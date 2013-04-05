@@ -1,0 +1,317 @@
+;MusicPlayerTest test code
+;Displays statistics about raster time so any code changes can be tested for CPU optimisation.
+
+!source "../stdlib/stdlib.a"
+!to "MusicPlayerTest.prg", cbm
+!sal
+!sl "MusicPlayerTest.map"
+!svl "MusicPlayerTest.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+;MusicPlayer_DebugBorder = 1
+
+!if 0 {
+; Define all known options to check it assembles with maximum memory used
+kRunningInEditor = 1
+SoundEffectsActive = 1
+HardRestartCommandsActive = 1
+SluringCommandsActive = 1
+ArpeggioCommandsActive = 1
+ExtendedArpeggioCommandsActive = 1
+ArpeggioStopCommandsActive = 1
+SmallVibratoCommandsActive = 1
+SustainGlideCommandsActive = 1
+LargeVibratoActive = 1
+PulseWidthVarianceActive = 1
+DrumDynamicStartOffsetUsed = 1
+DrumGateLengthUsed = 1
+
+GlideAutoCommandsActive = 1
+FilterGlideAutoCommandsActive = 1
+FilterHiAutoCommandsActive = 1
+FilterLoAutoCommandsActive = 1
+FilterControlAutoCommandsActive = 1
+FilterPassAutoCommandsActive = 1
+VolumeAutoCommandsActive = 1
+FixedVibratoAutoCommandsActive = 1
+FixedVibratoDelayAutoCommandsActive = 1
+FixedVibratoStopAutoCommandsActive = 1
+
+VariableHardRestartParams = 1
+HardRestartADAutoCommandsActive = 1
+HardRestartSRAutoCommandsActive = 1
+HardRestartWVAutoCommandsActive = 1
+HardRestartTIAutoCommandsActive = 1
+
+TableWaveSetAutoCommandsActive = 1
+TableNoteSetAutoCommandsActive = 1
+TablePulseSetAutoCommandsActive = 1
+TableFilterSetAutoCommandsActive = 1
+
+DurationTicksAutoCommandsActive = 1
+
+TableCodeActivateWave = 1
+TableCodeActivateNote = 1
+TableCodeActivatePulse = 1
+TableCodeActivateFilter = 1
+
+MusicPlayer_DebugBorder = 1
+}
+
+; Just to define since they are not in any of the test pieces.
+ZeroPageStart = $fb
+HardRestartSIDParamAD = $0
+HardRestartSIDParamSR = $f0
+HardRestartSIDParamWV = $9
+HardRestartSIDParamTime = $1
+
+
+
+*=BASICEntry
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	; Init the music
+	lda #0
+	jsr MusicPlayerInit
+
+
+	; Init the screen
+	jsr CLRSCR
+	lda #VIC2MemorySetupDefault
+	sta VIC2MemorySetup
+	lda #%11
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+.screenPos = 100
+	; Start the main loop
+.main
+	lda #.screenPos
+.l1
+	cmp VIC2Raster
+	bne .l1
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+	jsr MusicPlayerPlay
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+
+	lda VIC2Raster
+	sec
+	sbc #.screenPos
+
+	inc AverageTabPos
+	bne .o3
+	ldx #1
+	stx AverageValid
+.o3
+	ldx AverageTabPos
+	sta AverageTable,x
+
+	; Remember the maximum raster time used
+	cmp MaximumTime
+	bcc .o4
+	sta MaximumTime
+.o4
+
+	lda AverageValid
+	beq .o2
+
+	; Now calculate the average
+	lda #0
+	tay
+	tax
+.l2
+	clc
+	adc AverageTable,x
+	bcc .o1
+	iny
+.o1
+	inx
+	bne .l2
+
+	; We have 256 entries so we can just use the high byte :)
+	sty AverageCalculated
+	lda .valDiv10,y
+	clc
+	adc #'0'
+	sta SCREENRAM
+	lda .valMod10,y
+	clc
+	adc #'0'
+	sta SCREENRAM+1
+
+	lda #'$'
+	sta SCREENRAM+9
+	lda AverageCalculated
+	lsr
+	lsr
+	lsr
+	lsr
+	tay
+	lda .hexTab,y
+	sta SCREENRAM+10
+	lda AverageCalculated
+	and #$f
+	tay
+	lda .hexTab,y
+	sta SCREENRAM+11
+
+	; Enable the next line to have the test stop when the average is calculated. Useful for tests over a known period of time.
+	jmp *
+
+.o2
+
+	ldy MaximumTime
+	lda .valDiv10,y
+	clc
+	adc #'0'
+	sta SCREENRAM+40
+	lda .valMod10,y
+	clc
+	adc #'0'
+	sta SCREENRAM+41
+
+	lda #'$'
+	sta SCREENRAM+49
+	lda MaximumTime
+	lsr
+	lsr
+	lsr
+	lsr
+	tay
+	lda .hexTab,y
+	sta SCREENRAM+50
+	lda MaximumTime
+	and #$f
+	tay
+	lda .hexTab,y
+	sta SCREENRAM+51
+
+	; Check for fire resetting the maximum time
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .o5
+	lda #0
+	sta MaximumTime
+.o5
+
+	lda #%1
+	bit CIA1KeyboardColumnJoystickA
+	bne .o6
+	jsr MusicPlayerStop
+.o6
+
+	jsr HandleSFX
+
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+	jmp .main
+
+!if 0 {
+; The old music routine that doesn't have dynamic code optimisation, it just uses included binary data.
+*=$900
+maxBlocks = $40
+;MusicPlayer_DebugBorder = 1
+!source "../MusicEditor/MusicPlayer.a"
+*=MusicPlayerDataStart
+; Test result: 14 & 25
+; After opt: 11 & 19
+;!bin "TestMusic.prg",,MusicPlayerCodeToDataOffset+2
+; Test result: 18 & 30
+; After opt: 14 & 25
+!bin "TestMusic2.prg",,MusicPlayerCodeToDataOffset+2
+; Test result: Not taken
+; After opt: 12 & 22
+;!bin "TestMusic3.prg",,MusicPlayerCodeToDataOffset+2
+} else {
+; The new version that uses dynmaic code optimisation, it spots which features are active in the data file and only assembles those.
+; This uses intermediate assembly file from the Windows MusicStudio editor.
+; This include uses the --lib <include> path to find the correct file
+!source "t.a"
+}
+
+; Table for the raster data so a moving average can be calculated
+AverageTable !fill 256
+AverageTabPos !by 0
+AverageValid !by 0
+AverageCalculated !by 0
+MaximumTime !by 0
+
+.valDiv10
+	!for .table1,50 {!by <((.table1-1) / 10) }
+.valMod10
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+
+.hexTab !scr "0123456789abcdef"
+
+!source "../stdlib/Initialise.a"
+
+
+HandleSFX
+!ifdef SoundEffectsActive {
+	lda #%10
+	bit CIA1KeyboardColumnJoystickA
+	; Down test
+	bne .o7
+	; Channel
+	ldx #0
+	; Note
+	lda #48
+	; Envelope
+	ldy #1
+	jsr MusicPlayerPlaySFX
+.o7
+
+	lda #%100
+	bit CIA1KeyboardColumnJoystickA
+	; Left test
+	bne .o8
+	; Channel
+	ldx #1
+	; Note
+	lda #48
+	; Envelope
+	ldy #2
+	jsr MusicPlayerPlaySFX
+.o8
+
+	lda #%1000
+	bit CIA1KeyboardColumnJoystickA
+	; Right test
+	bne .o9
+	; Channel
+	ldx #2
+	; Note
+	lda #48
+	; Envelope
+	ldy #3
+	jsr MusicPlayerPlaySFX
+.o9
+}
+	rts
+
+
+; Just to define since they are not in any of the test pieces.
+ExtendedArpeggioData
+	!by $18,$00,$00,$f4,$0c,$00,$00,$f4
+
+TableHardRestartAttackDecay
+	!by $00,$00,$00
+TableHardRestartSustainRelease
+	!by $f0,$f0,$f0
+TableHardRestartWaveform
+	!by $09,$09,$09
+TableHardRestartFrames
+	!by $01,$01,$01

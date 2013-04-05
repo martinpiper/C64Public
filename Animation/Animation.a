@@ -1,0 +1,1143 @@
+;Animation test code
+
+!source "../stdlib/stdlib.a"
+!to "Animation.prg", cbm
+!sal
+!sl "Animation.map"
+!svl "Animation.lbl"
+!cpu 6510
+!ct pet
+
+;Comment out this to not use the speed testing code
+;SpeedTestCode = 1
+
+; TAG3D logo
+!if 0 {
+ScreenColour = 0
+BGColour = 9
+BGColour1Start = 0
+BGColour2Start = 0
+BGColourChangeIters = 2
+BGColour1During = 12
+BGColour2During = 15
+MaxFrames = 28
+SpriteAnimation = 1
+DoMusic = 1
+}
+
+; Hires white 3D logo
+!if 0 {
+ScreenColour = 0
+BGColour = 1
+BGColour1Start = 0
+BGColour2Start = 0
+BGColourChangeIters = 0
+BGColour1During = 0
+BGColour2During = 0
+MaxFrames = 100
+DoMusic = 1
+}
+
+; Batman logo
+!if 0 {
+ScreenColour = 0
+BGColour = 14
+BGColour1Start = 12
+BGColour2Start = 14
+BGColourChangeIters = 0
+BGColour1During = BGColour1Start
+BGColour2During = BGColour2Start
+MaxFrames = 66
+}
+
+; Batman dancing
+!if 0 {
+ScreenColour = 1
+BGColour = 8
+BGColour1Start = 11
+BGColour2Start = 12
+BGColourChangeIters = 0
+BGColour1During = BGColour1Start
+BGColour2During = BGColour2Start
+MaxFrames = 12
+}
+
+; Hires horse jump
+!if 1 {
+ScreenColour = 0
+BGColour = 1
+BGColour1Start = 0
+BGColour2Start = 0
+BGColourChangeIters = 0
+BGColour1During = 0
+BGColour2During = 0
+MaxFrames = 24
+}
+
+;Multiplexor_DebugBorder = 1
+;Multiplex_OverflowRasterCheck1 = 1
+;Multiplex_OverflowRasterCheck2 = 1
+;Multiplex_BunchingCheck = 1
+Multiplex_EnableEarlyOut = 1
+
+IRQCounts = $02
+
+!ifdef SpriteAnimation {
+Multiplex_VarBase	= $04
+Multiplex_spritepointer	= $e400+SPRITEFRAMESCROFF
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom
+Multiplex_items	= 24
+!source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
+}
+
+*=$400
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+;	+WaitForFire_A
+	lda #ScreenColour
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	lda #00
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+	lda #0
+	sta VIC2ExtraBackgroundColour1
+	sta VIC2ExtraBackgroundColour2
+
+!ifdef SpeedTestCode {
+	lda #BGColour1During
+	sta VIC2ExtraBackgroundColour1
+	lda #BGColour2During
+	sta VIC2ExtraBackgroundColour2
+} else {
+	lda #BGColour1Start
+	sta VIC2ExtraBackgroundColour1
+	lda #BGColour2Start
+	sta VIC2ExtraBackgroundColour2
+}
+
+!ifdef SpriteAnimation {
+	lda #$40 + 28
+	ldx #24
+.cf0
+	sta Multiplex_SpriteFrame-1,x
+	dex
+	bne .cf0
+
+	lda #$42
+	ldx #16
+.cf1
+	sta Multiplex_SpriteFrame-1,x
+	dex
+	bne .cf1
+
+	ldx #Multiplex_items
+.cf2
+	lda #255
+	sta Multiplex_YPos-1,x
+	dex
+	bne .cf2
+
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour2
+	lda #VIC2Colour_White
+	sta VIC2ExtraSpriteColour1
+
+	lda #VIC2SpriteXBorderLeft
+	sta $fb
+	lda #0
+	sta $fc
+	ldx #0
+.cf3
+	lda $fb
+	sta Multiplex_XPosLo,x
+	lda $fc
+	sta Multiplex_XPosHi,x
+	lda $fb
+	clc
+	adc #22
+	sta $fb
+	bcc .cf4
+	inc $fc
+.cf4
+	inx
+	cpx #16
+	bne .cf3
+}
+
+
+!ifdef DoMusic {
+	lda #0
+	jsr Music
+}
+
+	ldx #0
+	lda #BGColour
+.cl1
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .cl1
+
+	lda #0
+	sta IRQCounts
+	sta IRQCounts+1
+!ifdef SpeedTestCode {
+	lda #<IRQCounter
+	sta KERNALIRQServiceRoutineLo
+	lda #>IRQCounter
+	sta KERNALIRQServiceRoutineHi
+} else {
+!ifdef SpriteAnimation {
+	lda #<Multiplex_maininter
+	sta KERNALIRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta KERNALIRQServiceRoutineHi
+} else {
+	lda #<IRQCounter
+	sta KERNALIRQServiceRoutineLo
+	lda #>IRQCounter
+	sta KERNALIRQServiceRoutineHi
+}
+}
+
+
+!ifdef SpriteAnimation {
+	lda #Multiplex_items					; MPi: Increase to 48 sprites from the original 24 sprite demo
+	sta Multiplex_MaxSpr
+
+	jsr Multiplex_InitSort
+}
+
+
+	; Lastly update zeropage with our zeropage RLE decompressor
+	ldx #RNXPCompressionDecompressRLECodeEnd-RNXPCompressionDecompressRLECodeStart
+.cz1
+	lda RNXPCompressionDecompressRLECodeStart-1,x
+	sta+2 RNXPCompressionDecompressRLE-1,x
+	dex
+	bne .cz1
+
+	; Sync the start of IRQs and the mainline
+	+MACROWaitForTheLastScanPlus1_A
+	lda #1
+	sta VIC2InteruptControl
+	lda #255
+	sta VIC2Raster
+	+MACROAckRasterIRQ_A
+	cli
+
+.fr1
+
+	ldx #<$e000
+	ldy #>$e000
+	jsr RNXPCompressionDecompressRLE_InitStore
+	jsr .unpackFrame
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+	lda #%10011010		; Screen at $e400 char data at $e800
+	sta VIC2MemorySetup
+
+!ifdef SpriteAnimation {
+	lda #$e7
+	jsr Multiplex_SetSpritePointer
+}
+
+!if 0 {
+!if MaxFrames = 12 {
+	ldx #0
+.clc1a
+	lda $e000,x
+	sta COLOURRAM,x
+	inx
+	bne .clc1a
+.clc1b
+	lda $e000+$100,x
+	sta COLOURRAM+$100,x
+	inx
+	bne .clc1b
+.clc1c
+	lda $e000+$200,x
+	sta COLOURRAM+$200,x
+	inx
+	bne .clc1c
+.clc1d
+	lda $e000+$300,x
+	sta COLOURRAM+$300,x
+	inx
+	bne .clc1d
+}
+}
+
+	jsr .incrFrame
+
+	; MPi: TODO: It would be possible to include colour RAM data here, don't use banks or char data, just decompress the "screen" directly to the colour RAM
+	; Instead of compressing using banks just delta from the previous colour RAM frame instead.
+	; The DeltaCompression application would need a command line tweak to stop banks being used.
+	; As long as the colour RAM decompress is shorter than a frame it will be OK. Time this...
+
+	ldx #<$e000
+	ldy #>$e000
+	jsr RNXPCompressionDecompressRLE_InitStore
+	jsr .unpackFrame
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #%11011110		; Screen at $f400 char data at $f800
+	sta VIC2MemorySetup
+
+!ifdef SpriteAnimation {
+	lda #$f7
+	jsr Multiplex_SetSpritePointer
+}
+
+!if 0 {
+!if MaxFrames = 12 {
+	ldx #0
+.clc2a
+	lda $f000,x
+	sta COLOURRAM,x
+	inx
+	bne .clc2a
+.clc2b
+	lda $f000+$100,x
+	sta COLOURRAM+$100,x
+	inx
+	bne .clc2b
+.clc2c
+	lda $f000+$200,x
+	sta COLOURRAM+$200,x
+	inx
+	bne .clc2c
+.clc2d
+	lda $f000+$300,x
+	sta COLOURRAM+$300,x
+	inx
+	bne .clc2d
+}
+}
+
+	jsr .incrFrame
+
+	jmp .fr1
+
+.displaying !by 0
+
+.unpackFrame
+	ldx .displaying
+	lda .framesLo,x
+	ldy .framesHi,x
+	tax
+	jmp RNXPCompressionDecompressRLE
+
+.incrFrame
+
+;	+WaitForFire_A
+
+	inc .displaying
+	lda .displaying
+	cmp #MaxFrames
+	bne .up1
+!ifdef SpeedTestCode {
+	jam	; Use this to trigger the monitor after one whole sqeuence
+}
+	lda #0
+	sta .displaying
+	dec .on3DCount
+	bne .up1
+	lda #BGColour1During
+	sta VIC2ExtraBackgroundColour1
+	lda #BGColour2During
+	sta VIC2ExtraBackgroundColour2
+.up1
+	rts
+.on3DCount !by BGColourChangeIters
+
+.framesLo
+	!by <Frame00001
+	!by <Frame00002
+	!by <Frame00003
+	!by <Frame00004
+	!by <Frame00005
+	!by <Frame00006
+	!by <Frame00007
+	!by <Frame00008
+	!by <Frame00009
+	!by <Frame00010
+	!by <Frame00011
+	!by <Frame00012
+!if MaxFrames > 12 {
+	!by <Frame00013
+	!by <Frame00014
+	!by <Frame00015
+	!by <Frame00016
+	!by <Frame00017
+	!by <Frame00018
+	!by <Frame00019
+	!by <Frame00020
+	!by <Frame00021
+	!by <Frame00022
+	!by <Frame00023
+	!by <Frame00024
+!if MaxFrames > 24 {
+	!by <Frame00025
+	!by <Frame00026
+	!by <Frame00027
+	!by <Frame00028
+!if MaxFrames > 28 {
+	!by <Frame00029
+
+	!by <Frame00030
+	!by <Frame00031
+	!by <Frame00032
+	!by <Frame00033
+	!by <Frame00034
+	!by <Frame00035
+	!by <Frame00036
+	!by <Frame00037
+	!by <Frame00038
+	!by <Frame00039
+
+	!by <Frame00040
+	!by <Frame00041
+	!by <Frame00042
+	!by <Frame00043
+	!by <Frame00044
+	!by <Frame00045
+	!by <Frame00046
+	!by <Frame00047
+	!by <Frame00048
+	!by <Frame00049
+
+	!by <Frame00050
+	!by <Frame00051
+	!by <Frame00052
+	!by <Frame00053
+	!by <Frame00054
+	!by <Frame00055
+	!by <Frame00056
+	!by <Frame00057
+	!by <Frame00058
+	!by <Frame00059
+
+	!by <Frame00060
+	!by <Frame00061
+	!by <Frame00062
+	!by <Frame00063
+	!by <Frame00064
+	!by <Frame00065
+	!by <Frame00066
+!if MaxFrames > 66 {
+	!by <Frame00067
+	!by <Frame00068
+	!by <Frame00069
+
+	!by <Frame00070
+	!by <Frame00071
+	!by <Frame00072
+	!by <Frame00073
+	!by <Frame00074
+	!by <Frame00075
+	!by <Frame00076
+	!by <Frame00077
+	!by <Frame00078
+	!by <Frame00079
+
+	!by <Frame00080
+	!by <Frame00081
+	!by <Frame00082
+	!by <Frame00083
+	!by <Frame00084
+	!by <Frame00085
+	!by <Frame00086
+	!by <Frame00087
+	!by <Frame00088
+	!by <Frame00089
+
+	!by <Frame00090
+	!by <Frame00091
+	!by <Frame00092
+	!by <Frame00093
+	!by <Frame00094
+	!by <Frame00095
+	!by <Frame00096
+	!by <Frame00097
+	!by <Frame00098
+	!by <Frame00099
+
+	!by <Frame00100
+}
+}
+}
+}
+
+.framesHi
+	!by >Frame00001
+	!by >Frame00002
+	!by >Frame00003
+	!by >Frame00004
+	!by >Frame00005
+	!by >Frame00006
+	!by >Frame00007
+	!by >Frame00008
+	!by >Frame00009
+	!by >Frame00010
+	!by >Frame00011
+	!by >Frame00012
+!if MaxFrames > 12 {
+	!by >Frame00013
+	!by >Frame00014
+	!by >Frame00015
+	!by >Frame00016
+	!by >Frame00017
+	!by >Frame00018
+	!by >Frame00019
+	!by >Frame00020
+	!by >Frame00021
+	!by >Frame00022
+	!by >Frame00023
+	!by >Frame00024
+!if MaxFrames > 24 {
+	!by >Frame00025
+	!by >Frame00026
+	!by >Frame00027
+	!by >Frame00028
+!if MaxFrames > 28 {
+	!by >Frame00029
+
+	!by >Frame00030
+	!by >Frame00031
+	!by >Frame00032
+	!by >Frame00033
+	!by >Frame00034
+	!by >Frame00035
+	!by >Frame00036
+	!by >Frame00037
+	!by >Frame00038
+	!by >Frame00039
+
+	!by >Frame00040
+	!by >Frame00041
+	!by >Frame00042
+	!by >Frame00043
+	!by >Frame00044
+	!by >Frame00045
+	!by >Frame00046
+	!by >Frame00047
+	!by >Frame00048
+	!by >Frame00049
+
+	!by >Frame00050
+	!by >Frame00051
+	!by >Frame00052
+	!by >Frame00053
+	!by >Frame00054
+	!by >Frame00055
+	!by >Frame00056
+	!by >Frame00057
+	!by >Frame00058
+	!by >Frame00059
+
+	!by >Frame00060
+	!by >Frame00061
+	!by >Frame00062
+	!by >Frame00063
+	!by >Frame00064
+	!by >Frame00065
+	!by >Frame00066
+!if MaxFrames > 66 {
+	!by >Frame00067
+	!by >Frame00068
+	!by >Frame00069
+
+	!by >Frame00070
+	!by >Frame00071
+	!by >Frame00072
+	!by >Frame00073
+	!by >Frame00074
+	!by >Frame00075
+	!by >Frame00076
+	!by >Frame00077
+	!by >Frame00078
+	!by >Frame00079
+
+	!by >Frame00080
+	!by >Frame00081
+	!by >Frame00082
+	!by >Frame00083
+	!by >Frame00084
+	!by >Frame00085
+	!by >Frame00086
+	!by >Frame00087
+	!by >Frame00088
+	!by >Frame00089
+
+	!by >Frame00090
+	!by >Frame00091
+	!by >Frame00092
+	!by >Frame00093
+	!by >Frame00094
+	!by >Frame00095
+	!by >Frame00096
+	!by >Frame00097
+	!by >Frame00098
+	!by >Frame00099
+
+	!by >Frame00100
+}
+}
+}
+}
+
+!source "../stdlib/Initialise.a"
+
+!if 0 {
+	; The old code for a normal boring RLE, the same format used by "Compression.exe -cr"
+RNXPCompressionDecompressRLE_InitStore
+	stx RNXPCompressionDecompress_WriteByte+1
+	sty RNXPCompressionDecompress_WriteByte+2
+	rts
+
+RNXPCompressionDecompressRLE
+	stx RNXPCompressionDecompress_GetByte+1
+	sty RNXPCompressionDecompress_GetByte+2
+
+	+RNXPCompressionDecompress_GetByte
+	clc
+	adc RNXPCompressionDecompress_WriteByte+1
+	sta .smEndTestL+1
+	+RNXPCompressionDecompress_GetByte
+	adc RNXPCompressionDecompress_WriteByte+2
+	sta .smEndTestH+1
+
+	+RNXPCompressionDecompress_GetByte
+	sta .smRLEByte+1
+
+.rle1
+	+RNXPCompressionDecompress_GetByte
+.smRLEByte	cmp #00
+	beq .rle3
+	jsr RNXPCompressionDecompress_WriteByte
+	jmp .rle1
+	; Handle a run
+.rle3
+	lda RNXPCompressionDecompress_WriteByte+1
+.smEndTestL	cmp #00
+	bne .rle2
+	lda RNXPCompressionDecompress_WriteByte+2
+.smEndTestH	cmp #00
+	bne .rle2
+	rts
+.rle2
+	+RNXPCompressionDecompress_GetByte
+	tax
+	+RNXPCompressionDecompress_GetByte
+.rle4
+	jsr RNXPCompressionDecompress_WriteByte
+	dex
+	bne .rle4
+	jmp .rle1
+}
+
+; 66 Frames Batman logo
+; Old: $b7 frames
+; New: $97 frames
+; Moved to zero page
+; New: $91 frames
+
+!macro RNXPCompressionDecompress_WriteByte {
+	sta (RNXPCompressionDecompress_WriteByteAddr),y
+	iny
+	bne .ni1
+	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
+.ni1
+}
+
+!macro RNXPCompressionDecompress_IncGetByte {
+	inc+1 RNXPCompressionDecompress_GetByteAddr
+	bne .ni1
+	inc+1 RNXPCompressionDecompress_GetByteAddr+1
+.ni1
+}
+
+!macro RNXPCompressionDecompress_GetByte {
+	+RNXPCompressionDecompress_IncGetByte
+	lda (RNXPCompressionDecompress_GetByteAddr,x)
+}
+
+
+RNXPCompressionDecompressRLE_InitStore
+	stx+1 RNXPCompressionDecompress_WriteByteAddr
+	sty+1 RNXPCompressionDecompress_WriteByteAddr+1
+	rts
+
+
+RNXPCompressionDecompressRLECodeStart
+!pseudopc $80 {
+RNXPCompressionDecompressRLE
+	stx+1 RNXPCompressionDecompress_GetByteAddr
+	sty+1 RNXPCompressionDecompress_GetByteAddr+1
+	lda+1 RNXPCompressionDecompress_GetByteAddr
+	bne .nzp1
+	dec+1 RNXPCompressionDecompress_GetByteAddr+1
+.nzp1
+	dec+1 RNXPCompressionDecompress_GetByteAddr
+
+	ldy #0
+	ldx #0
+	+RNXPCompressionDecompress_GetByte
+	sta+1 .smopcode1+1
+	+RNXPCompressionDecompress_GetByte
+	sta+1 .smopcode2+1
+	+RNXPCompressionDecompress_GetByte
+	sta+1 .smopcode3+1
+
+.rle1
+	+RNXPCompressionDecompress_IncGetByte
+RNXPCompressionDecompress_GetByteAddr  = *+1
+	lda $1234
+	bpl .notOpcode
+	; MPi: TODO: Instead of doing a cmp/beq test the delta data could use the same trick as the music player and use a negative opcode as the direct jump address for the code to run.
+	; This could either be calculated by a preprocess stage of 6502 code or the save routines can save out data that will get linked with the right values.
+.smopcode1	cmp #0
+	beq .opcode1
+.smopcode2	cmp #0
+	beq .opcode2
+.smopcode3	cmp #0
+	beq .opcode3
+.notOpcode
+RNXPCompressionDecompress_WriteByteAddr = *+1
+	sta $4321,y
+	iny
+	bne .rle1
+	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
+	jmp .rle1
+
+.RLERet
+	rts
+
+.opcode1
+	+RNXPCompressionDecompress_GetByte
+;	cmp #0
+	beq .RLERet
+	sta+1 .smc1+1
+	+RNXPCompressionDecompress_GetByte
+.smc1	ldx #00
+.rle2
+	+RNXPCompressionDecompress_WriteByte
+	dex
+	bne .rle2
+	jmp .rle1
+
+.opcode2
+	+RNXPCompressionDecompress_GetByte
+;	cmp #0
+	beq .rle3
+	clc	; MPi: TODO: Potential for reversing the above comparison to get a free CLC
+	adc+1 RNXPCompressionDecompress_WriteByteAddr
+	sta+1 RNXPCompressionDecompress_WriteByteAddr
+	bcc .rle1
+	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
+	jmp .rle1
+.rle3
+	lda+1 .smopcode2+1
+	+RNXPCompressionDecompress_WriteByte
+	jmp .rle1
+
+.opcode3
+	+RNXPCompressionDecompress_GetByte
+	; MPi: TODO: Instead of doing a cmp #$ff there is scope for the delta compression to add the hi address directly to the data, then if the hi address is zero that is a better flag check to output the single opcode byte.
+	; It would also remove the need to ora #$e0
+	cmp #$ff
+	beq .rle4
+	ora #$e0
+	sta .smRLECopy+2
+	+RNXPCompressionDecompress_GetByte
+	sta .smRLECopy+1
+	+RNXPCompressionDecompress_GetByte
+	sta .smRLEC1+1
+	ldx #0
+.rle5
+.smRLECopy	lda $1234,x
+	+RNXPCompressionDecompress_WriteByte
+	inx
+.smRLEC1	cpx #0
+	bne .rle5
+	ldx #0
+	jmp .rle1
+.rle4
+	lda+1 .smopcode3+1
+	+RNXPCompressionDecompress_WriteByte
+	jmp .rle1
+}
+RNXPCompressionDecompressRLECodeEnd
+
+!ifdef SpriteAnimation {
+MultiplexExt_LastIRQ
+	pha
+
+	lda #$ff
+	sta VIC2Raster
+	lda #<BottomScreenIRQ
+	sta KERNALIRQServiceRoutineLo
+	lda #>BottomScreenIRQ
+	sta KERNALIRQServiceRoutineHi
+
+	pla
+
+	jmp Multiplex_AckExitInterrupt
+
+!source "../SpriteMultiplexor/SpriteMultiplexor.a"
+}
+
+BottomScreenIRQ
+	pha
+	txa
+	pha
+	tya
+	pha
+!ifdef Multiplexor_DebugBorder {
+	inc VIC2BorderColour
+}
+
+!ifdef DoMusic {
+	jsr Music+3
+}
+
+!ifdef Multiplexor_DebugBorder {
+	inc VIC2BorderColour
+}
+
+!ifdef SpriteAnimation {
+	ldx #0
+.sa1
+	dec Multiplex_XPosLo,x
+	dec Multiplex_XPosLo,x
+	lda Multiplex_XPosLo,x
+	cmp #$fe
+	bne .sa2
+	dec Multiplex_XPosHi,x
+	beq .sa2
+	lda #1
+	sta Multiplex_XPosHi,x
+	lda #<(16*22)
+	sta Multiplex_XPosLo,x
+	ldy MessageCounter
+	cpy #96
+	bne .ov1
+	lda #1
+	sta .enableCircle
+.ov1
+	inc MessageCounter
+	lda Message,y
+	cmp #32
+	bne .sa3
+	lda #$42
+	sta Multiplex_SpriteFrame,x
+	jmp .sa2
+.sa3
+	clc
+	adc #$42
+	sta Multiplex_SpriteFrame,x
+.sa2
+	lda Multiplex_SpriteFrame,x
+	cmp #$42
+	bne .someY
+	lda #255
+	jmp .noY
+.someY
+	lda Multiplex_XPosHi,x
+	lsr
+	lda Multiplex_XPosLo,x
+	ror
+	clc
+	adc .tickAdjust
+	tay
+	lda siny,y
+.noY
+	sta Multiplex_YPos,x
+	inx
+	cpx #16
+	bne .sa1
+	dec .tickAdjust	
+
+	lda .enableCircle
+	beq .noCircle
+	; The circle bit
+	inc .xtick
+	inc .ytick
+
+	ldx #16
+	ldy .xtick
+.sa4
+	lda siny,y
+	lsr
+	clc
+	adc #64+5
+	sta Multiplex_YPos,x
+	tya
+	clc
+	adc #32
+	tay
+	inx
+	cpx #24
+	bne .sa4
+
+	ldx #16
+	ldy .ytick
+.sa5
+	lda siny,y
+	lsr
+	clc
+	adc #100
+	sta Multiplex_XPosLo,x
+	lda #0
+	sta Multiplex_XPosHi,x
+	tya
+	clc
+	adc #32
+	tay
+	inx
+	cpx #24
+	bne .sa5
+
+.noCircle
+	lda #0
+	sta VIC2Sprite0Y
+	sta VIC2Sprite1Y
+	sta VIC2Sprite2Y
+	sta VIC2Sprite3Y
+	sta VIC2Sprite4Y
+	sta VIC2Sprite5Y
+	sta VIC2Sprite6Y
+	sta VIC2Sprite7Y
+}
+
+	+MACROAckRasterIRQ_A
+
+!ifdef SpriteAnimation {
+	jsr Multiplex_Sort
+	jsr Multiplex_StartTopInterrupt
+}
+!ifdef Multiplexor_DebugBorder {
+	lda #0 : sta VIC2BorderColour
+}
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+IRQCounter
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	+MACROAckRasterIRQ_A
+!ifdef Multiplexor_DebugBorder {
+	inc VIC2BorderColour
+}
+	inc IRQCounts
+	bne .nc1
+	inc IRQCounts+1
+.nc1
+
+!ifdef SpeedTestCode {
+} else {
+
+!ifdef DoMusic {
+	jsr Music+3
+}
+
+}
+
+!ifdef Multiplexor_DebugBorder {
+	inc VIC2BorderColour
+}
+
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+!ifdef SpriteAnimation {
+.enableCircle !by 0
+.xtick !by 0
+.ytick !by 64
+
+.tickAdjust !by 0
+siny
+ !by $8d,$8f,$92,$94,$96,$98,$9a,$9c,$9f,$a1,$a3,$a5,$a7,$a9,$ab,$ad
+ !by $af,$b1,$b3,$b5,$b7,$b9,$bb,$bc,$be,$c0,$c2,$c3,$c5,$c7,$c8,$ca
+ !by $cb,$cd,$ce,$d0,$d1,$d2,$d4,$d5,$d6,$d7,$d8,$d9,$da,$db,$dc,$dd
+ !by $de,$df,$e0,$e0,$e1,$e1,$e2,$e2,$e3,$e3,$e3,$e4,$e4,$e4,$e4,$e4
+ !by $e4,$e4,$e4,$e4,$e3,$e3,$e3,$e2,$e2,$e1,$e1,$e0,$e0,$df,$de,$dd
+ !by $dc,$db,$da,$d9,$d8,$d7,$d6,$d5,$d4,$d2,$d1,$d0,$ce,$cd,$cb,$ca
+ !by $c8,$c7,$c5,$c3,$c2,$c0,$be,$bc,$bb,$b9,$b7,$b5,$b3,$b1,$af,$ad
+ !by $ab,$a9,$a7,$a5,$a3,$a1,$9f,$9c,$9a,$98,$96,$94,$92,$8f,$8d,$8b
+ !by $89,$87,$84,$82,$80,$7e,$7c,$7a,$77,$75,$73,$71,$6f,$6d,$6b,$69
+ !by $67,$65,$63,$61,$5f,$5d,$5b,$5a,$58,$56,$54,$53,$51,$4f,$4e,$4c
+ !by $4b,$49,$48,$46,$45,$44,$42,$41,$40,$3f,$3e,$3d,$3c,$3b,$3a,$39
+ !by $38,$37,$36,$36,$35,$35,$34,$34,$33,$33,$33,$32,$32,$32,$32,$32
+ !by $32,$32,$32,$32,$33,$33,$33,$34,$34,$35,$35,$36,$36,$37,$38,$39
+ !by $3a,$3b,$3c,$3d,$3e,$3f,$40,$41,$42,$44,$45,$46,$48,$49,$4b,$4c
+ !by $4e,$4f,$51,$53,$54,$56,$58,$5a,$5b,$5d,$5f,$61,$63,$65,$67,$69
+ !by $6b,$6d,$6f,$71,$73,$75,$77,$7a,$7c,$7e,$80,$82,$84,$87,$89,$8b
+ !by $ff
+
+MessageCounter !by 0
+Message
+!scr "the spinning logo looks lonely         that is better      not much to say really                    more sprites i saw that coming "
+!scr "so the credits  necro polo did this version of mean streak  the sprites are from monty mole  the coding was by martin piper     "
+}
+
+Frame00001 !bin "Data/frm00001.del"
+Frame00002 !bin "Data/frm00002.del"
+Frame00003 !bin "Data/frm00003.del"
+Frame00004 !bin "Data/frm00004.del"
+Frame00005 !bin "Data/frm00005.del"
+Frame00006 !bin "Data/frm00006.del"
+Frame00007 !bin "Data/frm00007.del"
+Frame00008 !bin "Data/frm00008.del"
+Frame00009 !bin "Data/frm00009.del"
+
+Frame00010 !bin "Data/frm00010.del"
+Frame00011 !bin "Data/frm00011.del"
+Frame00012 !bin "Data/frm00012.del"
+!if MaxFrames > 12 {
+Frame00013 !bin "Data/frm00013.del"
+Frame00014 !bin "Data/frm00014.del"
+Frame00015 !bin "Data/frm00015.del"
+Frame00016 !bin "Data/frm00016.del"
+Frame00017 !bin "Data/frm00017.del"
+Frame00018 !bin "Data/frm00018.del"
+Frame00019 !bin "Data/frm00019.del"
+
+Frame00020 !bin "Data/frm00020.del"
+Frame00021 !bin "Data/frm00021.del"
+Frame00022 !bin "Data/frm00022.del"
+Frame00023 !bin "Data/frm00023.del"
+Frame00024 !bin "Data/frm00024.del"
+!if MaxFrames > 24 {
+Frame00025 !bin "Data/frm00025.del"
+Frame00026 !bin "Data/frm00026.del"
+Frame00027 !bin "Data/frm00027.del"
+Frame00028 !bin "Data/frm00028.del"
+!if MaxFrames > 28 {
+Frame00029 !bin "Data/frm00029.del"
+
+Frame00030 !bin "Data/frm00030.del"
+Frame00031 !bin "Data/frm00031.del"
+Frame00032 !bin "Data/frm00032.del"
+Frame00033 !bin "Data/frm00033.del"
+Frame00034 !bin "Data/frm00034.del"
+Frame00035 !bin "Data/frm00035.del"
+Frame00036 !bin "Data/frm00036.del"
+Frame00037 !bin "Data/frm00037.del"
+Frame00038 !bin "Data/frm00038.del"
+Frame00039 !bin "Data/frm00039.del"
+
+Frame00040 !bin "Data/frm00040.del"
+Frame00041 !bin "Data/frm00041.del"
+Frame00042 !bin "Data/frm00042.del"
+Frame00043 !bin "Data/frm00043.del"
+Frame00044 !bin "Data/frm00044.del"
+Frame00045 !bin "Data/frm00045.del"
+Frame00046 !bin "Data/frm00046.del"
+Frame00047 !bin "Data/frm00047.del"
+Frame00048 !bin "Data/frm00048.del"
+Frame00049 !bin "Data/frm00049.del"
+
+Frame00050 !bin "Data/frm00050.del"
+Frame00051 !bin "Data/frm00051.del"
+Frame00052 !bin "Data/frm00052.del"
+Frame00053 !bin "Data/frm00053.del"
+Frame00054 !bin "Data/frm00054.del"
+Frame00055 !bin "Data/frm00055.del"
+Frame00056 !bin "Data/frm00056.del"
+Frame00057 !bin "Data/frm00057.del"
+Frame00058 !bin "Data/frm00058.del"
+Frame00059 !bin "Data/frm00059.del"
+
+Frame00060 !bin "Data/frm00060.del"
+Frame00061 !bin "Data/frm00061.del"
+Frame00062 !bin "Data/frm00062.del"
+Frame00063 !bin "Data/frm00063.del"
+Frame00064 !bin "Data/frm00064.del"
+Frame00065 !bin "Data/frm00065.del"
+Frame00066 !bin "Data/frm00066.del"
+
+!if MaxFrames > 66 {
+Frame00067 !bin "Data/frm00067.del"
+Frame00068 !bin "Data/frm00068.del"
+Frame00069 !bin "Data/frm00069.del"
+
+Frame00070 !bin "Data/frm00070.del"
+Frame00071 !bin "Data/frm00071.del"
+Frame00072 !bin "Data/frm00072.del"
+Frame00073 !bin "Data/frm00073.del"
+Frame00074 !bin "Data/frm00074.del"
+Frame00075 !bin "Data/frm00075.del"
+Frame00076 !bin "Data/frm00076.del"
+Frame00077 !bin "Data/frm00077.del"
+Frame00078 !bin "Data/frm00078.del"
+Frame00079 !bin "Data/frm00079.del"
+
+Frame00080 !bin "Data/frm00080.del"
+Frame00081 !bin "Data/frm00081.del"
+Frame00082 !bin "Data/frm00082.del"
+Frame00083 !bin "Data/frm00083.del"
+Frame00084 !bin "Data/frm00084.del"
+Frame00085 !bin "Data/frm00085.del"
+Frame00086 !bin "Data/frm00086.del"
+Frame00087 !bin "Data/frm00087.del"
+Frame00088 !bin "Data/frm00088.del"
+Frame00089 !bin "Data/frm00089.del"
+
+Frame00090 !bin "Data/frm00090.del"
+Frame00091 !bin "Data/frm00091.del"
+Frame00092 !bin "Data/frm00092.del"
+Frame00093 !bin "Data/frm00093.del"
+Frame00094 !bin "Data/frm00094.del"
+Frame00095 !bin "Data/frm00095.del"
+Frame00096 !bin "Data/frm00096.del"
+Frame00097 !bin "Data/frm00097.del"
+Frame00098 !bin "Data/frm00098.del"
+Frame00099 !bin "Data/frm00099.del"
+
+Frame00100 !bin "Data/frm00100.del"
+}
+}
+}
+}
+
+!ifdef DoMusic {
+*=$bf00
+Music
+!bin "MusBF00.prg",,2
+}
+
+!ifdef SpriteAnimation {
+; Some sprite data high up in memory
+*=$d000
+!bin "Letters.spr"
+}
+
+;Fill in the last frames in the memory, calculated by the delta compressor, so it decompresses correctly
+!initmem 0
+*=$e000
+!bin "Data/frm00000.del"
+*=$fff8

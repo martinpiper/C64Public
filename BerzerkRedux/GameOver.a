@@ -1,0 +1,32 @@
+!zn
+GameOver
+	lda #150
+	sta .gameOverTimer
+	lda #0
+	; Stops the SFX engine running on the IRQ while we try to play music
+	sta SFXCall
+	lda #1
+	jsr MusicPlayerInit
+
+	+DisplayColourTextMiddle_AX .message1 , .message1End , MainScreen + (12*40) , VIC2Colour_Yellow
+
+.l1
+	jsr WaitForBottomIRQ
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	jsr Multiplex_Sort
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	jsr MusicPlayerPlay
+
+	dec .gameOverTimer
+	bne .l1
+	jsr MusicPlayerStop
+	rts
+
+.gameOverTimer !by 0
+.message1
+!scr "game over"
+.message1End

@@ -1,0 +1,224 @@
+;Decompression test code. Demonstrates how to create self extracting code.
+;..\acme.exe -v3 --msvc TestDecompression2.a
+
+; This decompression code will typically kill data in locations:
+; $10 to ZPSTVariable-1
+; $100 to $1cb
+; $334 to $3ff
+
+;To compress
+;..\bin\LZMPi.exe -c Scroller.bin Scroller.cmp
+;..\bin\LZMPi.exe -c ..\Scroller\Scroller.prg ..\Scroller\Scroller.cmp 2
+;..\bin\LZMPi.exe -c ..\CityGame\OriginalData.prg ..\CityGame\OriginalData.cmp 2
+;..\bin\LZMPi.exe -c ..\RacingGame\OriginalData.prg ..\RacingGame\OriginalData.cmp 2
+;..\bin\LZMPi.exe -c ..\Berzerk\Berzerk.prg ..\Berzerk\OriginalData.cmp 2
+
+!source "../stdlib/stdlib.a"
+!to "TestDecompression.prg", cbm
+!sal
+!sl "TestDecompression.map"
+!svl "TestDecompression.lbl"
+!cpu 6510
+!ct pet
+
+
+!source "../stdlib/BASICEntry80d.a"
+
+EndOfMemory = $10000
+
+; The contents of this macro can be used to cause the border colour to change while decompressing.
+!macro RNXPCompressionIncBorder_A {
+!if 1 {
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	inc VIC2BorderColour
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+}
+}
+
+
+*=BASICEntry
+	sei
+	; Due to being started with a BASIC SYS:
+	; Assume the DDR is correct
+;	lda #ProcessorPortDDRDefault
+;	sta ZPProcessorPortDDR
+
+	; Assume the SP is at (or very near) $f6
+;	ldx #$ff
+;	txs
+
+!if 0 {
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda #0
+	sta VIC2ScreenControlV
+}
+
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	; Copy the decompression code to lower memory. The size of the code varies depending on the
+	; features activated in the code.
+	ldx #RNXPCompressionDecompress_ZPEndReal - RNXPCompressionDecompress_ZPStartReal
+.cp1
+	; Copy the ZP code first
+	lda RNXPCompressionDecompress_ZPStart-1,x
+	sta+1 RNXPCompressionDecompress_ZPStartReal-1,x
+	dex
+	bne .cp1
+
+
+	; This option produces more tidy memory use, doesn't splat $400 onwards.
+	ldx #(SCREENRAM-Decompression_Part2Addr)-1
+.cp2
+	; Then the stack located code
+	lda RNXPCompressionDecompress_Part1Start-1,x
+	; Forces two byte addressing because Decompression_Part1Addr-1 = $ff which will use sta zp,x unless we force +2 mode
+	sta+2 Decompression_Part1Addr-1,x
+	; The the tape buffer code
+	lda RNXPCompressionDecompress_Part2Start-1,x
+	; No need to force +2 mode here, it is correctly implied
+	sta Decompression_Part2Addr-1,x
+	dex
+	bne .cp2
+
+	jmp ContinueZPCode
+
+Test1Len = RNXPCompressionDecompress_ZPEnd - RNXPCompressionDecompress_ZPStart
+Test2Len = RNXPCompressionDecompress_Part1End - RNXPCompressionDecompress_Part1Start
+Test3Len = RNXPCompressionDecompress_Part2End - RNXPCompressionDecompress_Part2Start
+
+CompressionStartOfHistoryBufferTables = $10
+
+RNXPCompressionDecompress_ExitCodeDefined = 1
+!macro RNXPCompressionDecompress_ExitCode {
+NOTE_CompressedDataExecute	jmp CompressedDataExecute
+}
+
+!set RNXPCompressionDecompress_WriteByteAddr = CompressedDataStore
+!set RNXPCompressionDecompress_GetByteAddr = EndOfMemory - CompressedDataEnd + CompressedDataStart
+
+!zn
+RNXPCompressionDecompress_ZPStart
+!pseudopc $50 {
+RNXPCompressionDecompress_ZPStartReal
+!source "DecompressionVars.a"
+
+ContinueZPCode
+	; Even with SEI by changing to ProcessorPortAllRAM and moving data right to the end of memory it does mean pressing restore will cause a crash
+	; because the end of RAM contains the NMI vector. After checking a few other decrunchers which move to the end of memory they also suffer the same problem.
+
+	; Now copy the compressed data to the top of memory, backwards of course.
+
+.cp2
+NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
+NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
+	dex
+	bne .cp2
+	dec .cp2+2
+	dec .cp2+5
+	lda .cp2+2
+	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
+	cmp #(>CompressedDataStart)-2
+	bne .cp2
+
+	jmp RNXPCompressionDecompress
+
+!if * >= ZPSTVariable {
+!error "The ZP code has grown too far into ZP locations we don't really want to trash"
+}
+; Keep this check for now even though it won't be triggered
+!if * > $ff {
+!error "The ZP code has grown into the stack space, which is being used by the decompressor"
+}
+RNXPCompressionDecompress_ZPEndReal
+}
+RNXPCompressionDecompress_ZPEnd
+
+	; Include the decompression code in the middle of this code to get the actual decompression
+	; code size for the copying phase below.
+Decompression_OptimiseForOneEscapeBit = 1
+Decompression_OptimiseNoChangingEscape = 1
+Decompression_OptimiseNoStoreStub = 1
+Decompression_TwoParts = 1
+; Start of the stack
+Decompression_Part1Addr = $0100
+; Start of the tape buffer
+Decompression_Part2Addr = $0334
+!zn {
+RNXPCompressionDecompress_Part1Start
+!pseudopc Decompression_Part1Addr {
+!source "Decompression.a"
+}
+RNXPCompressionDecompress_Part1End
+
+RNXPCompressionDecompress_Part2Start
+!pseudopc Decompression_Part2Addr {
+!source "DecompressionP2.a"
+}
+RNXPCompressionDecompress_Part2End
+}
+
+
+RNXPCompressionDecompress_Part1Size = RNXPCompressionDecompress_Part1End - RNXPCompressionDecompress_Part1Start
+RNXPCompressionDecompress_Part2Size = RNXPCompressionDecompress_Part2End - RNXPCompressionDecompress_Part2Start
+!if RNXPCompressionDecompress_Part1Size >= $cb {
+!error "RNXPCompressionDecompress_Part1Size is too large"
+}
+!if RNXPCompressionDecompress_Part2Size >= $cb {
+!error "RNXPCompressionDecompress_Part2Size is too large"
+}
+
+
+
+; These variable declarations are to setup the storage used for this stub.
+
+; In this test the data is defined by the assembler however this data could also be added by
+; appending the data to the end of the file and tweaking the values in the code (Labels start
+; with "SM_") for the start, length and execute lo/hi.
+; This means it would be very simple to use the stub with any compressed data saved by LZMPi.exe
+
+!if 0 {
+CompressedDataStore		= $0801
+CompressedDataExecute	= 2304
+CompressedDataStart
+; Don't need the first two bytes (original length of the data in lo/hi format)
+!bin "Scroller.cmp",,2
+CompressedDataEnd
+}
+
+; Test code
+
+!if 0 {
+CompressedDataStore = $0800
+CompressedDataExecute = 22016
+CompressedDataStart
+!bin "../CityGame/OriginalData.cmp",,2
+CompressedDataEnd
+}
+
+!if 0 {
+CompressedDataStore = $0800
+CompressedDataExecute = $0800
+CompressedDataStart
+!bin "../RacingGame/OriginalData.cmp",,2
+CompressedDataEnd
+}
+
+!if 0 {
+CompressedDataStore = $0801
+CompressedDataExecute = $0900
+CompressedDataStart
+!bin "../Berzerk/OriginalData.cmp",,2
+CompressedDataEnd
+}
+
+!if 1 {
+CompressedDataStore		= $0801
+CompressedDataExecute	= 2304
+CompressedDataStart
+!bin "../Scroller/Scroller.cmp",,2
+CompressedDataEnd
+}

@@ -1,0 +1,103 @@
+Gather information regarding TAP file format. Then look for kernal pulses and data structures.
+*I already know the structure of my turbo tape data.
+
+
+Do some quick tests to read kernal and then turbo format data from TAP files.
+
+
+Do some more quick tests to write kernal data first, with the tape header data and single data block.
+
+
+Quickly test writing my format tape turbo data.
+
+
+Separate C64Tape class into a separate file.
+
+
+Refator the class member names to use standard naming.
+
+
+Change the command line arguments so that the end address/offset is exclusive, not inclusive.
+
+
+Add an ACME label parser so that the IsNum and ParamToNum functions can reference a label.
+For example anything starting with a '.' can be a label.
+
+
+Add an option to save with a tiny header to 'otft'.
+
+
+Instead of magic numbers being passed to TapeWriteByte use the values read from a map file for:
+	TapePilotCode1
+	TapePilotCode2
+	TapeSyncCode
+	TapeHeaderByteEx
+	TapeHeaderByteEx2
+	TapeHeaderByteEx3
+*Of course the entries will need to be set before any map file load attempt so if they don't exist sensible values can be used.
+
+
+Create some higher level command line arguments for the common operations
+*Especially the operation to write a kernal file using data in the tape buffer and a single kernal data block.
+
+
+*********************
+** 1.0.0.1
+** Released to Richard Bayliss for testing.
+
+
+Fixed TapeLoaderCIA.a when not using the tiny header so that it works with non-checksum block files by ignoring the expected number of blocks and the header checksum byte.
+
+
+Add explicit warnings/errors if there are any areas that need explicit padding in the boot loaders.
+Enforce padding by NOP codes.
+
+
+Split TapeLoaderCIAMartyLoad.a from TapeLoaderCIA.a, added comments.
+Tidied and commented the tape header codes and speed defines check in Loaders.a
+
+
+Improved the kernal format reading code to cope with more TAP files.
+
+
+*********************
+** 1.0.0.2
+** Released to http://noname.c64.org/csdb/release/?id=111494
+
+Fixed some of the command line handling.
+
+Added MACROSetTurboTimer and removed duplicate code.
+
+Added more code documentation.
+
+
+Add the option of including something like my code from:
+http://www.lemon64.com/forum/viewtopic.php?p=469197#469197
+The aim being to be able to start a BASIC program normally.
+The code at .restoreStateStart will start any generic BASIC program.
+Included HelloWorldBasic.prg which demonstratesa BASIC program starting from the turbo loader.
+
+
+
+*ZPStartBasicLo/ZPStartBasicHi and ZPStartVariableLo/ZPStartVariableHi are initialised properly when loading blocks in any order.
+In .restoreStateStart the stores to ZPStartBasicLo/Hi are not needed. They can be set by the following logic:
+When starting to load a new file set the ZPStartBasicHi to 255.
+For every loaded block start that is <= ZPStartBasicHi then set both locations. Otherwise don't store them.
+This will get the lowest start address for the file.
+Similar logic needs to be done for the end address in case the last loaded block is not the highest loaded block.
+
+
+*Added JMPQuickStartAddress and JMPStartAddress for the _config.a file
+Add a configurable JMP execution address when the load finishes. Use the _config.a file.
+A simple label will suffice and it can just JMP to it. This calls some but not all of the tidy-up code before JMPing to it.
+Add another label option that won't call any tidy-up code before JMPing to it.
+
+
+*Interleaving data on the tape using the 's' parameter. Added a new ReadMe.txt section for this feature.
+Add option to interleave data files on the TAP file. This is possible in block mode because a file block has its own filename so blocks from different files can be interleaved.
+This can be accomplished by building internal streams of tape data and giving each stream a priority, so the higher priority streams are written first.
+Each stream would be a kernal file, or a whole (non blocked) turbo file or blocks from a turbo file, or any other section of tape data output.
+
+*********************
+** 1.0.0.3
+** Released to http://noname.c64.org/csdb/

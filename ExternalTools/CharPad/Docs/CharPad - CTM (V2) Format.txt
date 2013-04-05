@@ -1,0 +1,52 @@
+
+
+----------------------------------------------------- 
+CharPad - CTM (v2) File Format - Used by CharPad 1.7
+-----------------------------------------------------
+ 
+
+The CTM file is a CharPad project's native file format and is used to store all the required project data in a single file.
+ 
+NB. CTM = Chars, Tiles, Map.
+
+It is not intended or required to be implemented by any C64 project but is included here for information only.
+
+C64 Programmers should consult the help file for CharPad's export file formats. 
+
+-----------------------------------------------------------------------------------------------------
+
+File Header, 20 bytes...
+
+
+ID         [00-02]    3 bytes  : ASCII ID string... "CTM"
+VERSION    [03]       1 byte   : version number, currently $02.
+COLOURS    [04-07]    4 bytes  : BGR, MC1, MC2, RAM.
+COLOR_MODE [08]       1 byte   : 0 = Global, 1 = Per Tile, 2 = Per Tile Cell.
+VIC_RES    [09]       1 byte   : 0 = Hi Resolution, 1 = Multicolour.
+
+MAP_WID    [10,11]    2 bytes  : 16-bit Map width (low, high).
+MAP_HEI    [12,13]    2 bytes  : 16-bit Map height (low, high).
+
+NUM_CHARS  [14,15]    2 bytes  : 16-bits, Number of chars -1 (low, high).
+NUM_TILES  [16]       1 byte   : Number of tiles -1.
+TILE_SIZE  [17]       1 byte   : Tile Size (currently 1-5 square).
+
+RESERVED   [18-19]    2 bytes (total header size is 20)
+
+
+
+File Data...
+
+
+CHARDATA.   Size =  NUM_CHARS * 9 bytes   : NB. 9th byte holds material group value.
+
+TILEDATA.   Size =  NUM_TILES * TILE_SIZE * TILE_SIZE bytes * 2 bytes.
+
+             NB. TILEDATA is 16 bit character codes arranged left-to-right, top-to-bottom for each tile.
+
+
+TILE_COLOURS.   Size = NUM_TILES bytes (1 byte per tile, only exists if COLOR_MODE = 1)
+
+CELL_COLOURS.   Size = NUM_TILES * TILE_SIZE * TILE_SIZE bytes (1 byte per tile, only exists if COLOR_MODE = 2)
+
+MAPDATA.       Size =  MAP_WID x MAP_HEI bytes.

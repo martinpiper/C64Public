@@ -1,0 +1,132 @@
+
+------------------------------ 
+CharPad - Export file formats 
+------------------------------ 
+
+
+Character Sets
+
+Character sets may be exported from CharPad, there is no special file format used, just the raw data is
+saved, 8 bytes per character for any number of characters.
+
+Optionally the PRG format may be used which simply places 2 bytes, a user specifiable 16-bit start address 
+at the start of the file.
+
+
+Note : CharPad projects (and CTM files) use 1 extra byte per character as a "material attribute" value, 
+       these attribute values are used internally for character set sorting and will not be present in any
+       exported character set.
+
+
+-----------------------------------------------------------------------------------------------------
+
+Tile Sets
+
+a tile-set may be exported from CharPad, there is no special file format used but the organisation
+of the contained tile data is worth pointing out...
+
+Data for each tile is just a short series of character codes, a 5x5 tile will use 25 values, a 4x4 tile
+will use 16 etc.
+
+CharPad projects (and CTM files) use 16-bit values to represent the character codes because an unoptimized
+CharPad project may use in excess of 256 characters.
+
+An exported tile set however will only ever contain 8-bit values so it may be used by the Commodore 64
+which only supports 256 characters per set.
+
+if you attempt to export a tile set that is using more than 256 characters a warning/error message
+will be given and you will have to enable the optimizer or otherwise make sure the character count does
+not exceed 256.
+
+The data in an exported tile set file is organised as follows...
+
+
+Example is for 4x4 tile data but the organization is the same for any tile size... 
+
+Tile 0 - (4x4 = 16 bytes)...
+
+0123
+4567
+89AB
+CDEF
+
+Tile 1 - (4x4 = 16 bytes)... 
+
+0123
+4567
+89AB
+CDEF
+
+etc...
+
+So the tile-set file is just a stream of each tiles character codes which should be visually interpreted as running 
+left-to-right and top-to-bottom for up to 256 (n x n) tiles. 
+
+ie. Exporting a tile set of 256 5x5 tiles will create a file of 25 x 256 bytes = 6400 bytes.
+
+The first 5 bytes will be the character codes for tile 0's topmost line, the second five bytes are the codes 
+for its second line etc. 
+
+Optionally the PRG format may be used which simply places 2 bytes, a user specifiable 16-bit start address at
+the start of the file. 
+
+-----------------------------------------------------------------------------------------------------
+
+Maps
+
+A map may be exported from a CharPad project, there is no special file format just a stream of bytes with each 
+byte representing a tile code (0 - 255)
+
+No height or width information is saved, it is up to the user/programmer to correctly interpret and deploy an exported 
+map data file in terms of its dimensions which are only recorded in the original CharPad project (CTM) file.
+
+Optionally the PRG format may be used which simply places 2 bytes, a user specifiable 16-bit start address at the 
+start of the file.
+
+-----------------------------------------------------------------------------------------------------
+
+Shoot'em Up Construction Kit (SEUCK) Background Files
+
+
+CharPad now has the ability to export a single file which may be directly loaded and used by the SEUCK editor once it 
+has been added to a disk or tape (or emulator image file).
+
+SEUCK uses a system of 5x5 tiles and a map of 512 tiles high by 8 tiles wide.
+
+To export a SEUCK background file, the tile size in CharPad MUST be set to 5x5 or the export option will be disabled.
+
+Exported SEUCK backgrounds will always be an 8 (wide) x 512 (high) map of 5x5 tiles.
+
+To use the exported file in SEUCK you will first have to transfer it to a disk or tape (or emulator media image file)
+using appropriate software and ensure that the last 2 characters of its (16 character) filename are ".B"
+
+ie. "MYCHARPADGFX.B" will NOT work, but "MYCHARPADGFX  .B" will work fine. 
+
+In other words, the filename on the directory MUST be 16 characters long and terminated with '.B' (no quotes).
+
+
+-----------------------------------------------------------------------------------------------------
+
+"Sideways" Shoot'em Up Construction Kit (SEUCK) Background Files
+
+As above but the map dimensions must be 819 (wide) x 5 (high).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

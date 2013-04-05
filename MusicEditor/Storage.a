@@ -1,0 +1,1536 @@
+storeageInFileOperation !by 0
+
+!zn {
+!source "RelocateMusic.a"
+tswin
+	!by 9,3,17,5,12,0,<tstxt,>tstxt,<tsttl,>tsttl
+tsmen
+	!by 9,3,17,5,5,<tsbin,>tsbin,<tshot,>tshot,<tsjmp,>tsjmp
+tstxt
+	!by 31,9,3
+	!tx "Save track 1"
+	!by 31,9,4
+	!tx "sAve track 2"
+	!by 31,9,5
+	!tx "saVe track 3"
+	!by 31,9,6
+	!tx "savE all tracks"
+	!by 31,9,7
+	!tx "eXit",128
+tsttl !by 128
+tsbin !by 1,1,1,1,1
+tshot !tx "savex"
+tsjmp !by <svetrk1,>svetrk1
+      !by <svetrk2,>svetrk2
+      !by <svetrk3,>svetrk3
+      !by <savealltrk,>savealltrk
+      !by <exitStor,>exitStor
+
+saveEnv
+rts
+loadEnv
+rts
+
+savetrack
+	lda #<tswin
+	sta $fc
+	lda #>tswin
+	sta $fd
+	jsr openwindow
+	lda #<tsmen
+	sta $fc
+	lda #>tsmen
+	sta $fd
+	jsr submenu
+	jmp closewindow
+svetrk1
+	jsr diskh
+	pla
+	pla
+	lda #>track1
+	ldy #(>track1)+1
+	jmp savetrk
+svetrk2
+	jsr diskh
+	pla
+	pla
+	lda #>track2
+	ldy #(>track2)+1
+	jmp savetrk
+svetrk3
+	jsr diskh
+	pla
+	pla
+	lda #>track3
+	ldy #(>track3)+1
+	jmp savetrk
+savealltrk
+	jsr diskh
+	pla
+	pla
+	lda #>track1
+	ldy #(>track3)+1
+	jmp savetrk
+savetrk
+	sta 44
+	sty 46
+	lda #0
+	sta 43
+	sta 45
+	lda ty
+	cmp #3
+	bne svetk1
+	rts
+svetk1
+	ldx #0
+	ldy #2
+	jsr testavail
+	jsr $ffbd
+	lda #1
+	ldx deviceon
+	ldy #0
+	jsr $ffba
+	lda #43
+	ldx 45
+	ldy 46
+	jsr SAVE
+	rts
+editbkl
+	!by 3,7,33,5,11,3,<bkrtxt,>bkrtxt,<bkrtit,>bkrtit
+bkrtxt !by 31,6,9
+	!tx "blocks      to"
+	!by 128
+bkrtit !tx "save"
+	!by 128
+blk1 !by 0
+blk2 !by 0
+saveblocks
+	lda #<editbkl
+	sta $fc
+	lda #>editbkl
+	sta $fd
+	jsr openwindow
+	lda #0
+	sta blk1
+	sta blk2
+	jsr sprsetup
+	jsr cursoron
+	lda #1
+	sta VIC2SpriteDoubleWidth
+ec1 lda #16
+	sta xpos
+	sta cxpos
+	lda #9
+	sta ypos
+	sta cypos
+	jsr sprfig
+	lda blk1
+	jsr hexnum
+	lda #20
+	sta xpos
+	lda blk2
+	jsr hexnum
+	jsr getkey
+	ldx #1
+	stx VIC2Sprite0Colour
+	cmp #13
+	beq ec2
+	cmp #43
+	beq incnum1
+	cmp #145
+	beq incnum1
+	cmp #45
+	beq decnum1
+	cmp #17
+	beq decnum1
+	jmp ec1
+incnum1
+	inc blk1
+	lda blk1
+	and #maxBlocks-1
+	sta blk1
+	sta blk2
+	jsr delay
+	jmp ec1
+decnum1
+	dec blk1
+	lda blk1
+	and #maxBlocks-1
+	sta blk1
+	sta blk2
+	jsr delay
+	jmp ec1
+ec2
+lda #20
+sta xpos
+sta cxpos
+jsr sprfig
+lda blk2
+jsr hexnum
+lda #1
+sta VIC2Sprite0Colour
+jsr getkey
+cmp #13
+beq ec4
+cmp #43
+beq incnum2
+cmp #145
+beq incnum2
+cmp #45
+beq decnum2
+cmp #17
+beq decnum2
+jmp ec2
+incnum2
+inc blk2
+lda blk2
+and #maxBlocks-1
+cmp blk1
+bcs ec3
+lda blk1
+ec3
+sta blk2
+jsr delay
+jmp ec2
+decnum2
+dec blk2
+lda blk2
+and #maxBlocks-1
+cmp blk1
+bcs ec3
+lda blk1
+jmp ec3
+ec4
+lda #0
+sta VIC2SpriteDoubleWidth
+jsr diskh
+lda blk2
+clc
+adc #$4c
+tay
+lda blk1
+clc
+adc #$4b
+jmp savetrk
+tlwin
+!by 9,3,17,5,12,0,<tltxt,>tltxt,<tlttl,>tlttl
+tlmen
+!by 9,3,17,5,5,<tlbin,>tlbin,<tlhot,>tlhot,<tljmp,>tljmp
+tltxt
+	!by 31,9,3
+	!tx "Load track 1"
+	!by 31,9,4
+	!tx "lOad track 2"
+	!by 31,9,5
+	!tx "loAd track 3"
+	!by 31,9,6
+	!tx "loaD all tracks"
+	!by 31,9,7
+	!tx "eXit",128
+tlttl !by 128
+tlbin !by 1,1,1,1,1
+tlhot !tx "loadx"
+tljmp !by <ldetrk1,>ldetrk1
+      !by <ldetrk2,>ldetrk2
+      !by <ldetrk3,>ldetrk3
+      !by <loadalltrk,>loadalltrk
+      !by <exitStor,>exitStor
+loadtracks
+lda #<tlwin
+sta $fc
+lda #>tlwin
+sta $fd
+jsr openwindow
+lda #<tlmen
+sta $fc
+lda #>tlmen
+sta $fd
+jsr submenu
+jmp closewindow
+ldetrk1
+loadalltrk
+jsr diskh
+pla
+pla
+lda #>track1
+jmp loadpos
+loadpos pha
+lda #1
+ldx deviceon
+ldy #0
+jsr $ffba
+lda ty
+cmp #3
+beq dsg1
+ldx #0
+ldy #2
+jsr $ffbd
+pla
+pha
+ldx #0
+tay
+lda #0
+jsr LOAD
+dsg1 pla
+rts
+ldetrk2
+jsr diskh
+pla
+pla
+lda #>track2
+jmp loadpos
+ldetrk3
+jsr diskh
+pla
+pla
+lda #>track2
+jmp loadpos
+lditbkl
+!by 3,7,33,5,11,3,<lkrtxt,>lkrtxt,<lkrtit,>lkrtit
+lkrtxt !by 31,6,9
+	!tx "blocks  "
+	!by 128
+lkrtit !tx "load"
+	!by 128
+loadblocks
+lda #<lditbkl
+sta $fc
+lda #>lditbkl
+sta $fd
+jsr openwindow
+lda #0
+sta blk1
+sta blk2
+jsr sprsetup
+jsr cursoron
+lda #1
+sta VIC2SpriteDoubleWidth
+lc1 lda #16
+sta xpos
+sta cxpos
+lda #9
+sta ypos
+sta cypos
+jsr sprfig
+lda blk1
+jsr hexnum
+jsr getkey
+ldx #1
+stx VIC2Sprite0Colour
+cmp #13
+beq lc2
+cmp #43
+beq incnum1l
+cmp #145
+beq incnum1l
+cmp #45
+beq decnum1l
+cmp #17
+beq decnum1l
+jmp lc1
+lc2
+lda #0
+sta VIC2SpriteDoubleWidth
+jsr diskh
+lda blk1
+clc
+adc #$4b
+jmp loadpos
+incnum1l
+inc blk1
+lda blk1
+and #maxBlocks-1
+sta blk1
+jsr delay
+jmp lc1
+decnum1l
+dec blk1
+lda blk1
+and #maxBlocks-1
+sta blk1
+jsr delay
+jmp lc1
+
+;*=$2800
+jmp loadsave
+jmp loadall
+jmp saveall
+jmp toggledevs
+jmp savewodge
+
+kffb7
+lda deviceon
+cmp #1
+beq tapenoer
+jsr $ffb7
+rts
+tapenoer lda #0
+rts
+
+deviceon !by 8
+; Takes the block data and expands it so that each block is stored on a 256 byte boundary.
+; Also validates that the drum data is present and if not then it upgrades it with the new drum data.
+.upgradeDrumStart
+!source "DefaultDrumPatterns.a"
+.upgradeDrumEnd
+
+
+
+unpackmem
+	lda drumDataMagic
+	cmp .upgradeDrumStart
+	bne .upgradeDrums
+	lda drumDataMagic+1
+	cmp .upgradeDrumStart+1
+	bne .upgradeDrums
+	lda drumDataMagic+2
+	cmp .upgradeDrumStart+2
+	bne .upgradeDrums
+	lda drumDataMagic+3
+	cmp .upgradeDrumStart+3
+	bne .upgradeDrums
+	jmp .upm1
+.upgradeDrums
+	; First clear any random data
+	ldx #$7f
+	lda #0
+.upm0
+	sta drumDataMagic,x
+	dex
+	bpl .upm0
+
+	; Now write the drum upgrade data. This will automatically get saved by the storage routines.
+	ldx #.upgradeDrumEnd - .upgradeDrumStart
+.upm2
+	lda .upgradeDrumStart-1,x
+	sta drumDataMagic-1,x
+	dex
+	bne .upm2
+.upm1
+	lda #0
+;	sta VIC2BorderColour
+	ldy #maxBlocks-1
+up1	lda loblock,y
+	sta up2+1
+	lda hiblock,y
+	sta up2+2
+	lda #0
+	sta loblock,y
+	tya
+	clc
+	adc #$4b
+	sta hiblock,y
+	lda #0
+	sta up3+1
+	sta up4+1
+	tya
+	clc
+	adc #$4b
+	sta up3+2
+	sta up4+2
+	ldx #0
+up2	lda $ffff,x
+up3	sta $ff00,x
+	inx
+	cmp #$fd
+	beq up6
+	cpx #0
+	bne up2
+	beq up5
+up6	lda #255
+up4	sta $ff00,x
+	inx
+	bne up4
+up5	dey
+	bpl up1
+	jsr ValidateAllBlocks
+	rts
+
+; Takes the block stored on a 256 byte boundary and packs the blocks together into a smaller space.
+packmem
+	; Clear data between drumDataEnd and waveMix
+	ldx #waveMix-drumDataEnd
+	lda #0
+.cl1
+	sta drumDataEnd-1,x
+	dex
+	bne .cl1
+
+	; Pack block memory
+	ldy #0
+	sta ud3+1
+	lda #$4b
+	sta ud3+2
+ud1	tya
+	clc
+	adc #$4b
+	sta ud2+2
+	lda #0
+	sta ud2+1
+	ldx #0
+	lda ud3+1
+	sta loblock,y
+	lda ud3+2
+	sta hiblock,y
+	ldx #0
+ud2	lda $ff00,x
+ud3	sta $ffff,x
+	inc ud2+1
+	bne ud4
+	inc ud2+2
+ud4
+	inc ud3+1
+	bne ud5
+	inc ud3+2
+ud5
+	; Detect the end of a block
+	cmp #kMusicPlayer_EndBlock
+	beq .isEnd
+	cmp #kMusicPlayer_BlankCommand
+	beq .isEnd
+	jmp ud2
+.isEnd
+	iny
+	cpy #maxBlocks
+	bne ud1
+	rts
+
+bye !by 0
+tempx !by 0
+count !by 0
+tx !by 0
+start sei
+lda #54
+sta 1
+jsr $ffcc
+jsr $ffe7
+lda #54
+sta 1
+lda #0
+sta count
+sta bye
+ldx #0
+iop lda file,x
+beq kl1
+inx
+bne iop
+kl1
+txa
+ldx #<file
+ldy #>file
+jsr testavail
+jsr $ffbd
+lda #1
+ldx deviceon
+ldy #1
+jsr $ffba
+jsr $ffc0
+ldx #1
+jsr $ffc9
+ldx #0
+lda #0
+jsr ffd2a
+lda #>track1
+jsr ffd2a
+jmp packfile
+ffd2a stx tempx
+pha
+ldx #55
+stx 1
+jsr $ffd2
+;sta VIC2BorderColour
+sei
+ldx #54
+stx 1
+pla
+ldx tempx
+sei
+rts
+ned !by 0,0,0,0
+!by 128
+lz1j rts
+file =$0200
+packfile lda 679
+sta $fb
+lda 680
+sta $fc
+ldy #0
+l1 lda ($fb),y
+cmp #$e7
+beq packbytes
+sta 1023
+iny
+cmp ($fb),y
+bne output1
+iny
+cmp ($fb),y
+bne output1
+packbytes lda #$e7
+jsr ffd2a
+ldy #0
+ldx #0
+lda ($fb),y
+jsr ffd2a
+l2 cmp ($fb),y
+bne outputrepl
+inc $fb
+bne l3
+inc $fc
+l3 inx
+bne l2
+outputrepl txa
+jsr ffd2a
+jmp l4
+output1 jsr ffd2a
+ldy #0
+inc $fb
+bne l4
+inc $fc
+l4 lda $fc
+cmp 682
+bcs samelo
+jmp l1
+samelo lda $fb
+cmp 681
+bcs samehi
+jmp l1
+samehi lda #55
+sta 1
+lda #199
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+jsr ffd2a
+lda #0
+sta $ffc3
+lda #1
+jsr $ffc3
+jsr $ffe7
+lda #55
+sta 1
+rts
+
+startunpack
+sei
+lda #0
+sta track
+sta 679
+sta $fb
+lda #>track1
+sta 680
+sta $fc
+lda #255
+sta 681
+lda #04
+sta 682
+jmp startu
+byeu !by 0
+tempxu !by 0
+countu !by 0
+txu !by 0
+startu sei
+lda #54
+sta 1
+jsr $ffcc
+jsr $ffe7
+lda #55
+sta 1
+lda #0
+sta countu
+sta byeu
+ldx #0
+iopu lda file,x
+beq kl1u
+inx
+bne iopu
+kl1u
+txa
+ldx #<file
+ldy #>file
+jsr $ffbd
+lda #1
+ldx deviceon
+ldy #0
+jsr $ffba
+jsr $ffc0
+ldx #1
+jsr $ffc6
+jsr $ffcf
+jsr $ffcf
+jmp unpackfile
+ffd2au stx tempxu
+ldx #55
+stx 1
+jsr $ffd2
+sei
+ldx #54
+stx 1
+ldx tempxu
+sei
+rts
+nedu !by 0,0,0,0
+!by 128
+unpackfile
+l1u lda #$7f
+cmp $fc
+bne notsame
+ns1
+jsr kffb7
+jsr kffb7
+lda #1
+jsr $ffc3
+jsr $ffab
+jsr $ffe7
+lda #55
+sta 1
+rts
+tracku
+inc track
+ldy track
+cpy #7
+bcs ns1
+jmp rettrack
+track !by 0
+notsame
+jsr $ffcf
+sta 1023
+jsr kffb7
+bne ns1
+lda 1023
+cmp #199
+beq tracku
+ldy #0
+sty track
+rettrack
+cmp #$e7
+beq repeat
+ldy #0
+sta ($fb),y
+inc $fb
+bne l1u
+inc $fc
+lda $fc
+cmp #$90
+bcs ns1
+jmp l1u
+sta $fb
+repeat jsr $ffcf
+;sta VIC2BorderColour
+sta sm1+1
+jsr $ffcf
+;sta VIC2BorderColour
+tax
+l2u ldy #0
+sm1 lda #00
+sta ($fb),y
+inc $fb
+bne l3u
+inc $fc
+l3u lda $fc
+cmp #$90
+bcs ns1
+dex
+bne l2u
+jsr kffb7
+bne ns1
+jmp l1u
+findendaddr
+ldy #0
+sty $fb
+lda #$4b
+sta $fc
+ldx #maxBlocks-1
+fea1 lda ($fb),y
+cmp #$fd
+beq fea2
+fea1z iny
+bne fea1
+inc $fc
+bne fea1
+fea2 dex
+bpl fea1z
+tya
+clc
+adc $fb
+sta $fb
+bcc fea3
+inc $fc
+fea3
+inc $fb
+bne fea4
+inc $fc
+fea4
+lda $fb
+sta 681
+sta lomusend
+lda $fc
+sta 682
+sta himusend
+lda #0
+sta 679
+lda #>track1
+sta 680
+rts
+
+loadall
+jsr packmem
+jsr diskh
+lda ty
+cmp #3
+beq lendl
+jsr startunpack
+lendl jsr unpackmem
+rts
+saveall
+jsr packmem
+jsr diskh
+lda ty
+cmp #3
+beq sends
+jsr findendaddr
+jsr start
+sends jsr unpackmem
+rts
+diskh
+jsr IRQStopPlay
+lda #1
+sta storeageInFileOperation
+jsr findendaddr
+lda #0
+sta $d3
+sta $d4
+;sta VIC2BorderColour
+sta VIC2ScreenColour
+lda #0
+sta 198
+lda #0
+;sta VIC2BorderColour
+sta VIC2ScreenColour
+jsr getfilename
+ldx #0
+di1 lda $0200,x
+beq endoffile
+inx
+bne di1
+endoffile stx ty
+jsr tapefriendly
+lda #0
+sta storeageInFileOperation
+ldx ty
+lda ty
+rts
+saveit
+lda ty
+ldx #0
+ldy #2
+jsr testavail
+jsr $ffbd
+lda #1
+ldx deviceon
+ldy #0
+jsr $ffba
+lda #0
+sta $fb
+lda #>track1
+sta $fc
+ldx lomusend
+ldy himusend
+lda #$fb
+jsr SAVE
+rts
+vector ldx #0
+vc1 lda $0235,x
+sta endbit,x
+inx
+bne vc1
+rts
+vector2 ldx #0
+vc2 lda endbit,x
+sta $0235,x
+inx
+bne vc2
+rts
+disk jsr $ffab
+jsr $ff8a
+jsr $ffe7
+jmp diskh
+endbit !by 0
+ty !by 0
+lomusend !by 0
+himusend !by 0
+saveraw
+jsr packmem
+jsr diskh
+pla
+pla
+lda ty
+cmp #3
+bne saverawz
+jsr unpackmem
+rts
+saverawz
+jsr saveit
+jsr unpackmem
+rts
+loadraw
+jsr diskh
+pla
+pla
+lda ty
+cmp #3
+bne loadrawz
+rts
+loadrawz
+jsr loadit
+jsr unpackmem
+rts
+loadit
+lda #1
+ldx deviceon
+ldy #1
+jsr $ffba
+lda ty
+ldx #0
+ldy #2
+jsr $ffbd
+lda #0
+ldx #0
+ldy #>track1
+jsr LOAD
+rts
+loadsave
+lda #<lswin
+sta $fc
+lda #>lswin
+sta $fd
+jsr openwindow
+lda #<lsmen
+sta $fc
+lda #>lsmen
+sta $fd
+jsr submenu
+jmp closewindow
+lswin
+!by 9,3,14,4,12,0,<lstxt,>lstxt,<lsttl,>lsttl
+lsmen
+!by 9,3,14,4,4,<lsbin,>lsbin,<lshot,>lshot,<lsjmp,>lsjmp
+lstxt
+!by 31,9,3
+!tx "Load raw data"
+!by 31,9,4
+!tx "Save raw data"
+;!by 31,9,5
+;!tx "load Relocated"
+!by 31,9,5
+!tx "saVe relocated"
+!by 31,9,6
+!tx "eXit"
+!by 128
+lsttl !by 128
+lsbin !by 1,1,1,1
+lshot !tx "lsvx"
+lsjmp !by <loadraw,>loadraw
+      !by <saveraw,>saveraw
+;     !by <ldreloc,>ldreloc
+      !by <svreloc,>svreloc
+      !by <exitStor,>exitStor
+nullexit lda #0
+ldx #25
+gfz1 sta $0200,x
+dex
+bpl gfz1
+jmp return
+exitStor
+pla
+pla
+rts
+ldreloc
+rts
+
+getfilename
+!zn {
+lda #0
+sta chrx
+ldx #0
+.gf1 lda $0203,x
+sta $0200,x
+inx
+cpx #17
+bne .gf1
+es2
+	lda #<editbox
+	sta $fc
+	lda #>editbox
+	sta $fd
+
+	lda deviceon
+	cmp #1
+	bne .notTape
+
+	lda #<editboxTape
+	sta $fc
+	lda #>editboxTape
+	sta $fd
+
+.notTape
+jsr openwindow
+lda #10
+sta ypos
+sta cypos
+jsr sprsetup
+jsr cursoron
+editsub
+jsr printfile
+editsub2 jsr getkey
+cmp #255
+beq editsub2
+cmp #64
+beq editsub
+cmp #133
+beq directoryStor
+cmp #20
+beq deleten
+cmp #95
+beq nullexit
+cmp #96
+bcs editsub
+cmp #13
+beq return
+cmp #32
+bcc editsub
+ldx chrx
+cpx #16
+bcc es2z
+jmp editsub
+es2z
+sta $0200,x
+lda #0
+sta $0201,x
+jmp editsub
+deleten ldx chrx
+beq editsub
+lda #0
+sta $01ff,x
+jmp editsub
+return
+ldx #23
+es1
+lda $0200,x
+sta $0203,x
+dex
+bpl es1
+lda #64
+sta $0200
+lda #48
+sta $0201
+lda #58
+sta $0202
+jsr cursoroff
+rts
+}
+
+directoryStor
+lda deviceon
+cmp #1
+bne diry
+jmp es2
+diry
+jsr cursoroff
+jsr closewindow
+jsr directory
+jmp es2
+printfile
+lda #12
+sta xpos
+sta cxpos
+ldx #22
+es3z lda #$a0
+jsr charprint
+dex
+bpl es3z
+lda #12
+sta xpos
+sta cxpos
+ldx #0
+es3
+lda $0200,x
+beq es4
+jsr charprint
+inx
+bne es3
+es4
+lda xpos
+sta cxpos
+sec
+sbc #12
+sta chrx
+jsr sprfig
+lda #0
+sta VIC2SpritePriority
+rts
+editbox
+	!by 3,8,33,5,11,3,<edtxt,>edtxt,<edtit,>edtit
+edtxt !by 31,6,10
+	!tx "file : "
+	!by 128
+edtit !tx "< f1 = disk directory >"
+	!by 128
+
+editboxTape
+	!by 3,8,33,5,11,3,<edtxt,>edtxt,<edtitTape,>edtitTape
+edtitTape !tx "< enter file name >"
+	!by 128
+
+
+chrx !by 0
+testavail
+sta tatmp
+stx txtmp
+sty tytmp
+jsr $ffbd
+lda #1
+ldx deviceon
+cpx #1
+beq ta1
+ldy #0
+jsr $ffba
+jsr $ffc0
+ldx #1
+jsr $ffc6
+jsr $ffcf
+jsr kffb7
+beq prompt
+ta1
+lda #1
+jsr $ffc3
+jsr $ffab
+jsr $ffe7
+lda tatmp
+ldx txtmp
+ldy tytmp
+rts
+prompt
+ldx #<over
+ldy #>over
+jsr promptwindow
+cmp #89
+beq ta1
+lda #1
+jsr $ffc3
+jsr $ffab
+jsr $ffe7
+pla
+pla
+rts
+over !tx "! file exits !"
+	!by 128
+tatmp !by 0
+txtmp !by 0
+tytmp !by 0
+toggledevs
+stx $fb
+sty $fc
+ldy #0
+lda ($fb),y
+cmp #68
+beq tapeon
+lda #8
+sta deviceon
+lda #68
+sta ($fb),y
+iny
+lda #73
+sta ($fb),y
+iny
+lda #83
+sta ($fb),y
+iny
+lda #75
+sta ($fb),y
+rts
+tapeon
+lda #1
+sta deviceon
+lda #84
+sta ($fb),y
+iny
+lda #65
+sta ($fb),y
+iny
+lda #80
+sta ($fb),y
+iny
+lda #69
+sta ($fb),y
+rts
+tapefriendly
+lda deviceon
+cmp #1
+bne diskbit
+jsr $ff81
+sei
+lda #<DefaultIRQServiceRoutine
+sta IRQServiceRoutineLo
+lda #>DefaultIRQServiceRoutine
+sta IRQServiceRoutineHi
+cli
+lda #11
+;sta VIC2BorderColour
+lda #0
+sta VIC2ScreenColour
+lda #1
+sta 646
+sta 647
+lda #128
+sta 157
+lda #$40
+sta $d5
+lda #0
+sta $d8
+rts
+diskbit
+lda #0
+sta 157
+rts
+
+	; Saves the packed music file relocated
+svreloc
+	jsr packmem
+	jsr getreladdr
+	jsr diskh
+	pla
+	pla
+	lda ty
+	cmp #3
+	bne saverelz
+	jsr unpackmem
+	rts
+
+!zn
+.extraPackHiStart !by 0
+.nextTrackEndPos !by 0
+.consideringBlock !by 0
+.lnoSpace jmp .noSpace
+
+saverelz
+	sei
+	lda #<irqb
+	sta IRQServiceRoutineLo
+	lda #>irqb
+	sta IRQServiceRoutineHi
+	cli
+
+	; Check for the possibility to pack even more whilst copying the music to temporary space
+	lda himusend
+	clc
+	adc #2	; Safety buffer
+	sec
+	sbc #>RealMusicPlayerStart
+	; Enough memory for two copies?
+	asl
+	cmp #>MaxUnpackedMusicAddress - >RealMusicPlayerStart
+	bcs .lnoSpace
+	lda #0
+	sta $fb
+	sta $fd
+	lda #>RealMusicPlayerStart
+	sta $fc
+	lda himusend
+	clc
+	adc #2	; Safety buffer
+	sta $fe
+	sta .extraPackHiStart
+.cl1
+	lda $fd
+	cmp #>MaxUnpackedMusicAddress
+	bcs .lnoSpace
+
+	; Do the copy to backup memory
+	ldy #0
+.cl2
+	lda ($fb),y
+	sta ($fd),y
+	iny
+	bne .cl2
+	inc $fc
+	inc $fe
+	lda $fc
+	cmp himusend
+	beq .cl1
+	bcc .cl1
+
+	jsr CalculateUnusedBlocks
+	jsr ReallyKillUnusedBlocks
+
+	; Calculate the track end positions by looking for the end track control codes.
+	; At the same from the end of the block table look for blocks that can be moved to the track
+	; memory area.
+	lda #>track1
+	sta .smt1+2
+	sta .smt2+2
+
+	lda #maxBlocks-1
+	sta .consideringBlock
+.ft1
+	ldx #0
+.ft2
+.smt1	lda track1,x
+	cmp #kMusicPlayer_StopTrack
+	bcc .notTrackEnd
+	txa
+	tay
+.notTrackEnd
+	inx
+	bne .ft2
+	iny
+	sty .nextTrackEndPos
+
+	; Now consider the blocks until the track runs out of space
+
+.l1
+	ldx .consideringBlock
+	lda loblock,x
+	sta $fb
+	lda hiblock,x
+	sta $fc
+	; Try copying the block to the track data and detect the error if there is not enough space.
+	ldy #0
+	ldx .nextTrackEndPos
+.l2
+	lda ($fb),y
+.smt2	sta track1,x
+	cmp #kMusicPlayer_EndBlock
+	beq .l3
+	iny
+	inx
+	bne .l2
+	; Ran out of track space during the copy so try the next track
+	jmp .noEndFound
+.l3
+
+	ldy .consideringBlock
+	; Update the end of the file address from the start of the block just moved
+	lda loblock,y
+	sta lomusend
+	lda hiblock,y
+	sta himusend
+
+	; Update the block table
+	lda .nextTrackEndPos
+	sta loblock,y
+	lda .smt2+2
+	sta hiblock,y
+
+	; Check for more blocks
+	dey
+	bmi .saveItExtraPacked
+
+	sty .consideringBlock
+
+
+	inx
+	beq .noEndFound
+	stx .nextTrackEndPos
+
+	jmp .l1
+
+.noEndFound
+	inc .smt1+2
+	inc .smt2+2
+	lda .smt1+2
+	cmp #(>track3)+1
+	bne .ft1
+
+.saveItExtraPacked
+	; Save the data
+	jsr relocate
+	jsr saveitrel
+
+	; Restore the backup data to the primary data
+	lda #0
+	sta $fb
+	sta $fd
+	lda #>RealMusicPlayerStart
+	sta $fc
+	lda .extraPackHiStart
+	sta $fe
+	iny
+.cl3
+	lda ($fd),y
+	sta ($fb),y
+	iny
+	bne .cl3
+	inc $fc
+	inc $fe
+
+	; Can safely copy backwards to the maximum here
+	lda $fe
+	cmp #>MaxUnpackedMusicAddress
+	bne .cl3
+
+.restoreState
+	; And restore the state
+	jsr unpackmem
+	jsr IRQStartPlay
+	jsr IRQStopPlay
+	rts
+
+
+	rts
+
+.noSpace
+	jsr relocate
+	jsr saveitrel
+	lda #>RealMusicPlayerStart
+	sta startad+1
+	jsr relocate
+	jmp .restoreState
+
+
+!zn
+saveitrel
+	; Save the extra packed data
+	lda ty
+	ldx #0
+	ldy #2
+	jsr testavail
+	jsr $ffbd
+	lda #1
+	ldx deviceon
+	ldy #1
+	jsr $ffba
+	lda #0
+	sta $fb
+	lda #>RealMusicPlayerStart
+	sta $fc
+	ldx lomusend
+	ldy himusend
+	lda #$fb
+	jsr savewodge
+	rts
+editrel
+	!by 3,7,33,5,11,3,<edrtxt,>edrtxt,<edrtit,>edrtit
+edrtxt !by 31,6,9
+	!tx "address : "
+	!by 128
+edrtit !tx "< start address >"
+	!by 128
+getreladdr
+lda #<editrel
+sta $fc
+lda #>editrel
+sta $fd
+jsr openwindow
+lda #>RealMusicPlayerStart
+sta startad+1
+gl1
+lda startad+1
+cmp #3
+bne hello3
+lda #4
+sta startad+1
+hello3 cmp #$e1
+bne hello4
+lda #$e0
+sta startad+1
+hello4
+lda #16
+sta xpos
+lda #9
+sta ypos
+lda startad+1
+jsr hexnum
+lda #0
+jsr hexnum
+jsr getkey
+cmp #13
+beq numberyes
+cmp #43
+beq increl
+cmp #145
+beq increl
+cmp #45
+beq decrel
+cmp #17
+beq decrel
+jmp gl1
+increl
+inc startad+1
+lda startad+1
+cmp #$2f
+bne hello1
+inc startad+1
+hello1
+jsr delay
+jmp gl1
+decrel
+dec startad+1
+lda startad+1
+cmp #$2f
+bne hello2
+dec startad+1
+hello2
+jsr delay
+jmp gl1
+numberyes
+jsr closewindow
+rts
+irqb
+lda #1
+sta VIC2InteruptStatus
+jmp MinimalIRQServiceRoutine
+tapesaverel
+pla
+jmp SAVE
+savewodge
+pha
+lda deviceon
+cmp #1
+beq tapesaverel
+pla
+stx $fd
+sty $fe
+tax
+lda $00,x
+sta $fb
+lda $01,x
+sta $fc
+lda #1
+ldx deviceon
+ldy #1
+jsr $ffba
+jsr $ffc0
+ldx #1
+jsr $ffc9
+lda startad
+jsr $ffd2
+lda startad+1
+jsr $ffd2
+swr1
+ldy #0
+lda ($fb),y
+;sta VIC2BorderColour
+jsr $ffd2
+inc $fb
+bne swr2
+inc $fc
+swr2
+lda $fc
+cmp $fe
+bne swr1
+lda $fb
+cmp $fd
+bne swr1
+jsr $ffb7
+lda #0
+sta $ffc3
+lda #1
+jsr $ffc3
+jsr $ffe7
+rts
+ayipee
+}

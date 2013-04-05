@@ -1,0 +1,1770 @@
+; Various scrolling routines optimised for their bank and direction
+
+!zn
+ScrollBank0To1_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00+01+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00+01+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00+01+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00+01+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00+01+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00+01+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00+01+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00+01+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00+01+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00+01+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00+01+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00+01+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00+01+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00+01+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00+01+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00+01+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00+01+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00+01+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00+01+(18*40),x
+	lda $c800+00+(19*40),x
+	sta $cc00+01+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $c800+00+(20*40),x
+	sta $cc00+01+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00+01+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00+01+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00+01+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00+01+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripLeftBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800+01+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800+01+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800+01+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800+01+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800+01+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800+01+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800+01+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800+01+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800+01+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800+01+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800+01+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800+01+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800+01+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800+01+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800+01+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800+01+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800+01+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800+01+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800+01+(18*40),x
+	lda $cc00+00+(19*40),x
+	sta $c800+01+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $cc00+00+(20*40),x
+	sta $c800+01+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800+01+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800+01+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800+01+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800+01+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripLeftBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+
+!zn
+ScrollBank0To1_m1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00-01+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00-01+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00-01+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00-01+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00-01+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00-01+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00-01+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00-01+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00-01+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00-01+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00-01+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00-01+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00-01+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00-01+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00-01+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00-01+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00-01+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00-01+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00-01+(18*40),x
+	lda $c800+00+(19*40),x
+	sta $cc00-01+(19*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $c800+00+(20*40),x
+	sta $cc00-01+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00-01+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00-01+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00-01+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00-01+(24*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripRightBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_m1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800-01+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800-01+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800-01+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800-01+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800-01+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800-01+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800-01+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800-01+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800-01+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800-01+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800-01+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800-01+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800-01+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800-01+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800-01+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800-01+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800-01+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800-01+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800-01+(18*40),x
+	lda $cc00+00+(19*40),x
+	sta $c800-01+(19*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $cc00+00+(20*40),x
+	sta $c800-01+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800-01+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800-01+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800-01+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800-01+(24*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripRightBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+; With vertical movement
+!zn
+ScrollBank0To1_40
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00+40+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00+40+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00+40+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00+40+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00+40+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00+40+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00+40+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00+40+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00+40+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00+40+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00+40+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00+40+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00+40+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00+40+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00+40+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00+40+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00+40+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00+40+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00+40+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $c800+00+(19*40),x
+	sta $cc00+40+(19*40),x
+	lda $c800+00+(20*40),x
+	sta $cc00+40+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00+40+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00+40+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00+40+(23*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripTopBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_40
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800+40+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800+40+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800+40+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800+40+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800+40+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800+40+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800+40+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800+40+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800+40+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800+40+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800+40+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800+40+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800+40+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800+40+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800+40+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800+40+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800+40+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800+40+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800+40+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $cc00+00+(19*40),x
+	sta $c800+40+(19*40),x
+	lda $cc00+00+(20*40),x
+	sta $c800+40+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800+40+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800+40+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800+40+(23*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripTopBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+
+!zn
+ScrollBank0To1_m40
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $c800+00+(1*40),x
+	sta $cc00-40+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00-40+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00-40+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00-40+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00-40+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00-40+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00-40+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00-40+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00-40+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00-40+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00-40+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00-40+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00-40+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00-40+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00-40+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00-40+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00-40+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00-40+(18*40),x
+	lda $c800+00+(19*40),x
+	sta $cc00-40+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $c800+00+(20*40),x
+	sta $cc00-40+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00-40+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00-40+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00-40+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00-40+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripBottomBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_m40
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $cc00+00+(1*40),x
+	sta $c800-40+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800-40+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800-40+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800-40+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800-40+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800-40+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800-40+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800-40+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800-40+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800-40+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800-40+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800-40+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800-40+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800-40+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800-40+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800-40+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800-40+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800-40+(18*40),x
+	lda $cc00+00+(19*40),x
+	sta $c800-40+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $cc00+00+(20*40),x
+	sta $c800-40+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800-40+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800-40+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800-40+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800-40+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripBottomBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+; With diagonal movement
+!zn
+ScrollBank0To1_41
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00+41+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00+41+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00+41+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00+41+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00+41+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00+41+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00+41+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00+41+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00+41+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00+41+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00+41+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00+41+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00+41+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00+41+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00+41+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00+41+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00+41+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00+41+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00+41+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $c800+00+(19*40),x
+	sta $cc00+41+(19*40),x
+	lda $c800+00+(20*40),x
+	sta $cc00+41+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00+41+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00+41+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00+41+(23*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripTopBank1
+	jsr ScrollerDrawStripLeftBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_41
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800+41+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800+41+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800+41+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800+41+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800+41+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800+41+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800+41+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800+41+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800+41+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800+41+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800+41+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800+41+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800+41+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800+41+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800+41+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800+41+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800+41+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800+41+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800+41+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $cc00+00+(19*40),x
+	sta $c800+41+(19*40),x
+	lda $cc00+00+(20*40),x
+	sta $c800+41+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800+41+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800+41+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800+41+(23*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripTopBank0
+	jsr ScrollerDrawStripLeftBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+!zn
+ScrollBank0To1_39
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00+39+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00+39+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00+39+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00+39+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00+39+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00+39+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00+39+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00+39+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00+39+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00+39+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00+39+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00+39+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00+39+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00+39+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00+39+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00+39+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00+39+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00+39+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00+39+(18*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $c800+00+(19*40),x
+	sta $cc00+39+(19*40),x
+	lda $c800+00+(20*40),x
+	sta $cc00+39+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00+39+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00+39+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00+39+(23*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripTopBank1
+	jsr ScrollerDrawStripRightBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_39
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800+39+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800+39+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800+39+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800+39+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800+39+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800+39+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800+39+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800+39+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800+39+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800+39+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800+39+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800+39+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800+39+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800+39+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800+39+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800+39+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800+39+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800+39+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800+39+(18*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $cc00+00+(19*40),x
+	sta $c800+39+(19*40),x
+	lda $cc00+00+(20*40),x
+	sta $c800+39+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800+39+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800+39+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800+39+(23*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripTopBank0
+	jsr ScrollerDrawStripRightBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+!zn
+ScrollBank0To1_m41
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $c800+00+(1*40),x
+	sta $cc00-41+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00-41+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00-41+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00-41+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00-41+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00-41+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00-41+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00-41+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00-41+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00-41+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00-41+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00-41+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00-41+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00-41+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00-41+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00-41+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00-41+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00-41+(18*40),x
+	lda $c800+00+(19*40),x
+	sta $cc00-41+(19*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $c800+00+(20*40),x
+	sta $cc00-41+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00-41+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00-41+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00-41+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00-41+(24*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripBottomBank1
+	jsr ScrollerDrawStripRightBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_m41
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda $cc00+00+(1*40),x
+	sta $c800-41+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800-41+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800-41+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800-41+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800-41+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800-41+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800-41+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800-41+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800-41+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800-41+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800-41+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800-41+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800-41+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800-41+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800-41+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800-41+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800-41+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800-41+(18*40),x
+	lda $cc00+00+(19*40),x
+	sta $c800-41+(19*40),x
+	dex
+	bne .l1
+!ifdef Scroller_FullScreen {
+	ldx #39
+.l2
+	lda $cc00+00+(20*40),x
+	sta $c800-41+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800-41+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800-41+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800-41+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800-41+(24*40),x
+	dex
+	bne .l2
+}
+	jsr ScrollerDrawStripBottomBank0
+	jsr ScrollerDrawStripRightBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+!zn
+ScrollBank0To1_m39
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $c800+00+(1*40),x
+	sta $cc00-39+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00-39+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00-39+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00-39+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00-39+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00-39+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00-39+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00-39+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00-39+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00-39+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00-39+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00-39+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00-39+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00-39+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00-39+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00-39+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00-39+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00-39+(18*40),x
+	lda $c800+00+(19*40),x
+	sta $cc00-39+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $c800+00+(20*40),x
+	sta $cc00-39+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00-39+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00-39+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00-39+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00-39+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripBottomBank1
+	jsr ScrollerDrawStripLeftBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollBank1To0_m39
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda $cc00+00+(1*40),x
+	sta $c800-39+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800-39+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800-39+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800-39+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800-39+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800-39+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800-39+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800-39+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800-39+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800-39+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800-39+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800-39+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800-39+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800-39+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800-39+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800-39+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800-39+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800-39+(18*40),x
+	lda $cc00+00+(19*40),x
+	sta $c800-39+(19*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #38
+.l2
+	lda $cc00+00+(20*40),x
+	sta $c800-39+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800-39+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800-39+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800-39+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800-39+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripBottomBank0
+	jsr ScrollerDrawStripLeftBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+;*****************************************************************************
+;*****************************************************************************
+; Various colour scrolling routines optimised for their bank and direction
+;*****************************************************************************
+;*****************************************************************************
+
+; MPi: These colour scrolls are split so that the top half of the screen is updated before the bottom half due to the length of time the colour scroll takes.
+
+!zn
+ScrollColour_1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM+01+(0*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM+01+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM+01+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM+01+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM+01+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM+01+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM+01+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM+01+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM+01+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM+01+(9*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #38
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM+01+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM+01+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM+01+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM+01+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM+01+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM+01+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM+01+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM+01+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM+01+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM+01+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM+01+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM+01+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM+01+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM+01+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM+01+(24*40),x
+}
+	dex
+	bpl .l2
+	jsr ScrollerDrawStripLeftColour
+	jmp NotWantingColourScroll
+
+
+!zn
+ScrollColour_m1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #1
+.l1
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM-01+(0*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM-01+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM-01+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM-01+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM-01+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM-01+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM-01+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM-01+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM-01+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM-01+(9*40),x
+	inx
+	cpx #40
+	bne .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #1
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM-01+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM-01+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM-01+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM-01+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM-01+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM-01+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM-01+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM-01+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM-01+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM-01+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM-01+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM-01+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM-01+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM-01+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM-01+(24*40),x
+}
+	inx
+	cpx #40
+	bne .l2
+	jsr ScrollerDrawStripRightColour
+	jmp NotWantingColourScroll
+
+; Some space to put temporary colour data during the split scrolls
+ColourTemp !fill 40
+
+; With vertical movement
+!zn
+ScrollColour_40
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda COLOURRAM+00+(9*40),x
+	sta ColourTemp,x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM+40+(8*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM+40+(7*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM+40+(6*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM+40+(5*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM+40+(4*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM+40+(3*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM+40+(2*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM+40+(1*40),x
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM+40+(0*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #39
+.l2
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM+40+(23*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM+40+(22*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM+40+(21*40),x
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM+40+(20*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM+40+(19*40),x
+}
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM+40+(18*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM+40+(17*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM+40+(16*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM+40+(15*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM+40+(14*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM+40+(13*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM+40+(12*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM+40+(11*40),x
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM+40+(10*40),x
+	lda ColourTemp,x
+	sta COLOURRAM+40+(9*40),x
+	dex
+	bpl .l2
+	jsr ScrollerDrawStripTopColour
+	jmp NotWantingColourScroll
+
+
+!zn
+ScrollColour_m40
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #39
+.l1
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM-40+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM-40+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM-40+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM-40+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM-40+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM-40+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM-40+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM-40+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM-40+(9*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #39
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM-40+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM-40+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM-40+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM-40+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM-40+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM-40+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM-40+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM-40+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM-40+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM-40+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM-40+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM-40+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM-40+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM-40+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM-40+(24*40),x
+}
+	dex
+	bpl .l2
+	jsr ScrollerDrawStripBottomColour
+	jmp NotWantingColourScroll
+
+
+; With diagonal movement
+!zn
+ScrollColour_39
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #1
+.l1
+	lda COLOURRAM+00+(9*40),x
+	sta ColourTemp,x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM+39+(8*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM+39+(7*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM+39+(6*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM+39+(5*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM+39+(4*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM+39+(3*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM+39+(2*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM+39+(1*40),x
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM+39+(0*40),x
+	inx
+	cpx #40
+	bne .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #1
+.l2
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM+39+(23*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM+39+(22*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM+39+(21*40),x
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM+39+(20*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM+39+(19*40),x
+}
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM+39+(18*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM+39+(17*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM+39+(16*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM+39+(15*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM+39+(14*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM+39+(13*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM+39+(12*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM+39+(11*40),x
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM+39+(10*40),x
+	lda ColourTemp,x
+	sta COLOURRAM+39+(9*40),x
+	inx
+	cpx #40
+	bne .l2
+
+
+	jsr ScrollerDrawStripTopColour
+	jsr ScrollerDrawStripRightColour
+	jmp NotWantingColourScroll
+
+
+!zn
+ScrollColour_m39
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM-39+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM-39+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM-39+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM-39+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM-39+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM-39+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM-39+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM-39+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM-39+(9*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #38
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM-39+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM-39+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM-39+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM-39+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM-39+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM-39+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM-39+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM-39+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM-39+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM-39+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM-39+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM-39+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM-39+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM-39+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM-39+(24*40),x
+}
+	dex
+	bpl .l2
+	jsr ScrollerDrawStripBottomColour
+	jsr ScrollerDrawStripLeftColour
+	jmp NotWantingColourScroll
+
+
+!zn
+ScrollColour_41
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #38
+.l1
+	lda COLOURRAM+00+(9*40),x
+	sta ColourTemp,x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM+41+(8*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM+41+(7*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM+41+(6*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM+41+(5*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM+41+(4*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM+41+(3*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM+41+(2*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM+41+(1*40),x
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM+41+(0*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #38
+.l2
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM+41+(23*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM+41+(22*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM+41+(21*40),x
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM+41+(20*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM+41+(19*40),x
+}
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM+41+(18*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM+41+(17*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM+41+(16*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM+41+(15*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM+41+(14*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM+41+(13*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM+41+(12*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM+41+(11*40),x
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM+41+(10*40),x
+	lda ColourTemp,x
+	sta COLOURRAM+41+(9*40),x
+	dex
+	bpl .l2
+	jsr ScrollerDrawStripTopColour
+	jsr ScrollerDrawStripLeftColour
+	jmp NotWantingColourScroll
+
+
+!zn
+ScrollColour_m41
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #1
+.l1
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM-41+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM-41+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM-41+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM-41+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM-41+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM-41+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM-41+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM-41+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM-41+(9*40),x
+	inx
+	cpx #40
+	bne .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldx #1
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM-41+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM-41+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM-41+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM-41+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM-41+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM-41+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM-41+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM-41+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM-41+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM-41+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM-41+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM-41+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM-41+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM-41+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM-41+(24*40),x
+}
+	inx
+	cpx #40
+	bne .l2
+	jsr ScrollerDrawStripBottomColour
+	jsr ScrollerDrawStripRightColour
+	jmp NotWantingColourScroll

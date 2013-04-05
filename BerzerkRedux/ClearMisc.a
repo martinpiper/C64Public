@@ -1,0 +1,39 @@
+!zn
+ClearAllSpritesExceptPlayer
+	ldy #Multiplex_items-1
+.cl1
+	lda #$ff
+	sta Multiplex_YPos,y
+	sta Animation_Type,y
+	dey
+	bne .cl1
+	rts
+
+!zn
+ClearAllSprites
+	ldy #Multiplex_items-1
+.cl1
+	lda #$ff
+	sta Multiplex_YPos,y
+	sta Animation_Type,y
+	dey
+	bpl .cl1
+	rts
+
+!zn
+ClearMainScreen
+	ldx #0
+.l1
+	lda #0
+	sta MainScreen,x
+	sta MainScreen+$100,x
+	sta MainScreen+$200,x
+	sta MainScreen+$2e8,x
+	lda #VIC2Colour_White
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$2e8,x
+	dex
+	bne .l1
+	rts

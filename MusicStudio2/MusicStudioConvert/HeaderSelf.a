@@ -1,0 +1,172 @@
+; A self running demo.
+
+!source "stdlib/stdlib.a"
+!to "t.prg", cbm
+!sal
+!sl "t.map"
+!svl "t.lbl"
+!cpu 6510
+!ct pet
+
+;MusicPlayer_DebugBorder = 1
+
+!source "stdlib/BASICEntry80d.a"
+
+*=BASICEntry
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	+InitKERNALStringDisplay_AXY
+	+MACRODisableCursorFlash_A
+
+	jsr DisplayScreenText
+
+
+	sei
+	lda #kStartSong-1
+	jsr MusicPlayerInit
+
+	lda #$7f
+	sta CIA1InterruptControl
+	lda #$ff
+	sta VIC2Raster
+	lda #1
+	sta VIC2InteruptControl
+	lda #<TheIRQ
+	sta IRQServiceRoutineLo
+	lda #>TheIRQ
+	sta IRQServiceRoutineHi
+
+	; Waste a few frames to give the reset SID time to settle down
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreenLowerCase_A
+
+	+MACROAckAllIRQs_A
+	cli
+
+	jmp Mainline
+
+!source "t.a"
+
+!source "stdlib/PETSCII.a"
+
+!source "stdlib/Initialise.a"
+
+text
+!by CHR_Clear
+!by CHR_LightRed
+!tx "Playing "
+!by CHR_LightGreen
+!tx "Music Studio 2.2"
+!by CHR_LightRed
+!tx " music"
+!by CHR_Return
+!by CHR_Return
+!source "t3.a"
+!by CHR_Return
+!by CHR_LightBlue
+!tx "Raster time used 00"
+!by CHR_Return
+!by CHR_Return
+!by CHR_Grey
+!tx "Preferred SID Type = "
+!by CHR_Green
+!ifdef kEditorSIDIs6581 {
+!tx "6581"
+} else {
+!tx "8580"
+}
+!ifdef SoundEffectsActive {
+!by CHR_Return
+!by CHR_Return
+!by CHR_LightRed
+!tx "Press the letter keys to play different sound effects."
+}
+
+!by 0
+
+.valDiv10
+	!for .table1,50 {!by <((.table1-1) / 10) }
+.valMod10
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+
+
+DisplayScreenText
+	lda #<text
+	ldy #>text
+	jsr BASICTextPrint
+	rts
+
+Mainline
+.l1
+	+MACROWaitForTheLastScan_A
+	ldy .rasterTime
+	lda .valDiv10,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (6*40) + 17
+	lda .valMod10,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (6*40) + 17 + 1
+
+!ifdef SoundEffectsActive {
+	lda ZPCurrentKeyPressed
+	cmp #$40
+	beq .nothingPressed
+	; Debounce check
+	ldy .anyPreviousKey
+	bne .onothingPressed
+	ldy #1
+	sty .anyPreviousKey
+	lsr
+	lsr
+	and #3
+	tay
+	lda ZPCurrentKeyPressed
+	lsr
+	and #3
+	tax
+	cpx #2
+	bcc .l2
+	ldx #2
+.l2
+	iny
+	lda #48
+	jsr MusicPlayerPlaySFX
+	jmp .onothingPressed
+.nothingPressed
+	lda #0
+	sta .anyPreviousKey
+.onothingPressed
+}
+
+	jmp .l1
+
+!ifdef SoundEffectsActive {
+.anyPreviousKey !by 0
+}
+
+TheIRQ
+	; Using the KERNAL no need to save registers
+	; Wait for the 0 raster line
+.i1
+	lda VIC2Raster
+	bne .i1
+
+	inc VIC2BorderColour
+	jsr MusicPlayerPlay
+
+	lda VIC2Raster
+	sta .rasterTime
+
+!ifdef MusicPlayer_DebugBorder { } else {
+	dec VIC2BorderColour
+}
+	+MACROAckRasterIRQ_A
+	jmp DefaultIRQServiceRoutine
+.rasterTime !by 0

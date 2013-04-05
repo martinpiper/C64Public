@@ -1,0 +1,308 @@
+InitIRQs
+	lda #<Multiplex_maininter
+	sta KERNALIRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta KERNALIRQServiceRoutineHi
+
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+	lda #<(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerALo
+	lda #>(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerAHi
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	lda #Multiplex_items
+	sta Multiplex_MaxSpr
+	jsr Multiplex_InitSort
+	jsr Multiplex_Sort
+
+	; Starts raster IRQs
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+
+	+MACROAckAllIRQs_A
+
+	cli
+	rts
+
+
+
+
+MultiplexExt_LastIRQ
+	lda #<MyBottomIRQ
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MyBottomIRQ
+	sta Multiplex_IRQServiceRoutineHi
+	lda #VIC2SpriteYBorderBottom-1
+	sta VIC2Raster
+	lda #0
+	sta BottomIRQDone
+	jmp Multiplex_AckExitInterrupt
+
+MyBottomIRQ
+!ifdef IRQ_DebugBorder {
+	inc VIC2BorderColour
+}
+	sta irqAStore
+	stx irqXStore
+	sty irqYStore
+!ifdef Multiplex_LogCollisions {
+	lda VIC2SpriteSpriteCollision
+!ifdef Multiplex_LogCollisionsBackground {
+	ora VIC2SpriteBackgroundCollision
+}
+	jsr Multiplexor_UpdateCollisionDetails
+
+!ifdef IRQ_DebugBorder {
+	inc VIC2BorderColour
+}
+	lda SFXCall
+	beq .noSFXCall
+	jsr SFXPlay
+.noSFXCall
+!ifdef IRQ_DebugBorder {
+	inc VIC2BorderColour
+}
+
+	; Backup what the collision is this frame so the mainline can get it without it changing during
+	; the frame
+	ldx Multiplex_CollisionCounter
+	stx Multiplex_CollisionBackupCounter
+.cb1
+	lda Multiplex_CollisionIndexes,x
+	sta Multiplex_CollisionBackupIndexes,x
+	dex
+	bpl .cb1
+}
+
+!ifdef IRQ_DebugBorder {
+	dec VIC2BorderColour
+	dec VIC2BorderColour
+}
+
+	; Start the main interrupt back at the top of the screen again
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+
+	; Start the top multiplex raster at this position
+	lda #VIC2SpriteYBorderTop - VIC2SpriteSizeY - 8
+	sta VIC2Raster
+
+	inc BottomIRQDone
+	+MACROAckRasterIRQ_A
+!ifdef IRQ_DebugBorder {
+	dec VIC2BorderColour
+}
+	lda irqAStore
+	ldx irqXStore
+	ldy irqYStore
+	rti
+
+BottomIRQDone !by 0
+SFXCall !by 0
+
+!zn
+.startNewSampleSequence
+	txa
+	pha
+
+	ldx #0
+	stx SampleStartNewSequence
+	stx SamplePlayingSequence
+
+	jsr .getNext
+
+	lda #1
+	sta SamplePlaying
+
+	pla
+	tax
+	jmp NMISampleAddr
+
+.getNext
+	lda SampleStartLoTab,x
+	sta NMISampleAddr+1
+	lda SampleStartHiTab,x
+	sta NMISampleAddr+2
+
+	lda SampleEndLoTab,x
+	sta NMISampleAddrEndL+1
+	lda SampleEndHiTab,x
+	sta NMISampleAddrEndH+1
+	rts
+
+NMIRet
+	pha
+
+	lda SampleStartNewSequence
+	bne .startNewSampleSequence
+
+	lda SamplePlaying
+	bne NMISampleAddr
+	jmp .justExit4
+
+NMISampleAddr lda $ffff
+	sta .nmiNybble
+	and #15
+	sta SIDVolumeFilter
+	inc NMISampleAddr+1
+	bne .sml2
+	inc NMISampleAddr+2
+.sml2
+NMISampleAddrEndH	lda #>SampleEnd_Intruder
+	cmp NMISampleAddr+2
+	bne .justExit
+NMISampleAddrEndL	lda #<SampleEnd_Intruder
+	cmp NMISampleAddr+1
+	bne .justExit
+	txa
+	pha
+	; Perform the end logic
+	inc SamplePlayingSequence
+	ldx SamplePlayingSequence
+	cpx #8
+	beq .endPlaying
+	jsr .getNext
+	; If the start hi is 0 then exit playing the sequence
+	lda NMISampleAddr+2
+	beq .endPlaying
+	; Continue to the next sample
+	pla
+	tax
+	jmp .justExit2
+
+.endPlaying
+	lda #0
+	sta SamplePlaying
+	pla
+	tax
+.justExit4
+	lda #15
+	sta SIDVolumeFilter
+	; Don't ACK the NMI causes it to not trigger again until we are ready
+	jmp .justExit3
+
+.justExit
+	; Switch to playing the other half of the sample
+	lda #<NMIRet2
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet2
+	sta KERNALNMIServiceRoutineHi
+
+.justExit2
+
+	lda CIA2InterruptControl
+
+.justExit3
+!ifdef NMITimings {
+	inc VIC2BorderColour
+}
+	pla
+	rti
+.nmiNybble !by 0
+
+NMIRet2
+	pha
+
+	lda .nmiNybble
+	lsr
+	lsr
+	lsr
+	lsr
+	sta SIDVolumeFilter
+
+	; Switch back to the main sample logic
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+!ifdef NMITimings {
+	inc VIC2BorderColour
+}
+	lda CIA2InterruptControl
+
+	pla
+	rti
+
+SamplePlaying !by 0
+SampleStartNewSequence !by 0
+SamplePlayingSequence !by 0
+SampleStartLoTab !by 0,0,0,0,0,0,0,0
+SampleStartHiTab !by 0,0,0,0,0,0,0,0
+SampleEndLoTab !by 0,0,0,0,0,0,0,0
+SampleEndHiTab !by 0,0,0,0,0,0,0,0
+
+!zn
+SampleResetSequence
+	lda #0
+	sta SamplePlaying
+	sta SampleStartHiTab+1
+	sta SampleStartHiTab
+	sta SampleStartHiTab+1
+	sta SampleStartHiTab+2
+	sta SampleStartHiTab+3
+	sta SampleStartHiTab+4
+	sta SampleStartHiTab+5
+	sta SampleStartHiTab+6
+	sta SampleStartHiTab+7
+	rts
+
+!zn
+SampleMidRangeFrequencyShift = 32
+; A = Tweak value for frequency
+SamplePlaySequence
+
+	clc
+	adc #<(CyclesPerSecondPALC64/SampleRateHz)
+	sec
+	sbc #SampleMidRangeFrequencyShift
+	sta CIA2TimerALo
+
+	; This solves the missing speech problem with 8580 SID chips at the expense of one voice.
+	; The SFXPlay above needs to be made aware of this, perhaps optionally limit the SFX player
+	; to two voices? Have a toggle flag similar to SFXCall, but use a voice bitfield instead?
+	lda #$00
+	sta SIDVoice3AttackDecay
+	sta SIDVoice3FreqLo
+	sta SIDVoice3FreqHi
+	sta SIDVoice3PulseWidthLo
+	sta SIDVoice3PulseWidthHi
+	lda #$f0
+	sta SIDVoice3SustainRelease
+	lda #$41
+	sta SIDVoice3Control
+
+	lda #1
+	sta SampleStartNewSequence
+	lda CIA2InterruptControl	; ACK Any IRQs generated to start the next one
+	rts
+
+!zn
+WaitForBottomIRQ
+	lda BottomIRQDone
+	beq WaitForBottomIRQ
+	lda #0
+	sta BottomIRQDone
+	rts
+
+!zn
+TurnOffScreenWithBlank
+	lda #0
+	lda BottomIRQDone
+	jsr WaitForBottomIRQ
+	lda #%1101000
+	sta VIC2ScreenControlV
+	rts

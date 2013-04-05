@@ -1,0 +1,1900 @@
+;Animation types
+AnimationType_Player1 = 0
+AnimationType_Player1Bullet = 1
+AnimationType_Player1Death = 2
+AnimationType_Player2 = 3
+AnimationType_Player2Bullet = 4
+AnimationType_Player2Death = 5
+AnimationType_Enemy1Bullet = 6
+AnimationType_Enemy1Death = 14
+AnimationType_Enemy1 = 22
+!ifdef Scroller_LOTD {
+AnimationType_Spell1 = 58
+}
+
+; 0 = Nothing
+; 1 = Right
+; 2 = Left
+; 4 = Down
+; 8 = Up
+; Invalid inputs are treated as having nothing pressed, it doesn't make sense to have up+down+left for example.
+AnimationDirectionToFrame !by 4,5,3,4,7,8,6,4,1,2,0,4,4,4,4,4
+; Flags if the direction is a valid combination or not
+AnimationDirectionIsValid !by 0,0,0,1,0,0,0,1,0,0,0,1,1,1,1,1
+ 
+AnimationPlayer1BulletCount !by 0
+AnimationPlayer2BulletCount !by 0
+AnimationBulletCount !by 0
+
+; The current enemy position pointer in the attack wave data
+AnimationAttackWaveAddr !by 0,0
+
+!zn
+AnimationInit
+	ldx #Multiplex_items-1
+.l1
+	lda #$ff
+	sta AnimationType,x
+	lda #0
+	sta AnimationXPosHi,x
+	dex
+	bpl .l1
+	sta AnimationBulletCount
+
+	rts
+
+!zn
+AnimationKillEverythingExceptPlayers
+	ldx #Multiplex_items-1
+.l1
+	lda AnimationType,x
+	cmp #AnimationType_Enemy1Bullet
+	bcc .dontZap
+	lda #$ff
+	sta AnimationType,x
+.dontZap
+	dex
+	bpl .l1
+	lda #0
+	sta AnimationBulletCount
+	rts
+
+!zn
+AnimationEnemyTriggerInit
+	lda #<AttackWaves
+	sta AnimationAttackWaveAddr
+	lda #>AttackWaves
+	sta AnimationAttackWaveAddr+1
+	rts
+
+!zn
+AnimationEnemyTriggerSkipMap
+	lda AnimationAttackWaveAddr
+	sta tempWork0
+	lda AnimationAttackWaveAddr+1
+	sta tempWork1
+	; This skips over enemies that are earlier in the scrolled level since we have jumped to the
+	; position and we don't want all enemies from earlier in the map to appear.
+.l1
+	ldy #1
+	lda (tempWork0),y
+	cmp TotalScrollPosition+1
+	bcs .mightBe
+
+.skipThis
+	lda tempWork0
+	clc
+	adc #7
+	sta tempWork0
+	bcc .l1
+	inc tempWork1
+	jmp .l1
+
+.mightBe
+	; From the bcs above...
+	bne .definitelyGreaterThan
+	dey
+	; Check the lo byte
+	lda (tempWork0),y
+	cmp TotalScrollPosition
+	bcc .skipThis
+.definitelyGreaterThan
+
+	lda tempWork0
+	sta AnimationAttackWaveAddr
+	lda tempWork1
+	sta AnimationAttackWaveAddr+1
+
+	rts
+
+!zn
+.noneFreeS jmp .noneFree
+AnimationTriggerEnemies
+	lda AnimationAttackWaveAddr
+	sta tempWork0
+	lda AnimationAttackWaveAddr+1
+	sta tempWork1
+	; Continue to compare the TotalScrollPosition with the attack waves positions until the
+	; attack waves is equal to TotalScrollPosition.
+.l1
+	ldy #1
+	lda TotalScrollPosition+1
+	cmp (tempWork0),y
+	beq .mightBe
+	; Attack wave hi is definitely different to the scroll position so we exit
+.exitTrigger
+	; Store what we have so far
+	lda tempWork0
+	sta AnimationAttackWaveAddr
+	lda tempWork1
+	sta AnimationAttackWaveAddr+1
+	rts
+.mightBe
+	dey
+	; Check the lo byte
+	lda TotalScrollPosition
+	cmp (tempWork0),y
+	bne .exitTrigger
+
+	; Exact position match so this enemy needs to be triggered
+	; Get the animation type to try to trigger
+	ldy #6
+	lda (tempWork0),y
+	clc
+	adc #AnimationType_Enemy1
+	tay
+	; Try to trigger it
+	jsr AnimationFindFreeSlot
+	bcs .noneFreeS
+	; Fill in the various information for the animation engine to take over
+
+	ldy #2
+	lda (tempWork0),y
+	sta AnimationMovementAddrLo,x
+!ifdef Scroller_LinkedEnemyTest {
+	sta AnimationMovementOrigLo,x
+}
+	iny
+	lda (tempWork0),y
+	sta AnimationMovementAddrHi,x
+!ifdef Scroller_LinkedEnemyTest {
+	sta AnimationMovementOrigHi,x
+}
+
+	; Now relocate from the SEUCK memory address to our address
+	.offset = AttackWaves - $340c
+	lda AnimationMovementAddrLo,x
+	clc
+	adc #<.offset
+	sta AnimationMovementAddrLo,x
+	lda AnimationMovementAddrHi,x
+	adc #>.offset
+	sta AnimationMovementAddrHi,x
+
+	iny
+	lda (tempWork0),y
+	asl
+	sta AnimationXPosLo,x
+	lda #0
+	rol
+	sta AnimationXPosHi,x
+!ifdef Scroller_SpriteXAdjust {
+	lda AnimationXPosLo,x
+	sec
+	sbc #1
+	sta AnimationXPosLo,x
+	bcs .notLeft2
+	dec AnimationXPosHi,x
+.notLeft2
+}
+
+	iny
+	lda (tempWork0),y
+	; Baphomet has no adjustment for the sprite Y position
+!ifdef Scroller_NoSpriteYAdjust {} else {
+	; Small adjustment to make it exactly match with SEUCK
+	sec
+	sbc #1
+	bcs .noWrap	; Paranoia check :)
+	lda #0
+.noWrap
+}
+	sta AnimationYPos,x
+
+	; Calculate all the enemy information and store it for easier access
+	; Get the triggered enemy type
+	; Note: Use the enemy type without the AnimationType_Enemy1 adjustment
+	ldy #6
+	lda (tempWork0),y
+	tay
+	lda ObjectPropertiesTabLo,y
+	sta tempWork2
+	lda ObjectPropertiesTabHi,y
+	sta tempWork3
+	ldy #0
+	lda (tempWork2),y
+	and #15
+	beq .noSFX1
+	clc
+	adc #7
+.noSFX1
+	sta AnimationFireSFX,x
+
+	lda (tempWork2),y
+	lsr
+	lsr
+	lsr
+	lsr
+	and #15
+	beq .noSFX2
+	clc
+	adc #7+8
+.noSFX2
+	sta AnimationExplosionSFX,x
+	
+
+	iny		; 1
+	lda (tempWork2),y
+	and #$f
+	sta AnimationFireDirectionType,x
+
+	lda (tempWork2),y
+	lsr
+	lsr
+	lsr
+	lsr
+	sta AnimationHealth,x
+
+	iny		; 2
+	lda (tempWork2),y
+	sta AnimationFireRateInit,x
+	sta AnimationFireRateCount,x
+
+
+	iny		; 3
+	lda (tempWork2),y
+	lsr
+	lsr
+	lsr
+	lsr
+	and #3
+	cmp #3
+	bne .notReally4a
+	; Speed 3 = 4 pixels in SEUCK
+	lda #4
+.notReally4a
+	sta AnimationMoveSpeed,x
+
+	lda (tempWork2),y
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta AnimationFireSpeed,x
+
+	lda (tempWork2),y
+	and #15
+	sta AnimationCollisionLogic,x
+
+	iny		; 4
+	lda (tempWork2),y
+	lsr
+	lsr
+	lsr
+	lsr
+	and #7
+	clc
+	adc #AnimationType_Enemy1Bullet
+	sta AnimationFireType,x
+	lda (tempWork2),y
+	and #7
+	sta AnimationExplosionType,x
+
+	iny		; 5
+	iny		; 6
+	lda (tempWork2),y
+	sta AnimationPoints,x
+
+.noneFree
+	; Get the next enemy and loop to test it
+	lda tempWork0
+	clc
+	adc #7
+	sta tempWork0
+	bcc .s1
+	inc tempWork1
+.s1
+	jmp .l1
+
+!zn
+; Entry: Y = animation type
+; Finds a free slot and X contains the index with carry clear. If no index is free then carry is set.
+; Initialises the animation entries with type frm Y if a slot could be found.
+AnimationFindFreeSlot
+	ldx #0
+.l1
+	lda AnimationType,x
+	bmi .l2
+	inx
+	cpx #Multiplex_items
+	bne .l1
+	sec
+	rts
+.l2
+	jsr AnimationMutateToType
+
+	clc
+	rts
+
+!zn
+; Initialise the animation frames pointer and other internal stuff
+; Input: X = Animation index
+; Y = Animation type
+AnimationMutateToType
+	tya
+	sta AnimationType,x
+
+	; Is it an enemy type?
+	cmp #AnimationType_Enemy1
+	bcc .notEnemy
+
+	; If yes, initialise the enemy specific data
+	lda #0
+	sta AnimationMovementFrameCount,x
+	sta AnimationMovementMove,x
+.notEnemy
+	lda ObjectAnimationsTabLo,y
+	sta AnimationAnimsLo,x
+	sta tempWork3
+	lda ObjectAnimationsTabHi,y
+	sta AnimationAnimsHi,x
+	sta tempWork4
+
+	; Store the delay count
+	ldy #$12
+	lda (tempWork3),y
+	sta AnimationSpriteFrameCountDelayInit,x
+	; Store the colour
+	iny
+	lda (tempWork3),y
+	sta AnimationSpriteColour,x
+	; Extract the directional information
+	and #%00110000
+	sta Animation_DirectionalBits,x
+	beq .notDirectional
+
+	; Set the first blank frame for directional animations
+	; If the animation is sequential then this will get overwritten by the first animation update call
+	ldy #4
+	lda (tempWork3),y
+	and #$7f	; Paranoia
+	clc
+	adc #$40	; Offset for where our sprites are actually stored in bank 3
+	sta AnimationSpriteFrame,x
+	; Init directional information
+	lda #0
+	sta AnimationDirectionIn,x
+	sta AnimationDirectionLastValidIn,x
+
+.notDirectional
+	; Initialise the other frame data so it gets set on the first call in the update
+	lda #0
+	sta AnimationSpriteFrameCount,x
+	sta AnimationSpriteFrameCountDelay,x
+	rts
+
+!zn
+.semiRandomCount !by 0
+; 33 long
+.semiRandomDir1
+	!by 1,0,-1,0,-1,1,1,0,-1,-1,0,1,-1,1,-1,-1
+	!by 0,1,1,-1,0,1,-1,0,1,0,1,0,1,-1,0,1,-1
+.semiRandomDir2
+	!by 2,0,-2,0,-2,2,2,0,-2,-2,0,2,-2,2,-2,-2
+	!by 0,2,2,-2,0,2,-2,0,2,0,2,0,2,-2,0,2,-2
+.semiRandomDir3
+	!by 3,0,-3,0,-3,3,3,0,-3,-3,0,3,-3,3,-3,-3
+	!by 0,3,3,-3,0,3,-3,0,3,0,3,0,3,-3,0,3,-3
+
+.ranSpeedTabL !by <.semiRandomDir1 , <.semiRandomDir2 , <.semiRandomDir3
+.ranSpeedTabH !by >.semiRandomDir1 , >.semiRandomDir2 , >.semiRandomDir3
+
+.setFireDirectionS jmp .setFireDirection
+.setFireDirectionCrossS jmp .setFireDirectionCross
+.setFireDirectionXS jmp .setFireDirectionX
+AnimationUpdateEnemyFire
+	; Not allowed to early out because the fire rate count needs to be synced with the animation frame count for some enemy animations
+	ldx #Multiplex_items-1
+.sp1
+	lda AnimationType,x
+	bpl .processTypeCont1
+
+	; Otherwise we loop around
+.sl3
+	dex
+	bpl .sp1
+	rts
+
+.processTypeCont1
+!ifdef Scroller_LOTD {
+	cmp #AnimationType_Spell1
+	bcs .sl3
+}	
+	cmp #AnimationType_Enemy1
+	bcc .sl3
+
+	; Blank direction means don't fire.
+	lda AnimationFireDirectionType,x
+	beq .sl3
+
+	sta .enemyFireDirectionType
+	; Process enemies wanting to fire
+	lda AnimationFireRateCount,x
+	dec AnimationFireRateCount,x
+	cmp #0	; Compare needed on the previous value, not the dec result.
+	bne .sl3
+
+	lda AnimationFireRateInit,x
+	sta AnimationFireRateCount,x
+	; This dec tweak makes the SEUCK game 3 ghost enemy fire animations (see the unit test
+	; TESTGHST.P00) stay in sync with the ghost bullet.
+	; Without the dec the "bullet" gradually goes out of sync with the ghost animation.
+	; The one frame blank frame flicker for enemy 4 (object 25) is actually shown by the data
+	; running with the real SEUCK.
+	dec AnimationFireRateCount,x
+
+	; Try to fire but first check to see if we don't have too many bullets already active
+	lda AnimationBulletCount
+	cmp #10
+	bcs .sl3
+
+	; Backup the enemy fire speed and position ready for firing
+	lda AnimationFireSpeed,x
+	sta .enemyFireSpeed
+	lda #0
+	sec
+	sbc .enemyFireSpeed
+	sta .enemyFireSpeedNeg
+	lda AnimationXPosLo,x
+	sta .smxl+1
+	lda AnimationXPosHi,x
+	sta .smxh+1
+	lda AnimationYPos,x
+	sta .smy+1
+;	lda AnimationDirectionLastValidIn,x
+	lda AnimationDirectionIn,x	; It looks like the enemy is not meant to remember the fire direction during animation hold frames when there is no movement
+	and #$f
+	bne .hadAMove
+	lda #8	; No move so default to up
+.hadAMove
+	sta .enemyLastValidMove
+	stx tempWork8
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda AnimationFireSFX,x
+	beq .noSFX1
+	jsr SFXInit
+.noSFX1
+}
+	; Test for + and x fire
+	lda .enemyFireDirectionType
+	cmp #9
+	beq .setFireDirectionCrossS
+	cmp #10
+	beq .setFireDirectionXS
+
+	; Get the bullet type
+	ldy AnimationFireType,x
+	; Try to find a spare animation slot
+	jsr AnimationFindFreeSlot
+	bcs .sl2S2
+
+	inc AnimationBulletCount
+	; Found one spare!
+	; Update the velocity
+
+	lda .enemyFireDirectionType
+	cmp #9
+	bcs .over1
+	jmp .setFireDirection
+.sl2S2 jmp .sl2
+
+.over1
+	cmp #$b
+	beq .fireRandomly
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+	; Directional fire
+	lda #1
+	bit .enemyLastValidMove
+	beq .notRight
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+.notRight
+
+	lda #2
+	bit .enemyLastValidMove
+	beq .notLeft
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+.notLeft
+
+	lda #4
+	bit .enemyLastValidMove
+	beq .notDown
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedY,x 
+.notDown
+
+	lda #8
+	bit .enemyLastValidMove
+	beq .notUp
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+.notUp
+.setVelCacheFromBulletSpeedAndDoDirection
+	lda  AnimationBulletSpeedX,x 
+	sta .velCache
+	lda  AnimationBulletSpeedY,x 
+	sta .velCache+1
+	jmp .speedSetSoCalcDirection
+
+.fireRandomly
+	lda .enemyFireSpeed
+	bne .someSpeed
+.fireNoSpeed
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x
+	sta AnimationDirectionIn,x
+	beq .noSpeedSoSkip
+.someSpeed
+	; Convert the speed into a lookup table with self modifying code
+	tay
+	dey
+	lda .ranSpeedTabL,y
+	sta .smlu1+1
+	sta .smlu2+1
+	lda .ranSpeedTabH,y
+	sta .smlu1+2
+	sta .smlu2+2
+	; This implements random direction firing
+	inc .semiRandomCount
+	lda .semiRandomCount
+	and #31
+	sta .semiRandomCount
+	tay
+.smlu1	lda .semiRandomDir1,y
+	sta AnimationBulletSpeedX,x
+	sta .velCache
+	iny
+.smlu2	lda .semiRandomDir1,y
+	sta AnimationBulletSpeedY,x
+	sta .velCache+1
+.speedSetSoCalcDirection
+	; Only do this code if the animation is directional
+	lda Animation_DirectionalBits,x
+	beq .noSpeedSoSkip
+	; Calculate the velocity to a directional in case the animation is directional
+	stx tempWork7
+	ldx .velCache
+	ldy .velCache+1
+	jsr AnimationConvertXYToDirection
+	ldx tempWork7
+	sta AnimationDirectionIn,x
+.noSpeedSoSkip
+	jsr .setBulletPosition
+
+.sl2
+	ldx tempWork8
+
+.sl1
+	dex
+	bmi .ret
+	jmp .sp1
+.ret
+	rts
+
+.setBulletPosition
+	; Update the bullet position with that from the enemy position
+.smxl	lda #0
+	sta AnimationXPosLo,x
+.smxh	lda #0
+	sta AnimationXPosHi,x
+.smy	lda #0
+	sta AnimationYPos,x
+	rts
+
+.setFireDirection
+	cmp #1
+	bne .not1
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not1
+	cmp #2
+	bne .not2
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not2
+	cmp #3
+	bne .not3
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	lda #0
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not3
+	cmp #4
+	bne .not4
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not4
+	cmp #5
+	bne .not5
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not5
+	cmp #6
+	bne .not6
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not6
+	cmp #7
+	bne .not7
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	lda #0
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+.not7
+	; Last one must be 8
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+	jmp .setVelCacheFromBulletSpeedAndDoDirection
+
+.cachedEnemyFireType !by 0
+
+.noMoreSpacesS
+	jmp .sl2
+.setFireDirectionCross
+	; Get the bullet type
+	ldy AnimationFireType,x
+	sty .cachedEnemyFireType
+
+	; Try to find a spare animation slot
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpacesS
+	inc AnimationBulletCount
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%0100
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces
+	inc AnimationBulletCount
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%1000
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces
+	inc AnimationBulletCount
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	lda #0
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%0010
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces
+	inc AnimationBulletCount
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	lda #0
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%0001
+	sta AnimationDirectionIn,x
+
+.noMoreSpaces
+	jmp .sl2
+
+.noMoreSpaces2S
+	jmp .sl2
+.setFireDirectionX
+	; Get the bullet type
+	ldy AnimationFireType,x
+	sty .cachedEnemyFireType
+
+	; Try to find a spare animation slot
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces2S
+	inc AnimationBulletCount
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%0110
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces2
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces2
+	inc AnimationBulletCount
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%0101
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces2
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces2
+	inc AnimationBulletCount
+	lda .enemyFireSpeed
+	sta AnimationBulletSpeedX,x 
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%1001
+	sta AnimationDirectionIn,x
+	lda AnimationBulletCount
+	cmp #10
+	bcs .noMoreSpaces2
+
+	ldy .cachedEnemyFireType
+	jsr AnimationFindFreeSlot
+	bcs .noMoreSpaces
+	inc AnimationBulletCount
+	lda .enemyFireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+	jsr .setBulletPosition
+	lda #%1010
+	sta AnimationDirectionIn,x
+
+.noMoreSpaces2
+	jmp .sl2
+
+; Some backups of the current enemy due to running out of registers :)
+.velCache !by 0,0
+.enemyFireSpeed !by 0
+.enemyFireSpeedNeg !by 0
+.enemyFireDirectionType !by 0
+.enemyLastValidMove !by 0
+
+!zn
+!ifdef Scroller_LOTD {
+.processSpellMovementS jmp .processSpellMovement
+}
+.processEnemyMovementS jmp .processEnemyMovement
+.processEnemyBulletMovementS jmp .processEnemyBulletMovement
+.processBulletMovementS jmp .processBulletMovement
+.processPlayer1BulletMovementS jmp .processPlayer1BulletMovement
+.processPlayer2BulletMovementS jmp .processPlayer2BulletMovement
+.noFrameChangeS jmp .noFrameChange
+AnimationUpdateFrameMovement
+	; Reset the count since we are processing all objects anyway
+	lda #0
+	sta AnimationBulletCount
+	sta AnimationPlayer1BulletCount
+	sta AnimationPlayer2BulletCount
+
+	ldx #Multiplex_items-1
+.sp1
+	lda AnimationType,x
+	bpl .processTypeCont1
+
+.sl2
+	dex
+	bpl .sp1
+	rts
+
+.processTypeCont1
+!ifdef Scroller_LOTD {
+	cmp #AnimationType_Spell1
+	bcs .processSpellMovementS
+}
+	cmp #AnimationType_Enemy1
+	bcs .processEnemyMovementS
+	cmp #AnimationType_Enemy1Death
+	bcs .processAnimationFrames
+	cmp #AnimationType_Enemy1Bullet
+	bcs .processEnemyBulletMovementS
+	cmp #AnimationType_Player1Bullet
+	beq .processPlayer1BulletMovementS
+	cmp #AnimationType_Player2Bullet
+	beq .processPlayer2BulletMovementS
+
+	; At this point we could enter here and have a removed sprite due to movement
+.processAnimationFrames
+	lda AnimationType,x
+	bmi .sl2
+
+	; Prime the indirect pointer
+	lda AnimationAnimsLo,x
+	sta tempWork5
+	lda AnimationAnimsHi,x
+	sta tempWork6
+
+	; Process animation frames
+	ldy AnimationSpriteFrameCountDelay,x
+	bne .noFrameChangeS
+	lda AnimationSpriteFrameCountDelayInit,x
+	sta AnimationSpriteFrameCountDelay,x
+
+	lda Animation_DirectionalBits,x
+	beq .justSequential
+
+; Directional and directional hold animation logic
+	sta tempWork7
+	lda AnimationDirectionIn,x
+	and #$f	; Paranoia
+	beq .nothingPressed
+	tay
+	lda AnimationDirectionIsValid,y
+	bne .nothingPressed
+	tya
+	sta AnimationDirectionLastValidIn,x
+.nothingPressed
+	lda tempWork7
+	; Is it a hold animation?
+	and #%00100000
+	beq .notDirHold
+	; Is there any direction being pressed on the joystick?
+	lda AnimationDirectionIn,x
+	and #$f	; Paranoia
+	bne .notDirHold
+	jmp .noFrameChangeNoDelayUpdate
+.notDirHold
+	lda AnimationDirectionIn,x
+	; Convert the direction input to a frame index
+	and #$f	; Paranoia
+	tay
+	; Get the frame count and use it as a 0 or 9 toggle to the direction table lookup
+	lda AnimationSpriteFrameCount,x
+	lsr	; Get the frame toggle to carry
+	lda #0
+	bcc .isZero
+	lda #9
+.isZero
+	clc
+	adc AnimationDirectionToFrame,y
+	; Got the sprite animation frame index, now lookup the sprite frame
+	tay
+	; Load the actual frame
+	lda (tempWork5),y
+	and #$7f	; Paranoia
+	clc
+	adc #$40	; Offset for where our sprites are actually stored in bank 3
+	sta AnimationSpriteFrame,x
+	lda AnimationSpriteFrameCount,x
+	eor #1
+	sta AnimationSpriteFrameCount,x
+	jmp .noFrameChange
+.justSequential
+	ldy #1
+	sty tempWork3	; Flag for end of animation
+	ldy AnimationSpriteFrameCount,x
+	lda (tempWork5),y
+	bpl .notEnd
+	ldy #0
+	lda (tempWork5),y
+	sty tempWork3	; Flag for end of animation
+.notEnd
+	iny
+	; Have we hit $12 frames?
+	cpy #$12
+	bne .noLoop
+	ldy #0
+	sty tempWork3	; Flag for end of animation
+.noLoop
+	and #$7f	; Paranoia check
+	clc
+	adc #$40	; Offset for where our sprites are actually stored in bank 3
+
+!ifdef Scroller_LOTD {
+	; It is important to preserve Y here
+	sty .smsc1+1
+	; Tweak the animation definitions to use the extra loaded sprites for the spell effects
+	ldy AnimationType,x
+	cpy #AnimationType_Spell1
+	bcc .notSpell1
+	clc
+	adc #127
+	; Did we overflow the frames?
+	bcc .notSpell1
+	lda #126+$40
+.notSpell1
+.smsc1	ldy #00	; Self modified backup value
+}
+
+	sta AnimationSpriteFrame,x
+
+	; If Y (index) = 0 then we hit the end of the frame loop so we check for an explosion
+	lda tempWork3
+	bne .notExplosion
+
+	lda AnimationType,x
+	cmp #AnimationType_Player1Death
+	beq .respawnPlayer
+	cmp #AnimationType_Player2Death
+	beq .respawnPlayer
+	cmp #AnimationType_Enemy1Death
+	bcc .notExplosion
+	cmp #AnimationType_Enemy1
+	bcs .notExplosion
+	lda #$ff
+	sta AnimationType,x
+.notExplosion
+	; Store the next frame to use for next time
+	tya
+	sta AnimationSpriteFrameCount,x
+
+.noFrameChange
+	dec AnimationSpriteFrameCountDelay,x
+.noFrameChangeNoDelayUpdate
+
+	; Update the y position based on how much we are scrolling this frame
+	; But not the player types, of course.
+	lda LevelIsPushScrolled
+	bne .skipTest
+	lda AnimationType,x
+	cmp #AnimationType_Player1
+	beq .sl1
+	cmp #AnimationType_Player2
+	beq .sl1
+.skipTest
+!ifdef Scroller_IsHorizontal {
+	lda AnimationXPosLo,x
+	clc
+	adc scrollerRealMovementYPixels
+	sta AnimationXPosLo,x
+	bcc .noMSB
+	inc AnimationXPosHi,x
+.noMSB
+	lda AnimationXPosHi,x
+	beq .sl1
+	lda AnimationXPosLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcc .sl1
+} else {
+	lda AnimationYPos,x
+	clc
+	adc scrollerRealMovementYPixels
+	sta AnimationYPos,x
+	bcc .sl1
+}
+	; If it scrolls off the bottom of the screen we discard it
+	; Unless it is a player death type then we leave it alone and reset the ypos to be right at the bottom of the screen instead.
+	; Player alive types should never get here, ever, because they are clamped to their bottom pos each frame.
+	lda AnimationType,x
+	cmp #AnimationType_Player1Death
+	beq .isPlayerDeathType
+	cmp #AnimationType_Player2Death
+	beq .isPlayerDeathType
+	lda #$ff
+	sta AnimationType,x
+	jmp .sl1
+.isPlayerDeathType
+	lda #$ff
+	sta AnimationYPos,x
+.sl1
+	dex
+	bpl .sp1S
+	rts
+.sp1S jmp .sp1
+.processAnimationFramesS jmp .processAnimationFrames
+
+.respawnPlayer
+	jsr PlayerRespawn
+	jmp .noFrameChangeNoDelayUpdate
+
+.processEnemyMovement
+	; Early out
+	lda AnimationMovementMove,x
+	cmp #$ff
+	beq .processAnimationFramesS
+	and #$f
+	sta AnimationDirectionIn,x
+
+	lda AnimationMovementFrameCount,x
+	bne .notNeedNewMove
+
+	; Read in the next movement command byte
+	lda AnimationMovementAddrLo,x
+	sta tempWork0
+	lda AnimationMovementAddrHi,x
+	sta tempWork1
+
+	ldy #0
+	lda (tempWork0),y
+	sta AnimationMovementMove,x
+	; Exit if the command byte is $ff
+	cmp #$ff
+	bne .notProcessAnimationFrames
+	; End of the animation movement so input a blank movement.
+	; This causes directional fire to then fire upwards, which is what SEUCK does, so we do too.
+	; Personally I think we should use the movement from the last valid input since the animation frame is also held at that frame. It looks better.
+	lda #0
+	sta AnimationDirectionIn,x
+	jmp .processAnimationFrames
+.notProcessAnimationFrames
+	lsr
+	lsr
+	lsr
+	lsr
+	bne .notZero
+	lda #16
+.notZero
+	asl
+	asl
+	sta AnimationMovementFrameCount,x
+
+	; Update the pointer for the next command
+	dec AnimationMovementAddrLo,x
+	lda AnimationMovementAddrLo,x
+	cmp #$ff
+	bne .notNeedNewMove
+	dec AnimationMovementAddrHi,x
+
+.notNeedNewMove
+.movementBits = tempWork2
+	dec AnimationMovementFrameCount,x
+	lda AnimationMovementMove,x
+	sta .movementBits
+
+	; Test each bit in .movementBits with a lsr and bcc.
+	; Then proceed to move the animation depending on the bits set.
+	lsr .movementBits
+	bcc .notRight
+	lda AnimationXPosLo,x
+	clc
+	adc AnimationMoveSpeed,x
+	sta AnimationXPosLo,x
+	bcc .notRight
+	inc AnimationXPosHi,x
+.notRight
+
+	lsr .movementBits
+	bcc .notLeft
+	lda AnimationXPosLo,x
+	sec
+	sbc AnimationMoveSpeed,x
+	sta AnimationXPosLo,x
+	bcs .notLeft
+	dec AnimationXPosHi,x
+	bne .enemyOffScreen
+.notLeft
+
+	lsr .movementBits
+	bcc .notDown
+	lda AnimationYPos,x
+	clc
+	adc AnimationMoveSpeed,x
+	sta AnimationYPos,x
+.notDown
+
+	lsr .movementBits
+	bcc .notUp
+	lda AnimationYPos,x
+	sec
+	sbc AnimationMoveSpeed,x
+	sta AnimationYPos,x
+.notUp
+
+	; These checks are done every frame. Of course it would be more optimal to only check the
+	; top of the screen if the enemy is moving up and the same for the bottom, left and right
+	; but SEUCK doesn't have this optimisation so we cannot either. In some cases SEUCK can spawn
+	; an enemy at $1c (VIC2SpriteYBorderTop-VIC2SpriteSizeY-1) and have it removed shortly after.
+
+	; This X position check will check enemies going off the left as well as the right due to the
+	; wrap around.
+	lda AnimationXPosHi,x
+	beq .notRightCheck
+	lda AnimationXPosLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcs .enemyOffScreen
+.notRightCheck
+
+	lda AnimationYPos,x
+	cmp #VIC2SpriteYBorderTop-VIC2SpriteSizeY
+	bcc .enemyOffScreen
+
+	cmp #VIC2SpriteYBorderBottom
+	bcs .enemyOffScreen
+
+	jmp .processAnimationFrames
+.enemyOffScreen
+	lda #$ff
+	sta AnimationType,x
+	jmp .processAnimationFrames
+
+
+
+.processPlayer1BulletMovement
+	inc AnimationPlayer1BulletCount
+	jmp .playerBulletCommon
+.processPlayer2BulletMovement
+	inc AnimationPlayer2BulletCount
+.playerBulletCommon
+	; Handle the duration, 0 = always there
+	lda AnimationBulletDuration,x
+	beq .processBulletMovement
+	dec AnimationBulletDuration,x
+	bne .processBulletMovement
+	jmp .BDead
+.processEnemyBulletMovement
+	inc AnimationBulletCount
+.processBulletMovement
+	; Process bullet movement 
+	lda AnimationBulletSpeedX,x
+	beq .notXMSB	; Early out check
+	bmi .negX
+	lda AnimationXPosLo,x
+	clc
+	adc AnimationBulletSpeedX,x
+	sta AnimationXPosLo,x
+	bcc .notXB
+	inc AnimationXPosHi,x
+	jmp .notXB
+.negX
+	lda AnimationXPosLo,x
+	clc
+	adc AnimationBulletSpeedX,x
+	sta AnimationXPosLo,x
+	bcs .notXB
+	dec AnimationXPosHi,x
+.notXB
+	; Edge of screen range check
+	lda AnimationXPosHi,x
+	beq .notXMSB
+	lda AnimationXPosLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcs .BDead
+.notXMSB
+	; Process the Y movement
+	lda AnimationBulletSpeedY,x
+	beq .notBDead	; Early out check
+	bmi .negY
+	lda AnimationYPos,x
+	clc
+	adc AnimationBulletSpeedY,x
+	sta AnimationYPos,x
+	bcs .BDead
+	cmp #VIC2SpriteYBorderBottom
+	bcs .BDead
+	jmp .processAnimationFrames
+.negY
+	lda AnimationYPos,x
+	clc
+	adc AnimationBulletSpeedY,x
+	sta AnimationYPos,x
+	bcc .BDead
+	cmp #VIC2SpriteYBorderTop-VIC2SpriteSizeY
+	bcs .notBDead
+.BDead
+	; If the bullet went too far off screen, we kill it
+	lda #$ff
+	sta AnimationType,x
+	dec AnimationBulletCount
+.notBDead
+	jmp .processAnimationFrames
+
+
+!ifdef Scroller_LOTD {
+.doBallFallRMove
+	lda AnimationFireRateCount,x
+	cmp #80
+	bcs .killAnimationE
+
+	lda AnimationXPosLo,x
+	clc
+	adc #1
+	sta AnimationXPosLo,x
+	bcc .nfc1
+	inc AnimationXPosHi,x
+.nfc1
+	lda AnimationXPosHi,x
+	beq .nfosc1
+	lda AnimationXPosLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcs .killAnimation
+.nfosc1
+
+
+	inc AnimationFireRateCount,x
+;.tooFast
+	lda AnimationFireRateCount,x
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .smfbf+1
+
+	lda AnimationYPos,x
+	clc
+.smfbf	adc #0
+	sta AnimationYPos,x
+	bcs .killAnimation
+	jmp .processAnimationFrames
+.killAnimation
+	lda #$ff
+	sta AnimationType,x
+	jmp .processAnimationFrames
+.killAnimationE
+	txa
+	pha
+	tya
+	pha
+	ldy #AnimationType_Enemy1Death		; A red splat when the rock hits the "ground"
+	jsr AnimationMutateToType
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #15
+	jsr SFXInit
+}
+	pla
+	tay
+	pla
+	tax
+	jmp .processAnimationFrames
+
+.doBallFallRMoveS jmp .doBallFallRMove
+
+.processSpellMovement
+	cmp #AnimationType_Spell1+2
+	beq .doWindMove
+
+	cmp #AnimationType_Spell1+3
+	beq .doBallFallRMoveS
+
+.spellRet
+	jmp .processAnimationFrames
+.doWindMove
+	; Doesn't need initialisation
+	dec AnimationFireRateCount,x
+	lda AnimationYPos,x
+	sec
+	sbc #16
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .smAdd1+1
+	lda AnimationXPosLo,x
+	clc
+.smAdd1	adc #0
+	sta AnimationXPosLo,x
+	bcc .nc1
+	inc AnimationXPosHi,x
+.nc1
+	lda AnimationXPosHi,x
+	beq .spellRet
+	lda AnimationXPosLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcc .spellRet
+	; It went off the end of the screen so kill it
+	lda #$ff
+	sta AnimationType,x
+	jmp .processAnimationFrames
+}
+
+!zn
+AnimationUpdateMultiplexor
+	ldx #Multiplex_items-1
+.l1
+	lda AnimationType,x
+	bmi .blank
+	; Is the sprite totally blank? If yes then skip it
+	ldy AnimationSpriteFrame,x
+	lda SpriteEmptyLookupTab,y
+	beq .blank
+	tya
+	sta Multiplex_SpriteFrame,x
+
+	lda AnimationSpriteColour,x
+	sta Multiplex_Colour,x
+
+	lda AnimationXPosLo,x
+	sta Multiplex_XPosLo,x
+	lda AnimationXPosHi,x
+	sta Multiplex_XPosHi,x
+	lda AnimationYPos,x
+	sta Multiplex_YPos,x
+
+	; No need for colour since it is set by the animation system directly when the animation is
+	; allocated.
+	dex
+	bpl .l1
+	rts
+	; This discards the sprite by moving it beyond the y position where the multiplexor rejects
+	; sprites.
+.blank
+	lda #$ff
+	sta Multiplex_YPos,x
+	dex
+	bpl .l1
+	rts
+
+
+
+!zn
+AnimationClearMultiplexor
+	ldx #Multiplex_items-1
+	lda #$ff
+.l1
+	sta Multiplex_YPos,x
+
+	dex
+	bpl .l1
+	rts
+
+
+
+!zn
+AnimationConvertXYToDirection
+	; Zero the direction
+	lda #0
+	; Test and set x component from the velocity
+	cpx #0
+	beq .isX0
+	cpx #$7f
+	bcc .isXPos
+	ora #2
+	bne .isX0
+.isXPos
+	ora #1
+.isX0
+
+	; Test and set y component from the velocity
+	cpy #0
+	beq .isY0
+	cpy #$7f
+	bcc .isYPos
+	ora #8
+	bne .isY0
+.isYPos
+	ora #4
+.isY0
+	rts
+
+
+
+
+
+; Input: X animation index
+; Output Y,A screen offset lo/hi
+!zn
+AnimationSpriteXDiv2ToChar
+; First 12/2 pixels
+!fill 12,0
+; Now the x/2 positions
+!for .table1,160 {!by ((.table1-1) / 4) }
+; Now the rest clamped
+!fill 84,39
+
+AnimationSpriteYToCharOffsetLo
+; First 50 pixels
+!fill 50,0
+; Now the y positions
+!for .table1,200 {!by <(((.table1-1) / 8) * 40) }
+; Now the rest clamped
+!fill 6,<(24 * 40)
+
+AnimationSpriteYToCharOffsetHi
+; First 50 pixels
+!fill 50,0
+; Now the y positions
+!for .table1,200 {!by >(((.table1-1) / 8) * 40) }
+; Now the rest clamped
+!fill 6,>(24 * 40)
+
+AnimationToScreenOffset
+	; MPi: TODO: Pass in the hi in A and use sta .smHi+1 there it is the adc #0 below to save some cycles when exiting this routine
+	; for the common use where this is called and there is a following clc/adc# pair.
+	; Convert the 9 bit x position to char coords
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+
+	; MPi: TODO: There is scope for subtracting frameScrollPos from the position to help stop
+	; the player sprite bouncing off chars as the screen scrolls or being able to force a way
+	; through collision chars.
+
+	tay
+	lda AnimationSpriteXDiv2ToChar,y
+	sta .tempWorksm1+1
+	; Convert Y to char index
+	ldy AnimationYPos,x
+	lda AnimationSpriteYToCharOffsetLo,y
+	clc
+	adc .tempWorksm1+1
+	sta .tempWorksm1+1
+	lda AnimationSpriteYToCharOffsetHi,y
+	; Add the carry from the x pos if there is one
+	adc #0
+.tempWorksm1	ldy #0
+	rts
+
+
+!zn
+; A lookup table that converts animation type and flags if it is an enemy or a bullet
+.isEnemyOrBulletType
+	; Includes players etc
+	!fill AnimationType_Enemy1Bullet , 0
+	; The enemy bullets
+	!fill AnimationType_Enemy1Death - AnimationType_Enemy1Bullet , 1
+	; Ignore the enemy explosions
+	!fill AnimationType_Enemy1 - AnimationType_Enemy1Death , 0
+	; 36 Enemy types
+	!fill 36 , 1
+	; Just the spell type at the end
+	!fill 5 , 0
+
+.isPlayerOrPlayerBulletType
+	!by 1,1,0,1,1,0
+	!fill 8 , 0
+	!fill 8 , 0
+	!fill 36 , 0
+
+.objectSearch
+	!fill 8,0
+	!for .ost1,(36+5)-8 {!by .ost1 }
+
+
+AnimationRunCollisionDetection
+	; Add "collisions" for the super spell being fired in LotD
+!ifdef Scroller_LOTD {
+	; Here we hook in the spell effect code to fake a player bullet collision which processes the health.
+smSpellEffectRunningPlayerType	lda #$ff
+	bmi .notHitSomethingTyped
+	sta .playerTypeOrBulletTypeThatKilled
+	ldx #Multiplex_items-1
+.sl1
+	lda AnimationType,x
+	bmi .sl2
+	cmp #AnimationType_Spell1
+	bcs .sl2
+	cmp #AnimationType_Enemy1
+	bcc .sl2
+	; Hit the enemy with the spell
+	jsr .dontRemoveBullet
+.sl2
+	dex
+	bpl .sl1
+.notHitSomethingTyped
+}
+
+
+	; Instead of using a character screen collision phase for player, enemy and bullet
+	; collision instead log the sprite to sprite collision register at the start of each multiplexor
+	; IRQ, with the Y position and also what sprite indexes were output for each sprite slot before?
+	; More like the original SEUCK. Be careful not to reproduce the bug that SEUCK has though.
+	ldy Multiplex_CollisionCounterLastFrame
+	bne .cl0
+	rts
+.cl0
+	dey
+	bne .cl1
+	rts
+.cl1
+	ldx Multiplex_CollisionIndexesLastFrame,y
+	bpl .c1
+	jmp .ecc2
+.c1
+	lda AnimationType,x
+	bmi .ecc2
+	stx .sprPair
+	tax
+	lda .isEnemyOrBulletType,x
+	beq .ecc2
+.isEnemyOrBulletSoTest
+
+	; Search a maximum of eight index entries weighted to before this entry but also appearing after the entry if there are less than eight before it.
+	; MPi: TODO: Or maybe really store pairs inside Multiplex_CollisionIndexes to reduce the number of tests further.
+	ldx .objectSearch,y
+
+	; Limit the search range upper boundary
+	txa
+	clc
+	adc #8
+	cmp Multiplex_CollisionCounterLastFrame
+	bcc .notMax1
+	lda Multiplex_CollisionCounterLastFrame
+.notMax1
+	sta .maxSM+1
+
+.cl2
+	lda Multiplex_CollisionIndexesLastFrame,x
+	bmi .ecc3
+	cmp .sprPair
+	beq .ecc3
+	sta .sprPair+1
+
+	stx .tempReg
+	sty .tempReg+1
+
+	; No need to double check for invalid types because we already have above
+	ldx .sprPair
+	lda AnimationType,x
+
+	cmp #AnimationType_Enemy1
+	bcc .notPPWithEnemy
+	; Test if an enemy is hitting something player related
+	ldy .sprPair+1
+;	bmi .noHit	; This should ever happen but just in case
+	lda AnimationType,y
+	bmi .noHit	; This should ever happen but just in case
+	tay
+	lda .isPlayerOrPlayerBulletType,y
+	beq .noHit
+	ldy .sprPair+1
+	lda AnimationType,y
+.registerHitWithEnemy
+	jsr .areSpritesClose
+	bcs .noHit
+	lda AnimationType,y
+	jsr .hitSomethingTyped
+	jmp .noHit
+
+.notPPWithEnemy
+	; Check for enemy bullets
+	cmp #AnimationType_Enemy1Death
+	bcs .noHit
+	cmp #AnimationType_Enemy1Bullet
+	bcc .noHit
+	; Must be an enemy bullet
+	; Test if an enemy bullet is hitting something player related
+	ldy .sprPair+1
+	lda AnimationType,y
+	cmp #AnimationType_Player1
+	beq .registerHitWithEnemy2
+	cmp #AnimationType_Player2
+	beq .registerHitWithEnemy2
+
+.noHit
+
+	ldx .tempReg
+	ldy .tempReg+1
+.ecc3
+	inx
+.maxSM	cpx #$ff
+	bcc .cl2
+.ecc2
+	dey
+	bmi .ecc1
+	jmp .cl1
+.ecc1
+	rts
+.tempReg !by 0,0
+.sprPair !by 0,0
+
+
+
+.registerHitWithEnemy2
+	jsr .areSpritesClose
+	bcs .noHit
+	jmp .enemyBulletHitPlayer
+
+.areSpritesClose
+	lda AnimationYPos,x
+	cmp AnimationYPos,y
+	bcs .y1g2
+	lda AnimationYPos,y
+	sec
+	sbc AnimationYPos,x
+	cmp #VIC2SpriteSizeY
+	bcs .asc1
+	jmp .xcmp
+.y1g2
+	sec
+	sbc AnimationYPos,y
+	cmp #VIC2SpriteSizeY
+	bcs .asc1
+
+.xcmp
+	lda AnimationXPosHi,y
+	lsr
+	lda AnimationXPosLo,y
+	ror
+	sta .t1+1
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	sta .t1
+
+	cmp .t1+1
+	bcs .x1g2
+	lda .t1+1
+	sec
+	sbc .t1
+	cmp #VIC2SpriteSizeX/2
+	jmp .asc1
+.x1g2
+	sec
+	sbc .t1+1
+	cmp #VIC2SpriteSizeX/2
+.asc1
+	rts
+.t1 !by 0,0
+
+
+.enemyBulletHitPlayer
+	; This would be agood place for player energy checks, if it is added
+	txa
+	pha
+	tya
+	tax
+	jsr PlayerDeath
+	pla
+	tax
+
+	; Remove the enemy bullet
+	lda #$ff
+	sta AnimationType,x
+
+.skipIt
+	jmp .noHit
+
+.playerTypeOrBulletTypeThatKilled !by 0
+;	a = type, either player or player bullet
+;	x = enemy
+;	y = player or player bullet
+.hitSomethingTyped
+	sta .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player1
+	beq .hitWithPlayer
+	cmp #AnimationType_Player2
+	beq .hitWithPlayer
+	lda AnimationCollisionLogic,x
+	and #%1000
+	beq .dontRemoveBullet
+	; Must be a player bullet, so remove it
+	lda #$ff
+	sta AnimationType,y
+.dontRemoveBullet
+	lda AnimationCollisionLogic,x
+	and #%0100
+	bne .processHealth
+	rts
+
+.hitWithPlayer
+	; Backup the player animation index
+	lda AnimationCollisionLogic,x
+	and #%0010
+	beq .dontKillPlayer
+	txa
+	pha
+	; Use the player animation index
+	tya
+	tax
+	jsr PlayerDeath
+	pla
+	tax
+.dontKillPlayer
+	lda AnimationCollisionLogic,x
+	and #%0001
+	bne .processHealth
+
+	rts
+
+.processHealth
+	dec AnimationHealth,x
+	beq .makeItDead
+	bmi .makeItDead	; Paranoia
+	rts
+.makeItDead
+	; MPi: TODO: Deduce the player type and store it in ZP ready for indexing with Y.
+	; Then reduce the code below which accesses PlayerGameOffset*.
+!ifdef Scroller_LOTD {
+	; Check for the spell bottle
+	lda AnimationType,x
+	cmp #34
+	bne .notSpell
+	; Work out who "picked it up"
+	lda .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player2
+	beq .itIsPlayer2Sp
+	cmp #AnimationType_Player2Bullet
+	beq .itIsPlayer2Sp
+	; Must be player 1
+	inc Player1Information+PlayerGameOffset_Spells
+	jmp .notSpell
+.itIsPlayer2Sp
+	inc Player2Information+PlayerGameOffset_Spells
+.notSpell
+}
+
+	; Implement score
+	; Add the score to the correct player that killed the enemy.
+	lda #<ScorePlayer1
+	sta tempWork0
+	lda #>ScorePlayer1
+	sta tempWork1
+	lda .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player1
+	beq .itIsOK
+	cmp #AnimationType_Player1Bullet
+	beq .itIsOK
+	; Must be player 2 that did the dirty deed
+	lda #<ScorePlayer2
+	sta tempWork0
+	lda #>ScorePlayer2
+	sta tempWork1
+.itIsOK
+	lda AnimationPoints,x
+	jsr ScoreAdd
+	beq .noLifeIncrease
+	lda .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player2
+	beq .itIsPlayer2
+	cmp #AnimationType_Player2Bullet
+	beq .itIsPlayer2
+	; Must be player 1
+	; MPi: TODO: Macro this with the similar player code below
+	lda Player1Properties+PlayerOffset_ExtraLife
+	beq .noLifeIncrease
+	lda Player1Information+PlayerGameOffset_Lives
+	bmi .noLifeIncrease
+	inc Player1Information+PlayerGameOffset_Lives
+	inc ScorePlayer1LivesUpdated
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #3
+	jsr SFXInit
+}
+	jmp .noLifeIncrease
+.itIsPlayer2
+	lda Player2Properties+PlayerOffset_ExtraLife
+	beq .noLifeIncrease
+	lda Player2Information+PlayerGameOffset_Lives
+	bmi .noLifeIncrease
+	inc Player2Information+PlayerGameOffset_Lives
+	inc ScorePlayer2LivesUpdated
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #3+4
+	jsr SFXInit
+}
+	; Fallthrough to .noLifeIncrease
+.noLifeIncrease
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda AnimationExplosionSFX,x
+	beq .noSFX1
+	jsr SFXInit
+.noSFX1
+}
+
+!ifdef Scroller_LOTD {
+	; Backup the type
+	lda AnimationType,x
+	sta .smAt1+1
+}
+	; Get the object properties for the explosion and make sure the enemy changes to it
+	lda AnimationExplosionType,x
+	clc
+	adc #AnimationType_Enemy1Death
+	tay
+	jsr AnimationMutateToType
+
+!ifdef Scroller_LOTD {
+.smAt1	lda #0
+	cmp #34			; Stop the bottle pickup linked with anything else killing the enemy
+	bne .proceedLinkTest
+	rts
+.proceedLinkTest
+}
+!ifdef Scroller_LinkedEnemyTest {
+	; Check for linked enemies and make them all explode if one enemy does
+	; Linked enemies in LoTD are the end of level monsters, for example.
+	ldy #Multiplex_items-1
+.lec1
+	lda AnimationType,y
+	bmi .lec2
+!ifdef Scroller_LOTD {
+	cmp #AnimationType_Spell1
+	bcs .lec2
+}
+	cmp #AnimationType_Enemy1
+	bcc .lec2
+!ifdef Scroller_LOTD {
+	cmp #34			; Stop the bottle pickup linked with anything else killing the enemy
+	beq .lec2
+}
+
+	lda AnimationMovementOrigLo,y
+	cmp AnimationMovementOrigLo,x
+	bne .lec2
+	lda AnimationMovementOrigHi,y
+	cmp AnimationMovementOrigHi,x
+	bne .lec2
+	; Make it also explode
+	; Backup
+	tya
+	pha
+	txa
+	pha
+	; Calculate index
+	tya
+	tax
+	lda AnimationExplosionType,x
+	clc
+	adc #AnimationType_Enemy1Death
+	tay
+	jsr AnimationMutateToType
+	; Restore
+	pla
+	tax
+	pla
+	tay
+.lec2
+	dey
+	bpl .lec1
+}
+
+	rts
+.charThatHit !by 0
+
+!zn
+AnimationBackupLastCollisionFrame
+	txa
+	pha
+	ldx Multiplex_CollisionCounter
+	stx Multiplex_CollisionCounterLastFrame
+	beq .l2
+.l1
+	lda Multiplex_CollisionIndexes-1,x
+	sta Multiplex_CollisionIndexesLastFrame-1,x
+	dex
+	bne .l1
+.l2
+	pla
+	tax
+	rts

@@ -1,0 +1,20 @@
+;BlankProject test code
+
+!source "../stdlib/stdlib.a"
+!to "BlankProject.prg", cbm
+!sl "BlankProject.map"
+!svl "BlankProject.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+*=BASICEntry
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+
+
+!source "../stdlib/Initialise.a"

@@ -1,0 +1,27 @@
+How to build the release disk version.
+Create a new D64 with C:\CCS64\TOOLS\D64Editor\D64Editor.exe
+Disk name: BERZERK REDUX
+Disk ID: 01 18
+
+Workspace C64\DiskBootLoader\DiskBootLoader.dsw
+Make sure the jmp $80d is active because this is the start address of the MartyLoad code.
+Assemble.
+Copy DiskBootLoader.prg to the D64 and name it BOOT.
+
+Workspace C64\BerzerkRedux\BerzerkRedux.dsw
+Ignore (Disk code is now included for the score save file create code) : Make sure IRQDisk_NoDriveCode is disabled.
+Make sure the debug is turned off and the title screen version is correct.
+Assemble.
+Copy "berzerksave" to the D64 and make sure it is named BERZERKSAVE.
+
+Workspace C64\PictureLink\PictureLink.dsw
+Assemble. Note the address of RealStart and make sure the BASIC SYS command uses this address.
+Assemble again, to be sure. Run, to check it displays stuff correctly.
+
+Workspace C64\IRQDisk\IRQDisk.dsw
+In TestIRQDisk2.a make sure the jmp near the "NOTE:" is the correct address for RealStart per the comment.
+Make sure it assembles TestIRQDisk2.a
+Assemble
+
+Now copy C64\IRQDisk\TestIRQDisk.prg to the D64 and name it MAIN.
+Now copy C64\PictureLink\PictureLink.prg to the D64 and name it GAME.

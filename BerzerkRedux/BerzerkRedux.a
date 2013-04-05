@@ -1,0 +1,520 @@
+; Berzerk Redux
+
+; MPi: TODO:
+; *Sample playing, seems to still be a bit broken on newer SID types. Start a low frequency pulse width sound before playing.
+; This should bias the channel volume for the sample.
+; The code at SamplePlaySequence seems to try to fix this by starting a sample.
+; *But does the FX player skip the sample playing channel when it is on? SFXLimitVoice3 seems to indicate it does. Hmm...
+; http://codebase64.com/doku.php?id=base:nmi_sample_player
+
+; *Competition edition!
+; *Add an end room.
+; >Exiting a neighbouring door reduces the exit count by one. Exiting the opposite door reduces the exit count by three.
+; >Once the exit count reaches 0 display the end room. It could be a set room (from a random seed) with no exits.
+; >Ordinarily the random seed can never be reached by running around of course meaning it is one of the 256 rooms.
+; >This room is filled with the maximum number of robots at the maximum level.
+; >Once all robots are dead the wall disappear then a destructable Evil Otto appears that needs several shots to kill.
+; >During the Evil Otto fight robots will appear from the corners at set intervals.
+; >After killing Evil Otto and remaining robots are destroyed. Then you get the ending screen and a nice score bonus.
+; *Nice idea but not now - Shot chain bonus - Each robot killed without missing a shot adds a 10 points bonus up to 100 points.
+; *Add two player co-op option that has a combined score and saves scores into a different score table.
+;  Both players get to add their initials to the same entry.
+
+; *Walking through the top to appear in the bottom exit seems to randomly kill the player.
+; Fix by adding a player ignore collision after each room change.
+; >Fix applied, basically reset and read the collision registers at the top of the screen, test lots.
+
+; *Game over text print upon final death?
+; Make the top scroll left, with the sprites. Make the bottom scroll right, with the sprites also.
+; *Space and numbers in the score entry.
+; *See if I can find the "Flee" sample and add it.
+; >Unable to find it in the MAME sample set
+
+
+
+!source "../stdlib/stdlib.a"
+!to "BerzerkRedux.prg", cbm
+!sl "BerzerkRedux.map"
+;!sal
+!svl "BerzerkRedux.lbl"
+!cpu 6510
+!ct pet
+
+!source "BerzerkReduxVars.a"
+
+; Enable the following lines to show debug timings
+;NMITimings = 1
+;IRQ_DebugBorder = 1
+;GameLogicTimings = 1
+;Multiplexor_DebugBorder = 1
+;Multiplexor_DebugBorderCollision = 1
+
+!source "../IRQDisk/IRQDiskVars.a"
+IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
+IRQDisk_Retries = 5
+IRQDisk_LEDFlash = 15
+;IRQDisk_UseATN = 1
+; Use this to stop the game code from trying to initialise the drive code.
+; Disabling the drive code will also disable the save file create code.
+; Note that now the save file can be created by using some kernal code so the game generally needs to include the drive code.
+;IRQDisk_NoDriveCode = 1
+
+; Define what the multiplexor can use
+Multiplex_VarBase	= endMainRoutineZP
+Multiplex_spritepointer	= $c000 + $3f8
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+; Start discarding sprites earlier with a bigger than usual gap so allow time for the IRQ at the
+; bottom of the screen with the sample NMI active.
+Multiplex_DiscardSpritesYPos = VIC2SpriteYBorderBottom-8
+Multiplex_items	= 24
+Multiplex_OverflowRasterCheck1 = 1
+Multiplex_OverflowRasterCheck2 = 1
+Multiplex_BunchingCheck = 1
+Multiplex_LogCollisions = 1
+Multiplex_LogCollisionsBackground = 1
+Multiplex_EnableEarlyOut = 1
+; This is tweaked to account for the NMI sample player eating more time and the collision update
+; taking longer than the normal IRQ update.
+Multiplex_rasterHeight = 8
+!source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
+; Adjust this and in the conv.bat file to alter the game's sample rate from the original 22050Hz samples.
+SampleRateHz = 6000
+
+
+*=$400
+RealStart
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+;	+WaitForFire_A
+
+	; Invert the first 64 chars in the character set for the title screen
+	ldx #0
+.ic1
+	lda TitleScreenChars,x
+	eor #$ff
+	sta TitleScreenChars+$400,x
+	lda TitleScreenChars+$100,x
+	eor #$ff
+	sta TitleScreenChars+$500,x
+	dex
+	bne .ic1
+
+
+	; Some sound and video initialisation
+	jsr SFXSIDInit
+	lda #0
+	sta CIA2PortASerialBusVICBank
+	jsr ClearMainScreen
+
+	; First check to see if there is a drive number setup for the last device used
+	lda ZPCurrentFileDeviceNumber
+	cmp #8
+	bcc .skipTheCheck
+	cmp #12
+	bcs .skipTheCheck
+
+.tryScoreLoadAgain
+	jsr ClearMainScreen
+	; Display a disk message
+	+DisplayColourTextMiddle_AX MessageAccessingDisk , MessageAccessingDiskEnd , MainScreen + (10*40) , VIC2Colour_White
+
+	+MACROWaitForTheLastScan_A
+	jsr EnableScreen
+
+!ifdef IRQDisk_NoDriveCode { } else {
+	; Drive init
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	lda ZPCurrentFileDeviceNumber
+	jsr IRQDisk_Init
+
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+}
+
+	; Try to load the hi-score using the drive code
+	lda #SaveNameEnd-SaveNameStart
+	ldx #<SaveNameStart
+	ldy #>SaveNameStart
+
+	jsr IRQDisk_Load
+!ifdef IRQDisk_NoDriveCode {
+	bcs .skipTheCheck
+} else {
+	bcs .lPromptForCreate
+}
+
+	lda #1
+	sta LoadedOK
+	jsr CalculateScoreChecksum
+	cmp ScoreChecksum
+	beq .skipTheCheck
+	; Check checksum for the loaded data is different to the calculated checksum so we zero
+	; the score table since we can assume someone tampered with it.
+	ldx #(5*16)-1
+	lda #0
+.cl1
+	sta HiScore,x
+	dex
+	bpl .cl1
+.skipTheCheck
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	+MACROWaitForTheLastScan_A
+	lda #%1101000
+	sta VIC2ScreenControlV
+
+	jsr ClearAllSprites
+
+	jsr InitIRQs
+	jmp Mainline
+!ifdef IRQDisk_NoDriveCode { } else {
+.lPromptForCreate jmp PromptForCreate
+}
+
+!ifdef IRQDisk_NoDriveCode { } else {
+MessageDiskPrompt1 !scr "could not find the score save file"
+MessageDiskPrompt1End
+MessageDiskPrompt2 !scr "move stick left to create the file"
+MessageDiskPrompt2End
+MessageDiskPrompt3 !scr "press fire to skip score saves"
+MessageDiskPrompt3End
+MessageDiskPrompt4 !scr "move stick right to retry the file load"
+MessageDiskPrompt4End
+
+MessageDiskLastError !scr "last drive error"
+MessageDiskLastErrorEnd
+
+MessageDiskNoDrive !scr "no 1541 compatible drive connected?"
+MessageDiskNoDriveEnd
+
+PromptForCreate
+	jsr ClearMainScreen
+
+	+SetMemory_AX COLOURRAM + (15*40) , COLOURRAM + (15*40)  + 39, VIC2Colour_White
+
+.retryPrompting
+	+DisplayColourTextMiddle_AX MessageDiskPrompt1 , MessageDiskPrompt1End , MainScreen + (10*40) , VIC2Colour_White
+	+DisplayColourTextMiddle_AX MessageDiskPrompt3 , MessageDiskPrompt3End , MainScreen + (12*40) , VIC2Colour_White
+	+DisplayColourTextMiddle_AX MessageDiskPrompt4 , MessageDiskPrompt4End , MainScreen + (13*40) , VIC2Colour_Red
+	+DisplayColourTextMiddle_AX MessageDiskPrompt2 , MessageDiskPrompt2End , MainScreen + (14*40) , VIC2Colour_Green
+
+	+MACROWaitForTheLastScan_A
+	jsr EnableScreen
+.pc1
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notFire
+
+	sei
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	lda ZPCurrentFileDeviceNumber
+	jsr IRQDisk_Init
+
+	jmp .skipTheCheck
+
+.notFire
+
+	lda #%01000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+
+.isFire
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	beq .isFire
+
+	jmp .tryScoreLoadAgain
+
+.notRight
+	lda #%00100
+	bit CIA1KeyboardColumnJoystickA
+	bne .pc1
+
+.isLeft
+	lda #%00100
+	bit CIA1KeyboardColumnJoystickA
+	beq .isLeft
+
+	jsr ClearMainScreen
+	+DisplayColourTextMiddle_AX MessageAccessingDisk , MessageAccessingDiskEnd , MainScreen + (10*40) , VIC2Colour_White
+
+	; This doesn't actually save the real score data, it just saves the kernal code with the score table position and length
+	; so the IRQ drive code can write it later on.
+
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+;LISTEN after the kernal jmp table = ed0c
+;SECOND after the kernal jmp table = edb9
+;UNLSN after the kernal jmp table = edfe
+;CIOUT after the kernal jmp table = eddd
+
+;TALK after the kernal jmp table = ed09
+;TKSA after the kernal jmp table = edc7
+;UNTALK after the kernal jmp table = edef
+;ACPTR after the kernal jmp table = ee13
+
+;READST after the kernal jmp table = fe07
+
+; To read any errors:
+; a = 8
+; TALK
+; a = 6f
+; TKSA
+; ACPTR lots until READST
+; UNTALK
+; a = 8
+; LISTEN
+; a = ef (1 or f0)
+; SECOND
+; UNLSN
+
+; During a save the kernal does this:
+; at f3d5 C:\Work\C64Docs\unusedino.de\ec64\technical\aay\c64\romf3d5.htm
+; a = 8
+; LISTEN
+; a = f1 (1 or f0)
+; SECOND
+; Then CIOUT of the filename chars
+; UNLSN
+; a = 8
+; LISTEN
+; a = 61 (1 or 60)
+; SECOND
+; Then CIOUT lo/hi address
+; Then CIOUT data bytes
+; UNLSN
+; a = 8
+; LISTEN
+; a = e1 (1 or e0)
+; SECOND
+; UNLSN
+; No READST anywhere! It reads $90 (ZPSTVariable) directly.
+
+	lda #0
+	sta ZPSTVariable
+
+	lda ZPCurrentFileDeviceNumber
+	jsr LISTEN
+
+	jsr READSTDeviceError
+
+	lda #$f1
+	jsr SECOND
+
+	jsr READSTThenUNLSNSaveError
+
+	; Send the filename
+	ldx #0
+.fn1
+	lda SaveNameStart,x
+	jsr CIOUT
+	jsr READSTThenUNLSNSaveError
+	inx
+	cpx #SaveNameEnd-SaveNameStart
+	bne .fn1
+	jsr UNLSN
+	jsr READSTThenUNLSNSaveError
+
+	lda ZPCurrentFileDeviceNumber
+	jsr LISTEN
+
+	jsr READSTThenUNLSNSaveError
+
+	lda #$61
+	jsr SECOND
+
+	jsr READSTThenUNLSNSaveError
+
+	; Fake a load address
+	lda #<HiScore
+	jsr CIOUT
+	jsr READSTThenUNLSNSaveError
+	lda #>HiScore
+	jsr CIOUT
+	jsr READSTThenUNLSNSaveError
+	ldx #(ScoreChecksum+1)-HiScore
+	; This doesn't save the real file data it just saves blank data of the correct length for the IRQ disk save
+.fn2
+	lda #0
+	jsr CIOUT
+	jsr READSTThenUNLSNSaveError
+	dex
+	bne .fn2
+	jsr UNLSN
+	jsr READSTThenUNLSNSaveError
+
+	lda ZPCurrentFileDeviceNumber
+	jsr LISTEN
+	jsr READSTThenUNLSNSaveError
+	lda #$e1
+	jsr SECOND
+	jsr READSTThenUNLSNSaveError
+	jsr UNLSN
+
+	jsr READSTThenUNLSNSaveError
+
+
+	; Signal disk access is OK
+	lda #1
+	sta LoadedOK
+
+	; since we just used the kernal serial routines then we have to re-init the IRQ drive code
+	lda ZPCurrentFileDeviceNumber
+	jsr IRQDisk_Init
+
+	sei
+	ldx #ProcessorPortAllRAMWithIO
+	stx ZPProcessorPort
+
+	jmp .skipTheCheck
+
+READSTDeviceError
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bmi .deviceNotReady
+
+	rts
+
+.deviceNotReady
+	jsr UNLSN
+	lda #0
+	sta ZPSTVariable
+
+	+DisplayColourTextAt_AX MessageDiskNoDrive , MessageDiskNoDriveEnd , MainScreen + (23*40) , VIC2Colour_Yellow
+
+	pla
+	pla
+	jmp .retryPrompting
+
+READSTThenUNLSNSaveError
+	lda #VIC2Colour_Red
+	sta .smCol+1
+	jsr READST
+
+	and #%10000011	; Ignore EOI
+	bne .saveErrorNoRetUNLSN
+
+	rts
+
+.saveErrorNoRetUNLSN
+	jsr UNLSN
+
+	lda #0
+	sta ZPSTVariable
+
+	; Display the drive error
+	lda ZPCurrentFileDeviceNumber
+	jsr TALK
+	lda #$6f
+	jsr TKSA
+	ldy #0
+.re1
+	jsr ACPTR
+	tax
+	jsr READST
+	and #%11000011	; Use EOI this time
+	bne .fin1
+	txa
+	and #$3f		; Munge the characters to fit the charset on the screen
+	sta MainScreen + (24*40),y
+.smCol	lda #0
+	sta COLOURRAM + (24*40),y
+
+	lda MainScreen + (24*40),y
+	cmp #$2c	; Comma ","
+	bne .noComma
+	inc .smCol+1	; Change colour for each comma separator
+.noComma
+	iny
+	jmp .re1
+.fin1
+
+	jsr UNTLK
+
+	lda ZPCurrentFileDeviceNumber
+	jsr LISTEN
+	lda #$ef
+	jsr SECOND
+	jsr UNLSN
+
+	pla
+	pla
+
+	+DisplayColourTextAt_AX MessageDiskLastError , MessageDiskLastErrorEnd , MainScreen + (23*40) , VIC2Colour_Yellow
+	
+	jmp .retryPrompting
+}
+
+BossRoomStart1
+!scr "master"
+BossRoomEnd1
+BossRoomStart2
+!scr "robot"
+BossRoomEnd2
+BossRoomStart3
+!scr "room"
+BossRoomEnd3
+
+!source "TitleScreen.a"
+!source "EnterInitialsScreen.a"
+!source "GameLogic.a"
+!source "GameOver.a"
+!source "IRQs.a"
+
+!source "../stdlib/Initialise.a"
+!source "../SpriteMultiplexor/SpriteMultiplexor.a"
+
+SFXLimitVoice3 = 1
+!source "../SFX/SFX.a"
+!source "MazeRoom.a"
+!source "Rand.a"
+!source "Score.a"
+!source "ClearMisc.a"
+
+!zn
+Mainline
+	jsr DisplayTitleScreen
+
+	jsr InitGame
+	jsr GameLogic
+	; Game Over animation
+	jsr GameOver
+
+	; Hi score tests
+	+HiScoreTest 0 , .exitHiscoreTest
+	+HiScoreTest 1 , .exitHiscoreTest
+	+HiScoreTest 2 , .exitHiscoreTest
+	+HiScoreTest 3 , .exitHiscoreTest
+	+HiScoreTest 4 , .exitHiscoreTest
+
+.exitHiscoreTest
+	; Loop back to the start
+	jmp Mainline
+
+; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
+!zn {
+; Include the private code for each machine type
+!source "../IRQDisk/IRQDiskC64.a"
+!source "../IRQDisk/IRQDisk.a"
+!ifdef IRQDisk_NoDriveCode { } else {
+!source "../IRQDisk/stdlib1541.a"
+!source "../IRQDisk/IRQDiskDriveCode.a"
+}
+}
+
+
+SaveNameStart
+!raw "BERZERKSAVE"
+SaveNameEnd
+; After the code comes the data
+!source "Data.a"

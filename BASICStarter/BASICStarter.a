@@ -1,0 +1,99 @@
+;BASICStarter
+;This is designed to start BASIC code after many horrible things have been done to zero page or the interupts.
+;In essence it completely restores the machine to a known state before starting the loaded BASIC code.
+
+!source "../stdlib/stdlib.a"
+!to "BASICStarter.prg", cbm
+!sl "BASICStarter.map"
+!svl "BASICStarter.lbl"
+!cpu 6510
+!ct pet
+
+*=$400
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	jsr $fda3
+	lda #$00
+	tay
+.l1
+	sta $0002,y
+	sta $0200,y
+	sta $0300,y
+	iny
+	bne .l1
+	ldx #$3c
+	ldy #$03
+	stx $b2
+	sty $b3
+	ldx #0
+	ldy #$a0
+	jsr $fd8d
+
+	; This is needed because the BASIC init will kill the screen
+	ldx #.casBufEnd - .casBufStart
+.l2
+	lda .casBufCode-1,x
+	sta .casBufStart-1,x
+	dex
+	bne .l2
+	jmp .casBufStart
+
+.casBufCode
+!pseudopc $33c {
+.casBufStart
+	jsr $fd15
+	jsr $ff5b	; Screen on
+
+	cli
+
+	; Start BASIC
+	jsr $ffcc
+	lda #$00
+	sta $13
+	jsr $a67a
+
+	jsr $a871
+
+	jsr $e453
+
+	lda TheBASICStart
+	sta .casBufStart
+	lda TheBASICStart+1
+	sta .casBufStart+1
+
+	jsr $e3bf
+
+	jsr $e422
+
+	ldx #<TheBASICStart
+	ldy #>TheBASICStart
+	stx ZPStartBasicLo
+	sty ZPStartBasicHi
+	ldx #<TheBASICEnd
+	ldy #>TheBASICEnd
+	stx ZPStartVariableLo
+	sty ZPStartVariableHi
+
+	lda .casBufStart
+	sta TheBASICStart
+	lda .casBufStart+1
+	sta TheBASICStart+1
+
+	jsr $a659
+
+	jmp $a7ae
+.casBufEnd
+}
+
+
+!source "../stdlib/Initialise.a"
+
+*=$801
+TheBASICStart
+	!bin "BASIC.P00",,$1c
+TheBASICEnd
+	; For safety add a few extra zeros
+	!by 0,0,0,0

@@ -1,0 +1,30 @@
+; Create a SID file.
+
+!source "stdlib/stdlib.a"
+!to "t.sid", plain
+!sal
+!sl "t.map"
+!svl "t.lbl"
+!cpu 6510
+!ct raw
+
+;MusicPlayer_DebugBorder = 1
+
+*=0
+; A blank SID header
+!by $50,$53,$49,$44,$00,$02,$00,$7C,$00,$00,$09,$00,$09,$03
+!by >kNumSongs , <kNumSongs
+
+!by >kStartSong , <kStartSong
+!by $00,$00,$00,$00
+
+; Include the SID details for title, author, released info and SID type flags.
+!pseudopc 0 {
+!source "t2.a"
+}
+
+!by $00,$00,$00,$00
+; Lo/hi start
+!by $00,$09
+
+!source "t.a"

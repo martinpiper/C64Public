@@ -1,0 +1,1175 @@
+;Single direction scrolling routines
+
+scrollMapHPos			!by $00		; Block pos in map
+scrollMapHPos2			!by $00		; Block pos in map
+scrollMapLPos			!by $00		; Char pos in block (0-4)
+frameScrollPos			!by 0	; Pixels
+scrollerRealMovementYPixels !by 0
+frameTotalScrScroll		!by 0
+frameScrollMoveColours	!by 0
+
+; The pixel position plus the actual character line in the map. Used for testing attack wave data.
+TotalScrollPosition !by 0,0
+
+!zn {
+ScrollerInitTables
+	; Sort out the map table based on map width
+	ldx #0
+	lda #<MapData
+	sta tempWork0
+	lda #>MapData
+	sta tempWork1
+.fma1
+	lda tempWork0
+	sta MapTabL,x
+	lda tempWork1
+	sta MapTabH,x
+	lda tempWork0
+	clc
+	; Fixed width of five blocks per column
+	adc #5
+	sta tempWork0
+	bcc .over2
+	inc tempWork1
+.over2
+	inx
+	bne .fma1
+	rts
+}
+
+!zn {
+; To be called as one of the first functions in the frame. Can be called even if the screen is being displayed.
+ScrollerCalculate
+	; Use whatever values were calculated the previous frame
+	lda frameTargetVelY
+	bpl .notNeg
+	lda #0
+.notNeg
+	cmp #3
+	bcc .notMoreThan2
+	lda #2
+.notMoreThan2
+	sta scrollerRealMovementYPixels
+	cmp #0
+	beq .noCharsWanted
+
+	; Update the 16 bit map position with how much we scroll this frame
+	lda TotalScrollPosition
+	clc
+	adc scrollerRealMovementYPixels
+	sta TotalScrollPosition
+	bcc .calcS1
+	inc TotalScrollPosition+1
+.calcS1
+
+	; Apply the scroll
+	lda frameScrollPos
+	clc
+	adc scrollerRealMovementYPixels
+	cmp #8
+	and #7
+	sta frameScrollPos
+	bcc .noColourWanted
+	inc frameScrollMoveColours
+	rts
+.noColourWanted
+	lda frameTotalScrScroll
+	bne .noCharsWanted
+	; Might as well kick off the scroll for the next position
+	inc frameTotalScrScroll
+.noCharsWanted
+	rts
+
+}
+
+!zn {
+; To be called after ScrollerCalculate. Can be called even if the screen is being displayed.
+ScrollerScreen
+	; Test to see if we might do a colour scroll this frame and if so then update the displaying screen bank for the IRQ since our colour update is likely to be running by the time the IRQ happens.
+	lda frameScrollMoveColours
+	beq .scrollScreen
+
+JNotWantingScroll
+	jmp NotWantingScroll
+
+.scrollScreen
+	lda frameTotalScrScroll
+	beq JNotWantingScroll
+
+	cmp #4
+	beq JNotWantingScroll
+
+	; Stop this being called again this frame
+	inc frameTotalScrScroll
+
+	cmp #1
+	beq .do0
+
+	cmp #2
+	beq .do1
+
+	; This splits the screen data to be scrolled over several frames, reducing the time spent
+	; shifting data each frame.
+	ldy topScreenBank
+	bne .want2Scr1To0_1
+	jmp ScrollSingle2Bank0To1_1
+.want2Scr1To0_1
+	jmp ScrollSingle2Bank1To0_1
+
+.do0
+	ldy topScreenBank
+	bne .want0Scr1To0_1
+	jmp ScrollSingle0Bank0To1_1
+.want0Scr1To0_1
+	jmp ScrollSingle0Bank1To0_1
+
+.do1
+	ldy topScreenBank
+	bne .want1Scr1To0_1
+	jmp ScrollSingle1Bank0To1_1
+.want1Scr1To0_1
+	jmp ScrollSingle1Bank1To0_1
+
+
+	; If the screen y pixel wraps for the end of the movement then inc frameScrollMoveColours
+
+NotWantingScroll
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+}
+
+!zn {
+; Must be called after ScrollerScreen. Must not be called while the scrolling screen is being displayed.
+ScrollerOffScreen
+	; Now update the colour memory if required by the scroll
+	lda frameScrollMoveColours
+	beq NotWantingColourScroll
+
+	; Reset this so we don't do it again
+	lda #0
+	sta frameScrollMoveColours
+	sta frameTotalScrScroll
+
+	; Do this first since the colour scroll can take some time
+	lda topScreenBank
+	eor #1
+	sta topScreenBank
+	beq .m1
+	lda #$cf
+	bne .m2
+.m1
+	lda #$cb
+.m2
+	jsr Multiplex_SetSpritePointer
+
+	jmp ScrollSingleColour_1
+
+NotWantingColourScroll
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+}
+
+
+ScrollerTimesFiveTab !by 0,5,10,15,20,25,30,35
+
+!zn
+DrawBlock
+	sta mainAStore
+	stx mainXStore
+	sty mainYStore
+	lda ScrollerTimesFiveTab,y
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	clc
+	lda ScrollerTimesFiveTab,x
+	adc tempWork0
+	sta tempWork0
+	lda ScreenTabH,y
+	adc #$c8
+	sta tempWork1
+
+	ldx mainAStore
+	lda BlockTabL,x
+	sta tempWork2
+	lda BlockTabH,x
+	sta tempWork3
+	ldy #0
+
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda tempWork0
+	clc
+	adc #35
+	sta tempWork0
+	bcc .over3
+	inc tempWork1
+.over3
+
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda tempWork0
+	clc
+	adc #35
+	sta tempWork0
+	bcc .over4
+	inc tempWork1
+.over4
+
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda tempWork0
+	clc
+	adc #35
+	sta tempWork0
+	bcc .over5
+	inc tempWork1
+.over5
+
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda tempWork0
+	clc
+	adc #35
+	sta tempWork0
+	bcc .over6
+	inc tempWork1
+.over6
+
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+	iny
+	lda (tempWork2),y
+	sta (tempWork0),y
+
+	lda mainAStore
+	ldx mainXStore
+	ldy mainYStore
+	rts
+
+!zn
+DrawBlockColour
+	sta mainAStore
+	stx mainXStore
+	sty mainYStore
+	lda ScrollerTimesFiveTab,y
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	clc
+	lda ScrollerTimesFiveTab,x
+	adc tempWork0
+	sta tempWork0
+	lda ScreenTabH,y
+	adc #>COLOURRAM
+	sta tempWork1
+
+	ldx mainAStore
+	lda BlockColours,x
+	tax
+	ldy #0
+
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	tya
+	clc
+	adc #36
+	tay
+	txa
+
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	tya
+	clc
+	adc #36
+	tay
+	txa
+
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	tya
+	clc
+	adc #36
+	tay
+	txa
+
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	tya
+	clc
+	adc #36
+	tay
+	txa
+
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+
+	lda mainAStore
+	ldx mainXStore
+	ldy mainYStore
+	rts
+
+UpdateMapBlockPointers
+	ldy scrollMapHPos
+	lda MapTabL,y
+	sta .sm1+1
+	lda MapTabH,y
+	sta .sm1+2
+	lda scrollMapHPos2
+	; Times 5
+	asl
+	asl
+	clc
+	adc scrollMapHPos2
+	; Accumulates
+	adc .sm1+2
+	sta .sm1+2
+	rts
+
+; Draws the initial map from the coords setup, don't forget it is right to left in memory
+DrawMap
+	jsr UpdateMapBlockPointers
+	ldx #7
+.l1
+	ldy #0
+.l2
+.sm1	lda $ffff,y
+	jsr DrawBlock
+	jsr DrawBlockColour
+	iny
+	cpy #5
+	bne .l2
+
+	; Then progress down to the next map block line
+	inc scrollMapHPos
+	bne .notHigh2
+	inc scrollMapHPos2
+.notHigh2
+	jsr UpdateMapBlockPointers
+
+	ldy #0
+	dex
+	bpl .l1
+
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+
+	; Now initialise our variables preparing for a fine scroll from this displayed screen
+	lda #4
+	sta scrollMapLPos
+	lda #0
+	sta frameTotalScrScroll
+	sta frameScrollMoveColours
+	; MPi: TODO: Maybe draw the map to the back buffer then swap it rather than assuming one
+	; static screen bank?
+	sta topScreenBank
+	rts
+
+
+
+
+; Char screen scrollers
+!zn
+ScrollSingle0Bank0To1_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #13
+.l1
+	lda $c800+00+(0*40),x
+	sta $cc00+01+(0*40),x
+	lda $c800+00+(1*40),x
+	sta $cc00+01+(1*40),x
+	lda $c800+00+(2*40),x
+	sta $cc00+01+(2*40),x
+	lda $c800+00+(3*40),x
+	sta $cc00+01+(3*40),x
+	lda $c800+00+(4*40),x
+	sta $cc00+01+(4*40),x
+	lda $c800+00+(5*40),x
+	sta $cc00+01+(5*40),x
+	lda $c800+00+(6*40),x
+	sta $cc00+01+(6*40),x
+	lda $c800+00+(7*40),x
+	sta $cc00+01+(7*40),x
+	lda $c800+00+(8*40),x
+	sta $cc00+01+(8*40),x
+	lda $c800+00+(9*40),x
+	sta $cc00+01+(9*40),x
+	lda $c800+00+(10*40),x
+	sta $cc00+01+(10*40),x
+	lda $c800+00+(11*40),x
+	sta $cc00+01+(11*40),x
+	lda $c800+00+(12*40),x
+	sta $cc00+01+(12*40),x
+	lda $c800+00+(13*40),x
+	sta $cc00+01+(13*40),x
+	lda $c800+00+(14*40),x
+	sta $cc00+01+(14*40),x
+	lda $c800+00+(15*40),x
+	sta $cc00+01+(15*40),x
+	lda $c800+00+(16*40),x
+	sta $cc00+01+(16*40),x
+	lda $c800+00+(17*40),x
+	sta $cc00+01+(17*40),x
+	lda $c800+00+(18*40),x
+	sta $cc00+01+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #13
+.l2
+	lda $c800+00+(19*40),x
+	sta $cc00+01+(19*40),x
+	lda $c800+00+(20*40),x
+	sta $cc00+01+(20*40),x
+	lda $c800+00+(21*40),x
+	sta $cc00+01+(21*40),x
+	lda $c800+00+(22*40),x
+	sta $cc00+01+(22*40),x
+	lda $c800+00+(23*40),x
+	sta $cc00+01+(23*40),x
+	lda $c800+00+(24*40),x
+	sta $cc00+01+(24*40),x
+	dex
+	bpl .l2
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollSingle1Bank0To1_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #13
+.l1
+	lda $c800+00+14+(0*40),x
+	sta $cc00+01+14+(0*40),x
+	lda $c800+00+14+(1*40),x
+	sta $cc00+01+14+(1*40),x
+	lda $c800+00+14+(2*40),x
+	sta $cc00+01+14+(2*40),x
+	lda $c800+00+14+(3*40),x
+	sta $cc00+01+14+(3*40),x
+	lda $c800+00+14+(4*40),x
+	sta $cc00+01+14+(4*40),x
+	lda $c800+00+14+(5*40),x
+	sta $cc00+01+14+(5*40),x
+	lda $c800+00+14+(6*40),x
+	sta $cc00+01+14+(6*40),x
+	lda $c800+00+14+(7*40),x
+	sta $cc00+01+14+(7*40),x
+	lda $c800+00+14+(8*40),x
+	sta $cc00+01+14+(8*40),x
+	lda $c800+00+14+(9*40),x
+	sta $cc00+01+14+(9*40),x
+	lda $c800+00+14+(10*40),x
+	sta $cc00+01+14+(10*40),x
+	lda $c800+00+14+(11*40),x
+	sta $cc00+01+14+(11*40),x
+	lda $c800+00+14+(12*40),x
+	sta $cc00+01+14+(12*40),x
+	lda $c800+00+14+(13*40),x
+	sta $cc00+01+14+(13*40),x
+	lda $c800+00+14+(14*40),x
+	sta $cc00+01+14+(14*40),x
+	lda $c800+00+14+(15*40),x
+	sta $cc00+01+14+(15*40),x
+	lda $c800+00+14+(16*40),x
+	sta $cc00+01+14+(16*40),x
+	lda $c800+00+14+(17*40),x
+	sta $cc00+01+14+(17*40),x
+	lda $c800+00+14+(18*40),x
+	sta $cc00+01+14+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #13
+.l2
+	lda $c800+00+14+(19*40),x
+	sta $cc00+01+14+(19*40),x
+	lda $c800+00+14+(20*40),x
+	sta $cc00+01+14+(20*40),x
+	lda $c800+00+14+(21*40),x
+	sta $cc00+01+14+(21*40),x
+	lda $c800+00+14+(22*40),x
+	sta $cc00+01+14+(22*40),x
+	lda $c800+00+14+(23*40),x
+	sta $cc00+01+14+(23*40),x
+	lda $c800+00+14+(24*40),x
+	sta $cc00+01+14+(24*40),x
+	dex
+	bpl .l2
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollSingle2Bank0To1_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #10
+.l1
+	lda $c800+00+14+14+(0*40),x
+	sta $cc00+01+14+14+(0*40),x
+	lda $c800+00+14+14+(1*40),x
+	sta $cc00+01+14+14+(1*40),x
+	lda $c800+00+14+14+(2*40),x
+	sta $cc00+01+14+14+(2*40),x
+	lda $c800+00+14+14+(3*40),x
+	sta $cc00+01+14+14+(3*40),x
+	lda $c800+00+14+14+(4*40),x
+	sta $cc00+01+14+14+(4*40),x
+	lda $c800+00+14+14+(5*40),x
+	sta $cc00+01+14+14+(5*40),x
+	lda $c800+00+14+14+(6*40),x
+	sta $cc00+01+14+14+(6*40),x
+	lda $c800+00+14+14+(7*40),x
+	sta $cc00+01+14+14+(7*40),x
+	lda $c800+00+14+14+(8*40),x
+	sta $cc00+01+14+14+(8*40),x
+	lda $c800+00+14+14+(9*40),x
+	sta $cc00+01+14+14+(9*40),x
+	lda $c800+00+14+14+(10*40),x
+	sta $cc00+01+14+14+(10*40),x
+	lda $c800+00+14+14+(11*40),x
+	sta $cc00+01+14+14+(11*40),x
+	lda $c800+00+14+14+(12*40),x
+	sta $cc00+01+14+14+(12*40),x
+	lda $c800+00+14+14+(13*40),x
+	sta $cc00+01+14+14+(13*40),x
+	lda $c800+00+14+14+(14*40),x
+	sta $cc00+01+14+14+(14*40),x
+	lda $c800+00+14+14+(15*40),x
+	sta $cc00+01+14+14+(15*40),x
+	lda $c800+00+14+14+(16*40),x
+	sta $cc00+01+14+14+(16*40),x
+	lda $c800+00+14+14+(17*40),x
+	sta $cc00+01+14+14+(17*40),x
+	lda $c800+00+14+14+(18*40),x
+	sta $cc00+01+14+14+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #10
+.l2
+	lda $c800+00+14+14+(19*40),x
+	sta $cc00+01+14+14+(19*40),x
+	lda $c800+00+14+14+(20*40),x
+	sta $cc00+01+14+14+(20*40),x
+	lda $c800+00+14+14+(21*40),x
+	sta $cc00+01+14+14+(21*40),x
+	lda $c800+00+14+14+(22*40),x
+	sta $cc00+01+14+14+(22*40),x
+	lda $c800+00+14+14+(23*40),x
+	sta $cc00+01+14+14+(23*40),x
+	lda $c800+00+14+14+(24*40),x
+	sta $cc00+01+14+14+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripLeftBank1
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank1
+}
+	jmp NotWantingScroll
+
+; Now the other bank
+
+!zn
+ScrollSingle0Bank1To0_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #13
+.l1
+	lda $cc00+00+(0*40),x
+	sta $c800+01+(0*40),x
+	lda $cc00+00+(1*40),x
+	sta $c800+01+(1*40),x
+	lda $cc00+00+(2*40),x
+	sta $c800+01+(2*40),x
+	lda $cc00+00+(3*40),x
+	sta $c800+01+(3*40),x
+	lda $cc00+00+(4*40),x
+	sta $c800+01+(4*40),x
+	lda $cc00+00+(5*40),x
+	sta $c800+01+(5*40),x
+	lda $cc00+00+(6*40),x
+	sta $c800+01+(6*40),x
+	lda $cc00+00+(7*40),x
+	sta $c800+01+(7*40),x
+	lda $cc00+00+(8*40),x
+	sta $c800+01+(8*40),x
+	lda $cc00+00+(9*40),x
+	sta $c800+01+(9*40),x
+	lda $cc00+00+(10*40),x
+	sta $c800+01+(10*40),x
+	lda $cc00+00+(11*40),x
+	sta $c800+01+(11*40),x
+	lda $cc00+00+(12*40),x
+	sta $c800+01+(12*40),x
+	lda $cc00+00+(13*40),x
+	sta $c800+01+(13*40),x
+	lda $cc00+00+(14*40),x
+	sta $c800+01+(14*40),x
+	lda $cc00+00+(15*40),x
+	sta $c800+01+(15*40),x
+	lda $cc00+00+(16*40),x
+	sta $c800+01+(16*40),x
+	lda $cc00+00+(17*40),x
+	sta $c800+01+(17*40),x
+	lda $cc00+00+(18*40),x
+	sta $c800+01+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #13
+.l2
+	lda $cc00+00+(19*40),x
+	sta $c800+01+(19*40),x
+	lda $cc00+00+(20*40),x
+	sta $c800+01+(20*40),x
+	lda $cc00+00+(21*40),x
+	sta $c800+01+(21*40),x
+	lda $cc00+00+(22*40),x
+	sta $c800+01+(22*40),x
+	lda $cc00+00+(23*40),x
+	sta $c800+01+(23*40),x
+	lda $cc00+00+(24*40),x
+	sta $c800+01+(24*40),x
+	dex
+	bpl .l2
+}
+	jmp NotWantingScroll
+
+!zn
+ScrollSingle1Bank1To0_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #13
+.l1
+	lda $cc00+00+14+(0*40),x
+	sta $c800+01+14+(0*40),x
+	lda $cc00+00+14+(1*40),x
+	sta $c800+01+14+(1*40),x
+	lda $cc00+00+14+(2*40),x
+	sta $c800+01+14+(2*40),x
+	lda $cc00+00+14+(3*40),x
+	sta $c800+01+14+(3*40),x
+	lda $cc00+00+14+(4*40),x
+	sta $c800+01+14+(4*40),x
+	lda $cc00+00+14+(5*40),x
+	sta $c800+01+14+(5*40),x
+	lda $cc00+00+14+(6*40),x
+	sta $c800+01+14+(6*40),x
+	lda $cc00+00+14+(7*40),x
+	sta $c800+01+14+(7*40),x
+	lda $cc00+00+14+(8*40),x
+	sta $c800+01+14+(8*40),x
+	lda $cc00+00+14+(9*40),x
+	sta $c800+01+14+(9*40),x
+	lda $cc00+00+14+(10*40),x
+	sta $c800+01+14+(10*40),x
+	lda $cc00+00+14+(11*40),x
+	sta $c800+01+14+(11*40),x
+	lda $cc00+00+14+(12*40),x
+	sta $c800+01+14+(12*40),x
+	lda $cc00+00+14+(13*40),x
+	sta $c800+01+14+(13*40),x
+	lda $cc00+00+14+(14*40),x
+	sta $c800+01+14+(14*40),x
+	lda $cc00+00+14+(15*40),x
+	sta $c800+01+14+(15*40),x
+	lda $cc00+00+14+(16*40),x
+	sta $c800+01+14+(16*40),x
+	lda $cc00+00+14+(17*40),x
+	sta $c800+01+14+(17*40),x
+	lda $cc00+00+14+(18*40),x
+	sta $c800+01+14+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #13
+.l2
+	lda $cc00+00+14+(19*40),x
+	sta $c800+01+14+(19*40),x
+	lda $cc00+00+14+(20*40),x
+	sta $c800+01+14+(20*40),x
+	lda $cc00+00+14+(21*40),x
+	sta $c800+01+14+(21*40),x
+	lda $cc00+00+14+(22*40),x
+	sta $c800+01+14+(22*40),x
+	lda $cc00+00+14+(23*40),x
+	sta $c800+01+14+(23*40),x
+	lda $cc00+00+14+(24*40),x
+	sta $c800+01+14+(24*40),x
+	dex
+	bpl .l2
+}
+	jmp NotWantingScroll
+
+
+!zn
+ScrollSingle2Bank1To0_1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldx #10
+.l1
+	lda $cc00+00+14+14+(0*40),x
+	sta $c800+01+14+14+(0*40),x
+	lda $cc00+00+14+14+(1*40),x
+	sta $c800+01+14+14+(1*40),x
+	lda $cc00+00+14+14+(2*40),x
+	sta $c800+01+14+14+(2*40),x
+	lda $cc00+00+14+14+(3*40),x
+	sta $c800+01+14+14+(3*40),x
+	lda $cc00+00+14+14+(4*40),x
+	sta $c800+01+14+14+(4*40),x
+	lda $cc00+00+14+14+(5*40),x
+	sta $c800+01+14+14+(5*40),x
+	lda $cc00+00+14+14+(6*40),x
+	sta $c800+01+14+14+(6*40),x
+	lda $cc00+00+14+14+(7*40),x
+	sta $c800+01+14+14+(7*40),x
+	lda $cc00+00+14+14+(8*40),x
+	sta $c800+01+14+14+(8*40),x
+	lda $cc00+00+14+14+(9*40),x
+	sta $c800+01+14+14+(9*40),x
+	lda $cc00+00+14+14+(10*40),x
+	sta $c800+01+14+14+(10*40),x
+	lda $cc00+00+14+14+(11*40),x
+	sta $c800+01+14+14+(11*40),x
+	lda $cc00+00+14+14+(12*40),x
+	sta $c800+01+14+14+(12*40),x
+	lda $cc00+00+14+14+(13*40),x
+	sta $c800+01+14+14+(13*40),x
+	lda $cc00+00+14+14+(14*40),x
+	sta $c800+01+14+14+(14*40),x
+	lda $cc00+00+14+14+(15*40),x
+	sta $c800+01+14+14+(15*40),x
+	lda $cc00+00+14+14+(16*40),x
+	sta $c800+01+14+14+(16*40),x
+	lda $cc00+00+14+14+(17*40),x
+	sta $c800+01+14+14+(17*40),x
+	lda $cc00+00+14+14+(18*40),x
+	sta $c800+01+14+14+(18*40),x
+	dex
+	bpl .l1
+!ifdef Scroller_FullScreen {
+	ldx #10
+.l2
+	lda $cc00+00+14+14+(19*40),x
+	sta $c800+01+14+14+(19*40),x
+	lda $cc00+00+14+14+(20*40),x
+	sta $c800+01+14+14+(20*40),x
+	lda $cc00+00+14+14+(21*40),x
+	sta $c800+01+14+14+(21*40),x
+	lda $cc00+00+14+14+(22*40),x
+	sta $c800+01+14+14+(22*40),x
+	lda $cc00+00+14+14+(23*40),x
+	sta $c800+01+14+14+(23*40),x
+	lda $cc00+00+14+14+(24*40),x
+	sta $c800+01+14+14+(24*40),x
+	dex
+	bpl .l2
+}
+	jsr ScrollerDrawStripLeftBank0
+!ifdef IRQOpenBorders {
+	jsr ScrollerOpenBorderCopyBank0
+}
+	jmp NotWantingScroll
+
+
+
+
+;*****************************************************************************
+;*****************************************************************************
+; Vertical strips
+;*****************************************************************************
+;*****************************************************************************
+
+!macro MACROScrollerVPlot {
+	sta (tempWork0,x)
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	bcc .over6
+	inc tempWork1
+.over6
+}
+
+!macro MACROScrollerDrawVStrip .mapLY, .mapHY, .mapHY2 {
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	; Initialse map
+	ldy .mapHY
+	lda MapTabL,y
+	sta .sm1+1
+	lda MapTabH,y
+	sta .sm1+2
+	ldx .mapHY2
+	lda ScrollerTimesFiveTab,x
+	clc
+	adc .sm1+2
+	sta .sm1+2
+
+	ldx #0	; Must be zero throughout
+
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+!ifdef Scroller_FullScreen {
+	jsr .DrawWholeBlock
+}
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	inc .sm1+1
+	bne .s1
+	inc .sm1+2
+.s1
+	rts
+
+.GetBlockChar
+.sm2	ldy $ffff
+	lda .sm2+1
+	clc
+	adc #5
+	sta .sm2+1
+	bcc .noc1
+	inc .sm2+2
+.noc1
+	tya
+	rts
+
+.DrawWholeBlock
+	jsr .GetBlockFromMap
+	lda BlockTabL,y
+	clc
+	adc .mapLY
+	sta .sm2+1
+	lda BlockTabH,y
+	adc #0
+	sta .sm2+2
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	rts
+
+.partial !by 0
+}
+
+
+!macro MACROScrollerDrawVStripColour .mapLY, .mapHY, .mapHY2 {
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	; Set screen lohi
+	; Initialse other variables
+	ldy .mapHY
+	lda MapTabL,y
+	sta .sm1+1
+	lda MapTabH,y
+	sta .sm1+2
+	ldx .mapHY2
+	lda ScrollerTimesFiveTab,x
+	clc
+	adc .sm1+2
+	sta .sm1+2
+
+	ldx #0	; Must be zero throughout
+
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+!ifdef Scroller_FullScreen {
+	jsr .DrawWholeBlockColour
+}
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	inc .sm1+1
+	bne .s1
+	inc .sm1+2
+.s1
+	rts
+
+.DrawWholeBlockColour
+	jsr .GetBlockFromMap
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	rts
+
+.partial !by 0
+}
+
+!zn
+.offsetTab !by 3,2,1,0,4
+ScrollSingleColour_1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	ldy scrollMapLPos
+	ldx .offsetTab,y
+.l1
+	lda COLOURRAM+00+(0*40),x
+	sta COLOURRAM+01+(0*40),x
+	lda COLOURRAM+00+(1*40),x
+	sta COLOURRAM+01+(1*40),x
+	lda COLOURRAM+00+(2*40),x
+	sta COLOURRAM+01+(2*40),x
+	lda COLOURRAM+00+(3*40),x
+	sta COLOURRAM+01+(3*40),x
+	lda COLOURRAM+00+(4*40),x
+	sta COLOURRAM+01+(4*40),x
+	lda COLOURRAM+00+(5*40),x
+	sta COLOURRAM+01+(5*40),x
+	lda COLOURRAM+00+(6*40),x
+	sta COLOURRAM+01+(6*40),x
+	lda COLOURRAM+00+(7*40),x
+	sta COLOURRAM+01+(7*40),x
+	lda COLOURRAM+00+(8*40),x
+	sta COLOURRAM+01+(8*40),x
+	lda COLOURRAM+00+(9*40),x
+	sta COLOURRAM+01+(9*40),x
+	txa
+	clc
+	adc #5
+	tax
+	cpx #39
+	bcc .l1
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	ldy scrollMapLPos
+	ldx .offsetTab,y
+.l2
+	lda COLOURRAM+00+(10*40),x
+	sta COLOURRAM+01+(10*40),x
+	lda COLOURRAM+00+(11*40),x
+	sta COLOURRAM+01+(11*40),x
+	lda COLOURRAM+00+(12*40),x
+	sta COLOURRAM+01+(12*40),x
+	lda COLOURRAM+00+(13*40),x
+	sta COLOURRAM+01+(13*40),x
+	lda COLOURRAM+00+(14*40),x
+	sta COLOURRAM+01+(14*40),x
+	lda COLOURRAM+00+(15*40),x
+	sta COLOURRAM+01+(15*40),x
+	lda COLOURRAM+00+(16*40),x
+	sta COLOURRAM+01+(16*40),x
+	lda COLOURRAM+00+(17*40),x
+	sta COLOURRAM+01+(17*40),x
+	lda COLOURRAM+00+(18*40),x
+	sta COLOURRAM+01+(18*40),x
+	lda COLOURRAM+00+(19*40),x
+	sta COLOURRAM+01+(19*40),x
+!ifdef Scroller_FullScreen {
+	lda COLOURRAM+00+(20*40),x
+	sta COLOURRAM+01+(20*40),x
+	lda COLOURRAM+00+(21*40),x
+	sta COLOURRAM+01+(21*40),x
+	lda COLOURRAM+00+(22*40),x
+	sta COLOURRAM+01+(22*40),x
+	lda COLOURRAM+00+(23*40),x
+	sta COLOURRAM+01+(23*40),x
+	lda COLOURRAM+00+(24*40),x
+	sta COLOURRAM+01+(24*40),x
+}
+	txa
+	clc
+	adc #5
+	tax
+	cpx #39
+	bcc .l2
+
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	lda scrollMapLPos
+	cmp #4
+	bne .noColourUpdate
+	jsr ScrollerDrawStripLeftColour
+.noColourUpdate
+	dec scrollMapLPos
+	bpl .noBlockWrap
+	lda #4
+	sta scrollMapLPos
+	inc scrollMapHPos
+	bne .noBlockWrap
+	inc scrollMapHPos2
+.noBlockWrap
+
+
+	jmp NotWantingColourScroll
+
+!zn {
+ScrollerDrawStripLeftBank0
+	lda #0
+	sta tempWork0
+	lda #$c8
+	sta tempWork1
+	+MACROScrollerDrawVStrip scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
+
+!zn {
+ScrollerDrawStripLeftBank1
+	lda #0
+	sta tempWork0
+	lda #$cc
+	sta tempWork1
+	+MACROScrollerDrawVStrip scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
+
+!zn {
+ScrollerDrawStripLeftColour
+	lda #0
+	sta tempWork0
+	lda #$d8
+	sta tempWork1
+	+MACROScrollerDrawVStripColour scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}

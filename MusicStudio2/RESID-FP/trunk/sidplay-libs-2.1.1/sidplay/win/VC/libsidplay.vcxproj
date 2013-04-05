@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>sidplay</ProjectName>
+    <ProjectGuid>{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}</ProjectGuid>
+    <RootNamespace>sidplay</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>.\Release/libsidplay.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>.;../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;DLL_EXPORT;HAVE_MSWINDOWS;HAVE_CONFIG_H;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderOutputFile>.\Release/libsidplay.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
+      <ObjectFileName>.\Release/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0809</Culture>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>.\Debug/libsidplay.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;DLL_EXPORT;HAVE_MSWINDOWS;HAVE_CONFIG_H;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderOutputFile>.\Debug/libsidplay.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
+      <ObjectFileName>.\Debug/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0809</Culture>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\mos6510\conf6510.h" />
+    <ClInclude Include="..\..\mos6510\mos6510.h" />
+    <ClInclude Include="..\..\mos6510\opcodes.h" />
+    <ClInclude Include="..\..\mos6510\cycle_based\mos6510c.h" />
+    <ClInclude Include="..\..\mos6510\cycle_based\sid6510c.h" />
+    <ClInclude Include="..\..\mos6526\mos6526.h" />
+    <ClInclude Include="..\..\mos656x\mos656x.h" />
+    <ClInclude Include="..\..\sid6526\sid6526.h" />
+    <ClInclude Include="..\..\sidtune\PP20.h" />
+    <ClInclude Include="..\..\sidtune\PP20_Defs.h" />
+    <ClInclude Include="..\..\sidtune\SidTuneCfg.h" />
+    <ClInclude Include="..\..\sidtune\SidTuneTools.h" />
+    <ClInclude Include="..\..\xsid\xsid.h" />
+    <ClInclude Include="..\..\c64\c64cia.h" />
+    <ClInclude Include="..\..\c64\c64vic.h" />
+    <ClInclude Include="..\..\c64\c64xsid.h" />
+    <ClInclude Include="..\..\Buffer.h" />
+    <ClInclude Include="..\..\c64env.h" />
+    <ClInclude Include="..\..\component.h" />
+    <ClInclude Include="..\..\event.h" />
+    <ClInclude Include="..\..\nullsid.h" />
+    <ClInclude Include="..\..\player.h" />
+    <ClInclude Include="..\..\sid2types.h" />
+    <ClInclude Include="..\..\sidbuilder.h" />
+    <ClInclude Include="..\..\sidconfig.h" />
+    <ClInclude Include="..\..\sidendian.h" />
+    <ClInclude Include="..\..\sidenv.h" />
+    <ClInclude Include="..\..\sidplay2.h" />
+    <ClInclude Include="..\..\SidTune.h" />
+    <ClInclude Include="..\..\sidtypes.h" />
+    <ClInclude Include="..\..\sidusage.h" />
+    <ClInclude Include="..\..\SmartPtr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\mos6510\mos6510.cpp" />
+    <ClCompile Include="..\..\mos6526\mos6526.cpp" />
+    <ClCompile Include="..\..\mos656x\mos656x.cpp" />
+    <ClCompile Include="..\..\sid6526\sid6526.cpp" />
+    <ClCompile Include="..\..\sidtune\IconInfo.cpp" />
+    <ClCompile Include="..\..\sidtune\InfoFile.cpp" />
+    <ClCompile Include="..\..\sidtune\MUS.cpp" />
+    <ClCompile Include="..\..\sidtune\p00.cpp" />
+    <ClCompile Include="..\..\sidtune\PP20.cpp" />
+    <ClCompile Include="..\..\sidtune\prg.cpp" />
+    <ClCompile Include="..\..\sidtune\PSID.cpp" />
+    <ClCompile Include="..\..\sidtune\SidTune.cpp" />
+    <ClCompile Include="..\..\sidtune\SidTuneTools.cpp" />
+    <ClCompile Include="..\..\xsid\xsid.cpp" />
+    <ClCompile Include="..\..\config.cpp" />
+    <ClCompile Include="..\..\event.cpp" />
+    <ClCompile Include="..\..\mixer.cpp" />
+    <ClCompile Include="..\..\player.cpp" />
+    <ClCompile Include="..\..\psiddrv.cpp" />
+    <ClCompile Include="..\..\reloc65.c" />
+    <ClCompile Include="..\..\sidplay2.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\mos6510\cycle_based\mos6510c.i" />
+    <None Include="..\..\mos6510\cycle_based\sid6510c.i" />
+    <None Include="..\..\basic.bin" />
+    <None Include="..\..\char.bin" />
+    <None Include="..\..\kernal.bin" />
+    <None Include="..\..\poweron.bin" />
+    <None Include="..\..\psiddrv.a65" />
+    <None Include="..\..\psiddrv.bin" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,854 @@
+!zn
+; A/Y = Room number, 16 bits A is lo, Y is hi
+; X = Previous entrance 0,1,2,3 = up, down, left, right
+; We could use Prim's algorithm here, but we won't. :)
+; This algorithm produces more interesting patterns of sparse walls instead.
+DisplayMazeRoom
+	stx .roomExitDirection
+	jsr Seed
+.tryAgain
+	jsr ClearMainScreen
+	jsr DrawScore
+	
+	; Calculate how many walls we will have
+	jsr Rand
+	and #7
+	clc
+	adc #4
+	sta .numWalls
+	jsr Rand
+	sta .wallPicker
+	; Draw the walls
+.l1
+	; Pick if the wall is horizontal or vertical
+	inc .wallPicker
+	lda .wallPicker
+	lsr
+	bcs .ohorizontalWall
+	jmp .horizontalWall
+.ohorizontalWall
+	; Vertical wall
+	; Calculate the starting Y position of the wall
+	jsr Rand
+	and #7
+	tax
+	lda yTabStarts,x
+	sta tempWork2
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	clc
+	adc #$c0
+	sta tempWork1
+	; Calculate how long this segment should be
+	jsr Rand
+	and #7
+	tax
+	lda .yTab,x
+	sta tempWork3
+	; Calculate the X position
+	jsr Rand
+	and #7
+	tax
+	ldy .xTab,x
+	; Check the entrance or exit is not blocked
+	; First check the left/right bounds
+	cpy #14
+	bcc .dl1
+	cpy #25
+	bcs .dl1
+	; Check it doesn't start at zero
+	lda tempWork2
+	bne .ce1
+	lda #6
+	sta tempWork2
+	lda #6*40
+	sta tempWork0
+.ce1
+	; Check the end is not near the bottom
+	lda #18
+	sec
+	sbc tempWork2
+	beq .edl1
+	bmi .edl1
+	cmp tempWork3
+	bcs.dl1
+	sta tempWork3
+	; Now draw the segment
+.dl1
+	lda tempWork3
+	cmp #1
+	beq .edl1
+.dl11
+	lda #64
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dec tempWork3
+	beq .edl1
+	inc tempWork2
+	lda tempWork2
+	cmp #24
+	bcc .dl11
+.edl1
+
+	jmp .el1
+.horizontalWall
+	; Calculate the starting Y position of the wall
+	jsr Rand
+	and #7
+	tax
+	ldy .yTabChars,x
+	sty .smrc1+1
+	ldy .yTabPos,x
+	sty tempWork4
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	clc
+	adc #$c0
+	sta tempWork1
+	; Calculate how long this segment should be
+	jsr Rand
+	and #7
+	tax
+	lda .xTab,x
+	sta tempWork2
+	; Calculate the X position
+	jsr Rand
+	and #7
+	tax
+	ldy xTabStarts,x
+	sty tempWork3
+
+	; Check the entrance or exit is not blocked
+	; First check the up/down bounds
+	lda tempWork4
+	cmp #6
+	bcc .dl4
+	cmp #18
+	bcs .dl4
+	cpy #5
+	bcs .dl4
+	ldy #5
+	sty tempWork3
+.dl4
+	; Calculate the maximum segment length and compare it with what we have
+	lda #35
+	sec
+	sbc tempWork3
+	beq .edl2
+	cmp tempWork2
+	bcs .dl3
+	sta tempWork2
+.dl3
+
+	; Now draw the segment
+.dl2
+.smrc1	lda #1
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	dec tempWork2
+	beq .edl2
+	iny
+	cpy #40
+	bcc .dl2
+.edl2
+
+.el1
+	dec .numWalls
+	beq .ol1
+	jmp .l1
+.ol1
+
+	; Draw the blocked exit door
+	; 0,1,2,3 = up, down, left, right
+	lda .roomExitDirection
+	beq .dbTop
+	cmp #1
+	bne .odbBottom
+	jmp .dbBottom
+.odbBottom
+	cmp #2
+	beq .dbLeft
+	cmp #3
+	beq .dbRight
+	jmp .blockedOver
+
+.dbLeft
+	ldx #<MainScreen
+	stx tempWork0
+	ldx #>MainScreen
+	stx tempWork1
+	ldx #23
+	ldy #0
+.db1
+	lda #66
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Red
+	sta (tempWork4),y
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dex
+	bpl .db1
+	jmp .blockedOver
+.dbRight
+	ldx #<MainScreen
+	stx tempWork0
+	ldx #>MainScreen
+	stx tempWork1
+	ldx #23
+	ldy #39
+.db2
+	lda #66
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Red
+	sta (tempWork4),y
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dex
+	bpl .db2
+	jmp .blockedOver
+.dbTop
+	ldx #39
+.db3
+	lda #67
+	sta MainScreen,x
+	lda #VIC2Colour_Red
+	sta COLOURRAM,x
+	dex
+	bpl .db3
+	jmp .blockedOver
+.dbBottom
+	ldx #39
+.db4
+	lda #68
+	sta MainScreen + (23*40),x
+	lda #VIC2Colour_Red
+	sta COLOURRAM + (23*40),x
+	dex
+	bpl .db4
+	jmp .blockedOver
+
+
+.blockedOver
+
+	; Verify the corner cases have a character there
+	ldx #1
+.cc1
+	lda MainScreen+(11*40),x
+	cmp #64
+	bcc .cc1n
+	lda MainScreen+(12*40)-1,x
+	cmp #64
+	bcc .cc1n
+	lda #64
+	sta MainScreen+(12*40),x
+	lda #VIC2Colour_Blue
+	sta COLOURRAM+(12*40),x
+.cc1n
+	inx
+	cpx #38
+	bne .cc1
+
+	ldx #1
+.cc2
+	lda MainScreen+(17*40),x
+	cmp #64
+	bcc .cc2n
+	lda MainScreen+(18*40)-1,x
+	cmp #64
+	bcc .cc2n
+	lda #64
+	sta MainScreen+(18*40),x
+	lda #VIC2Colour_Blue
+	sta COLOURRAM+(18*40),x
+.cc2n
+	inx
+	cpx #38
+	bne .cc2
+
+	; Top and bottom
+	ldx #14
+.l3
+	lda MainScreen+40,x
+	cmp #64
+	beq .useThisChar1
+	lda #69
+.useThisChar1
+	sta MainScreen,x
+	lda MainScreen+40+25,x
+	cmp #64
+	beq .useThisChar2
+	lda #69
+.useThisChar2
+	sta MainScreen+25,x
+
+	lda #VIC2Colour_Blue
+	sta COLOURRAM,x
+	sta COLOURRAM+25,x
+
+	lda MainScreen+(22*40),x
+	cmp #64
+	beq .useThisChar3
+	lda #70
+.useThisChar3
+	sta MainScreen+(23*40),x
+
+	lda MainScreen+(22*40)+25,x
+	cmp #64
+	beq .useThisChar4
+	lda #70
+.useThisChar4
+	sta MainScreen+(23*40)+25,x
+
+	lda #VIC2Colour_Blue
+	sta COLOURRAM+(23*40),x
+	sta COLOURRAM+25+(23*40),x
+	dex
+	bpl .l3
+
+	; Left and right sides
+	ldx #<MainScreen
+	stx tempWork0
+	ldx #>MainScreen
+	stx tempWork1
+	ldx #7
+.l4
+	ldy #0
+	lda #64
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	ldy #39
+	lda #64
+	sta (tempWork0),y
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dex
+	bpl .l4
+	ldx #<MainScreen+(16*40)
+	stx tempWork0
+	ldx #>MainScreen+(16*40)
+	stx tempWork1
+	ldx #7
+.l5
+	ldy #0
+	lda #64
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	ldy #39
+	lda #64
+	sta (tempWork0),y
+
+	lda tempWork0
+	sta tempWork4
+	lda tempWork1
+	and #3
+	ora #>COLOURRAM
+	sta tempWork5
+	lda #VIC2Colour_Blue
+	sta (tempWork4),y
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dex
+	bpl .l5
+
+
+	; Now paranoia check the produced room walls to make sure the room can be traversed by the player.
+	; Assume left for starters
+	lda #0
+	sta .exitHit
+	ldx .roomExitDirection
+	lda .roomTabX,x
+	ldy .roomTabY,x
+	tax
+	jsr .recursiveFindExit
+	lda .exitHit
+	bne .found
+	jsr Rand
+	jmp .tryAgain
+.found
+!if 1 {
+	; Draw the room borders
+	; Draw some invisible characters where the doors are that block the robots but not the player
+	; Top and bottom
+	ldx #10
+.iw1
+	lda MainScreen+15,x
+	cmp #64
+	bcs .o1
+	lda #65
+	sta MainScreen+15,x
+.o1
+	lda MainScreen+(23*40)+15,x
+	cmp #64
+	bcs .o2
+	lda #65
+	sta MainScreen+(23*40)+15,x
+.o2
+	dex
+	bpl .iw1
+
+	; Left and right sides
+	ldx #<MainScreen+(7*40)
+	stx tempWork0
+	ldx #>MainScreen+(7*40)
+	stx tempWork1
+	ldx #10
+.iw2
+	ldy #0
+	lda (tempWork0),y
+	cmp #64
+	bcs .o3
+	lda #65
+	sta (tempWork0),y
+.o3
+	ldy #39
+	lda (tempWork0),y
+	cmp #64
+	bcs .o4
+	lda #65
+	sta (tempWork0),y
+.o4
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dex
+	bpl .iw2
+}
+
+	; Now sweep the whole screen and expand where we have the ' ' char to show robots where they
+	; can spawn.
+	jsr SweepRoomX
+	jsr SweepRoomY
+	jsr SweepRoomX2
+	jsr SweepRoomY2
+	jsr SweepRoomX2
+!if 0 {
+	jsr SweepRoomY
+	jsr SweepRoomX2
+	jsr SweepRoomY2
+	jsr SweepRoomX
+	jsr SweepRoomY
+	jsr SweepRoomX2
+	jsr SweepRoomY2
+}
+
+	lda #0
+	sta BottomIRQDone
+	rts
+; 0,1,2,3 = up, down, left, right
+.roomTabX !by 20,20,2,36
+.roomTabY !by 2,21,12,12
+
+.storeCharAt
+	pha
+	stx tempWork2
+	sty tempWork3
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	clc
+	adc #>MainScreen
+	sta tempWork1
+	txa
+	tay
+	pla
+	sta (tempWork0),y
+	ldx tempWork2
+	ldy tempWork3
+	rts
+
+.getCharAt
+	stx tempWork2
+	sty tempWork3
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	clc
+	adc #>MainScreen
+	sta tempWork1
+	txa
+	tay
+
+	lda (tempWork0),y
+	bne .nb
+	iny
+	lda (tempWork0),y
+	bne .nb
+
+	lda tempWork3
+	cmp #24
+	bne .specialCase
+	; Because the screen is 25 lines high we special case the last 2x row
+	lda #0
+	jmp .nb
+.specialCase
+
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+
+	lda (tempWork0),y
+	bne .nb
+	dey
+	lda (tempWork0),y
+	bne .nb
+
+.nb
+	ldx tempWork2
+	ldy tempWork3
+	cmp #0
+	rts
+
+.exitHit !by 0
+
+; X = X coord
+; Y = Y coord
+.recursiveFindExit
+	stx .curX
+	sty .curY
+	txa
+	pha
+	tya
+	pha
+
+	; To stop the search going too recursive
+	tsx
+	cpx #32
+	ldx .curX
+	bcs .plentyStackLeft
+	sec
+	jmp .exit
+.plentyStackLeft
+	jsr .getCharAt
+	beq .unblocked
+	sec
+	jmp .exit
+
+.unblocked
+	lda .curX
+	beq .gotExit
+	cmp #38
+	beq .gotExit
+	lda .curY
+	beq .gotExit
+	cmp #24
+	beq .gotExit
+	jmp .continueChecking
+.gotExit
+	inc .exitHit
+	; This enables the early out
+;	clc
+;	jmp .exit
+.continueChecking
+	; Mark where we are and continue searching
+	lda #32
+	jsr .storeCharAt
+
+	; Then search around us for an empty block to go to
+	dex
+	dex
+	bmi .blockedL
+	jsr .getCharAt
+	bne .blockedL
+	jsr .recursiveFindExit
+	bcc .exit
+.blockedL
+	inx
+	inx
+
+	inx
+	inx
+	cpx #39
+	bcs .blockedR
+	jsr .getCharAt
+	bne .blockedR
+	jsr .recursiveFindExit
+	bcc .exit
+.blockedR
+	dex
+	dex
+
+	dey
+	dey
+	bmi .blockedU
+	jsr .getCharAt
+	bne .blockedU
+	jsr .recursiveFindExit
+	bcc .exit
+.blockedU
+	iny
+	iny
+
+	iny
+	iny
+	cpy #25
+	bcs .blockedD
+	jsr .getCharAt
+	bne .blockedD
+	jsr .recursiveFindExit
+	bcc .exit
+.blockedD
+	dey
+	dey
+
+	; Blocked or no exit found so quit this position without any success
+	sec
+.exit
+	pla
+	tay
+	pla
+	tax
+	rts
+.curX !by 0
+.curY !by 0
+
+.numWalls !by 0
+.roomExitDirection !by 0
+.wallPicker !by 0
+.xTab !by 5,10,15,15,20,25,5,10
+xTabStarts !by 0,5,10,15,20,25,30,35
+.yTab !by 6,12,18,24,30,36,6,12
+.yTabChars !by 64,64,64,64,64,64,64,64
+; Horizontal walls
+.yTabPos !by 6,12,18,6,12,18,6,12
+; Vertical walls
+yTabStarts !by 0,6,6,12,12,18,18,18
+
+!zn
+SweepRoomX
+	lda #<MainScreen + 40 + 1
+	sta tempWork0
+	lda #>MainScreen + 40 + 1
+	sta tempWork1
+	lda #22
+	sta tempWork2
+.l1
+	ldy #38
+.l2
+	lda (tempWork0),y
+.l2b
+	cmp #' '
+	bne .l3
+.l5
+	dey
+	bmi .l4
+	lda (tempWork0),y
+	bne .l2b
+	lda #' '
+	sta (tempWork0),y
+	jmp .l5
+.l3
+	dey
+	bpl .l2
+.l4
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dec tempWork2
+	bne .l1
+	rts
+
+!zn
+SweepRoomX2
+	lda #<MainScreen + 40 + 1
+	sta tempWork0
+	lda #>MainScreen + 40 + 1
+	sta tempWork1
+	lda #22
+	sta tempWork2
+.l1
+	ldy #1
+.l2
+	lda (tempWork0),y
+.l2b
+	cmp #' '
+	bne .l3
+.l5
+	iny
+	cpy #39
+	bcs .l4
+	lda (tempWork0),y
+	bne .l2b
+	lda #' '
+	sta (tempWork0),y
+	jmp .l5
+.l3
+	iny
+	cpy #39
+	bcc .l2
+.l4
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	dec tempWork2
+	bne .l1
+	rts
+
+!zn
+SweepRoomYPos
+	lda ScreenTabL,x
+	sta tempWork0
+	lda ScreenTabH,x
+	clc
+	adc #>MainScreen
+	sta tempWork1
+	rts
+SweepRoomY
+	ldy #38
+.l1
+	ldx #22
+.l2
+	jsr SweepRoomYPos
+	lda (tempWork0),y
+.l2b
+	cmp #' '
+	bne .l3
+.l5
+	dex
+	beq .l4
+	jsr SweepRoomYPos
+
+	lda (tempWork0),y
+	bne .l2b
+	lda #' '
+	sta (tempWork0),y
+	jmp .l5
+.l3
+	dex
+	bne .l2
+.l4
+	dey
+	bne .l1
+	rts
+
+!zn
+SweepRoomY2
+	ldy #38
+.l1
+	ldx #1
+.l2
+	jsr SweepRoomYPos
+	lda (tempWork0),y
+.l2b
+	cmp #' '
+	bne .l3
+.l5
+	inx
+	cpx #24
+	beq .l4
+	jsr SweepRoomYPos
+
+	lda (tempWork0),y
+	bne .l2b
+	lda #' '
+	sta (tempWork0),y
+	jmp .l5
+.l3
+	inx
+	cpx #24
+	bne .l2
+.l4
+	dey
+	bne .l1
+	rts

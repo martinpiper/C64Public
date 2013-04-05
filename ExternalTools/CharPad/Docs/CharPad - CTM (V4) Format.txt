@@ -1,0 +1,136 @@
+
+
+--------------------------------------------------------------- 
+CharPad - CTM (v4) File Format - Used by CharPad 1.8 (Beta 3))
+---------------------------------------------------------------
+ 
+
+The CTM file is a CharPad project's native file format and is used to store all the required project data in a single file.
+ 
+NB. CTM = Chars, Tiles, Map.
+
+It is not intended or required to be implemented by any C64 project but it's details are included here for information only.
+
+C64 Programmers should consult the help file for CharPad's export file formats. 
+
+
+Notes:
+
+There are two major changes in CTM V4...
+
+1. Inclusion of a CHAR_ATTRIBS block - it isn't strictly necessary as CharPad "generates" the character attributes from the
+   CELL_ATTRIBS when a tileset/charset is compressed - including it though means that the charset can be correctly rendered
+   immediately after loading rather than waiting for the user to expand/compress. 
+   
+   It's contents may be considered as the most recent "build" of the character set attributes.   
+   
+   
+2. Removed the TILE_SIZE header entry and replaced with TILE_WID and TILE_HEI.
+
+   Although CharPad currently only supports square tiles, this change opens up some future possibilities and just makes for 
+   a more flexible format.   
+   
+Also the file header is now 24 bytes long (previously 20) and so includes 4 RESERVED bytes for future expansion.     
+    
+
+-----------------------------------------------------------------------------------------------------
+
+File Header, 20 bytes...
+
+
+ID          [00-02]    3 bytes  : ASCII ID string... "CTM"
+VERSION     [03]       1 byte   : version number, currently $04.
+COLOURS     [04-07]    4 bytes  : BGR, MC1, MC2, RAM.
+COLOUR_MODE [08]       1 byte   : 0 = Global, 1 = Per Tile, 2 = Per Tile Cell.
+VIC_RES     [09]       1 byte   : 0 = Hi Resolution, 1 = Multicolour.
+
+NUM_CHARS   [10,11]    2 bytes  : 16-bits, Number of chars - 1 (low, high).
+
+NUM_TILES   [12]       1 byte   : Number of tiles - 1.
+
+TILE_WID    [13]       1 byte   : Tile Width
+TILE_HEI    [14]       1 byte   : Tile Height
+
+MAP_WID     [15,16]    2 bytes  : 16-bit Map width (low, high).
+MAP_HEI     [17,18]    2 bytes  : 16-bit Map height (low, high).
+
+EXPANDED    [19]       1 byte   : Boolean flag, 1 = CHAR_DATA is in "Expanded" form (CELL_DATA is unnecessary and absent).
+
+RESERVED    [20]       1 byte   
+RESERVED    [21]       1 byte
+RESERVED    [22]       1 byte
+RESERVED    [23]       1 byte   : (total header size is 24 bytes)
+
+
+File Data...
+
+
+CHAR_DATA.      The character set. Size = NUM_CHARS * 8 bytes.
+
+                NB. NUM_CHARS should equal NUM_TILES * TILE_SIZE * TILE_SIZE for an "Expanded" char-set.
+                
+
+                An expanded char-set is one where CHAR_DATA contains one unique (8 byte) character definition for each
+                and every cell for each tile in the tile-set.
+
+                In such a case the CELL_DATA would simply be an ascending series starting at 0, easily recreated, and as 
+                such it will be omitted from the file.
+
+
+
+CHAR_ATTRIBS.   1 byte for each character in the set.
+
+                Each byte should be interpreted as follows...  
+              
+                MMMMCCCC, where M is one of 4 material bits, C is one of 4 colour bits.    
+
+                The CHAR_ATTRIBS block is new to CTM v4, CharPad generates this information when a charset is 
+                compressed from an expanded state.
+
+                (CharPads compressor can optionally copy colour and/or material attributes from the CELL_ATTRIBS to the 
+                CHAR_ATTRIBS prior to compression to allow varying levels of compression to be achieved) 
+
+                CharPad always uses the CELL_ATTRIBS data when rendering tiles and CHAR_ATTRIBS when rendering the 
+                character set itself.
+
+                Including CHAR_ATTRIBS in the CTM file allows a character set to be rendered correctly immediately 
+                after loading instead of having to wait for the user to expand and compress.
+                                 
+
+
+CELL_DATA.      Size = NUM_TILES * TILE_SIZE * TILE_SIZE bytes * 2 bytes. (only exists if CHAR_DATA is not "Expanded")
+
+                NB. CELL_DATA is a stream of 16-bit character codes to be arranged left-to-right, top-to-bottom for each tile.
+
+                The largest contained character code should not be greater than NUM_CHARS - 1.
+
+                In the case that the CHAR_DATA is saved in "Expanded" form, CELL_DATA will be absent as its values would just
+                be an ascending series starting at 0.
+
+                NB. The format of each (16-bit) code is Low Byte, High Byte.
+
+
+
+CELL_ATTRIBS.   Size = NUM_TILES * TILE_SIZE * TILE_SIZE bytes (exists for ALL modes)
+                
+                1 attribute byte for each cell of each tile. 
+                
+                Upper 4 bits = cell Material value (0-15)
+                Lower 4 bits = cell "Colour RAM" value (0-15)    nb. only when COLOUR_MODE = 2 (Per Tile Cell)
+
+                NB. CELL_ATTRIBS is a stream of 8-bit attribute codes arranged left-to-right, top-to-bottom for each tile.
+
+
+TILE_ATTRIBS.   Size = NUM_TILES bytes (1 byte per tile = "RAM colour". only exists if COLOR_MODE = 1 (Per Tile)
+
+
+MAP_DATA.        Size =  MAP_WID x MAP_HEI bytes.
+
+
+
+
+.
+
+
+
+

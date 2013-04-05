@@ -1,0 +1,36 @@
+; 1541 Multi-platform IRQ fast loader
+; By Martin Piper, free for everyone to use or abuse :)
+; Inspired by documentation and code found on http://cadaver.homeftp.net/rants/irqload.htm
+; Don't forget to include "stdlib/stdlib.a"
+; To initialise the loader:
+;	lda ZPCurrentFileDeviceNumber	; The drive number to use
+;	jsr IRQDisk_Init
+; To load a file:
+;	lda #name length
+;	ldx #<name
+;	ldy #>name
+;	jsr IRQDisk_Load
+;	; C=status: 0=ok, 1=error
+
+
+IRQDisk_MachineTypeVIC20	= 1
+IRQDisk_MachineTypeC16		= 2
+IRQDisk_MachineTypeC64		= 4
+IRQDisk_MachineTypeC128		= 8
+
+; Choose which target we want to generate code for
+;IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
+
+;IRQDisk_Retries = 5	; amount of retries when reading a sector
+
+; 1 = LED On while loading a file.
+; 2 = LED Pulses up while idle.
+; 4 = LED Pulses down while idle.
+; 8 = LED On when reading blocks.
+; 15 = 1 + 2 + 4 + 8
+;IRQDisk_LEDFlash = 15
+
+
+; Choose the 2 bit ATN mode burst transfer, only works with one drive connected.
+; As of 1st October 2008 this only works on a real C64 or Hoxs64.
+;IRQDisk_UseATN = 1

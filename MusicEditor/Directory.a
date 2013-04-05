@@ -1,0 +1,353 @@
+!zn {
+openfile
+lda #1
+ldx #<.file
+ldy #>.file
+jsr $ffbd
+lda #1
+ldx #8
+ldy #0
+jsr $ffba
+jsr $ffc0
+ldx #1
+jsr $ffc6
+rts
+.file !by "$"
+byte !by 0
+closefile
+lda #1
+jsr $ffc3
+ldx #0
+jsr $ffc6
+rts
+getbyte
+jsr $ffcf
+rts
+skipbyte
+jsr getbyte
+dey
+bne skipbyte
+rts
+checkstat
+jsr $ffb7
+cmp #0
+rts
+errorchannel
+ldy #15
+lda #32
+l6 sta namebuffer,y
+dey
+bne l6
+lda #34
+sta namebuffer,y
+lda #0
+rts
+gettitle
+lda #16
+sta .sm1+1
+jsr openfile
+ldy #8
+jsr skipbyte
+.l1 jsr getbyte
+sta byte
+jsr checkstat
+bne errorchannel
+lda byte
+sta titlebuffer,y
+iny
+cpy #16
+bne .l1
+ldy #15
+jsr skipbyte
+rts
+getname
+lda #16
+sta .sm1+1
+.l3 ldy #0
+jsr getbyte
+cmp #34
+bne .l4
+lda #15
+sta .sm1+1
+jmp .l3
+.l2 jsr getbyte
+.l4 sta byte
+jsr checkstat
+bne errorchannel
+lda byte
+sta namebuffer,y
+iny
+cpy #16
+bne .l2
+.sm1 ldy #16
+jsr skipbyte
+lda #16
+sta .sm1+1
+jsr checkstat
+beq l7
+jmp errorchannel
+l7
+rts
+titlebuffer !tx "                 "
+namebuffer !tx "                 "
+!tx "    "
+namelength !by 0
+trimspeech
+ldy #0
+l8
+lda namebuffer,y
+cmp #34
+beq l9
+iny
+cpy #16
+bne l8
+l9
+sty namelength
+lda #32
+sta namebuffer,y
+rts
+;
+;setup param block
+;
+.directory
+jsr openfile
+jsr setupwindow
+dir1
+jsr clearbuffer
+lda #0
+sta .count
+dir2
+jsr getname
+jsr trimspeech
+lda namelength
+bne dir3z
+lda .count
+beq direxit
+lda #0
+dir3z
+jsr storename
+inc .count
+ldy .count
+lda namelength
+sta lengthtab-1,y
+cpy #14
+bcc dir2
+dir3
+jsr setuptables
+lda #<dirmenu
+sta $fc
+lda #>dirmenu
+sta $fd
+lda #128
+sta subtext+16
+jsr openwindow
+lda #<dirsubmenu
+sta $fc
+lda #>dirsubmenu
+sta $fd
+jsr submenu
+cmp #15
+beq direxit
+cmp #14
+bne .getfilename
+jsr closewindow
+jmp dir1
+direxit
+jsr closefile
+jsr closewindow
+lda #0
+rts
+setupwindow
+jsr gettitle
+lda #128
+sta titlebuffer+16
+lda #<titlewin
+sta $fc
+lda #>titlewin
+sta $fd
+jmp openwindow
+rts
+storename
+lda .count
+asl
+asl
+asl
+asl
+clc
+adc .count
+tay
+ldx #0
+sn1
+lda namebuffer,x
+sta subtext,y
+iny
+inx
+cpx #16
+bcc sn1
+lda #147
+sta subtext,y
+rts
+clearbuffer
+ldx #0
+txa
+.cb1
+sta subtext,x
+inx
+bne .cb1
+jmp setuptext
+.getfilename
+pha
+jsr closefile
+jsr closewindow
+pla
+sta temp
+sta temp+2
+asl
+asl
+asl
+asl
+clc
+adc temp
+ldx #<subtext
+stx temp
+ldx #>subtext
+stx temp+1
+clc
+adc temp
+sta temp
+bcc gfn1
+inc temp+1
+gfn1
+ldy temp+2
+lda lengthtab,y
+ldx temp
+ldy temp+1
+rts
+setuptables
+ldy #0
+ldx #0
+sut1
+lda #253
+sta dirhot,x
+inx
+lda #1
+sta dirbintab,y
+lda lengthtab,y
+bne sut2
+lda #0
+sta dirbintab,y
+dex
+sut2
+iny
+cpy #14
+bne sut1
+lda #78
+sta dirhot,x
+inx
+lda #88
+sta dirhot,x
+inx
+stx dirsubmenu+4
+rts
+lengthtab !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+dirmenu
+!by 12,7,16,16,11,0,17,>subtext,<subtext,>subtext
+dirsubmenu
+!by 12,7,16,16,16,<dirbintab,>dirbintab,<dirhot,>dirhot,<dirjmp,>dirjmp
+dirbintab
+!by 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+dirhot !by 253,253,253,253,253,253,253,253,253,253,253,253,253
+       !by 253
+	   !tx "nx"
+dirjmp
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+        !by <dirselect,>dirselect
+dirselect
+pla
+pla
+lda ypos
+sec
+sbc #7
+rts
+titlewin
+!by 11,3,18,3,11,7,<twtxt,>twtxt,<titlebuffer,>titlebuffer
+twtxt !by 31,14,4
+!tx "directory"
+!by 128
+twtxt2 !by 128
+setuptext
+ldx #0
+ldy #238
+spt1
+lda settxt,x
+sta subtext,y
+iny
+inx
+cpx #15
+bcc spt1
+rts
+settxt !tx "Next page"
+	!by 147
+	!tx "eXit"
+	!by 128
+.count !by 0
+temp !by 0,0,0
+
+directory
+jsr storebit
+jsr .directory
+stx smd1+1
+sty smd1+2
+sta smd2+1
+ldy #0
+dc1
+smd2 cpy #$ff
+beq fillrest
+smd1 lda $ffff,y
+sta $0200,y
+iny
+bne dc1
+fillrest
+lda #0
+dc2
+sta $0200,y
+iny
+cpy #25
+bne dc2
+jsr unstorebit
+rts
+storebit
+ldx #0
+sb1
+lda $0478,x
+sta menubuffer1,x
+lda $d878,x
+sta menubuffer2,x
+inx
+bne sb1
+rts
+unstorebit
+ldx #0
+sb2
+lda menubuffer1,x
+sta $0478,x
+lda menubuffer2,x
+sta $d878,x
+inx
+bne sb2
+rts
+}

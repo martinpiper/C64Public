@@ -1,0 +1,654 @@
+;***************************************
+; The code that is sent to the drive
+.driveCodePseudoStart:
+
+!pseudopc $500 {
+
+
+; Unused according to http://unusedino.de/ec64/technical/aay/c1541/ra41main.htm
+.unused1541ZP	= $1b
+!if (IRQDisk_LEDFlash & (2 + 4)){
+.pulseSpeed	= $3b
+.lastPulse	= $3c
+}
+
+!macro .LEDOn .VIA2Port {
+	; Turn LED on
+	lda .VIA2Port
+	ora #8
+	sta .VIA2Port
+}
+
+!macro .LEDOff .VIA2Port {
+	; LED Off
+	lda .VIA2Port
+	and #$f7
+	sta .VIA2Port
+}
+
+;---------------------------------------
+
+.driveCodeRealStart:
+	; Paranoia
+	cld
+!if (IRQDisk_LEDFlash & (2 + 4)){
+	lda #1
+	sta .pulseSpeed
+	lda #0
+	sta .lastPulse
+}
+
+.driveWaitForAnyInputL:
+	; Enable IRQs while waiting for commands. This is because the drive motor is controlled by
+	; the drive IRQs and the motor won't stop spinnning otherwise.
+	cli
+
+!if 0 {
+	; Make the drive just log any changes from the VIA into memory, sometimes useful for debugging
+	sei	; We don't want any of the IRQs to alter what we are testing
+	ldx #1
+	lda #$fe
+	sta .blockBuffer1
+.driveDebug:
+	; Debugging, useful for getting the drive to reply nothing at all
+;	jmp .driveDebug
+
+	cmp .VIA1Port
+	beq .driveDebug
+	lda .VIA1Port
+	sta .blockBuffer1,x
+	pha	; Save what we got
+	inx
+	; Debugging, useful to test the computer serial port changes when the drive replies to certain bit patterns.
+!if 1 {
+	and #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	beq .nada
+	cmp #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	beq .nada
+	lsr
+	; Send C0D1 for carry clear
+	lda #.VIA1Port_DataOut
+	bcc .rskip2
+	; Send C1D0 for carry set
+	lda #.VIA1Port_ClockOut
+.rskip2:
+	sta .VIA1Port
+
+	lda #$ff
+	sta .blockBuffer1,x
+	inx
+	pla
+	lda .VIA1Port
+	sta .blockBuffer1,x
+	pha
+	inx
+
+.nada
+}
+	; Toggle the LED on a change
+	lda .VIA2Port
+	eor #8
+	sta .VIA2Port
+	; And output some debug
+	lda #$f0
+	sta .blockBuffer1,x
+	inx
+
+	; Restore what we are testing with
+	pla
+
+	jmp .driveDebug
+}
+
+!if !(IRQDisk_LEDFlash & (2 + 4)){
+	+.LEDOff .VIA2Port
+}
+	; Handle the command from the computer
+	jsr .driveRecv
+	cmp #.diskCommandReadFile
+	beq .driveReadFile
+	cmp #.diskCommandWriteFile
+	beq .driveWriteFile
+	; Even if the pulsing code is disabled test for the command and process the extra byte sent
+	; so that the command parameter byte is not mistaken for a command byte.
+	cmp #.diskCommandSetPulseSpeed
+	beq .driveSetPulseSpeed
+	; Then test other commands...
+	; For example, sending data to the drive so it can process it and send back the result.
+;	cmp #.diskCommandFutureExpansion
+;	beq .doSomething
+	; If the command isn't handled then report an error and loop
+	jmp .driveErrorSoQuit
+
+.driveSetPulseSpeed
+	jsr .driveRecv
+	bcs .driveWaitForAnyInputL
+!if (IRQDisk_LEDFlash & (2 + 4)){
+	sta .pulseSpeed
+}
+	jmp .driveWaitForAnyInputL
+;	jmp .driveSendSuccessAndWait
+
+.driveWriteFile:
+	jsr .commonFindTheFile
+	bcs .driveWaitForAnyInputL
+.notLastBlockInFile3
+	jsr .driveReadBlock
+	; Quit if there was a read error
+	bcs .ldriveErrorSoQuit
+	; Usually we can read $fe bytes ($100 - 2 for track and sector)
+	ldy #$fe
+	lda .blockBuffer1
+	; If the track is non-zero this was not the last block
+	bne .notLastBlockInFile2
+
+	; Last block so get the length, minus one to adjust for the drive block length
+	ldy .blockBuffer1+1
+	dey
+	; Calculate how many bytes we really want to get to save for this block
+.notLastBlockInFile2
+	tya
+	tax
+	jsr .commonSendAByte
+	; Paranoia check, should never happen with good formatted disks
+	cpy #0
+	beq .justWriteBlock
+	ldx #2
+.rc1
+	jsr .driveRecv
+	sta .blockBuffer1,x
+	inx
+	dey
+	bne .rc1
+.justWriteBlock
+	jsr .driveWriteBlock
+	; Quit if there was a read error
+	bcs .ldriveErrorSoQuit
+
+	; Now check to see if we need a next block
+	lda .blockBuffer1+1
+	sta .sectorBuffer1
+	lda .blockBuffer1
+	sta .trackBuffer1
+	; If so then loop which reads in the next block
+	bne .notLastBlockInFile3
+
+	jmp .driveSendSuccessAndWait
+
+.ldriveErrorSoQuit jmp .driveErrorSoQuit
+
+.driveReadFile:
+	jsr .commonFindTheFile
+	bcs .driveWaitForAnyInputL
+
+	; Read the block
+.driveNextBlockL:
+	jsr .driveReadBlock
+	; Quit if there was a read error
+	bcs .ldriveErrorSoQuit
+	; Get the track and sector of the next block
+	ldy #$00
+	lda .blockBuffer1+1
+	sta .sectorBuffer1
+	lda .blockBuffer1
+	sta .trackBuffer1
+	; If the track is non-zero this was not the last block
+	bne .notLastBlockInFile
+
+	; Last block so get the length
+	ldy .blockBuffer1+1
+	iny
+.notLastBlockInFile:
+	sty .temp1
+
+!ifdef IRQDisk_UseATN {
+	; If using ATN then first send how many bytes we are burst sending
+	lda .temp1
+	sec
+	sbc #2
+	tax
+	jsr .driveSend
+}
+
+	; Skip the track and sector when sending the data buffer
+	ldy #2
+
+	; Send the data buffer to the computer
+.driveSendBuffer:
+	; Remember to encode the literal escape byte if needed
+	ldx .blockBuffer1,y
+!ifdef IRQDisk_UseATN {
+	; Burst transfer we ignore the escape byte
+	jsr .driveSendBurst
+} else {
+	jsr .commonSendAByte
+}
+	iny
+	; Are all the bytes in the block sent?
+	cpy .temp1
+	bne .driveSendBuffer
+
+!ifdef IRQDisk_UseATN {
+	; Send C0D0 to cause the computer to wait for the normal bits to be sent next
+	lda #0
+	sta .VIA1Port
+}
+
+	lda .blockBuffer1
+	; Loop until all blocks are sent
+	bne .driveNextBlockL
+
+.driveSendSuccessAndWait:
+	; Send the success escape byte sequence
+	ldx #.driveEscapeByte
+	jsr .driveSend
+	ldx #0
+	jsr .driveSend
+	; And wait for the next file
+	jmp .driveWaitForAnyInputL
+
+; Sends X
+; A,X corrupted, Y unchanged
+.commonSendAByte
+	cpx #.driveEscapeByte
+	bne .notEscapeCode
+
+	jsr .driveSend
+	ldx #.driveEscapeByte
+
+.notEscapeCode:
+	jsr .driveSend
+	rts
+
+.commonFindTheFile
+	; Get the file name length and file name chars
+	jsr .driveRecv
+	and #15
+	tax
+	sta .driveFileNameLength
+	ldy #0
+	cpx #0
+	beq .driveFileNameFill
+.driveFileNameReadL:
+	jsr .driveRecv
+	sta .driveFileName,y
+	iny
+	dex
+	bne .driveFileNameReadL
+
+.driveFileNameFill:
+	; Fill the remaining name with $a0 for easier file name matching with the directory blocks
+	lda #$a0
+.driveFileNameFillL:
+	cpy #16
+	beq .driveNoMoreFill
+	sta .driveFileName,y
+	iny
+	bne .driveFileNameFillL
+.driveNoMoreFill:
+
+	; Read the disk first directory block from track 18 and sector 1
+	ldx #18
+	ldy #1
+.scanDirectoryL:
+	stx .trackBuffer1
+	sty .sectorBuffer1
+	jsr .driveReadBlock
+	bcs .driveErrorSoQuit
+
+	; Y = $02 is the initial offset into the directory block to start searching for file name data.
+	ldy #$02
+.scanNextFileNameL:
+	; Check the file type, must be PRG
+	lda .blockBuffer1,y
+	and #$83
+	cmp #$82
+	bne .fileNotFound
+
+	; Check the chars
+	ldx #0
+	lda #3
+	sta .driveCheckCharsL+1
+.driveCheckCharsL:
+	lda .blockBuffer1+3,y
+	cmp .driveFileName+0,x
+	bne .fileNotFound
+	inc .driveCheckCharsL+1
+	inx
+	cpx #16
+	bne .driveCheckCharsL
+	; If we got here then the read succeeded
+	beq .scanFileNameFound
+
+	; Hop to the next entry if possible
+.fileNotFound:
+	tya
+	clc
+	adc #$20
+	tay
+	bcc .scanNextFileNameL
+
+	; Next block
+	ldy .blockBuffer1+1
+	ldx .blockBuffer1
+	; Keep trying blocks until the last directory block
+	bne .scanDirectoryL
+
+	; File not found: Fall through
+
+.driveErrorSoQuit:
+	; Send the escape byte followed by 1 to notify the computer
+	ldx #.driveEscapeByte
+	jsr .driveSend
+	ldx #1
+	jsr .driveSend
+	sec
+	rts
+
+
+	; Found, so get the starting track and sector numbers from the directory
+.scanFileNameFound:
+!if (IRQDisk_LEDFlash & 1) {
+	+.LEDOn .VIA2Port
+}
+
+	lda .blockBuffer1+1,y
+	sta .trackBuffer1
+	lda .blockBuffer1+2,y
+	sta .sectorBuffer1
+
+	clc
+	rts
+
+
+;***************************************
+	; Read a block
+.driveReadBlock:
+	lda #.commandJobCodeRead
+	sta .cbosm1+1
+	jmp .commonBlockOp
+.driveWriteBlock:
+	lda #.commandJobCodeWrite
+	sta .cbosm1+1
+	; Note: Fall through
+;	jmp .commonBlockOp
+.commonBlockOp
+!if IRQDisk_LEDFlash & 8 {
+	+.LEDOn .VIA2Port
+}
+	ldy #IRQDisk_Retries
+	; Enable interrupts so the command gets processed by the drive
+	cli
+.driveRetryBlockRead:
+.cbosm1	lda #.commandJobCodeRead
+	sta .commandCodeBuffer1	; code for reading the block
+.drivePollCommandBuffer:
+	lda .commandCodeBuffer1	; wait for the command to complete
+	bmi .drivePollCommandBuffer
+	; Check status
+	cmp #1
+	bne .driveBlockReadError
+	; Reading the block succeeded
+!if (IRQDisk_LEDFlash & (8 + 1)) = 8 {
+	+.LEDOff .VIA2Port
+}
+	clc
+	; Disable IRQs while not reading blocks
+	sei
+	rts
+
+.driveBlockReadError:
+	; Decremenet retry count
+	dey
+	; Too many errors, so goto error :)
+	bmi .driveReportError
+
+	; Do we want to try knocking the head when we have half retries left?
+	cpy #IRQDisk_Retries / 2
+	bne .driveSkipHeadKnock
+
+	; Knock the head
+	lda #.commandJobCodeBump
+	sta .commandCodeBuffer1
+
+.driveSkipHeadKnock:
+	; Theoretically if the user replaced the disk, hence the read error, we can read the new diskID
+	lda .headerBlockID
+	sta .diskID
+	lda .headerBlockID+1
+	sta .diskID+1
+
+.drivePollCommandBuffer2:
+	; Wait for the command to complete
+	lda .commandCodeBuffer1
+	bmi .drivePollCommandBuffer2
+	bpl .driveRetryBlockRead
+
+.driveReportError:
+!if IRQDisk_LEDFlash & (8 + 1) {
+	+.LEDOff .VIA2Port
+}
+	sec
+	; Disable IRQs while not reading blocks
+	sei
+	rts
+
+; When sending bits
+; If carry set (LSBit of data) send C0D1 else send C1D0
+; Wait for C1D1
+; Send C0D0
+; Wait for C0D0
+; Loop for the other bits
+;***************************************
+	; Send sends the X register contents. .unused1541ZP is used as temporary storage.
+.driveSend:
+	stx .unused1541ZP
+	; Counter to send 8 bits
+	ldx #8
+.driveSendBitL:
+	; Read next bit to send
+	lsr .unused1541ZP
+	; Prepare to send C0D1 when carry set
+	lda #.VIA1Port_DataOut
+	bcs .skipInvert
+	; Send C1D0 when carry clear
+	lda #.VIA1Port_ClockOut
+.skipInvert:
+	sta .VIA1Port
+
+.waitACK:
+	; Wait for C1D1, the ACK
+	lda .VIA1Port
+	and #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	eor #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	; If C0 or D0 are set then loop
+	bne .waitACK
+	; Send C0D0
+	sta .VIA1Port
+
+	lda #.VIA1Port_ClockIn + .VIA1Port_DataIn
+.waitC0D0:
+	bit .VIA1Port
+	; If C1 or D1 loop, i.e. wait for C0D0
+	bne .waitC0D0
+
+	dex
+	; Loop for the other bits
+	bne .driveSendBitL
+	rts
+
+!ifdef IRQDisk_UseATN {
+; Sends 8 bits in four groups of 2 bits using data and clock with ATN as the trigger
+.driveSendBurst:
+	stx .unused1541ZP
+
+	; Counter to send 4 lots of 2 bits
+	ldx #4
+.driveSendBitBL:
+	; Read next bits to send
+	lsr .unused1541ZP
+	lda #0
+	rol
+	asl
+	lsr .unused1541ZP
+	rol
+	asl
+	; Send them
+	ora #.VIA1Port_ATNACK
+	sta .toSendWithATN
+
+	lda #.VIA1Port_ATN
+.waitDriveATN
+	bit .VIA1Port
+	beq .waitDriveATN
+	lda .toSendWithATN
+	sta .VIA1Port
+	lda #1
+	clc
+.sendbVL1:
+	adc #1
+	cmp #(.ATNCycleCount * 2)
+	bne .sendbVL1
+
+	dex
+	; Loop for the other bits
+	bne .driveSendBitBL
+
+	rts
+.toSendWithATN !by 0
+}
+
+.driveTempStore !by 0,0,0
+;***************************************
+	; Receives a byte from the computer. Returns the byte in A. XY Are preserved.
+	;.unused1541ZP is used as temporary storage.
+.driveRecv:
+	stx .driveTempStore+1
+	sty .driveTempStore+2
+!if IRQDisk_LEDFlash  & (2 + 4) {
+	ldy .lastPulse	; LED brightness (0=dim, 255=lit)
+	; X is used by .driverSerialSignalReceived to restore the stack and the LED pulsing routine if a serial signal is received
+	tsx
+.flashLoop1:
+!if IRQDisk_LEDFlash  & 2 {
+	jsr .pulseLEDForY
+	lda .lastPulse
+	clc
+	adc .pulseSpeed
+	tay
+	bcc .flashLoop1
+	ldy #255
+}
+!if IRQDisk_LEDFlash  & 4 {
+.flashLoop2:
+	tya
+	sec
+	sbc .pulseSpeed
+	tay
+	bcs .noLoop
+	ldy #0
+	jmp .flashLoop1
+.noLoop
+	jsr .pulseLEDForY
+	ldy .lastPulse
+	jmp .flashLoop2
+}
+	jmp .flashLoop1
+
+.pulseLEDForY:
+	; Store the delay
+	sty .lastPulse
+	+.LEDOff .VIA2Port
+	; Wait for a bit
+	jsr .pulseDelay
+	+.LEDOn .VIA2Port
+	; Wait for the inverse time
+	lda .lastPulse
+	eor #$ff
+	tay
+	; Fall through and then return
+.pulseDelay:
+	; Check for any incomming serial signal and exit the pulse if there are any.
+	; This means the pulse code does not make the drive slow to receive commands.
+	lda #.VIA1Port_ClockIn + .VIA1Port_DataIn + .VIA1Port_ATN
+	and .VIA1Port
+	bne .driverSerialSignalReceived
+	iny
+	bne .pulseDelay
+	rts
+
+.driverSerialSignalReceived:
+	+.LEDOff .VIA2Port
+	; Discard whatever was pushed onto the stack by the pulse code
+	txs
+}
+
+; 8: When receiving
+; 8: Test ATN and quit back to normal DOS if needed.
+; 8: Wait while C0D0 (which is the default state of 00 on the port)
+; 8: Extract the bit from the data
+; 8: ACK by sending back the reverse
+; 8: Wait while C1D1
+; 8: Send C0D0
+; 8: Loop for the rest of the bits
+	; Counter to receive 8 bits
+	ldx #8
+.driveRecvBitsL:
+	; Wait while C1D1
+	lda #.VIA1Port_ClockIn + .VIA1Port_DataIn + .VIA1Port_ATN
+	and .VIA1Port
+	; Quit if ATN was asserted, this is a hint that regular CBM DOS wants to talk to the drive.
+	bmi .driveGotATN
+	; Nothing set, so loop
+	beq .driveRecvBitsL
+	; Read the data bit into carry
+	lsr
+	; Send C0D1 for carry clear
+	lda #.VIA1Port_DataOut
+	bcc .skipInvert2
+	; Send C1D0 for carry set
+	lda #.VIA1Port_ClockOut
+.skipInvert2:
+	; ACK What was received by sending back the expected result
+	; Due to the way the VIA works this ends up sending C1D1 to the computer
+	sta .VIA1Port
+	; Rotate the carry bit into the byte being constructed
+	ror .unused1541ZP
+.waitACK4:
+	; Wait while C1D1
+	lda .VIA1Port
+	and #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	eor #.VIA1Port_ClockIn + .VIA1Port_DataIn
+	; If C1D1 then loop
+	beq .waitACK4
+	; Send C0D0
+	lda #0
+	sta .VIA1Port
+
+	; Loop for the next bits
+	dex
+	bne .driveRecvBitsL
+
+	; Read the constructed byte and return it
+	lda .unused1541ZP
+	ldx .driveTempStore+1
+	ldy .driveTempStore+2
+	rts
+
+.driveGotATN:
+	; We got ATN so we exit back to the normal drive OS
+	; Pop the first return address and enable interrupts
+	pla
+	pla
+	; Let the interrupts run
+	cli
+	rts
+
+.driveFileNameLength !by 0
+.driveFileName !fill 16
+
+.temp1 !by 0
+.temp2 !by 0
+
+.driveCodeRealEnd:
+} ; < !pseudopc

@@ -1,0 +1,377 @@
+;BerzerkReduxCart boot code and picture display
+;-truedrive -cartcrt BerzerkReduxCart.crt
+
+!source "../stdlib/stdlib.a"
+!to "BerzerkReduxCart.prg", cbm
+!sl "BerzerkReduxCart.map"
+!sal
+!svl "BerzerkReduxCart.lbl"
+!cpu 6510
+!ct pet
+
+; MPi: TODO: Automate the crt file generation from the raw data.
+;unsigned char HeaderData[80] = {
+;	0x43, 0x36, 0x34, 0x20, 0x43, 0x41, 0x52, 0x54, 0x52, 0x49, 0x44, 0x47, 0x45, 0x20, 0x20, 0x20, 
+;	0x00, 0x00, 0x00, 0x40, 0x01, 0x00, 0x00, 0x13, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+;	0x43, 0x41, 0x52, 0x54, 0x36, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+;	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+;	0x43, 0x48, 0x49, 0x50, 0x00, 0x00, 0x20, 0x10, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x20, 0x00
+;};
+;unsigned char ChipData[16] = {
+;	0x43, 0x48, 0x49, 0x50, 0x00, 0x00, 0x20, 0x10, 0x00, 0x00, 0x00, <bank number>, 0x80, 0x00, 0x20, 0x00
+;};
+
+;..\bin\LZMPi.exe -c PressFire.prg PressFireComp.prg 2
+
+; This is bank 0 in the cart
+; It contains the boot code, title screen data and the main code.
+; The code at Boot copies the code at RealCodeStart to its real place in $c000.
+; The main code then decompresses and displays the title screen.
+; The compressed music is located in bank 7 and it is decompressed just before the title screen bitmap.
+; It then waits for fire and then uses the other cart banks to copy the compressed Berzerk Redux code.
+; It then disables the cart and executes the compressed game code as normal.
+
+; If bank 0 ever gets over 8K or the compressed game code gets over $b800 (47104) bytes then this approach is screwed. :)
+; This is because the compressed game code is copied into its normal BASIC loading place at $0801 onwards and because we have compressed music in bank 7
+
+*=$8000
+!word Boot
+!word Boot
+	!byte $c3 ;c
+	!byte $c2 ;b
+	!byte $cd ;m
+	!byte $38 ;8
+	!byte $30 ;0
+
+Boot
+	sei
+	jsr $fda3 ;prepare irq
+	jsr $fd50 ;init memory
+	jsr $fd15 ;init i/o
+;	jsr $ff5b ;init video
+
+	lda #0
+	sta ZPCurrentFileDeviceNumber
+
+!if 1 {
+	; If a drive exists then fake init the disk drive device number
+	lda #8
+	jsr LISTEN
+	lda #$6f	; $f (command channel) OR $60
+	jsr SECOND
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .noDrive
+	lda #8
+	sta ZPCurrentFileDeviceNumber
+.noDrive
+	jsr UNLSN
+}
+
+	lda #<CodeMoveStart
+	sta $fb
+	lda #>CodeMoveStart
+	sta $fc
+	lda #(>(CodeMoveEnd-CodeMoveStart))+1
+	sta $fd
+	lda #<RealCodeStart
+	sta $fe
+	lda #>RealCodeStart
+	sta $ff
+	ldy #0
+.l1
+	lda ($fb),y
+	sta ($fe),y
+	dey
+	bne .l1
+	inc $fc
+	inc $ff
+	dec $fd
+	bne .l1
+	jmp RealCodeStart
+
+	; The loading picture is in bank 0, compressed of course.
+LogoBitmap
+!bin "../PictureLink/PicBitmap",,2
+LogoColour
+!bin "../PictureLink/PicColour",,2
+LogoScreen
+!bin "../PictureLink/PicScreen",,2
+PressFire
+!bin "PressFireComp.prg",,2
+
+!zone
+CodeMoveStart
+!pseudopc $c000 {
+RealCodeStart
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	; Enable this to give a chance to "insert" the cartridge with all the compressed data on it.
+;	+WaitForFire_A
+
+	ldx #<$0400
+	ldy #>$0400
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoScreen
+	ldy #>LogoScreen
+	jsr RNXPCompressionDecompress
+
+	ldx #<COLOURRAM
+	ldy #>COLOURRAM
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoColour
+	ldy #>LogoColour
+	jsr RNXPCompressionDecompress
+
+	ldy #$20
+	ldx #0
+	txa
+.cl2
+	sta $2000,x
+	dex
+	bne .cl2
+	inc .cl2+2
+	dey
+	bne .cl2
+
+	; Check the banks switch and also decompress the music in bank 7
+	lda $8000
+	ldx $8001
+	ldy #7
+	sty $de00
+	cmp $8000
+	bne .diff
+	cpx $8001
+	bne .diff
+
+	+ClearScreenAt_AX SCREENRAM , ' '
+	+DisplayColourTextMiddle_AX .HWFail , .HWFailEnd , SCREENRAM + (12*40) , VIC2Colour_White
+
+	+MACROWaitForTheLastScanPlus1_A
+	+SetDefaultScreenLowerCase_A
+
+	jmp *
+
+.diff
+	; Decompress the music from bank 7
+	ldx #<$4000
+	ldy #>$4000
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<$8000
+	ldy #>$8000
+	jsr RNXPCompressionDecompress
+
+	; Bank to bank 0
+	ldy #0
+	sty $de00
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #3
+	sta CIA2PortASerialBusVICBank
+	lda #%00011000
+	sta VIC2MemorySetup
+	lda #%11000
+	sta VIC2ScreenControlH
+
+	lda #%111011
+	sta VIC2ScreenControlV
+
+	ldx #<$2000
+	ldy #>$2000
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoBitmap
+	ldy #>LogoBitmap
+	jsr RNXPCompressionDecompress
+
+
+	ldx #<$800
+	ldy #>$800
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<PressFire
+	ldy #>PressFire
+	jsr RNXPCompressionDecompress
+
+
+	; Setup a row of eight hires sprites for the bottom border status bar
+	ldx #0
+	stx VIC2SpriteMulticolour
+	lda #VIC2SpriteXBorderLeft
+.sl1
+	sta VIC2Sprite0X,x
+	clc
+	adc #VIC2SpriteSizeX
+
+	inx
+	inx
+	cpx #16
+	bne .sl1
+
+	ldx #0
+.sl2
+	lda #VIC2SpriteYBorderBottom+4
+	sta VIC2Sprite0Y,x
+	inx
+	inx
+	cpx #16
+	bne .sl2
+
+	lda #0
+	ldx #7
+.sl3
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .sl3
+
+	lda #0
+	sta VIC2SpriteXMSB
+	ldx #32	; Sprite frames are at $800+
+	stx SPRITEFRAME+0
+	inx
+	stx SPRITEFRAME+1
+	inx
+	stx SPRITEFRAME+2
+	inx
+	stx SPRITEFRAME+3
+	inx
+	stx SPRITEFRAME+4
+	inx
+	stx SPRITEFRAME+5
+	inx
+	stx SPRITEFRAME+6
+	inx
+	stx SPRITEFRAME+7
+
+	lda #%11111111
+	sta VIC2SpriteEnable
+
+	; Init the music that was decompressed
+	lda #0
+	jsr $4000
+.fl1
+	; Open the bottom borders
+	+MACROWaitForRaster VIC2SpriteYBorderBottom-2
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	lda SprColTabCounter2
+	beq .pulse
+	dec SprColTabCounter2
+	jmp .skipPulse
+.pulse
+	inc SprColTabCounter
+	lda SprColTabCounter
+	lsr
+	lsr
+	and #15
+	tax
+	lda SprColTab,x
+	ldx #7
+.sl4
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .sl4
+.skipPulse
+	+MACROWaitForRaster 255
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	jsr $4003
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	bne .fl1
+
+	lda #0
+	sta SIDVolumeFilter
+	jsr PrintDecompressing
+
+	; Copy the other 8KB cart banks to BASIC memory
+	lda #0
+	tax
+	ldy #1
+	sty $de00
+.l2
+.sm1	lda $8000,x
+.sm2	sta $0800,x
+	dex
+	bne .l2
+	inc .sm1+2
+	inc .sm2+2
+
+	lda .sm2+2
+	cmp #$c0
+	beq .RunGame
+
+	lda .sm1+2
+	cmp #$a0
+	bne .l2
+
+	lda #$80
+	sta .sm1+2
+	; Next bank
+	iny
+	sty $de00
+	jmp .l2
+
+.RunGame
+	; Kill the cart
+	lda #8
+	sta $de00
+
+	; Start the compressed game code
+	jmp 2061
+
+SprColTabCounter !by 0
+SprColTabCounter2 !by 250	; 5 seconds of no press fire message
+SprColTab !by VIC2Colour_Black , VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White
+!by VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_LightGrey , VIC2Colour_Grey , VIC2Colour_DarkGrey
+
+PrintDecompressing
+	; Stop the IRQs, then blank the screen colour, then display a message in an unused porition
+	; of extended zero page.
+	+MACROWaitForTheLastScanPlus1_A
+	ldx #0
+	stx VIC2ScreenControlV
+	lda #VIC2Colour_Black
+.cl1
+	sta COLOURRAM ,x
+	sta COLOURRAM + $100 ,x
+	sta COLOURRAM + $200 ,x
+	sta COLOURRAM + $2e8 ,x
+	dex
+	bne .cl1
+
+	+DisplayColourTextMiddle_AX .decompressing , .decompressingEnd , $0000 + (17*40) , VIC2Colour_White
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #3
+	sta CIA2PortASerialBusVICBank
+	lda #4
+	sta VIC2MemorySetup
+	lda #%01000
+	sta VIC2ScreenControlH
+	lda #%11011
+	sta VIC2ScreenControlV
+	rts
+
+.decompressing !scr "<<loading>>"
+.decompressingEnd
+
+.HWFail !scr "Hardware failure, banks not switching!"
+.HWFailEnd
+
+
+!source "../stdlib/Initialise.a"
+
+!macro RNXPCompressionIncBorder_A {}
+!source "../Decompression/Decompression.a"
+!source "../Decompression/DecompressionP2.a"
+
+!source "../Decompression/DecompressionVars.a"
+
+CompressionStartOfHistoryBufferTables = *
+
+}
+CodeMoveEnd

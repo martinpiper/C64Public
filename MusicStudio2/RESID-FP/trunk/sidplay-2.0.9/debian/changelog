@@ -1,0 +1,58 @@
+sidplay (2.0.9-5) unstable; urgency=low
+
+  * Fix a compilation error and warnings with gcc-4.3/g++-4.3 .
+  * Update watch file thanks to Raphael Geissert (closes: #449887).
+  * Correct minor packaging issues and update Standards-Version to 3.7.3 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Mon, 07 Apr 2008 23:46:50 +0200
+
+sidplay (2.0.9-4) unstable; urgency=medium
+
+  * Again a fix for GNU/kFreeFSD compilation (closes: #399124).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Sat, 18 Nov 2006 06:38:45 +0000
+
+sidplay (2.0.9-3) unstable; urgency=low
+
+  * Fix FTBFS on GNU/kFreeBSD's, thanks to Aurelien Jarno
+    <aurel32@debian.org> (closes: #336880).
+  * Updated FSF address in copyright.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Thu,  9 Mar 2006 21:00:30 +0000
+
+sidplay (2.0.9-2) unstable; urgency=low
+
+  * Fix manpage typeos, thanks to A Costa <agcosta@gis.net> (closes: #312762).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Sat, 20 Aug 2005 15:27:21 +0200
+
+sidplay (2.0.9-1) unstable; urgency=low
+
+  * New upstream version.
+  * Changed email address.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Thu, 25 Nov 2004 03:22:59 +0100
+
+sidplay (2.0.8-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bump up Standards-Version to 3.6.1, no changes needed.
+  * Cleaned up rules a bit.
+  * Remove spurious rpath from binary.
+  * New maintainer.
+
+ -- László Böszörményi (GCS) <gcs@lsc.hu>  Sat, 14 Aug 2004 13:23:32 +0000
+
+sidplay (2.0.7+cvs20030111-2) unstable; urgency=low
+
+  * src/keyboard.cpp: Fix char/int silliness with _getch().
+    (Closes: #181223)
+
+ -- Ivo Timmermans <ivo@debian.org>  Sun, 16 Feb 2003 16:17:26 +0100
+
+sidplay (2.0.7+cvs20030111-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Ivo Timmermans <ivo@debian.org>  Sun, 12 Jan 2003 18:12:04 +0100
+

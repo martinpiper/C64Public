@@ -1,0 +1,49 @@
+;BlankProjectComp test code
+
+!source "../stdlib/stdlib.a"
+!to "BlankProjectComp.prg", cbm
+!sl "BlankProjectComp.map"
+!svl "BlankProjectComp.lbl"
+!cpu 6510
+!ct pet
+
+*=$400
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+	ldx #7
+.f0
+	lda # ($700 / 64)
+	sta SCREENRAM+SPRITEFRAMESCROFF,x
+	txa
+	sta VIC2Sprite0Colour,x
+	asl
+	tay
+	lda #128
+	sta VIC2Sprite0Y,y
+.sm0	lda #VIC2SpriteXBorderLeft
+	sta VIC2Sprite0X,y
+	lda .sm0+1
+	clc
+	adc #VIC2SpriteSizeX
+	sta .sm0+1
+	dex
+	bpl .f0
+
+	lda #%11111111
+	sta VIC2SpriteEnable
+	lda #0
+	sta VIC2SpriteMulticolour
+	sta VIC2SpriteDoubleWidth
+
+.l1
+	inc VIC2BorderColour
+	dec VIC2BorderColour
+	jmp .l1
+
+!source "../stdlib/Initialise.a"
+
+*=$700
+!fill 63, 255

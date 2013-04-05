@@ -1,0 +1,260 @@
+!zn
+.message1 !scr "congratulations player 1"
+.message1End
+.message2 !scr "you have joined the immortals"
+.message2End
+.message3 !scr "in the berzerk hall of fame"
+.message3End
+.message4 !scr "enter your initials:"
+.message4End
+.message5 !scr "move stick to change letter"
+.message5End
+.message6 !scr "then press fire to store it."
+.message6End
+
+.initialsTab
+!scr "abcdefghijklmnopqrstuvwxyz"
+; Delete char
+!by 31
+
+.enteringInitial !by 0
+EnteringInitials !by 0,0,0
+EnterInitials
+	jsr TurnOffScreenWithBlank
+	lda #1
+	sta SFXCall
+	jsr SFXSIDInit
+	jsr ClearMainScreen
+	jsr ClearAllSprites
+	jsr EnableScreenWithIRQWait
+
+	lda #1
+	jsr IRQDisk_SetPulseSpeed
+
+	+DisplayColourTextMiddle_AX .message1 , .message1End , MainScreen + (4*40) , VIC2Colour_Yellow
+	+DisplayColourTextMiddle_AX .message2 , .message2End , MainScreen + (6*40) , VIC2Colour_LightBlue
+	+DisplayColourTextMiddle_AX .message3 , .message3End , MainScreen + (8*40) , VIC2Colour_LightBlue
+	+DisplayColourTextMiddle_AX .message4 , .message4End , MainScreen + (10*40) , VIC2Colour_LightBlue
+	+DisplayColourTextMiddle_AX .message5 , .message5End , MainScreen + (15*40) , VIC2Colour_LightGreen
+	+DisplayColourTextMiddle_AX .message6 , .message6End , MainScreen + (17*40) , VIC2Colour_LightGreen
+
+	lda #0
+	sta .enteringInitial
+	sta EnteringInitials
+	sta EnteringInitials+1
+	sta EnteringInitials+2
+.ft1
+.l1
+	jsr WaitForBottomIRQ
+	jsr Multiplex_Sort
+
+	ldx EnteringInitials
+	beq .o1
+	lda .initialsTab-1,x
+	sta MainScreen + 19 + (13*40)
+.o1
+	ldx EnteringInitials+1
+	beq .o2
+	lda .initialsTab-1,x
+	sta MainScreen + 20 + (13*40)
+.o2
+	ldx EnteringInitials+2
+	beq .o3
+	lda .initialsTab-1,x
+	sta MainScreen + 21 + (13*40)
+.o3
+
+	; Wait around for fire to be pressed and released
+	ldx .enteringInitial
+	lda EnteringInitials,x
+	bne .o4
+	lda #1
+	sta EnteringInitials,x
+	lda #' '
+	sta MainScreen + 19 + (13*40),x
+.o4
+	inc COLOURRAM + 19 + (13*40),x
+	; Slow down the input of the initials
+	lda COLOURRAM + 19 + (13*40),x
+	and #3
+	bne .l1
+	lda CIA1KeyboardColumnJoystickA
+	and #%00001
+	bne .notUp
+	jsr .doDec
+.notUp
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%00010
+	bne .notDown
+	jsr .doInc
+.notDown
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%00100
+	bne .notLeft
+	jsr .doDec
+.notLeft
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%01000
+	bne .notRight
+	jsr .doInc
+.notRight
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	bne .ft1
+
+	; Check for delete being selected
+	ldx .enteringInitial
+
+	; Remove the char and go back one
+	lda EnteringInitials,x
+	cmp #27
+	bne .justAChar
+
+	cpx #0
+	; Cannot delete the first char
+	beq .ft2
+
+	lda #16
+	jsr SFXInit
+	lda #17
+	jsr SFXInit
+
+
+	lda #0
+	sta EnteringInitials,x
+	dec .enteringInitial
+	lda #VIC2Colour_Black
+	sta COLOURRAM + 19 + (13*40),x
+	jmp .ft2
+
+.justAChar
+	lda #VIC2Colour_White
+	sta COLOURRAM + 19 + (13*40),x
+	inc .enteringInitial
+
+	lda #0
+	jsr SFXInit
+
+.ft2
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	beq .ft2
+
+	lda .enteringInitial
+	cmp #3
+	beq .ol1
+	jmp .l1
+.ol1
+
+	lda #0
+	sta .doEndOrDel
+
+	; Now just display "end" or delete
+.l2
+	jsr WaitForBottomIRQ
+	jsr Multiplex_Sort
+
+	lda .doEndOrDel
+	and #1
+	beq .dispEndEntry
+	; Display del
+	lda #31
+	sta MainScreen + 19 + (13*40) + 3
+	lda #' '
+	sta MainScreen + 19 + (13*40) + 4
+	jmp .oDisp
+
+.dispEndEntry
+	; Display end
+	ldx #101
+	stx MainScreen + 19 + (13*40) + 3
+	inx
+	stx MainScreen + 19 + (13*40) + 4
+
+.oDisp
+
+	inc COLOURRAM + 19 + (13*40) + 3
+	inc COLOURRAM + 19 + (13*40) + 4
+
+	; Slow down the input of the delete or "end"
+	lda COLOURRAM + 19 + (13*40) + 3
+	and #3
+	bne .l2
+	lda CIA1KeyboardColumnJoystickA
+	and #%00001
+	bne .notUp2
+	inc .doEndOrDel
+.notUp2
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%00010
+	bne .notDown2
+	inc .doEndOrDel
+.notDown2
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%00100
+	bne .notLeft2
+	dec .doEndOrDel
+.notLeft2
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%01000
+	bne .notRight2
+	dec .doEndOrDel
+.notRight2
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	bne .l2
+
+	lda #VIC2Colour_White
+	sta COLOURRAM + 19 + (13*40) + 3
+	sta COLOURRAM + 19 + (13*40) + 4
+
+.ft3
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	beq .ft3
+
+	lda .doEndOrDel
+	and #1
+	beq .endEntry
+
+	; Otherwise go back to entering initial three
+	lda #2
+	sta .enteringInitial
+	lda #' '
+	sta MainScreen + 19 + (13*40) + 3
+	sta MainScreen + 19 + (13*40) + 4
+	jmp .l1
+
+.endEntry
+	rts
+LoadedOK !by 0
+
+.doEndOrDel !by 0
+
+.doInc
+	jsr WaitForBottomIRQ
+	inc EnteringInitials,x
+	lda EnteringInitials,x
+	cmp #28
+	bne .notLoop1
+	lda #1
+	sta EnteringInitials,x
+.notLoop1
+	rts
+
+.doDec
+	jsr WaitForBottomIRQ
+	dec EnteringInitials,x
+	bne .notLoop2
+	lda #27
+	sta EnteringInitials,x
+.notLoop2
+	rts

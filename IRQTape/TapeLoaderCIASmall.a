@@ -1,0 +1,142 @@
+; This tape loader just uses the CIA without any IRQ being active. It is designed to fit into a
+; small space at the bottom of memory in zero page.
+; In a zone so that all this block of code which is actually split into two chunks gets treated as one block
+; It doesn't use the free block at $2a7-$301.
+; It only uses the block at $302-$311 and the tape header block.
+!zn {
+
+TapeLoaderStoringToLo					= $06
+TapeLoaderStoringToHi					= $07
+.checksum								= $08
+.loadColPos								= $09
+
+startBlock
+!pseudopc $0302 {
+TapeRelocatedStart
+; Now we are effectively at $0302
+; Set the vector "BASIC Input Line and Decode" so that it gets saved and when our routine loads it gets called when the load finishes.
+; We set this vector because the BASIC LOAD command (also shift-runstop) starts at $e168.
+; After the load this function will e1b2 jmp $a52a which then does a530 jmp $a480 which then follows on to do a480 jmp ($302)
+!by <MainLoaderEntry , >MainLoaderEntry
+
+; Must not end beyond $0313 in real terms
+MainLoaderEntry
+	; Demonstrate some code that uses the timer but doesn't use an IRQ to read bytes.
+	; Instead IRQs are turned off and a tight loop is used to read bytes from the tape.
+	; Here we know the ROM calls us so we can assume the ROMs and IO are enabled.
+	sei
+
+	+MACROCIAIRQControlDisable_A
+
+	; Turns on cassette motor and removes ROMs
+	lda #%101
+	bne .TapeHeaderCode
+}
+endBlock
+; Just to introduce a warning if the above code oversteps its boundary
+*=startBlock + $12
+FreeBlock = $12 - (endBlock - startBlock)
+
+; Effectively at $0314
+!by <DefaultIRQServiceRoutine , >DefaultIRQServiceRoutine
+
+TapeTurboEndOfExtendedZeroPageCodeAndIRQ
+
+tapeHeader
+; Must not end beyond $03fb in real terms
+!pseudopc $0351 {
+
+.TapeHeaderCode
+	sta ZPProcessorPort
+
+	lda #15
+	sta SIDVolumeFilter
+	lda #$88
+	sta SIDVoice1AttackDecay
+	sta SIDVoice1SustainRelease
+	lda #$21
+	sta SIDVoice1Control
+
+	; Clear CIA timers and VIC to a known state
+	ldx #0
+
+	stx SIDVoice1FreqLo
+	stx SIDVoice1FreqHi
+
+	stx VIC2InteruptControl
+	stx CIA1TimerAControl
+	stx CIA1TimerBControl
+	stx CIA2TimerAControl
+	stx CIA2TimerBControl
+	stx .checksum
+	dex
+	txs
+
+	inc VIC2BorderColour
+
+	+MACROSetTurboTimer
+
+	; Because the kernal loader has been interrupted we have to switch on the screen :)
+;	lda #VIC2ScreenControlVDefault
+;	sta VIC2ScreenControlV
+
+	; First loop until we get a valid tape sync code
+.l1
+	jsr WaitForTapeEdge
+	rol
+	cmp #TapeSyncCode
+	bne .l1
+
+	; Much shorter version because it assumes the load address and end address
+	; No file name byte check. :)
+
+	; Then check the next byte is actually from the header
+	jsr GetTapeByte
+	cmp #TapeHeaderByteEx3
+	bne .l1
+
+.l2
+	jsr GetTapeByte
+.sm1
+	sta MainSecondLoaderStart
+
+	sta VIC2BorderColour
+	sta SIDVoice1FreqHi
+
+	eor .checksum
+	sta .checksum
+
+	inc .sm1+1
+	bne .l3
+	inc .sm1+2
+
+.l3
+	; Now check for the end of the file being reached
+	lda .sm1+1
+	cmp #< (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+	bne .l2
+	lda .sm1+2
+	cmp #> (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+	bne .l2
+
+	; End reached, check the checksum byte
+	jsr GetTapeByte
+	cmp .checksum
+	bne .displayLoadError
+
+	; Call the loaded code
+	jmp MainSecondLoaderStart
+
+	; Display an error border effect
+.displayLoadError
+	inc VIC2BorderColour
+	jmp .displayLoadError
+
+!source "TapeLoaderCIACommon.a"
+
+}
+endTapeHeader
+; Just to introduce a warning if the above code oversteps its boundary
+*=tapeHeader + $ab
+FreeBlockHeader = $ab - (endTapeHeader - tapeHeader)
+}

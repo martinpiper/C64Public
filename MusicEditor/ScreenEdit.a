@@ -1,0 +1,68 @@
+*=$c000
+!zn {
+	sei
+	lda #<irq1
+	sta IRQServiceRoutineLo
+	lda #>irq1
+	sta IRQServiceRoutineHi
+	cli
+	rts
+	irq1 lda 197
+	cmp #4
+	beq saveit
+	cmp #3
+	beq retreve
+	jmp DefaultIRQServiceRoutine
+saveit sei
+	ldx #0
+l1 lda $0400,x
+	sta $4000,x
+	lda $0500,x
+	sta $4100,x
+	lda $0600,x
+	sta $4200,x
+	lda $06e8,x
+	sta $42e8,x
+	lda $d800,x
+	sta $4400,x
+	lda $d900,x
+	sta $4500,x
+	lda $da00,x
+	sta $4600,x
+	lda $dae8,x
+	sta $46e8,x
+	inc VIC2BorderColour
+	inx
+	bne l1
+	lda VIC2BorderColour
+	sta $43fe
+	lda VIC2ScreenColour
+	sta $43ff
+	jmp DefaultIRQServiceRoutine
+retreve ldx #0
+	sei
+l2 lda $4000,x
+	sta $0400,x
+	lda $4100,x
+	sta $0500,x
+	lda $4200,x
+	sta $0600,x
+	lda $42e8,x
+	sta $06e8,x
+	lda $4400,x
+	sta $d800,x
+	lda $4500,x
+	sta $d900,x
+	lda $4600,x
+	sta $da00,x
+	lda $46e8,x
+	sta $dae8,x
+	inc VIC2ScreenColour
+	inx
+	bne l2
+	lda $43fe
+	sta VIC2BorderColour
+	lda $43ff
+	sta VIC2ScreenColour
+	jmp DefaultIRQServiceRoutine
+}

@@ -1,0 +1,106 @@
+Source: sidplay-libs
+Section: sound
+Priority: optional
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.hu>
+Build-Depends: debhelper (>= 4.0.0)
+Standards-Version: 3.7.3
+
+Package: libsidplay2-dev
+Section: libdevel
+Architecture: any
+Depends: libsidplay2 (= ${binary:Version})
+Description: SID (MOS 6581) emulation library
+ This is a (shared) library that implements the emulation of the C64's
+ SID chip (MOS 6581) and CPU (6510). It is used by several "player"
+ applications, e.g. sidplay, which make it possible to listen to *really*
+ a lot (13.600+) of tunes, known from old and new C64 programs (as well
+ as Amiga compositions).
+ .
+ Find most of the available musics from your favourite games or demos
+ and more in the High Voltage SID Collection (HVSC). For downloads and
+ information about the volunteers, who maintain the collection, look at
+ the HVSC homepage http://www.hvsc.c64.org.
+
+Package: libsidplay2
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Replaces: libsidplay2-1, libsidplay2-1c102 (<= 2.1.1-2)
+Conflicts: libsidplay2-1, libsidplay2-1c102 (<= 2.1.1-2)
+Description: SID (MOS 6581) emulation library
+ This is a (shared) library that implements the emulation of the C64's
+ SID chip (MOS 6581) and CPU (6510). It is used by several "player"
+ applications, e.g. sidplay, which make it possible to listen to *really*
+ a lot (13.600+) of tunes, known from old and new C64 programs (as well
+ as Amiga compositions).
+ .
+ Find most of the available musics from your favourite games or demos
+ and more in the High Voltage SID Collection (HVSC). For downloads and
+ information about the volunteers, who maintain the collection, look at
+ the HVSC homepage http://www.hvsc.c64.org.
+
+Package: libsidutils-dev
+Section: libdevel
+Architecture: any
+Depends: libsidutils0 (= ${binary:Version})
+Description: utility functions for SID players
+ This library contains various things deemed useful to all SID players
+ (Emulations of the C64's SID chip (MOS 6581) and CPU (6510)), and
+ currently every player seems to be re-inventing. It is used by
+ several "player" applications, e.g. sidplay.
+ .
+ Support so far is:
+ .
+  * INI file reader.
+  * MD5 key creation.
+  * Song length database parser.
+  * Sid filter file parser.
+ .
+ Coming soon:
+ .
+  * Playlist parser (load and save).
+  * STIL parser.
+
+Package: libsidutils0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: utility functions for SID players
+ This library contains various things deemed useful to all SID players
+ (Emulations of the C64's SID chip (MOS 6581) and CPU (6510)), and
+ currently every player seems to be re-inventing. It is used by
+ several "player" applications, e.g. sidplay.
+ .
+ Support so far is:
+ .
+  * INI file reader.
+  * MD5 key creation.
+  * Song length database parser.
+  * Sid filter file parser.
+ .
+ Coming soon:
+ .
+  * Playlist parser (load and save).
+  * STIL parser.
+
+Package: libresid-builder-dev
+Section: libdevel
+Architecture: any
+Depends: libresid-builder0c2a (= ${binary:Version})
+Replaces: libresid-dev (<= 2.1.0)
+Conflicts: libresid-dev (<= 2.1.0)
+Description: SID chip emulation class based on resid
+ SID builder packages provide a chip emulator, to be used by libsidplay2.
+ This package is an emulation based on the resid library, including hardsid
+ support.
+
+Package: libresid-builder0c2a
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Replaces: libresid2c102 (<= 2.1.1-2), libresid-builder0
+Conflicts: libresid2c102 (<= 2.1.1-2), libresid-builder0
+Description: SID chip emulation class based on resid
+ SID builder packages provide a chip emulator, to be used by libsidplay2.
+ This package is an emulation based on the resid library, including hardsid
+ support.

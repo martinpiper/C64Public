@@ -1,0 +1,81 @@
+; From http://unusedino.de/ec64/technical/aay/c1541/ra41main.htm
+
+.commandCodeBuffer0	= $00
+.commandCodeBuffer1	= $01
+.commandCodeBuffer2	= $02
+.commandCodeBuffer3	= $03
+.commandCodeBuffer4	= $04
+.commandCodeBuffer5	= $05
+
+.trackBuffer0	= $06
+.trackBuffer1	= $08
+.trackBuffer2	= $0a
+.trackBuffer3	= $0c
+.trackBuffer4	= $0e
+.trackBuffer5	= $10
+
+.sectorBuffer0	= $07
+.sectorBuffer1	= $09
+.sectorBuffer2	= $0b
+.sectorBuffer3	= $0d
+.sectorBuffer4	= $0f
+.sectorBuffer5	= $11
+
+.diskID	= $12
+
+.headerBlockID	= $16
+
+.blockBuffer0	= $0300
+.blockBuffer1	= $0400
+.blockBuffer2	= $0500
+.blockBuffer3	= $0600
+.blockBuffer4	= $0700
+
+.VIA1Port	= $1800
+.VIA2Port	= $1c00
+
+
+!if 0 {
+http://www.unusedino.de/ec64/technical/aay/c1541/via10.htm
+   | Bit  7   |   ATN IN                                          |
+   | Bits 6-5 |   Device address preset switches:                 |
+   |          |     00 = #8, 01 = #9, 10 = #10, 11 = #11          |
+   | Bit  4   |   ATN acknowledge OUT                             |
+   | Bit  3   |   CLOCK OUT                                       |
+   | Bit  2   |   CLOCK IN                                        |
+   | Bit  1   |   DATA OUT                                        |
+   | Bit  0   |   DATA IN    
+}
+
+.VIA1Port_DataIn	= 1
+.VIA1Port_DataOut	= 2
+.VIA1Port_ClockIn	= 4
+.VIA1Port_ClockOut	= 8
+.VIA1Port_ATNACK	= 16
+.VIA1Port_DevAddr0	= 32
+.VIA1Port_DevAddr1	= 64
+.VIA1Port_ATN		= 128
+
+!if 0 {
+http://www.unusedino.de/ec64/technical/aay/c1541/jobcodes.htm
+     +-------+---------+-------------------------------+
+     |  JOB  |  NAME   |          DESCRIPTION          |
+     +-------+---------+-------------------------------+
+     |  $80  | READ    | Read sector                   |
+     |  $90  | WRITE   | Write sector (includes $A0)   |
+     |  $A0  | VERIFY  | Verify sector                 |
+     |  $B0  | SEEK    | Find sector                   |
+     |  $C0  | BUMP    | Bump, Find track 1            |
+     |  $D0  | JUMP    | Execute program in buffer     |
+     |  $E0  | EXECUTE | Execute program, first switch |
+     |       |         | drive on and find track       |
+     +-------+---------+-------------------------------+
+}
+
+.commandJobCodeRead		= $80
+.commandJobCodeWrite	= $90
+.commandJobCodeVerify	= $a0
+.commandJobCodeSeek		= $b0
+.commandJobCodeBump		= $c0
+.commandJobCodeJump		= $d0
+.commandJobCodeExecute	= $e0

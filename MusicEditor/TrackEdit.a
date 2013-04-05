@@ -1,0 +1,1201 @@
+!zn {
+;
+; print track
+;
+printtrack
+	lda trknum
+	tax
+	asl
+	tay
+	lda trktab,y
+	sta $fc
+	lda trktab+1,y
+	sta $fd
+	lda #1
+	sta xpos
+	lda trkypos,x
+	sta ypos
+	lda trkoffset,x
+	ldx #3
+	tay
+ptrk1
+	pha
+	jsr hexnum
+	lda #32
+	jsr charprint
+	jsr charprint
+	lda #7
+	sta trkcount
+ptrk2
+	lda ($fc),y
+	jsr hexnum
+	lda #32
+	jsr charprint
+	iny
+	dec trkcount
+	bpl ptrk2
+	lda #1
+	sta xpos
+	inc ypos
+	pla
+	clc
+	adc #8
+	dex
+	bpl ptrk1
+	rts
+trackeditor
+	jsr inittracks
+	ldy trknum
+	lda #5
+	sta cxpos
+	lda trkypos,y
+	sta cypos
+	jsr sprfig
+	lda #<trksubmenu
+	sta $fc
+	lda #>trksubmenu
+	sta $fd
+	jmp submenu
+trkedit2
+	jsr sprfig
+	jsr cursoron
+trk1
+trace lda VIC2Raster
+	cmp #247
+	bcc trace
+	lda #$29
+	sta zp4
+	sta zp5
+	lda #%01111111
+	sta zp4+1
+	sta zp5+1
+	jsr trackplay
+	lda trcn
+	sta .trkp
+	lda trcn+1
+	sta .trkp+1
+	lda trcn+2
+	sta .trkp+2
+	lda #9
+	sta zp4
+	sta zp5
+	lda #128
+	sta zp4+1
+	sta zp5+1
+	jsr trackplay
+	jsr getkey
+	ldx #0
+trk2
+	cmp trkkey,x
+	beq trk3
+	inx
+	cpx tkeyno
+	bcc trk2
+	jsr trkinschar
+	jmp trk1
+trk3
+	pha
+	txa
+	asl
+	tax
+	lda trkjmp,x
+	sta trk4+1
+	lda trkjmp+1,x
+	sta trk4+2
+	pla
+trk4
+	jsr $ffff
+	jsr delay
+	jmp trk1
+;
+; init tracks
+;
+inittracks
+	ldx #2
+int1
+	txa
+	sta trknum
+	jsr printtrack
+	ldx trknum
+	dex
+	bpl int1
+	rts
+
+trkkey !by 157,29,145,17
+	!by 20,148,13,95
+	!by 42,144,5,28
+trkjmp !by <trkleft,>trkleft
+	!by <trkright,>trkright
+	!by <trkup,>trkup
+	!by <trkdown,>trkdown
+	!by <trkdel,>trkdel
+	!by <trkins,>trkins
+	!by <trkcarret,>trkcarret
+	!by <trkexit,>trkexit
+	!by <trkblock,>trkblock
+	!by <changetrack,>changetrack
+	!by <changetrack,>changetrack
+	!by <changetrack,>changetrack
+tkeyno !by 12
+trktab !by <track1,>track1,<track2,>track2,<track3,>track3
+; Defines if the current x cursor position needs to skip a space, or not.
+trkxtab !by 0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0
+trkxtab2 !by 0,0,0,1,1,0,2,2,0,3,3,0,4,4,0,5,5,0,6,6,0,7,7,0,8,8,0
+trkytab2 !by 0,8,$10,$18,0,0,0
+	!by 0,8,$10,$18,0,0,0
+	!by 0,8,$10,$18,0,0,0
+trkypos !by 3,10,17
+trkoffset !by 0,0,0
+trknum !by 0
+trkcount !by 0
+
+;
+; track, move cursor routeens
+;
+trkleft
+	lda cxpos
+	cmp #5
+	beq tkl2
+	dec cxpos
+	tax
+	lda trkxtab-5,x
+	bne tkl1
+	dec cxpos
+tkl1
+	jmp sprfig
+tkl2
+	lda #27
+	sta cxpos
+	jmp trkup
+trkright
+	lda cxpos
+	cmp #27
+	bcs tkr2
+	inc cxpos
+	tax
+	lda trkxtab-5,x
+	beq tkr1
+	inc cxpos
+tkr1
+	jmp sprfig
+tkr2
+	lda #5
+	sta cxpos
+	jmp trkdown
+trkup
+	ldy trknum
+	lda trkypos,y
+	cmp cypos
+	beq tku1
+	dec cypos
+	jmp sprfig
+tku1
+	jmp scrtrkup
+trkdown
+	ldy trknum
+	lda trkypos,y
+	clc
+	adc #3
+	cmp cypos
+	beq tkd1
+	inc cypos
+	jmp sprfig
+tkd1
+	jmp scrtrkdown
+;
+; scroll tracks
+;
+scrtrkup
+	ldy trknum
+	lda trkoffset,y
+	beq stu1
+	sec
+	sbc #8
+	sta trkoffset,y
+	jmp printtrack
+stu1
+	jmp sprfig
+scrtrkdown
+	ldy trknum
+	lda trkoffset,y
+	cmp #$e0
+	bcs stu1
+	adc #8
+	sta trkoffset,y
+	jmp printtrack
+;
+; insert character into track
+;
+trkinschar
+	cmp #136
+	beq tkc1
+	cmp #4
+	beq tkc2
+	cmp #196
+	beq tkc1
+	cmp #48
+	bcc tkc1
+	cmp #58
+	bcc tkc2
+	cmp #65
+	bcc tkc1
+	cmp #71
+	bcc tkc2
+tkc1
+	rts
+tkc2
+	pha
+	ldx cxpos
+	stx xpos
+	lda cypos
+	sta ypos
+	pla
+	jsr charprint
+	dec xpos
+	jsr calcpos
+	lda trkxtab-5,x
+	bne tkc3
+	jsr findnum2
+	jmp tkc4
+tkc3 dey
+	jsr findnum2
+tkc4
+	pha
+	jsr findtrkpos
+	pla
+	sta ($fc),y
+	jmp trkright
+findtrkpos
+	ldx cxpos
+	ldy cypos
+	lda trkytab2-3,y
+	ldy trknum
+	clc
+	adc trkoffset,y
+	clc
+	adc trkxtab2-5,x
+	tay
+	lda trknum
+	asl
+	tax
+	lda trktab+1,x
+	sta $fd
+	lda trktab,x
+	sta $fc
+	rts
+changetrack
+	cmp #144
+	beq cht1
+	cmp #5
+	beq cht2
+	cmp #28
+	bne cht4
+	lda #2
+	bne cht3
+cht1
+	lda #0
+	beq cht3
+cht2
+	lda #1
+cht3
+	sta trknum
+	tay
+	lda #5
+	sta cxpos
+	lda trkypos,y
+	sta cypos
+	jmp sprfig
+cht4
+	rts
+trkexit
+	pla
+	pla
+	jsr cursoroff
+	rts
+trkins jsr findtrkpos
+	cpy #255
+	beq ti3
+	sty tim1+1
+	ldy #254
+ti1 lda ($fc),y
+	iny
+	sta ($fc),y
+	dey
+	dey
+tim1 cpy #$ff
+	bne ti1
+	lda ($fc),y
+	iny
+	sta ($fc),y
+trkins2
+	jsr findtrkpos
+	lda #0
+	sta ($fc),y
+ti3 jmp printtrack
+trkdel jsr findtrkpos
+	cmp #255
+	beq ti3
+ti2 iny
+	lda ($fc),y
+	dey
+	sta ($fc),y
+	iny
+	bne ti2
+	lda ($fc),y
+	dey
+	sta ($fc),y
+	ldy #255
+	lda #0
+	sta ($fc),y
+	jmp printtrack
+trkcarret rts
+trkblock
+	lda cxpos
+	pha
+	lda cypos
+	pha
+	jsr savepar
+	jsr findtrkpos
+	lda ($fc),y
+	cmp #64
+	bcs noblk1
+	ldx #2
+	jsr printscreen
+	jsr findtrkpos
+	lda ($fc),y
+	jsr editor
+	ldx #1
+	jsr printscreen
+noblk1
+	jsr regetpar
+	pla
+	sta cypos
+	pla
+	sta cxpos
+	jsr sprfig
+	jsr cursoron
+	lda trknum
+	pha
+	jsr inittracks
+	pla
+	sta trknum
+	rts
+findnum2
+	lda ($fe),y
+	jsr gethexnum
+	asl
+	asl
+	asl
+	asl
+	sta temphex
+	iny
+	lda ($fe),y
+	jsr gethexnum
+	clc
+	adc temphex
+	iny
+	rts
+temphex !by 0
+
+;
+; envelope editor
+;
+printenv
+	lda #0
+	sta xpos
+	lda #3
+	sta ypos
+	lda envoffset
+	ldx #15
+	tay
+	lsr
+	lsr
+	lsr
+	pha
+	clc
+	adc #<waveMix
+	sta .sme1+1
+	pla
+penv1
+	pha
+	jsr hexnum
+	lda #32
+	jsr charprint
+	lda #7
+	sta envcount
+penv2
+	lda envdata,y
+	jsr hexnum
+	lda #32
+	jsr charprint
+	iny
+	dec envcount
+	bpl penv2
+
+.sme1 lda waveMix
+	jsr hexnum
+	inc .sme1+1
+
+	lda #0
+	sta xpos
+	inc ypos
+	pla
+	clc
+	adc #1
+	dex
+	bpl penv1
+	rts
+envedit
+	jsr printenv
+	lda #3
+	sta cxpos
+	lda #3
+	sta cypos
+	lda #<envsubmenu
+	sta $fc
+	lda #>envsubmenu
+	sta $fd
+	jmp submenu
+envedit2
+	jsr sprfig
+	jsr cursoron
+env1
+	jsr getkey
+	cmp #255
+	beq env1
+	ldx #0
+env2
+	cmp envkey,x
+	beq env3
+	inx
+	cpx ekeyno
+	bcc env2
+	jsr envinschar
+	jmp env1
+env3
+	pha
+	txa
+	asl
+	tax
+	lda envjmp,x
+	sta env4+1
+	lda envjmp+1,x
+	sta env4+2
+	pla
+env4
+	jsr $ffff
+	jmp env1
+envkey !by 157,29,145,17
+       !by 148,20,13,95
+       !by 64,38
+envjmp !by <envleft,>envleft
+       !by <envright,>envright
+       !by <envup,>envup
+       !by <envdown,>envdown
+       !by <envins,>envins
+       !by <envdel,>envdel
+       !by <envcarret,>envcarret
+       !by <trkexit,>trkexit
+       !by <envgrab,>envgrab
+       !by <envput,>envput
+ekeyno !by 10
+envcount !by 0
+envoffset !by 0
+envbuffer !by 0,0,0,0,0,0,0,0
+;
+; envelope key routines
+;
+envleft
+	lda cxpos
+	cmp #3
+	beq evl2
+	dec cxpos
+	tax
+	lda trkxtab-3,x
+	bne evl1
+	dec cxpos
+evl1
+	jsr delay
+	jmp sprfig
+evl2
+	lda #28
+	sta cxpos
+	jmp envup
+envright
+	lda cxpos
+	cmp #28
+	beq evr2
+	inc cxpos
+	tax
+	lda trkxtab-3,x
+	beq evr1
+	inc cxpos
+evr1
+	jsr delay
+	jmp sprfig
+evr2
+	lda #3
+	sta cxpos
+	jmp envdown
+envup
+	lda cypos
+	cmp #3
+	beq evu1
+	dec cypos
+	jsr delay
+	jmp sprfig
+evu1
+	jmp envscrup
+envdown
+	lda cypos
+	cmp #18
+	beq evd1
+	inc cypos
+	jsr delay
+	jmp sprfig
+evd1
+	jmp envscrdown
+envscrup
+	lda envoffset
+	beq esu1
+	sec
+	sbc #8
+	sta envoffset
+	jmp printenv
+esu1
+	rts
+envscrdown
+	lda envoffset
+	bmi esu1
+	clc
+	adc #8
+	sta envoffset
+	jmp printenv
+envinschar
+	cmp #48
+	bcc eic1
+	cmp #58
+	bcc eic2
+	cmp #65
+	bcc eic1
+	cmp #71
+	bcc eic2
+eic1
+	jsr delay
+	rts
+eic2
+	ldx cxpos
+	stx xpos
+	ldy cypos
+	sty ypos
+	jsr charprint
+	dec xpos
+	jsr calcpos
+	lda trkxtab-3,x
+	beq eic3
+	dey
+eic3
+	jsr findnum2
+eic4
+	pha
+	ldx cxpos
+	lda trkxtab2-3,x
+	cmp #8
+	bne .notWaveMix
+.isWaveMix
+	lda cypos
+	sec
+	sbc #3
+	asl
+	asl
+	asl
+	clc
+	adc envoffset
+	lsr
+	lsr
+	lsr
+	tay
+	pla
+	sta waveMix,y
+	jmp envright
+.notWaveMix
+	jsr findenvpos
+	pla
+	sta envdata,y
+	jmp envright
+findenvpos
+	ldx cxpos
+	lda cypos
+	sec
+	sbc #3
+	asl
+	asl
+	asl
+	clc
+	adc envoffset
+	clc
+	adc trkxtab2-3,x
+	tay
+	rts
+envcarret
+	lda #5
+	sta cxpos
+	jmp envdown
+envins
+	jsr findenvpos
+	and #$f8
+	clc
+	adc #7
+	tax
+	sty envcount
+evi1
+	cpx envcount
+	beq evi2
+	lda envdata-1,x
+	sta envdata,x
+	dex
+	jmp evi1
+evi2
+	lda #0
+	sta envdata,y
+	jmp printenv
+envdel
+	jsr findenvpos
+	and #$f8
+	clc
+	adc #7
+	sta envcount
+edl1
+	cpy envcount
+	beq edl2
+	lda envdata+1,y
+	sta envdata,y
+	iny
+	bne edl1
+edl2
+	lda #0
+	sta envdata,y
+	jmp printenv
+envgrab
+	jsr findenvpos
+	and #$f8
+	tay
+	ldx #0
+evg1
+	lda envdata,y
+	sta envbuffer,x
+	sta VIC2BorderColour
+	iny
+	inx
+	cpx #8
+	bcc evg1
+	lda #0
+	sta VIC2BorderColour
+	jmp printenv
+envput
+	jsr findenvpos
+	and #$f8
+	tay
+	ldx #0
+evp1
+	lda envbuffer,x
+	sta envdata,y
+	sta VIC2BorderColour
+	iny
+	inx
+	cpx #8
+	bcc evp1
+	lda #0
+	sta VIC2BorderColour
+	jmp printenv
+
+;
+; Drum edit
+;
+!macro DrumPrintLine .xpos , .ypos , .offset , .num {
+	lda #.xpos
+	sta xpos
+	lda #.ypos
+	sta ypos
+	ldy #0
+.drm1
+	lda .offset,y
+	jsr hexnum
+	lda #32
+	jsr charprint
+	iny
+	cpy #.num
+	bne .drm1
+}
+
+printDrums
+	+DrumPrintLine 1 , 4 , drumData , 8
+	+DrumPrintLine 1 , 5 , drumData + 8 , 8
+	+DrumPrintLine 10, 6 , drumData + 17, 1
+	+DrumPrintLine 10, 7 , drumData + 16, 1
+
+	+DrumPrintLine 1 , 9 , drumData + 18, 8
+	+DrumPrintLine 1 , 10, drumData + 18 + 8 , 8
+	+DrumPrintLine 10, 11, drumData + 18 + 17, 1
+	+DrumPrintLine 10, 12, drumData + 18 + 16, 1
+
+	+DrumPrintLine 1 , 14, drumData + 36, 8
+	+DrumPrintLine 1 , 15, drumData + 36 + 8 , 8
+	+DrumPrintLine 10, 16, drumData + 36 + 17, 1
+	+DrumPrintLine 10, 17, drumData + 36 + 16, 1
+
+	+DrumPrintLine 1 , 19, drumData + 54, 8
+	+DrumPrintLine 1 , 20, drumData + 54 + 8 , 8
+	+DrumPrintLine 10, 21, drumData + 54 + 17, 1
+	+DrumPrintLine 10, 22, drumData + 54 + 16, 1
+
+	rts
+
+DrumEdit
+	jsr printDrums
+	jsr DrumEditUpdateCursorPos
+	jsr cursoron
+.dre1
+	jsr getkey
+	cmp #255
+	beq .dre1
+
+	cmp #157
+	beq .ldreLeft
+	cmp #29
+	beq .ldreRight
+	cmp #145
+	beq .ldreUp
+	cmp #17
+	beq .ldreDown
+
+	cmp #95
+	beq .ldreExit
+	cmp #'x'
+	beq .ldreExit
+
+	cmp #'s'
+	beq .ldreSetStart
+	cmp #'t'
+	beq .ldreSetEnd
+
+	jsr DrumEditIsChar
+	jmp .dre1
+
+.ldreExit
+	jsr cursoroff
+	rts
+
+.ldreLeft
+	jsr .dreLeft
+	jmp .dre1
+.ldreRight
+	jsr .dreRight
+	jmp .dre1
+.ldreUp
+	jsr .dreUp
+	jmp .dre1
+.ldreDown
+	jsr .dreDown
+	jmp .dre1
+
+.ldreSetStart
+	jmp .dreSetStart
+.ldreSetEnd
+	jmp .dreSetEnd
+
+.dreLeft
+	lda .drumEditPositionX
+	beq .del2
+	dec .drumEditPositionX
+.del1
+	jsr delay
+	jsr DrumEditUpdateCursorPos
+.del2
+	rts
+
+.dreRight
+	lda .drumEditPositionX
+	cmp #15
+	beq .del2
+	inc .drumEditPositionX
+	jmp .del1
+
+.dreUp
+	lda .drumEditPositionY
+	beq .del2
+	dec .drumEditPositionY
+	jmp .del1
+
+.dreDown
+	lda .drumEditPositionY
+	cmp #7
+	beq .del2
+	inc .drumEditPositionY
+	jmp .del1
+
+
+.drumEditPositionX !by 0
+.drumEditPositionY !by 0
+.drumScreenPositionY !by 4,5,9,10,14,15,19,20
+.drumScreenPositionX !by 1,2,4,5,7,8,10,11,13,14,16,17,19,20,22,23
+
+.drumMemoryPositionY !by 0,8,18+0,18+8,36+0,36+8,54+0,54+8
+
+DrumEditUpdateCursorPos
+	ldx .drumEditPositionX
+	lda .drumScreenPositionX,x
+	sta cxpos
+	ldx .drumEditPositionY
+	lda .drumScreenPositionY,x
+	sta cypos
+	jsr sprfig
+	rts
+
+DrumEditIsChar
+	; If it is a hex number then draw it on screen
+	cmp #48
+	bcc deic1
+	cmp #58
+	bcc deic2
+	cmp #65
+	bcc deic1
+	cmp #71
+	bcc deic2
+deic1
+	jsr delay
+	rts
+deic2
+	ldx cxpos
+	stx xpos
+	ldy cypos
+	sty ypos
+	jsr charprint
+
+	; Now convert the hex number on screen and store back into the right place in memory
+	lda .drumEditPositionX
+	lsr
+	asl
+	tax
+	lda .drumScreenPositionX,x
+	sta xpos
+	ldx .drumEditPositionY
+	lda .drumScreenPositionY,x
+	sta ypos
+	jsr calcpos
+	jsr findnum2
+	pha
+	lda .drumEditPositionX
+	lsr
+	clc
+	ldx .drumEditPositionY
+	adc .drumMemoryPositionY,x
+	tax
+	pla
+	sta drumData,x
+
+	jsr .dreRight
+	jmp deic1
+
+DrumEditCalcDrumMemoryInUse
+	lda .drumEditPositionY
+	lsr
+	asl
+	tax
+	ldy .drumMemoryPositionY,x
+	rts
+
+.dreSetStart
+	jsr DrumEditCalcDrumMemoryInUse
+	lda .drumEditPositionX
+	lsr
+	sta drumData + 16 + 1,y
+	jsr printDrums
+	jmp .dre1
+.dreSetEnd
+	jsr DrumEditCalcDrumMemoryInUse
+	lda .drumEditPositionX
+	lsr
+	clc
+	; Make the end point exclusive
+	adc #1
+	sta drumData + 16,y
+	jsr printDrums
+	jmp .dre1
+
+
+;
+; sub menu driver
+;
+submenu
+	jsr cursoroff
+	ldy #0
+	sty subopt
+	ldx #0
+sbm1
+	lda ($fc),y
+	sta subpar,x
+	iny
+	inx
+	cpx #11
+	bcc sbm1
+	dec smaxopt
+	jsr subreverse
+sbm2
+	jsr getkey
+	cmp #145
+	beq sbm3
+	cmp #17
+	beq sbm4
+	cmp #13
+	beq sbm5
+	jsr checkhotkey
+	jmp sbm2
+sbm3
+	jsr subup
+	jsr delay
+	jmp sbm2
+sbm4
+	jsr subdown
+	jsr delay
+	jmp sbm2
+sbm5
+	jsr selectoption
+	jsr cursoroff
+	jsr delay
+	jmp sbm2
+subup
+	lda subopt
+	beq sbu1
+	jsr subreverse
+	dec subopt
+	jmp subreverse
+sbu1
+	rts
+subdown
+	lda subopt
+	cmp smaxopt
+	bcs sbu1
+	jsr subreverse
+	inc subopt
+	jmp subreverse
+selectoption
+	lda subopt
+	asl
+	tay
+	lda sjmppos
+	sta $fc
+	lda sjmppos+1
+	sta $fd
+	lda ($fc),y
+	sta $fe
+	iny
+	lda ($fc),y
+	sta $ff
+	jmp ($fe)
+checkhotkey
+	cmp #95
+	bne chk0
+	lda #88
+chk0
+	pha
+	lda shotkey
+	sta $fc
+	lda shotkey+1
+	sta $fd
+	pla
+	ldy #0
+chk1
+	cmp ($fc),y
+	beq chk2
+	iny
+	cpy smaxopt
+	bcc chk1
+	beq chk1
+	rts
+chk2
+	cpy subopt
+	beq chk3
+	tya
+	pha
+	jsr subreverse
+	pla
+	sta subopt
+	jsr subreverse
+chk3
+	jsr delay
+	jmp selectoption
+subreverse
+	lda subtab
+	sta $fc
+	lda subtab+1
+	sta $fd
+	ldx #0
+	ldy #0
+srv1
+	lda ($fc),y
+	beq srv2
+	inx
+	cpx subopt
+	beq srv2
+	bcs srv3
+srv2
+	iny
+	cpy sdepth
+	bcc srv1
+	rts
+srv3
+	tya
+	clc
+	adc sypos
+	sta ypos
+	lda sxpos
+	sta xpos
+	jsr calccol
+	ldx swidth
+srv4
+	lda ($fc),y
+	eor #255
+	sta ($fc),y
+	iny
+	dex
+	bne srv4
+	rts
+subpar
+sxpos !by 0
+sypos !by 0
+swidth !by 0
+sdepth !by 0
+smaxopt !by 0
+subtab !by 0,0
+shotkey !by 0,0
+sjmppos !by 0,0
+subopt !by 0
+envsubmenu
+!by 30,3,9,10,5,<evstab,>evstab,<evshot,>evshot,<evsjmp,>evsjmp
+evstab !by 1,0,1,1,0,0,0,1,0,1
+evshot !tx "egpcx"
+evsjmp !by <envedit2,>envedit2
+	!by <envgrab,>envgrab
+	!by <envput,>envput
+;	!by <envsnd,>envsnd
+	!by <envkill,>envkill
+	!by <trkexit,>trkexit
+envsnd
+	rts
+envkill
+	jsr findenvpos
+	and #$f8
+	tay
+	ldx #0
+evk1
+	lda #0
+	sta envdata,y
+	stx VIC2BorderColour
+	iny
+	inx
+	cpx #8
+	bcc evk1
+	lda #0
+	sta VIC2BorderColour
+	jmp printenv
+trksubmenu
+!by 30,3,10,17,5,<trkstab,>trkstab,<trkshot,>trkshot,<trksjmp,>trksjmp
+trkstab !by 1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1
+trkshot !tx "epnvx"
+trksjmp !by <trkedit2,>trkedit2
+;       !by <swap1,>swap1
+;       !by <swap2,>swap2
+;       !by <swap3,>swap3
+;       !by <trkkill,>trkkill
+;       !by <trkgrab,>trkgrab
+;       !by <trkput,>trkput
+;       !by <trkplay,>trkplay
+        !by <IRQStartPlay,>IRQStartPlay
+        !by <nexttune,>nexttune
+        !by <prevtune,>prevtune
+        !by <trkexit,>trkexit
+nexttune
+	jsr IRQIncrTune
+	rts
+prevtune
+	jsr IRQDecrTune
+	rts
+savepar
+	ldx #10
+svp1
+	lda subpar,x
+	sta tmppar,x
+	dex
+	bpl svp1
+	lda subopt
+	sta tmppar+11
+	rts
+regetpar
+	ldx #10
+rgp1
+	lda tmppar,x
+	sta subpar,x
+	dex
+	bpl rgp1
+	lda tmppar+11
+	sta subopt
+	jsr subreverse
+	rts
+tmppar !by 0,0,0,0,0,0,0,0,0,0,0,0
+swap1
+	rts
+swap2
+	rts
+swap3
+	rts
+trkkill
+	rts
+trkgrab
+	rts
+trkput
+	rts
+trkplay
+	rts
+trackplay
+	ldx #2
+zp1
+	lda .trkp,x
+	cmp trkoffset,x
+	bcc zp2
+	lda trkoffset,x
+	clc
+	adc #31
+	cmp .trkp,x
+	bcc zp2
+	lda .trkp,x
+	sec
+	sbc trkoffset,x
+	lsr
+	lsr
+	lsr
+	clc
+	adc trkypos,x
+	sta ypos
+	lda .trkp,x
+	and #7
+	sta zp3+1
+	asl
+zp3 adc #$ff
+	clc
+	adc #5
+	sta xpos
+	jsr calcpos
+	lda ($fe),y
+zp5 ora #128
+	sta ($fe),y
+	iny
+	lda ($fe),y
+zp4 ora #128
+	sta ($fe),y
+zp2
+	dex
+	bpl zp1
+	rts
+.trkp !by 0,0,0
+}

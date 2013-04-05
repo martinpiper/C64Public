@@ -1,0 +1,64 @@
+;BlankProject test code
+
+!source "../stdlib/stdlib.a"
+!to "SFX.prg", cbm
+!sl "SFX.map"
+!svl "SFX.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+*=BASICEntry
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr SFXSIDInit
+
+!if 0 {
+	; Test for playing a long running sound after delaying the start by pressing joystick2 fire
+.notFire2
+	lda #%10000
+	bit CIA1KeyboardRowsJoystickB
+	bne .notFire2
+	lda #20
+	jsr SFXInit
+}
+
+.l1
+	lda #255
+.l2
+	cmp VIC2Raster
+	bne .l2
+	inc VIC2BorderColour
+	jsr SFXPlay
+	dec VIC2BorderColour
+
+	; Check for joystick press
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notFire
+	lda .gotFire
+	bne .skipFire
+	inc .gotFire
+	lda .todoSFX
+	jsr SFXInit
+
+	inc .todoSFX
+	lda .todoSFX
+	cmp #24
+	bne .skipFire
+	lda #0
+	sta .todoSFX
+	beq .skipFire
+.notFire
+	lda #0
+	sta .gotFire
+.skipFire
+	jmp .l1
+.gotFire !by 0
+.todoSFX !by 0
+
+!source "../stdlib/Initialise.a"
+!source "SFX.a"
+SFXTable
+!bin "../SEUCK/GAME3__I.P00",$f0,$1a + 2 - $900 + $b810

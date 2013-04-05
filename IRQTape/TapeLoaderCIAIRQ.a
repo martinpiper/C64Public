@@ -1,0 +1,321 @@
+; Disable this to make the IRQ take more time for sanity checking of the longest execution path
+; with respect to the tape timings.
+TapeLoaderEarlyOut = 1
+
+; This tape loader uses an IRQ and CIA timer to leave the mainline for other use
+!zn
+.byte							= $02
+.checksum						= $03
+
+
+kTurboTapeHeaderStatusStoringBytes = 10	; An enumaration, not a memory location
+
+TapeLoaderInitialiseIRQ
+	; Turn off CIA IRQ sources
+	+MACROCIAIRQControlDisable_A
+
+	lda #<.irq
+	sta KERNALIRQServiceRoutineLo
+	lda #>.irq
+	sta KERNALIRQServiceRoutineHi
+
+	; Setup NMI
+	lda #<.nmi
+	sta KERNALNMIServiceRoutineLo
+	lda #>.nmi
+	sta KERNALNMIServiceRoutineHi
+
+	; Enable interrupts to be generated on positive edge on FLAG pin from datasette
+	lda #%10010000
+	sta CIA1InterruptControl
+
+	+MACROSetTurboTimer
+
+	; Ack any interrupts that have happened from CIA1 only. We don't ack anything on CIA2 because we want to keep restore disabled.
+	lda CIA1InterruptControl
+
+	rts
+
+; A = Filename
+TapeLoaderLoadNewFile
+	sta FileNameByte
+	txa
+	pha
+
+	lda #255
+	sta ZPStartBasicHi
+
+	lda #0
+	sta TurboTapeBlockLoadError
+	sta ZPStartVariableHi
+!ifdef EnableBlockChecksum {
+	sta TurboTapeBlockCounter
+	tax
+.clb1
+	sta BlocksLoadedTable,x
+	dex
+	bne .clb1
+}
+
+	sta TapeLoaderExpectedLoadingBlocks
+	jsr .ResetLoaderStatus
+
+	pla
+	tax
+	rts
+
+.ResetLoaderStatus
+	lda #0
+	sta .byte					; Safe to set 0 zero here since we will be getting a sync byte which resets to 1 for the carry 8 bit check later on
+	sta TurboTapeHeaderStatus
+	sta TurboTapeFinishedLoadingFile
+	sta .checksum
+	rts
+
+!ifdef EnableBlockChecksum {
+TurboTapeBlockCounter !by 0
+}
+
+; Approx cycles while running (varies) including IRQ setup/return 160
+; Since we are timing a shortest time period of (2 * TapeTurboSpeed) for a zero bit this
+; execution time is not a huge issue.
+; ** Note we do not bother to save Y on the stack since it isn't used
+.irq
+	pha
+	txa
+	pha
+
+	; ACK IRQ
+	lda CIA1InterruptControl
+	ldx #%11001
+	stx CIA1TimerAControl		; Start timer again, one shot mode.
+	lsr							; Get TimerA finished flag into carry
+	; Shift actual tape bit 0/1 into received byte
+	rol .byte					; If we are synced then this will cause carry to be set every eight bits. Else carry is undefined.
+
+	; Produces some sound during loading
+;	lda SIDVolumeFilter
+;	eor #15
+;	sta SIDVolumeFilter
+
+	lda VIC2BorderColour
+	eor #5						; Better border colours with one less byte than using the clc/adc method
+	sta VIC2BorderColour
+
+	; Produces some different sound during loading
+;	sta SIDVolumeFilter
+
+
+	lda .byte
+	ldx TurboTapeHeaderStatus
+	bne .gotSync				; We have sync so proceed to process bits as normal
+	cmp #TapeSyncCode			; We are not synced so check for our sync byte to come in
+	beq .processByte			; We have a valid sync code so we try to process the byte which then causes us to become synced
+	; Just rti until we reach a good synced state
+	; *** Deliberate fall through to .end
+.end		; Also called from other other places so it must just do a rti now
+	pla
+	tax
+	pla
+.nmi
+	rti
+
+	; We got the sync so we know we can dec the bit count and process the byte when we get 8 bits
+.gotSync
+	bcc .end					; We've not got the carry set yet so we can't have a full byte
+
+	; Produces more different sound during loading
+;	sta SIDVolumeFilter
+
+.processByte
+	ldx #1						; Reset the byte to 1 so we will get carry set when we rotate into it and get 8 bits
+	stx .byte
+	; Parse header byte reading state
+	ldx TurboTapeHeaderStatus
+	; Implied cpx #0 
+	beq .progressHeaderStatus
+!ifdef TapeLoaderEarlyOut {
+	cpx #kTurboTapeHeaderStatusStoringBytes
+	beq .stateStoreByte
+}
+	dex		; Test 1
+	beq .doingHeaderCheckEx
+	dex		; Test 2
+	beq .doingHeaderCheckEx2
+	dex		; Test 3
+	beq .doingFileNameCheck
+	dex		; Test 4
+	beq .doingStartLoByte
+	dex		; Test 5
+	beq .doingStartHiByte
+	dex		; Test 6
+	beq .doingExpectedBlocks
+	dex		; Test 7
+	beq .doingEndLoByte
+	dex		; Test 8
+	beq .doingEndHiByte
+	dex		; Test 9
+	beq .doingHeaderChecksum
+
+	; Loading bytes state break here
+
+	dex		; Test 11...
+	bne .doingChecksumByte	; ...  by doing a reverse check
+	; Fall through here means we are in state 9, the most commonly used state for data bytes.
+	; x = 0
+.stateStoreByte
+!ifdef TapeLoaderEarlyOut {
+	ldx #0
+}
+	sta (TapeLoaderStoringToLo,x)
+	; Then calculate the checksum
+	eor .checksum
+	sta .checksum
+	inc TapeLoaderStoringToLo
+	bne .over1
+	inc VIC2BorderColour
+	inc TapeLoaderStoringToHi
+.over1
+	; Check for reaching the end of what we are loading
+	lda TapeLoaderStoringToHi
+	cmp .smZPStartVariableHi+1
+	bne .end
+	lda TapeLoaderStoringToLo
+	cmp .smZPStartVariableLo+1
+	bne .end
+	jmp .progressHeaderStatusNoChecksumUpdate
+
+	; When the intial sync has been received then reset the checksum
+; This is also called by the other header stage routines
+.progressHeaderStatus
+	; A = The byte from the tape routine
+	eor .checksum
+	sta .checksum
+.progressHeaderStatusNoChecksumUpdate
+	inc TurboTapeHeaderStatus			; We are now synced because header status has changed from being 0
+	jmp .end
+
+.doingHeaderCheckEx
+	cmp #TapeHeaderByteEx
+	beq .progressHeaderStatus			; Succeeded in reading the correct header byte ex
+	; *** Deliberate fall through to below
+.notValidSoReset
+	; We failed so reset and try syncing again
+	jsr .ResetLoaderStatus
+	jmp .end
+.doingHeaderCheckEx2
+	cmp #TapeHeaderByteEx2
+	beq .progressHeaderStatus			; Succeeded in reading the correct header byte ex
+	jmp .notValidSoReset
+.doingFileNameCheck
+FileNameByte = * + 1
+	cmp #0	; Self modifying byte for the filename
+	beq .progressHeaderStatus
+	; If the filename isn't correct then tweak the border colour once
+	inc VIC2BorderColour
+	jmp .notValidSoReset
+.doingStartLoByte
+	sta TapeLoaderStoringToLo
+	sta .smZPStartBasicLo+1
+	jmp .progressHeaderStatus
+.doingStartHiByte
+	sta TapeLoaderStoringToHi
+	sta .smZPStartBasicHi+1
+	jmp .progressHeaderStatus
+.doingExpectedBlocks
+	sta TapeLoaderExpectedLoadingBlocks
+	jmp .progressHeaderStatus
+.doingEndLoByte
+	sta .smZPStartVariableLo+1
+	jmp .progressHeaderStatus
+.doingEndHiByte
+	sta .smZPStartVariableHi+1
+	jmp .progressHeaderStatus
+.doingHeaderChecksum
+	cmp .checksum
+	bne .displayLoadError
+
+!ifdef EnableBlockChecksum {
+	ldx .smZPStartBasicHi+1
+	lda BlocksLoadedTable,x
+	; If this block has already been loaded then don't load it again
+	bne .notValidSoReset
+}
+	; Reset the checksum for the file data
+	lda #0
+	sta .checksum
+	jmp .progressHeaderStatusNoChecksumUpdate
+
+; Last of all when the file/block is loaded this will trigger
+.doingChecksumByte
+	cmp .checksum
+	bne .displayLoadError	; Indicate a load error by making the border do a colour effect.
+
+!ifdef EnableBlockChecksum {
+	; Mark the beginning of the block as loaded.
+	ldx .smZPStartBasicHi+1
+	inc BlocksLoadedTable,x
+}
+
+	; If smZPStartBasicHi < ZPStartBasicHi
+.smZPStartBasicHi lda #0
+	cmp ZPStartBasicHi
+	bcs .noBASICUpdate1
+	sta ZPStartBasicHi
+.smZPStartBasicLo lda #0
+	sta ZPStartBasicLo
+.noBASICUpdate1
+	; If smZPStartBasicHi >= ZPStartBasicHi
+.smZPStartVariableHi lda #0
+	cmp ZPStartVariableHi
+	bcc .noBASICUpdate2
+	sta ZPStartVariableHi
+.smZPStartVariableLo lda #0
+	sta ZPStartVariableLo
+.noBASICUpdate2
+	
+	; Reset the loader status so the IRQ then goes ahead and tries to load whatever is next
+	jsr .ResetLoaderStatus
+
+!ifdef EnableBlockChecksum {
+	; Check the number of blocks loaded is what we expected to load for this file
+	inc TurboTapeBlockCounter
+	lda TurboTapeBlockCounter
+	; Check to see if all file blocks were loaded for this filename
+	cmp TapeLoaderExpectedLoadingBlocks
+	bne .notLoadedYet
+	lda #0
+	sta TurboTapeBlockCounter
+}
+
+	; Signal our user mode that we have done a complete file
+	inc TurboTapeFinishedLoadingFile
+
+.notLoadedYet
+	jmp .end
+
+.displayLoadError
+	jsr .ResetLoaderStatus
+	inc TurboTapeBlockLoadError
+
+	; Switch off the tape motor. The mainline loader routine will then wait for stop to be
+	; pressed before enabling the tape motor.
+	lda ZPProcessorPort
+	ora #%100000
+	sta ZPProcessorPort
+
+	jmp .end
+
+TapeLoaderGetBlocksLeftToLoad
+!ifdef EnableBlockChecksum {
+	lda TapeLoaderExpectedLoadingBlocks
+	sec
+	sbc TurboTapeBlockCounter
+	sec
+	sbc #1
+} else {
+	lda ZPStartVariableHi
+	sec
+	sbc TapeLoaderStoringToHi
+}
+	rts

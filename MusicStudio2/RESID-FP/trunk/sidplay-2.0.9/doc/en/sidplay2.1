@@ -1,0 +1,147 @@
+.\" Copyright 2000 Simon White (s_a_white@email.com)
+.\" Copyright 2000 Mikko Kilponen (mikil@uni.kaapeli.net)
+.TH SIDPLAY 1 "19 September 2000" "SID Player Application"
+.SH NAME
+SIDPLAY \- Sidplay is SID-chip emulator for playing Commodore 64 music.
+.SH SYNOPSIS
+.B sidplay\ 
+.I [ OPTIONS... ]
+.B <datafile>
+.br
+.B sidplay2
+.I [ OPTIONS... ]
+.B <datafile>
+.SH DESCRIPTION
+Sidplay is a music player that emulates various components from a Commodore 64 (C64) computer.  The result is a program which can load and execute C64 machine code programs which produce music and sound.  This page covers both Sidplay versions 1 and 2, Sidplay being an frame based emulation capable of playback on low  specification PCs.  Sidplay2 on the other hand has been designed for accuracy which results in a much higher cpu usage.  Additional playback modes have however been provided to allow playback on low specification machines at the cost of accuracy, but it still has a higher cpu demand than Sidplay.
+.SH COMMON OPTIONS
+.TP
+\fB\--help|-h\fR
+Display help.
+.TP
+\fB\-f<num>\fR
+Set frequency in Hz (default: 44100).
+.TP
+\fB\-nf\fR
+No filter emulation.  This will reduce CPU overhead at the cost of reduced sound quality.
+.TP
+\fB\-ns\fR
+Emulate MOS8580 waveforms (default: MOS6581).
+.TP
+\fB\-o<num>\fR
+Select track number (default: preset).
+.TP
+\fB\-s\fR
+Stereo Hardware support.  For Sidplay the channels for the sid will be split into left and right creating a stereo effect.  The same effect is present for Sidplay2 unless the tune is identified as stereo.  If this is the case then sid 1 and 2 become the left and right channels respectively.  For Sidplay other options are provided to produce special effects when in stereo mode, but Sidplay2 does not as yet support these.
+.TP
+\fB\-v\fR
+Verbose output while playing.
+
+
+.SH SIDPLAY2 OPTIONS
+.TP
+\fB\-b<num>\fR
+Set start time in [mins]:secs format (compatible with sid2wav).
+.TP
+\fB\-fd\fR
+Force dual sid environment.
+This forces emulation of  2 sid-chips for stereo playback
+even if datafile is identified as only being mono.  This occurs
+in the case of the stereo sid format as currently there is no way
+to identify them.  Stereo MUS files are however automatically
+detected.  The second sid appears in the 0xD500 address range.
+\fB\-fs\fR
+By default all samples are played through the SIDs master volume.  This can cause the
+SIDs voices to become disturbed and slightly noisy, but generally no worse than the
+original tune.  This switch can be used to move the samples to there own channel on
+the soundcard to avoid this problem.  Note that this is incompatible with some
+emulations and will cause he samples to be lost e.g. HardSID.
+.TP
+\fB\-m<b|r>\fR
+Mode switch (default -mr).  Currently supported modes are:
+.br
+    Sidplays\ \ Bankswitching Mode (-mb).
+.br
+    Sidplay2s\ Real C64 emulation mode (-mr).
+
+.TP
+\fB\-nf<filter>\fR
+New SID filter definition.  This will redefine ReSIDs internal filter (see the sidplay2 homepage for the file format).
+.TP
+\fB\-p<num>\fR
+Set bit precision for wav saving. The default is 32 (32 bit float), but can be set to 16 to create 16 bit little endian wavs.
+.TP
+\fB\-O<num>\fR
+Optimisation level (default: 0).  Increasing the optimisation level will improve the performance of sidplay2 at the cost of accuracy.  The maximum optimisation level can be found using \"sidplay2 --help\".  Any optimisation level greater than this will not cause an error and will be clipped to the maximum level.
+.TP
+\fB\-o<l|s>\fR
+Option 'l' will select continuous track looping while 's' will select the current track
+instead of all.  This option can be combined with the track selection to
+form -ols<num>.
+.TP
+\fB\-q\fR
+Quiet output while playing (opposite of verbose).
+.TP
+\fB\-s<l|r>\fR
+Playback the left or right stereo channel only.
+.TP
+\fB\-t<num>\fR
+Set play length in [mins]:secs format (0 is endless).
+.TP
+\fB\-v<n|p>[f]\fR
+Set VIC clock speed.  'n' is NTSC (America, 60Hz) and 'p' is PAL (Europe, 50Hz).  Providing an 'f' will prevent speed fixing that tries to compensate automatically for the speed difference.  Removing speed speed fixing simulates what happens on a real C64.  Options can be written as: -vnf or -vn -vf.
+.TP
+\fB\-w[name]|--wav[name]\fR
+Create WAV-file.  The default output filename is <datafile>[n].wav where [n] is the tune number should there be more than one in the sid.  This allows batch conversion of sid tunes without them overwriting each other.  By providing a name you override this default behavior.  The output file will be <name> with no tune number is added and <name> IS NOT checked for or appended with a legal wav file extension.
+
+.SH SIDPLAY OPTIONS
+.TP
+\fB\-a\fR
+strict PlaySID song compatibility (read the docs!).
+.TP
+\fB\-a2\fR
+bank switching mode (overrides -a).
+.TP
+\fB\-16\fR
+enable 16-bit sample mixing.
+.TP
+\fB\-ss\fR
+enable stereo surround.
+.TP
+\fB\-pc\fR
+enable centered auto-panning (stereo only).
+.TP
+\fB\-n\fR
+set NTSC clock speed (default: PAL).
+.TP
+\fB\-c\fR
+force song speed = clock speed (PAL/NTSC).
+.TP
+\fB\-bn<num>\fR
+set number of audio buffer fragments to use.
+.TP
+\fB\-bs<num>\fR
+set size 2^<num> of audio buffer fragments.
+.TP
+\fB\-b<num>\fR
+set sample buffer size.
+
+.RS
+.SH NOTES
+Place for notes..
+.SH OTHER INFORMATION
+Sidplay2 Homepage:
+    http://sidplay2.sourceforge.net/
+.br
+Sidplay homepage:
+    http://www.geocities.com/SiliconValley/Lakes/5147/
+.br
+High Voltage Sid Collection (HVSC):
+    http://hvsc.c64.org/
+.SH AUTHORS
+sidplay2     - Simon White <sidplay2@yahoo.com>
+.br
+sidplay      - Michael Schwendt <sidplay@geocities.com>
+.br
+reSID engine - Dag Lem <resid@nimrod.no>
+.br
+man-page     - Mikko Kilponen <mikil@uni.kaapeli.net>

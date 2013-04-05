@@ -1,0 +1,107 @@
+Release Notes 2.0.9:
+
+Merged Windows code based adding new command line flags for debuging.
+Fixed build issues on Solairs.
+Imported Audio driver updates for IRIX, needs testing.
+
+
+Release Notes 2.0.7-2:
+
+Fixed -w[name] option to override default wav filename.  Now files are stored
+into the current directory you happen to be in.
+
+
+Release Notes 2.0.7:
+
+This application has now been split, with the other part forming a new library
+called libsidplay.
+
+
+Added:
+
+Support to select the player environment:
+
+-mr = Real C64 Mode (default)
+-mb = SIDPlay bankswitching mode.
+
+Flag -fs (force samples to soundcard)
+
+Flag -nf<file> to load a new filter definition.
+
+Support for a new library called libsidutils.  This contains things which are
+of interest to the majority of players but are not considered part of the core
+player library.  This currently adds INI file support, songlength database
+support and parsing of filter defintion files.
+
+Sidplay2 now has a configuration file which allows the users to setup the
+common options which they use always.  The values you setup in the config file
+can always be overridden from the command line.  The command console version
+will not be able to edit this file itself.
+
+The INI file will endup in different places depending on your operating system.
+For UNIX compatible OS's it'll endup in your home directory as
+.sidplay/sidplay2.ini.
+
+For a Windows native executable it will end up in you Windows directory as
+sidplay2.ini.  Should you have the HOME environment variable defined, which
+may be the case if you have an NT type OS or Cygwin then it again ends up
+in your home directory as sidplay2.ini.  Note, if you have built the binary
+under Cygwin itself it will be detected as a UNIX compatible OS and result in
+the INI file being located in .sidplay2/sidplay2.ini in your home directory.
+
+More audio drivers provided by Jarno (There maybe a BeOS one soon :-).  MAC
+driver needs updating badly.  It was stopped due to the MAC not supporting
+command line programs very well.  With the new config file, the only thing
+that is now required is to type the file name.  So hopefully the MAC driver
+could be revived until a better solution is found.
+
+On demand loading of SID filter defintions.  Currently this is determined
+by the old/new sid flag in the sidplay2.ini file or on the command line
+with -ns (8580, 6581 by default).  As soon as support is added to sidtune
+the SID filter and emulation will automatically change due to the needs of the
+song.
+
+Currently the PSID defintion does not provide this information so
+an extension has been submitted to store the intended song speed (PAL/NTSC)
+and SID revision (6581/8580).  The 2 bits used to hold this information
+are bits 1 and 2 in the flag register respectively.  The defaults for both
+these 2 bits are zero, which indicates PAL and 6581.  Should bit 0 be set to
+1 (MUS tune) then the meaning of bit 1 is reversed!
+
+	
+New keys:
+
+HOME (first song), END (last song), Cursors (UP/DOWN will change the song
+speed, LEFT/RIGHT change track), p ([UN]PAUSE), ESC (quit).
+
+On Windows 98 First Edition Microsoft have admitted that reading of the
+cursor keys is broken for console programs.  You need to upgrade to the
+Second Edition to fix it.  For those not wishing to do this use the
+numpad instead.
+
+ANSI Console support.  Enable this is the sidplay2.ini file.  It's also
+possible to redefine the characters used for drawing the table to suite
+your character set.  For NT, ANSI console support is only available for
+non Win32 console apps :(.  A third party utility can be used to add
+support for this.
+
+Playlist support will be provided in one of the next 2 releases and
+the operation of keys will roughly be the same.  LEFT/RIGHT will skip
+playlist tracks, HOME/END will go to the first/last track in the playlist
+respectively.  The command console version will not be able to edit
+playlists itself.
+
+
+Features:
+
+For songs which don't have there song length detected it will play
+indefinatly.
+
+For those that are detected, the next tune will be auto-loaded.
+
+For Multi tune songs the player will rotate through every subtune
+indefinatly.
+
+For single tune songs the player will quit after the tune has completed.
+
+If the above is not like, please contact with your suggestions.

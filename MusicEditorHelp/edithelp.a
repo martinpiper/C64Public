@@ -1,0 +1,558 @@
+!"@0:edithelp.s"
+*=$3000
+sei
+lda #$7f
+sta $dc0d
+lda #1
+sta $d019
+sta $d01a
+lda #27
+sta 53265
+lda #250
+sta $d012
+lda #<irq1
+sta 788
+lda #>irq1
+sta 789
+cli
+lda #0
+sta 53280
+sta 53281
+sta $fd
+sta $fe
+jsr $e544
+rts
+irq1 !
+jsr status
+dec $d019
+lda 197
+cmp #4
+beq saveit
+cmp #3
+beq retreve
+jmp $ea31
+saveit !
+jsr saveit2
+jmp $ea31
+retreve !
+jsr retrevescr
+jmp $ea31
+saveit2 !
+lda #$50
+sta $fb
+lda #0
+sta $fd
+lda #4
+sta $fc
+lda #$40
+sta $fe
+si1 !
+ldy #39
+si2 !
+lda ($fb),y
+cmp #32
+bne si3
+dey
+bpl si2
+si3 !
+cpy #39
+beq si4
+iny
+lda #105
+sta ($fb),y
+si4 !
+lda $fb
+clc
+adc #$28
+sta $fb
+bcc si5
+inc $fc
+si5 !
+jsr checkend
+beq si1
+lda #$50
+sta $fb
+lda #4
+sta $fc
+lda #0
+sta lastcol
+ldy #0
+si6 !
+lda $fc
+clc
+adc #212
+sta $fc
+lda ($fb),y
+and #15
+cmp lastcol
+beq si7
+pha
+lda #102
+jsr output1
+pla
+sta lastcol
+jsr output1
+si7 !
+lda $fc
+sec
+sbc #212
+sta $fc
+lda ($fb),y
+and #127
+iny
+bne si7z
+inc $fc
+si7z !
+jsr output1
+cmp #105
+bne si8
+lda $fb
+clc
+adc #40
+sta $fb
+bcc si12
+inc $fc
+si12 !
+ldy #0
+si8 !
+jsr checkend
+beq si6
+jsr bitcrunch
+jsr status
+jsr erasechrret
+rts
+output1 !
+sta tmpa
+pha
+tya
+pha
+ldy #0
+lda tmpa
+sta ($fd),y
+inc $fd
+bne si9
+inc $fe
+lda $fe
+cmp #$50
+bcc si9
+pla
+pla
+pla
+pla
+inc $d020
+rts
+si9 !
+pla
+tay
+pla
+rts
+checkend !
+lda $fc
+sta tmphi
+tya
+clc
+adc $fb
+sta tmplo
+bcc si10
+inc tmphi
+si10 !
+lda tmphi
+cmp #7
+bcc si11
+lda tmplo
+cmp #$98
+bcc si11
+lda #1
+rts
+si11 !
+lda #0
+rts
+lastcol byt 0
+tmplo byt 0
+tmphi byt 0
+tmpa  byt 0
+status !
+ldx #79
+si13 !
+lda #15
+sta $d800,x
+sta $db98,x
+lda message,x
+and #$3f
+sta $0400,x
+lda message2,x
+and #$3f
+sta $0798,x
+dex
+bpl si13
+lda $fd
+and #15
+tax
+lda hexnum,x
+sta $0427
+lda $fd
+lsr a
+lsr a
+lsr a
+lsr a
+tax
+lda hexnum,x
+sta $0426
+lda $fe
+and #15
+tax
+lda hexnum,x
+sta $0425
+lda $fe
+lsr a
+lsr a
+lsr a
+lsr a
+tax
+lda hexnum,x
+sta $0424
+rts
+hexnum byt 48,49,50,51,52,53,54,55,56,57,1,2,3,4,5,6
+message byt "total end address                   0000"
+byt "----------------------------------------"
+message2 byt "----------------------------------------"
+byt "    help editor (c) 1992 element 114    "
+erasechrret !
+lda #$50
+sta $fb
+lda #4
+sta $fc
+ldy #0
+si14 !
+lda ($fb),y
+cmp #105
+bne si15
+lda #32
+sta ($fb),y
+si15 !
+inc $fb
+bne si16
+inc $fc
+si16 !
+jsr checkend
+beq si14
+rts
+bitcrunch !
+lda #$40
+sta $fc
+sta $8c
+lda #0
+sta $fb
+sta $8b
+tay
+bc1 !
+lda ($8b),y
+sta tempa
+jsr incr1
+lda ($8b),y
+and #1
+clc
+ror a
+ror a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+lsr a
+sta tempa
+jsr incr1
+lda ($8b),y
+clc
+and #3
+ror a
+ror a
+ror a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+lsr a
+lsr a
+sta tempa
+jsr incr1
+lda ($8b),y
+clc
+and #7
+ror a
+ror a
+ror a
+ror a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr incr1
+lda ($8b),y
+asl a
+asl a
+asl a
+asl a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+lsr a
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr incr1
+lda ($8b),y
+asl a
+asl a
+asl a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+lsr a
+lsr a
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr incr1
+lda ($8b),y
+asl a
+asl a
+ora tempa
+sta ($fb),y
+jsr incr2
+lda ($8b),y
+clc
+and #%01000000
+rol a
+rol a
+rol a
+sta tempa
+jsr incr1
+lda ($8b),y
+asl a
+ora tempa
+sta ($fb),y
+jsr incr2
+jsr incr1
+jmp bc1
+!
+incr1 !
+inc $8b
+bne ic11
+inc $8c
+ic11 !
+lda $8b
+cmp $fd
+bne ic12
+lda $8c
+cmp $fe
+beq ic13
+ic12 !
+rts
+ic13 !
+lda tempa
+sta ($fb),y
+inc $fb
+bne ic14
+inc $fc
+ic14 !
+lda $fb
+sta $fd
+lda $fc
+sta $fe
+pla
+pla
+rts
+!
+incr2 !
+inc $fb
+bne ic21
+inc $fc
+ic21 !
+rts
+!
+tempa byt 0
+!
+bitexpand !
+ldy #0
+bex1 !
+lda ($fd),y
+and #%01111111
+jsr makescr
+lda ($fd),y
+and #%10000000
+clc
+rol a
+rol a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00111111
+asl a
+ora tempa
+jsr makescr
+lda ($fd),y
+and #%11000000
+clc
+rol a
+rol a
+rol a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00011111
+asl a
+asl a
+ora tempa
+jsr makescr
+lda ($fd),y
+lsr a
+lsr a
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00001111
+asl a
+asl a
+asl a
+ora tempa
+jsr makescr
+lda ($fd),y
+lsr a
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00000111
+asl a
+asl a
+asl a
+asl a
+ora tempa
+jsr makescr
+lda ($fd),y
+lsr a
+lsr a
+lsr a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00000011
+clc
+ror a
+ror a
+ror a
+ror a
+ora tempa
+jsr makescr
+lda ($fd),y
+lsr a
+lsr a
+sta tempa
+jsr binc1
+lda ($fd),y
+and #%00000001
+clc
+ror a
+ror a
+ror a
+ora tempa
+jsr makescr
+lda ($fd),y
+lsr a
+jsr makescr
+jsr binc1
+jmp bex1
+!
+binc1 !
+inc $fd
+bne binc2
+inc $fe
+binc2 !
+rts
+!
+tmpy byt 0,0,0
+makescr !
+sty tmpy+2
+ldy tmpy
+ldx yflag
+bne colchange2
+cmp #102
+beq colchange
+cmp #105
+beq chrretscr
+sta ($fb),y
+lda $fc
+clc
+adc #212
+sta $fc
+lda tmpy+1
+sta ($fb),y
+lda $fc
+sec
+sbc #212
+sta $fc
+mc1 !
+iny
+bne mc1z
+inc $fc
+mc1z !
+sty tmpy
+jsr checkend
+bne mc2
+mc4 !
+ldy tmpy+2
+rts
+colchange !
+inc yflag
+jmp mc4
+colchange2 !
+sta tmpy+1
+dec yflag
+jmp mc4
+chrretscr !
+ldy #0
+sty tmpy
+lda $fb
+clc
+adc #$28
+sta $fb
+bcc mc3
+inc $fc
+mc3 !
+jmp mc1z
+mc2 !
+jsr binc1
+pla
+pla
+rts
+yflag byt 0
+!
+retrevescr !
+ldy #0
+sty tmpy
+sty tmpy+1
+sty yflag
+lda #$50
+sta $fb
+lda #4
+sta $fc
+lda #0
+sta $fd
+lda #$40
+sta $fe
+jsr bitexpand
+rts
+!

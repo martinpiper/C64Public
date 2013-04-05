@@ -1,0 +1,1376 @@
+!zn {
+xpos !by 0
+ypos !by 0
+cxpos !by 0
+cypos !by 0
+ytab !by 0,0,0,40,0,80,0,120,0,160
+     !by 0,200,0,240,1,24,1,64
+     !by 1,104,1,144,1,184,1,224
+     !by 2,8,2,48,2,88,2,128,2,168
+     !by 2,208,2,248,3,32,3,72
+     !by 3,112,3,152,3,192
+printblock
+lda #2
+sta xpos
+lda #4
+sta ypos
+lda #15
+sta .count
+lda #0
+sta endflag
+ldx offset
+pb1
+ldy endflag
+beq pb2
+jsr clearline
+jmp pb3
+pb2
+	lda $c000,x
+	pha
+	jsr printline
+	pla
+	cmp #kMusicPlayer_EndBlock
+	beq pb4
+pb3
+	lda #2
+	sta xpos
+	inc ypos
+	inx
+	dec .count
+	bpl pb1
+	jsr calclength
+	rts
+pb4
+	lda ypos
+	sta endflag
+	dec endflag
+	jmp pb3
+
+
+filterHi
+ldx #<flhtxt
+ldy #>flhtxt
+jmp defjmp
+filterLo
+ldx #<flltxt
+ldy #>flltxt
+jmp defjmp
+filterControl
+ldx #<flctxt
+ldy #>flctxt
+jmp defjmp
+filterPass
+ldx #<flptxt
+ldy #>flptxt
+jmp defjmp
+
+
+printline
+stx xtemp
+cmp #$60
+bcc note
+cmp #kMusicPlayer_Duration
+beq duration
+cmp #kMusicPlayer_Envelope
+beq envelope
+cmp #kMusicPlayer_Volume
+beq fade
+cmp #kMusicPlayer_EndBlock
+beq endblock
+cmp #kMusicPlayer_Glide
+beq glide
+cmp #kMusicPlayer_FilterHi
+beq filterHi
+cmp #kMusicPlayer_FilterLo
+beq filterLo
+cmp #kMusicPlayer_FilterControl
+beq filterControl
+cmp #kMusicPlayer_FilterPass
+beq filterPass
+cmp #kMusicPlayer_FilterGlide
+beq FilterGlide
+jmp clearline
+note
+sta value
+lsr
+lsr
+tay
+lda octtab,y
+sta octnum
+tay
+lda value
+sec
+sbc octtab2,y
+tay
+lda notetab,y
+jsr charprint
+lda shptab,y
+jsr charprint
+lda octnum
+clc
+adc #48
+jsr charprint
+jmp clearline
+duration
+ldx #<durtxt
+ldy #>durtxt
+defjmp
+jsr text
+ldx xtemp
+inx
+lda $c000,x
+jsr hexnum
+jmp clearline
+envelope
+ldx #<envtxt
+ldy #>envtxt
+jmp defjmp
+fade
+ldx #<fadtxt
+ldy #>fadtxt
+jmp defjmp
+endblock
+ldx #<endtxt
+ldy #>endtxt
+jsr text
+ldx xtemp
+jmp clearline
+glide
+ldx #<gltxt
+ldy #>gltxt
+jsr text
+ldx xtemp
+inx
+lda $c000,x
+jsr hexnum
+inx
+lda #44
+jsr charprint
+lda $c000,x
+jsr hexnum
+jmp clearline
+
+FilterGlide
+ldx #<fgtxt
+ldy #>fgtxt
+jsr text
+ldx xtemp
+inx
+lda $c000,x
+jsr hexnum
+inx
+lda #44
+jsr charprint
+lda $c000,x
+jsr hexnum
+
+clearline
+ldy xpos
+lda #32
+cl1
+cpy #11
+beq cl2
+jsr charprint
+iny
+bne cl1
+cl2
+rts
+
+hexnum
+pha
+and #$f0
+lsr
+lsr
+lsr
+lsr
+jsr numhex
+pla
+pha
+and #$0f
+jsr numhex
+pla
+rts
+numhex
+sty yhex
+tay
+lda hextab,y
+jsr charprint
+ldy yhex
+rts
+hextab !tx "0123456789abcdef"
+octtab !by 0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7
+octtab2 !by 0,12,24,36,48,60,72,84
+notetab !tx "ccddeffggaab"
+shptab !tx "-#-#--#-#-#-"
+xtemp !by 0
+offset !by 0
+ytemp !by 0
+value !by 0
+.count !by 0
+octnum !by 0
+endflag !by 0
+text
+	stx $fc
+	sty $fd
+	ldy #0
+text1
+	lda ($fc),y
+	cmp #128
+	beq text2
+	jsr charprint
+	iny
+	bne text1
+	inc $fd
+	jmp text1
+text2
+	rts
+
+charprint
+	sty cpytemp
+	pha
+	jsr calcpos
+	pla
+	and #63
+	sta ($fe),y
+	inc xpos
+	ldy cpytemp
+	rts
+
+calcpos
+	lda ypos
+	asl
+	tay
+	lda ytab,y
+	adc #4
+	sta $ff
+	lda ytab+1,y
+	sta $fe
+	ldy xpos
+	rts
+
+cpxtemp !by 0
+cpytemp !by 0
+yhex !by 0
+xhex !by 0
+
+flhtxt !tx "flh:"
+!by 128
+
+flltxt !tx "fll:"
+!by 128
+
+flctxt !tx "flc:"
+!by 128
+
+flptxt !tx "flp:"
+!by 128
+
+durtxt !tx "dur:"
+!by 128
+
+envtxt !tx "env:"
+!by 128
+
+fadtxt !tx "vol:"
+!by 128
+
+gltxt !tx "gl:"
+!by 128
+
+fgtxt !tx "fg:"
+!by 128
+
+endtxt !tx "**stop**"
+!by 128
+
+
+
+sprfig
+	lda cypos
+	asl
+	asl
+	asl
+	clc
+	adc #50
+	sta VIC2Sprite0Y
+	lda VIC2SpriteXMSB
+	and #%11111110
+	sta VIC2SpriteXMSB
+	lda cxpos
+	asl
+	asl
+	asl
+	clc
+	adc #24
+	sta VIC2Sprite0X
+	rts
+
+sprsetup
+	lda VIC2SpriteEnable
+	ora #1
+	sta VIC2SpriteEnable
+	lda #10
+	sta VIC2Sprite0Colour
+	lda VIC2SpriteMulticolour
+	and #$fe
+	sta VIC2SpriteMulticolour
+	lda #13
+	sta $07f8
+	ldx #63
+ss1	lda #0
+	sta $0340,x
+	dex
+	bpl ss1
+	inx
+	lda #$ff
+ss2
+	sta $0340,x
+	inx
+	inx
+	inx
+	cpx #24
+	bcc ss2
+	lda #255
+	sta VIC2SpritePriority
+	rts
+
+movecursor
+	stx cxpos
+	sty cypos
+	jmp sprfig
+
+editor
+	sta .lastblock
+	jsr fetchblock
+	lda #0
+	sta offset
+	sta yoffset
+	jsr printblock
+	jsr pn1
+	jsr predit1
+	jmp editblock
+
+
+StripUnusedBlocks
+	jsr CalculateUnusedBlocks
+	jsr DoKillPrompt
+	bne .noKill
+	jsr ReallyKillUnusedBlocks
+.noKill
+	rts
+
+CalculateUnusedBlocks
+	; First clear the lookup table memory
+	ldx #0
+	txa
+.l2
+	sta $c000,x
+	inx
+	bne .l2
+
+	; Now enumerate all the tracks and find blocks and flag them as being used in the lookup table.
+
+.l3
+	lda track1,x
+	tay
+	lda #1
+	sta $c000,y
+	lda track2,x
+	tay
+	lda #1
+	sta $c000,y
+	lda track3,x
+	tay
+	lda #1
+	sta $c000,y
+	inx
+	bne .l3
+	rts
+
+DoKillPrompt
+	; Calculate how many will be killed and prompt
+	ldy #0
+.l5
+	lda $c000,x
+	bne .isUsed2
+
+	lda loblock,x
+	sta .sm1+1
+	lda hiblock,x
+	sta .sm1+2
+.sm1	lda $1234
+	cmp #kMusicPlayer_EndBlock
+	beq .isUsed2	; Already clear so skip it in this calculation
+	iny
+.isUsed2
+	inx
+	cpx #$40
+	bne .l5
+
+	; No blocks will be killed so don't bother to prompt
+	cpy #0
+	beq .noPrompt
+
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	lda hextab,x
+	sta killedText+5
+
+	tya
+	and #15
+	tax
+	lda hextab,x
+	sta killedText+6
+	
+	ldx #<killedText
+	ldy #>killedText
+	jsr promptwindow
+	cmp #keyCodeY
+	; Leave NE set or clear
+	rts
+
+.noPrompt
+	; To return with NE set
+	lda #1
+	rts
+
+
+; Needs CalculateUnusedBlocks called before calling this
+ReallyKillUnusedBlocks
+	ldx #0
+	; Now find the unused blocks and kill them
+.l4
+	lda $c000,x
+	bne .isUsed
+	lda loblock,x
+	sta $fc
+	lda hiblock,x
+	sta $fd
+	ldy #0
+	lda #kMusicPlayer_EndBlock
+	sta ($fc),y
+
+.isUsed
+	inx
+	cpx #$40
+	bne .l4
+	rts
+
+killedText !tx "kill 00 blocks",128
+
+ValidateAllBlocks
+	lda #0
+	sta .lastblock
+.l1
+	jsr fetchblock
+	jsr replaceblock
+	inc .lastblock
+	lda .lastblock
+	cmp #$40
+	bne .l1
+	rts
+
+
+;
+; fetch block in a
+;
+fetchblock
+	tax
+	lda loblock,x
+	sta $fc
+	lda hiblock,x
+	sta $fd
+	ldy #0
+ftb1
+	lda ($fc),y
+	sta $c000,y
+	iny
+	beq ftb4
+	cmp #kMusicPlayer_EndBlock
+	bne ftb1
+ftb2
+	cpy #0
+	beq ftb3
+	lda #$ff
+	sta $c000,y
+	iny
+	bne ftb2
+ftb3
+	rts
+ftb4
+	lda #kMusicPlayer_EndBlock
+	sta $c000
+	iny
+	jmp ftb2
+
+;
+; edit the block
+;
+editblock
+lda #0
+sta offset
+sta yoffset
+ldx #2
+ldy #4
+jsr movecursor
+lda #<blksubmenu
+sta $fc
+lda #>blksubmenu
+sta $fd
+jmp submenu
+blkedit2
+jsr cursoron
+jmp edit1
+predit1
+jsr calclength
+lda blocklength
+ldx #7
+stx xpos
+ldx #22
+stx ypos
+jmp hexnum
+edit1
+jsr pn1
+jsr predit1
+jsr getkey
+ldx #0
+edit2
+	cmp edkey,x
+	beq edit3
+	inx
+	cpx keyno
+bcc edit2
+cmp #196
+beq edit1
+jsr typechar
+jmp edit1
+edit3
+pha
+txa
+asl
+tax
+lda jmptab,x
+sta edit4+1
+lda jmptab+1,x
+sta edit4+2
+pla
+edit4 jsr $ffff
+jsr delay
+jmp edit1
+edkey !by 157,29,145,17
+       !by 95,20,148,13
+       !by 219,221,19
+       !by 64,38,33
+jmptab !by <left,>left
+       !by <right,>right
+       !by <up,>up
+       !by <down,>down
+       !by <.exit,>.exit
+       !by <del,>del
+       !by <ins,>ins
+       !by <carret,>carret
+       !by <incrblk,>incrblk
+       !by <decrblk,>decrblk
+       !by <homeblk,>homeblk
+       !by <grab,>grab
+       !by <putb,>putb
+       !by <kilb,>kilb
+keyno !by 14
+;
+; cursor control routeens
+;
+left
+lda cxpos
+cmp #2
+beq left1
+dec cxpos
+cmv
+jsr sprfig
+left1
+rts
+right
+lda cxpos
+cmp #9
+beq left1
+inc cxpos
+jmp cmv
+up
+jsr storeline
+lda cypos
+cmp #4
+beq .up2
+dec cypos
+jmp cmv
+.up2
+lda yoffset
+beq left1
+jmp scrollup
+down
+jsr storeline
+lda cypos
+cmp #19
+beq down1
+inc cypos
+jmp cmv
+down1
+lda endflag
+bne left1
+jmp scrolldown
+.exit
+jsr storeline
+jsr removespaces
+lda #0
+sta offset
+sta yoffset
+jsr printblock
+jsr replaceblock
+jsr cursoroff
+pla
+pla
+lda .lastblock
+rts
+cursoron
+lda VIC2SpriteEnable
+ora 1
+sta VIC2SpriteEnable
+rts
+cursoroff
+lda VIC2SpriteEnable
+and #$fe
+sta VIC2SpriteEnable
+rts
+removespaces
+; Crash fix 2
+; Make sure the block is always terminated with at least two kMusicPlayer_EndBlock
+lda #kMusicPlayer_EndBlock
+sta $c000+$ff
+sta $c000+$fe
+
+ldx #0
+rs1
+lda $c000,x
+cmp #kMusicPlayer_EndBlock
+beq rs3
+cmp #$ff
+bne rs2
+jsr removeBye
+jmp rs1
+rs2
+inx
+cpx #255
+bne rs1
+rs3
+rts
+removeBye
+txa
+pha
+rb1
+lda $c001,x
+sta $c000,x
+inx
+cpx #255
+bne rb1
+txa
+sta $c000,x
+pla
+tax
+rts
+
+ins
+	lda cxpos
+	cmp #2
+	beq carret
+	jsr checkpos
+	bne ins3
+	lda cxpos
+	sta xpos
+	lda cypos
+	sta ypos
+	jsr calcpos
+	sty ytemp
+	ldy #9
+ins1
+	cpy ytemp
+	beq ins2
+	dey
+	lda ($fe),y
+	iny
+	sta ($fe),y
+	dey
+	jmp ins1
+ins2
+	ldy cxpos
+	lda #32
+	sta ($fe),y
+ins3
+	rts
+
+carret
+	jsr storeline
+	lda cxpos
+	cmp #2
+	beq car1
+	lda #2
+	sta cxpos
+	jsr sprfig
+	jmp down
+car1
+	jsr findpos
+	jsr insertchar
+	jmp printblock
+
+insertchar
+cpx #255
+beq insc3
+stx xtemp
+
+lda blocklength
+cmp #$fe
+bcs insc3
+
+ldx #254
+insc1
+lda $c000,x
+sta $c001,x
+cpx xtemp
+beq insc2
+dex
+jmp insc1
+insc2
+ldx xtemp
+lda #$ff
+sta $c000,x
+insc3
+rts
+findpos
+lda yoffset
+clc
+adc cypos
+sec
+sbc #4
+jsr calcoffset
+rts
+;
+; calculate offset (lines) in a
+;
+calcoffset
+	ldx #0
+	tay
+	beq clo2
+clo1
+	jsr findinstr
+	dey
+	bne clo1
+clo2
+	rts
+
+findinstr
+	lda $c000,x
+	inx
+; The least instruction allowed due to the music player having "bpl .noteplayBuffered"
+	cmp #$80
+	bcc fi1
+	cmp #$ff
+	beq fi1
+	cmp #kMusicPlayer_EndBlock
+	beq fi1
+	cmp #kMusicPlayer_FilterGlide
+	beq .isTwoBytes
+	cmp #kMusicPlayer_Glide
+	beq .isTwoBytes
+	jmp .oneByteExtra
+.isTwoBytes
+	inx
+; All other instructions
+.oneByteExtra
+	inx
+fi1
+	rts
+
+;
+; scroll block routeens
+;
+scrollup
+lda yoffset
+beq scu1
+dec yoffset
+scud
+lda yoffset
+jsr calcoffset
+stx offset
+jsr printblock
+scu1
+rts
+scrolldown
+lda endflag
+bne scu1
+inc yoffset
+jmp scud
+typechar
+cmp #4
+beq tch0
+cmp #32
+bcc tch2
+cmp #90
+bcs tch2
+tch0
+pha
+lda cxpos
+sta xpos
+lda cypos
+sta ypos
+jsr checkpos
+bne tch1
+pla
+jsr charprint
+jsr right
+jmp delay
+tch1
+pla
+tch2
+rts
+del
+lda cxpos
+cmp #2
+beq del3
+sta xpos
+lda cypos
+sta ypos
+jsr checkpos
+bne del6
+jsr calcpos
+del1
+cpy #9
+bcs del2
+iny
+lda ($fe),y
+dey
+sta ($fe),y
+iny
+bne del1
+del2
+lda #32
+sta ($fe),y
+del6
+rts
+del3
+jsr findpos
+lda $c000,x
+cmp #kMusicPlayer_EndBlock
+beq del5
+stx delxtemp
+jsr findinstr
+txa
+sec
+sbc delxtemp
+tay
+ldx delxtemp
+del4
+jsr removeBye
+dey
+bne del4
+jsr printblock
+del5
+rts
+delxtemp !by 0
+yoffset !by 0
+
+
+replaceblock
+	ldx .lastblock
+	lda loblock,x
+	sta $fc
+	lda hiblock,x
+	sta $fd
+	ldy #0
+rpb1
+	lda $c000,y
+	sta ($fc),y
+	iny
+	bne rpb1
+	rts
+
+
+delay
+	ldx #0
+	ldy #$17
+delay1
+	nop
+	nop
+	dex
+	bne delay1
+	dey
+	bne delay1
+	rts
+
+
+incrblk
+	lda .lastblock
+	cmp #(maxBlocks-1)
+	beq hblk2
+	jsr doblock
+	inc .lastblock
+	lda .lastblock
+	jsr fetchblock
+	jsr predit1
+	jmp hblk1
+
+decrblk
+	lda .lastblock
+	beq hblk2
+	jsr doblock
+	dec .lastblock
+	lda .lastblock
+	jsr fetchblock
+	jsr predit1
+	jmp hblk1
+homeblk
+	jsr storeline
+hblk1
+	lda #0
+	sta offset
+	sta yoffset
+	lda #2
+	sta cxpos
+	lda #4
+	sta cypos
+	jsr pn1
+	jmp pn1z
+pn1
+	lda #8
+	sta xpos
+	lda #2
+	sta ypos
+	lda .lastblock
+	jsr hexnum
+	rts
+pn1z
+	jsr sprfig
+	jsr printblock
+hblk2
+	rts
+
+doblock
+	jsr storeline
+	jsr removespaces
+	lda #0
+	sta offset
+	sta yoffset
+	jsr replaceblock
+	rts
+.lastblock !by 0
+
+storeline
+	lda #2
+	sta xpos
+	lda cypos
+	sta ypos
+	lda #0
+	sta linelength
+	jsr calcpos
+	lda ($fe),y
+
+	cmp #32
+	bne .notBlank
+	lda #$ff
+	jmp .commonBlockStoreByte
+
+.notBlank
+	lda #<endtxt
+	ldx #>endtxt
+	ldy xpos
+	jsr cmpstr
+	bne .notEnd
+	lda #kMusicPlayer_EndBlock
+.commonBlockStoreByte
+	sta outchar
+	lda #1
+	sta linelength
+	jmp replaceline
+
+.notEnd
+	lda #<durtxt
+	ldx #>durtxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc1
+	lda #kMusicPlayer_Duration
+.commonBlockGetByteAndStore
+	sta outchar
+	jsr findnum
+.commonBlockStoreOneByte
+	sta outchar+1
+	lda #2
+	sta linelength
+	jmp replaceline
+
+.nbc1
+	lda #<envtxt
+	ldx #>envtxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc2
+	lda #kMusicPlayer_Envelope
+	jmp .commonBlockGetByteAndStore
+
+
+.nbc2
+	lda #<fadtxt
+	ldx #>fadtxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc3
+	lda #kMusicPlayer_Volume
+	jmp .commonBlockGetByteAndStore
+
+.nbc3
+	lda #<gltxt
+	ldx #>gltxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc4
+	lda #kMusicPlayer_Glide
+	sta outchar
+	jsr findnum
+	sta outchar+1
+	iny
+	jsr findnum
+	sta outchar+2
+	lda #3
+	sta linelength
+	jmp replaceline
+
+.nbc4
+	lda #<flhtxt
+	ldx #>flhtxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc5
+	lda #kMusicPlayer_FilterHi
+	jmp .commonBlockGetByteAndStore
+
+.nbc5
+	lda #<flltxt
+	ldx #>flltxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc6
+	lda #kMusicPlayer_FilterLo
+	jmp .commonBlockGetByteAndStore
+
+.nbc6
+	lda #<flctxt
+	ldx #>flctxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc7
+	lda #kMusicPlayer_FilterControl
+	jmp .commonBlockGetByteAndStore
+
+.nbc7
+	lda #<flptxt
+	ldx #>flptxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc8
+	lda #kMusicPlayer_FilterPass
+	jmp .commonBlockGetByteAndStore
+
+.nbc8
+	lda #<fgtxt
+	ldx #>fgtxt
+	ldy xpos
+	jsr cmpstr
+	bne .nbc9
+	lda #kMusicPlayer_FilterGlide
+	sta outchar
+	jsr findnum
+	sta outchar+1
+	iny
+	jsr findnum
+	sta outchar+2
+	lda #3
+	sta linelength
+	jmp replaceline
+
+.nbc9
+
+	jmp stl1
+
+	; Check for notes if none of the above command checks worked
+stl1
+	ldy #2
+	lda ($fe),y
+stl2
+	cmp #1
+	bcc stl3
+	cmp #8
+	bcc stl4
+stl3
+	sec
+	sbc #4
+	jmp stl2
+stl4
+	sec
+	sbc #1
+	tax
+	lda noteval,x
+	sta tempchar
+	iny
+	lda ($fe),y
+	cmp #35
+	bne stl5
+	inc tempchar
+stl5
+	iny
+	lda ($fe),y
+stl6
+	cmp #48
+	bcc stl7
+	cmp #56
+	bcc stl8
+stl7
+	sec
+	sbc #4
+	jmp stl6
+stl8
+	sec
+	sbc #48
+	tax
+	lda octtab2,x
+	clc
+	adc tempchar
+	sta outchar
+	lda #1
+	sta linelength
+	jmp replaceline
+
+	; Compares a string in l/h a/x with ($fe),y
+cmpstr
+	sta cps1+1
+	stx cps1+2
+	sty cpsty
+	ldx #0
+cps1
+	lda $ffff,x
+	cmp #128
+	beq cps3
+cps2
+	and #63
+	cmp #58
+	beq cps4
+	cmp ($fe),y
+	bne cps3
+cps4	inx
+	iny
+	jmp cps1
+cps3
+	rts
+cpsty !by 0
+
+findnum
+lda ($fe),y
+jsr gethexnum
+asl
+asl
+asl
+asl
+sta tempnum
+iny
+lda ($fe),y
+jsr gethexnum
+clc
+adc tempnum
+iny
+rts
+
+gethexnum
+	and #127
+	cmp #2
+	bne ghn2
+	lda #$b
+	rts
+ghn2
+	cmp #47
+	bcs ghn1
+	clc
+	adc #64
+ghn1
+	sec
+	sbc #48
+	cmp #10
+	bcc ghex3
+	sbc #7
+ghex1
+	cmp #10
+	bcc ghex2
+	cmp #16
+	bcc ghex3
+ghex2
+	sec
+	sbc #4
+	jmp ghex1
+ghex3
+rts
+
+outchar !by 0,0,0
+tempchar !by 0
+tempnum !by 0
+linelength !by 0
+templength !by 0
+noteval !by 9,11,0,2,4,5,7
+replaceline
+;
+; replaces instructions
+;
+jsr findpos
+stx templength
+jsr findinstr
+txa
+sec
+sbc templength
+sec
+sbc linelength
+beq rpl1
+bcs rpl3
+bcc rpl5
+rpl1
+ldx templength
+ldy #0
+rpl2
+lda outchar,y
+sta $c000,x
+inx
+iny
+cpy linelength
+bcc rpl2
+ldx templength
+lda $c000,x
+jsr printline
+jsr calclength
+rts
+;
+; remove extra lines
+;
+rpl3
+tay
+ldx templength
+rpl4
+jsr removeBye
+dey
+bne rpl4
+beq rpl1
+;
+; addlines (if room)
+;
+rpl5
+eor #255
+clc
+adc #1
+tay
+clc
+adc blocklength
+bcs rpl7
+ldx templength
+rpl6
+jsr insertchar
+dey
+bne rpl6
+beq rpl1
+rpl7
+jsr printblock
+rts
+; find block length
+calclength
+ldy #0
+fbl1
+lda $c000,y
+cmp #kMusicPlayer_EndBlock
+beq fbl2
+iny
+bne fbl1
+fbl2
+sty blocklength
+rts
+blocklength !by 0
+checkpos
+lda endflag
+beq ckp2
+cmp cypos
+bcs ckp2
+lda #1
+rts
+ckp2
+lda #0
+rts
+grab
+jsr storeline
+ldx #0
+gb1
+lda $c000,x
+sta $c200,x
+sta VIC2BorderColour
+inx
+bne gb1
+stx VIC2BorderColour
+rts
+putb
+ldx #0
+gb2
+lda $c200,x
+sta $c000,x
+sta VIC2BorderColour
+inx
+bne gb2
+stx VIC2BorderColour
+jmp hblk1
+rts
+kilb
+ldx #<.killtxt
+ldy #>.killtxt
+jsr promptwindow
+cmp #keyCodeY
+bne skc1
+ldx #1
+lda #$ff
+gb3
+sta $c000,x
+inx
+stx VIC2BorderColour
+bne gb3
+lda #kMusicPlayer_EndBlock
+sta $c000,x
+skc1 jmp hblk1
+.killtxt !tx "< clear? >"
+!by 128
+blksubmenu
+!by 25,3,14,17,8,<bkstab,>bkstab,<bkshot,>bkshot,<bksjmp,>bksjmp
+bkstab !by 1,0,1,1,1,0,0,0,0,0,1,1,0,0,1,0,1
+bkshot !tx "edgunrpx"
+bksjmp !by <blkedit2,>blkedit2
+       !by <kilb,>kilb
+       !by <grab,>grab
+       !by <putb,>putb
+;      !by <keyblk,>keyblk
+;      !by <trnblk,>trnblk
+;      !by <timblk,>timblk
+       !by <incrblk,>incrblk
+       !by <decrblk,>decrblk
+;      !by <playblk,>playblk
+       !by <IRQStartPlay,>IRQStartPlay
+       !by <.exit2,>.exit2
+.exit2
+pla
+pla
+lda .lastblock
+rts
+keyblk
+trnblk
+timblk
+playblk
+rts
+}

@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MusicStudio", "MusicStudio.vcproj", "{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0ACEC72B-89F1-4098-A71F-94121D88362A} = {0ACEC72B-89F1-4098-A71F-94121D88362A}
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A} = {3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E} = {FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}
+		{873230EA-1EBC-4B11-80B9-FD446582FA27} = {873230EA-1EBC-4B11-80B9-FD446582FA27}
+		{63370DF9-1079-4428-9403-E7912DD39505} = {63370DF9-1079-4428-9403-E7912DD39505}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hardsid-builder", "..\RESID-FP\trunk\sidplay-libs-2.1.1\builders\hardsid-builder\win\VC\hardsid_builder.vcproj", "{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resid-builder", "..\RESID-FP\trunk\sidplay-libs-2.1.1\builders\resid-builder\win\VC\resid_builder.vcproj", "{873230EA-1EBC-4B11-80B9-FD446582FA27}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sidplay", "..\RESID-FP\trunk\sidplay-libs-2.1.1\sidplay\win\VC\libsidplay.vcproj", "{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sidplay-client", "..\RESID-FP\trunk\sidplay-2.0.9\win\VC\sidplay.vcproj", "{0ACEC72B-89F1-4098-A71F-94121D88362A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A} = {3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E} = {FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}
+		{873230EA-1EBC-4B11-80B9-FD446582FA27} = {873230EA-1EBC-4B11-80B9-FD446582FA27}
+		{63370DF9-1079-4428-9403-E7912DD39505} = {63370DF9-1079-4428-9403-E7912DD39505}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sidutils", "..\RESID-FP\trunk\sidplay-libs-2.1.1\utils\win\VC\libsidutils.vcproj", "{63370DF9-1079-4428-9403-E7912DD39505}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MusicStudioLauncher", "..\MusicStudioLauncher\MusicStudioLauncher.vcproj", "{39135231-0247-4035-B25E-0E5004C53189}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}.Debug|Win32.Build.0 = Debug|Win32
+		{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}.Release|Win32.ActiveCfg = Release|Win32
+		{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}.Release|Win32.Build.0 = Release|Win32
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}.Debug|Win32.Build.0 = Debug|Win32
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}.Release|Win32.ActiveCfg = Release|Win32
+		{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}.Release|Win32.Build.0 = Release|Win32
+		{873230EA-1EBC-4B11-80B9-FD446582FA27}.Debug|Win32.ActiveCfg = Debug|Win32
+		{873230EA-1EBC-4B11-80B9-FD446582FA27}.Debug|Win32.Build.0 = Debug|Win32
+		{873230EA-1EBC-4B11-80B9-FD446582FA27}.Release|Win32.ActiveCfg = Release|Win32
+		{873230EA-1EBC-4B11-80B9-FD446582FA27}.Release|Win32.Build.0 = Release|Win32
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}.Debug|Win32.Build.0 = Debug|Win32
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}.Release|Win32.ActiveCfg = Release|Win32
+		{3AFB0F7C-8CFF-4440-9C12-9D4DC3A1736A}.Release|Win32.Build.0 = Release|Win32
+		{0ACEC72B-89F1-4098-A71F-94121D88362A}.Debug|Win32.ActiveCfg = DebugLib|Win32
+		{0ACEC72B-89F1-4098-A71F-94121D88362A}.Debug|Win32.Build.0 = DebugLib|Win32
+		{0ACEC72B-89F1-4098-A71F-94121D88362A}.Release|Win32.ActiveCfg = ReleaseLib|Win32
+		{0ACEC72B-89F1-4098-A71F-94121D88362A}.Release|Win32.Build.0 = ReleaseLib|Win32
+		{63370DF9-1079-4428-9403-E7912DD39505}.Debug|Win32.ActiveCfg = Debug|Win32
+		{63370DF9-1079-4428-9403-E7912DD39505}.Debug|Win32.Build.0 = Debug|Win32
+		{63370DF9-1079-4428-9403-E7912DD39505}.Release|Win32.ActiveCfg = Release|Win32
+		{63370DF9-1079-4428-9403-E7912DD39505}.Release|Win32.Build.0 = Release|Win32
+		{39135231-0247-4035-B25E-0E5004C53189}.Debug|Win32.ActiveCfg = Debug|Win32
+		{39135231-0247-4035-B25E-0E5004C53189}.Debug|Win32.Build.0 = Debug|Win32
+		{39135231-0247-4035-B25E-0E5004C53189}.Release|Win32.ActiveCfg = Release|Win32
+		{39135231-0247-4035-B25E-0E5004C53189}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,543 @@
+; VICE Parameters: -1 vice.tap IRQTape1.prg
+; This demonstrates using the CIA timer to load data from tape with an autoboot loader.
+; The first loader is very small and loads a larger section of code and then runs it.
+!source "../stdlib/stdlib.a"
+!source "../stdlib/PETSCII.a"
+!to "IRQTape1.prg", cbm
+!sal
+!sl "IRQTape1.map"
+!svl "IRQTape1.lbl"
+!cpu 6510
+!ct pet
+!initmem $ea
+
+; MPi: DONE: The IRQ code will need to have a checksum for a file header before it commits to
+; loading a file data into memory. This is for extra safety. It is also important for the block
+; loading code because there will be many more headers spread out through the blocks.
+
+; MPi: DONE: Think about a block loader for the tape turbo. If it encounters an error in the
+; block it would allow the tape to be rewound a little and to try again.
+; This can be accomplished by having the file saved as many small blocks with very small pilots
+; between each block. Then the mainline code can maintain a bit pattern of blocks left to load.
+; The IRQ code can test the bit pattern before committing to loading a block. If a block has not
+; been loaded before and it passes the checksum it can decrement a counter of blocks left to
+; load.
+
+; MPi: DONE: The non-block loader can report a load error in the same way and try to reload the
+; entire file.
+
+; MPi: TODO: In .processByte instead of doing ldx TurboTapeHeaderStatus and dex testing have the
+; whole tape IRQ on a page boundary and have a self modified JMP using the lo byte of the next
+; routine to execute.
+
+; Define this to cause the extended code for Legion of the Damned to be used
+;Scroller_LOTD = 1
+
+; Define this to remove top and bottom borders whilst loading.
+OpenBorders = 1
+
+
+; These options are for the initial boot loader. They cannot be both enabled at the same time.
+; Uncomment the following line to use a tiny loader that doesn't switch on the screen.
+; This loader uses a sawtooth waveform and sets the freqHi with the bytes being loaded.
+;SmallLoader = 1
+
+; Uncomment the following line to enable the MartyLoad code instead of the black screen with white
+; file name text.
+;MartyLoad = 1
+
+; Uncomment the following line to enable the Noveish loader
+;NovaishLoad = 1
+
+; Uncomment the following to enable block checksum loading.
+; This allows each block of 256 bytes to have a checksum, if the checksum fails then a load error
+; is triggered and the user is prompted to rewind the tape a little and try loading the block
+; again. A table of blocks already loaded is maintained so valid blocks are not tried again.
+; A total count of blocks expected is also maintained so the loader can trigger the music and
+; main code execution at the correct time.
+EnableBlockChecksum = 1
+
+
+; Automatic configration options set by the code depending on the above user defined options.
+; Switches on the tiny turbo data header if needed
+!ifdef MartyLoad {
+TinyHeader = 1
+}
+!ifdef NovaishLoad {
+TinyHeader = 1
+}
+!ifdef SmallLoader {
+TinyHeader = 1
+}
+
+
+; This starts at $0801 so that doing a LOAD"*",8 will still work with the default $0801 BASIC start address.
+!source "../stdlib/BASICEntry900.a"
+
+TapePilotCode1		= %11111111
+TapePilotCode2		= %11000011
+TapeSyncCode		= %10101010
+TapeHeaderByteEx	= %11110000
+TapeHeaderByteEx2	= %10010110
+TapeHeaderByteEx3	= %01101001
+
+!source "TurboTapeVars.a"
+
+; The speed of the turbo in cycles, each bit 0 is 2*this value and bit 1 is 4*this value
+; For bad quality tape duplication firms make this value larger, for example $90 or $a0 is quite good.
+TapeTurboSpeed = $80	; Much faster than this and some parts of the saving routines can take longer than this many cycles.
+
+*=BASICEntry
+	; Saves data to the tape
+
+	; First configure the ROMs, just in case we have them switched out by something else
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	; Clear anything on the screen
+	jsr CLRSCR
+
+!if 0 {
+	jsr $f817     ; print "press play..."
+	; For debugging we copy the tape data and header into its correct location now so we can call it directly
+	sei
+!zn
+	; Copy the routine we want to run to its real place in memory
+	ldx #endBlock2 - startBlock
+.l1
+	lda startBlock-1,x
+	sta TapeRelocatedStart-1,x
+	dex
+	bne .l1
+
+	ldy #endTapeHeader - tapeHeader
+.l4
+	lda tapeHeader-1,y
+	sta $0351-1,y
+	dey
+	bne .l4
+	jmp MainLoaderEntry
+}
+
+!if 0 {
+	jsr $f817     ; print "press play..."
+	; For debugging we copy the main scrolling loader into its correct location now so we can call it directly
+	sei
+!zn
+	; Copy the routine we want to run to its real place in memory
+	ldx #0
+.l1
+	lda RealCodeStart,x
+	sta MainSecondLoaderStart,x
+	dex
+	bne .l1
+	; Update the counters
+	inc .l1+2
+	inc .l1+5
+	; Test for the end
+	lda .l1+2
+	cmp #>RealCodeEnd
+	bne .l1
+
+	jsr CLRSCR
+	lda #0
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+	; Turns on cassette motor and removes ROMs
+	lda #%101
+	sta ZPProcessorPort
+
+	jmp MainSecondLoaderStart
+}
+
+!if 0 {
+	jsr $f838     ; print "press record..."
+;	bcs .DoNotSave
+
+	; Save some known values
+	sei
+	lda #0
+	sta VIC2ScreenControlV
+	lda #%101			; Low signal level, just get the tape motor running
+	sta ZPProcessorPort
+	jsr TurboTapeWritePilot
+
+	lda #TapeSyncCode
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx2
+	jsr TurboTapeSaveByte
+
+.l5
+;	lda #%11111111
+	lda #%00000000
+	jsr TurboTapeSaveByte
+
+	lda #%11111111
+	jsr TurboTapeSaveByte
+	jmp .l5
+}
+
+	; Claim the STOP vector to update the border while using the kernal header save.
+	lda #<myBorderFlash
+	sta STOPVectorLo
+	lda #>myBorderFlash
+	sta STOPVectorHi
+
+	; Save the turbo loader
+	; Open device options
+	lda #1
+	ldx #1				; Cassette
+	ldy #1				; Force it to reload from where it was saved from
+	jsr SETLFS
+	; Set filename
+	lda #.nameEnd-.nameStart		; Number of filename characters
+	ldx #<.nameStart
+	ldy #>.nameStart
+	jsr SETNAM
+	; Setup save parameters directly into that expected by the kernal routines
+	; Saving the first IRQ vector like this causes some interesting effects such as the kernal loader exiting earlier after the
+	; first block of code and not bothering about verifying it. This gives us control of the computer at an earlier stage than the
+	; normal kernal load sequence. The vector at $0302 is then called earlier.
+	; This causes the kernel loader to think it is done, when it is not ($f92c at $314 changes to $f931!! after the first loaded byte then $ea31)
+	; This is because of the code at $f8be which is:
+	; F8BE   AD A0 02   LDA $02A0
+	; F8C1   CD 15 03   CMP $0315
+	; F8C4   18         CLC
+	; F8C5   F0 15      BEQ $F8DC
+	; ...
+	; F8DC   A9 00      LDA #$00
+	; F8DE   8D A0 02   STA $02A0	; Flags the tape loader to finish
+	; F8E1   60         RTS
+
+	lda #<TapeRelocatedStart			; lo start
+	sta $c1				; Used by the kernal routines
+	lda #>TapeRelocatedStart			; hi start
+	sta $c2				; Used by the kernal routines
+	lda #$16			; lo end
+	sta $ae				; Used by the kernal routines
+	lda #$03			; hi end
+	sta $af				; Used by the kernal routines
+
+	; Instead of calling the kernal save routine we emulate what it does so we can alter the tape header buffer before it is saved.
+	; This routine needs to save $02a7 - $0316
+	; This gives us the memory from $02a7 - $0301 and $0304 - $0313 for our code.
+	; We also have the memory from the tape buffer at $033c - $03fb which gives space for our code or data from $0351 since the start of the header is used for the filename and various other information like load address etc.
+	jsr TurboTapeWriteSlowHeader
+
+	; Now save the data from where it is located in memory here
+	lda #<startBlock
+	sta $c1
+	lda #>startBlock
+	sta $c2
+	lda #<TapeTurboEndOfExtendedZeroPageCodeAndIRQ
+	sta $ae
+	lda #>TapeTurboEndOfExtendedZeroPageCodeAndIRQ
+	sta $af
+	; Only save once and not twice since this code uses the $314/$315
+	; trick to exit the load earlier. 
+	; This was found by watching for a load from startBlock and pointed to the kernal tape save
+	; which did a lda ($ac),y at $fc41.
+	; It is the fourth call to fb8e. The call comes from fc88.
+	; just before fc88 there is:
+	; FC84   A5 BE      LDA $BE
+	; FC86   F0 30      BEQ $FCB8
+	; FC88   20 8E FB   JSR $FB8E
+	; Note the LDA $BE
+	; This works if $BE is set to 0 when it is 1 after the header is saved.
+
+
+	; This vector is claimed because it is regularly called during the save and is also easier
+	; than rewriting large chunks of kernal around $fc84
+	; Claim the stop vector which tests $be=1 and then sets $be=0.
+	; $be is the count of the block being written from 2 to 1 to 0
+	; Causing the kernal to exit the save one block early without causing a detected load error.
+	lda #<myStop
+	sta STOPVectorLo
+	lda #>myStop
+	sta STOPVectorHi
+
+	; Jump into the kernal to save the data after the header
+	jsr $f867
+	lda #1
+	jsr CLOSE
+
+
+	; Now disable interrupts and the screen so we can start saving our turbo tape data
+	sei
+	lda #0
+	sta VIC2ScreenControlV
+
+	lda #%101			; Low signal level, just get the tape motor running
+	; Also uses "all RAM with IO"
+	sta ZPProcessorPort
+
+	; Introduce a small delay between the kernal saved data which stops the tape motor and the turbo tape data
+	jsr TurboTapeFileDelay
+
+!ifdef Scroller_LOTD { } else {
+	; Save some rubbish tape header to check our syncing and extended tape header check code works. This results in this incorrect tape header being discarded and waiting for a real tape header
+	jsr TurboTapeWritePilot
+	lda #TapeSyncCode
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx-1
+	jsr TurboTapeSaveByte
+	jsr TurboTapeWritePilot
+	lda #TapeSyncCode
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx2-1
+	jsr TurboTapeSaveByte
+}
+
+	; Now write some real data, the scrolling message music player
+	jsr TurboTapeFileDelay
+	; Now write real tape data
+	; Write the scroller loader
+	jsr TurboTapeWritePilot
+	; File name. We use 255 here because the initial boot loader ignores the name but when testing
+	; the main scrolling loader by copying it into memory and jumping to it we want it to skip
+	; loading this data and start loading the following sprite data instead.
+	lda #255
+	ldx #<MainSecondLoaderStart
+	ldy #>MainSecondLoaderStart
+!ifdef TinyHeader {
+	jsr TurboTapeWriteShortStart
+} else {
+	jsr TurboTapeWriteStart
+	lda #0
+	jsr TurboTapeSaveByte	; Save a rubbish expected number of blocks, it is skipped anyway.
+}
+	ldx #< (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+	ldy #> (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+!ifdef TinyHeader {
+	jsr TurboTapeSetEnd
+} else {
+	jsr TurboTapeWriteEndHeaderChecksum
+}
+	+TurboTapeSaveChunk RealCodeStart , RealCodeEnd , 0
+	lda TurboTapeSaveChecksum
+	jsr TurboTapeSaveByte
+	jsr TurboTapeWriteLeadOut
+
+	; All data saved beyond this point is loaded by the MainSecondLoaderStart code. Since it uses
+	; the TapeLoaderCIAIRQ.a code then it needs data to be saved with TurboTapeWriteEndHeaderChecksum
+
+!ifdef Scroller_LOTD { } else {
+; Write eight bytes with a different filename, it should not get loaded.
+; Thus the message scroller and music player should not try to init this as a loaded music file.
+	jsr TurboTapeFileDelay
+	jsr TurboTapeWritePilot
+	lda #1	; File name
+	ldx #0
+	ldy #$07
+	jsr TurboTapeWriteStart
+	ldx #$08
+	ldy #$07
+	jsr TurboTapeWriteEndHeaderChecksum
+	lda #0
+	jsr TurboTapeSaveByte
+	lda #1
+	jsr TurboTapeSaveByte
+	lda #2
+	jsr TurboTapeSaveByte
+	lda #3
+	jsr TurboTapeSaveByte
+	jsr TurboTapeSaveByte
+	jsr TurboTapeSaveByte
+	jsr TurboTapeSaveByte
+	jsr TurboTapeSaveByte
+	lda TurboTapeSaveChecksum
+	jsr TurboTapeSaveByte
+	jsr TurboTapeWriteLeadOut
+}
+
+	; Note how the filename increases. This is so the MainSecondLoaderStart code can test for what
+	; file has just been loaded. The FileNameByte is also incremented after each file so the IRQ
+	; can be sure to load the correct file.
+
+	; Save the sprite data
+	lda #0	; File name
+	ldx #0
+	ldy #$02
+	jsr TurboTapeWriteSetFilenameStart
+	ldx #<(SpriteDataEnd - SpriteDataStart)
+	ldy #>(SpriteDataEnd - SpriteDataStart)
+	jsr TurboTapeWriteSetSize
+	ldx #<SpriteDataStart
+	ldy #>SpriteDataStart
+	jsr TurboTapeWriteFrom
+
+
+	; Save the music
+	lda #1	; File name
+	ldx #0
+	ldy #$80
+	jsr TurboTapeWriteSetFilenameStart
+	ldx #<(MusicEnd - MusicStart)
+	ldy #>(MusicEnd - MusicStart)
+	jsr TurboTapeWriteSetSize
+	ldx #<MusicStart
+	ldy #>MusicStart
+	jsr TurboTapeWriteFrom
+
+
+	; Save the main data
+	lda #2	; File name
+	ldx #1
+	ldy #$8
+	jsr TurboTapeWriteSetFilenameStart
+	ldx #<(MainEnd - MainStart)
+	ldy #>(MainEnd - MainStart)
+	jsr TurboTapeWriteSetSize
+	ldx #<MainStart
+	ldy #>MainStart
+	jsr TurboTapeWriteFrom
+
+
+	; Turn off tape motor and restore ROMs
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	; Reset
+	jmp (KERNALColdStartResetLo)
+
+!source "TurboTapeWrite.a"
+
+myBorderFlash
+	inc VIC2BorderColour
+	lda #1
+	jmp DefaultSTOPVector
+
+myStop
+	inc VIC2BorderColour
+
+	; Detect if we are on the second save pass after the first has been saved.
+	lda $be
+	cmp #1
+	bne .notYet
+
+	; Note: Under emulation it is possible to just return 0 and fake a STOP key press here,
+	; but with a real C2N tape drive the stopping tape motor can corrupt the last byte so instead
+	; we set $be to be 0.
+
+	; $be=0 tells the tape routine that is has no more data to save, this causes the early exit
+	; from the save routine.
+	lda #0
+	sta $be
+
+.notYet
+	jmp DefaultSTOPVector
+
+.nameStart
+!ifdef Scroller_LOTD {
+TapeHeaderFilenameStart = $0341	; The tape header address for the filename text
+TapeHeaderFilenameLen = 4	; Up to 15 chars is fine
+!pet "lotd"
+} else {
+; Enabling colours in the filename works but TapeHeaderFilenameStart needs to be adjusted by
+; two chars to skip the controls chars
+TapeHeaderFilenameStart = $0343	; The tape header address for the filename text plus 2 chars
+TapeHeaderFilenameLen = 5	; Up to 13 chars is fine because of the two extra chars
+!by CHR_Clear , CHR_White
+!pet "turbo"
+}
+.nameEnd
+
+
+!ifdef NovaishLoad {
+!source "TapeLoaderCIANovaish.a"
+} else {
+	!ifdef SmallLoader {
+	!source "TapeLoaderCIASmall.a"
+	} else {
+		!ifdef MartyLoad {
+		!source "TapeLoaderCIAMartyLoad.a"
+		} else {
+		!source "TapeLoaderCIA.a"
+		}
+	}
+}
+
+
+
+MusicStart
+!ifdef Scroller_LOTD {
+!bin "LotDLoadMusic.prg",,2
+} else {
+!bin "R.MUS8000.PRG",,2
+}
+MusicEnd
+
+MainStart
+!ifdef Scroller_LOTD {
+!bin "LotDComp.prg",,2
+;!bin "..\BASICStarter\BASICStarter.prg",,2
+} else {
+!bin "TestMultiplexor.prg",,2
+;!bin "d:\downloads\THECURSEDKEY.PRG",,2
+}
+MainEnd
+
+
+!zn {
+RealCodeStart
+
+!source "ScrollerMusicLoader.a"
+
+RealCodeEnd
+}
+
+!macro SpriteLine .v {
+	!by .v>>16, (.v>>8)&255, .v&255
+}
+
+SpriteDataStart
+!ifdef Scroller_LOTD {
++SpriteLine %########################
++SpriteLine %#......................#
++SpriteLine %#..##################..#
++SpriteLine %#..#................#..#
++SpriteLine %#..#..############..#..#
++SpriteLine %#..#..##........##..#..#
++SpriteLine %#..#..##..####..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..#..#..##..#..#
++SpriteLine %#..#..##..####..##..#..#
++SpriteLine %#..#..##........##..#..#
++SpriteLine %#..#..############..#..#
++SpriteLine %#..#................#..#
++SpriteLine %#..##################..#
++SpriteLine %#......................#
++SpriteLine %########################
+} else {
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %####.......##.......####
++SpriteLine %###.#......##......#.###
++SpriteLine %###..#.....##.....#..###
++SpriteLine %###...#....##....#...###
++SpriteLine %###....#...##...#....###
++SpriteLine %###.....#..##..#.....###
++SpriteLine %###......######......###
++SpriteLine %###......#####.......###
++SpriteLine %########################
++SpriteLine %###......#####.......###
++SpriteLine %###......#####.......###
++SpriteLine %###.....#..#..#......###
++SpriteLine %###....#...#...#.....###
++SpriteLine %###...#....#....#....###
++SpriteLine %###..#.....#.....#...###
++SpriteLine %###.#......#......#..###
++SpriteLine %####.......#.......#.###
++SpriteLine %########################
++SpriteLine %########################
+}
+SpriteDataEnd

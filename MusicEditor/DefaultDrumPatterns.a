@@ -1,0 +1,23 @@
+; Four byte header for drum patterns plus version number.
+!tx "dmp"
+!by 0
+;Snare
+.upgradehin		!by  43,  8, 12,143,130, 13,  0,  0
+.upgradewvf		!by 128, 64, 64,128,128, 64,  0,  0
+.drum0LoopPoint
+!by 6,3
+; Bass
+.upgradehinb	!by  40,  8,  7,  5,  3,  1,  1,  1
+.upgradewvfb	!by 128, 64, 64, 64, 64, 64, 64, 64
+.drum1LoopPoint
+!by 8,7
+; Tomtom
+.upgradehint	!by   8,$fe,$fe,$fe,$fe,$fe,$fe,$fe
+.upgradewvft	!by 128, 64, 64, 64, 64, 64, 64, 64
+.drum2LoopPoint
+!by 8,3
+; Tomtom 2
+.upgradehint2	!by   8,$fe,$fe,$fe,$fe,$fe,$fe,  9
+.upgradewvft2	!by 128, 64, 64, 64, 64, 64, 64,128
+.drum3LoopPoint
+!by 8,3

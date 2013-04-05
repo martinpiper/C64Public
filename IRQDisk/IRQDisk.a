@@ -1,0 +1,562 @@
+; Number of bytes to use during the drive memory transfer
+.driveTransferBytes = $20
+; Used during transfers so we can get status information
+.driveEscapeByte = $ea
+
+
+; Commands used to send to the device
+.diskCommandReadFile = 1
+.diskCommandWriteFile = 2
+.diskCommandSetPulseSpeed = 3
+.diskCommandFutureExpansion = 4
+
+!ifdef IRQDisk_NoDriveCode { } else {
+; By default after the init the drive has incomming port %00 which is C0D0.
+; By default after the init the C64 is getting %11 on the port which is C0D0.
+;***************************************
+.linitError jmp .initError
+IRQDisk_Init
+	sta .toDrive
+	; Clear any previous disk related errors
+	lda #0
+	sta ZPSTVariable
+	; Initialize the self-modifying parts of the code
+	lda #<.driveCodePseudoStart
+	sta .smwdcbl + 1
+	lda #>.driveCodePseudoStart
+	sta .smwdcbl + 2
+	lda #<.driveCodeRealStart
+	sta .commandMWLo
+	lda #>.driveCodeRealStart
+	sta .commandMWHi
+	; Send the M-W command telling the .driveCodeRealStart we are going to send .driveTransferBytes data
+	; Start of the write drive code loop
+.wdcl:
+	; Make the drive listen for the command
+	jsr IRQDisk_InitDrive
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .linitError
+	ldx #0
+.mwoutl:
+	lda .commandMW,x
+	jsr CIOUT
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+	inx
+	cpx #.commandMWLength
+	bne .mwoutl
+
+	; Sends a chunk of .driveTransferBytes bytes of drive code following the M-W command
+	ldx #0
+.smwdcbl:
+	lda .driveCodePseudoStart,x
+	jsr CIOUT
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+	inx
+	cpx #.driveTransferBytes
+	bne .smwdcbl
+
+	; Finish the command
+	jsr UNLSN
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+
+	; Update the self-modifying addresses for .driveTransferBytes bytes for the drive code
+	clc
+	lda #.driveTransferBytes
+	adc .smwdcbl + 1
+	sta .smwdcbl + 1
+	bcc .skiphi1
+	; Update the high byte
+	inc .smwdcbl + 2
+	clc
+.skiphi1:
+	; Update the self-modifying addresses for .driveTransferBytes bytes for the M-W command address
+	; Lo first
+	lda #.driveTransferBytes
+	adc .commandMWLo
+	sta .commandMWLo
+	tax
+	; Hi next using the carry
+	lda #0
+	adc .commandMWHi
+	sta .commandMWHi
+	cpx #<.driveCodeRealEnd
+	sbc #>.driveCodeRealEnd
+	; If we have not finished uploading the drive code we go back and do another M-W command
+	bcc .wdcl
+
+	; Send M-E command to start running the drive code
+	; Make the drive listen for the command
+	jsr IRQDisk_InitDrive
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+	ldx #0
+.meoutl:
+	lda .commandME,x
+	jsr CIOUT
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+	inx
+	cpx #.commandMELength
+	bne .meoutl
+
+	; Finish the command
+	jsr UNLSN
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .initError
+
+	; Try setting the pulse speed, this syncs the communication between the drive and the computer.
+	lda #1
+	jsr IRQDisk_SetPulseSpeed
+	; Fake a time out error if the carry is set on this return
+	lda #%11
+	bcs .initError
+
+	rts
+.initError
+	sta .lastDriveError
+	sec
+	rts
+.lastDriveError !by 0
+
+; The drive number we want to use
+.toDrive !by 8
+
+	; The M-W command
+.commandMW:
+	!raw "M-W"
+.commandMWLo !by <.driveCodeRealStart
+.commandMWHi !by >.driveCodeRealStart
+	!by .driveTransferBytes
+.commandMWLength = * - .commandMW
+
+	; The M-E command
+.commandME:
+	!raw "M-E"
+	!by <.driveCodeRealStart,>.driveCodeRealStart
+.commandMELength = * - .commandME
+
+;***************************************
+	; Make the chosen drive listen
+IRQDisk_InitDrive:
+	lda .toDrive
+	jsr LISTEN
+	; http://www.joler.org/storage/C64PRG10.TXT
+	; B-27. Function Name: SECOND - "When a secondary address is to be sent to a device on the serial bus, the address must first be ORed with $60."
+	lda #$6f	; $f (command channel) OR $60
+	jmp SECOND
+}
+
+;***************************************
+	; The actual IRQ loader
+.loadError
+rts
+; On return:
+;	CC = Load OK
+;	CS = Load error
+IRQDisk_Load:
+	pha
+	; Update the self modify file name address
+	stx .smFileNameIn+1
+	sty .smFileNameIn+2
+
+	; Send the command code to read a file
+	lda #.diskCommandReadFile
+	jsr .computerSend
+	pla
+	bcs .loadError
+	tay
+	; Send the file name length
+	jsr .computerSend
+	bcs .loadError
+	; Send file name
+	ldx #0
+!ifdef IRQDisk_UseATN {
+	stx .gotAddrB
+}
+.smFileNameIn	lda $0000,x
+	jsr .computerSend
+	bcs .loadError
+	inx
+	dey
+	bne .smFileNameIn
+
+!ifdef IRQDisk_UseATN {
+	; Start the disk loading loop
+.diskLoadL:
+	; Gets the number of bytes to process, or the EOF escape code, or an error escape code
+	jsr .computerRecv
+	tay
+
+.diskLoadL2
+	jsr .computerRecvBitsATNBurst
+	ldx .gotAddrB
+	bne .gotAddrSkip
+	; Store the start address first time around
+	sta .storeLo
+	dey
+	jsr .computerRecvBitsATNBurst
+	sta .storeHi
+	dey
+	lda #1
+	sta .gotAddrB
+	; Now the first char
+	jsr .computerRecvBitsATNBurst
+.gotAddrSkip
+	; Check for the rare case of having no more bytes left to process
+	cpy #0
+	beq .diskLoadL
+	; Receives the next byte from the drive and exits this loop by popping the stack
+.storeLo = * + 1
+.storeHi = * + 2
+	; Store the data
+	sta $100
+	; Useful debugging displays chars on the screen or flashes the border
+;	sta $400	; store it
+;	inc VIC2ScreenColour
+	inc .storeLo
+	bne .dls1
+	inc .storeHi
+.dls1:
+	dey
+	bne .diskLoadL2
+	jmp .diskLoadL
+.gotAddrB !by 0
+} else {
+	jsr .computerRecv	; get the start address
+	tay
+	jsr .computerRecv
+	sta .storeHi
+
+	; Start the disk loading loop
+.diskLoadL:
+	; Receives the next byte from the drive and exits this loop by popping the stack
+	jsr .computerRecv
+.storeHi = * + 2
+	; Store the data
+	sta $100,y
+	; Useful debugging displays chars on the screen or flashes the border
+;	sta $400,y	; store it
+;	inc VIC2ScreenColour
+	iny
+	bne .diskLoadL
+	inc .storeHi
+	jmp .diskLoadL
+}
+	; Gets a byte from the drive with escape byte parsing
+.computerRecv:
+	jsr .computerRecvBits
+	cmp #.driveEscapeByte
+	bne .notEscape
+	; We got the escape code so we get another byte
+	jsr .computerRecvBits
+	; Is it the escape code again? If yes it is the actual byte
+	cmp #.driveEscapeByte
+	beq .notEscape
+
+	; Compare the status returned from the drive
+	; Transfer finished. 0=ok, nonzero=error.
+	cmp #1
+	; Pop the return address and go back to to whomever called us
+	pla
+	pla
+
+.notEscape:
+	rts
+
+IRQDisk_GetLastStoredHi
+	lda .storeHi
+	rts
+
+;***************************************
+; Sets the pulse speed
+; On return:
+;	CC = Communication OK
+;	CS = Communication error
+IRQDisk_SetPulseSpeed:
+	pha
+	; Send the command code to set the pulse speed
+	lda #.diskCommandSetPulseSpeed
+	jsr .computerSend
+	pla
+	; If there was a problem then don't send the next byte
+	bcs .end1
+	; Send the pulse speed
+	jsr .computerSend
+	; Don't wait for a reply from the drive
+.end1
+	rts
+	
+;***************************************
+; The sets the name to start saving data with. It will return quite quickly while the drive tries
+; to find the file name, hence the user will only know if the name was found when IRQDisk_WriteData
+; is called to actually try to start saving.
+; On return:
+;	CC = Communication OK
+;	CS = Communication error
+IRQDisk_WriteSetName:
+	pha
+	; Update the self modify file name address
+	stx .smFileNameIn2+1
+	sty .smFileNameIn2+2
+
+	; Send the command code to write a file
+	lda #.diskCommandWriteFile
+	jsr .computerSend
+	pla
+	tay
+	; Send the file name length
+	jsr .computerSend
+	; Send file name
+	ldx #0
+.smFileNameIn2	lda $0000,x
+	jsr .computerSend
+	inx
+	dey
+	bne .smFileNameIn2
+	rts
+
+; On return:
+;	CC = Save OK
+;	CS = Save error
+IRQDisk_WriteData
+	stx .diskSaveL + 1
+	sty .diskSaveL + 2
+	jsr .computerRecv	; get the return code or the number of bytes to save to the file
+	tay
+	; Theoretically it is possible to have a file on the disk with 1 or 2 bytes so in these situations
+	; skip saving the start address
+	cpy #3
+	bcc .diskSaveL:
+	; We send two bytes for the start address so adjust the first bytes to send by 2
+	dey
+	dey
+	; Send lo and hi
+	lda .diskSaveL+1
+	jsr .computerSend
+	lda .diskSaveL+2
+	jsr .computerSend
+	; Start the disk saving loop
+.diskSaveL:
+	lda $0000
+	inc .diskSaveL + 1
+	bne .diskSaveL2
+	inc .diskSaveL + 2
+.diskSaveL2
+	jsr .computerSend
+	dey
+	bne .diskSaveL
+	; Receives the next byte from the drive which might be the number of bytes to send next or
+	; an error code which exits this loop by popping the stack.
+	jsr .computerRecv
+	; We are told how many bytes to transfer next
+	tay
+	jmp .diskSaveL
+
+
+	; Used by the sending and receiving code
+.tempStore !by 0,0,0
+
+; C: When writing a byte to the drive
+; C: Writes carry set as C0D1 or carry clear as C1D0
+; C: Waits for C1D1, the ACK
+; C: Send C1D1
+; C: Wait for C0D0 (which is the default state for the C64)
+; C: Loop for the rest of the bits
+;***************************************
+	; Writes a byte to the drive
+.computerSend:
+	sta .tempStore
+	stx .tempStore+1
+	sty .tempStore+2
+	; Counter for 8 bits to send
+	ldx #8
+.writeBit1:
+	; Get the low bit into the carry
+	lsr .tempStore
+	; Send the data, either carry clear = C0D1 or CS = C1D0
+	lda .serialOut
+	and #255 - .serialDataOut - .serialClockOut
+	ora #.serialClockOut
+	bcc .noInvert2
+	eor #.serialDataOut | .serialClockOut
+.noInvert2:
+	sta .serialOut
+
+	ldy #0
+	; Now wait for a C1D1, the ACK
+	lda #.serialDataIn | .serialClockIn
+.waitACK1:
+	dey
+	beq .timeOut1
+	bit .serialIn
+	; If C0 or D0 then loop
+	bne .waitACK1
+
+	; Now send C1D1 to signal the end of the bit sent
+	lda .serialOut
+	and #255 - .serialDataOut - .serialClockOut
+	sta .serialOut
+
+	; Wait for the C0D0
+	ldy #0
+.waitACK2:
+	dey
+	beq .timeOut1
+	lda .serialIn
+	and #.serialDataIn | .serialClockIn
+	eor #.serialDataIn | .serialClockIn
+	; If C1 or D1 then loop
+	bne .waitACK2
+
+	; Loop until we have sent all the bits
+	dex
+	bne .writeBit1
+	clc
+	ldx .tempStore+1
+	ldy .tempStore+2
+	rts
+
+.timeOut1
+	sec
+	ldx .tempStore+1
+	ldy .tempStore+2
+	rts
+
+; When getting bits
+; Wait while getting C0D0
+; Then .serialDataIn = actual bit, the clock is actually the opposite of the data bit. It is the clock
+; change combined with the data change that signals the data bit is ready.
+; If we got 1 then ACK by sending C0D1 else send C1D0
+; Shift carry into data
+; Wait while C1D1
+; Send C1D1
+; Loop for the other bits
+;***************************************
+	; Gets a byte from the drive without escape byte parsing
+.computerRecvBits:
+	; Counter for 8 bits to receive
+	ldx #8
+.waitIdle1:
+	; Wait while C0D0
+	lda .serialIn
+	and #.serialDataIn | .serialClockIn
+	eor #.serialDataIn | .serialClockIn
+	beq .waitIdle1
+
+	; Choose the best code to get carry from the serial data in bit
+!if .serialDataIn = 128 {
+	asl
+} else {
+!if .serialDataIn < .serialClockIn {
+	and #.serialDataIn
+}
+	cmp #.serialDataIn
+}
+
+	; Send the opposite of the received data to ACK, so if carry set send C0D1 else send C1D0
+	; Due to the way the CIA works this ends up sending C1D1 to the drive
+	lda .serialOut
+	and #255 - .serialDataOut - .serialClockOut
+	ora #.serialClockOut
+	bcs .noInvert
+	eor #.serialDataOut | .serialClockOut
+.noInvert:
+	sta .serialOut
+
+	; Shift in the data bit
+	ror .tempStore
+
+	; Wait while C1D1
+	lda #.serialDataIn | .serialClockIn
+.waitACK3:
+	bit .serialIn
+	; If C1 and D1 then loop
+	beq .waitACK3
+
+	; Send C1D1 to signal the next bit should be sent
+	lda .serialOut
+	and #255 - .serialDataOut - .serialClockOut
+	sta .serialOut
+
+	; Loop around getting the rest of the bits
+	dex
+	bne .waitIdle1	; loop until all bits are received
+
+	; Enable the following line to show border changes for each byte received
+;	inc VIC2BorderColour
+
+	lda .tempStore
+	rts
+
+!ifdef IRQDisk_UseATN {
+.computerRecvBitsATNBurst:
+	; Stop IRQs from messing with our timings
+	sei
+
+	; Counter for 8 bits to receive
+	ldx #4
+.recvBLoop1:
+
+	; Strobe ATN to signal the drive to send two bits
+	lda .serialOut
+	ora #.serialATNOut
+	sta .serialOut
+	; Wait a short while for the drive to respond.
+	; The drive sits in a very tight loop when in burst mode and with the C64 slower than the
+	; drive we only wait a short while.
+	lda #1
+	clc
+.recbVL2:
+	adc #1
+	cmp #.ATNCycleCount
+	bne .recbVL2
+
+	lda .serialIn
+	pha
+
+	; Un-strobe ATN
+	lda .serialOut
+	and #255 - .serialATNOut
+	sta .serialOut
+
+	lda #1
+	clc
+.recbVL3:
+	adc #1
+	cmp #.ATNCycleCount
+	bne .recbVL3
+
+	pla
+
+	eor #.serialDataIn | .serialClockIn
+	; MPi: TODO: Implement for other platforms except C64
+	pha
+	; Shift in the clock bit from the drive
+	asl
+	asl
+	ror .tempStore
+	pla
+	asl
+	; Shift in the data bit from the drive
+	ror .tempStore
+
+	; Loop around getting the rest of the bits
+	dex
+	bne .recvBLoop1	; loop until all bits are received
+	lda .tempStore
+
+	; Allow IRQs again
+	cli
+
+	rts
+}

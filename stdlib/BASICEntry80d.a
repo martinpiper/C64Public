@@ -1,0 +1,8 @@
+; This starts at $0801 so that doing a LOAD"*",8 will still work with the default $0801 BASIC start address.
+*= BASICSTART
+!byte $0b,$08,$01,$00,$9e		; Line 1 SYS2061
+!convtab pet
+!tx "2061"						; Address for sys start in text
+!byte $00,$00,$00				; This is really the end of our BASIC program
+
+BASICEntry = $80d

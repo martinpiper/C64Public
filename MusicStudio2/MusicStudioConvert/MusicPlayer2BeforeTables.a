@@ -1,0 +1,2099 @@
+; Setup some common defines
+!ifdef FixedVibratoAutoCommandsActive { FixedVibratoCommandsActive = 1 }
+!ifdef FixedVibratoDelayAutoCommandsActive { FixedVibratoCommandsActive = 1 }
+!ifdef FixedVibratoStopAutoCommandsActive { FixedVibratoCommandsActive = 1 }
+
+
+; The order and values of these are important because bcs tests are used when comparing with
+; kMusicPlayer_StopTrack
+; Track control defines
+kMusicPlayer_StopTrack		= $fd
+kMusicPlayer_StopAllTracks	= $fe
+kMusicPlayer_LoopTrack		= $ff
+kMusicPlayer_RepeatBlock	= $40
+kMusicPlayer_TransposeBlock	= $80
+
+MusicPlayerCodeStart
+
+; This entry point for this module *must* three jmps followed by 2 filter bytes plus 3 track pos bytes
+MusicPlayerInit
+	jmp .start					; 0
+MusicPlayerPlay
+	jmp .play					; 3
+MusicPlayerStop
+	jmp .stopplay				; 6
+!ifdef SoundEffectsActive {
+MusicPlayerPlaySFX
+	jmp .playSFX				; 9
+}
+
+.bitstart
+
+.trcn !by 0,0,0			; Read by the track editor to show the current track position. *Must be* the first in this list
+.doubleNoteDurationLo !by 0,0,0	; Read by the music player demo. *Must be* second in this list.
+!ifdef SustainGlideCommandsActive {
+.sustainGlideTarget !by 0,0,0
+.sustainGlideActual !by 0,0,0
+.sustainGlideShift !by 0,0,0
+}
+
+!ifdef SmallVibratoCommandsActive {
+.smallVibratoUpDown !by 0,0,0
+.smallVibratoSequence !by 0,0,0
+}
+
+!ifdef FixedVibratoCommandsActive {
+.fixedVibratoSize !by 0,0,0
+.fixedVibratoSequence !by 0,0,0
+}
+
+!ifdef SoundEffectsActive {
+.isFXChannel !by 0,0,0
+.lSIDFilterControl !by 0
+.fxnoteDuration !by 0,0,0
+.fxNextNotePlay !by 0,0,0
+.fxLastSound !by 0,0,0
+.fxFiltBitMask !by 0
+}
+.atde !by 0,0,0
+.sure !by 0,0,0
+.core !by 0,0,0
+.pwhi !by 0,0,0
+; A cache of the value EnvelopesPulseWidthVariance and#%11000000 lsr*4
+!ifdef PulseWidthVarianceActive {
+.pwhic !by 0,0,0
+.pwhit !by 0,0,0
+}
+.pwlo !by 0,0,0
+.glti !by 0,0,0
+!ifdef GlideAutoCommandsActive {
+.glno !by 0,0,0
+}
+.tran !by 0,0,0
+.ntlo !by 0,0,0
+.nthi !by 0,0,0
+.blcn !by 0,0,0
+.lasn !by 0,0,0
+.lst1 !by 0,0,0
+.retr !by 0,0,0
+.fxfv !by 0,0,0
+.vols !by 0,0,0
+; Can be zero, positive or negative
+.drumFlag !by 0,0,0
+
+!ifdef HardRestartCommandsActive {
+.disableHardRestart !by 0,0,0
+}
+
+!ifdef SluringCommandsActive {
+.isSluring !by 0,0,0
+.wantisSluring !by 0,0,0
+}
+.wibt !by 0,0,0
+!ifdef LargeVibratoActive {
+.largeWibbleEnable !by 0,0,0
+}
+!ifdef ArpeggioCommandsActive {
+.currentArpeggio !by 0,0,0
+.arpeggioCounter !by 0,0,0
+.arpeggio1 !by 0,0,0
+.arpeggio2 !by 0,0,0
+}
+!ifdef ExtendedArpeggioCommandsActive {
+; This extendedArpeggioCounter is biased by 1 so it can be used as a flag as well.
+; This does mean the maximum usable extended arpeggios is 255 bytes not 256 bytes
+.extendedArpeggioCounter !by 0,0,0
+.extendedArpeggioStart !by 0,0,0
+.extendedArpeggioEnd !by 0,0,0
+}
+.ltnt !by 0,0,0
+.wibf !by 0,0,0
+.gltf !by 0,0,0
+.pcnt !by 0,0,0
+.pdel !by 0,0,0
+.originalNoteDuration !by 0,0,0
+.trkp !by 0,0,0
+.nextNotePlay !by 0,0,0
+.playflag !by 0		; If 0 then stop otherwise play
+.processFirstFrame !by 0
+.filterGlideSpeed !by 0
+.filterParams !by 0
+
+; Everything up to here from .bitstart is zeroed in code
+.bitend
+
+!if (.bitend - .bitstart) >= 256 {
+!error ".bitstart to .bitend is now too large by " , (.bitend - .bitstart)-256 , " bytes"
+}
+
+; Internal player values that do not need to be zeroed at player start
+.core2 !by 0,0,0
+!ifdef LargeVibratoActive {
+EnvelopesP4_1 !by 0,0,0
+EnvelopesP4_2 !by 0,0,0
+EnvelopesP5_1 !by 0,0,0
+EnvelopesP5_2 !by 0,0,0
+}
+.gateDrum !by 0,0,0
+!ifdef FilterGlideAutoCommandsActive {
+.filterGlideStep !by 0,0,0
+.filterGlideCounter !by 0,0,0
+}
+
+TrackPosLo !by <Track0,<Track1,<Track2
+TrackPosHi !by >Track0,>Track1,>Track2
+
+; Block command labels
+; Since LowestBlockCommand must be >= 128 then we make sure it is by spotting the where we optimise too much space and align the table
+!if (<*) < $80 {
+!align 127,0,0
+}
+LowestBlockCommand
+!ifdef RestNoteAutoCommandsActive {
+BlockCommandRestNote				!by <.restNote,>.restNote
+}
+!ifdef SustainGlideCommandsActive {
+BlockCommandSustainGlide			!by <.sustainGlide,>.sustainGlide
+}
+!ifdef SmallVibratoCommandsActive {
+BlockCommandSmallVibratoDelay		!by <.smallVibratoDelayCommand,>.smallVibratoDelayCommand
+BlockCommandSmallVibrato			!by <.smallVibrato,>.smallVibrato
+BlockCommandSmallVibratoStop		!by <.smallVibratoStop,>.smallVibratoStop
+}
+!ifdef FixedVibratoDelayAutoCommandsActive {
+BlockCommandFixedVibratoDelay		!by <.fixedVibratoDelayCommand,>.fixedVibratoDelayCommand
+}
+!ifdef FixedVibratoAutoCommandsActive {
+BlockCommandFixedVibrato			!by <.fixedVibrato,>.fixedVibrato
+}
+!ifdef FixedVibratoStopAutoCommandsActive {
+BlockCommandFixedVibratoStop		!by <.fixedVibratoStop,>.fixedVibratoStop
+}
+!ifdef ArpeggioStopCommandsActive {
+BlockCommandArpeggioStop			!by <.arpeggioStop,>.arpeggioStop
+}
+!ifdef ExtendedArpeggioCommandsActive {
+BlockCommandExtendedArpeggio		!by <.extendedArpeggio,>.extendedArpeggio
+}
+!ifdef HardRestartCommandsActive {
+BlockCommandHardRestartEnable		!by <.hardRestartEnable,>.hardRestartEnable
+BlockCommandHardRestartDisable		!by <.hardRestartDisable,>.hardRestartDisable
+}
+!ifdef SluringCommandsActive {
+BlockCommandSlurEnable		!by <.slurEnable,>.slurEnable
+BlockCommandSlurRelease		!by <.slurRelease,>.slurRelease
+}
+!ifdef ArpeggioCommandsActive {
+BlockCommandArpeggio		!by <.arpeggio , >.arpeggio
+}
+!ifdef FilterGlideAutoCommandsActive {
+BlockCommandFilterGlide		!by <.handleFiltGlide , >.handleFiltGlide
+}
+!ifdef FilterHiAutoCommandsActive {
+BlockCommandFilterHi		!by <.handleFiltHi , >.handleFiltHi
+}
+!ifdef FilterLoAutoCommandsActive {
+BlockCommandFilterLo		!by <.handleFiltLo , >.handleFiltLo
+}
+!ifdef FilterControlAutoCommandsActive {
+BlockCommandFilterControl	!by <.handleFiltControl , >.handleFiltControl
+}
+!ifdef FilterPassAutoCommandsActive {
+BlockCommandFilterPass		!by <.handleFiltPass , >.handleFiltPass
+}
+BlockCommandDuration		!by <.durchnge , >.durchnge
+BlockCommandEnvelope		!by <.sndchnge , >.sndchnge
+!ifdef VolumeAutoCommandsActive {
+BlockCommandVolume			!by <.handleVolume , >.handleVolume
+}
+BlockCommandEndBlock		!by <.endblock , >.endblock
+!ifdef GlideAutoCommandsActive {
+BlockCommandGlide			!by <.glidentd , >.glidentd
+}
+HighestBlockCommand
+
+!if <LowestBlockCommand < $80 {
+!error "LowestBlockCommand needs to start with a lo offset of at least 128"
+}
+
+!if <(HighestBlockCommand+2) < $80 {
+!error "HighestBlockCommand needs to start with a lo offset of at least 128"
+}
+
+!if >LowestBlockCommand != >(HighestBlockCommand+2) {
+!error "LowestBlockCommand and HighestBlockCommand must exist in the same 256 byte page"
+}
+
+
+; Depending on space requirements for the block commands there can be extra data tables here
+!ifdef SmallVibratoCommandsActive {
+.smallVibratoUp !by 0,0,0
+.smallVibratoDown !by 0,0,0
+.smallVibratoSpeed !by 0,0,0
+.smallVibratoDelay !by 0,0,0
+}
+
+!ifdef FixedVibratoCommandsActive {
+.fixedVibratoFreqStepLo !by 0,0,0
+.fixedVibratoFreqStepHi !by 0,0,0
+.fixedVibratoFreqDeltaLo !by 0,0,0
+.fixedVibratoFreqDeltaHi !by 0,0,0
+.fixedVibratoSpeed !by 0,0,0
+.fixedVibratoDelay !by 0,0,0
+}
+
+!ifdef OverrideWithTrackPointers {
+.editorTrackStart !by 0,0,0
+}
+
+.lonote
+	!by 12,28,45,62,81,102,123,145,169,195,221,250,24,56,90,125,163,204,246
+	!by 35,83,134,187,244,48,112,180,251,71,152,237,71,167,12,119,233,97
+	!by 225,104,247,143,48,218,143,78,24,239,210,195,195,209,239,31,96,181,30
+	!by 156,49,223,165,135,134,162,223,62,193,107,60,57,99,190,75,15,12,69,191
+	!by 125,131,214,121,115,199,124,151,30,24,139,126,250,6,172,243,230,143,248,46
+.hinote
+	!by 1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,5,5,5,6,6,7,7,7
+	!by 8,8,9,9,10,11,11,12,13,14,14,15,16,17,18,19,21,22,23,25,26,28,29
+	!by 31,33,35,37,39,42,44,47,50,53,56,59,63,67,71,75,79,84,89,94,100,106
+	!by 112,119,126,134,142,150,159,168,179,189,200,212,225,238,253
+
+.volu !by 15
+.start
+	tax
+	lda #0
+	ldy #(.bitend-.bitstart)
+.s1
+	sta .bitstart-1,y
+	dey
+	bne .s1
+
+	ldy #$1c
+.s2
+	sta SID,y
+	dey
+	bpl .s2
+
+	; Helps ensure a nice clean start to the music by delaying the SID start by three frames.
+	lda #2
+	sta .doubleNoteDurationLo
+	sta .doubleNoteDurationLo+1
+	sta .doubleNoteDurationLo+2
+	; A sensible muted voice to allow reliable startup of the voice
+	lda #$f9
+	sta .sure
+	sta .sure+1
+	sta .sure+2
+	lda #%1001
+	sta .core
+	sta .core+1
+	sta .core+2
+	
+!ifdef SoundEffectsActive {
+	lda #$ff
+	sta .fxFiltBitMask
+}
+
+	lda TrackStart0,x
+	sta .trcn
+	sta .lst1
+	lda TrackStart1,x
+	sta .trcn+1
+	sta .lst1+1
+	lda TrackStart2,x
+	sta .trcn+2
+	sta .lst1+2
+
+!ifdef OverrideWithTrackPointers {
+	lda .editorTrackStart
+	beq .noOverride1
+	sta .trcn
+	sta .lst1
+.noOverride1
+	lda .editorTrackStart+1
+	beq .noOverride2
+	sta .trcn+1
+	sta .lst1+1
+.noOverride2
+	lda .editorTrackStart+2
+	beq .noOverride3
+	sta .trcn+2
+	sta .lst1+2
+.noOverride3
+}
+
+
+	lda #15
+	sta .playflag
+	sta .volu
+
+	rts
+
+.endplay
+	pla
+	sta $fc
+	pla
+	sta $fb
+
+!ifdef MusicPlayer_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	rts
+
+.lnotThisFrame
+	inc .processFirstFrame
+	jmp .notThisFrame
+
+; This function check quickly disables the voice ready the the new sound to be generated in the
+; next frames. This fixes the SID bug where sometimes a note will fail to trigger cleanly.
+.checkVoiceRetrigger
+!ifdef SoundEffectsActive {
+	; If sound effects are enabled on this channel then don't do this code
+	lda .isFXChannel,x
+	bne .p1zcz
+}
+	; If the hard restart code is enabled then the slur commands also alter it.
+!ifdef .disableHardRestart {
+	lda .disableHardRestart,x
+	bne .p1zcz
+} else {
+	; If the hard restart code is not enabled then the slur command state can be used.
+!ifdef SluringCommandsActive {
+	lda .isSluring,x
+	bne .p1zcz
+}
+}
+
+	; MPi: NOTE: This hard restart code works, it doesn't drop the first frame of drum
+	; sounds. Fiddle with it very carefully. A full song test needs to be done after any
+	; fiddling, no matter how small.
+
+	; Hard restart
+	; MPi: TODO: This might be made better by using the next ADSR but we don't know it yet.
+	; So for now use this very quick and loud ADSR instead.
+	lda #0
+	sta .atde,x
+	lda #$f0
+	sta .sure,x
+	lda #%1001
+	sta .core,x
+.ldidHardRestart
+	jmp .didHardRestart
+
+; The main entry point for the play routine to be called ~50 times per sec
+.play
+!ifdef MusicPlayer_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	lda $fb
+	pha
+	lda $fc
+	pha
+
+	ldx #2
+	lda .volu
+	sta SIDVolumeFilter
+	lda .playflag
+	beq .endplay
+
+	lda .processFirstFrame
+	beq .lnotThisFrame
+
+; This play routine basically splits itself into some chunks to allow a new note to be processed over two shorter frames instead of one larger frame:
+; Gets a new note if it is available from the buffered next note.
+; Updates the voice effects
+; Then stores the internal voices to SID
+; Then updates the sequence interals which can store what note to get next
+
+; Handle each track (voice) effects
+.p2
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	beq .musicProcessingOnly
+	; Quickly handle the state update for the ignored music notes
+	ldy .nextNotePlay,x
+	beq .noIgnoredMusicNote
+	lda .originalNoteDuration,x
+	asl
+	sta .doubleNoteDurationLo,x
+	lda #0
+	sta .nextNotePlay,x
+.noIgnoredMusicNote
+	dec .doubleNoteDurationLo,x
+	ldy .fxNextNotePlay,x
+	beq .realNotePlayRet
+	lda #0
+	sta .fxNextNotePlay,x
+	ldy .fxLastSound,x
+	jmp .fxNotePlayHook
+}
+.musicProcessingOnly
+	ldy .nextNotePlay,x
+	beq .p2Skip
+	lda #0
+	sta .nextNotePlay,x
+	jmp .realNotePlay
+.p2Skip
+	lda .trkp,x
+	bne .skipWholeTrack				; Skip track if we are not playing it
+
+	; If the voice does a hard retrigger then there is little point in running the rest of the voice
+	; update code
+	dec .doubleNoteDurationLo,x
+	bne .ocheckVoiceRetrigger
+	jmp .checkVoiceRetrigger
+.ocheckVoiceRetrigger
+.p1zcz
+
+	; When a note is played then obviously the voice is not disabled and it cannot hard retrigger
+.realNotePlayRet
+
+	; Enable the following jump to see how removing the note update code affects raster time.
+;	jmp .gsret
+
+; Perform effects for each voice
+	lda .drumFlag,x
+	beq .nodrumsound
+	jmp .drumbit
+.nodrumsound
+	lda .core2,x
+	beq .noWaveMix
+	eor .core,x
+	sta .core,x
+.noWaveMix
+	jmp .fmbit
+.lendplay jmp .endplay
+.gsret
+
+.didHardRestart
+.skipWholeTrack
+	dex
+	bpl .p2
+
+; Store the voice data from our internal copy to the SID
+	lda .volu
+	beq .lendplay
+
+
+!ifdef SoundEffectsActive {
+	ldx #2
+.fxTimerUpdate
+	lda .isFXChannel,x
+	beq .fxTimerUpdate2
+	dec .isFXChannel,x
+	bne .fxTimerUpdate2
+	; Restore the filter
+	lda .fxFiltBitMask
+	ora .filtMaskVoiceOn,x
+	sta .fxFiltBitMask
+
+	lda .lSIDFilterControl
+	and .fxFiltBitMask
+	sta SIDFilterControl
+
+!ifdef SluringCommandsActive {
+	lda #0
+	sta .isSluring,x
+}
+.fxTimerUpdate2
+	dex
+	bpl .fxTimerUpdate
+}
+
+
+!ifdef MusicPlayer_DebugBorder {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+
+!ifdef FilterGlideAutoCommandsActive {
+	; Handle the filter glide
+	lda .filterGlideSpeed
+	beq .noFilterGlide
+	clc
+	adc .filterGlideCounter
+	sta .filterGlideCounter
+	bpl .doUpF
+	lda .filterParams
+	sec
+	sbc .filterGlideStep
+	sta .filterParams
+	bcs .plotFilt
+	lda #0
+	sta .filterParams
+.doUpF
+	lda .filterParams
+	clc
+	adc .filterGlideStep
+	sta .filterParams
+	bcc .plotFilt
+	lda #$ff
+	sta .filterParams
+.plotFilt
+	; These SID registers are write only so we cannot read them. *Sigh*
+	lda .filterParams
+	sta SIDFilterCutoffFreqHi
+}
+.noFilterGlide
+
+
+!ifdef MusicPlayer_DebugBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+
+!if 0 {
+	; This shorter version saves 86 bytes but increases the runtime by ~76 cycles when all three
+	; voices are running.
+	ldx #2
+.ns1
+	lda .trkp,x
+	bne .noteoff2
+	ldy .voft,x
+	lda .atde,x
+	sta SIDVoice1AttackDecay,y
+	lda .sure,x
+	sta SIDVoice1SustainRelease,y
+	lda .ntlo,x
+	sta SIDVoice1FreqLo,y
+	lda .nthi,x
+	sta SIDVoice1FreqHi,y
+	lda .pwlo,x
+	sta SIDVoice1PulseWidthLo,y
+	lda .pwhi,x
+	sta SIDVoice1PulseWidthHi,y
+	lda .core,x
+	sta SIDVoice1Control,y
+.noteoff2
+	dex
+	bpl .ns1
+} else {
+!macro MACROStoreVoice .offset, .offset2 , .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, .isFXChannel {
+!ifdef SoundEffectsActive {
+	lda .isFXChannel+.offset
+	bne .isFXSoStore
+}
+	lda .trkp+.offset
+	bne .noteoff2
+.isFXSoStore
+	lda .pwlo+.offset
+	sta SIDVoice1PulseWidthLo+.offset2
+	lda .pwhi+.offset
+	sta SIDVoice1PulseWidthHi+.offset2
+
+	lda .atde+.offset
+	sta SIDVoice1AttackDecay+.offset2
+	lda .sure+.offset
+	sta SIDVoice1SustainRelease+.offset2
+
+	lda .ntlo+.offset
+	sta SIDVoice1FreqLo+.offset2
+	lda .nthi+.offset
+	sta SIDVoice1FreqHi+.offset2
+
+	lda .core+.offset
+	sta SIDVoice1Control+.offset2
+.noteoff2
+}
+
+!ifdef SoundEffectsActive {
+	+MACROStoreVoice 0, 0 ,  .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, .isFXChannel
+	+MACROStoreVoice 1, 7 ,  .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, .isFXChannel
+	+MACROStoreVoice 2, 14 , .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, .isFXChannel
+} else {
+	+MACROStoreVoice 0, 0 ,  .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, 0
+	+MACROStoreVoice 1, 7 ,  .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, 0
+	+MACROStoreVoice 2, 14 , .trkp, .atde, .sure, .ntlo, .nthi, .pwlo, .pwhi, .core, 0
+}
+}
+
+.notThisFrame
+
+!ifdef MusicPlayer_DebugBorder {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+
+; Now handle the state of each voice
+	ldx #2
+.p2ch
+!ifdef SoundEffectsActive {
+	ldy .isFXChannel,x
+	beq .handleMusic
+	dec .fxnoteDuration,x
+	bne .handleMusic
+	; Make the effect release
+	lda .core,x
+	and #%11111110
+	sta .core,x
+.handleMusic
+}
+	lda .trkp,x
+	bne .p1				; Skip track if we are not playing it
+	lda .doubleNoteDurationLo,x
+	beq .handleseq
+	cmp .originalNoteDuration,x
+	beq .makeVoiceRelease
+	; If after one frame of no attack & decay then we trigger a release. This one frame delay is
+	; important because the SID needs time to attack & decay for ~8ms before reaching the sustain
+	; volume.
+	lda .atde,x
+	bne .p1
+.makeVoiceRelease
+!ifdef SluringCommandsActive {
+	lda .isSluring,x
+	bne .skipRelease
+}
+	; Change the voice to be in the release state from attack/sustain
+	lda .core,x
+	and #%11111110
+	sta .core,x
+.skipRelease
+.handleseqRet
+.p1
+	dex
+	bpl .p2ch
+
+	jmp .endplay
+
+.transpose
+	and #%01111111
+	cmp #$30
+	bcc .notNegTranspose
+	sec
+	sbc #$31
+	eor #$ff
+.notNegTranspose
+	sta .tran,x
+	inc .trcn,x
+	jmp .hsi1
+
+.loopplay
+	lda .lst1,x
+	sta .trcn,x
+	tay
+
+	jmp .sm1
+
+.repeatbl
+	and #$3f
+	sta .retr,x
+	inc .trcn,x
+	iny
+	jmp .sm1
+
+.endtrack
+	sta .trkp,x
+; Check for all three tracks turning off and turn off the playflag if so
+; Commented out to save some memory
+;	lda .trkp
+;	ora .trkp+1
+;	ora .trkp+2
+;	sta .playflag
+	ldy .voft,x
+	lda #0				; MPi: TODO: Shouldn't this be eight to disable the voice? Maybe it just sets the note to release?
+	sta SIDVoice1Control,y
+	jmp .handleseqRet
+
+.voft !by 0,7,14
+.stopplayInt
+	jsr .stopplay
+	jmp .endplay
+
+.handleseq
+	lda TrackPosLo,x
+	sta .sm1+1
+	lda TrackPosHi,x
+	sta .sm1+2
+
+.hsi1
+	ldy .trcn,x
+.sm1 lda $1234,y
+	cmp #kMusicPlayer_RepeatBlock
+	bcc .block
+	cmp #kMusicPlayer_TransposeBlock
+	bcc .repeatbl
+	cmp #kMusicPlayer_StopTrack
+	beq .endtrack
+	cmp #kMusicPlayer_StopAllTracks
+	beq .stopplayInt
+	bcs .loopplay
+	jmp .transpose
+;rest
+
+!ifdef FilterHiAutoCommandsActive {
+.handleFiltHi
+	iny
+	lda ($fb),y
+	; MPi: TODO: Instead of updating the SID register directly might need to buffer it
+	sta SIDFilterCutoffFreqHi
+	sta .filterParams
+	iny
+	jmp .loop
+}
+
+!ifdef FilterLoAutoCommandsActive {
+.handleFiltLo
+	iny
+	lda ($fb),y
+	; MPi: TODO: Instead of updating the SID register directly might need to buffer it
+	sta SIDFilterCutoffFreqLo
+	iny
+	jmp .loop
+}
+
+!ifdef FilterControlAutoCommandsActive {
+.handleFiltControl
+	iny
+	lda ($fb),y
+	; MPi: TODO: Instead of updating the SID register directly might need to buffer it
+!ifdef SoundEffectsActive {
+	; Has to update two locations because SIDFilterControl is write only
+	sta .lSIDFilterControl
+	and .fxFiltBitMask
+}
+	sta SIDFilterControl
+	iny
+	jmp .loop
+}
+
+!ifdef FilterPassAutoCommandsActive {
+.handleFiltPass
+	iny
+	; Just update the filter pass flags
+	lda .volu
+	and #%00001111
+	ora ($fb),y
+	sta .volu
+	iny
+	jmp .loop
+}
+
+!ifdef FilterGlideAutoCommandsActive {
+.handleFiltGlide
+	iny
+	lda ($fb),y
+	sta .filterGlideStep
+	iny
+	lda ($fb),y
+	; This initialises the counter to be negative or positive to cause the filter glide to go up or down first.
+	sta .filterGlideCounter
+	; Initialise just the filter glide speed
+	and #%01111111
+	sta .filterGlideSpeed
+	iny
+	jmp .loop
+}
+
+!ifdef VolumeAutoCommandsActive {
+.handleVolume
+	iny
+
+	; Just update the volume
+	lda .volu
+	and #%11110000
+	ora ($fb),y
+	sta .volu
+
+	iny
+	jmp .loop
+}
+
+; a = Process what block number.
+.block
+	tay
+	lda BlockIndexLo,y
+	sta $fb
+	lda BlockIndexHi,y
+	sta $fc
+
+; Get the previous count
+	ldy .blcn,x
+
+; Playing a note comes back to here until a note is processed or the block ends
+	; Y is preserved until a note is played and then it is stored back into .blcn,x
+.loop
+	lda ($fb),y
+	bpl .noteplayBuffered		; Branch if "plus", i.e. <= $7f
+
+	; The commands are actually offsets into an indirected jump table
+	sta .smjl1+1
+.smjl1	jmp (LowestBlockCommand)
+
+.noteplayBuffered
+	sec
+	adc .tran,x
+;	adc #1	; The sec above adds 1 so even a note of 0 will appear as 1 to trigger the note
+	sta .nextNotePlay,x
+.blockWaitForNextNote
+	iny
+	tya
+	sta .blcn,x
+	jmp .handleseqRet
+
+!ifdef RestNoteAutoCommandsActive {
+.restNote
+	lda .originalNoteDuration,x
+	asl
+	sta .doubleNoteDurationLo,x
+	jmp .blockWaitForNextNote
+}
+
+!ifdef ArpeggioStopCommandsActive {
+.arpeggioStop
+	lda #0
+!ifdef ArpeggioCommandsActive {
+	sta .currentArpeggio,x
+}
+!ifdef ExtendedArpeggioCommandsActive {
+	sta .extendedArpeggioEnd,x
+}
+	iny
+	jmp .loop
+}
+
+!ifdef ExtendedArpeggioCommandsActive {
+.extendedArpeggio
+!ifdef ArpeggioCommandsActive {
+	lda #0
+	sta .currentArpeggio,x
+}
+	iny
+	lda ($fb),y
+	sta .extendedArpeggioStart,x
+	iny
+	lda ($fb),y
+	; First frame no arpeggio since the counter and end are the same
+	sta .extendedArpeggioCounter,x
+	sta .extendedArpeggioEnd,x
+	iny
+	jmp .loop
+}
+
+!ifdef HardRestartCommandsActive {
+.hardRestartEnable
+	lda #0
+	sta .disableHardRestart,x
+	iny
+	jmp .loop
+.hardRestartDisable
+	; A is some NE value
+	sta .disableHardRestart,x
+	iny
+	jmp .loop
+}
+
+!ifdef SluringCommandsActive {
+.slurEnable
+	; A is some NE value
+	sta .wantisSluring,x
+!ifdef .disableHardRestart {
+	sta .disableHardRestart,x
+}
+	iny
+	jmp .loop
+.slurRelease
+	lda #0
+	sta .wantisSluring,x
+!ifdef .disableHardRestart {
+	sta .disableHardRestart,x
+}
+	iny
+	jmp .loop
+}
+
+!ifdef ArpeggioCommandsActive {
+.arpeggio
+	iny
+!ifdef ExtendedArpeggioCommandsActive {
+	lda #0
+	sta .extendedArpeggioEnd,x
+}
+	lda ($fb),y
+	sta .currentArpeggio,x
+	beq .skipArpeggio2
+
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .arpeggio1,x
+	lda .currentArpeggio,x
+	and #15
+	sta .arpeggio2,x
+
+.skipArpeggio2
+	iny
+	jmp .loop
+}
+.sndchnge
+	iny
+	lda ($fb),y
+	sta .lasn,x
+	iny
+	jmp .loop
+.durchnge
+	iny
+	lda ($fb),y
+	sta .originalNoteDuration,x
+	iny
+	jmp .loop
+!ifdef GlideAutoCommandsActive {
+.glidentd
+	iny
+	lda ($fb),y
+	bpl .gldz1
+	and #%01111111
+	eor #255
+.gldz1
+	sta .glno,x
+	iny
+	lda ($fb),y
+	sta .glti,x
+	iny
+	lda #2
+	sta .gltf,x
+	jmp .loop
+}
+
+!ifdef SmallVibratoCommandsActive {
+.smallVibrato
+	iny
+	lda ($fb),y
+	sta .smallVibratoUpDown,x
+	beq .noMoreSmallVibrato
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .smallVibratoUp,x
+	lda .smallVibratoUpDown,x
+	and #$f
+	sta .smallVibratoDown,x
+	iny
+	lda ($fb),y
+	sta .smallVibratoSpeed,x
+	iny
+!ifdef FixedVibratoAutoCommandsActive {
+	; Turn off the fixed vibrato if it is active
+	lda #0
+	sta .fixedVibratoSize,x
+	sta .fixedVibratoSequence,x
+}
+	jmp .loop
+.noMoreSmallVibrato
+	iny
+	iny
+	jmp .loop
+
+.smallVibratoDelayCommand
+	iny
+	lda ($fb),y
+	sta .smallVibratoDelay,x
+	lda #0
+	sta .smallVibratoSequence,x
+	iny
+	jmp .loop
+
+
+.smallVibratoStop
+	lda #0
+	sta .smallVibratoUpDown,x
+	sta .smallVibratoSequence,x
+	iny
+	jmp .loop
+}
+
+!ifdef FixedVibratoAutoCommandsActive {
+.fixedVibrato
+	iny
+	lda ($fb),y
+	sta .fixedVibratoSize,x
+	beq .noMoreFixedVibrato
+	iny
+	lda ($fb),y
+	sta .fixedVibratoSpeed,x
+	iny
+!ifdef SmallVibratoCommandsActive {
+	; Turn off the small vibrato if it is active
+	lda #0
+	sta .smallVibratoUpDown,x
+	sta .smallVibratoSequence,x
+}
+	jmp .loop
+.noMoreFixedVibrato
+	iny
+	iny
+	jmp .loop
+}
+
+!ifdef FixedVibratoDelayAutoCommandsActive {
+.fixedVibratoDelayCommand
+	iny
+	lda ($fb),y
+	sta .fixedVibratoDelay,x
+	lda #0
+	sta .fixedVibratoSequence,x
+	iny
+	jmp .loop
+}
+
+!ifdef FixedVibratoStopAutoCommandsActive {
+.fixedVibratoStop
+	lda #0
+	sta .fixedVibratoSize,x
+	sta .fixedVibratoSequence,x
+	iny
+	jmp .loop
+}
+
+!ifdef SustainGlideCommandsActive {
+.sustainGlide
+	iny
+	; Get a 4 bit accurate version of the target sustain level
+	lda ($fb),y
+	and #$f0
+	; Target the middle of the fractional part
+	ora #$08
+	sta .sustainGlideTarget,x
+	; Get the shift value
+	lda ($fb),y
+	and #$f
+	sta .sustainGlideShift,x
+	; Get a 4 bit accurate version of the release, again targetting the middle of the fractional part
+	lda .sure,x
+	and #$f0
+	ora #$08
+	sta .sustainGlideActual,x
+	iny
+	jmp .loop
+}
+
+
+.endblock
+	lda .retr,x
+	beq .nextstep
+	ldy #0
+	dec .retr,x
+	jmp .loop
+.nextstep
+	lda #0
+	sta .blcn,x
+	inc .trcn,x
+	jmp .hsi1
+
+!ifdef SoundEffectsActive {
+; Input
+; A = Note
+; X = Channel
+; Y = Envelope
+.filtMaskVoice !by %11111110,%11111101,%11111011
+.filtMaskVoiceOn !by %1,%10,%100
+.playSFX
+	sta .fxNextNotePlay,x
+
+	; Envelope calculation
+	tya
+	sta .fxLastSound,x
+
+	; Calculate a sensible note duration by combining the note attack and decay
+	tay
+	lda EnvelopesAttackDecay,y
+	lsr
+	lsr
+	lsr
+	lsr
+	ora EnvelopesAttackDecay,y
+	and #$f
+	asl
+	asl
+	adc #4
+	; Maximum value here is 60+4
+	sta .fxnoteDuration,x
+
+	; Then calculate a sensible duration for the effect channel to stay active with some minimum
+	; values. The idea being that short effects will not blank out the music channel for long.
+	; Then longer effects will not get cut off by the music too quickly either.
+	lda EnvelopesSustainRelease,y
+	and #$f
+	asl
+	asl
+	asl
+	; Minimum of 50 frames, plus an extra possible 120 frames depending on the release.
+	adc #50
+	; Plus 60+4 from above
+	adc .fxnoteDuration,x
+	; So this never gets larger than 234
+.bph
+	sta .isFXChannel,x
+
+
+	ldy .fxNextNotePlay,x
+	dey
+	tya
+	sta .ltnt,x
+	lda .lonote,y
+	sta .ntlo,x
+	lda .hinote,y
+	sta .nthi,x
+
+
+	lda .fxFiltBitMask
+	and .filtMaskVoice,x
+	sta .fxFiltBitMask
+
+	and .lSIDFilterControl
+	; No need to update .lSIDFilterControl, we want the filter to come back after the channel
+	; switches back to music
+	sta SIDFilterControl
+
+
+	; MPi: TODO: Calculate the time the channel is using effects based on the envelope duration and release time
+	lda #150
+	sta .isFXChannel,x
+
+	; Make sure the player is enabled to actually play :)
+	lda .volu
+	and #15
+	bne .gotSomeVol
+	; Otherwise enable the volume again
+	lda #15
+.gotSomeVol
+	ora .volu
+	sta .volu
+	sta .playflag
+
+	rts
+}
+
+	; Y = the note + 1
+.realNotePlay
+	dey
+	tya
+	sta .ltnt,x
+	lda .lonote,y
+	sta .ntlo,x
+	lda .hinote,y
+	sta .nthi,x
+	lda .originalNoteDuration,x
+	asl
+	sta .doubleNoteDurationLo,x
+	dec .doubleNoteDurationLo,x
+
+	; Enable the following jump to see how removing the actual note play code affects raster time.
+;	jmp .realNotePlayRet
+
+!ifdef SluringCommandsActive {
+	lda .isSluring,x
+	beq .notSluring
+	jmp .endOfNotePlayHandling
+.notSluring
+}
+; Store effects for the voice when it plays
+	ldy .lasn,x
+.fxNotePlayHook
+	; A = 0 is used down below
+	lda #0
+	sta .drumFlag,x
+	sta .fxfv,x
+	sta .pwlo,x
+	sta .pcnt,x
+	lda EnvelopesWaveControl,y
+	bne .oskiplot
+.skiplot
+	sta .core,x
+	sta .ntlo,x
+	sta .nthi,x
+	jmp .realNotePlayRet
+.oskiplot
+	sta .core,x
+	bmi .nopdel1
+	cmp #64
+	bcc .nopdel1
+	and #%00111000
+	lsr
+	sta .pdel,x
+	lda .core,x
+	and #%11000111
+	sta .core,x
+.nopdel1
+	lda EnvelopesAttackDecay,y
+	sta .atde,x
+	lda EnvelopesSustainRelease,y
+	sta .sure,x
+	lda EnvelopesPulseWidthVariance,y
+	and #15
+	sta .pwhi,x
+
+!ifdef PulseWidthVarianceActive {
+	lda EnvelopesPulseWidthVariance,y
+	and #%00110000
+	sta .pwhit,x
+	beq .noType
+	lda EnvelopesPulseWidthVariance,y
+	and #%11000000
+	lsr
+	lsr
+	lsr
+	adc #%1000
+	sta .pwhic,x
+}
+.noType
+
+	; Check for drums
+	lda EnvelopesDrumVibratoControl,y
+	sta .vols,x
+	; Volume changes have been removed from the envelope and replaced with the VOL command
+	and #$f0
+	; Find the drum command
+	cmp #$80
+	bne .nodrumsound2
+.processDrum
+!ifdef DrumDynamicStartOffsetUsed {
+	lda EnvelopesDrumVibratoControl,y
+	and #%1100	; Extract these bits then start the drum sound some sections later.
+	lsr
+	lsr
+	sta .fxfv,x
+}
+
+!ifdef DrumGateLengthUsed {
+	lda EnvelopesDrumVibratoControl,y
+	and #%11
+	tay
+	; MPi: TODO: Make this immediate values instead of loading from memory all the time.
+	lda DrumGateLengthsTable,y
+	sta .gateDrum,x
+} else {
+	lda #1
+	sta .gateDrum,x
+}
+	; Any non-zero value will do
+	sta .drumFlag,x
+
+
+	; Drums mean no more note effects for this voice will be processed so don't bother
+.lrealNotePlayRet
+	jmp .realNotePlayRet
+.nodrumsound2
+
+!ifdef LargeVibratoActive {
+	; Vibrato checks
+	lda EnvelopesVibratoUp,y
+	ora EnvelopesVibratoDown,y
+	; If there is no up time and no down time then skip it. This stops the large wibble routine from an endless loop.
+	and #15
+	sta .largeWibbleEnable,x
+	beq .skipLargeWibbleInit
+	; Initialise the time
+	lda #1
+	sta .wibt,x
+	; Store the up/down initial flag
+	lda EnvelopesDrumVibratoControl,y
+	and #$10
+	sta .wibf,x
+	lda EnvelopesVibratoUp,y
+	and #%00001111
+	sta EnvelopesP4_1,x
+	lda EnvelopesVibratoUp,y
+	lsr
+	lsr
+	lsr
+	lsr
+	sta EnvelopesP4_2,x
+	lda EnvelopesVibratoDown,y
+	and #%00001111
+	sta EnvelopesP5_1,x
+	lda EnvelopesVibratoDown,y
+	lsr
+	lsr
+	lsr
+	lsr
+	sta EnvelopesP5_2,x
+.skipLargeWibbleInit
+}
+
+	; MPi: TODO: There is scope for moving the initialisation of .core2 and EnvelopesP5_1 etc
+	; into the note play once only upon a sound change.
+	; Basically at the end of .noteplayBuffered check for init already being done.
+	; Wave mix
+	lda EnvelopesWaveMix,y
+	sta .core2,x
+
+	; Only process voice specific effects that need to be reset after this point
+.endOfNotePlayHandling
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	bne .lrealNotePlayRet
+}
+
+!ifdef SluringCommandsActive {
+	lda .wantisSluring,x
+	sta .isSluring,x
+}
+	dec .gltf,x
+	bne .noend
+!ifdef GlideAutoCommandsActive {
+	lda #0
+	sta .glno,x
+}
+.noend
+	; Extended arpeggio handling
+!ifdef ExtendedArpeggioCommandsActive {
+	lda .extendedArpeggioEnd,x
+	sta .extendedArpeggioCounter,x
+	beq .tryArpeggio
+	jmp .realNotePlayRet
+.tryArpeggio
+}
+
+!ifdef ArpeggioCommandsActive {
+	; Arpeggio handling
+	lda .currentArpeggio,x
+	beq .skipArpeggio
+	; Use 4 so the first frame arpeggio sfx routine is ignored but it still counts 4,3,2,1
+	lda #4
+.skipArpeggio
+	sta .arpeggioCounter,x
+}
+	jmp .realNotePlayRet
+
+.drumbit
+	ldy .fxfv,x
+	lda .vols,x
+	and #%11
+	beq .snare
+	cmp #2
+	beq .tomtom
+	bcc .bass
+	; Tomtom 2
+!ifdef Drum03Active {
+	lda #<Drum03WaveControl
+	sta .smt1+1
+	lda #>Drum03WaveControl
+	sta .smt1+2
+	lda #<Drum03HiNote
+	sta .smt2+1
+	sta .smt3+1
+	lda #>Drum03HiNote
+	sta .smt2+2
+	sta .smt3+2
+
+	cpy #Drum03EndLoop
+	bcc .sn1tz
+	lda #Drum03StartLoop
+	sta .fxfv,x
+.sn1tz
+	jmp .tomtombitCommon
+}
+
+.tomtom
+!ifdef Drum02Active {
+	lda #<Drum02WaveControl
+	sta .smt1+1
+	lda #>Drum02WaveControl
+	sta .smt1+2
+	lda #<Drum02HiNote
+	sta .smt2+1
+	sta .smt3+1
+	lda #>Drum02HiNote
+	sta .smt2+2
+	sta .smt3+2
+
+	cpy #Drum02EndLoop
+	bcc .sn1t2z
+	lda #Drum02StartLoop
+	sta .fxfv,x
+.sn1t2z
+	jmp .tomtombitCommon
+}
+
+.snare
+!ifdef Drum00Active {
+	cpy #Drum00EndLoop
+	bcc .sn1
+	lda #Drum00StartLoop
+	sta .fxfv,x
+	tay
+.sn1
+	lda Drum00HiNote,y
+	sta .nthi,x
+	lda Drum00WaveControl,y
+}
+.exitDrumCommonStoreCore
+	sta .core,x
+	lda #0
+	sta .ntlo,x
+	sta .pwlo,x
+.exitDrumCommonGateDrumAndIncFXFV
+	inc .fxfv,x
+	lda .gateDrum,x
+	beq .alreadyGated
+	; Without DrumGateLengthUsed it is 0 or 1, otherwise we need a 1 in A first since it is
+	; a counter.
+!ifdef DrumGateLengthUsed {
+	lda #1
+}
+	; Unfortunately we don't know if someone could have put in a gate bit already in the drum data
+	; so we have to OR it in
+	ora .core,x
+	sta .core,x
+	dec .gateDrum,x
+.alreadyGated
+	jmp .gsret
+
+.bass
+!ifdef Drum01Active {
+	cpy #Drum01EndLoop
+	bcc .sn2
+	lda #Drum01StartLoop
+	sta .fxfv,x
+	tay
+.sn2
+	lda Drum01HiNote,y
+	sta .nthi,x
+	lda Drum01WaveControl,y
+	jmp .exitDrumCommonStoreCore
+}
+
+
+.tomtombitCommon
+	ldy .ltnt,x
+.sn1t
+	lda #0
+	sta .pwlo,x
+	lda .hinote,y
+	sta .nthi,x
+	lda .lonote,y
+	sta .ntlo,x
+	ldy .fxfv,x
+.smt1	lda $1234,y
+	sta .core,x
+	bpl .nochanget
+.smt2	lda $1234,y
+	sta .nthi,x
+	jmp .exitDrumCommonGateDrumAndIncFXFV
+.nochanget
+	lda .ltnt,x
+	clc
+	ldy .fxfv,x
+.smt3	adc $1234,y
+	; Clamp
+	bpl .tt1
+	lda #0
+.tt1
+	cmp #96
+	bcc .tt2
+	lda #95
+.tt2
+	sta .ltnt,x
+	tay
+	jmp .exitDrumCommonGateDrumAndIncFXFV
+
+; Frequency modulation
+.fmbit
+
+!ifdef SustainGlideCommandsActive {
+; MPi: TODO: Perhaps group these section together to skip all at once
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	bne .skipSustainGlide
+}
+
+	ldy .sustainGlideShift,x
+	beq .skipSustainGlide
+
+	lda .sure,x
+	and #$0f
+	sta .sure,x
+
+	lda .sustainGlideTarget,x
+	sec
+	sbc .sustainGlideActual,x
+.shiftLoop
+	lsr
+	dey
+	bne .shiftLoop
+	clc
+	adc .sustainGlideActual,x
+	sta .sustainGlideActual,x
+	and #$f0
+	sta .smsg1+1
+	ora .sure,x
+	sta .sure,x
+
+	; Check to see if the target has been reached
+	lda .sustainGlideTarget,x
+	and #$f0
+.smsg1	cmp #0
+	bne .skipSustainGlide
+	; If yes then turn off this effect
+	lda #0
+	sta .sustainGlideShift,x
+
+.skipSustainGlide
+}
+
+
+
+	; In this section $fb contains the note movement
+	; Initialise any note movement this frame for this voice
+	lda #0
+	sta $fb
+
+	; Extended arpeggio handling
+!ifdef ExtendedArpeggioCommandsActive {
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	bne .skipArp
+}
+	lda .extendedArpeggioCounter,x
+	beq .tryArpeggio2
+	cmp .extendedArpeggioEnd,x
+	beq .restartExtendedArpeggio
+	tay
+	lda ExtendedArpeggioData-1,y
+	; Store into the note transpose for this frame
+	sta $fb
+	iny
+	tya
+	cmp .extendedArpeggioEnd,x
+	beq .restartExtendedArpeggio
+	sta .extendedArpeggioCounter,x
+	jmp .skipArp
+.restartExtendedArpeggio
+	lda .extendedArpeggioStart,x
+	sta .extendedArpeggioCounter,x
+	jmp .skipArp
+.tryArpeggio2
+}
+
+!ifdef ArpeggioCommandsActive {
+!ifdef ExtendedArpeggioCommandsActive { } else {
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	bne .skipArp
+}
+}
+	; Handle arpeggio
+	lda .arpeggioCounter,x
+	beq .skipArp
+	cmp #4
+	beq .skipArpButDoCount
+
+	cmp #2
+	bcc .arp1
+	beq .arp2
+.arp3
+	lda .arpeggio1,x
+	sta $fb
+	jmp .skipArpButDoCount
+.arp2
+	lda .arpeggio2,x
+	sec
+	sbc .arpeggio1,x
+	sta $fb
+	jmp .skipArpButDoCount
+.arp1
+	lda .arpeggio2,x
+	sec
+	sbc #1
+	eor #255
+	sta $fb
+
+.skipArpButDoCount
+	dec .arpeggioCounter,x
+	bne .skipArp
+	lda #3
+	sta .arpeggioCounter,x
+}
+.skipArp
+
+!ifdef LargeVibratoActive {
+	; Large wibble processing
+	ldy .largeWibbleEnable,x
+	beq .endfm
+
+	; On a new note .wibt is primed to be 1
+	dec .wibt,x
+	bne .endfm
+	; Since the small wibble test have been disabled then load the vols for this voice
+	lda .vols,x
+	; Take the .vols and reset the time for the large wibble
+	and #15
+	sta .wibt,x
+
+	lda .wibf,x
+	beq .down
+.up
+	lda EnvelopesP4_1,x
+	cmp .fxfv,x
+	bne .pntone1
+	lda #0
+	sta .fxfv,x
+	sta .wibf,x
+	jmp .down
+.pntone1
+	lda EnvelopesP4_2,x
+	clc
+	adc $fb
+	jmp .setNote
+.down
+	lda EnvelopesP5_1,x
+	cmp .fxfv,x
+	bne .pntone2
+	lda #0
+	sta .fxfv,x
+	inc .wibf,x
+	jmp .up
+.pntone2
+	lda $fb
+	sec
+	sbc EnvelopesP5_2,x
+.setNote
+	sta $fb
+	inc .fxfv,x
+}
+
+.endfm
+
+; Note glide handling
+.glidesub
+!ifdef GlideAutoCommandsActive {
+	lda .glno,x
+	beq .noglide
+	lda .doubleNoteDurationLo,x
+	and #1
+	beq .noglide
+	lda .glti,x
+	beq .glident
+	dec .glti,x
+	jmp .noglide
+.glident
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	bne .noglide
+}
+	lda .glno,x
+	clc
+	adc $fb
+	sta $fb
+}
+.noglide
+
+	; Process all accumulated notes
+	lda $fb
+	beq .noNoteChange
+	clc
+	adc .ltnt,x
+; After the accumulated note movements have been applied check for negative notes or notes that go over 96 and clamp to 0 and 95
+; This fixes lots of bleeps that can be heard in some tracks
+	bpl .notNeg
+	; Turn off the glide when we don't need to use it any more
+	lda #0
+!ifdef GlideAutoCommandsActive {
+	sta .glno,x
+}
+	jmp .nowrap
+.notNeg
+	cmp #96
+	bcc .nowrap
+	; Turn off the glide when we don't need to use it any more
+!ifdef GlideAutoCommandsActive {
+	lda #0
+	sta .glno,x
+}
+	lda #95
+.nowrap
+	sta .ltnt,x
+	tay
+	lda .lonote,y
+	sta .ntlo,x
+	lda .hinote,y
+	sta .nthi,x
+.noNoteChange
+
+!ifdef SmallVibratoCommandsActive {
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	beq .oskipSmallVib
+	jmp .skipSmallVib
+.oskipSmallVib
+}
+	lda .smallVibratoUpDown,x
+	bne .doSmallVib
+	jmp .skipSmallVib
+.doSmallVib
+	ldy .smallVibratoDelay,x
+	beq .doSmallVib2
+	dec .smallVibratoDelay,x
+	jmp .skipSmallVib
+.doSmallVib2
+	lda .smallVibratoSequence,x
+	and #63
+	beq .smallVibNoChange
+	cmp #32
+	beq .smallVibNoChange
+	bcs .smallVibratoNeg
+
+	; Handle the positive small vibrato
+
+	; Get the current note
+	ldy .ltnt,x
+	; Subtract current note from the target
+	lda .lonote+2,y
+	sec
+	sbc .lonote,y
+	sta $fb
+	lda .hinote+2,y
+	sbc .hinote,y
+	sta $fc
+
+	lda .smallVibratoSequence,x
+	and #31
+	tay
+	lda .smallVibratoSineTab-1,y
+	beq .smallVibNoChange
+	tay
+	jsr .smallVibratoMul16bitBy4bitInY
+
+	ldy .smallVibratoUp,x
+	beq .smvo1
+	dey
+	beq .smvo1
+.smv1
+	lsr $fc
+	ror
+	dey
+	bne .smv1
+	sta $fb
+.smvo1
+
+	; Adjusts the note with the target small vibrato offset
+	ldy .ltnt,x
+	lda .lonote,y
+	clc
+	adc $fb 
+	sta .ntlo,x
+	lda .hinote,y
+	adc $fc
+	sta .nthi,x
+
+	jmp .dosmallVibCounter
+
+
+.smallVibNoChange
+	ldy .ltnt,x
+	lda .lonote,y
+	sta .ntlo,x
+	lda .hinote,y
+	sta .nthi,x
+
+	jmp .dosmallVibCounter
+
+.smallVibratoNeg
+	; Get the current note
+	ldy .ltnt,x
+	; Subtract current note from the target
+	lda .lonote,y
+	sec
+	sbc .lonote-2,y
+	sta $fb
+	lda .hinote,y
+	sbc .hinote-2,y
+	sta $fc
+
+	lda .smallVibratoSequence,x
+	and #31
+	tay
+	lda .smallVibratoSineTab-1,y
+	beq .smallVibNoChange
+	tay
+	jsr .smallVibratoMul16bitBy4bitInY
+
+	ldy .smallVibratoDown,x
+	beq .smvo2
+	dey
+	beq .smvo2
+.smv2
+	lsr $fc
+	ror
+	dey
+	bne .smv2
+	sta $fb
+.smvo2
+
+	; Adjusts the note with the target small vibrato offset
+	ldy .ltnt,x
+	lda .lonote,y
+	sec
+	sbc $fb
+	sta .ntlo,x
+	lda .hinote,y
+	sbc $fc
+	sta .nthi,x
+
+
+.dosmallVibCounter
+	lda .smallVibratoSequence,x
+	; Always some speed even if it is 0
+	sec
+	adc .smallVibratoSpeed,x
+	sta .smallVibratoSequence,x
+}
+.skipSmallVib
+
+
+!ifdef FixedVibratoCommandsActive {
+!ifdef SoundEffectsActive {
+	lda .isFXChannel,x
+	beq .oskipFixedVib
+	jmp .skipFixedVib
+.oskipFixedVib
+}
+	lda .fixedVibratoSize,x
+	bne .doFixedVib
+	jmp .skipFixedVib
+.doFixedVib
+	ldy .fixedVibratoDelay,x
+	beq .doFixedVib2
+	dec .fixedVibratoDelay,x
+	jmp .skipFixedVib
+.doFixedVib2
+	lda .fixedVibratoSequence,x
+	and #63
+	; Always happens at least once so it can init some values
+	beq .fixedVibNoChange
+	cmp #48
+	bcs .fixedVibratoPos
+	cmp #32
+	beq .fixedVibNoChange
+	cmp #16
+	bcs .fixedVibratoNeg
+.fixedVibratoPos
+	; Handle the positive fixed vibrato
+
+	lda .fixedVibratoFreqDeltaLo,x
+	clc
+	adc .fixedVibratoFreqStepLo,x
+	sta .fixedVibratoFreqDeltaLo,x
+	lda .fixedVibratoFreqDeltaHi,x
+	adc .fixedVibratoFreqStepHi,x
+	sta .fixedVibratoFreqDeltaHi,x
+
+	jmp .dofixedVibNoteUpdate
+
+
+.fixedVibNoChange
+	ldy .ltnt,x
+	lda .lonote,y
+	sta .ntlo,x
+	lda .hinote,y
+	sta .nthi,x
+
+	lda .lonote+2,y
+	sec
+	sbc .lonote,y
+	sta $fb
+	lda .hinote+2,y
+	sbc .hinote,y
+	sta $fc
+
+	ldy .fixedVibratoSize,x
+	lda $fb
+.fmv1
+	lsr $fc
+	ror
+	dey
+	bne .fmv1
+
+	sta .fixedVibratoFreqStepLo,x
+	lda $fc
+	sta .fixedVibratoFreqStepHi,x
+
+	lda #0
+	sta .fixedVibratoFreqDeltaLo,x
+	sta .fixedVibratoFreqDeltaHi,x
+	jmp .dofixedVibCounter
+
+.fixedVibratoNeg
+	lda .fixedVibratoFreqDeltaLo,x
+	sec
+	sbc .fixedVibratoFreqStepLo,x
+	sta .fixedVibratoFreqDeltaLo,x
+	lda .fixedVibratoFreqDeltaHi,x
+	sbc .fixedVibratoFreqStepHi,x
+	sta .fixedVibratoFreqDeltaHi,x
+
+.dofixedVibNoteUpdate
+
+	; Adjusts the note with the target fixed vibrato offset
+	ldy .ltnt,x
+	lda .lonote,y
+	clc
+	adc .fixedVibratoFreqDeltaLo,x
+	sta .ntlo,x
+	lda .hinote,y
+	adc .fixedVibratoFreqDeltaHi,x
+	sta .nthi,x
+
+.dofixedVibCounter
+
+	lda .fixedVibratoSequence,x
+	; Always some speed even if it is 0
+	sec
+	adc .fixedVibratoSpeed,x
+	sta .fixedVibratoSequence,x
+}
+.skipFixedVib
+
+
+
+
+
+
+
+
+
+
+
+; Pulse waveform handling
+.pulse
+!ifdef PulseWidthVarianceActive {
+	lda .pwhit,x
+	beq .endpulse
+	cmp #%10000
+	bne .uppz
+.uppzz
+	lda .pwlo,x
+	clc
+	adc .pwhic,x
+	sta .pwlo,x
+	bcc .endpulse
+	inc .pwhi,x
+	; MPi: Sounds better without any limits
+;	lda .pwhi,x
+;	cmp #16
+;	bcc .endpulse
+;	lda #15
+;	sta .pwhi,x
+;	lda #$ff
+;	sta .pwlo,x
+	jmp .gsret
+.uppz
+	cmp #%100000
+	bne .uppordop
+.dopzz
+	lda .pwlo,x
+	sec
+	sbc .pwhic,x
+	sta .pwlo,x
+	bcs .endpulse
+	dec .pwhi,x
+	; MPi: Sounds better without any limits
+;	bpl .endpulse
+;	lda #0
+;	sta .pwhi,x
+;	sta .pwlo,x
+	jmp .gsret
+.uppordop
+	lda .pcnt,x
+	; To force add with 1
+	sec
+	adc .pdel,x
+	sta .pcnt,x
+	bmi .dopzz			; .pwhic opt
+	jmp .uppzz
+.endpulse
+}
+
+	jmp .gsret
+
+
+.stopplay
+	lda #0
+	sta .volu
+	sta .playflag
+!ifdef SoundEffectsActive {
+ 	sta .nextNotePlay
+	sta .nextNotePlay+1
+	sta .nextNotePlay+2
+	sta SIDVoice1Control
+	sta SIDVoice2Control
+	sta SIDVoice3Control
+	lda #1
+	sta .trkp
+	sta .trkp+1
+	sta .trkp+2
+}
+	rts
+
+
+!ifdef SmallVibratoCommandsActive {
+.smallVibratoMul16bitBy4bitInY
+	cpy #1
+	beq .mulFinalShift
+	bcc .mul0
+
+	sty .mul8Bit
+	stx .mulTmpX
+
+	lda #$00
+	tay
+	beq .mulStart
+.mulDoAdd
+	clc
+	adc $fb
+	tax
+
+	tya
+	adc $fc
+	tay
+	txa
+
+.mulShift
+	asl $fb
+	rol $fc
+.mulStart
+	lsr .mul8Bit
+	bcs .mulDoAdd
+	bne .mulShift
+
+	; 16 bit result in A,Y
+	sty $fc
+
+	ldx .mulTmpX
+
+.mulFinalShift
+	; Divides the 16bit number by 16
+	lsr $fc
+	ror
+	lsr $fc
+	ror
+	lsr $fc
+	ror
+	lsr $fc
+	ror
+	sta $fb
+	rts
+
+.mul0
+	sty $fb
+	sty $fc
+	rts
+
+.mul8Bit !by 0
+.mulTmpX !by 0
+
+.smallVibratoSineTab
+!for .x,31 {
+	!by 15 * sin( (float(.x) / 32) * 3.14159265 )
+}
+
+}
+
+
+MusicPlayerCodeEnd

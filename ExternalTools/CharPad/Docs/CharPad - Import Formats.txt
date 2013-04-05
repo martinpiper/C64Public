@@ -1,0 +1,47 @@
+
+------------------------------ 
+CharPad - Import file formats 
+------------------------------
+          
+    
+Character Sets...
+
+CharPad's data importer expects character sets to be in raw data format, that is, the file 
+size should be exactly NUM_CHARS * 8 bytes in length.
+                
+
+
+Tile Sets...
+
+CharPad's data importer expects a tile set file to begin with a 2 byte header...
+
+[0] Tile Width
+[1] Tile Height
+
+The quantity of tiles contained in the file (and verification of file size) can then
+be calculated based on the file size.
+
+The tile data itself should be in the usual left-to-right, top-to-bottom format with 
+each tile immediately following the previous.
+                
+
+
+Maps...
+
+CharPad's data importer expects a map file to begin with a 4 byte header...
+
+[0] Map Width (Low Byte)
+[1] Map Width (High Byte)
+[2] Map Height (Low Byte)
+[3] Map Height (High Byte)
+
+The map data should then follow in the usual left-to-right, top-to-bottom format. 
+
+
+
+
+
+
+
+
+

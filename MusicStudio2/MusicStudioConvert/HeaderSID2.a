@@ -1,0 +1,40 @@
+; This file is conditionally included to allow MusicStudio to interface with the playing SID
+; and play sound effects and other effects by updating the control memory.
+!zn
+MusicStudioInterface
+	sei
+	jsr MusicPlayerInit
+;	jsr MusicPlayerStop
+	
+.wr1
+	lda #$ff
+.wr2
+	cmp VIC2Raster
+	bne .wr2
+	inc VIC2BorderColour
+	jsr MusicPlayerPlay
+	dec VIC2BorderColour
+	lda VIC2Raster
+	sta .rasterTime
+
+.sm1	ldx #2
+	lda .playSFXChannel,x
+	beq .skipSFX
+	lda .playSFXNote,x
+	ldy .playSFXEnvelope,x
+	jsr MusicPlayerPlaySFX
+	ldx .sm1+1
+	lda #0
+	sta .playSFXChannel,x
+.skipSFX
+	dec .sm1+1
+	bpl .sm1
+	lda #2
+	sta .sm1+1
+
+	jmp .wr1
+; Start of the control memory to allow MusicStudio to interface with the SID player.
+.rasterTime !by 0
+.playSFXNote !by 48,48,48
+.playSFXEnvelope !by 1,2,3
+.playSFXChannel !by 0,0,0

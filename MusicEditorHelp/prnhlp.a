@@ -1,0 +1,340 @@
+tempa !by 0
+
+bitexpand
+	lda #54
+	sta 1
+	ldy #0
+bex1
+	lda ($fd),y
+	and #%01111111
+	jsr makescr
+	lda ($fd),y
+	and #%10000000
+	clc
+	rol
+	rol
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00111111
+	asl
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	and #%11000000
+	clc
+	rol
+	rol
+	rol
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00011111
+	asl
+	asl
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00001111
+	asl
+	asl
+	asl
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	lsr
+	lsr
+	lsr
+	lsr
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00000111
+	asl
+	asl
+	asl
+	asl
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	lsr
+	lsr
+	lsr
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00000011
+	clc
+	ror
+	ror
+	ror
+	ror
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	lsr
+	lsr
+	sta tempa
+	jsr binc1
+	lda ($fd),y
+	and #%00000001
+	clc
+	ror
+	ror
+	ror
+	ora tempa
+	jsr makescr
+	lda ($fd),y
+	lsr
+	jsr makescr
+	jsr binc1
+	jmp bex1
+
+binc1
+	inc $fd
+	bne binc2
+	inc $fe
+binc2
+	rts
+
+tmpy !by 0,0,0
+tmphi !by 0
+tmplo !by 0
+
+makescr
+	sty tmpy+2
+	ldy tmpy
+	ldx yflag
+	bne colchange2
+	cmp #102
+	beq colchange
+	cmp #105
+	beq chrretscr
+	sta ($fb),y
+	lda $fc
+	clc
+	adc #$d8-$c0
+	sta $fc
+	lda tmpy+1
+	sta ($fb),y
+	lda $fc
+	sec
+	sbc #$d8-$c0
+	sta $fc
+mc1
+	iny
+	bne mc1z
+	inc $fc
+mc1z
+	sty tmpy
+	jsr checkend
+	bne mc2
+mc4
+	ldy tmpy+2
+	rts
+colchange
+	inc yflag
+	jmp mc4
+colchange2
+	sta tmpy+1
+	dec yflag
+	jmp mc4
+chrretscr
+	ldy #0
+	sty tmpy
+	lda $fb
+	clc
+	adc #$28
+	sta $fb
+	bcc mc3
+	inc $fc
+mc3
+	jmp mc1z
+mc2
+	jsr binc1
+	pla
+	pla
+	rts
+yflag !by 0
+
+retrevescr
+	jsr clrscreen
+	ldy #0
+	sty tmpy
+	sty tmpy+1
+	sty yflag
+	ldx #$50
+	stx $fb
+	ldx #$c0
+	stx $fc
+	asl
+	tax
+	lda $40c0,x
+	sta $fd
+	lda $40c1,x
+	sta $fe
+	jsr bitexpand
+	lda #55
+	sta 1
+	jsr copyscreen
+	rts
+
+checkend
+	lda $fc
+	sta tmphi
+	tya
+	clc
+	adc $fb
+	sta tmplo
+	bcc si10
+	inc tmphi
+si10
+	lda tmphi
+	cmp #$c3
+	bcc si11
+	lda tmplo
+	cmp #$98
+	bcc si11
+	lda #1
+	rts
+si11
+	lda #0
+	rts
+
+clrscreen
+	pha
+	lda #32
+	ldx #0
+cs1
+	sta $c000+80,x
+	sta $c000+80+256,x
+	sta $c000+80+512,x
+	sta $c000+192+512,x
+
+	sta $0400+80,x
+	sta $0400+80+256,x
+	sta $0400+80+512,x
+	sta $0400+192+512,x
+	inx
+	bne cs1
+	pla
+	rts
+
+copyscreen
+	ldx #0
+cs2
+	lda $c000+80,x
+	sta 1024+80,x
+	lda $c000+80+256,x
+	sta 1024+80+256,x
+	lda $c000+80+512,x
+	sta 1024+80+512,x
+	lda $c000+192+512,x
+	sta 1024+192+512,x
+	inx
+	bne cs2
+	rts
+
+!align 255,0
+deltab1 !by 8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8
+coltab1 !by 1,1,1,1,1,1,1,3,14,6,2,4,10,7,1,0
+coltab2 !by 6,14,0,6,14,3,1,1,1,1,1,1,1,1,1,6
+
+setint
+	jsr CINT
+	lda #0
+	jsr MusicPlayerInit
+	+MACRODisableUpperLowerCaseChange_A
+	sei
+	lda #27
+	sta 53265
+	lda #<irq1
+	sta 788
+	lda #>irq1
+	sta 789
+	lda #1
+	sta $d019
+	sta $d01a
+	lda #$7f
+	sta $dc0d
+	lda #49
+	sta $d012
+	lda #22
+	sta VIC2MemorySetup
+	cli
+	rts
+
+irq1
+	ldx #7
+i1
+	dex
+	bne i1
+l2
+	lda coltab1,x
+	ldy deltab1,x
+l3
+	dey
+	bne l3
+	sta $d020
+	sta $d021
+	inx
+	cpx #16
+	bne l2
+	dec $d019
+	lda #<irq2
+	sta 788
+	lda #>irq2
+	sta 789
+	lda #233
+	sta $d012
+	jmp $ea31
+
+irq2
+	ldx #7
+i4
+	dex
+	bne i4
+l5
+	lda coltab2,x
+	ldy deltab1,x
+l6
+	dey
+	bne l6
+	sta $d020
+	sta $d021
+	inx
+	cpx #16
+	bne l5
+	dec $d019
+	lda #<irq1
+	sta 788
+	lda #>irq1
+	sta 789
+	lda #49
+	sta $d012
+	lda $fb
+	pha
+	lda $fc
+	pha
+	lda $fd
+	pha
+	lda $fe
+	pha
+	jsr MusicPlayerPlay
+	pla
+	sta $fe
+	pla
+	sta $fd
+	pla
+	sta $fc
+	pla
+	sta $fb
+	jmp $ea81

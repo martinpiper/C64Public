@@ -1,0 +1,35 @@
+;Scroller_LOTD = 1
+OpenBorders = 1
+
+; These three loaders use the TinyHeader option
+; No screen, flashing, sound
+SmallLoader = 1
+; A bit like Cyberload
+;MartyLoad = 1
+; A bit like Novaload
+;NovaishLoad = 1
+
+; The number of cycles for half of one pulse
+TapeTurboSpeed = $80
+
+
+; Does not include the second loader code, if this is defined then MainSecondLoaderStart, RealCodeStart, RealCodeEnd needs to be defined.
+;IgnoreSecondLoader = 1
+;MainSecondLoaderStart = $900
+;RealCodeStart = $900
+;RealCodeEnd = RealCodeStart + ($4896-$101)
+
+
+; With the second loader enabled...
+
+; Enables block checksums in the second loader
+EnableBlockChecksum = 1
+
+;Includes some LoTD specific scroll text and other tweaks
+;Scroller_LOTD = 1
+;JMPQuickStartAddress = 2061
+
+; Initialises the machine to a BASIC friendly state then jumps to the address
+;JMPStartAddress = 2304
+; Does nothing to tidy the machine to a known state.
+;JMPQuickStartAddress = 2304

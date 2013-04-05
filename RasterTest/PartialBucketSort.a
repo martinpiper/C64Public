@@ -1,0 +1,92 @@
+!zn {
+; Example usage:
+;	; Try sorting the first non-blank line of the boot screen
+;	ldx #<$0400 + 40
+;	ldy #>$0400 + 40
+;	jsr PartialBucketSortSetData
+;	; Using the next non-blank line as the index
+;	ldx #<$0400 + 40 + 40 + 40
+;	ldy #>$0400 + 40 + 40 + 40
+;	jsr PartialBucketSortSetIndex
+;	; Start partial bucket sort with 40 items
+;	ldy #40
+;	jsr PartialBucketSort
+
+; x,y lo/hi of data
+PartialBucketSortSetData
+	; Store any self modifying values here
+	stx .smtb1+1
+	sty .smtb1+2
+	rts
+
+!macro StoreBucket macroOffset {
+!zn {
+	lda bucketCounts + macroOffset
+	beq .skip1
+	lda #macroOffset
+	sta usedBuckets,y
+	iny
+.skip1
+}
+}
+
+.numBuckets = 32
+
+; Partially sorts by data into 32 buckets (bands of 8) and stores the index in asscending order into the index
+; y = Num elements in the input
+; y = Real number of elements stored accounting for bucket overflows
+PartialBucketSort
+	; Clear the bucket counts
+	ldx #.numBuckets
+	lda #0
+.initLoop
+	dex
+	sta bucketCounts,x
+	bne .initLoop
+
+	; Now start bucketing the sprites
+	sty .sm1+1
+	ldy #0
+.loop
+.smtb1	lda $1234,y		; Self modifying
+	and #$e0			; The same as div 32 then mul 32. This just happens to work with 32 buckets. Any more or less and a different calculation is needed.
+	sta .sm2 + 1		; Pre-calc what bucket address this should eventually go into
+	; Div 8 to find the bucket index
+	lsr
+	lsr
+	lsr
+	tax
+	lda bucketCounts,x
+	; Any space left?
+	cmp #8
+	beq .skipSpr
+	inc bucketCounts,x	; Add to our bucket
+	tax					; xfer the bucket offset
+	tya					; xfer the sprite index
+.sm2	sta bucketData,x	; Store the sprite index into the bucket plus bucket index
+.skipSpr
+	iny
+.sm1	cpy #0			; Self modifying number of sprite indexes
+	bne .loop
+
+	; Now output what used bucket indexes in order
+	; This is assembler generated unrolled code
+	ldy #0
+	; Start storing
+	!for .i , .numBuckets {
+		+StoreBucket (.i-1)
+	}
+
+;	sty $0400			; Debugging. Number of active buckets
+.ret
+	rts
+
+!align 255,0			; Must be aligned to 256 bytes for the self modify store to work
+;bucketData = $0700		; !fill .numBuckets * 8		; Max of eight sprites for each bucket. Any more than this and it will not store sprites for that band.
+bucketData !fill .numBuckets * 8		; Max of eight sprites for each bucket. Any more than this and it will not store sprites for that band.
+!align 255,0			; Must be aligned to 256 bytes for the self modify store to work
+;bucketCounts = $0500	; !fill .numBuckets
+bucketCounts !fill .numBuckets
+;usedBuckets = $0600	; !fill .numBuckets
+usedBuckets !fill .numBuckets
+}

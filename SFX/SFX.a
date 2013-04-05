@@ -1,0 +1,268 @@
+; Sound effects player using the SEUCK SFX data format.
+
+SFXCurrentVoice !by 0
+
+; The number of bytes of working size per voice
+SFXVoiceWorkSize = 13
+; Define the first voice
+SFXVoiceControl !by 0
+SFXVoiceAttackDecay !by 0
+SFXVoiceFreqLo !by 0
+SFXVoiceFreqHi !by 0
+SFXVoiceFreqLoSpeed !by 0
+SFXVoiceFreqHiSpeed2 !by 0
+SFXVoiceFreqDecay !by 0
+SFXVoiceFreqLoSpeed2 !by 0
+SFXVoiceFreqHiSpeed !by 0
+SFXVoiceFreqHiCountInit !by 0
+SFXVoiceFreqDirection !by 0
+SFXVoiceFreqHiCount !by 0
+SFXVoiceTotalCount !by 0
+; Use filled space for the other two voices
+!fill 13*2
+
+SFXTempVar !by 0
+
+SFXMulBy7Tab !by $0,$7,$e
+SFXMulBy10Tab !for .table1,24 {!by ((.table1-1) * 10) }
+SFXIndexToWorkVoiceTab !for .table1,3 {!by ((.table1-1) * SFXVoiceWorkSize) }
+
+!zn
+SFXSIDInit
+	ldx #$16
+	lda #$00
+	sta SFXCurrentVoice
+.l1
+	sta SID,x
+	dex
+	bpl .l1
+	ldx #(SFXVoiceWorkSize*3)-1
+.l2
+	sta SFXVoiceControl,x
+	dex
+	bpl .l2
+
+	lda #$08
+	sta SIDVoice1Control
+	sta SIDVoice2Control
+	sta SIDVoice3Control
+	lda #$07
+	sta SIDVoice1PulseWidthHi
+	sta SIDVoice2PulseWidthHi
+	sta SIDVoice3PulseWidthHi
+	lda #$0f
+	sta SIDVolumeFilter
+	lda #0
+	sta SIDFilterControl
+	rts
+
+!zn
+; Input: A = SFX Type
+.xTemp !by 0
+.yTemp !by 0
+SFXInit
+	stx .xTemp
+	sty .yTemp
+	; Convert the index into an offset
+	tax
+	ldy SFXMulBy10Tab,x
+	; Find a new SID voice by picking the voice with the lowest remaining SFXVoiceTotalCount
+	ldx #0
+	lda SFXVoiceTotalCount
+	cmp SFXVoiceTotalCount+SFXVoiceWorkSize
+	bcc .not2
+	ldx #1
+	lda SFXVoiceTotalCount+SFXVoiceWorkSize
+.not2
+!ifdef SFXLimitVoice3 { } else {
+	cmp SFXVoiceTotalCount+(SFXVoiceWorkSize*2)
+	bcc .not3
+	ldx #2
+}
+.not3
+	; Store what we have chosen
+	stx SFXCurrentVoice
+
+	; Now retire the values by one ready for next time
+	lda SFXVoiceTotalCount
+	beq .no1
+	dec SFXVoiceTotalCount
+.no1
+	lda SFXVoiceTotalCount+SFXVoiceWorkSize
+	beq .no2
+	dec SFXVoiceTotalCount+SFXVoiceWorkSize
+.no2
+	lda SFXVoiceTotalCount+(SFXVoiceWorkSize*2)
+	beq .no3
+	dec SFXVoiceTotalCount+(SFXVoiceWorkSize*2)
+.no3
+	; Fetch the SID voice offset adjustment
+	lda SFXMulBy7Tab,x
+	tax
+	; Initialise the SID voice
+	lda #$00
+	sta SIDVoice1AttackDecay,x
+	sta SIDVoice1SustainRelease,x
+	sta SIDVoice1Control,x
+	; Copy the SFX from the table to our work space for the voice
+	ldx SFXCurrentVoice
+	; Multiply by 12, convert the index to an offset
+	lda SFXIndexToWorkVoiceTab,x
+	tax
+	; Copy the ten bytes of SFX table data
+	lda #$0A
+	sta SFXTempVar
+.l1
+	lda SFXTable,y
+	sta SFXVoiceControl,x
+	inx
+	iny
+	dec SFXTempVar
+	bne .l1
+	lda #$00
+	; All of these use -10 because X has just copied 10 bytes
+	sta SFXVoiceFreqDirection-10,x
+	; Copy the initial values to higher up
+	lda SFXVoiceFreqDecay-10,x
+	sta SFXVoiceFreqHiCount-10,x
+	bne .noMoreUpdates
+	lda SFXVoiceFreqHiCountInit-10,x
+	sta SFXVoiceFreqHiCount-10,x
+	inc SFXVoiceFreqDirection-10,x
+.noMoreUpdates
+	; Work out roughly how long the effect will last for priority evaluation by summing the
+	; attack and decay.
+	lda SFXVoiceAttackDecay-10,x
+	lsr
+	lsr
+	lsr
+	lsr
+	sta SFXTempVar
+	lda SFXVoiceAttackDecay-10,x
+	and #15
+	clc
+	adc SFXTempVar
+	; Slightly longer delay, carry will always be clear here
+	asl
+	; Always add three so that the priority picks the next one if the attack/decay is really tiny.
+	adc #3
+	sta SFXVoiceTotalCount-10,x
+	ldx .xTemp
+	ldy .yTemp
+	RTS
+
+!zn
+SFXPlay
+	; Update the pulse according to the toggle
+	lda .pulseToggle
+	bne .doDecPulse
+	; Inc pulse
+	lda .pulseWidthLo
+	clc
+	adc #$50
+	sta .pulseWidthLo
+	bcc .processVoices
+	inc .pulseWidthHi
+	lda .pulseWidthHi
+	cmp #$05
+	bne .processVoices
+	lda #$01
+	sta .pulseToggle
+	bne .processVoices
+.doDecPulse
+	; Dec pulse
+	lda .pulseWidthLo
+	sec
+	sbc #$50
+	sta .pulseWidthLo
+	bcs .processVoices
+	dec .pulseWidthHi
+	lda .pulseWidthHi
+	cmp #$02
+	bne .processVoices
+	lda #$00
+	sta .pulseToggle
+.processVoices
+	ldy #$00
+	ldx #$00
+	jsr .processOneVoice
+	ldy #$07
+	ldx #SFXVoiceWorkSize
+!ifdef SFXLimitVoice3 { } else {
+	jsr .processOneVoice
+	ldy #$0E
+	ldx #SFXVoiceWorkSize*2
+}
+.processOneVoice
+	; Not likely to be any frequency changes so don't run the code, just update the SID voice instead
+	lda SFXVoiceFreqDecay,x
+	ora SFXVoiceFreqHiCountInit,x
+	beq .noUpdates
+	; Process the direction
+	lda SFXVoiceFreqDirection,x
+	bne .downWibble
+	; Incr
+	lda SFXVoiceFreqLo,x
+	clc
+	adc SFXVoiceFreqLoSpeed,x
+	sta SFXVoiceFreqLo,x
+	bcc .noCarry1
+	inc SFXVoiceFreqHi,x
+.noCarry1
+	; Incr 2
+	lda SFXVoiceFreqHi,x
+	clc
+	adc SFXVoiceFreqHiSpeed2,x
+	sta SFXVoiceFreqHi,x
+	dec SFXVoiceFreqHiCount,x
+	bne .noUpdates
+.freqProcess
+	lda SFXVoiceFreqHiCountInit,x
+	sta SFXVoiceFreqHiCount,x
+	beq .freqReset
+	; Swap the direction
+	lda #$01
+	sta SFXVoiceFreqDirection,x
+	bne .noUpdates
+.downWibble
+	; Decr
+	lda SFXVoiceFreqLo,x
+	sec
+	sbc SFXVoiceFreqLoSpeed2,x
+	sta SFXVoiceFreqLo,x
+	bcs .freqHiAdjust
+	dec SFXVoiceFreqHi,x
+.freqHiAdjust
+	; Decr 2
+	lda SFXVoiceFreqHi,x
+	sec
+	sbc SFXVoiceFreqHiSpeed,x
+	sta SFXVoiceFreqHi,x
+	dec SFXVoiceFreqHiCount,x
+	bne .noUpdates
+.freqReset
+	lda SFXVoiceFreqDecay,x
+	sta SFXVoiceFreqHiCount,x
+	beq .freqProcess
+	; Swap the direction
+	lda #$00
+	sta SFXVoiceFreqDirection,x
+.noUpdates
+	; Update SID from our calculated data
+	lda SFXVoiceFreqLo,x
+	sta SIDVoice1FreqLo,y
+	lda SFXVoiceFreqHi,x
+	sta SIDVoice1FreqHi,y
+	lda SFXVoiceAttackDecay,x
+	sta SIDVoice1AttackDecay,y
+	lda SFXVoiceControl,x
+	sta SIDVoice1Control,y
+	lda .pulseWidthLo
+	sta SIDVoice1PulseWidthLo,y
+	lda .pulseWidthHi
+	sta SIDVoice1PulseWidthHi,y
+	rts
+
+.pulseWidthLo !by 0
+.pulseWidthHi !by 0
+.pulseToggle !by 0

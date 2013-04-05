@@ -1,0 +1,454 @@
+; Displays a scrolling message with music and demonstrates using the CIAIRQ loader.
+TurboTapeHeaderStatus					= $04
+TurboTapeFinishedLoadingFile			= $05
+TapeLoaderStoringToLo					= $06
+TapeLoaderStoringToHi					= $07
+TapeLoaderExpectedLoadingBlocks			= $08
+
+TurboTapeBlockLoadError					= $09
+
+
+; The screen offset for the tape counter
+TapeLoadErrorLine = 16
+TapeCounterOffset = (15*40)+18
+
+!pseudopc $f000 {
+.yposSplit = 238
+MainSecondLoaderStart
+	; IRQs are already off here, but we duplicate the SEI just to make it obvious what we are doing.
+	sei
+	; Grab everything on the stack
+	ldx #$ff
+	txs
+
+	; Init the processor port.
+	; Technically this is already done by the CIA loader but we duplicate this here just make it obvious.
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
+	; Turns on cassette motor and removes ROMs
+	lda #%101
+	sta ZPProcessorPort
+
+	; Clear the screen
+	ldx #0
+
+	stx SIDVolumeFilter
+
+	lda #' '
+.cl1
+	sta SCREENRAM,x
+	sta SCREENRAM+$100,x
+	sta SCREENRAM+$200,x
+	sta SCREENRAM+$2e8,x
+	dex
+	bne .cl1
+
+	; Initialise the scroller text and tape counter white colour
+	ldy #39
+	lda #VIC2Colour_White
+.l2
+	sta COLOURRAM+(24*40),y
+	dey
+	bpl .l2
+	sta COLOURRAM+TapeCounterOffset
+	sta COLOURRAM+TapeCounterOffset+1
+	sta COLOURRAM+TapeCounterOffset+2
+
+!ifdef Scroller_LOTD {
+	ldy #.text2End - .text2
+.l2b
+	lda .text2-1,y
+	sta SCREENRAM+(9*40)-1,y
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM+(9*40)-1,y
+	dey
+	bne .l2b
+}
+
+	; Enable loading any data now
+	jsr TapeLoaderInitialiseIRQ
+	lda #0
+	jsr TapeLoaderLoadNewFile
+	cli
+
+
+	; Set a solid or clear sprite as default
+	ldy #63
+!ifdef Scroller_LOTD {
+	lda #0
+} else {
+	lda #255
+}
+.l3
+	sta $200,y
+	dey
+	bpl .l3
+
+	; Initialise the sprite display and the screen display
+	lda #0
+	sta VIC2SpriteMulticolour
+	sta VIC2SpritePriority
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2ScreenColour
+	lda #8	; Sprite data at $200-$23f
+	sta SPRITEFRAME
+!ifdef Scroller_LOTD {
+	lda #170
+	sta VIC2Sprite0X
+	lda #0
+	sta VIC2SpriteXMSB
+	lda #70
+	sta VIC2Sprite0Y
+} else {
+!ifdef OpenBorders {
+	lda #170
+	sta VIC2Sprite0X
+	lda #0
+	sta VIC2SpriteXMSB
+	lda #VIC2SpriteYBorderTop-38
+	sta VIC2Sprite0Y
+} else {
+	lda #<(VIC2SpriteXBorderRight-VIC2SpriteSizeX)
+	sta VIC2Sprite0X
+	lda #1
+	sta VIC2SpriteXMSB
+	lda #VIC2SpriteYBorderTop
+	sta VIC2Sprite0Y
+}
+}
+	lda .spriteColours
+	sta VIC2Sprite0Colour
+	; And switch on the sprite
+	lda #1
+	sta VIC2SpriteEnable
+	; Setup some screen display values, just to make sure everything is OK
+	lda #VIC2MemorySetupDefault
+	sta VIC2MemorySetup
+	; Set VIC bank 0
+	lda #CIA2PortASerialBusVICBankDefault
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+.MainLoop
+	; Some debugging that allows us to see spare mainline cycles between the IRQs by changing the screen colour
+!if 0 {
+	inc VIC2ScreenColour
+	dec VIC2ScreenColour
+	jmp .MainLoop
+}
+
+.s00
+	lda VIC2Raster
+	cmp #.yposSplit
+	bcc .s00
+
+	; Scrolling split
+	lda .xpos
+	sta VIC2ScreenControlH
+
+!ifdef OpenBorders {
+.notYet1
+	lda VIC2Raster
+	cmp #VIC2SpriteYBorderBottom-2
+	bcc .notYet1
+
+	; Step 1 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	lda #%10000000
+.notYet2
+	bit VIC2ScreenControlV
+	beq .notYet2
+
+	; Step 2 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+}
+
+	; There is some spare time here so use it for playing the music
+	; If the music isn't yet loaded then don't play it :)
+	lda .musicInited
+	beq .s1
+	; Play
+	jsr $8003
+.s1
+
+
+	; Now wait for the raster to move off the bottom of the screen
+	; After the open border code or the music will be fine.
+.s0
+	lda VIC2Raster
+	cmp #.yposSplit
+	bcs .s0
+!ifdef OpenBorders {
+	lda #0
+} else {
+	lda #%1000
+}
+	sta VIC2ScreenControlH
+
+	; Now it is safe to execute routines that can take some time
+
+	; Here is where this scroller routine will display some text while the music data loads, then plays and then the final application loads and runs.
+	lda TurboTapeFinishedLoadingFile
+	beq .SkipFileLoaded
+
+	; Check what was just loaded
+	ldx FileNameByte
+	cpx #2	; For the code we want to load an start
+	beq .startLoadedCode
+
+	; Prepare the IRQ loader to load the next file
+	inc FileNameByte
+	lda FileNameByte
+	jsr TapeLoaderLoadNewFile
+
+	; Check the filename
+	cpx #0
+	beq .SkipFileLoaded
+	cpx #1
+	beq .InitMusic
+	; Add extra cases here for file name bytes we want to handle
+
+.startLoadedCode
+	; Start the main code we just loaded
+	lda #0
+	sta SIDVolumeFilter
+	; Turn off the screen before starting the compressed game. Alows faster unpacking and also
+	; stops the screen from displaying the junk while the decompression is working.
+	sta VIC2ScreenControlV
+!ifdef JMPQuickStartAddress {
+	; The scroller code initialises and recovers from most weird machine configs so we do not
+	; need to add code to specifically recover the machine's config.
+	jmp JMPQuickStartAddress
+} else {
+UnusedSpace = $0334
+	; Other code, like old games written years ago, are unable to recover from some weird machine
+	; configs specifically those that play around with keyboard buffers and IRQs. So we need to
+	; add code to specifically recover the machine's config.
+	; First move the code
+	ldx #.restoreStateEnd - .restoreStateStart
+.rs1
+	lda .restoreStateStart-1,x
+	sta UnusedSpace-1,x
+	dex
+	bne .rs1
+	jmp UnusedSpace
+
+.restoreStateStart
+!pseudopc UnusedSpace {
+	; Some extra setup to restore the machine to a good state
+	sei
+	ldx #$ff
+	txs
+
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	; Init string display stack
+	lda #0
+	sta $18
+
+	; If the NMI from TapeLoaderCIA.a was used MACROAckAllIRQs_A will ACK the NMI and allow the restore key to work again.
+	; If you want BASIC to ignore the restore key then comment out the MACROAckAllIRQs_A line below.
+	+MACROAckAllIRQs_A
+
+	jsr $fda3	; Init I/O
+	jsr $fd15	; Restore the normal IRQ
+	jsr $ff5b	; Screen on
+	cli
+	jsr $e453
+
+!ifdef JMPStartAddress {
+	; Either jump directly into the code just loaded... (If the file loaded is just a simple "SYS XXXXX" BASIC program it is usually OK to do this.) ...
+	jmp JMPStartAddress
+} else {
+	; ... Or use the code below to start the real BASIC code
+	jsr $a660 ; CLR
+	jsr $a68e ; Reset TXTPTR
+	jmp $a7ae ; RUN Command. This "RUN" is explicit because if someone does a normal "LOAD" command there won't be any pending "RUN" after the autoboot code finishes.
+}
+}
+.restoreStateEnd
+}
+
+	; Some small functions to flag updates close to where they are branched from
+.InitMusic
+	lda #0
+	jsr $8000
+	lda #1
+	sta .musicInited
+;	jmp .SkipFileLoaded
+
+.SkipFileLoaded
+
+	; Use the low byte of the tape storage address to cycle the sprite colours
+	lda TapeLoaderStoringToLo
+	lsr
+	lsr
+	lsr
+	tax
+	lda .spriteColours,x
+	sta VIC2Sprite0Colour
+
+	lda TurboTapeBlockLoadError
+	beq .noLoadError
+
+	lda .stopPressed
+	bne .rrwnd
+	+DisplayColourTextMiddle_AX .textLoadErrorPressStop , .textLoadErrorPressStopEnd , SCREENRAM + (TapeLoadErrorLine*40), VIC2Colour_LightRed
+	jmp .overText
+.rrwnd
+	+DisplayColourTextMiddle_AX .textLoadErrorPressRewind , .textLoadErrorPressRewindEnd , SCREENRAM + (TapeLoadErrorLine*40) , VIC2Colour_LightRed
+.overText
+
+	; Test for stop being pressed
+	lda ZPProcessorPort
+	and #%10000
+	beq .notStop
+
+	lda #1
+	sta .stopPressed
+
+	; Enable the tape motor
+	lda ZPProcessorPort
+	and #%11011111
+	sta ZPProcessorPort
+
+	jmp .endLoadErrorCode
+
+.notStop
+	; Play or rewind or FFWD is pressed, was the stop key pressed?
+	lda .stopPressed
+	beq .endLoadErrorCode
+
+	; If yes, get rid of the message
+	lda #0
+	sta TurboTapeBlockLoadError
+	sta .stopPressed
+
+.noLoadError
+	ldx #40
+	lda #' '
+.cll1
+	sta SCREENRAM-1 + (TapeLoadErrorLine*40),x
+	dex
+	bne .cll1
+
+.endLoadErrorCode
+
+	; Display the blocks left to load
+	lda TapeLoaderExpectedLoadingBlocks
+	beq .noTapeCount
+	jsr TapeLoaderGetBlocksLeftToLoad
+	tay
+	lda TableMod10,y
+	clc
+	adc #'0'
+	sta SCREENRAM+TapeCounterOffset+2
+	ldx TableDiv10,y
+	lda TableMod10,x
+	clc
+	adc #'0'
+	sta SCREENRAM+TapeCounterOffset+1
+	lda TableDiv100,y
+	clc
+	adc #'0'
+	sta SCREENRAM+TapeCounterOffset
+	jmp .tapeCountEnd
+.noTapeCount
+	lda #' '
+	sta SCREENRAM+TapeCounterOffset
+	sta SCREENRAM+TapeCounterOffset+1
+	sta SCREENRAM+TapeCounterOffset+2
+.tapeCountEnd
+
+	; Update the scroll
+	dec .xpos
+	bmi .doXScroll
+	jmp .MainLoop
+.doXScroll
+	lda #7
+	sta .xpos
+	ldy #0
+.l1
+	lda SCREENRAM+(24*40)+1,y
+	sta SCREENRAM+(24*40),y
+	iny
+	cpy #39
+	bne .l1
+	ldy .nextChar
+	lda .text,y
+	sta SCREENRAM+(24*40)+39
+	iny
+	cpy #.textEnd-.text
+	bne .s2
+
+	ldy #0
+.s2
+	sty .nextChar
+	jmp .MainLoop
+
+.stopPressed !by 0
+.musicInited !by 0
+.xpos !by 7
+.nextChar !by 0
+!ifdef Scroller_LOTD {
+.text !scr "... now loading legion of the damned ... starring: anthony burns (design, gfx, storyline) ... martin piper (seuck redux code and enhancements) ... richard bayliss (front end, background fade effect and music) "
+} else {
+.text !scr "this is a demonstration scrolling message for this loading routine. it can be really long or really short.             going to loop soon...   5.. 4.. 3.. 2.. 1..                "
+}
+.textEnd
+
+!ifdef Scroller_LOTD {
+.text2
+!scr "            - now  loading -            "
+!scr "                                        "
+!scr "  l e g i o n  o f  t h e  d a m n e d  "
+!scr "                                        "
+!scr "              please wait!              "
+.text2End
+
+}
+
+.textLoadErrorPressStop
+!scr "load error. press stop"
+.textLoadErrorPressStopEnd
+.textLoadErrorPressRewind
+!scr "rewind the tape then press play"
+.textLoadErrorPressRewindEnd
+
+;.spriteColours !by VIC2Colour_DarkGrey,VIC2Colour_Grey,VIC2Colour_LightGrey,VIC2Colour_White,VIC2Colour_LightGrey,VIC2Colour_Grey,VIC2Colour_DarkGrey,VIC2Colour_DarkGrey
+; Better sprite pulse colours than the grey table above
+.spriteColours
+	!by VIC2Colour_Black,VIC2Colour_Blue,VIC2Colour_Brown,VIC2Colour_Red
+	!by VIC2Colour_DarkGrey,VIC2Colour_Purple,VIC2Colour_Orange,VIC2Colour_Grey
+	!by VIC2Colour_LightBlue,VIC2Colour_Green,VIC2Colour_LightRed,VIC2Colour_Cyan
+	!by VIC2Colour_LightGrey,VIC2Colour_Yellow,VIC2Colour_LightGreen,VIC2Colour_White
+	!by VIC2Colour_LightGreen,VIC2Colour_Yellow,VIC2Colour_LightGrey,VIC2Colour_Cyan
+	!by VIC2Colour_LightRed,VIC2Colour_Green,VIC2Colour_LightBlue,VIC2Colour_Grey
+	!by VIC2Colour_Orange,VIC2Colour_Purple,VIC2Colour_DarkGrey,VIC2Colour_Red
+	!by VIC2Colour_Brown,VIC2Colour_Blue,VIC2Colour_Black,VIC2Colour_Black
+
+; Lookup tables to convert the remaing blocks left to load value into hundreds, tens and units.
+TableMod10 !for .t,256 {!by (.t-1) % 10}
+TableDiv10 !for .t,256 {!by (.t-1) / 10}
+TableDiv100 !for .t,256 {!by (.t-1) / 100}
+
+!source "TapeLoaderCIAIRQ.a"
+
+; Must be the last bit of memory since this table is not allocated. Why bother to load a table
+; full of zeros? :)
+BlocksLoadedTable = *
+!if BlocksLoadedTable > $fe00 {
+!error "This table must not start later than $fe00."
+}
+
+MainSecondLoaderEnd
+}

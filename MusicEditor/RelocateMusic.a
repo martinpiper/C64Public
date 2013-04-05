@@ -1,0 +1,54 @@
+!zn {
+startad !by 0,$c0
+; This compares two indentical, except for lo/hi byte offsets, loaded music player routines.
+; When a difference is found the delta is used to produce a relocated bit of code.
+relocate
+	ldx RealMusicPlayerStart + 2	; Get whatever hi byte address this was last relocated to
+	dex
+	stx sb1m+1
+	stx sb2m+1
+	lda #0
+	sta $fb
+	sta $fd
+	lda #>RealMusicPlayerStart
+	sta $fc
+	lda #>RelocMusicPlayerStart
+	sta $fe
+	sei
+	lda #54
+	sta 1
+	ldy #0
+l1r
+	lda ($fb),y
+	cmp ($fd),y
+	beq l2r
+	sec
+sb1m sbc #$3f			; Self modifying value
+	clc
+	adc startad+1
+	sta ($fb),y
+	inc VIC2BorderColour
+l2r
+	iny
+	bne l1r
+	inc $fe
+	inc $fc
+	lda $fc
+	cmp #>track1		; Continue until the start of the music data
+	bne l1r
+	ldy #0
+l3r
+	lda hiblock,y
+	sec
+sb2m sbc #$3f			; Self modifying value
+	clc
+	adc startad+1
+	sta hiblock,y
+	iny
+	cpy #maxBlocks
+	bne l3r
+	lda #55
+	sta 1
+	cli
+	rts
+}

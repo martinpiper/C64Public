@@ -1,0 +1,177 @@
+RNXPCompressionDecompress_SecondPart
+.doLengthCheck
+	;	if (workLen == 0x10000003)
+	;	{
+	;		break;
+	;	}
+
+	; This above check is not needed because a really long length is encoded with lots of shifts
+	; hence the check above that detects a carry overflow then goes to ".gotVeryLongLength" will work instead.
+
+
+
+	;	// Decode workOffset if it hasn't been updated by the above history buffer match
+	;	if (workOffset == 0)
+	;	{
+	; Don't need this check because updating the offset in the history match with the jump to later on means this will always succeed
+
+	lda #0
+	;		u32 b1,b2;
+	;		b1 = MGetNextBit();
+	;		b2 = MGetNextBit();
+	jsr .GetNextBitIntoCarry
+	rol
+	jsr .GetNextBitIntoCarry
+	rol
+	;		if (!b1 && !b2)
+	;		{
+	bne .skipToElse
+	;			// Special case
+	;			workOffset = lastWorkOffset;
+	lda .lastWorkOffset
+	sta .workOffset
+	lda .lastWorkOffset+1
+	sta .workOffset+1
+	jmp .updateHistoryBuffer
+	;		}
+	;		else
+	;		{
+.skipToElse
+	;			workOffset = b2;
+	tay
+	and #1
+	sta .workOffset
+	;			if (!b1)
+	;			{
+	tya
+	and #2
+	bne .getRemainingBits
+	;				while (!MGetNextBit())
+	;				{
+.gnb1
+	jsr .GetNextBitIntoCarry
+	bcs .getoneMoreBit
+	;					workOffset = (workOffset << 1) + MGetNextBit();
+	;				}
+	jsr .GetNextBitIntoCarry
+	rol .workOffset
+	rol .workOffset+1
+	jmp .gnb1
+.getoneMoreBit
+	;				workOffset = (workOffset << 1) + MGetNextBit();
+	;				// Then get the next bits
+	ldy #6
+	bne .grb1
+
+.getRemainingBits
+	;			int i;
+	;			for (i=0;i<5;i++)
+	;			{
+	;				workOffset = (workOffset << 1) + MGetNextBit();
+	;			}
+	ldy #5
+.grb1
+	jsr .GetNextBitIntoCarry
+	rol .workOffset
+	rol .workOffset+1
+	dey
+	bne .grb1
+
+	;			workOffset++;
+	inc .workOffset
+	bne .iw1
+	inc .workOffset+1
+.iw1
+	; Fall through
+
+.updateHistoryBuffer
+	;		// Update the history buffer
+	;		historyBufferLen[historyIndex] = workLen;
+	;		historyBufferOffset[historyIndex] = workOffset;
+	;		historyIndex++;
+	;		historyIndex = historyIndex & 15;
+	ldy .historyIndex
+	lda .workLen
+	sta .historyBufferLenL,y
+	lda .workLen+1
+	sta .historyBufferLenH,y
+	lda .workOffset
+	sta .historyBufferOffsetL,y
+	lda .workOffset+1
+	sta .historyBufferOffsetH,y
+	iny
+	tya
+	and #15
+	sta .historyIndex
+
+.alreadyGotOffset
+	;	lastWorkOffset = workOffset;
+	lda .workOffset
+	sta .lastWorkOffset
+	lda .workOffset+1
+	sta .lastWorkOffset+1
+
+
+	;if (workOffset > LONG_OFFSET_THRESHOLD) : (0xd00)
+	cmp #$d
+	bcc .afterThresholdCheck
+	beq .doIt2
+	bcs .doIt1
+.doIt2
+	lda .workOffset+0
+	beq .afterThresholdCheck
+.doIt1
+	; workLen++;
+	inc .workLen+0
+	bne .afterThresholdCheck
+	inc .workLen+1
+.afterThresholdCheck
+	; const u8 *workPos = dest + outLen - workOffset;
+	lda RNXPCompressionDecompress_WriteByte+1
+	sec
+	sbc .workOffset+0
+	sta RNXPCompressionDecompress_GetDictEntryAndWrite+1
+	; Carry
+	lda RNXPCompressionDecompress_WriteByte+2
+	sbc .workOffset+1
+	sta RNXPCompressionDecompress_GetDictEntryAndWrite+2
+
+	+RNXPCompressionIncBorder_A
+
+	;	dest[outLen] = *workPos;
+	;	outLen++;
+	;	workPos++;
+	jsr RNXPCompressionDecompress_GetDictEntryAndWrite
+
+	;	do
+	;	{
+	;		dest[outLen] = *workPos;
+	;		outLen++;
+	;		workPos++;
+	;		workLen--;
+	;	} while (workLen > 0);
+	; Do the low byte first
+	ldy .workLen+0
+	beq .d9
+	; dest[outLen] = *workPos;
+.d8
+	jsr RNXPCompressionDecompress_GetDictEntryAndWrite
+	dey
+	bne .d8
+
+	; Now y always == 0
+	; Hi byte check
+.d9
+	lda .workLen+1
+	beq .d11
+	; Do 256 dey/bne interations to account for the hi byte of the workLen
+.d10
+	jsr RNXPCompressionDecompress_GetDictEntryAndWrite
+	dey
+	bne .d10
+
+	; Then count the hi byte of workLen
+	dec .workLen+1
+	bne .d10
+.d11
+	jmp .l1

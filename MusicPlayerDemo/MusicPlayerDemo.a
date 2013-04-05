@@ -1,0 +1,1220 @@
+;Music player demo
+
+!source "../stdlib/stdlib.a"
+!to "MusicPlayerDemo.prg", cbm
+!sal
+!sl "MusicPlayerDemo.map"
+!svl "MusicPlayerDemo.lbl"
+!cpu 6510
+!ct pet
+
+; The screen
+*=$400
+!bin "Screen.bin",,
+
+; The chars
+*=$800
+!bin "Chars.chr",,
+
+!macro SetText .petscii , .pos {
+	ldx #0
+	ldy #0
+.stl1
+	lda .petscii,x
+	beq .stl2
+	cmp #32
+	beq .doSpace
+	asl
+	clc
+	adc #30
+	sta .pos,y
+	adc #1
+	sta .pos+1,y
+	iny
+.doNext
+	iny
+	inx
+	bne .stl1
+.stl2
+	lda #3
+.stl3
+	cpy #40
+	beq .stl4
+	sta .pos,y
+	iny
+	bne .stl3
+.stl4
+	jmp .realEnd
+.doSpace
+	lda #3
+	sta .pos,y
+	jmp .doNext
+.realEnd
+
+}
+
+*=$1000
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+;	+WaitForFireB_A
+
+	lda #50
+	sta VIC2Raster
+	lda #<irq1
+	sta KERNALIRQServiceRoutineLo
+	lda #>irq1
+	sta KERNALIRQServiceRoutineHi
+	lda #1
+	sta VIC2InteruptStatus
+	sta VIC2InteruptControl
+	ldx #0
+	lda #VIC2Colour_White
+l1
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$2e8,x
+	inx
+	bne l1
+l2
+	lda SCREENRAM,x
+	cmp #$b
+	bcc pp1
+	lda #VIC2Colour_Brown
+	sta COLOURRAM,x
+pp1
+	lda SCREENRAM+$100,x
+	cmp #$b
+	bcc pp2
+	lda #VIC2Colour_Brown
+	sta COLOURRAM+$100,x
+pp2
+	lda SCREENRAM+$200,x
+	cmp #$b
+	bcc pp3
+	lda #VIC2Colour_LightRed
+	sta COLOURRAM+$200,x
+pp3
+	lda SCREENRAM+$300,x
+	cmp #$b
+	bcc pp4
+	lda #VIC2Colour_LightRed
+	sta COLOURRAM+$300,x
+pp4
+	inx
+	bne l2
+
+	+SetText musicTitle1 , SCREENRAM + 12 + (11*40)
+	+SetText musicTitle2 , SCREENRAM + 12 + (13*40)
+	+SetText musicTitle3 , SCREENRAM + 12 + (15*40)
+	+SetText musicTitle4 , SCREENRAM + 12 + (17*40)
+	+SetText musicTitle5 , SCREENRAM + 12 + (19*40)
+
+	jsr UnsetPlayerColours
+
+	jsr SetPlayer1
+	lda #0
+	jsr $3000
+
+
+	jsr FullScreen
+	; This exits at the bottom of the screen, so no screen sync is needed.
+	; The IRQs for the border colours then start.
+	+MACROAckAllIRQs_A
+	cli
+
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+	lda #$12
+	sta VIC2MemorySetup
+	lda #%11000
+	sta VIC2ScreenControlH
+
+	jmp mainline
+	rts
+
+UnsetPlayerColours
+	ldx #$14
+	lda #0
+.l1
+	sta SID,x
+	dex
+	bpl .l1
+
+	lda #VIC2Colour_LightRed
+	ldx #39
+.uc0
+	sta COLOURRAM + (11*40),x
+	sta COLOURRAM + (13*40),x
+	sta COLOURRAM + (15*40),x
+	sta COLOURRAM + (17*40),x
+	sta COLOURRAM + (19*40),x
+	dex
+	bpl .uc0
+	rts
+
+!macro SetPlayer .pos {
+	jsr UnsetPlayerColours
+	lda #VIC2Colour_Brown
+	ldx #39
+.uc1
+	sta COLOURRAM + (.pos*40),x
+	dex
+	bpl .uc1
+	rts
+}
+
+SetPlayer1
+	+SetPlayer 11
+SetPlayer2
+	+SetPlayer 13
+SetPlayer3
+	+SetPlayer 15
+SetPlayer4
+	+SetPlayer 17
+SetPlayer5
+	+SetPlayer 19
+
+
+
+!source "../stdlib/Initialise.a"
+
+!align 255, 0
+deltab
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
+
+!align 255, 0
+coltab
+!by 1,7,3,5,4,2,6,0,0,0,0,0,6,14,1,14
+!by 14,1,14,6,0,0,0,0
+!by 14,14,2,10,1,10,2,14
+!by 11,12,15,1,15,12,11,14
+!by 11,12,15,1,15,12,11,14
+!by 5,3,13,1,13,5,3,14,14
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+;!tx "                                        "
+;!tx "                                        "
+;!tx "                                        "
+;!tx "                                        "
+
+coltabBot
+!by VIC2Colour_White , VIC2Colour_Yellow , VIC2Colour_LightRed , VIC2Colour_Red
+!by VIC2Colour_Red , VIC2Colour_LightRed , VIC2Colour_Yellow , VIC2Colour_White
+!by 0,0
+
+coltaz
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+!tx "                                        "
+
+
+!align 255, 0
+coltabAnimate
+!fill 255,0
+
+
+!macro IRQPrologue {
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+}
+
+!macro IRQPrologueXScroll {
+	pha
+	txa
+	pha
+	tya
+	pha
+
+smXScr	lda #7
+	sta VIC2ScreenControlH
+
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+}
+
+!macro IRQEpilogue .raster , .nextIRQ {
+	lda #<.nextIRQ
+	sta KERNALIRQServiceRoutineLo
+	lda #>.nextIRQ
+	sta KERNALIRQServiceRoutineHi
+	lda #.raster
+	sta VIC2Raster
+	+MACROAckRasterIRQ_A
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+}
+
+; This does a small animation with the colour bars before displaying the main screen
+FullScreen
+.rl4
+	lda #255
+.rl5
+	cmp VIC2Raster
+	bne .rl5
+
+	lda #0
+	sta .colTabAnimateAllEqual
+
+	; Calculate updated bar positions
+	lda #0
+	ldx #250
+.cl1
+	sta coltabAnimate,x
+	dex
+	bne .cl1
+
+	ldx #0
+.cl2
+	lda .colTabAnimatePos,x
+	cmp .colTabAnimateTarget,x
+	beq .cl4RE
+	bcs .cl3gt
+	; Greater than
+	lda .colTabAnimateTarget,x
+	sec
+	sbc .colTabAnimatePos,x
+	lsr
+	lsr
+	lsr
+	bne .clltGotValue
+	; Otherwise fake the smallest movement we want
+	lda #1
+.clltGotValue
+	clc
+	adc .colTabAnimatePos,x
+	sta .colTabAnimatePos,x
+	jmp .cl4
+
+.cl3gt
+	sec
+	sbc .colTabAnimateTarget,x
+	lsr
+	lsr
+	lsr
+	bne .clgtGotValue
+	; Again fake the smallest movement
+	lda #1
+.clgtGotValue
+	sta .clnm1+1
+	lda .colTabAnimatePos,x
+	sec
+.clnm1	sbc #0
+	sta .colTabAnimatePos,x
+	jmp .cl4
+.cl4RE
+	inc .colTabAnimateAllEqual
+.cl4
+
+	tay
+
+	lda .colTabAnimateBarStart,x
+	sta .smclx+1
+	lda .colTabAnimateBarEnd,x
+	sta .smclxEnd+1
+	txa
+	pha
+
+.smclx	ldx #0
+.cl5
+	lda coltab,x
+	sta coltabAnimate,y
+	inx
+	iny
+.smclxEnd	cpx #0
+	bne .cl5
+
+	pla
+	tax
+
+	inx
+	cpx #4
+	bne .cl2
+
+	; All done moving?
+	lda .colTabAnimateAllEqual
+	cmp #4
+	beq .ret
+	jmp FullScreenRender
+.ret
+	rts
+
+	; Render
+!align 255, 0
+FullScreenRender
+	; Find the top screen line 49
+	ldx #49
+.rl6
+	cpx VIC2Raster
+	bne .rl6
+
+	; Wait until line 50 by positioning into the right HBLANK
+	ldy #9
+.rl8
+	dey
+	bne .rl8
+	nop
+	nop
+	nop
+
+.rl1
+	lda coltabAnimate,x
+	sta VIC2BorderColour
+	ldy #8
+.rl7
+	dey
+	bne .rl7
+	lda $0
+	nop
+	nop
+	inx
+	cpx #251
+	bne .rl1
+	lda #0
+	sta VIC2BorderColour
+
+	jmp .rl4
+
+.colTabAnimatePos !by 150,150,150,150
+.colTabAnimateTarget !by 50,78,122,242
+.colTabAnimateBarStart	!by 0	,24	,16	,coltabBot-coltab
+.colTabAnimateBarEnd	!by 16	,57	,24	,(coltabBot-coltab)+10
+.colTabAnimateAllEqual !by 0
+
+!align 255, 0
+irq1
+	+IRQPrologue
+
+	ldx #0
+i1
+	lda coltab,x
+	ldy deltab,x
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+i2
+	dey
+	bne i2
+	inx
+	cpx #16
+	bne i1
+
+	+IRQEpilogue 78 , irq2
+
+irq3
+	+IRQPrologue
+
+	ldx #16
+i3
+	lda coltab,x
+	ldy deltab,x
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+i4
+	dey
+	bne i4
+	inx
+	cpx #24
+	bne i3
+
+	+IRQEpilogue 138 , irq4
+
+irq2
+	+IRQPrologue
+
+	nop
+	nop
+
+	ldx #24
+i5
+	lda coltab,x
+	ldy deltab+4,x
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+i6
+	dey
+	bne i6
+	inx
+	cpx #57
+	bne i5
+
+	+IRQEpilogue 122 , irq3
+
+irq4
+	+IRQPrologue
+
+	ldx #56
+i7
+	lda coltab+8,x
+	ldy #7
+	sta VIC2ExtraBackgroundColour1
+	lda coltaz,x
+	sta VIC2ExtraBackgroundColour2
+i8
+	dey
+	bne i8
+	inx
+	cpx #$80
+	bne i7
+
+	+IRQEpilogue 242 , irq5
+
+irq5
+	+IRQPrologueXScroll
+
+	ldx #0
+i10
+	lda coltabBot,x
+	ldy deltab,x
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+i11
+	dey
+	bne i11
+	inx
+	cpx #10
+	bne i10
+
+	lda #%11000
+	sta VIC2ScreenControlH
+
+	+IRQEpilogue 50 , irq1
+
+
+cnt2 !by 0
+cnt1 !by 0
+
+;MPi: TODO: Add the keyboardcheck from the scroller demo for changing the music.
+;MPi: TODO: Make the colour bars check the different music routine addresses for the status updates.
+
+mainline
+	; Wait for the bottom of the screen before updating everything
+	lda #255
+.wl1
+	cmp VIC2Raster
+	bne .wl1
+
+	; It is very important that music is played at the same raster position each frame to avoid
+	; notes having triggering problems.
+smP1	jsr $3003
+;	inc VIC2BorderColour
+
+	jsr ColourBarUpdate
+	jsr barcheck
+	jsr startscr
+	jsr GetKeyPressed
+	cmp #0
+	beq .continueMainline
+	cmp #$ff
+	bne .notStop
+	jsr UnsetPlayerColours
+smP3	jsr $3006
+	jmp .continueMainline
+.notStop
+	cmp #1
+	bne .cnot1
+	jsr SetPlayer1
+	lda #0
+	jsr $3000
+	lda #$30
+.updatePlayer
+	sta smP1+2
+	sta smP2+2
+	sta smP3+2
+	jmp .continueMainlineNoPlay
+.cnot1
+
+	cmp #2
+	bne .cnot2
+	jsr SetPlayer2
+	lda #0
+	jsr $4000
+	lda #$40
+	jmp .updatePlayer
+.cnot2
+
+	cmp #3
+	bne .cnot3
+	jsr SetPlayer3
+	lda #0
+	jsr $5000
+	lda #$50
+	jmp .updatePlayer
+.cnot3
+
+	cmp #4
+	bne .cnot4
+	jsr SetPlayer4
+	lda #0
+	jsr $6100
+	lda #$61
+	jmp .updatePlayer
+.cnot4
+
+	cmp #5
+	bne .cnot5
+	jsr SetPlayer5
+	lda #0
+	jsr $7800
+	lda #$78
+	jmp .updatePlayer
+.cnot5
+
+.continueMainline
+.continueMainlineNoPlay
+	jsr UpdateXScroll
+	jmp mainline
+
+.delay !by 0
+ColourBarUpdate
+	; Make the colour bars come in with a delayed effect
+	inc .delay
+	lda .delay
+	and #3
+	bne .s2
+	lda .smtb1+1
+	cmp #64
+	beq .s1
+	inc .smtb1+1
+	jmp .s2
+.s1
+
+	lda .smtb2+1
+	cmp #55
+	beq .s2
+	dec .smtb2+1
+.s2
+
+	inc cnt1
+	lda cnt1
+	and #3
+	bne m2
+	ldy coltab
+	ldx #0
+m1
+	lda coltab+1,x
+	sta coltab,x
+	inx
+	cpx #7
+	bne m1
+	sty coltab+7
+	lda cnt2
+	and #31
+	tax
+	ldy #56
+	jmp .smtb1	; For the test first off
+m3
+	lda colsbit1,x
+	sta coltab+$8,y
+;	sta coltab+$10,y
+	sta coltab+$18,y
+;	sta coltab+$20,y
+	sta coltab+$28,y
+;	sta coltab+$30,y
+	sta coltab+$38,y
+;	sta coltab+$40,y
+	sta coltab+$48,y
+;	sta coltab+$50,y
+	iny
+	inx
+	txa
+	and #31
+	tax
+.smtb1	cpy #56
+	bne m3
+	jsr cols2
+	inc cnt2
+m2
+	lda coltab+$43
+	sta VIC2ExtraBackgroundColour2
+	lda coltaz+$61
+	sta VIC2ExtraBackgroundColour1
+	rts
+
+
+colsbit1
+!by 0,11,12,15,1,10,2,0,6,14,3,1,3,14,6
+!by 14,3,1,3,14,6,0,2,10,1,15,12,11,0
+!by 9,2,8,10,15,7,1,15,12,11,0
+!by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+; Stars
+loscr !for .table1,25 {!by <((.table1-1) * 40) }
+hiscr !for .table1,25 {!by >(SCREENRAM+((.table1-1) * 40)) }
+
+stars !by 128,128,128,128
+xpos !by 11,13,25,24,2,13,34,12,23,32,13,2,3,32,17,13,21,9,8,3,27,34,2
+!by 34,12,14,22,7,32,2,13,1,10
+!by 34,12,14,22,7,32,2,13,1,10
+!by 1,8,4,1,14,21,28,23,7,8,14,21,26,24,15,8,5,13,28
+!by 34,12,14,7,32,2,13,1,10
+xpos2 !by 13,25,24,2,13,34,12,23,32,13,2,3,32,17,13,21,9,8,3,27,34,2
+!by 34,12,14,22,7,32,2,13,1,10
+!by 1,8,4,1,14,21,28,23,7,8,14,21,26,24,15,8,5,13,28
+!by 34,12,14,7,32,2,13,1,10
+xpos3 !by 13,24,2,13,34,12,0,1,23,32,13,2,3,32,23,17,13,21,9,8,3,27,34,2
+!by 34,12,14,7,32,2,13,1,10
+
+startscr
+	lda stars
+	clc
+	ror
+	ror
+	sta stars
+	bne star2
+	lda #128
+	sta stars
+	ldx #0
+st1
+	lda hiscr,x
+	sta $fc
+	lda loscr,x
+	sta $fb
+	lda xpos,x
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk1a
+	lda #3
+	sta ($fb),y
+sk1a
+	inc xpos,x
+	lda xpos,x
+	cmp #40
+	bne st2
+	lda #0
+	sta xpos,x
+st2
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk1b
+	lda #0
+	sta ($fb),y
+sk1b
+	inx
+	cpx #24
+	bne st1
+star2
+	lda stars
+	sta 2052
+	lsr
+	ora 2052
+	lsr
+	ora 2052
+	sta 2052
+	lda stars
+	lsr
+	sta 2051
+	sta 2053
+
+	lda stars+1
+	clc
+	ror
+	sta stars+1
+	bne star3
+	lda #128
+	sta stars+1
+	ldx #1
+st3
+	lda hiscr,x
+	sta $fc
+	lda loscr,x
+	sta $fb
+	lda xpos2,x
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk2a
+	lda #3
+	sta ($fb),y
+sk2a
+	inc xpos2,x
+	lda xpos2,x
+	cmp #40
+	bne st4
+	lda #0
+	sta xpos2,x
+st4
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk2b
+	lda #1
+	sta ($fb),y
+sk2b
+	inx
+	inx
+	cpx #23
+	bne st3
+star3
+	lda stars+1
+	sta 2052+8
+star3a
+	lda #0
+	sta stars+2
+	ldx #0
+st6
+	lda hiscr,x
+	sta $fc
+	lda loscr,x
+	sta $fb
+	lda xpos3,x
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk3a
+	lda #3
+	sta ($fb),y
+sk3a
+	inc xpos3,x
+	lda xpos3,x
+	cmp #40
+	bne st8
+	lda #0
+	sta xpos3,x
+st8
+	tay
+	lda ($fb),y
+	cmp #4
+	bcs sk3b
+	lda #2
+	sta ($fb),y
+sk3b
+	inx
+	inx
+	cpx #24
+	bne st6
+star4
+	lda #%11111
+	sta 2053+8+8
+	lda #%01110
+	sta 2054+8+8
+	sta 2052+8+8
+	lda #%00100
+	sta 2055+8+8
+	sta 2051+8+8
+	rts
+
+cols2
+	lda cnt2
+	and #31
+	tax
+	ldy #63
+	jmp .smtb2	; For the test first off
+mz3
+	lda colsbit1,x
+	sta coltaz,y
+;	sta coltaz+$8,y
+	sta coltaz+$10,y
+;	sta coltaz+$18,y
+	sta coltaz+$20,y
+;	sta coltaz+$28,y
+	sta coltaz+$30,y
+;	sta coltaz+$38,y
+	sta coltaz+$40,y
+;	sta coltaz+$48,y
+	dey
+	inx
+	txa
+	and #31
+	tax
+.smtb2	cpy #63
+	bne mz3
+	rts
+
+barl !by <bar1,<bar2,<bar3,<bar1
+barh !by >bar1,>bar2,>bar3,>bar1
+bar1
+!by 6,6,6,6,6,6,6,6
+!by 6,6,6,2,2,6,6,6
+!by 6,6,6,2,2,6,6,6
+!by 6,6,6,2,2,6,6,6
+!by 6,6,2,10,10,2,6,6
+!by 6,6,2,10,10,2,6,6
+!by 6,2,10,1,1,10,2,6
+!by 6,2,10,1,1,10,2,6
+bar2
+!by 6,6,6,6,6,6,6,6
+!by 6,6,6,11,11,6,6,6
+!by 6,6,11,12,12,11,6,6
+!by 6,6,11,12,12,11,6,6
+!by 6,11,12,15,15,12,11,6
+!by 6,11,12,15,15,12,11,6
+!by 11,12,15,1,1,15,12,11
+!by 11,12,15,1,1,15,12,11
+bar3
+!by 6,6,6,6,6,6,6,6
+!by 6,6,6,5,5,6,6,6
+!by 6,6,5,3,3,5,6,6
+!by 6,6,5,3,3,5,6,6
+!by 6,5,3,13,13,3,5,6
+!by 6,5,3,13,13,3,5,6
+!by 5,3,13,1,1,13,3,5
+!by 5,3,13,1,1,13,3,5
+barcnt !by 7,7,7,7
+btog !by 0
+bcnt1 !by 3
+
+barcheck
+	ldx #2
+bc1
+smP2	lda $300c,x		; .doubleNoteDurationLo
+	beq bc3
+bc3zy
+	lda bcnt1
+	and #3
+	bne bc2
+	lda barcnt,x
+	beq bc2z
+	dec barcnt,x
+bc2z
+	cpx #2
+	bne bc2
+	lda barcnt+1,x
+	beq bc2
+	dec barcnt+1,x
+	jmp bc2
+bc3
+	lda barcnt,x
+	cmp #6
+	bcs bc3m
+bc3y
+	lda #7
+	sta barcnt,x
+	jmp bc2
+bc3z
+	lda btog
+	eor #1
+	sta btog
+	cmp #1
+	beq bc3y
+bc3m
+	lda #7
+	sta barcnt+3
+bc2
+	dex
+	bpl bc1
+	inc bcnt1
+	ldx #3
+bc4
+	lda barl,x
+	sta smb1+1
+	lda barh,x
+	sta smb1+2
+	txa
+	asl
+	asl
+	asl
+	clc
+	sta smb2+1
+	adc #7
+	sta smb3+1
+	stx 820
+	dec smb2+1
+	lda barcnt,x
+	asl
+	asl
+	asl
+	tax
+smb3
+	ldy #7
+smb1
+	lda $ffff,x
+	sta coltab+24,y
+	dey
+	inx
+smb2
+	cpy #0
+	bne smb1
+	ldx 820
+	dex
+	bpl bc4
+	rts
+
+.lastKeyPressed !by 0
+.scannedKeys !by 0
+.testDifferent
+	cmp .lastKeyPressed
+	bne .differentKey
+	lda #0
+	rts
+.differentKey
+	sta .lastKeyPressed
+	rts
+
+.noKey
+	lda #0
+	sta .lastKeyPressed
+	rts
+
+GetKeyPressed
+	; Prime what part of the keyboard to read
+	lda #%01111111
+	sta CIA1KeyboardColumnJoystickA
+.again
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again
+	cmp #$ff
+	beq .noKey1
+	sta .scannedKeys
+	lda #%00000001
+	bit .scannedKeys
+	bne .not1
+	lda #1
+	jmp .testDifferent
+.not1
+	lda #%00001000
+	bit .scannedKeys
+	bne .not2
+	lda #2
+	jmp .testDifferent
+.not2
+
+	lda #%10000000
+	bit .scannedKeys
+	bne .notRunStop
+	lda #-1
+	jmp .testDifferent
+.notRunStop
+
+.noKey1
+	lda #%11111101
+	sta CIA1KeyboardColumnJoystickA
+.again2
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again2
+	cmp #$ff
+	beq .noKey2
+	sta .scannedKeys
+	lda #%00000001
+	bit .scannedKeys
+	bne .not3
+	lda #3
+	jmp .testDifferent
+.not3
+	lda #%00001000
+	bit .scannedKeys
+	bne .not4
+	lda #4
+	jmp .testDifferent
+.not4
+
+.noKey2
+	lda #%11111011
+	sta CIA1KeyboardColumnJoystickA
+.again3
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again3
+	cmp #$ff
+	beq .noKey3
+	sta .scannedKeys
+	lda #%00000001
+	bit .scannedKeys
+	bne .not5
+	lda #5
+	jmp .testDifferent
+.not5
+
+.noKey3
+	jmp .noKey
+
+
+.greyTab !by VIC2Colour_Black , VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey
+!by VIC2Colour_White , VIC2Colour_LightGrey , VIC2Colour_Grey , VIC2Colour_DarkGrey
+
+.greyTabCount !by 0
+
+UpdateXScroll
+	inc .greyTabCount
+	lda .greyTabCount
+	and #63
+	lsr
+	lsr
+	lsr
+	tax
+	lda .greyTab,x
+	ldx #39
+.fc1
+	sta COLOURRAM + (24*40),x
+	dex
+	bpl .fc1
+
+	; Pixel scroll and detect negative
+	dec smXScr+1
+	bmi .shiftIt
+	rts
+.shiftIt
+	lda #7
+	sta smXScr+1
+	ldx #0
+.scl1
+	lda SCREENRAM+(24*40)+1,x
+	sta SCREENRAM+(24*40),x
+	inx
+	cpx #39
+	bne .scl1
+
+smSTP	lda scrollText
+	cmp #32
+	bne .notSpace
+	lda #0
+.notSpace
+	cmp #'0'
+	bcc .isNotNum
+	clc
+	adc #$72
+	jmp .over1
+.isNotNum
+	clc
+	adc #128
+.over1
+	sta SCREENRAM+(24*40)+39
+
+	inc smSTP+1
+	bne .scl2
+	inc smSTP+2
+.scl2
+
+	lda smSTP+1
+	cmp #<scrollTextEnd
+	bne .scl3
+	lda smSTP+2
+	cmp #>scrollTextEnd
+	bne .scl3
+
+	lda #<scrollText
+	sta smSTP+1
+	lda #>scrollText
+	sta smSTP+2
+
+.scl3
+	rts
+
+!if 0 {
+musicTitle1 !scr "berzerk redux"
+!by 0
+
+musicTitle2 !scr "twinkly intro"
+!by 0
+
+musicTitle3 !scr "racing game"
+!by 0
+
+musicTitle4 !scr "tusari title"
+!by 0
+
+musicTitle5 !scr "tusari end"
+!by 0
+
+scrollText
+!scr "            use keys 1 to 5 to choose the music        "
+!scr "press run stop to stop the music        "
+!scr "the berzerk redux music was composed by richard bayliss       "
+!scr "the twinkly intro was converted from future composer v4 using the element 114 music convertor      "
+!scr "the racing game and tusari music was composed by alan peters       "
+scrollTextEnd
+
+*=$3000
+!bin "../MusicEditor/R3000BRZ.P00",,$1c
+
+*=$4000
+!bin "../MusicEditor/R4000BL1.P00",,$1c
+
+*=$5000
+!bin "../MusicEditor/R5000RCN.P00",,$1c
+
+*=$6100
+!bin "../MusicEditor/R6100TSR.P00",,$1c
+
+*=$7800
+!bin "../MusicEditor/R7800TSR.P00",,$1c
+}
+
+
+
+!if 1 {
+musicTitle1 !scr "mfit remix"
+!by 0
+
+musicTitle2 !scr "mood blender"
+!by 0
+
+musicTitle3 !scr "bare knuckle"
+!by 0
+
+musicTitle4 !scr "lobster"
+!by 0
+
+musicTitle5 !scr "model"
+!by 0
+
+scrollText
+!scr "            use keys 1 to 5 to choose the music        "
+!scr "press run stop to stop the music        "
+!scr "the mfit remix music was composed by richard bayliss       "
+!scr "mood blender   bare knuckle   lobster   model  were composed by necropolo       "
+scrollTextEnd
+
+*=$3000
+!bin "../MusicEditor/R3000MFT.P00",,$1c
+
+*=$4000
+!bin "../MusicEditor/R4000MDB.P00",,$1c
+
+*=$5000
+!bin "../MusicEditor/R5000BRK.P00",,$1c
+
+*=$6100
+!bin "../MusicEditor/R6100LBS.P00",,$1c
+
+*=$7800
+!bin "../MusicEditor/R7800MDL.P00",,$1c
+}

@@ -1,0 +1,176 @@
+;Music editor for the C64
+;Converted from the original 6510+ assembler source code
+!source "../stdlib/stdlib.a"
+!to "MusicEditor.prg", cbm
+!sal
+!sl "MusicEditor.map"
+!svl "MusicEditor.lbl"
+!cpu 6510
+!ct pet
+
+; TODO
+
+keyCodeY = 89
+
+; Various hard coded variables that need to be tidied
+
+track1 =$4600	; The start of the music data in memory. Must be aligned on $100 bytes.
+track2 =$4700
+track3 =$4800
+envdata=$4900	; Also called FX table data
+maxBlocks = $40
+loblock =$4a00
+hiblock =loblock + maxBlocks
+drumDataMagic=loblock + maxBlocks + maxBlocks	; Drum patterns magic value, used for upgrade detection.
+drumData=drumDataMagic+4	; Drum patterns
+drumDataEnd=drumData+(18*4)
+; Memory between drumDataEnd and waveMix is used for some player internal values and is cleared
+; by packmem.
+waveMix =$4ae0
+blocks =$4b00
+
+backupFXTableSpace = $c100
+
+
+!source "../stdlib/BASICEntry900.a"
+
+; This eventually gets overwritten by the menu buffer
+*=BASICEntry
+	lda #ProcessorPortAllRAM
+	jsr InitialiseMachine
+
+	; Setup a version number into the screen data
+	lda #'1' | $80
+	sta screen1 + (24*40)+37
+	lda #'.' | $80
+	sta screen1 + (24*40)+38
+	lda #'2' | $80
+	sta screen1 + (24*40)+39
+
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	+InitKERNALIO_AXY
+
+	jsr InitKeyboard
+	lda #0
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+
+	; Jump to main
+	jmp mainline
+
+; A = Start high address of the destination to store
+; X = lo source
+; Y = hi source
+MoveScreen
+!zn {
+	; Setup the self modifying addresses from the input
+	sta toAddr+2
+	clc
+	adc #8
+	sta toChk+1
+	txa
+	sta fromAddr+1
+	tya
+	sta fromAddr+2
+
+	; Turn off interrupts, VIC and chargen to enable RAM underneath
+	sei
+	lda #$2f
+	sta ZPProcessorPortDDR
+	lda #$34
+	sta ZPProcessorPort
+
+	; Start the copying until we reach the programmed end
+loop1
+	ldx #0
+loop2
+fromAddr
+	lda $4000,x				; Self modifying
+toAddr
+	sta VIC2Sprite0X,x				; Self modifying
+	inx
+	bne loop2
+	inc toAddr+2
+	inc fromAddr+2
+	lda toAddr+2
+toChk
+	cmp #$d8				; Self modifying
+	bne loop1
+
+	; Enable interupts and normal VIC
+	lda #$2f
+	sta ZPProcessorPortDDR
+	lda #$37
+	sta ZPProcessorPort
+	cli
+	rts
+}
+
+!source "MainScreen.a"
+!source "TrackEdit.a"
+!source "Storage.a"
+!source "BlockEdit.a"
+
+; MPi: TODO: Should really use MusicPlayerCodeToDataOffset offset from track1 to work out these three positions below.
+; Must be here at this location
+*=$3e00
+!source "MusicPlayerIRQ.a"
+
+; Must be here at this location
+; Must be aligned to $100 bytes
+*=$3f00
+RealMusicPlayerStart
+trcn = MusicPlayerTrackPos
+!source "MusicPlayer.a"
+
+; This file must be included after the real entry point for the music player code as the first time around the entry points are calculated as labels.
+; Must be aligned to $100 bytes
+*=$3700
+RelocMusicPlayerStart
+; It is safe to disable this include when not needing the relocate functionality and wanting to
+; set label break points in the main player code.
+!source "MusicPlayer.a"
+
+; Needed to get sensible envelope values in the default options
+; It also allows a bit of music to be loaded as default to test the product if the jsr clearall is commented out.
+*= track1
+!bin "114MUSDATA.bin"
+
+; The highest position music blocks can reach
+MaxUnpackedMusicAddress = $8c00
+*= MaxUnpackedMusicAddress
+!source "../stdlib/Initialise.a"
+!source "GetKey.a"
+!source "Directory.a"
+
+!align 255,0
+menubuffer1
+	!fill 256,0
+menubuffer2
+	!fill 256,0
+winbuffer1
+	!fill 256,0
+winbuffer2
+	!fill 256,0
+subtext
+	!fill 256,0
+
+*=$d000
+screen1
+!bin "screen1.bin",,2
+*=$d800
+screen2
+!bin "screen2.bin",,2
+*=$e000
+screen3
+!bin "screen3.bin",,2
+*=$e800
+screen4
+!bin "screen4.bin",,2
+*=$f000
+screen5
+!bin "screen5.bin",,2

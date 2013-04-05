@@ -1,0 +1,463 @@
+!zn {
+TurboTapeWriteSlowHeader
+;f76a
+	lda #3			; Flag for the secondary address, i.e. make this save unrelocatable
+	sta $9e       ; Tape Error log pass 1
+	jsr $f7d0     ; Get Buffer Address
+	bcc .ret
+	lda $c2       ; Start Address for LOAD and Cassette Write
+	pha
+	lda $c1       ; Start Address for LOAD and Cassette Write
+	pha
+	lda $af       ; Tape End Address/End of Program
+	pha
+	lda $ae       ; Tape End Address/End of Program
+	pha
+	ldy #$bf
+	lda #$20
+
+;f784
+.l1
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	dey
+	bne .l1
+	lda $9e       ; Tape Error log pass 1
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	iny
+	lda $c1       ; Start Address for LOAD and Cassette Write
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	iny
+	lda $c2       ; Start Address for LOAD and Cassette Write
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	iny
+	lda $ae       ; Tape End Address/End of Program
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	iny
+	lda $af       ; Tape End Address/End of Program
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	iny
+	sty $9f       ; Tape Error log pass 2
+	ldy #$00
+	sty $9e       ; Tape Error log pass 1
+
+;f7a5
+.l2
+
+	ldy $9e       ; Tape Error log pass 1
+	cpy $b7       ; Number of Characters in Filename
+	beq .pass
+	lda ($bb),y   ; Pointer: Current File name Address
+	ldy $9f       ; Tape Error log pass 2
+	sta ($b2),y   ; Pointer: Start Address of Tape Buffer
+	inc $9e       ; Tape Error log pass 1
+	inc $9f       ; Tape Error log pass 2
+	bne .l2
+
+;f7a9
+.pass
+
+	; Here we put our own data into the tape header
+	ldy #endTapeHeader - tapeHeader
+.l3
+	lda tapeHeader-1,y
+	sta $0351-1,y
+	dey
+	bne .l3
+
+	; Continue with normal kernal loader
+	jsr $f7d7     ; Set Buffer Stat / End Pointers
+	lda #$69
+	sta $ab       ; RS232 Input parity/Tape temporary
+	jsr $f86b     ; Initiate Tape Write
+	tay
+	pla
+	sta $ae       ; Tape End Address/End of Program
+	pla
+	sta $af       ; Tape End Address/End of Program
+	pla
+	sta $c1       ; Start Address for LOAD and Cassette Write
+	pla
+	sta $c2       ; Start Address for LOAD and Cassette Write
+	tya
+
+.ret
+	rts
+}
+
+!zn {
+TurboTapeFileDelay
+	; Now delay for a bit to let the cassette motor spin up
+	ldx #255
+	ldy #255
+.d1
+	dex
+	bne .d1
+	dec $d020
+	inc $d020
+	dey
+	bne .d1
+	rts
+}
+
+!zn {
+; Write the standard number of pilot tones
+TurboTapeWritePilot
+	ldy #192	; Plenty of bytes
+	jmp TurboTapeWritePilotVariable
+
+; Y = Number of pilot bytes to write. Usually 192.
+TurboTapeWritePilotVariable
+	; First we start the CIA timer at a constant rate so we can check for it and output at a constant rate.
+	; This is regardless about what other code is run during the save process resulting is a very stable data signal.
+	lda #$7f
+	sta CIA1InterruptControl
+	lda #<TapeTurboSpeed
+	sta CIA1TimerALo
+	lda #>TapeTurboSpeed
+	sta CIA1TimerAHi
+	lda #%10001
+	sta CIA1TimerAControl		; Start timer, this timer automatically restarts.
+	; Now check the timer getting triggered once first of all to avoid an overflow due to early timers being triggered
+	lda #0
+	sta CIA1InterruptControl
+	lda #1
+.tl1
+	bit CIA1InterruptControl
+	beq .tl1
+	lda #0
+	sta CIA1InterruptControl
+
+	; Now we are at the start of the timer sync so we start to save out our bytes
+
+	; We save some marker bytes first. This is so we can view what we are debugging with a known pattern.
+	; Marker bytes. We look for TapeSyncCode before accepting any bytes and then we check for TapeHeaderByteEx followed by TapeHeaderByteEx2 and the filename byte to make sure the header is really what we're expecting before progressing onto the other lo/hi byte pairs in the header
+	; First we write our pilot tones to allow for a wobbly tape motor and other various weird timings coming from the cassette.
+	; We also fill the bits just so we are sure what we might have coming from the cassette.
+.pilot1
+	lda #TapePilotCode1
+	jsr TurboTapeSaveByte
+	lda #TapePilotCode2
+	jsr TurboTapeSaveByte
+	dey
+	bne .pilot1
+
+	rts
+
+TurboTapeWriteStart
+	pha
+	lda #0
+	sta TurboTapeSaveChecksum
+	lda #TapeSyncCode
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx2
+	jsr TurboTapeSaveByte
+	pla
+	jsr TurboTapeSaveByte
+	; Lo hi of load address
+	txa
+	sta .sm1+1
+	jsr TurboTapeSaveByte
+	tya
+	sta .sm1+2
+	jsr TurboTapeSaveByte
+	rts
+
+TurboTapeWriteShortStart
+	lda #TapeSyncCode
+	jsr TurboTapeSaveByte
+	lda #TapeHeaderByteEx3
+	jsr TurboTapeSaveByte
+	rts
+
+
+; The boot loader does not use a header checksum
+TurboTapeWriteEnd
+	; Lo hi of end address (exclusive)
+	txa
+	sta .sm2+1
+	jsr TurboTapeSaveByte
+	tya
+	sta .sm3+1
+	jsr TurboTapeSaveByte
+	lda #0
+	sta TurboTapeSaveChecksum
+	rts
+
+;The bigger IRQ loader does use a header checksum
+TurboTapeWriteEndHeaderChecksum
+	; Lo hi of end address (exclusive)
+	txa
+	sta .sm2+1
+	jsr TurboTapeSaveByte
+	tya
+	sta .sm3+1
+	jsr TurboTapeSaveByte
+	lda TurboTapeSaveChecksum
+	jsr TurboTapeSaveByte
+	lda #0
+	sta TurboTapeSaveChecksum
+	rts
+
+TurboTapeSetEnd
+	; Lo hi of end address (exclusive)
+	stx .sm2+1
+	sty .sm3+1
+	lda #0
+	sta TurboTapeSaveChecksum
+	rts
+
+
+TurboTapeWriteData
+	; Just save some test code
+.i2
+.sm1	lda $0000
+	jsr TurboTapeSaveByte
+	inc .sm1+1
+	bne .i3
+	inc .sm2+2
+.i3
+.sm2	lda #0
+	cmp .sm1+2
+	bne .i2
+.sm3	lda #0
+	cmp .sm1+1
+	bne .i2
+	rts
+
+TurboTapeWriteLeadOut
+	; Write some leadout
+	lda #TapePilotCode1
+	jsr TurboTapeSaveByte
+	lda #TapePilotCode2
+	jsr TurboTapeSaveByte
+	rts
+}
+
+!zn {
+!macro waitMacro {
+	; Check for timing loss, i.e. we should be waiting for the timer not seeing it already triggered
+	lda #1
+	bit CIA1InterruptControl
+	beq .tl1
+.oops
+	inc VIC2BorderColour
+	jmp .oops
+.tl1
+	bit CIA1InterruptControl
+	beq .tl1
+}
+
+; Make sure the turbo tape code from here is aligned so that we get consistent write speeds no matter what is before here
+!align 255,0
+.buffer !by 0
+TurboTapeSaveChecksum !by 0
+.tempRegs !by 0,0,0
+; x,y preserved
+TurboTapeSaveByte
+	; Save
+	stx .tempRegs+1
+
+	sta .buffer
+	eor TurboTapeSaveChecksum
+	sta TurboTapeSaveChecksum
+
+	ldx #$08
+.go
+	asl .buffer
+
+	; Output a bit
+	; Carry indicates what bit to send and the wait time with the low signal will indicate a long or short pulse
+	+waitMacro
+	bcc .b0
+	+waitMacro
+.b0
+	lda #%0101			; Low signal level
+	sta ZPProcessorPort
+
+	+waitMacro
+	bcc .b1
+	+waitMacro
+.b1
+	lda #%1101			; Hi signal level
+	sta ZPProcessorPort
+
+	lda VIC2BorderColour
+	eor #5						; Better border colours with one less byte than using the clc/adc method
+	sta VIC2BorderColour
+
+	dex
+	bne .go
+
+	; And restore
+	ldx .tempRegs+1
+	rts
+
+!zn
+.filename !by 0
+.start !by 0,0
+.size !by 0,0
+.end !by 0,0
+.numBlocks !by 0
+; A = Filename
+; X,Y = Lo/Hi start
+TurboTapeWriteSetFilenameStart
+	sta .filename
+	stx .start
+	sty .start+1
+	rts
+
+; X,Y = Lo/Hi size
+TurboTapeWriteSetSize
+	stx .size
+	sty .size+1
+	rts
+
+.TurboTapeWriteCommon
+	lda .start
+	clc
+	adc .size
+	sta .end
+	lda .start+1
+	adc .size+1
+	sta .end+1
+
+	lda .size+1
+	sta .numBlocks
+	inc .numBlocks
+
+	jsr TurboTapeFileDelay
+	jsr TurboTapeWritePilot
+
+	rts
+
+!ifdef EnableBlockChecksum {
+; X,Y = Lo/Hi to write data from
+TurboTapeWriteFrom
+	stx .sm1+1
+	sty .sm1+2
+	jsr .TurboTapeWriteCommon
+	lda .size+1
+	beq .lastBlock
+
+	; Save blocks in 256 byte chunks first if the length is longer than 256 bytes
+.l1
+	lda .filename
+	ldx .start
+	ldy .start+1
+	jsr TurboTapeWriteStart
+	; Save how many blocks we are expecting for the whole file in this chunk
+	lda .numBlocks
+	jsr TurboTapeSaveByte
+	; 256 bytes
+	inc .start+1
+	ldx .start
+	ldy .start+1
+	jsr TurboTapeWriteEndHeaderChecksum
+
+	ldx #0
+	jsr .TurboTapeBlocksWriteFromChunk
+
+	ldy #2
+	jsr TurboTapeWritePilotVariable
+
+	dec .size+1
+	bne .l1
+
+.lastBlock
+	lda .size
+	beq .noMoreBlocks
+
+	lda .filename
+	ldx .start
+	ldy .start+1
+	jsr TurboTapeWriteStart
+	; Save how many blocks we are expecting for the whole file in this chunk
+	lda .numBlocks
+	jsr TurboTapeSaveByte
+	ldx .end
+	ldy .end+1
+	jsr TurboTapeWriteEndHeaderChecksum
+
+	ldx .size
+	jsr .TurboTapeBlocksWriteFromChunk
+
+.noMoreBlocks
+	jsr TurboTapeWriteLeadOut
+
+	rts
+
+; X = Number of bytes to write in this chunk
+.TurboTapeBlocksWriteFromChunk
+.re1
+.sm1	lda $1234
+	jsr TurboTapeSaveByte
+	inc .sm1+1
+	bne .s1
+	inc .sm1+2
+	inc VIC2BorderColour
+.s1
+	dex
+	bne .re1
+
+	lda TurboTapeSaveChecksum
+	jsr TurboTapeSaveByte
+
+	rts
+
+} else {	;< ifdef EnableBlockChecksum
+
+; X,Y = Lo/Hi to write data from
+TurboTapeWriteFrom
+	stx .sm2+1
+	sty .sm2+2
+
+	lda .sm2+1
+	clc
+	adc .size
+	sta .sm3+1
+	lda .sm2+2
+	adc .size+1
+	sta .sm4+1
+
+	jsr .TurboTapeWriteCommon
+
+	lda .filename
+	ldx .start
+	ldy .start+1
+	jsr TurboTapeWriteStart
+	; Save how many blocks we are expecting for the whole file in this chunk
+	lda .numBlocks
+	jsr TurboTapeSaveByte
+	ldx .end
+	ldy .end+1
+	jsr TurboTapeWriteEndHeaderChecksum
+
+.re2
+.sm2	lda $1234
+	jsr TurboTapeSaveByte
+	inc .sm2+1
+	bne .s2
+	inc .sm2+2
+	inc VIC2BorderColour
+.s2
+	; Have we finished saving yet?
+	lda .sm2+2
+.sm4	cmp #0
+	bne .re2
+	lda .sm2+1
+.sm3	cmp #0
+	bne .re2
+
+	; Done saving!
+	lda TurboTapeSaveChecksum
+	jsr TurboTapeSaveByte
+
+	jsr TurboTapeWriteLeadOut
+
+	rts
+} ;<< ifdef EnableBlockChecksum
+
+
+}

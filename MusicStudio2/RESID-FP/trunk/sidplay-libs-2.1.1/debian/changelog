@@ -1,0 +1,94 @@
+sidplay-libs (2.1.1-7) unstable; urgency=low
+
+  * Fix FTBFS issues with g++-4.3 (closes: #467459).
+  * Update to Standars-Version 3.7.3 and fix lintian warnings/errors.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Mon, 25 Feb 2008 18:44:08 +0000
+
+sidplay-libs (2.1.1-6) unstable; urgency=low
+
+  * Update configure.ac to fix FTBFS on GNU/kFreeBSD (closes: #401857).
+  * Update to Standars-Version 3.7.2 and fix lintian warnings/errors.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Fri, 20 Jul 2007 23:27:57 +0300
+
+sidplay-libs (2.1.1-5) unstable; urgency=low
+
+  * Fix extra qualification, patch by Martin Michlmayr (closes: #357710).
+  * Include hardsid support (closes: #353114).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Thu, 30 Mar 2006 21:19:47 +0000
+
+sidplay-libs (2.1.1-4) unstable; urgency=low
+
+  * Acknowledge NMU (closes: #339262).
+  * Fix faster playback due to a GCC4 optimisation problem (closes: #337347).
+  * Updated FSF address in copyright.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Thu,  9 Mar 2006 14:56:14 +0100
+
+sidplay-libs (2.1.1-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Medium-urgency upload for RC bugfix.
+  * Rename libresid-builder0 to libresid-builder0c2a for the C++ mt allocator
+    ABI transition, and conflict/replace libresid-builder0 accordingly
+    (closes: #339262).
+
+ -- Steve Langasek <vorlon@debian.org>  Sun,  4 Dec 2005 03:15:07 -0800
+
+sidplay-libs (2.1.1-3) unstable; urgency=low
+
+  * Drop c102 suffix from the package names due to C++ ABI transition.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Sat, 16 Jul 2005 20:19:00 +0200
+
+sidplay-libs (2.1.1-2) unstable; urgency=medium
+
+  * Fix FTBFS with g++-3.4 and gcc-4.0 on amd64 systems. Thanks to Daniel
+    Schepler and Andreas Jochens for the proposed fixes.
+  (closes: #283689, #288465).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Tue,  1 Feb 2005 19:05:47 +0100
+
+sidplay-libs (2.1.1-1) unstable; urgency=low
+
+  * New upstream version (libresid2c102 and libresid-dev packages are now
+    obsolete, and not being built).
+  * Changed email address.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.hu>  Thu, 25 Nov 2004 02:22:07 +0100
+
+sidplay-libs (2.1.0-4) unstable; urgency=medium
+
+  * Move resid libraries back to /usr/lib, as otherwise it would use
+    rpath which should be fixed for sidplay2 linking. Generate shlibs
+    file for the library (again for all of them).
+
+ -- László Böszörményi (GCS) <gcs@lsc.hu>  Mon, 23 Aug 2004 20:55:03 +0000
+
+sidplay-libs (2.1.0-3) unstable; urgency=medium
+
+  * Fix FTBFS with gcc 3.4 (closes: #259823).
+  * Add shlib files only to real libraries installed in /usr/lib.
+  * Cleaned rules a bit.
+  * Bumped up Standards-Version to 3.6.1, no changes needed.
+  * New maintainer.
+
+ -- László Böszörményi (GCS) <gcs@lsc.hu>  Sun, 15 Aug 2004 12:48:16 +0000
+
+sidplay-libs (2.1.0-2) unstable; urgency=low
+
+  * debian/control: Change the libsidutils description.  (Closes: #176671)
+
+ -- Ivo Timmermans <ivo@debian.org>  Sat, 15 Feb 2003 15:46:26 +0100
+
+sidplay-libs (2.1.0-1) unstable; urgency=low
+
+  * New upstream source package, which combines libsidplay, libresid,
+    libsidutils, libresid-builder.
+  * libsidplay2-1 and libresid2 have been renamed to libsidplay2-1c102 and
+    libresid2c102 because of the C++ ABI transition.
+
+ -- Ivo Timmermans <ivo@debian.org>  Sun, 12 Jan 2003 15:35:31 +0100
+

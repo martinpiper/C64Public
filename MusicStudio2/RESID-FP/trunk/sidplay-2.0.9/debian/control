@@ -1,0 +1,14 @@
+Source: sidplay
+Section: sound
+Priority: optional
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.hu>
+Build-Depends: debhelper (>= 4.0.0), libsidplay2-dev (>= 2.1.1-4), pkg-config, libresid-builder-dev (>= 2.1.1), libsidutils-dev, chrpath
+Homepage: http://sidplay2.sourceforge.net/
+Standards-Version: 3.7.3
+
+Package: sidplay
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Music player for tunes from C64 and C128 (console)
+ This is a simple music player for C64 and C128 tunes, also known as
+ SID tunes.

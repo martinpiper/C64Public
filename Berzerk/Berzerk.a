@@ -1,0 +1,2588 @@
+; The original Atari 2600 Berzerk code with tweaks to allow the C64 to run most of the same code.
+
+;To use Stella
+;D:\Downloads\stella-2.6.1\Stella.exe
+;Berzerk.bin
+
+; Choose to output Atari2600 or C64 code.
+; Useful for verifying that the original Atari code still assembles and produces a working game.
+MakeC64 = 1
+
+
+!source "../stdlib/stdlib.a"
+!if MakeC64 {
+!to "Berzerk.prg", cbm
+} else {
+!to "Berzerk.bin", plain
+}
+!sl "Berzerk.map"
+!svl "Berzerk.lbl"
+!cpu 6510
+!ct pet
+
+; Define what the multiplexor can use
+Multiplex_VarBase	= $40	; Somewhere safe after the Atari ZP vars
+Multiplex_spritepointer	= 1024 + 1016
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+Multiplex_DiscardSpritesYPos=250
+Multiplex_items	= 16
+!source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
+;Multiplexor_DebugBorder = 1
+Multiplex_EnableEarlyOut = 1
+
+ScreenTempLo = Multiplex_endVars
+ScreenTempHi = ScreenTempLo + 1
+
+!if MakeC64 {
+VSYNC = $03	; Moved away from C64 processor port
+VBLANK = $03	; Moved away from C64 processor port
+} else {
+VSYNC = $00
+VBLANK = $01
+}
+WSYNC = $02
+RSYNC = $03
+NUSIZ0 = $04
+NUSIZ1 = $05
+COLUP0 = $06
+COLUP1 = $07
+COLUPF = $08
+COLUBK = $09
+CTRLPF = $0A
+REFP0 = $0B
+REFP1 = $0C
+PF0 = $0D
+PF1 = $0E
+PF2 = $0F
+RESP0 = $10
+RESP1 = $11
+RESM0 = $12
+RESM1 = $13
+RESBL = $14
+AUDC0 = $15
+AUDC1 = $16
+AUDF0 = $17
+AUDF1 = $18
+AUDV0 = $19
+AUDV1 = $1A
+GRP0 = $1B
+GRP1 = $1C
+ENAM0 = $1D
+ENAM1 = $1E
+ENABL = $1F
+HMP0 = $20
+HMP1 = $21
+HMM0 = $22
+HMM1 = $23
+HMBL = $24
+VDELP0 = $25
+VDEL01 = $26
+VDELBL = $27
+RESMP0 = $28
+RESMP1 = $29
+HMOVE = $2A
+HMCLR = $2B
+CXCLR = $2C
+
+CXM0P=$30
+CXM1P=$31
+CXP0FB=$32
+CXP1FB=$33
+CXM0FB=$34
+CXM1FB=$35
+CXBLPF=$36
+CXPPMM=$37
+INPT0=$38
+INPT1=$39
+INPT2=$3A
+INPT3=$3B
+INPT4=$3C
+INPT5=$3D
+
+
+SWCHA	= $0280
+SWCHB	= $0282
+INTIM	= $0284
+TIM64T	= $0296
+
+
+ScanLine	= $0300
+SpriteNum	= $0301
+
+LOMEM	 = $80
+LOMEM1	 = $81
+
+;
+; Code equates
+;
+L0082	 = $82
+L0083	 = $83
+L0084	 = $84
+L0085	 = $85
+L0086	 = $86
+L0087	 = $87
+L0088	 = $88
+Plyr0SprDatL	 = $89
+Plyr0SprDatH	 = Plyr0SprDatL + 1
+PlayerYPos	 = $8B
+L008C	 = $8C
+L008D	 = $8D
+L008E	 = $8E
+L008F	 = $8F
+L0090	 = $90
+L0091	 = $91
+L0092	 = $92
+PlayerXPos	 = $93
+L0094	 = $94
+L0095	 = $95
+L0096	 = $96
+L0097	 = $97
+L0098	 = $98
+L0099	 = $99
+L009A	 = $9A
+L009B	 = $9B
+L009C	 = $9C
+L009D	 = $9D
+L009E	 = $9E
+L009F	 = $9F
+L00A6	 = $A6
+L00A7	 = $A7
+L00AE	 = $AE
+L00AF	 = $AF
+L00B7	 = $B7
+RobotYPos	 = $B8
+L00B9	 = $B9
+L00BE	 = $BE
+L00BF	 = $BF
+L00C0	 = $C0
+RobotXPos	 = $C1
+L00C2	 = $C2
+L00C8	 = $C8
+L00C9	 = $C9
+L00CA	 = $CA
+L00CB	 = $CB
+L00D0	 = $D0
+L00D1	 = $D1
+RobotFrame	 = $D2
+L00D3	 = $D3
+L00D9	 = $D9
+L00DA	 = $DA
+L00DB	 = $DB
+L00DC	 = $DC
+L00DD	 = $DD
+L00DE	 = $DE
+L00DF	 = $DF
+L00E0	 = $E0
+L00E1	 = $E1
+L00E2	 = $E2
+L00E3	 = $E3
+L00E4	 = $E4
+L00E5	 = $E5
+Plyr1SprDat	 = $E6
+L00E7	 = $E7
+L00E8	 = $E8
+L00E9	 = $E9
+L00EA	 = $EA
+L00EC	 = $EC
+L00EE	 = $EE
+L00F0	 = $F0
+L00F2	 = $F2
+L00F4	 = $F4
+L00F6	 = $F6
+L00F7	 = $F7
+L00F8	 = $F8
+L00F9	 = $F9
+L00FC	 = $FC
+Plyr0SprDat	 = $FD
+L00FE	 = $FE
+
+
+!if MakeC64 {
+
+!source "../stdlib/BASICEntry900.a"
+
+*=BASICEntry
+	jmp RealStart
+
+*=$4000
+.csCnt !by 0
+ConvertSprites
+	tya
+	pha
+	sty .csCnt
+.csl2
+	txa
+	pha
+	ldy #0
+.CSL1
+SpriteSM1	lda $0000
+	inc SpriteSM1+1
+	bne .retSpriteByte
+	inc SpriteSM1+2
+.retSpriteByte
+	sta ($80),y
+	iny
+	lda #0
+	sta ($80),y
+	iny
+	lda #0
+	sta ($80),y
+	iny
+	dex
+	bne .CSL1
+	; Convert the rest of the sprite
+.sprL1
+	cpy #64
+	beq .retSprite
+	iny
+	sta ($80),y
+	bne .sprL1
+.retSprite
+	lda $80
+	clc
+	adc #64
+	sta $80
+	bcc .over
+	inc $81
+.over
+	pla
+	tax
+	dec .csCnt
+	bne .csl2
+	pla
+	tay
+	rts
+
+RealStart
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	
+;	lda #%101 ; Tell VIC to display a char screen starting at $0000
+	lda #%10101 ; Tell VIC to display a char screen starting at $0400
+	sta VIC2MemorySetup
+
+	lda #%11011
+	sta VIC2ScreenControlV
+
+	lda #0
+	sta $80
+	lda #$20
+	sta $81
+	lda #<UDGRobot
+	sta SpriteSM1+1
+	lda #>UDGRobot
+	sta SpriteSM1+2
+	ldx #9
+	ldy #19
+	jsr ConvertSprites
+
+	lda #<UDGPlayer
+	sta SpriteSM1+1
+	lda #>UDGPlayer
+	sta SpriteSM1+2
+	ldx #12
+	ldy #32
+	jsr ConvertSprites
+
+	lda #255
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpriteDoubleWidth
+
+	; Clear memory to some known pattern so we can approximately judge memory use
+	lda #255
+	ldx #2
+.cl1
+	sta $00,x
+	inx
+	bne .cl1
+.cl2
+	sta $0100,x
+	sta $0200,x
+	sta $0300,x
+	inx
+	bne .cl2
+
+	jsr InitIRQs
+
+	lda #4
+	sta Multiplex_SpriteFrame
+	sta Multiplex_SpriteFrame+1
+	sta Multiplex_SpriteFrame+2
+	sta Multiplex_SpriteFrame+3
+	sta Multiplex_SpriteFrame+4
+	sta Multiplex_SpriteFrame+5
+	sta Multiplex_SpriteFrame+6
+	sta Multiplex_SpriteFrame+7
+	sta Multiplex_SpriteFrame+8
+	sta Multiplex_SpriteFrame+9
+	sta Multiplex_SpriteFrame+10
+	sta Multiplex_SpriteFrame+11
+	sta Multiplex_SpriteFrame+12
+	sta Multiplex_SpriteFrame+13
+	sta Multiplex_SpriteFrame+14
+	sta Multiplex_SpriteFrame+15
+
+	jmp AtariEntry
+
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+
+NMIRet
+	rti
+
+InitIRQs
+	lda #<Multiplex_maininter
+	sta KERNALIRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta KERNALIRQServiceRoutineHi
+
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+	lda #9;Multiplex_items
+	sta Multiplex_MaxSpr
+	jsr Multiplex_InitSort
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	cli
+	rts
+
+bottomMultiplexIRQDone !by 0
+
+irqAStore !by 0
+
+!source "../stdlib/Initialise.a"
+!source "../SpriteMultiplexor/SpriteMultiplexor.a"
+
+RegisterTemps !by 0,0,0
+
+ScanLineCalc
+	sta RegisterTemps
+	stx RegisterTemps+1
+	sty RegisterTemps+2
+	lda ScanLine
+	; Guard against going off the bottom
+	cmp #25*8
+	bcs .ExitScanLineCalc
+	and #7
+	cmp #7
+	beq .WholeChar
+.ExitScanLineCalc
+	inc ScanLine
+	lda RegisterTemps
+	ldx RegisterTemps+1
+	ldy RegisterTemps+2
+	rts
+
+.WholeChar
+	lda ScanLine
+	lsr
+	lsr
+	lsr
+	tax
+	lda .screenTabL,x
+	sta ScreenTempLo
+	lda .screenTabH,x
+	sta ScreenTempHi
+
+	ldy #0
+
+	lda PF0
+	and #1<<4
+	jsr .PutChar
+	lda PF0
+	and #1<<5
+	jsr .PutChar
+	lda PF0
+	and #1<<6
+	jsr .PutChar
+	lda PF0
+	and #1<<7
+	jsr .PutChar
+
+	lda PF1
+	and #1<<0
+	jsr .PutChar
+	lda PF1
+	and #1<<1
+	jsr .PutChar
+	lda PF1
+	and #1<<2
+	jsr .PutChar
+	lda PF1
+	and #1<<3
+	jsr .PutChar
+	lda PF1
+	and #1<<4
+	jsr .PutChar
+	lda PF1
+	and #1<<5
+	jsr .PutChar
+	lda PF1
+	and #1<<6
+	jsr .PutChar
+	lda PF1
+	and #1<<7
+	jsr .PutChar
+
+	lda PF2
+	and #1<<0
+	jsr .PutChar
+	lda PF2
+	and #1<<1
+	jsr .PutChar
+	lda PF2
+	and #1<<2
+	jsr .PutChar
+	lda PF2
+	and #1<<3
+	jsr .PutChar
+	lda PF2
+	and #1<<4
+	jsr .PutChar
+	lda PF2
+	and #1<<5
+	jsr .PutChar
+	lda PF2
+	and #1<<6
+	jsr .PutChar
+	lda PF2
+	and #1<<7
+	jsr .PutChar
+
+	lda CTRLPF
+	and #1
+	beq .NoReflectPF
+	jmp .ReflectPF
+
+.NoReflectPF
+	lda PF0
+	and #1<<4
+	jsr .PutChar
+	lda PF0
+	and #1<<5
+	jsr .PutChar
+	lda PF0
+	and #1<<6
+	jsr .PutChar
+	lda PF0
+	and #1<<7
+	jsr .PutChar
+
+	lda PF1
+	and #1<<0
+	jsr .PutChar
+	lda PF1
+	and #1<<1
+	jsr .PutChar
+	lda PF1
+	and #1<<2
+	jsr .PutChar
+	lda PF1
+	and #1<<3
+	jsr .PutChar
+	lda PF1
+	and #1<<4
+	jsr .PutChar
+	lda PF1
+	and #1<<5
+	jsr .PutChar
+	lda PF1
+	and #1<<6
+	jsr .PutChar
+	lda PF1
+	and #1<<7
+	jsr .PutChar
+
+	lda PF2
+	and #1<<0
+	jsr .PutChar
+	lda PF2
+	and #1<<1
+	jsr .PutChar
+	lda PF2
+	and #1<<2
+	jsr .PutChar
+	lda PF2
+	and #1<<3
+	jsr .PutChar
+	lda PF2
+	and #1<<4
+	jsr .PutChar
+	lda PF2
+	and #1<<5
+	jsr .PutChar
+	lda PF2
+	and #1<<6
+	jsr .PutChar
+	lda PF2
+	and #1<<7
+	jsr .PutChar
+	jmp .ExitScanLineCalc
+
+.ReflectPF
+	lda PF2
+	and #1<<7
+	jsr .PutChar
+	lda PF2
+	and #1<<6
+	jsr .PutChar
+	lda PF2
+	and #1<<5
+	jsr .PutChar
+	lda PF2
+	and #1<<4
+	jsr .PutChar
+	lda PF2
+	and #1<<3
+	jsr .PutChar
+	lda PF2
+	and #1<<2
+	jsr .PutChar
+	lda PF2
+	and #1<<1
+	jsr .PutChar
+	lda PF2
+	and #1<<0
+	jsr .PutChar
+
+	lda PF1
+	and #1<<7
+	jsr .PutChar
+	lda PF1
+	and #1<<6
+	jsr .PutChar
+	lda PF1
+	and #1<<5
+	jsr .PutChar
+	lda PF1
+	and #1<<4
+	jsr .PutChar
+	lda PF1
+	and #1<<3
+	jsr .PutChar
+	lda PF1
+	and #1<<2
+	jsr .PutChar
+	lda PF1
+	and #1<<1
+	jsr .PutChar
+	lda PF1
+	and #1<<0
+	jsr .PutChar
+
+	lda PF0
+	and #1<<7
+	jsr .PutChar
+	lda PF0
+	and #1<<6
+	jsr .PutChar
+	lda PF0
+	and #1<<5
+	jsr .PutChar
+	lda PF0
+	and #1<<4
+	jsr .PutChar
+	jmp .ExitScanLineCalc
+
+.PutChar
+	beq .pc1
+	lda #' '
+	sta (ScreenTempLo),y
+	iny
+	rts
+.pc1
+	lda #160
+	sta (ScreenTempLo),y
+	iny
+	rts
+
+.screenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+.screenTabH !for .table1,25 {!by >(1024+((.table1-1) * 40)) }
+}
+
+
+
+;
+; Start of code
+;
+!if MakeC64 {
+	; Just align for the C64
+!align 255,0
+} else {
+	; The original start of the Atari 2600 version
+	*= $F000
+}
+AtariEntry
+	jmp LF9AC
+LF003	lda Plyr0SprDatL
+	lda Plyr0SprDatL
+	lda Plyr0SprDatL
+	jmp LF03E
+LF00C	nop
+	nop
+	jmp LF03E
+LF011
+	lda CXP1FB
+	ora CXM0P
+	ora CXPPMM
+	and #$80
+	bit CXM1P
+	bvc LF01F
+	ora #$01
+LF01F	sta L00C9,X
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+!if MakeC64 = 0 {
+	lda Plyr0SprDatL
+	lda Plyr0SprDat
+	sta GRP0
+	lda (L008F),Y
+	sta ENAM0
+	nop
+	lda Plyr0SprDatL
+	lda Plyr0SprDatL
+}
+	cpy L008C
+	bcc LF003
+	cpy L008D
+	bcs LF00C
+!if MakeC64 = 0 {
+	lda (Plyr0SprDatL),Y
+	sta Plyr0SprDat
+}
+LF03E	iny
+	tya
+	lsr
+	clc
+	adc L0083
+	tax
+	lda LFE00,X
+	sta PF2
+	lda LFD00,X
+	sta PF1
+	lda LFB00,X
+	ora L00E1
+	sta PF0
+!if MakeC64 = 0 {
+	lda Plyr1SprDat
+	sta GRP1
+}
+	ldx L00FE
+	bmi LF076
+	lda Plyr0SprDatL
+!if MakeC64 = 0 {
+LF060	dex
+	bpl LF060
+	sta RESP1
+	lda (L0098),Y
+	sta ENAM1
+	ldx L00FC
+	lda L00AF,X
+	tax
+	lda UDGRobot,X
+	sta Plyr1SprDat
+}
+	jmp LF08B
+LF076
+!if MakeC64 = 0 {
+	lda (L0098),Y
+	sta ENAM1
+	ldx L00FC
+	lda L00AF,X
+	tax
+	lda UDGRobot,X
+	sta Plyr1SprDat
+	ldx L00FE
+LF086	inx
+	bmi LF086
+	sta RESP1
+}
+LF08B	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	; Robot move
+	sta HMOVE
+LF08F	lda Plyr0SprDat
+	sta GRP0
+	lda (L008F),Y
+	sta ENAM0
+	nop
+	lda Plyr0SprDatL
+	lda Plyr0SprDatL
+	cpy L008C
+	bcc LF103
+	cpy L008D
+	bcs LF10B
+	lda (Plyr0SprDatL),Y
+	sta Plyr0SprDat
+LF0A8	iny
+	tya
+	lsr
+	clc
+	adc L0083
+	tax
+	lda LFE00,X
+	sta PF2
+	lda LFD00,X
+	sta PF1
+	lda LFB00,X
+	ora L00E1
+	sta PF0
+	lda Plyr1SprDat
+	sta GRP1
+	lda (L0098),Y
+	sta ENAM1
+	ldx L00FC
+!if MakeC64 {
+	; No store WSYNC but this is needed because this scanline has no WSYNC wait because the code just runs on over to the next scanline
+	jsr ScanLineCalc
+}
+	tya
+	cmp RobotYPos,X
+	bne LF0DE
+	lda L009F,X
+	sta HMP1
+	lda L00A7,X
+	sta L00FE
+	lda #$00
+	sta Plyr1SprDat
+	jmp LF011
+LF0DE	bcc LF0FA
+	sec
+	sbc #$09
+	bmi LF0EB
+	cmp RobotYPos,X
+	bcc LF0EB
+	inc L00FC
+LF0EB	inc L00AF,X
+	lda L00AF,X
+	tax
+	lda UDGRobot,X
+LF0F3	sta Plyr1SprDat
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	jmp LF08F
+LF0FA	cpy #$57
+	bcs LF110
+	lda #$00
+	jmp LF0F3
+LF103	nop
+	lda Plyr0SprDatL
+	lda Plyr0SprDatL
+	jmp LF0A8
+LF10B	lda Plyr0SprDatL
+	jmp LF0A8
+LF110	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda Plyr0SprDat
+	sta GRP0
+	lda (L008F),Y
+	sta ENAM0
+	cpy L008D
+	bcs LF122
+	lda (Plyr0SprDatL),Y
+	sta Plyr0SprDat
+LF122	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$E0
+	sta PF0
+	lda #$FF
+	sta PF1
+	lda #$07
+	ldx L00E2
+	cpx #$01
+	bne LF136
+	lda #$FF
+LF136	sta PF2
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda Plyr0SprDat
+	sta GRP0
+	lda #$00
+	sta GRP1
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta GRP1
+	sta GRP0
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda CXP1FB
+	ora CXM0P
+	ora CXPPMM
+	and #$80
+	bit CXM1P
+	bvc LF158
+	ora #$01
+LF158	ldx L00FC
+	sta L00C9,X
+LF15C	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta REFP0
+	sta HMP1
+	lda #$03
+	sta NUSIZ0
+	sta NUSIZ1
+	lda #$1C
+	eor L0085
+	sta COLUP0
+	sta COLUP1
+	lda #$01
+	sta VDELP0
+	sta VDEL01
+	ldx #$06
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+!if MakeC64 = 0 {
+LF182	dex
+	bpl LF182
+	nop
+	sta RESP0
+	sta RESP1
+}
+	lda #$F0
+	sta HMP0
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	; Something to do with player?
+	sta HMOVE
+	lda #$06
+	sta L00E8
+	; Displays the "(C)1982 Atari" logo or the score characters
+	; It appears to change GRP during the middle of the scan to display more data
+LF196	ldy L00E8
+	lda (L00EA),Y
+	sta GRP0
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda (L00EC),Y
+	sta GRP1
+	lda (L00EE),Y
+	sta GRP0
+	lda (L00F0),Y
+	sta L00E9
+	lda (L00F2),Y
+	tax
+	lda (L00F4),Y
+	tay
+	lda L00E9
+	sta GRP1
+	stx GRP0
+	sty GRP1
+	sta GRP0
+	dec L00E8
+	bpl LF196
+	lda #$00
+	sta GRP0
+	sta GRP1
+	sta GRP0
+	sta NUSIZ0
+	sta NUSIZ1
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$03
+	sta VBLANK
+	lda #$24
+	sta TIM64T
+	lda LOMEM1
+	bpl LF1E4
+	jmp LF8B2
+LF1E4	ldx #$85
+	lda L00DA
+	bpl LF1EE
+ 	lda INPT4
+	bpl LF1F5
+LF1EE	lda SWCHB
+	and #$01
+	bne LF1FC
+LF1F5	ldy L0084
+	lda #$00
+	jmp LF9B4
+LF1FC	lda LOMEM
+	bne LF202
+	inc LOMEM
+LF202	lda SWCHB
+	and #$02
+	bne LF22E
+	sta AUDV0
+	sta AUDV1
+	lda L0086
+	bne LF230
+	lda LOMEM
+	cmp #$12
+	bcc LF219
+	lda #$00
+LF219	clc
+	sed
+	adc #$01
+	cld
+LF21E	sta LOMEM
+	sta L00DE
+	lda #$AA
+	sta L00DD
+	sta L00DF
+	sta L00DA
+	sta L00E5
+	lda #$1A
+LF22E	sta L0086
+LF230	dec L0086
+	lda L00DA
+	bpl LF24D
+	lda L0084
+	bne LF23C
+	inc L0085
+LF23C	ldx #$03
+LF23E	lda LFCF5,X
+	eor L0085
+	and #$F7
+	sta COLUP0,X
+	dex
+	bpl LF23E
+	jmp LF42C
+LF24D	lda L00E5
+	cmp #$FF
+	beq LF259
+	sec
+	ror L00E5
+	jmp LF42C
+LF259	ldx #$00
+	ldy #$03
+	lda L009D
+LF25F	cmp LFC8D,Y
+	beq LF27D
+	dey
+	bpl LF25F
+	lda L009E
+	beq LF27D
+	cmp #$54
+	beq LF27D
+	bit CXPPMM
+	bvs LF27D
+	bit CXM1P
+	bvs LF27D
+	bmi LF27D
+	bit CXM1FB
+	bpl LF28D
+LF27D	lda L009A
+	cmp #$0F
+	beq LF285
+	stx L009A
+LF285	stx L0098
+	stx AUDV1
+	lda #$FB
+	sta L0099
+LF28D	ldy #$03
+	lda L0096
+LF291	cmp LFC8D,Y
+	beq LF2B1
+	dey
+	bpl LF291
+	lda L0097
+	beq LF2B1
+	cmp #$54
+	beq LF2B1
+	bit CXPPMM
+	bvs LF2B1
+	bit CXM0P
+	bvs LF2B1
+	bmi LF2B1
+	bit CXM0FB
+	bvs LF2B1
+	bpl LF2CB
+LF2B1	stx AUDV0
+	stx L0094
+	stx L008F
+	lda #$FB
+	sta L0090
+	bit CXM0P
+	bvc LF2CB
+	lda L0088
+	and #$10
+	beq LF2CB
+	lda #$02
+	sta L00F6
+	sta CXCLR
+LF2CB	lda L0091
+	cmp #$03
+	bcc LF2F1
+	bpl LF2DA
+	ldy #$03
+	dec L00DA
+	jmp LF85F
+LF2DA	inc L0091
+	ldx #$00
+	and #$02
+	beq LF2E6
+	ldx #$25
+	lda #$01
+LF2E6	sta AUDF0
+	stx Plyr0SprDat
+	lda #$0E
+	sta AUDV0
+	jmp LF3A4
+LF2F1	lda L00F6
+	cmp #$03
+	bcc LF320
+	lda L0084
+	ror
+	bcs LF339
+	lda L00AE
+	clc
+	adc #$07
+	cmp PlayerXPos
+	bcc LF320
+	lda PlayerXPos
+	clc
+	adc #$07
+	cmp L00AE
+	bcc LF320
+	lda L00D9
+	clc
+	adc #$0B
+	cmp PlayerYPos
+	bcc LF320
+	lda PlayerYPos
+	clc
+	adc #$14
+	cmp L00D9
+	bcs LF32C
+LF320	bit CXM1P
+	bmi LF32C
+	bit CXPPMM
+	bmi LF32C
+	bit CXP0FB
+	bpl LF339
+LF32C	lda #$03
+	sta L0091
+	lda #$08
+	sta AUDC0
+	sta L00F7
+	jmp LF2DA
+LF339	lda #$00
+	sta L00E7
+	lda #$7F
+	sta L00E8
+	lda SWCHA
+	lsr
+	lsr
+	lsr
+	lsr
+	eor #$0F
+	and #$0F
+	bne LF363
+	lda #$00
+	sta L0091
+	sta Plyr0SprDat
+	sta L0092
+	lda L0084
+	bne LF365
+	inc L0087
+	bne LF365
+	lda LOMEM
+	jmp LF21E
+LF363	sta L008E
+LF365	ldx L0091
+	lda LFCAF,X
+	sta Plyr0SprDat
+	lda INPT4
+	bmi LF3A4
+	lda #$00
+	sta L0092
+	lda L008E
+	and #$03
+	tax
+	lda LFCDB,X
+	sta Plyr0SprDat
+	lda L0094
+	bne LF3A4
+	jsr LFA50
+	inc L0094
+	ldx L008E
+	stx L0095
+	lda PlayerXPos
+	clc
+	adc LFCEA,X
+	sta L0096
+	lda PlayerYPos
+	lsr
+	clc
+	adc LFCDF,X
+	sta L0097
+	lda #$0A
+	sta AUDC0
+	lda #$FF
+	sta L00F7
+LF3A4	lda L0094
+	beq LF3E8
+	ldx L0095
+	lda L0097
+	clc
+	adc LFCB3,X
+	sta L0097
+	lda #$5A
+	sec
+	sbc L0097
+	sta L008F
+	lda #$FB
+	sta L0090
+	lda L00F7
+	bpl LF3CE
+	lsr
+	sta AUDV0
+	and #$0F
+	beq LF3CA
+	dec L00F7
+LF3CA	eor #$0F
+	sta AUDF0
+LF3CE	lda #$00
+	sta NUSIZ0
+	lda LFCC3,X
+	beq LF3E3
+	asl
+	clc
+	adc L0096
+	sta L0096
+	ldx #$20
+	stx NUSIZ0
+	lda #$58
+LF3E3	clc
+	adc L008F
+	sta L008F
+LF3E8	lda L0091
+	cmp #$03
+	bcs LF42C
+	lda L0092
+	clc
+	adc #$70
+	sta L0092
+	bcc LF42C
+	dec L0091
+	bpl LF3FF
+	lda #$02
+	sta L0091
+LF3FF	ldx L008E
+	lda PlayerYPos
+	clc
+	adc LFCB3,X
+	sta PlayerYPos
+	lda PlayerXPos
+	clc
+	adc LFCC3,X
+	sta PlayerXPos
+	ldy #$02
+	lda PlayerXPos
+	beq LF429
+	iny
+	cmp #$92
+	bcs LF429
+	ldy #$00
+	lda PlayerYPos
+	cmp #$02
+	bcc LF429
+	iny
+	cmp #$98
+	bne LF42C
+LF429	jmp LF85F
+LF42C	lda L008E
+	asl
+	sta REFP0
+	lda PlayerYPos
+	jsr LFA04
+	lda #>UDGPlayer
+	sta Plyr0SprDatH
+	lda L0096
+	jsr LFED7
+	ldx #$02
+	jsr LFEF3
+	lda L0084
+	ror
+	bcs LF477
+	lda L00BE
+	cmp #$7F
+	bne LF477
+	lda L0088
+	and #$30
+	beq LF477
+	ldx L00F6
+	cpx #$03
+	bcs LF47A
+	lda L0084
+	bne LF477
+	inc L00F6
+	lda #$01
+	sta L00F9
+	ldy L00E2
+	lda LFFEA,Y
+	sta L00D9
+	sta L00D1
+	adc #$10
+	sta L00C8
+	lda LFFE6,Y
+	sta L00AE
+LF477	jmp LF4F3
+LF47A	lda RobotYPos
+	cmp #$7F
+	beq LF487
+	lda L00E0
+	asl
+	adc L00B7
+	bcc LF4D8
+LF487	lda L00F9
+	clc
+	adc L00D9
+	sta L00D9
+	cmp L00D1
+	bcs LF4EA
+	ldx #$03
+LF494	stx L00F9
+	lda L00D1
+	cmp PlayerYPos
+	bcs LF4A4
+	inc L00D1
+	inc L00D1
+	inc L00D1
+	inc L00D1
+LF4A4	dec L00D1
+	dec L00D1
+	lda L00D1
+	clc
+	adc #$14
+	cmp #$9B
+	bcc LF4B3
+	lda #$9A
+LF4B3	sta L00C8
+LF4B5	ldx L00F9
+	bmi LF4CA
+	lda L00D1
+	adc #$05
+	cmp L00D9
+	bcs LF4CA
+	lda L00C8
+	sta L00D9
+	lda #$0E
+	jmp LF4DA
+LF4CA	lda L00AE
+	cmp PlayerXPos
+	beq LF4D8
+	bcs LF4D6
+	inc L00AE
+	inc L00AE
+LF4D6	dec L00AE
+LF4D8	lda #$01
+LF4DA	sta Plyr0SprDat
+	lda L00D9
+	jsr LFA04
+	lda #>UDGEVILOTTO
+	sta Plyr0SprDatH
+	lda L00AE
+	jmp LF4F5
+LF4EA	cmp L00C8
+	bcc LF4B5
+	ldx #$FC
+	jmp LF494
+LF4F3	lda PlayerXPos
+LF4F5	jsr LFED7
+	ldx #$00
+	jsr LFEF3
+; Top of the frame
+!if MakeC64 {
+	jsr ScanLineCalc
+	dec VIC2BorderColour
+	lda #254
+RasterWait
+	cmp VIC2Raster
+	bcs RasterWait
+	inc VIC2BorderColour
+	lda #0
+	sta ScanLine
+	sta SpriteNum
+
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .noFire
+	lda #0
+	sta INPT4
+	beq .nextJoy
+.noFire
+	lda #128
+	sta INPT4
+.nextJoy
+	lda #$ef
+	cmp CIA1KeyboardRowsJoystickB
+	beq .spacePressed
+	lda #%1011
+	sta SWCHB
+	jmp .overSpace
+.spacePressed
+	lda #%1010
+	sta SWCHB
+.overSpace
+
+	; Decode C64 joystick to Atari
+	lda #%11111111
+	sta SWCHA
+	lda #%0001
+	bit CIA1KeyboardColumnJoystickA
+	bne .joyNotUp
+	lda SWCHA
+	eor #%00010000
+	sta SWCHA
+.joyNotUp
+	lda #%0010
+	bit CIA1KeyboardColumnJoystickA
+	bne .joyNotDown
+	lda SWCHA
+	eor #%00100000
+	sta SWCHA
+.joyNotDown
+	lda #%0100
+	bit CIA1KeyboardColumnJoystickA
+	bne .joyNotLeft
+	lda SWCHA
+	eor #%01000000
+	sta SWCHA
+.joyNotLeft
+	lda #%1000
+	bit CIA1KeyboardColumnJoystickA
+	bne .joyNotRight
+	lda SWCHA
+	eor #%10000000
+	sta SWCHA
+.joyNotRight
+
+	; Decode robot data from Atari to C64
+	ldx #0
+.spl1
+	lda RobotYPos,x
+	cmp #$7f
+	bne .active1
+	lda #$ff
+	jmp .notActive
+.active1
+	asl
+	clc
+	adc #50
+.notActive
+	sta Multiplex_YPos,x
+	lda RobotXPos,x
+	clc
+	adc #15
+	asl
+	sta Multiplex_XPosLo,x
+	lda #0
+	rol
+	sta Multiplex_XPosHi,x
+	lda RobotFrame,x
+	tay
+	lda RobotFrameOffsetDiv9,y
+	clc
+	adc #128
+	sta Multiplex_SpriteFrame,x
+	inx
+	cpx #8
+	bne .spl1
+
+	; Decode player data from Atari to C64
+	lda PlayerXPos
+	clc
+	adc #15
+	asl
+	sta Multiplex_XPosLo,x
+	lda #0
+	rol
+	sta Multiplex_XPosHi,x
+	lda PlayerYPos
+	clc
+	adc #50
+	sta Multiplex_YPos,x
+
+	ldy RealPlayerSpriteIndex
+	lda PlayerFrameOffsetDiv12,y
+	clc
+	adc #128+19
+	sta Multiplex_SpriteFrame,x
+}
+LF4FD	lda INTIM
+	bne LF4FD
+	lda #$03
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta VBLANK
+	sta VSYNC
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	inc L0084
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	ldy #$2C
+	sty WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sty TIM64T
+	ldy #$00
+	sty VSYNC
+	lda L00DD
+	ora L00DE
+	ora L00DF
+	beq LF59A
+	ldx #$0A
+	lda #$5C
+LF527	sta L00EA,X
+	dex
+	dex
+	bpl LF527
+	lda LOMEM1
+	bpl LF543
+	ldx #$0A
+	ldy L00DA
+LF535	dey
+	bmi LF540
+	lda #$63
+	sta L00EA,X
+	dex
+	dex
+	bpl LF535
+LF540	jmp LF907
+LF543	lda L00DA
+	bmi LF55B
+	lda RobotYPos
+	cmp #$7F
+	bne LF55B
+	lda #$16
+	sta L00EC
+	ldx L00DB
+	lda LFC0B,X
+	sta L00EA
+	jmp LF59A
+LF55B	ldy #$02
+	lda #$0A
+	sta Plyr1SprDat
+LF561	lda L00DD,Y
+	and #$0F
+	tax
+	lda LFC0B,X
+	ldx Plyr1SprDat
+	sta L00EA,X
+	dec Plyr1SprDat
+	dec Plyr1SprDat
+	lda L00DD,Y
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	lda LFC0B,X
+	ldx Plyr1SprDat
+	sta L00EA,X
+	dec Plyr1SprDat
+	dey
+	dec Plyr1SprDat
+	bpl LF561
+	ldx #$00
+LF58A	lda L00EA,X
+	cmp #$16
+	bne LF59A
+	lda #$5C
+	sta L00EA,X
+	inx
+	inx
+	cpx #$0A
+	bcc LF58A
+LF59A	lda LOMEM1
+	bmi LF540
+	jsr LFA50
+	ldx #$00
+	clc
+	lda L00B7
+	adc L00E0
+	sta L00B7
+	bcc LF5AE
+	ldx #$01
+LF5AE	stx L009F
+	ldx #$00
+	stx Plyr1SprDat
+LF5B4	lda RobotYPos,X
+	cmp #$7F
+	beq LF610
+	ldy RobotFrame,X
+	cpy #$17
+	bcc LF5C3
+	jmp LF680
+LF5C3	jsr LFA9C
+	bcs LF610
+	lda L009F
+	beq LF610
+	cpy #$08
+	bcs LF5DD
+LF5D0	lda RobotAnimFrameIndex,Y
+	sta RobotFrame,X
+	jmp LF69B
+LF5D8	ldy #$00
+	jmp LF5D0
+LF5DD	cpy #$08
+	bne LF613
+	lda L00E5
+	cmp #$FF
+	bne LF5D0
+	jsr LFADD
+	cpx L00E9
+	bne LF5D8
+	lda L00E4
+	bpl LF602
+	ldy #$13
+	lda PlayerYPos
+	lsr
+	cmp RobotYPos,X
+	beq LF5D8
+	bcs LF5FF
+	ldy #$10
+LF5FF	jmp LF60E
+LF602	ldy #$0C
+	lda RobotXPos,X
+	cmp PlayerXPos
+	beq LF5D8
+	bcc LF60E
+	ldy #$09
+LF60E	sty RobotFrame,X
+LF610	jmp LF69B
+LF613	cpy #$0C
+	bcs LF624
+	lda RobotXPos,X
+	cmp PlayerXPos
+	bcc LF5D8
+	beq LF5D8
+	dec RobotXPos,X
+	jmp LF5D0
+LF624	cpy #$0F
+	bcs LF633
+	lda RobotXPos,X
+	cmp PlayerXPos
+	bcs LF5D8
+	inc RobotXPos,X
+	jmp LF5D0
+LF633	cpy #$13
+	bcs LF65B
+	lda PlayerYPos
+	lsr
+	adc #$03
+	cmp RobotYPos,X
+	beq LF5D8
+	bcs LF602
+	cpy #$0F
+	beq LF658
+	cpy #$11
+	beq LF658
+	txa
+	beq LF656
+	lda L00B7,X
+	clc
+	adc #$0A
+	cmp RobotYPos,X
+	bcs LF602
+LF656	dec RobotYPos,X
+LF658	jmp LF5D0
+LF65B	lda PlayerYPos
+	lsr
+	cmp RobotYPos,X
+	beq LF602
+	bcc LF602
+	cpy #$13
+	beq LF67D
+	cpy #$15
+	beq LF67D
+	lda L00B9
+	cmp #$7F
+	beq LF67B
+	lda RobotYPos,X
+	clc
+	adc #$0B
+	cmp L00B9,X
+	bcs LF602
+LF67B	inc RobotYPos,X
+LF67D	jmp LF5D0
+LF680	lda L00CA,X
+	beq LF686
+	inc Plyr1SprDat
+LF686	inc RobotFrame,X
+	lda RobotFrame,X
+	cmp #$1B
+	bcc LF69B
+	jsr LFAB7
+	lda #$50
+	jsr LFA19
+	inc L00DB
+	jmp LF5B4
+LF69B	inx
+	cpx #$08
+	beq LF6A3
+	jmp LF5B4
+LF6A3	lda L00BF
+	cmp #$7F
+	bne LF6AF
+	lda L00E5
+	cmp #$FF
+	beq LF6B2
+LF6AF	jmp LF7B1
+LF6B2	lda L00DC
+	lsr
+	beq LF6AF
+	lda L009A
+	cmp #$0F
+	bne LF6C5
+	inc L009C
+	bpl LF6AF
+	lda #$00
+	sta L009A
+LF6C5	lda L0088
+	ror
+	bcc LF6AF
+	lda L009A
+	beq LF6D1
+	jmp LF743
+LF6D1	lda L009F
+	bne LF6AF
+	lda #$FF
+	sta L009B
+	lda L0084
+	and #$07
+	tax
+	lda RobotYPos,X
+	cmp #$7F
+	beq LF6AF
+	lda RobotFrame,X
+	cmp #$17
+	bcs LF6AF
+	lda PlayerXPos
+	sec
+	sbc #$08
+	cmp RobotXPos,X
+	bcs LF708
+	clc
+	adc #$10
+	cmp RobotXPos,X
+	bcc LF708
+	ldy #$04
+	lda PlayerYPos
+	lsr
+	cmp RobotYPos,X
+	bcs LF705
+	ldy #$08
+LF705	jmp LF723
+LF708	lda PlayerYPos
+	lsr
+	sec
+	sbc #$06
+	cmp RobotYPos,X
+	bcs LF6AF
+	clc
+	adc #$0C
+	cmp RobotYPos,X
+	bcc LF6AF
+	ldy #$02
+	lda RobotXPos,X
+	cmp PlayerXPos
+	bcs LF723
+	ldy #$01
+LF723	lda RobotFrame,X
+	cmp #$09
+	bcc LF72D
+	lda #$00
+	sta RobotFrame,X
+LF72D	lda #$FF
+	sta L00F8
+	lda LFC91,Y
+	clc
+	adc RobotYPos,X
+	sta L009E
+	lda LFC9C,Y
+	clc
+	adc RobotXPos,X
+	sta L009D
+	sty L009A
+LF743	lda L009A
+	and #$03
+	beq LF74D
+	lda #$20
+	sta NUSIZ1
+LF74D	lda L00DC
+	cmp #$10
+	bcs LF75E
+	ror
+	tax
+	lda RobotBulletSpeed,X
+	adc L009B
+	sta L009B
+	bcc LF7B1
+LF75E	lda L009A
+	beq LF7B1
+	cmp #$0F
+	beq LF7B1
+	and #$0C
+	beq LF774
+	and #$04
+	beq LF772
+	inc L009E
+	inc L009E
+LF772	dec L009E
+LF774	lda #$5A
+	sec
+	sbc L009E
+	sta L0098
+	lda #$FB
+	sta L0099
+	lda L00F8
+	bpl LF794
+	lsr
+	sta AUDV1
+	and #$0F
+	beq LF78C
+	dec L00F8
+LF78C	eor #$0F
+	sta AUDF1
+	lda #$0E
+	sta AUDC1
+LF794	lda L009A
+	and #$03
+	beq LF7B1
+	and #$01
+	beq LF7A6
+	inc L009D
+	inc L009D
+	inc L009D
+	inc L009D
+LF7A6	dec L009D
+	dec L009D
+	lda #$58
+	clc
+	adc L0098
+	sta L0098
+LF7B1	lda L009D
+	jsr LFED7
+	ldx #$03
+	jsr LFEF3
+	lda L00F8
+	bmi LF7CD
+	sta AUDV1
+	beq LF7C5
+	dec L00F8
+LF7C5	eor #$0F
+	sta AUDF1
+	lda #$08
+	sta AUDC1
+LF7CD	ldx #$07
+LF7CF	ldy RobotFrame,X
+	lda RobotFrameOffset,Y
+	sta L00AF,X
+	dex
+	bpl LF7CF
+	ldx #$07
+LF7DB	lda RobotYPos,X
+	cmp #$7F
+	beq LF7F6
+	lda RobotXPos,X
+	jsr LFED7
+	sta L009F,X
+	dey
+	tya
+	cmp #$05
+	bcc LF7F4
+	sbc #$04
+	eor #$FF
+	tay
+	iny
+LF7F4	sty L00A7,X
+LF7F6	dex
+	bpl LF7DB
+	ldy #$00
+	sty L00FC
+	sty Plyr1SprDat
+	sty Plyr0SprDat
+	sty GRP0
+	sty ENAM1
+	sty ENAM0
+	sty VDEL01
+	lda L0085
+	bne LF828
+	lda #$3C
+	sta COLUP0
+	lda L00E5
+	cmp #$FF
+	beq LF81D
+	tya
+	sty COLUP0
+	jmp LF826
+LF81D	lda L00DC
+	lsr
+	and #$07
+	tax
+	lda LFCD3,X
+LF826	sta COLUP1
+LF828	lda #$E0
+	sta PF0
+	lda #$FF
+	sta PF1
+	lda #$07
+	ldx L00E2
+	bne LF838
+	lda #$FF
+LF838	sta PF2
+LF83A	lda INTIM
+	bne LF83A
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	; Player move
+	sta HMOVE
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta VBLANK
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta HMCLR
+	sta CXCLR
+	ldy #$02
+	cpy L008C
+	bcc LF857
+	lda (Plyr0SprDatL),Y
+	sta Plyr0SprDat
+LF857	iny
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	jmp LF08F
+LF85F	sty Plyr1SprDat
+	inc L00DC
+	lda RobotYPos
+	cmp #$7F
+	bne LF872
+	lda L00DB
+	asl
+	asl
+	asl
+	asl
+	jsr LFA19
+LF872	lda #$7F
+	sta RobotYPos
+	sta PlayerYPos
+	lda L00DC
+	lsr
+	and #$07
+	tax
+	lda LFCA7,X
+	sta L00E0
+	lda #$0F
+	sta L009A
+	lda #$00
+	sta L009C
+	sta L0084
+	sta L0098
+	sta L00A6
+	sta L00F7
+	sta AUDV1
+	sta L0091
+	sta L0094
+	sta L008F
+	sta L00F6
+	lda #$58
+	sta L00D0
+	lda LOMEM1
+	cmp #$03
+	bne LF8AB
+	lda #$05
+	sta L00F7
+LF8AB	lda #$FF
+	sta LOMEM1
+	jmp LF42C
+LF8B2	ldy Plyr1SprDat
+	cpy #$01
+	beq LF8BA
+	inc L00A6
+LF8BA	cpy #$00
+	beq LF8C0
+	dec L00D0
+LF8C0	lda L00A6
+	cmp L00D0
+	bcs LF8C9
+	jmp LF42C
+LF8C9	lda #$02
+	sta LOMEM1
+	ldx #$00
+	cpy #$02
+	bcc LF8D5
+	ldx #$20
+LF8D5	stx L00E1
+	lda LFFE2,Y
+	sta L00E2
+	tay
+	lda LFFEA,Y
+	sta PlayerYPos
+	lda LFFE6,Y
+	sta PlayerXPos
+	jsr LFED7
+	ldx #$00
+	jsr LFEF3
+	lda L00E4
+	and #$03
+	cmp L0082
+	bne LF8F9
+	eor #$02
+LF8F9	sta L0082
+	tay
+	lda LFFDE,Y
+	sta L0083
+	jsr LFA73
+	jmp LF42C
+LF907	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta AUDV0
+	ldx L00F7
+	beq LF92A
+	lda L0084
+	and #$07
+	bne LF922
+	lda LFCF8,X
+	sta AUDF0
+	dec L00F7
+LF922	lda #$0D
+	sta AUDC0
+	lda #$0D
+	sta AUDV0
+LF92A	ldx INTIM
+	bne LF92A
+	stx WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	stx VBLANK
+	lda L00A6
+	beq LF948
+LF937	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	inx
+	cpx L00A6
+	bne LF937
+LF948	cpx L00D0
+	beq LF986
+	cpx #$02
+	bcs LF964
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$E0
+	sta PF0
+	lda #$FF
+	sta PF1
+	lda #$07
+	sta PF2
+	inx
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	jmp LF948
+LF964	cpx #$56
+	bcs LF99D
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	txa
+	lsr
+	clc
+	adc L0083
+	tay
+	; Displays the background but only while wiping it between screens
+	lda LFB01,Y
+	sta PF0
+	lda LFD01,Y
+	sta PF1
+	lda LFE01,Y
+LF97D	sta PF2
+	inx
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	cpx L00D0
+	bne LF964
+LF986	cpx #$58
+	beq LF99A
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	inx
+	jmp LF986
+LF99A	jmp LF15C
+LF99D	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	lda #$E0
+	sta PF0
+	lda #$FF
+	sta PF1
+	lda #$07
+	jmp LF97D
+LF9AC	ldy INTIM
+	ldx #$FF
+	txs
+	inx
+	txa
+!if MakeC64 {
+	; Stop the code stomping on the C64 processor port
+	ldx #2
+.acl1	sta $00,X
+	inx
+	cpx #$40
+	bne .acl1
+
+	; This needs to be 0 to allow the Berzerk code to start properly
+	lda #0
+	sta INTIM
+	; This fudges the input so we don't try to start a game
+	lda #%1011
+	sta SWCHB
+	lda #$ff
+	sta SWCHA
+
+	lda #128	; Simulate not pressing any button
+;	lda #0		; Simulate holding down fire
+	sta INPT4
+	sta INPT5
+
+	lda #0
+	ldx #$80
+LF9B4	sta $00,X
+	inx
+	bne LF9B4
+} else {
+LF9B4	sta $00,X
+	inx
+	bne LF9B4
+}
+	cld
+	sta COLUBK
+	lda #$88
+	sta COLUPF
+	lda #$11
+	sta CTRLPF
+	lda #$7F
+	sta L00C0
+	sty L00E4
+	tya
+	eor #$B5
+	sta L00E3
+	lda #$0F
+	sta L009A
+	ldx #$02
+	lda LOMEM1
+	bne LF9DB
+	ldx #$FF
+LF9DB	stx L00DA
+	ldy #$02
+	sty L008E
+	iny
+	ldx #$0B
+LF9E4	lda LF9F8,X
+	sta L00EA,X
+	dex
+	bpl LF9E4
+	ldx LOMEM
+	lda LFEC4,X
+	sta L0088
+	inc L0087
+	jmp LF85F
+LF9F8	!by <UDGSpace,>UDGSpace,<UDGCopyright,>UDGCopyright,<UDGAtariLogo1,>UDGAtariLogo1,<UDGAtariLogo2,>UDGAtariLogo2
+	!by <UDGAtariLogo3,>UDGAtariLogo3,<UDGAtariLogo4,>UDGAtariLogo4
+LFA04	sta VDELP0
+	lsr
+	sta L008C
+	clc
+	adc #$0D
+	sta L008D
+	; Figures out what sprite data for player 0
+	; It can either be the player or Evil Otto
+	; <UDGPlayer and <UDGEVILOTTO should both be exactly the same because the graphics for both are $100 bytes apart
+!if MakeC64 {
+	lda Plyr0SprDat
+	sta RealPlayerSpriteIndex
+}
+	lda #<UDGPlayer
+	sec
+	sbc L008C
+	clc
+	adc Plyr0SprDat
+	sta Plyr0SprDatL
+	rts
+!if MakeC64 {
+RealPlayerSpriteIndex !by 0
+}
+LFA19	ldy L00DE
+	sty L00E7
+	ldy #$02
+	sed
+	clc
+LFA21	adc L00DD,Y
+	sta L00DD,Y
+	lda #$00
+	dey
+	bpl LFA21
+	cld
+	bit L0088
+	bvs LFA3B
+	bpl LFA4F
+	lda L00E7
+	and #$1F
+	cmp #$19
+	bne LFA4F
+LFA3B	lda L00E7
+	and #$0F
+	cmp #$09
+	bne LFA4F
+	lda L00E7
+	cmp L00DE
+	beq LFA4F
+	lda #$03
+	sta LOMEM1
+	inc L00DA
+LFA4F	rts
+LFA50	lda L00E3
+	asl
+	eor L00E3
+	asl
+	asl
+	rol L00E4
+	rol L00E3
+	lda L00E4
+	and #$7F
+	sta Plyr1SprDat
+LFA61	clc
+	adc L00E7
+	sec
+	cmp L00E8
+	bcc LFA72
+	beq LFA72
+	lsr Plyr1SprDat
+	lda Plyr1SprDat
+	jmp LFA61
+LFA72	rts
+LFA73	ldx #$07
+	lda #$00
+	sta L00DB
+	sta L00E5
+	sta L00E7
+	lda #$87
+	sta L00E8
+	lda #$4B
+LFA83	sta L00E9
+	sta RobotYPos,X
+	jsr LFA50
+	sta RobotXPos,X
+	jsr LFA50
+	and #$07
+	sta RobotFrame,X
+	lda L00E9
+	sec
+	sbc #$0A
+	dex
+	bpl LFA83
+	rts
+LFA9C	lda Plyr1SprDat
+	bne LFAB5
+	lda L00CA,X
+	beq LFAB5
+	lda #$17
+	sta RobotFrame,X
+	lda L00E5
+	cmp #$FF
+	beq LFAB1
+	jsr LFAB7
+LFAB1	inc Plyr1SprDat
+	sec
+	rts
+LFAB5	clc
+	rts
+LFAB7	txa
+	tay
+; Seems to expire a certain robot from the enemy list by moving everthing else down by one
+LFAB9
+	; Colour?
+	lda L00CB,X
+	sta L00CA,X
+	; Frame
+	lda L00D3,X
+	sta RobotFrame,X
+	; x pos
+	lda L00C2,X
+	sta RobotXPos,X
+	; Logically this would be the y pos
+	lda L00B9,X
+	sta RobotYPos,X
+	inx
+	cmp #$7F
+	bne LFAB9
+	inc L00E0
+	inc L00E0
+	lda #$08
+	sta AUDC1
+	lda #$0F
+	sta L00F8
+	tya
+	tax
+	rts
+LFADD	ldy #$03
+	lda #$00
+LFAE1	clc
+	adc #$22
+	cmp PlayerXPos
+	bcs LFAEB
+	dey
+	bpl LFAE1
+LFAEB	lda PlayerYPos
+	cmp #$50
+	bcs LFAF5
+	iny
+	iny
+	iny
+	iny
+LFAF5	tya
+	eor L00E4
+	and #$07
+	sta L00E9
+	rts
+	!by $00,$00,$00
+!align 255,0,0	; Background data must be on a page boundary due to cycle timing issues
+LFB00	!by $00
+LFB01	!by $00,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $E0,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$2F,$2F,$2F,$20,$20,$20,$20
+	!by $20,$20,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$20,$20,$20,$20
+	!by $20,$20,$20,$20,$20,$20,$20,$20
+	!by $20,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$FF,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00
+LFC0B	!by $16,$1D,$24,$2B,$32,$39,$40,$47
+	!by $4E,$55,$5C
+UDGCHAR0   !by $7E,$72,$72,$72,$72,$72,$7E,$1C
+	!by $1C,$1C,$1C,$1C,$1C,$3C,$7E,$40
+	!by $7E,$0E,$0E,$4E,$7E,$7E,$4E,$0E
+	!by $1C,$0E,$4E,$7E,$1C,$1C,$7E,$5C
+	!by $5C,$5C,$7C,$7E,$4E,$0E,$7E,$40
+	!by $4E,$7E,$7E,$4E,$4E,$7E,$40,$4E
+	!by $7E,$0E,$0E,$0E,$0E,$0E,$4E,$7E
+	!by $7E,$4E,$4E,$7E,$72,$72,$7E,$7E
+	!by $72,$02,$7E,$72,$72,$7E
+
+UDGSpace	!by $00,$00,$00,$00,$00,$00,$00
+	!by $18,$18,$18,$5A,$3C,$00,$18
+
+; These graphics are upside down, reflected in Y
+; Makes up the message "(C)1982 Atari"
+UDGCopyright	!by $79,$85,$B5,$A5,$B5,$85,$79
+UDGAtariLogo1	!by $17,$15,$15,$77,$55,$55,$77
+UDGAtariLogo2	!by $71,$41,$41,$71,$11,$51,$70
+UDGAtariLogo3	!by $49,$49,$49,$C9,$49,$49,$BE
+UDGAtariLogo4	!by $55,$55,$55,$D9,$55,$55,$99
+
+
+LFC8D	!by $00,$01,$94,$95
+
+
+LFC91	!by $00,$07,$07,$00,$06,$06,$00,$00
+	!by $01,$06,$00
+LFC9C	!by $03,$09,$03,$03,$04,$0A,$03,$03
+	!by $04,$03,$03
+LFCA7	!by $20,$28,$30,$38,$40,$48,$50,$58
+LFCAF	!by $00,$0C,$18,$25
+LFCB3	!by $00,$FF,$01,$00,$00,$FF,$01,$00
+	!by $00,$FF,$01,$00,$00,$00,$00,$00
+LFCC3	!by $00,$00,$00,$00,$FF,$FF,$FF,$FF
+	!by $01,$01,$01,$01,$00,$00,$00,$00
+	; Robot colour
+LFCD3	!by $1A,$36,$0C,$CA,$4C,$A8,$FC,$58
+LFCDB	!by $31,$49,$3D,$31
+LFCDF	!by $00,$02,$07,$00,$05,$05,$07,$00
+	!by $05,$05,$07
+LFCEA	!by $00,$07,$08,$00,$00,$00,$00,$00
+	!by $06,$06,$06
+LFCF5	!by $40,$01,$F2
+LFCF8	!by $84,$00,$1F,$10,$02,$0A,$11,$18
+
+	; Something to do with the background
+
+!align 255,0,0	; Background data must be on a page boundary due to cycle timing issues
+LFD00	!by $00
+LFD01	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$08,$08,$08,$08,$08
+	!by $08,$08,$08,$08,$08,$0F,$0F,$08
+	!by $08,$08,$08,$08,$08,$08,$08,$08
+	!by $08,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $FF,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$08,$08,$08,$08,$08,$08,$08
+	!by $08,$08,$08,$08,$08,$08,$08,$08
+	!by $08,$08,$08,$08,$08,$08,$08,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+UDGPlayer  !by $00,$18,$18,$00,$3C,$5A,$5A,$18,$18
+	!by $18,$1C,$00,$00,$18,$18,$00,$38
+	!by $58,$3C,$18,$08,$64,$44,$00,$00
+	!by $18,$18,$00,$38,$18,$3C,$18,$F4
+	!by $82,$03,$00,$00,$3C,$24,$24,$3C
+	!by $C3,$A5,$A5,$E7,$26,$22,$2E,$38
+	!by $00,$18,$18,$00,$1E,$18,$18,$18
+	!by $18,$18,$1C,$00,$00,$18,$18,$00
+	!by $3C,$3A,$3A,$18,$18,$18,$1C,$00
+	!by $00,$18,$18,$02,$1C,$18,$18,$18
+	!by $18,$18,$1C,$00,$00,$00
+
+!align 255,0,0	; Background data must be on a page boundary due to cycle timing issues
+LFE00	!by $00
+LFE01	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$FF,$FF,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$04,$04,$04,$04,$04
+	!by $04,$04,$04,$04,$04,$04,$04,$04
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $07,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$04,$04,$04
+	!by $04,$04,$04,$04,$04,$04,$04,$04
+	!by $04,$04,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$04,$04,$04,$04,$04,$04
+	!by $04,$04,$04,$04,$04,$04,$04,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$00,$00,$00,$00,$00,$00,$00
+
+UDGEVILOTTO	!by $00,$3C,$7E,$DB,$FF,$BD,$C3,$7E
+	!by $3C,$00,$00,$00,$00,$00,$00,$00
+	!by $00,$3C,$7E,$DB,$FF,$7F,$00,$00
+	!by $00,$00,$00
+LFEC4	!by $49,$49,$51,$61,$89,$91,$A1,$09
+	!by $11,$21,$00,$00,$00,$00,$00,$00
+	!by $60,$50,$48
+
+	; Funny place to have code
+LFED7	ldy #$00
+	clc
+	adc #$01
+	cmp #$2D
+	bcc LFEE4
+	ldy #$03
+	sbc #$2D
+LFEE4	sec
+LFEE5	iny
+	sbc #$0F
+	bcs LFEE5
+	eor #$FF
+	sbc #$06
+	asl
+	asl
+	asl
+	asl
+	rts
+LFEF3	sta WSYNC
+!if MakeC64 {
+	jsr ScanLineCalc
+}
+	nop
+	nop
+	sta HMP0,X
+	lda HMP0
+LFEFB	dey
+	bpl LFEFB
+	sta RESP0,X
+	rts
+
+RobotFrameOffset
+	!by $00,$00,$09,$12,$1B,$24,$2D,$36
+	!by $3F,$48,$51,$51,$5A,$63,$63,$6C
+	!by $00,$75,$00,$24,$87,$24,$7E,$90
+	!by $99,$A2,$A2
+!if MakeC64 {
+RobotFrameOffsetDiv9
+	!by $00/9,$00/9,$09/9,$12/9,$1B/9,$24/9,$2D/9,$36/9
+	!by $3F/9,$48/9,$51/9,$51/9,$5A/9,$63/9,$63/9,$6C/9
+	!by $00/9,$75/9,$00/9,$24/9,$87/9,$24/9,$7E/9,$90/9
+	!by $99/9,$A2/9,$A2/9
+PlayerFrameOffsetDiv12
+	!for .table1,255 {!by <((.table1-1) / 12) }
+}
+RobotAnimFrameIndex
+	!by $01,$02,$03,$04,$05,$06,$07,$08
+	!by $00,$0A,$0B,$09,$0D,$0E,$0C,$10
+	!by $11,$12,$0F,$14,$15,$16,$13
+UDGRobot
+	!by $3C,$7E,$FF,$BD,$BD,$24,$24,$66
+	!by $00,$3C,$3E,$FF,$BD,$BD,$24,$24
+	!by $66,$00,$3C,$1E,$FF,$BD,$BD,$24
+	!by $24,$66,$00,$3C,$4E,$FF,$BD,$BD
+	!by $24,$24,$66,$00,$3C,$66,$FF,$BD
+	!by $BD,$24,$24,$66,$00,$3C,$72,$FF
+	!by $BD,$BD,$24,$24,$66,$00,$3C,$78
+	!by $FF,$BD,$BD,$24,$24,$66,$00,$3C
+	!by $7C,$FF,$BD,$BD,$24,$24,$66,$00
+	!by $3C,$3E,$FF,$BD,$BD,$24,$24,$6C
+	!by $00,$3C,$3E,$FF,$BD,$BD,$18,$18
+	!by $38,$00,$3C,$7C,$FF,$BD,$BD,$24
+	!by $24,$36,$00,$3C,$7C,$FF,$BD,$BD
+	!by $18,$18,$1C,$00,$3C,$7E,$FF,$BD
+	!by $BD,$24,$24,$64,$06,$3C,$7E,$FF
+	!by $BD,$BD,$24,$24,$26,$60,$3C,$66
+	!by $FF,$BD,$BD,$24,$24,$64,$06,$3C
+	!by $66,$FF,$BD,$BD,$24,$24,$26,$60
+	!by $00,$00,$00,$24,$18,$00,$00,$00
+	!by $00,$14,$42,$81,$24,$00,$00,$52
+	!by $24,$00,$42,$81,$24,$00,$42,$3C
+	!by $81,$42,$00
+LFFDE	!by $00,$2A,$54,$7E
+LFFE2	!by $01,$00,$03,$02
+	; Something to do with player positions after going through doors?
+LFFE6	!by $49,$49,$06,$8B
+LFFEA	!by $08,$8E,$4A,$4A
+
+; Robot firing bullet speed
+RobotBulletSpeed	!by $38,$40,$50,$60,$78,$90,$B0,$D0
+
+!if MakeC64 = 0 {
+*= $fffc
+	!by <AtariEntry,>AtariEntry
+	!by $00,$00
+}

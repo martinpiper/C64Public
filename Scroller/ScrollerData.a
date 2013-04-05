@@ -1,0 +1,511 @@
+!ifdef Scroller_MultiDirection {
+!align 255,0
+BlockColours
+!bin "../FreeDirRant/level4.blk",$80
+
+!align 255,0
+BlockData
+!bin "../FreeDirRant/level4.blk",,$80
+
+!align 255,0
+; First two bytes = width,height
+MapData
+!bin "../FreeDirRant/level4.map"
+
+BackgroundFixedColours
+!by $9, $f ,$c
+
+} else {
+; Include some demonstration SEUCK data instead
+; The SEUCK data files are in VICE file format which means they have $1a bytes of extra file
+; header information, then there are 2 bytes of load address and the real memory start address
+; is meant to be $900, hence each !bin command uses offsets starting with "$1a + 2 - $900", the
+; last offset is therefore a memory address for the particular part of SEUCK memory.
+
+; Changing the "GAME3" to "GAME1" will include the other game example file.
+!macro SEUCKFileData .offset, .size {
+!bin "../SEUCK/GAME1__I.P00",.offset,.size
+;!bin "../SEUCK/GAME2__I.P00",.offset,.size
+;!bin "../SEUCK/GAME3__I.P00",.offset,.size
+;!bin "../SEUCK/GAME4__I.P00",.offset,.size
+;!bin "../SEUCK/demo4.bin",.offset,.size
+;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
+;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
+; Horizontal SEUCK files
+;!bin "../SEUCK/LOTD___I.P00",.offset,.size
+;!bin "../SEUCK/SIDEWAYS.P00",.offset,.size
+;!bin "../SEUCK/BAPHOMET.P00",.offset,.size
+;!bin "../SEUCK/AEONDATA.P00",.offset,.size
+;!bin "../SEUCK/PLMBAMSE___I.P00",.offset,.size
+;!bin "../SEUCK/NYAAAAHI.P00",.offset,.size
+;!bin "../SEUCK/PURGE101.P00",.offset,.size
+}
+
+; This macro includes the LotD extra data
+!macro SEUCKFileData2 .offset, .size {
+!bin "../SEUCK/LTDSPLLS.P00",.offset,.size
+}
+
+!align 255,0
+BlockColours
++SEUCKFileData $80,$1a + 2 - $900 + $1900
+
+!align 255,0
+BlockData
++SEUCKFileData $c80,$1a + 2 - $900 + $1a00
+
+!align 255,0
+; This map is 8 blocks wide so it equals $200 (512) blocks high
+MapData
++SEUCKFileData $1000,$1a + 2 - $900 + $900
+
+;$4085,86,87 = VIC2ScreenColour, VIC2ExtraBackgroundColour1, VIC2ExtraBackgroundColour2
+BackgroundFixedColours
++SEUCKFileData 3,$1a + 2 - $900 + $4085
+
+SpriteFixedColours
++SEUCKFileData 1,$1a + 2 - $900 + $4081
++SEUCKFileData 1,$1a + 2 - $900 + $4083
+}
+
+; Adding different music player support is as simple as:
+; 1) Comment out the the UseE114Music label below which stops "MusicPlayer.a" and "R.MUS8000.PRG" being included.
+; 2) Include whatever music file you want instead of the placeholder "your custom music file.prg". Remember by default the music player starts at $8000
+; 3) Define labels for MusicPlayerInit and MusicPlayerPlay that point to the other music routine's entry points.
+!ifdef Scroller_LOTD { } else {
+UseE114Music = 1
+}
+
+; There is some spare space here for code and data growth
+
+!ifdef Scroller_NoMusic {} else {
+!ifdef UseE114Music {
+; Include demonstration music from the Element 114 music editor
+*=$8000
+maxBlocks = $40
+; Pull in newest music player code. By default it assumes the music is MusicPlayerCodeToDataOffset bytes after the start
+!source "../MusicEditor/MusicPlayer.a"
+
+; Strip out the relocated music player from the binary file and just include the music data.
+*=MusicPlayerDataStart
+!bin "R.MUS8000.PRG",,MusicPlayerCodeToDataOffset+2
+} else {
+; Demonstrate how to include some other music player instead
+; Music players do not have to start at $8000 but it helps use this part of memory before the
+; graphics at $c000-$ffff
+*=$8000
+; Replace this !bin to include whatever music player you want
+!bin "LotDTitle.prg",,$2	; Remember to skip any lo/hi file information by using $2
+; Define these to point the entry points of the included music routine.
+MusicPlayerInit = $8000
+MusicPlayerPlay = $8003
+}
+}
+!align 255,0
+
+
+!ifdef Scroller_MultiDirection { } else {
+
+; Seems to actually be $340c-$3fcf
+; Appears to be two stacks growing from the start and the end of memory.
+; $3fcc/3fcd = lo/hi of the end of the start memory i.e. This pointer grows upwards through memory
+; $3fce/3fcf = lo/hi of the start of the end memory. i.e. This pointer grows downwards through memory
+; From the start:
+; 7 bytes per enemy
+; 0-1	- Map pos. Pixels = Bits 0-2 then char rows using the remaining bits from both bytes
+; e.g. Block 1 = char row 5 = $28 = 5 * 8 = 40
+; 2-3	- lo/hi address of offset movement data. e.g. $3fcb
+; 4		- x pos div 2 from the screen pos used
+; 5		- y pos
+; 6		- Enemy animation number
+; Or ff ff (as the position) signals the end of attack waves
+
+; From the end the movement data stream is stored in reverse order such that the initial pointer
+; counts backwards until the data reaches an $ff.
+; A static enemy of one frame
+; 10 ff
+; A static enemy of many frames
+; f0 f0 f0 f0 10 ff
+; An enemy just moving to the right for many frames
+; 10 f1 f1 b1 ff
+; An enemy just moving to the left for many frames
+; 10 f2 f2 22 ff
+; An enemy just moving down for many frames
+; 10 f4 f4 64 ff
+; An enemy just moving up for many frames
+; 10 f8 f8 78 ff
+; An enemy just moving up-left for many frames
+; 10 fa 7a ff
+; An enemy just moving up-right for many frames
+; 10 f9 59 ff
+; An enemy just moving down-right for many frames
+; 10 f5 f5 ff
+; An enemy just moving down-left for many frames
+; 10 f6 f6 ff
+; Therefore the data seems to be
+; lo nybble	- Direction bits 0 right, 1 left, 2 down, 3 up
+; hi nybble	- For number of frames.
+; Until $ff is encountered
+AttackWaves
++SEUCKFileData $bc0,$1a + 2 - $900 + $340c
+
+; 36 Enemy properties
+; $00		- Lo nybble - Bullet sound effect - 0 is no sound
+; $00		- Hi nybble - Explosion sound effect - 0 is no sound
+; $01		- Lo nybble - Fire type
+;	0 = None
+;	1 = Up
+;	2 = Up right
+;	3 = Right
+;	4 = Down right
+;	5 = Down
+;	6 = Down left
+;	7 = Left
+;	8 = Left up
+;	9 = +
+;	a = x
+;	b = Random
+;	c = Directional
+; $01		- Hi nybble - Hits to kill 0-15 (0 is never used)
+; $02		- Fire rate
+; $03		- Bit 0 - Enemy to ship - Enemy die
+; $03		- Bit 1 - Enemy to ship - Ship die
+; $03		- Bit 2 - Enemy to bullet - Enemy die
+; $03		- Bit 3 - Enemy to bullet - Bullet die
+; $03		- Bits 4-5 - Movement speed 0-3 (0 is never used)
+; $03		- Bits 6-7 - Bullet speed 0-3
+; $04		- Lo nybble - Explosion type
+; $04		- Hi nybble - Bullet type
+; $06		- Points divided by ten
+; Enemy speed. Pixels per second.
+; Enemy bullet speed. Pixels per second.
+!ifdef Scroller_LOTD {
+; An extra five animations for the spell effects
+ObjectPropertiesTabLo !for .table1,36+5 {!by <(ObjectProperties + (.table1-1) * $7) }
+ObjectPropertiesTabHi !for .table1,36+5 {!by >(ObjectProperties + (.table1-1) * $7) }
+} else {
+ObjectPropertiesTabLo !for .table1,36 {!by <(ObjectProperties + (.table1-1) * $7) }
+ObjectPropertiesTabHi !for .table1,36 {!by >(ObjectProperties + (.table1-1) * $7) }
+}
+; These properties only exist for enemies so remember to subtract AnimationType_Enemy1 before indexing from the type
+ObjectProperties
++SEUCKFileData $fc,$1a + 2 - $900 + $3108
+
+Player1Properties
++SEUCKFileData $13,$1a + 2 - $900 + $409d
+
+Player2Properties
++SEUCKFileData $13,$1a + 2 - $900 + $40b0
+PlayerOffset_LeftStopLo = 0
+PlayerOffset_LeftStopHi = 1
+PlayerOffset_UpStop = 2
+PlayerOffset_RightStopLo = 3
+PlayerOffset_RightStopHi = 4
+PlayerOffset_DownStop = 5
+PlayerOffset_StartXPosLo = 6
+PlayerOffset_StartXPosHi = 7
+PlayerOffset_StartYPos = 8
+PlayerOffset_Speed = 9
+PlayerOffset_NumBullets = $a
+PlayerOffset_Directional = $b
+PlayerOffset_BulletSpeed = $c
+PlayerOffset_BulletDuration = $d
+PlayerOffset_DieOrStop = $e
+PlayerOffset_CharacterCollision = $f
+PlayerOffset_Lives = $10
+PlayerOffset_ExtraLife = $11
+PlayerOffset_Enabled = $12
+
+
+
+
+; Each level property is 7 bytes long
+; $00/$01	- Lo/hi of start block in the map
+; $02/$03	- Lo/hi of end block in the map
+; $04		- Static count
+; $05		- Scroll type and speed
+;			- Bit 0 - Speed 1/2
+;			- Bit 6/7 - %00 = Still
+;			- Bit 6/7 - %10 = Scroll
+;			- Bit 6/7 - %11 = Push
+; $06		- End of level
+; $06		- $00 = Redraw
+; $06		- $ff = Loop
+; $06		- $80 = Continue
+LevelProperties
++SEUCKFileData $9a,$1a + 2 - $900 + $b776
+
+
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+SFXTable
++SEUCKFileData $f0,$1a + 2 - $900 + $b810
+}
+
+}
+
+
+
+
+!ifdef Scroller_MultiDirection {
+; VIC Graphics data
+*=$c000
+CharData
+!bin "../FreeDirRant/level4.chr",,$100
+
+!macro SpriteLine .v {
+	!by .v>>16, (.v>>8)&255, .v&255
+}
+
+*=$fe00
+SpriteData
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+!by 255,255,255,255,255,255,255,255
+
++SpriteLine %........................
++SpriteLine %.#......................
++SpriteLine %.##.....................
++SpriteLine %.###....................
++SpriteLine %.####...................
++SpriteLine %.#####..................
++SpriteLine %.######.................
++SpriteLine %.#######................
++SpriteLine %.########...............
++SpriteLine %.#########..............
++SpriteLine %.########...............
++SpriteLine %.######.................
++SpriteLine %.######.................
++SpriteLine %.##..##.................
++SpriteLine %.#....##................
++SpriteLine %......##................
++SpriteLine %.......##...............
++SpriteLine %.......##...............
++SpriteLine %........##..............
++SpriteLine %........##..............
++SpriteLine %........................
+!byte 0
+
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###.......###........###
++SpriteLine %###......#####.......###
++SpriteLine %###......#####.......###
++SpriteLine %###......#####.......###
++SpriteLine %###.......###........###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %###..................###
++SpriteLine %########################
++SpriteLine %########################
+!byte 0
+
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %####.......##.......####
++SpriteLine %###.#......##......#.###
++SpriteLine %###..#.....##.....#..###
++SpriteLine %###...#....##....#...###
++SpriteLine %###....#...##...#....###
++SpriteLine %###.....#..##..#.....###
++SpriteLine %###......######......###
++SpriteLine %###......#####.......###
++SpriteLine %########################
++SpriteLine %###......#####.......###
++SpriteLine %###......#####.......###
++SpriteLine %###.....#..#..#......###
++SpriteLine %###....#...#...#.....###
++SpriteLine %###...#....#....#....###
++SpriteLine %###..#.....#.....#...###
++SpriteLine %###.#......#......#..###
++SpriteLine %####.......#.......#.###
++SpriteLine %########################
++SpriteLine %########################
+!byte 0
+} else {
+; $00 - $11	- Frames - If the hi bit is set then it is the end of the animation and it should loop.
+; $12		- Animation speed
+; $13		- Lo nybble - Colour
+;			- Hi nybble - %0001 - Directional
+;			- Hi nybble - %0010 - Directional hold
+!ifdef Scroller_LOTD {
+; An extra five animations
+ObjectAnimationsTabLo !for .table1,58+5 {!by <(ObjectAnimations + (.table1-1) * $14) }
+ObjectAnimationsTabHi !for .table1,58+5 {!by >(ObjectAnimations + (.table1-1) * $14) }
+} else {
+ObjectAnimationsTabLo !for .table1,58 {!by <(ObjectAnimations + (.table1-1) * $14) }
+ObjectAnimationsTabHi !for .table1,58 {!by >(ObjectAnimations + (.table1-1) * $14) }
+}
+ObjectAnimations
++SEUCKFileData $488,$1a + 2 - $900 + $2c80
+!ifdef Scroller_LOTD {
+; Include the extra animations
+; Fireball trail
++SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (6*$14)
+; Wind trail
++SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (7*$14)
+; Wind
++SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (22*$14)
+; Fireball1
++SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (23*$14)
+; Fireball2
++SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (24*$14)
+}
+
+; Include some demonstration SEUCK data instead
+; The title screen chars and screen itself are copied to bank 0 $400-$fff by DisplayTitleScreen
+; each time the title screen is displayed. During the game $400-$fff is used by other VIC data.
+TitleScreenChars
++SEUCKFileData $208,$1a + 2 - $900 + $3204
+
+TitleScreenCharData
++SEUCKFileData $200,$1a + 2 - $900 + $f400
+
+RasterColourTable
++SEUCKFileData $40,$1a + 2 - $900 + $41c1
+RasterColourTableType
++SEUCKFileData 1,$1a + 2 - $900 + $409c
+
+!ifdef TitleScreen_AnimatingSprites {
+TitleScreenBallSprites
+!bin "ArmalyteBalls.bin",$200,0
+}
+
+; ScorePlayer1Render assumes aligned data
+!align 255,0
+SpriteScoreChars
++SEUCKFileData $a8,$1a + 2 - $900 + $f508
+; One unit of blank data follwing the player life graphic used by ScorePlayer1Render
+!fill 8,0
+
+
+; Put any other data to be loaded in here.
+
+
+; Data after this point is later used by data tables etc.
+; The game tables that are initialised after the code starts.
+!set StartOfTableMemory = *
+
+!macro reserve ~.address, .amount {
+	.address = StartOfTableMemory
+	!set StartOfTableMemory = StartOfTableMemory + .amount
+}
+
+!macro alignToBoundary {
+	!set StartOfTableMemory = (StartOfTableMemory+255) & $ff00
+}
+
+
+; Used to tell if a sprite has anything in it at all. Useful for collision detection.
+; Gets initialised when the sprites are moved up into memory.
++alignToBoundary
++reserve ~SpriteEmptyLookupTab , 256
++reserve ~SpriteEmptyLookupTab2 , 256
++reserve ~Multiplex_YPos , Multiplex_items
++reserve ~Multiplex_XPosLo , Multiplex_items
++reserve ~Multiplex_XPosHi , Multiplex_items
++reserve ~Multiplex_Colour , Multiplex_items
++reserve ~Multiplex_SpriteFrame , Multiplex_items
++reserve ~Multiplex_Sortlo , Multiplex_items
++reserve ~Multiplex_Sorthi , Multiplex_items
+
+; Moved these tables for the animation engine
++reserve ~AnimationType , Multiplex_items
++reserve ~AnimationXPosLo , Multiplex_items
++reserve ~AnimationXPosHi , Multiplex_items
++reserve ~AnimationYPos , Multiplex_items
++reserve ~AnimationSpriteColour , Multiplex_items
++reserve ~AnimationSpriteFrame , Multiplex_items
++reserve ~AnimationSpriteFrameCount , Multiplex_items
++reserve ~AnimationSpriteFrameCountDelay , Multiplex_items
++reserve ~AnimationSpriteFrameCountDelayInit , Multiplex_items
+
+; For directional animations
++reserve ~Animation_DirectionalBits , Multiplex_items
+; Uses the same directional bit pattern as the attack wave movement
+; Direction bits 0 right, 1 left, 2 down, 3 up
++reserve ~AnimationDirectionIn , Multiplex_items
++reserve ~AnimationDirectionLastValidIn , Multiplex_items
+
+; Pointer to the animation frame table for the animation type
++reserve ~AnimationAnimsLo , Multiplex_items
++reserve ~AnimationAnimsHi , Multiplex_items
+
+; These only become valid for objects 22-57 (Enemy 1-36)
++reserve ~AnimationMovementAddrLo , Multiplex_items
++reserve ~AnimationMovementAddrHi , Multiplex_items
+!ifdef Scroller_LinkedEnemyTest {
++reserve ~AnimationMovementOrigLo , Multiplex_items
++reserve ~AnimationMovementOrigHi , Multiplex_items
+}
++reserve ~AnimationMovementFrameCount , Multiplex_items
+; The current byte read in
++reserve ~AnimationMovementMove , Multiplex_items
++reserve ~AnimationMoveSpeed , Multiplex_items
++reserve ~AnimationFireSpeed , Multiplex_items
++reserve ~AnimationExplosionType , Multiplex_items
++reserve ~AnimationFireType , Multiplex_items
++reserve ~AnimationFireDirectionType , Multiplex_items
++reserve ~AnimationFireRateCount , Multiplex_items
++reserve ~AnimationFireRateInit , Multiplex_items
++reserve ~AnimationHealth , Multiplex_items
++reserve ~AnimationCollisionLogic , Multiplex_items
++reserve ~AnimationFireSFX , Multiplex_items
++reserve ~AnimationExplosionSFX , Multiplex_items
++reserve ~AnimationPoints , Multiplex_items
+; These are valid for objects 6-13, 1 and 4. Bullet types.
++reserve ~AnimationBulletSpeedX , Multiplex_items
++reserve ~AnimationBulletSpeedY , Multiplex_items
+
+; These are only valid for player bullet types
++reserve ~AnimationBulletDuration , Multiplex_items
+
++reserve ~Multiplex_CollisionCounter		, 1
++reserve ~Multiplex_CollisionHistory		, 8
++reserve ~Multiplex_CollisionIndexes		, (Multiplex_items-8)*8
++reserve ~Multiplex_CollisionCounterLastFrame		, 1
++reserve ~Multiplex_CollisionIndexesLastFrame		, (Multiplex_items-8)*8
+
+
+; Moved these calculated tables to here
++alignToBoundary
++reserve ~MapTabL , 256
++reserve ~MapTabH , 256
+
+
+; A marker for the end of memory so we can check it doesn't intefere with VIC2 data in bank3
+EndOfTableMemory = StartOfTableMemory
+
+!if EndOfTableMemory >= $c000 {
+!error "EndOfTableMemory is into bank 3. Too many tables?!"
+}
+
+; Lastly, high up in memory goes the sprite data
+*=$c000
+CharData
++SEUCKFileData $7f8,$1a + 2 - $900 + $f800
+
+*=$d000
+SpriteData
++SEUCKFileData $1fc0,$1a + 2 - $900 + $c000
+!ifdef Scroller_LOTD {
+MaxSpriteNumber = 126+12
++SEUCKFileData2 (12*64),$1a + 2 - $900 + $c000
+} else {
+MaxSpriteNumber = 126
+}
+
+}

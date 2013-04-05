@@ -1,0 +1,77 @@
+;Mandelbrot test code
+
+!source "../stdlib/stdlib.a"
+!to "Mandelbrot.prg", cbm
+!sl "Mandelbrot.map"
+!svl "Mandelbrot.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+
+;$BC5B/48219:   Compare FAC#1 With Memory A/Y
+
+
+!zn
+*=BASICEntry
+	cld
+	jsr CINT
+	lda #65
+	jsr CHROUT
+	lda #66
+	jsr CHROUT
+	lda #67
+	jsr CHROUT
+	lda #68
+	jsr CHROUT
+
+	lda #0
+	sta $0d	; Numerical data, honest
+
+	lda #<Floats
+	ldy #>Floats
+	jsr $ab76	; Set token
+
+	jsr $79		; Read char
+	jsr $bcf3	; Set FAC from next token
+
+	ldx #0
+	ldy #5
+	jsr $bbd4	; Store FAC to memory X/Y
+
+	jsr $bc0c	; Copy FAC#1 into FAC#2
+
+;	jsr $bddd	; Convert FAC#1 to ASCII String. Kills FAC#2
+;	jsr $b487	; Set Up String
+;	jsr $ab21	; Output String
+
+	jsr $73		; Skip and read char
+	jsr $bcf3	; Set FAC from next token
+
+;	lda #$69	; FAC#2
+;	ldy #0
+;	jsr $bc5b	; Compare FAC#1 With Memory A/Y
+
+
+	lda #0
+	ldy #5
+;	jsr $bba2	; Load FAC from memory A/Y
+
+;	jsr $bbfc	; Copy FAC#2 into FAC#1
+
+	jsr $bddd	; Convert FAC#1 to ASCII String
+	jsr $b487	; Set Up String
+	jsr $ab21	; Output String
+
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+
+Floats
+	; Note the trailing comma just like a BASIC data line, can also be "!by 0"
+	!tx "-2.5,"	; xmin
+	!tx "-1.5,"	; ymin
+	!tx "1.5,"	; xmax
+	!tx "1.5"	; ymax
+	!by 0

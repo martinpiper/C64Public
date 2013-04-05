@@ -1,0 +1,1244 @@
+!zn {
+menunum
+!by 0
+mainline
+	sei
+	lda #165
+	sta 816
+	lda #244
+	sta 817
+	jsr init
+main1
+	lda #1
+	sta VIC2SpritePriority
+	ldx #0
+	jsr printscreen
+	jsr menubar
+	jmp main1
+init
+	; Kill the block paste buffer
+	lda #kMusicPlayer_EndBlock
+	sta $c200
+	; init the menu system
+	lda #0
+	sta menunum
+	sta option
+	jsr default
+	ldx #0
+ca2 lda envdata,x
+	sta backupFXTableSpace,x
+	inx
+	bne ca2
+; Comment out the next line to use a default bit of music to test the product
+	jsr clearall
+	; This fixes up internal pointers so the various editing modules work correctly with whatever
+	; song data is in memory.
+	; While editing the blocks are stored as 256 bytes per block and the block lo/hi table is
+	; initialised to point to this expanded data. This makes it easier to edit blocks in situ.
+	jsr unpackmem
+	jsr sprsetup
+	jsr cursoroff
+	jsr IRQStartPlay
+	jsr IRQStopPlay
+	ldx #0
+	jmp printscreen
+tmpx
+!by 0
+default
+	sei
+	lda #55
+	sta 1
+	jsr $ff81
+	lda #$34
+	sta IRQServiceRoutineLo
+	lda #$ea
+	sta IRQServiceRoutineHi
+	cli
+	lda #4
+	sta 648
+	+MACRODisableUpperLowerCaseChange_A
+screenclr
+	ldx #0
+	stx VIC2BorderColour
+	stx VIC2ScreenColour
+	stx VIC2SpriteEnable
+d1
+	lda #32
+	sta SCREENRAM,x
+	sta SCREENRAM+$100,x
+	sta SCREENRAM+$200,x
+	sta SCREENRAM+$2e8,x
+	lda #15
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$2e8,x
+	inx
+	bne d1
+	lda #20
+	sta VIC2MemorySetup
+	lda #200
+	sta VIC2ScreenControlH
+	lda #3
+	sta CIA2PortASerialBusVICBank
+	lda #27
+	sta VIC2ScreenControlV
+	rts
+irqset
+	jmp DefaultIRQServiceRoutine
+clearall
+!zn {
+	lda #0
+	ldx #25
+.gf1
+	sta $0200,x
+	dex
+	bpl .gf1
+	lda #0
+	jsr cltrk
+	lda #1
+	jsr cltrk
+	lda #2
+	jsr cltrk
+	jsr clsnd
+	ldx #0
+	ldy #maxBlocks
+	jsr clblk
+
+	; Produce some sensible initialised data
+	lda #0
+	sta track1
+	lda #kMusicPlayer_LoopTrack
+	sta track1+1
+
+	; env:01
+	lda #kMusicPlayer_Envelope
+	sta $4b00
+	lda #1
+	sta $4b01
+	; dur:04
+	lda #kMusicPlayer_Duration
+	sta $4b02
+	lda #$20
+	sta $4b03
+	; C-4
+	lda #$30
+	sta $4b04
+	; stop
+	lda #kMusicPlayer_EndBlock
+	sta $4b05
+}
+	rts
+
+cltrk
+	clc
+	adc #>track1
+	sta ctm1+2
+	sta ctm2+2
+	ldx #0
+	txa
+ctm1
+	sta $ff00,x
+	inx
+	bne ctm1
+	lda #kMusicPlayer_StopTrack
+ctm2
+	sta $ff00
+	rts
+clsnd
+	ldx #0
+.cs1
+	lda backupFXTableSpace,x
+	sta envdata,x
+	dex
+	bne .cs1
+
+	ldx #31
+	lda #0
+.cs2
+	sta waveMix,x
+	dex
+	bpl .cs2
+
+	rts
+clblk
+	sty cbm1+1
+	txa
+	clc
+	adc #$4b
+	sta cbm2+2
+cb1
+	lda #0
+	sta loblock,x
+;	sta $4a80,x
+;	lda #1
+;	sta $4ac0,x
+	txa
+	clc
+	adc #$4b
+	sta hiblock,x
+	inx
+cbm1
+	cpx #$ff
+	bne cb1
+cb2
+	lda #$ff
+	ldx #0
+cbm2
+	sta $ff00,x
+	inx
+	bne cbm2
+	lda cbm2+2
+	sta cbm3+2
+	lda #$fd
+cbm3
+	sta $ff00
+	inc cbm2+2
+	dey
+	bne cb2
+	rts
+printscreen
+	lda #127
+	cmp VIC2Raster
+	bne printscreen
+	txa
+	asl
+	asl
+	asl
+	clc
+	adc #$d0
+	sta ps1m+2
+	clc
+	adc #4
+	sta ps3m+2
+	lda #4
+	sta ps2m+2
+	lda #$c8
+	sta ps4m+2
+	sei
+	lda #$34
+	sta 1
+	ldx #3
+ps1
+	ldy #0
+ps2
+ps1m lda $ff00,y
+ps2m sta $0400,y
+ps3m lda $ff00,y
+ps4m sta $c800,y
+	iny
+	beq ps3
+	cpy #$e8
+	bne ps2
+	dex
+	bpl ps2
+	bmi ps4
+ps3
+	inc ps1m+2
+	inc ps2m+2
+	inc ps3m+2
+	inc ps4m+2
+	bne ps2
+ps4
+	lda #55
+	sta 1
+	cli
+	ldx #0
+ps5
+	lda $c800,x
+	sta $d800,x
+	lda $c900,x
+	sta $d900,x
+	lda $ca00,x
+	sta $da00,x
+	lda $cae8,x
+	sta $dae8,x
+	inx
+	bne ps5
+	rts
+blockedit
+	lda lastblock
+	pha
+	ldx #2
+	jsr printscreen
+	lda lastblock
+	jsr editor
+	sta lastblock
+	pla
+	rts
+lastblock
+!by 0
+trackedit
+	pha
+	ldx #1
+	jsr printscreen
+	pla
+	jsr trackeditor
+	rts
+loadsaveMenu
+	jsr IRQStopPlay
+	lda #0
+	sta IRQBorderColour
+	jsr loadsave
+	lda #0
+	sta lastblock
+	rts
+devs ldx #<togtab
+	ldy #>togtab
+	jmp toggledevs
+pload
+	jsr IRQStopPlay
+	lda #0
+	sta IRQBorderColour
+	sta lastblock
+	jmp loadall
+enveditScreen
+	ldx #3
+	jsr printscreen
+	jsr envedit
+	rts
+drumEditScreen
+	ldx #4
+	jsr printscreen
+	jsr DrumEdit
+	rts
+menubar
+	jsr openmenu
+mnu1
+	jsr getkey
+	ldx #0
+mnu2
+	cmp menukey,x
+	beq mnu3
+	inx
+	cpx mkeyno
+	bcc mnu2
+	jsr menuhotkey
+	jmp mnu1
+mnu3
+	pha
+	txa
+	asl
+	tax
+	lda menujmp,x
+	sta mnu4+1
+	lda menujmp+1,x
+	sta mnu4+2
+	pla
+mnu4
+	jsr $ffff
+	jsr delay
+	jmp mnu1
+
+menukey
+	!by 157,29,145,17,13
+menujmp
+	!by <menuleft,>menuleft
+	!by <menuright,>menuright
+	!by <menuup,>menuup
+	!by <menudown,>menudown
+	!by <menuselect,>menuselect
+mkeyno
+	!by 5
+mbartab
+	!by 0,8,14,20,35
+mbarwidth
+	!by 7,5,5,8,5
+option
+	!by 0
+mcount
+	!by 0,0
+cxtemp
+	!by 0
+cytemp
+	!by 0
+mytemp
+	!by 0
+atemp
+	!by 0
+menupar
+mxpos
+	!by 0
+mypos
+	!by 0
+mwidth
+	!by 0
+mdepth
+	!by 0
+maxopt
+	!by 0
+mtxtpos
+	!by 0,0
+mhotkey
+	!by 0,0
+mjmppos
+	!by 0,0
+;
+;menu cursor routeens
+;
+menuleft
+	jsr closemenu
+	jsr reversebar
+	dec menunum
+	bpl ml1
+	lda #4
+	sta menunum
+ml1
+	jmp openmenu
+menuright
+	jsr closemenu
+	jsr reversebar
+	inc menunum
+	lda menunum
+	cmp #5
+	bcc ml1
+	lda #0
+	sta menunum
+	jmp openmenu
+menuup
+	lda option
+	beq mu1
+	jsr reverseoption
+	dec option
+	jmp reverseoption
+mu1
+	rts
+menudown
+	lda option
+	cmp maxopt
+	beq mu1
+	jsr reverseoption
+	inc option
+	jmp reverseoption
+openmenu
+	lda menunum
+	asl
+	tax
+	lda menutab,x
+	sta $fc
+	lda menutab+1,x
+	sta $fd
+	jsr printmenu
+	jsr reversebar
+	jmp reverseoption
+menutab
+	!by <menu1,>menu1
+	!by <menu2,>menu2
+	!by <menu3,>menu3
+	!by <menu4,>menu4
+; Cut down commented out items?
+;	!by <menu5,>menu5
+	!by <menu6,>menu6
+;	!by <menu7,>menu7
+;	!by <menu8,>menu8
+calccol
+	lda ypos
+	asl
+	tay
+	lda ytab,y
+	clc
+	adc #$d8
+	sta $fd
+	lda ytab+1,y
+	sta $fc
+	ldy xpos
+	rts
+printcol
+	sty cytemp
+	pha
+	jsr calccol
+	pla
+	sta ($fc),y
+	ldy cytemp
+	rts
+;
+;print menu, max(16*16) or (32*8)
+;
+printmenu
+	ldy #0
+	ldx #0
+pm1
+	lda ($fc),y
+	sta menupar,x
+	inx
+	iny
+	cpx #11
+	bcc pm1
+	dec maxopt
+	lda mxpos
+	sta xpos
+	lda mypos
+	sta ypos
+	jsr calcpos
+	jsr calccol
+	lda mdepth
+	sta mcount
+	lda #40
+	sec
+	sbc mwidth
+	sta mytemp
+	ldx #0
+pm2
+	lda mwidth
+	sta mcount+1
+pm3
+	lda ($fe),y
+	sta menubuffer1,x
+	lda ($fc),y
+	sta menubuffer2,x
+	lda #12
+	sta ($fc),y
+	lda #$a0
+	sta ($fe),y
+	iny
+	bne pm4
+	inc $ff
+	inc $fd
+pm4
+	inx
+	dec mcount+1
+	bne pm3
+	tya
+	clc
+	adc mytemp
+	bcc pm5
+	inc $ff
+	inc $fd
+pm5
+	tay
+	dec mcount
+	bne pm2
+	lda mdepth
+	sta mcount
+pm6
+	lda mxpos
+	sta xpos
+	ldx mtxtpos
+	ldy mtxtpos+1
+	jsr menutext
+	iny
+	bne duh1
+	inc mtxtpos+1
+duh1
+	tya
+	clc
+	adc mtxtpos
+	sta mtxtpos
+	bcc pm7
+	inc mtxtpos+1
+pm7
+	inc ypos
+	dec mcount
+	bne pm6
+	rts
+;
+;close an open menu
+;
+closemenu
+	lda mxpos
+	sta xpos
+	lda mypos
+	sta ypos
+	jsr calcpos
+	jsr calccol
+	lda mdepth
+	sta mcount
+	ldx #0
+cm1
+	lda mwidth
+	sta mcount+1
+	sty mytemp
+cm2
+	lda menubuffer1,x
+	sta ($fe),y
+	lda menubuffer2,x
+	sta ($fc),y
+	inx
+	iny
+	bne cm3
+	inc $ff
+	inc $fd
+cm3
+	dec mcount+1
+	bne cm2
+	lda mytemp
+	clc
+	adc #40
+	tay
+	bcc cm4
+	inc $ff
+	inc $fd
+cm4 dec mcount
+	bne cm1
+	rts
+;
+;reverse option
+;
+reverseoption
+	lda maxopt
+	cmp option
+	bcs rop1
+	sta option
+rop1
+	lda mxpos
+	sta xpos
+	lda mypos
+	clc
+	adc option
+	sta ypos
+	jsr calccol
+	ldx mwidth
+rop2
+	lda ($fc),y
+	eor #255
+	sta ($fc),y
+	iny
+	bne rop3
+	inc $fd
+rop3
+	dex
+	bne rop2
+	rts
+menutext
+	stx $d3
+	sty $d4
+	ldy #0
+mtt1
+	lda ($d3),y
+	and #191
+	cmp #128
+	beq mtt2
+	clc
+	adc #128
+	jsr charprint2
+	iny
+	bne mtt1
+	inc $d4
+	bne mtt1
+mtt2
+	rts
+;
+;selected menu item
+;
+menuselect
+	jsr closemenu
+	jsr reversebar
+	lda mjmppos
+	sta $fc
+	lda mjmppos+1
+	sta $fd
+	lda option
+	asl
+	tay
+	lda ($fc),y
+	sta $fe
+	iny
+	lda ($fc),y
+	sta $ff
+	pla
+	pla
+	jmp ($fe)
+reversebar
+	ldy menunum
+	lda mbarwidth,y
+	ldx mbartab,y
+	tay
+rvb1
+	lda $d800,x
+	eor #255
+	sta $d800,x
+	inx
+	dey
+	bne rvb1
+	rts
+charprint2
+	sty cptemp
+	cmp #128
+	bcs cp21
+	adc #128
+	pha
+	jsr calccol
+	lda #1
+	sta ($fc),y
+	pla
+cp21
+	pha
+	jsr calcpos
+	pla
+	sta ($fe),y
+	inc xpos
+	ldy cptemp
+	rts
+cptemp
+!by 0
+;
+;**** menu data ****
+;
+menu1
+	!by 0,1,8,9,9,<mtxt1,>mtxt1,<mhot1,>mhot1,<mjmp1,>mjmp1
+menu2
+	!by 8,1,11,4,4,<mtxt2,>mtxt2,<mhot2,>mhot2,<mjmp2,>mjmp2
+menu3
+	!by 14,1,12,6,6,<mtxt3,>mtxt3,<mhot3,>mhot3,<mjmp3,>mjmp3
+menu4
+	!by 20,1,9,5,5,<mtxt4,>mtxt4,<mhot4,>mhot4,<mjmp4,>mjmp4
+menu5
+	!by 30,1,6,3,3,<mtxt5,>mtxt5,<mhot5,>mhot5,<mjmp5,>mjmp5
+menu6
+	!by 34,1,6,3,3,<mtxt6,>mtxt6,<mhot6,>mhot6,<mjmp6,>mjmp6
+mtxt1
+	!tx "Load all"
+	!by 128
+	!tx "Save all"
+	!by 128
+	!tx "sTorage"
+	!by 128
+	!tx "Play all"
+	!by 128
+	!tx "stop Mus"
+	!by 128
+	!tx "Kill all"
+	!by 128
+	!tx "pRint"
+	!by 128
+togtab
+	!tx "disk"
+	!by 128
+	!tx "Quit"
+	!by 128
+mhot1
+	!tx "lstpmkr*q"
+mtxt2
+	!tx "Edit"
+	!by 128
+	!tx "Load tracks"
+	!by 128
+	!tx "Save tracks"
+	!by 128
+	!tx "Kill tracks"
+	!by 128
+mhot2 !tx "elsk"
+mtxt3
+	!tx "Edit"
+	!by 128
+	!tx "Load blocks"
+	!by 128
+	!tx "Save blocks"
+	!by 128
+	!tx "Kill blocks"
+	!by 128
+	!tx "Real time"
+	!by 128
+	!tx "sTrip unused"
+	!by 128
+mhot3 !tx "elskrt"
+mtxt4
+	!tx "Edit"
+	!by 128
+	!tx "Drums"
+	!by 128
+	!tx "Load envs"
+	!by 128
+	!tx "Save envs"
+	!by 128
+	!tx "Kill envs"
+	!by 128
+mhot4 !tx "edlsk"
+mtxt5
+	!tx "Browse"
+	!by 128
+	!tx "Index"
+	!by 128
+	!tx "Print"
+	!by 128
+mhot5 !tx "bip"
+mtxt6
+	!tx "Code"
+	!by 128
+	!tx "Data"
+	!by 128
+	!tx "Player",128
+mhot6 !tx "cdp"
+mjmp1
+	!by <pload,>pload
+	!by <saveall,>saveall
+	!by <loadsaveMenu,>loadsaveMenu
+	!by <IRQStartPlay,>IRQStartPlay
+	!by <IRQStopPlay,>IRQStopPlay
+	!by <killall,>killall
+	!by <rzs,>rzs
+	!by <devs,>devs
+	!by <exit,>exit
+mjmp2
+	!by <trackedit,>trackedit
+	!by <loadtracks,>loadtracks
+	!by <savetrack,>savetrack
+	!by <rzs,>rzs
+mjmp3
+	!by <blockedit,>blockedit
+	!by <loadblocks,>loadblocks
+	!by <saveblocks,>saveblocks
+	!by <rzs,>rzs
+	!by <rzs,>rzs
+	!by <StripUnusedBlocks,>StripUnusedBlocks
+mjmp4
+	!by <enveditScreen,>enveditScreen
+	!by <drumEditScreen,>drumEditScreen
+	!by <loadEnv,>loadEnv
+	!by <saveEnv,>saveEnv
+	!by <rzs,>rzs
+mjmp5
+;	!by <helpsub,>helpsub
+	!by <rzs,>rzs
+	!by <rzs,>rzs
+mjmp6
+	!by <rzs,>rzs
+	!by <rzs,>rzs
+	!by <rzs,>rzs
+
+; Blank menu routine
+rzs
+	rts
+exit
+	ldx #<exittxt
+	ldy #>exittxt
+	jsr promptwindow
+	cmp #keyCodeY
+	beq ex1
+	rts
+ex1
+	jmp clearmem
+exittxt !tx "quit ?",128
+menuhotkey
+	pha
+	lda mhotkey
+	sta $fc
+	lda mhotkey+1
+	sta $fd
+	ldy #0
+	pla
+mhk1
+	cmp ($fc),y
+	beq mhk2
+	iny
+	cpy maxopt
+	beq mhk1
+	bcc mhk1
+rts
+mhk2
+	cpy option
+	beq mhk3
+	tya
+	pha
+	jsr reverseoption
+	pla
+	sta option
+mhk3
+	jsr reverseoption
+	jmp menuselect
+openwindow
+	lda colour
+	pha
+	lda style
+	pha
+	ldx #0
+	ldy #0
+opw1
+	lda ($fc),y
+	sta winpar,x
+	inx
+	iny
+	cpy #10
+	bcc opw1
+	lda wtlpos
+	sta $fc
+	lda wtlpos+1
+	sta $fd
+	ldy #0
+opw2
+	lda ($fc),y
+	cmp #128
+	beq opw4
+	iny
+	bne opw2
+opw3
+	cpy wwidth
+	bcc opw4
+	ldy wwidth
+	lda #128
+	sta ($fc),y
+opw4
+	sty wtllen
+	lda wxpos
+	sta xpos
+	lda wypos
+	sta ypos
+	jsr calcpos
+	jsr calccol
+	lda #40
+	sec
+	sbc wwidth
+	sta wtemp
+	ldx #0
+	lda wdepth
+	sta wcount
+opw5
+	lda wwidth
+	sta wcount+1
+opw6
+	lda ($fc),y
+	sta winbuffer1,x
+	lda ($fe),y
+	sta winbuffer2,x
+	lda wincol
+	sta ($fc),y
+	lda #160
+	sta ($fe),y
+	inx
+	iny
+	bne opw7
+	inc $fd
+	inc $ff
+opw7
+	dec wcount+1
+	bne opw6
+	tya
+	clc
+	adc wtemp
+	tay
+	bcc opw8
+	inc $fd
+	inc $ff
+opw8
+	dec wcount
+	bne opw5
+	lda wincol
+	sta colour
+	ldx wtxtpos
+	ldy wtxtpos+1
+	inc ypos
+	jsr wtext
+	lda wstyle
+	beq opw11
+	dec wstyle
+	ldx #5
+opw10
+	lda winpar,x
+	sta boxpar,x
+	dex
+	bpl opw10
+	jsr drawbox
+opw11
+	jsr printtitle
+	pla
+	sta style
+	pla
+	sta colour
+	rts
+closewindow
+	lda wxpos
+	sta xpos
+	lda wypos
+	sta ypos
+	jsr calccol
+	jsr calcpos
+	lda #40
+	sec
+	sbc wwidth
+	sta wtemp
+	ldx #0
+	lda wdepth
+	sta wcount
+clw1
+	lda wwidth
+	sta wcount+1
+clw2
+	lda winbuffer1,x
+	sta ($fc),y
+	lda winbuffer2,x
+	sta ($fe),y
+	inx
+	iny
+	bne clw3
+	inc $fd
+	inc $ff
+clw3
+	dec wcount+1
+	bne clw2
+	tya
+	clc
+	adc wtemp
+	tay
+	bcc clw4
+	inc $fd
+	inc $ff
+clw4
+	dec wcount
+	bne clw1
+	rts
+
+drawbox
+	lda bxpos
+	sta xpos
+	lda bypos
+	sta ypos
+	lda bcol
+	sta colour
+	lda bstyle
+	asl
+	asl
+	asl
+	tax
+	lda boxtab,x
+	jsr wcharprint
+	ldy bwidth
+	dey
+	dey
+	sty btemp
+	lda boxtab+1,x
+dbx1
+	jsr wcharprint
+	dey
+	bne dbx1
+	lda boxtab+2,x
+	jsr wcharprint
+	ldy bdepth
+	dey
+	dey
+dbx2
+	lda bxpos
+	sta xpos
+	inc ypos
+	lda boxtab+3,x
+	jsr wcharprint
+	lda xpos
+	clc
+	adc btemp
+	sta xpos
+	lda boxtab+4,x
+	jsr wcharprint
+	dey
+	bne dbx2
+	lda bxpos
+	sta xpos
+	inc ypos
+	lda boxtab+5,x
+	jsr wcharprint
+	ldy btemp
+	lda boxtab+6,x
+dbx3
+	jsr wcharprint
+	dey
+	bne dbx3
+	lda boxtab+7,x
+	jmp wcharprint
+boxpar
+bxpos !by 0
+bypos !by 0
+bwidth !by 0
+bdepth !by 0
+bcol !by 0
+bstyle !by 0
+bcount !by 0,0
+btemp !by 0
+style !by 0
+winpar
+wxpos !by 0
+wypos !by 0
+wwidth !by 0
+wdepth !by 0
+wincol !by 0
+wstyle !by 0
+wtxtpos !by 0,0
+wtlpos !by 0,0
+wcount !by 0,0
+wtemp !by 0
+wtllen !by 0
+colour !by 0
+
+printtitle
+	lda wtllen
+	lsr
+	sta wtemp
+	lda wwidth
+	lsr
+	clc
+	adc wxpos
+	sec
+	sbc wtemp
+	cmp wxpos
+	bcs ptl1
+	lda wxpos
+ptl1
+	sta xpos
+	lda wypos
+	sta ypos
+	lda wincol
+	sta colour
+	ldx wtlpos
+	ldy wtlpos+1
+	jmp wtext
+
+newline
+	lda wxpos
+	sta xpos
+	inc ypos
+	bne wint2
+	lda wstyle
+	beq wint2
+	inc xpos
+	bne wint2
+wtext
+	stx $d3
+	sty $d4
+	ldy #0
+wint1
+	lda ($d3),y
+	cmp #31
+	beq curmove
+	cmp #18
+	beq newcol
+	cmp #147
+	beq newline
+	cmp #128
+	beq wint3
+	bcc chp1b
+	pha
+	lda #1
+	sta colour
+	pla
+chp1b
+	and #191
+	bmi chp1
+	clc
+	adc #128
+chp1
+	jsr wcharprint
+	lda wincol
+	sta colour
+wint2
+	iny
+	bne wint1
+	inc $d4
+	bne wint1
+wint3
+	rts
+curmove
+	iny
+	bne cum1
+	inc $d4
+cum1
+	lda ($d3),y
+	sta xpos
+	iny
+	bne cum2
+	inc $d4
+cum2
+	lda ($d3),y
+	sta ypos
+	jmp wint2
+newcol
+	iny
+	bne ncl1
+	inc $d4
+ncl1
+	lda ($d3),y
+	sta colour
+	jmp wint2
+wcharprint
+	pha
+	sty cytemp
+	pha
+	jsr calcpos
+	jsr calccol
+	lda colour
+	sta ($fc),y
+	pla
+	sta ($fe),y
+	inc xpos
+	bne chp2
+	inc ypos
+chp2
+	ldy cytemp
+	pla
+	rts
+promptwindow
+	stx prpar+8
+	sty prpar+9
+	ldx #<prpar
+	ldy #>prpar
+	stx $fc
+	sty $fd
+	jsr openwindow
+prw1
+	jsr getkey
+	cmp #keyCodeY
+	beq prw2
+	cmp #78
+	bne prw1
+prw2
+	pha
+	jsr closewindow
+	pla
+	rts
+prpar
+	!by 10,3,20,5,12,1,<prtxt,>prtxt,0,0
+prtxt !by 31,13,5
+	!tx "continue (y/n)?"
+	!by 128
+boxtab
+	!by $70,$40,$6e,$5d,$5d,$6d,$40,$7d
+	!by $f0,$c0,$ee,$dd,$dd,$ed,$c0,$fd
+	!by $4f,$77,$50,$65,$6a,$4c,$6f,$7a
+	!by $6c,$62,$7b,$e1,$61,$7c,$e2,$7e
+	!by $cf,$f7,$d0,$f4,$ea,$cc,$ef,$fa
+	!by $e9,$a0,$df,$a0,$a0,$5f,$a0,$69
+	!by $55,$40,$49,93,93,$4a,$40,$4b
+	!by $d5,$c0,$c9,$dd,$dd,$ca,$c0,$cb
+killall
+	ldx #<killtxt
+	ldy #>killtxt
+	jsr promptwindow
+	cmp #keyCodeY
+	bne kal1
+	jsr IRQStopPlay
+	lda #0
+	sta IRQBorderColour
+	sta lastblock
+	jsr clearall
+kal1
+	rts
+killtxt !tx "< kill? >"
+	!by 128
+
+clearmem
+	ldx #0
+cm1z
+	lda clearmem2,x
+	sta $0334,x
+	inx
+	bne cm1z
+	jmp $0334
+clearmem2
+	sei
+	lda #$34
+	sta 1
+	lda #$08
+	sta $fc
+	ldy #0
+	sty $fb
+cz1
+	lda #96
+	lda ($fb),y
+	ora #128
+	ror
+	eor #2
+	sta ($fb),y
+	iny
+	bne cz1
+	inc $fc
+	bne cz1
+	lda #55
+	sta 1
+	jmp ($fffc)
+}

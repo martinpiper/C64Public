@@ -1,0 +1,84 @@
+;DiskBootLoader test code
+
+!source "../stdlib/stdlib.a"
+!to "DiskBootLoader.prg", cbm
+!sl "DiskBootLoader.map"
+!svl "DiskBootLoader.lbl"
+!cpu 6510
+!ct pet
+
+; This forces any unused memory to be filled with $02. This is useful for the unused stack area
+; where it is filled with the "stack slide" and causes the CPU to eventually execute $0203
+!initmem $02
+
+; We'll start loading here on the stack
+*=$110
+RealStart
+	jsr CLRSCR
+
+	lda #0
+	sta VIC2ScreenColour
+	jsr SETMSG
+	ldx #.relocCodeEnd-.relocCodeStart
+	; Copy the code to the unused space
+.l1
+	lda .relocCodeStart-1,x
+	sta StopKeyCheck-1,x
+	dex
+	bne .l1
+
+	lda #<StopKeyCheck
+	sta STOPVectorLo
+	lda #>StopKeyCheck
+	sta STOPVectorHi
+
+	lda #8
+	ldx ZPCurrentFileDeviceNumber
+	ldy #1
+	jsr SETLFS
+	lda #.fileNameEnd-.fileNameStart
+	ldx #<.fileNameStart
+	ldy #>.fileNameStart
+	jsr SETNAM
+	lda #0
+	ldx #$ff
+	ldy #$ff
+	jsr LOAD
+	stx ZPStartVariableLo
+	sty ZPStartVariableHi
+	lda #$c0
+	jsr SETMSG
+	ldx #<DefaultSTOPVector
+	ldy #>DefaultSTOPVector
+	stx STOPVectorLo
+	sty STOPVectorHi
+	; Start whatever BASIC program we have just loaded. Or this could be changed to jump to whatever
+	; code was just loaded.
+	jmp $80d
+;	jsr $a65e	; BASIC CLR
+;	jsr $a68e	; Reset TXTPTR
+;	jsr $a7ae	; BASIC Warm start
+;	rts
+
+.relocCodeStart
+	; This area in extended zero page is unused
+!pseudopc $2a7 {
+StopKeyCheck
+	; This flashes the border during loading because the load routine checks the stop key.
+	lda #1
+	sta VIC2BorderColour
+	dec VIC2BorderColour
+	; Tell the kernal we are not pressing the stop key, honest
+	lda #$ff
+	rts
+}
+.relocCodeEnd
+
+.fileNameStart !pet "main"
+.fileNameEnd
+
+; This space is filled with $02 due to the !initmem
+
+*=$203
+	; The "stack slide" gets here
+	jmp RealStart

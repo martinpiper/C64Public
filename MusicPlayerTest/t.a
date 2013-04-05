@@ -1,0 +1,2262 @@
+; The "Limited" below refers to the comment "Enable the next line to have the test stop..." test
+
+TestTune1 = 1
+; p.blippy intro1.prg
+; Limited: Before =	$11 $19
+; After opt = $0e $18
+; Not limited:	Before = $1a
+; After opt = $1a
+
+TestTune2 = 0
+; MeanStreak.msmus
+; Limited: Before =	$11 $1d
+; After opt = $0e $1b
+; Not limited:	Before = $29
+; After opt = $28
+
+TestTune3 = 0
+; Thanx iAN (FVB).msmus
+; Limited: Before =	$11 $1a
+; After opt = $0e 19
+; Not limited:	Before = $20
+; After opt = $1d
+
+!if TestTune1 {
+*=$900
+DurationAutoCommandsActive = 1
+EnvelopeAutoCommandsActive = 1
+TableCodeActivateNote = 1
+TableCodeActivatePulse = 1
+!source "MusicPlayer2.a"
+Track0
+	!by $90,$47,$01,$93,$43,$01,$90,$43,$01,$ff
+Track1
+	!by $90,$47,$02,$93,$43,$02,$90,$43,$02,$ff
+Track2
+	!by $90,$41,$03,$04,$93,$03,$06,$90,$05,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$40,$00,$00,$00,$04,$00,$00,$da,$f2,$de,$ec,$fa,$f6,$e2,$fd,$f2,$fd,$da,$ff,$f0,$fc,$fd,$bd,$ff,$00,$02,$00,$00,$00,$00,$00,$00,$00,$d9,$d6,$cc,$91,$ea,$d2,$ea,$d4,$fd,$d2,$ff,$fa,$ff,$fa,$ec,$c2,$00,$00,$00,$00,$00,$00,$00,$fd,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$ff,$f8,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+BlockIndexLo
+	!by <Block00
+	!by <Block01
+	!by <Block02
+	!by <Block03
+	!by <Block04
+	!by <Block05
+	!by <Block06
+BlockIndexHi
+	!by >Block00
+	!by >Block01
+	!by >Block02
+	!by >Block03
+	!by >Block04
+	!by >Block05
+	!by >Block06
+Block00
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandDuration , $40
+	!by 0
+	!by <BlockCommandEndBlock
+Block01
+	!by <BlockCommandEnvelope , $01
+	!by <BlockCommandDuration , $09
+	!by 12
+	!by 12
+	!by <BlockCommandDuration , $06
+	!by 10
+	!by <BlockCommandDuration , $09
+	!by 12
+	!by 12
+	!by <BlockCommandDuration , $03
+	!by 10
+	!by 12
+	!by <BlockCommandDuration , $09
+	!by 8
+	!by 8
+	!by <BlockCommandDuration , $06
+	!by 8
+	!by <BlockCommandDuration , $09
+	!by 10
+	!by 10
+	!by <BlockCommandDuration , $03
+	!by 11
+	!by 12
+	!by <BlockCommandEndBlock
+Block02
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $03
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 48
+	!by 60
+	!by 0
+	!by <BlockCommandEnvelope , $02
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 60
+	!by 48
+	!by 60
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $02
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 60
+	!by 48
+	!by 60
+	!by <BlockCommandEnvelope , $02
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 48
+	!by 60
+	!by 48
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 48
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 60
+	!by <BlockCommandEnvelope , $02
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $04
+	!by 0
+	!by <BlockCommandEnvelope , $05
+	!by 60
+	!by <BlockCommandEndBlock
+Block03
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 36
+	!by <BlockCommandEnvelope , $05
+	!by <BlockCommandDuration , $03
+	!by 0
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $06
+	!by 36
+	!by <BlockCommandDuration , $03
+	!by 34
+	!by <BlockCommandDuration , $21
+	!by 36
+	!by <BlockCommandDuration , $06
+	!by 32
+	!by 32
+	!by <BlockCommandDuration , $03
+	!by 32
+	!by 32
+	!by <BlockCommandDuration , $06
+	!by 34
+	!by 29
+	!by 39
+	!by 38
+	!by <BlockCommandEnvelope , $03
+	!by <BlockCommandDuration , $09
+	!by 36
+	!by <BlockCommandEnvelope , $05
+	!by <BlockCommandDuration , $03
+	!by 0
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 41
+	!by <BlockCommandDuration , $21
+	!by 36
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 41
+	!by 39
+	!by <BlockCommandDuration , $06
+	!by 38
+	!by 39
+	!by 38
+	!by 36
+	!by <BlockCommandEndBlock
+Block04
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandDuration , $09
+	!by 36
+	!by 38
+	!by 39
+	!by 36
+	!by <BlockCommandEnvelope , $0b
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 41
+	!by <BlockCommandDuration , $06
+	!by 43
+	!by <BlockCommandDuration , $18
+	!by 41
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $03
+	!by 38
+	!by 39
+	!by 41
+	!by 43
+	!by 36
+	!by 38
+	!by 39
+	!by 41
+	!by <BlockCommandEnvelope , $09
+	!by 34
+	!by 36
+	!by 38
+	!by 39
+	!by 38
+	!by 36
+	!by 34
+	!by <BlockCommandEnvelope , $06
+	!by 38
+	!by 39
+	!by 38
+	!by 34
+	!by <BlockCommandDuration , $0f
+	!by 36
+	!by <BlockCommandDuration , $09
+	!by 39
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 38
+	!by 39
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $09
+	!by <BlockCommandDuration , $09
+	!by 43
+	!by <BlockCommandDuration , $06
+	!by <BlockCommandEnvelope , $03
+	!by 43
+	!by <BlockCommandEnvelope , $0b
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 46
+	!by <BlockCommandDuration , $12
+	!by 48
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 46
+	!by <BlockCommandDuration , $18
+	!by 48
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 48
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by 0
+	!by <BlockCommandEnvelope , $08
+	!by <BlockCommandDuration , $0c
+	!by 48
+	!by <BlockCommandDuration , $03
+	!by 46
+	!by 48
+	!by 51
+	!by 48
+	!by <BlockCommandEnvelope , $07
+	!by 46
+	!by 43
+	!by <BlockCommandEnvelope , $08
+	!by 43
+	!by 46
+	!by 48
+	!by 46
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandDuration , $0c
+	!by 43
+	!by <BlockCommandEnvelope , $08
+	!by <BlockCommandDuration , $1e
+	!by 48
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $09
+	!by 43
+	!by 41
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by 41
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 41
+	!by 39
+	!by 34
+	!by <BlockCommandEndBlock
+Block05
+	!by <BlockCommandEnvelope , $0a
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 36
+	!by <BlockCommandEnvelope , $07
+	!by 39
+	!by 38
+	!by <BlockCommandEnvelope , $0a
+	!by <BlockCommandDuration , $06
+	!by 36
+	!by <BlockCommandDuration , $03
+	!by 38
+	!by <BlockCommandDuration , $1e
+	!by 39
+	!by <BlockCommandDuration , $06
+	!by 41
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 41
+	!by 39
+	!by <BlockCommandDuration , $06
+	!by 41
+	!by <BlockCommandDuration , $09
+	!by 43
+	!by <BlockCommandDuration , $03
+	!by 46
+	!by <BlockCommandDuration , $12
+	!by 48
+	!by 46
+	!by 43
+	!by <BlockCommandDuration , $06
+	!by 48
+	!by 46
+	!by 43
+	!by 41
+	!by 43
+	!by 41
+	!by 39
+	!by 41
+	!by <BlockCommandEnvelope , $0c
+	!by <BlockCommandDuration , $2a
+	!by 43
+	!by <BlockCommandDuration , $06
+	!by 41
+	!by <BlockCommandDuration , $2a
+	!by 39
+	!by <BlockCommandDuration , $06
+	!by 43
+	!by <BlockCommandDuration , $2a
+	!by 36
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $03
+	!by 43
+	!by 36
+	!by 36
+	!by 41
+	!by 36
+	!by 36
+	!by 43
+	!by 36
+	!by 36
+	!by 41
+	!by 36
+	!by 41
+	!by 39
+	!by 38
+	!by 36
+	!by 34
+	!by <BlockCommandEndBlock
+Block06
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by <BlockCommandDuration , $03
+	!by 36
+	!by <BlockCommandEnvelope , $05
+	!by 0
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $06
+	!by 36
+	!by <BlockCommandDuration , $03
+	!by 34
+	!by <BlockCommandDuration , $21
+	!by 36
+	!by <BlockCommandDuration , $06
+	!by 39
+	!by 39
+	!by 39
+	!by 38
+	!by 38
+	!by 36
+	!by 34
+	!by <BlockCommandDuration , $09
+	!by 39
+	!by <BlockCommandDuration , $2d
+	!by 36
+	!by <BlockCommandDuration , $06
+	!by 43
+	!by <BlockCommandEnvelope , $07
+	!by 36
+	!by 36
+	!by 44
+	!by 43
+	!by 41
+	!by 39
+	!by 34
+	!by <BlockCommandEndBlock
+TableControlWave	!by $08,$ff,$41,$ff,$81,$40,$80,$40,$ff,$81,$40,$ff,$11,$ff,$21,$ff
+TableValueWave		!by $00,$00,$00,$00,$00,$01,$01,$00,$07,$00,$06,$00,$00,$00,$00,$00
+TableControlLNNote	!by $00,$00,$00,$00,$00,$00,$0f,$00,$00,$00,$00,$00,$00,$00,$00,$0f
+TableControlCommandJumpLoNote	!by <NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f
+TableValueLNNote		!by $2b,$08,$0c,$8f,$82,$0d,$04,$28,$08,$07,$05,$03,$01,$01,$01,$0f
+TableValueHNNote		!by $2b,$08,$0c,$8f,$82,$0d,$04,$28,$08,$07,$05,$03,$01,$01,$01,$0f
+TableControlPulse	!by $06,$17,$ff,$08,$ff,$09,$17,$ff,$04,$ff,$0a,$ff,$04,$17,$ff,$0f,$18,$ff
+TableValuePulse		!by $00,$10,$02,$00,$00,$00,$00,$07,$00,$00,$00,$00,$00,$30,$0e,$00,$00,$11
+TableControlFilter
+TableValueFilter	
+EnvelopesAttackDecay !by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesSustainRelease !by $00,$ee,$e9,$ab,$c7,$e9,$ae,$ae,$ae,$a9,$ae,$ae,$ae
+EnvelopesTableWave !by $01,$03,$05,$03,$0a,$03,$03,$03,$0d,$03,$0f,$03,$03
+EnvelopesTableNote !by $00,$00,$01,$00,$08,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesTablePulse !by $00,$01,$04,$06,$09,$0b,$0d,$09,$00,$0d,$00,$10,$0d
+EnvelopesTableFilter !by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesTableBitMask !by $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
+EnvelopesMiscBitMask !by $00,$80,$00,$80,$00,$80,$80,$80,$80,$80,$80,$80,$80
+TrackStart0 !by 0
+TrackStart1 !by 0
+TrackStart2 !by 0
+	!by 10
+	!by 144
+	!by 146
+	!by 148
+	!by 151
+	!by 153
+	!by 171
+	!by 173
+	!by 175
+	!by 186
+	!by 195
+	!by 196
+	!by 197
+	!by 198
+	!by 199
+	!by 200
+	!by 201
+	!by 202
+	!by 203
+	!by 204
+	!by 205
+	!by 206
+	!by 207
+	!by 208
+	!by 209
+	!by 210
+	!by 227
+	!by 228
+	!by 229
+	!by 230
+	!by 232
+	!by 233
+	!by 234
+	!by 235
+	!by 236
+	!by 237
+	!by 238
+	!by 239
+kNumSongs = TrackStart1 - TrackStart0
+kStartSong = 1
+}
+
+!if TestTune2 {
+*=$900
+TableCodeActivateNote = 1
+TableCodeActivatePulse = 1
+SluringCommandsActive = 1
+HardRestartCommandsActive = 1
+ArpeggioCommandsActive = 1
+ArpeggioStopCommandsActive = 1
+SmallVibratoCommandsActive = 1
+ArpeggioAutoCommandsActive = 1
+ArpeggioStopAutoCommandsActive = 1
+DurationAutoCommandsActive = 1
+EnvelopeAutoCommandsActive = 1
+FilterControlAutoCommandsActive = 1
+FilterGlideAutoCommandsActive = 1
+FilterHiAutoCommandsActive = 1
+FilterLoAutoCommandsActive = 1
+FilterPassAutoCommandsActive = 1
+GlideAutoCommandsActive = 1
+HardRestartDisableAutoCommandsActive = 1
+HardRestartEnableAutoCommandsActive = 1
+RestNoteAutoCommandsActive = 1
+SlurEnableAutoCommandsActive = 1
+SlurReleaseAutoCommandsActive = 1
+SmallVibratoAutoCommandsActive = 1
+SmallVibratoDelayAutoCommandsActive = 1
+SmallVibratoStopAutoCommandsActive = 1
+VolumeAutoCommandsActive = 1
+!source "MusicPlayer2.a"
+Track0
+	!by $80,$53,$03,$85,$43,$03,$80,$4b,$03,$85,$43,$03,$80,$4b,$03,$85,$43,$03,$80,$43,$03,$85,$43,$03,$80,$43,$03,$10,$10,$42,$0c,$10,$10,$43,$0c,$47,$17,$b5,$43,$17,$b9,$43,$17,$80,$47,$17,$b5,$43,$17,$b9,$43,$17,$85,$47,$03,$80,$0c,$0c,$4b,$03,$1d,$ff
+Track1
+	!by $80,$02,$4f,$01,$85,$43,$01,$80,$4b,$01,$85,$43,$01,$80,$4b,$01,$85,$43,$01,$80,$43,$01,$85,$43,$01,$80,$43,$01,$11,$0f,$12,$13,$12,$14,$11,$15,$bc,$43,$14,$80,$04,$04,$42,$01,$19,$0f,$12,$13,$1b,$4b,$01,$1d,$ff
+Track2
+	!by $80,$02,$04,$04,$05,$08,$06,$85,$06,$80,$07,$0b,$09,$85,$09,$80,$05,$08,$0a,$85,$0a,$80,$06,$85,$06,$80,$07,$0d,$42,$0e,$0d,$42,$0e,$80,$1a,$b2,$1a,$83,$1a,$80,$1c,$16,$15,$18,$0e,$0e,$00,$1d,$ff
+BlockIndexLo
+	!by <Block00
+	!by <Block01
+	!by <Block02
+	!by <Block03
+	!by <Block04
+	!by <Block05
+	!by <Block06
+	!by <Block07
+	!by <Block08
+	!by <Block09
+	!by <Block0a
+	!by <Block0b
+	!by <Block0c
+	!by <Block0d
+	!by <Block0e
+	!by <Block0f
+	!by <Block10
+	!by <Block11
+	!by <Block12
+	!by <Block13
+	!by <Block14
+	!by <Block15
+	!by <Block16
+	!by <Block17
+	!by <Block18
+	!by <Block19
+	!by <Block1a
+	!by <Block1b
+	!by <Block1c
+	!by <Block1d
+BlockIndexHi
+	!by >Block00
+	!by >Block01
+	!by >Block02
+	!by >Block03
+	!by >Block04
+	!by >Block05
+	!by >Block06
+	!by >Block07
+	!by >Block08
+	!by >Block09
+	!by >Block0a
+	!by >Block0b
+	!by >Block0c
+	!by >Block0d
+	!by >Block0e
+	!by >Block0f
+	!by >Block10
+	!by >Block11
+	!by >Block12
+	!by >Block13
+	!by >Block14
+	!by >Block15
+	!by >Block16
+	!by >Block17
+	!by >Block18
+	!by >Block19
+	!by >Block1a
+	!by >Block1b
+	!by >Block1c
+	!by >Block1d
+Block00
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandFilterGlide , $01 , $01
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandVolume , $0d
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by 60
+	!by <BlockCommandVolume , $0c
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $0b
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $0a
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $09
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $08
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $07
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $06
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $05
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $04
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $03
+	!by <BlockCommandRestNote
+	!by <BlockCommandVolume , $02
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartEnable
+	!by 12
+	!by <BlockCommandEndBlock
+Block01
+	!by <BlockCommandEnvelope , $01
+	!by <BlockCommandDuration , $04
+	!by 50
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by 51
+	!by 51
+	!by <BlockCommandEnvelope , $01
+	!by 62
+	!by <BlockCommandEnvelope , $03
+	!by 53
+	!by 46
+	!by 46
+	!by <BlockCommandEndBlock
+Block02
+	!by <BlockCommandVolume , $0f
+	!by <BlockCommandFilterLo , $10
+	!by <BlockCommandFilterHi , $10
+	!by <BlockCommandFilterControl , $d2
+	!by <BlockCommandFilterPass , $20
+	!by <BlockCommandFilterGlide , $01 , $03
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandDuration , $20
+	!by 62
+	!by <BlockCommandDuration , $40
+	!by <BlockCommandEnvelope , $05
+	!by <BlockCommandHardRestartDisable
+	!by 62
+	!by <BlockCommandDuration , $1c
+	!by 62
+	!by <BlockCommandHardRestartEnable
+	!by <BlockCommandFilterGlide , $00 , $00
+	!by <BlockCommandFilterLo , $ff
+	!by <BlockCommandFilterHi , $ff
+	!by <BlockCommandFilterControl , $f2
+	!by <BlockCommandFilterPass , $10
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEndBlock
+Block03
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 24
+	!by <BlockCommandEnvelope , $02
+	!by <BlockCommandDuration , $04
+	!by 26
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 27
+	!by <BlockCommandDuration , $04
+	!by 22
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $04
+	!by 19
+	!by <BlockCommandEndBlock
+Block04
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by 53
+	!by 48
+	!by 53
+	!by <BlockCommandEndBlock
+Block05
+	!by <BlockCommandDuration , $38
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by <BlockCommandSmallVibratoDelay , $20
+	!by 48
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandGlide , $81 , $04
+	!by 48
+	!by <BlockCommandDuration , $3c
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by <BlockCommandSmallVibratoDelay , $20
+	!by <BlockCommandHardRestartEnable
+	!by <BlockCommandSlurRelease
+	!by 43
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandGlide , $82 , $00
+	!by 31
+	!by <BlockCommandEndBlock
+Block06
+	!by <BlockCommandFilterLo , $80
+	!by <BlockCommandFilterHi , $80
+	!by <BlockCommandFilterControl , $d4
+	!by <BlockCommandFilterPass , $30
+	!by <BlockCommandFilterGlide , $01 , $01
+	!by <BlockCommandEnvelope , $08
+	!by <BlockCommandDuration , $04
+	!by 63
+	!by 62
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by 60
+	!by 55
+	!by 58
+	!by 55
+	!by <BlockCommandSlurRelease
+	!by 58
+	!by 55
+	!by 58
+	!by 59
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandHardRestartDisable
+	!by 63
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandSmallVibrato , $33 , $08
+	!by <BlockCommandSmallVibratoDelay , $04
+	!by 63
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 62
+	!by <BlockCommandSlurRelease
+	!by 60
+	!by 58
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by 55
+	!by 58
+	!by 55
+	!by <BlockCommandSlurRelease
+	!by 58
+	!by 55
+	!by <BlockCommandHardRestartDisable
+	!by 58
+	!by 59
+	!by 60
+	!by <BlockCommandHardRestartEnable
+	!by 63
+	!by 60
+	!by 63
+	!by <BlockCommandEndBlock
+Block07
+	!by <BlockCommandEnvelope , $08
+	!by <BlockCommandDuration , $04
+	!by 63
+	!by 62
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by 60
+	!by 55
+	!by 58
+	!by 55
+	!by <BlockCommandSlurRelease
+	!by 58
+	!by 55
+	!by 58
+	!by 59
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandHardRestartDisable
+	!by 63
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandSmallVibrato , $33 , $08
+	!by <BlockCommandSmallVibratoDelay , $04
+	!by 63
+	!by <BlockCommandDuration , $04
+	!by 62
+	!by <BlockCommandSlurRelease
+	!by 60
+	!by 58
+	!by 60
+	!by <BlockCommandSlurEnable
+	!by 55
+	!by 58
+	!by 55
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibratoStop
+	!by 58
+	!by 55
+	!by <BlockCommandHardRestartDisable
+	!by 51
+	!by 50
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandSmallVibrato , $44 , $07
+	!by <BlockCommandSmallVibratoDelay , $20
+	!by 48
+	!by <BlockCommandEndBlock
+Block08
+	!by <BlockCommandFilterLo , $10
+	!by <BlockCommandFilterHi , $10
+	!by <BlockCommandFilterControl , $f4
+	!by <BlockCommandFilterPass , $10
+	!by <BlockCommandFilterGlide , $01 , $04
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $09
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by <BlockCommandFilterHi , $ff
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEndBlock
+Block09
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandSmallVibrato , $44 , $07
+	!by <BlockCommandSmallVibratoDelay , $20
+	!by 48
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 58
+	!by <BlockCommandDuration , $3c
+	!by 55
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandGlide , $81 , $00
+	!by 55
+	!by <BlockCommandEndBlock
+Block0a
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandEnvelope , $08
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 58
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by 60
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandGlide , $82 , $00
+	!by <BlockCommandHardRestartEnable
+	!by <BlockCommandSlurRelease
+	!by 60
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandEnvelope , $0a
+	!by <BlockCommandSmallVibrato , $33 , $08
+	!by 70
+	!by 70
+	!by <BlockCommandDuration , $18
+	!by 72
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandGlide , $81 , $00
+	!by 72
+	!by <BlockCommandEnvelope , $02
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandEndBlock
+Block0b
+	!by <BlockCommandFilterLo , $10
+	!by <BlockCommandFilterHi , $10
+	!by <BlockCommandFilterControl , $f4
+	!by <BlockCommandFilterGlide , $01 , $02
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $0b
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by 58
+	!by 60
+	!by 60
+	!by 63
+	!by 63
+	!by 65
+	!by 65
+	!by 58
+	!by <BlockCommandFilterHi , $ff
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEndBlock
+Block0c
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $0c
+	!by 24
+	!by <BlockCommandDuration , $04
+	!by 36
+	!by 24
+	!by <BlockCommandDuration , $08
+	!by 36
+	!by <BlockCommandDuration , $04
+	!by 36
+	!by <BlockCommandDuration , $0c
+	!by 24
+	!by <BlockCommandDuration , $04
+	!by 36
+	!by 24
+	!by <BlockCommandDuration , $08
+	!by 36
+	!by <BlockCommandDuration , $04
+	!by 36
+	!by <BlockCommandDuration , $0c
+	!by 22
+	!by <BlockCommandDuration , $04
+	!by 34
+	!by 22
+	!by <BlockCommandDuration , $08
+	!by 34
+	!by <BlockCommandDuration , $04
+	!by 34
+	!by <BlockCommandDuration , $0c
+	!by 22
+	!by <BlockCommandDuration , $04
+	!by 34
+	!by 22
+	!by <BlockCommandDuration , $08
+	!by 34
+	!by <BlockCommandDuration , $04
+	!by 34
+	!by <BlockCommandDuration , $0c
+	!by 27
+	!by <BlockCommandDuration , $04
+	!by 39
+	!by 27
+	!by <BlockCommandDuration , $08
+	!by 39
+	!by <BlockCommandDuration , $04
+	!by 39
+	!by <BlockCommandDuration , $0c
+	!by 27
+	!by <BlockCommandDuration , $04
+	!by 39
+	!by 27
+	!by <BlockCommandDuration , $08
+	!by 39
+	!by <BlockCommandDuration , $04
+	!by 39
+	!by <BlockCommandDuration , $0c
+	!by 29
+	!by <BlockCommandDuration , $04
+	!by 41
+	!by 29
+	!by <BlockCommandDuration , $08
+	!by 41
+	!by <BlockCommandDuration , $04
+	!by 41
+	!by <BlockCommandDuration , $0c
+	!by 29
+	!by <BlockCommandDuration , $04
+	!by 41
+	!by 29
+	!by <BlockCommandDuration , $08
+	!by 41
+	!by <BlockCommandDuration , $04
+	!by 41
+	!by <BlockCommandEndBlock
+Block0d
+	!by <BlockCommandFilterGlide , $00 , $00
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $0e
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 31
+	!by 34
+	!by 35
+	!by <BlockCommandDuration , $1c
+	!by 38
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartEnable
+	!by 38
+	!by <BlockCommandEndBlock
+Block0e
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $01
+	!by <BlockCommandVolume , $0f
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartEnable
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by <BlockCommandArpeggio , $c7
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 46
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 51
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEndBlock
+Block0f
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by 59
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandSlurRelease
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by 59
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandSmallVibratoStop
+	!by 65
+	!by <BlockCommandSmallVibrato , $22 , $06
+	!by 65
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 65
+	!by 63
+	!by 62
+	!by <BlockCommandDuration , $24
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandEndBlock
+Block10
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 24
+	!by <BlockCommandEnvelope , $02
+	!by <BlockCommandDuration , $04
+	!by 26
+	!by <BlockCommandEnvelope , $04
+	!by 36
+	!by 24
+	!by 36
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $04
+	!by 36
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 24
+	!by <BlockCommandEnvelope , $02
+	!by <BlockCommandDuration , $04
+	!by 26
+	!by <BlockCommandEnvelope , $04
+	!by 36
+	!by 24
+	!by 36
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $04
+	!by 36
+	!by <BlockCommandEndBlock
+Block11
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandSlurRelease
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandDuration , $08
+	!by 14
+	!by <BlockCommandDuration , $04
+	!by 14
+	!by <BlockCommandEndBlock
+Block12
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 60
+	!by <BlockCommandDuration , $10
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibratoStop
+	!by 55
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandEnvelope , $0f
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 59
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $08
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by 59
+	!by <BlockCommandEndBlock
+Block13
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 60
+	!by <BlockCommandDuration , $10
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibratoStop
+	!by 55
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by 60
+	!by <BlockCommandEnvelope , $0f
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 60
+	!by <BlockCommandDuration , $10
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibratoStop
+	!by 55
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by 60
+	!by <BlockCommandEndBlock
+Block14
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 48
+	!by 58
+	!by <BlockCommandDuration , $3c
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by 55
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandGlide , $81 , $00
+	!by 55
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandSlurRelease
+	!by 51
+	!by <BlockCommandSlurEnable
+	!by 63
+	!by <BlockCommandDuration , $40
+	!by 60
+	!by <BlockCommandEndBlock
+Block15
+	!by <BlockCommandEnvelope , $0f
+	!by <BlockCommandDuration , $40
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 48
+	!by 46
+	!by 43
+	!by 45
+	!by 43
+	!by 41
+	!by 46
+	!by <BlockCommandDuration , $3c
+	!by 48
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandDuration , $40
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartDisable
+	!by 60
+	!by 58
+	!by <BlockCommandDuration , $20
+	!by 67
+	!by 65
+	!by 70
+	!by 69
+	!by <BlockCommandDuration , $40
+	!by 60
+	!by 58
+	!by <BlockCommandDuration , $20
+	!by 67
+	!by 65
+	!by 70
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSmallVibrato , $22 , $06
+	!by 72
+	!by <BlockCommandDuration , $04
+	!by 72
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandEndBlock
+Block16
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandFilterLo , $10
+	!by <BlockCommandFilterHi , $90
+	!by <BlockCommandFilterControl , $b4
+	!by <BlockCommandFilterPass , $10
+	!by <BlockCommandFilterGlide , $01 , $05
+	!by <BlockCommandVolume , $0c
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandDuration , $40
+	!by <BlockCommandSlurEnable
+	!by <BlockCommandHardRestartDisable
+	!by 48
+	!by <BlockCommandDuration , $3c
+	!by 48
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartEnable
+	!by 48
+	!by <BlockCommandEndBlock
+Block17
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 24
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $04
+	!by 36
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by 27
+	!by <BlockCommandDuration , $04
+	!by 22
+	!by <BlockCommandEnvelope , $0d
+	!by 36
+	!by <BlockCommandEnvelope , $04
+	!by 19
+	!by <BlockCommandEndBlock
+Block18
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandSmallVibrato , $22 , $06
+	!by 67
+	!by 65
+	!by 70
+	!by <BlockCommandFilterGlide , $00 , $00
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandHardRestartDisable
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandGlide , $81 , $00
+	!by 72
+	!by <BlockCommandEndBlock
+Block19
+	!by <BlockCommandEnvelope , $01
+	!by <BlockCommandDuration , $04
+	!by 50
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by 51
+	!by 51
+	!by <BlockCommandFilterLo , $10
+	!by <BlockCommandFilterHi , $e1
+	!by <BlockCommandFilterControl , $e8
+	!by <BlockCommandFilterPass , $10
+	!by <BlockCommandEnvelope , $02
+	!by <BlockCommandSlurRelease
+	!by 62
+	!by 53
+	!by 46
+	!by 46
+	!by <BlockCommandEndBlock
+Block1a
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by <BlockCommandArpeggio , $c7
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 48
+	!by <BlockCommandEndBlock
+Block1b
+	!by <BlockCommandEnvelope , $0d
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 60
+	!by <BlockCommandDuration , $10
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibratoStop
+	!by 55
+	!by <BlockCommandSlurEnable
+	!by 58
+	!by <BlockCommandDuration , $1c
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandSmallVibrato , $33 , $06
+	!by <BlockCommandSmallVibratoDelay , $10
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandEnvelope , $0f
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 59
+	!by <BlockCommandDuration , $14
+	!by <BlockCommandSmallVibrato , $44 , $06
+	!by 60
+	!by <BlockCommandSmallVibratoStop
+	!by <BlockCommandDuration , $08
+	!by 58
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandHardRestartDisable
+	!by 59
+	!by <BlockCommandEndBlock
+Block1c
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $01
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by <BlockCommandEnvelope , $0c
+	!by 53
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by 53
+	!by <BlockCommandEndBlock
+Block1d
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandDuration , $40
+	!by 0
+	!by 0
+	!by <BlockCommandEndBlock
+TableControlWave	!by $09,$ff,$81,$41,$40,$ff,$81,$41,$40,$80,$ff,$41,$ff,$81,$ff,$41,$43,$ff,$11,$17,$ff,$21,$23,$ff,$47,$ff
+TableValueWave		!by $00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00,$00,$13,$00,$00,$16,$00,$00
+TableControlLNNote	!by $00,$00,$00,$00,$0f,$00,$00,$00,$00,$0f
+TableControlCommandJumpLoNote	!by <NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f
+TableValueLNNote		!by $f3,$08,$04,$01,$04,$2b,$08,$0c,$3c,$09
+TableValueHNNote		!by $f3,$08,$04,$01,$04,$2b,$08,$0c,$3c,$09
+TableControlPulse	!by $08,$ff,$06,$ff,$04,$17,$ff,$07,$17,$ff,$06,$17,$ff,$06,$17,$ff,$03,$17,$ff,$05,$17,$ff
+TableValuePulse		!by $00,$00,$00,$00,$00,$10,$06,$00,$30,$09,$00,$30,$0c,$00,$10,$0f,$00,$30,$12,$00,$10,$15
+TableControlFilter
+TableValueFilter	
+EnvelopesAttackDecay !by $00,$00,$00,$00,$00,$aa,$28,$00,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesSustainRelease !by $f0,$f2,$f8,$a6,$fd,$af,$ae,$00,$ae,$55,$a9,$55,$8e,$df,$bd,$df
+EnvelopesTableWave !by $01,$03,$07,$0c,$0c,$0e,$0c,$01,$10,$0c,$13,$16,$0c,$19,$0c,$0c
+EnvelopesTableNote !by $00,$01,$06,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesTablePulse !by $00,$01,$01,$03,$05,$00,$08,$00,$0b,$03,$00,$00,$0e,$11,$14,$11
+EnvelopesTableFilter !by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesTableBitMask !by $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
+EnvelopesMiscBitMask !by $00,$00,$00,$80,$80,$80,$80,$00,$80,$80,$80,$80,$80,$80,$80,$80
+TrackStart0 !by 0
+TrackStart1 !by 0
+TrackStart2 !by 0
+kNumSongs = TrackStart1 - TrackStart0
+kStartSong = 1
+}
+
+!if TestTune3 {
+*=$900
+TableCodeActivateNote = 1
+TableCodeActivatePulse = 1
+SluringCommandsActive = 1
+ExtendedArpeggioCommandsActive = 1
+ArpeggioStopCommandsActive = 1
+ArpeggioStopAutoCommandsActive = 1
+DurationAutoCommandsActive = 1
+EnvelopeAutoCommandsActive = 1
+ExtendedArpeggioAutoCommandsActive = 1
+FixedVibratoAutoCommandsActive = 1
+FixedVibratoStopAutoCommandsActive = 1
+SlurEnableAutoCommandsActive = 1
+SlurReleaseAutoCommandsActive = 1
+!source "MusicPlayer2.a"
+Track0
+	!by $80,$01,$01,$80,$43,$01,$85,$01,$01,$87,$01,$01,$80,$43,$01,$85,$01,$01,$87,$01,$01,$ff
+Track1
+	!by $80,$04,$09,$80,$42,$02,$09,$85,$02,$09,$87,$02,$0a,$80,$42,$02,$09,$85,$02,$09,$87,$02,$0a,$ff
+Track2
+	!by $80,$00,$00,$80,$05,$06,$0b,$0c,$85,$06,$0d,$87,$05,$0c,$80,$03,$0e,$07,$08,$85,$06,$0f,$87,$05,$10,$ff
+BlockIndexLo
+	!by <Block00
+	!by <Block01
+	!by <Block02
+	!by <Block03
+	!by <Block04
+	!by <Block05
+	!by <Block06
+	!by <Block07
+	!by <Block08
+	!by <Block09
+	!by <Block0a
+	!by <Block0b
+	!by <Block0c
+	!by <Block0d
+	!by <Block0e
+	!by <Block0f
+	!by <Block10
+BlockIndexHi
+	!by >Block00
+	!by >Block01
+	!by >Block02
+	!by >Block03
+	!by >Block04
+	!by >Block05
+	!by >Block06
+	!by >Block07
+	!by >Block08
+	!by >Block09
+	!by >Block0a
+	!by >Block0b
+	!by >Block0c
+	!by >Block0d
+	!by >Block0e
+	!by >Block0f
+	!by >Block10
+Block00
+	!by <BlockCommandEnvelope , $00
+	!by <BlockCommandDuration , $40
+	!by 48
+	!by 48
+	!by <BlockCommandEndBlock
+Block01
+	!by <BlockCommandEnvelope , $07
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandDuration , $0c
+	!by 16
+	!by <BlockCommandDuration , $04
+	!by 16
+	!by 19
+	!by 19
+	!by <BlockCommandDuration , $08
+	!by 23
+	!by <BlockCommandDuration , $0c
+	!by 21
+	!by <BlockCommandDuration , $04
+	!by 21
+	!by 24
+	!by 24
+	!by <BlockCommandDuration , $08
+	!by 28
+	!by <BlockCommandDuration , $0c
+	!by 23
+	!by <BlockCommandDuration , $04
+	!by 23
+	!by 26
+	!by 26
+	!by <BlockCommandDuration , $08
+	!by 30
+	!by <BlockCommandDuration , $0c
+	!by 23
+	!by <BlockCommandDuration , $04
+	!by 23
+	!by 26
+	!by 26
+	!by 30
+	!by 30
+	!by <BlockCommandEndBlock
+Block02
+	!by <BlockCommandEnvelope , $03
+	!by <BlockCommandDuration , $08
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $03
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $02
+	!by 57
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $03
+	!by 56
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 59
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEndBlock
+Block03
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $0c
+	!by 52
+	!by <BlockCommandFixedVibrato , $04 , $06
+	!by 64
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by <BlockCommandDuration , $04
+	!by 64
+	!by <BlockCommandEnvelope , $00
+	!by 62
+	!by <BlockCommandEnvelope , $06
+	!by 64
+	!by <BlockCommandEnvelope , $00
+	!by 50
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $04
+	!by 64
+	!by 62
+	!by 64
+	!by 62
+	!by 59
+	!by 64
+	!by 66
+	!by 67
+	!by 69
+	!by 71
+	!by 69
+	!by 67
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 71
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 69
+	!by 67
+	!by 71
+	!by 69
+	!by 67
+	!by 66
+	!by 67
+	!by <BlockCommandEndBlock
+Block04
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandEnvelope , $03
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by 14
+	!by <BlockCommandDuration , $08
+	!by 14
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $02
+	!by 14
+	!by 14
+	!by <BlockCommandEndBlock
+Block05
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $0c
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 59
+	!by 59
+	!by 59
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 54
+	!by <BlockCommandDuration , $0c
+	!by 52
+	!by 54
+	!by 54
+	!by 55
+	!by 54
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by <BlockCommandDuration , $0c
+	!by 50
+	!by <BlockCommandEndBlock
+Block06
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 52
+	!by 52
+	!by 40
+	!by 40
+	!by 54
+	!by 54
+	!by 42
+	!by 42
+	!by 55
+	!by 55
+	!by 43
+	!by 43
+	!by 57
+	!by 57
+	!by 45
+	!by 45
+	!by <BlockCommandDuration , $08
+	!by 59
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 55
+	!by <BlockCommandDuration , $08
+	!by 54
+	!by 57
+	!by 55
+	!by 54
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by <BlockCommandDuration , $08
+	!by 51
+	!by <BlockCommandEndBlock
+Block07
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandDuration , $40
+	!by <BlockCommandEnvelope , $05
+	!by <BlockCommandFixedVibrato , $06 , $01
+	!by 52
+	!by <BlockCommandDuration , $0c
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 71
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 67
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 69
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 66
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 67
+	!by <BlockCommandDuration , $0c
+	!by <BlockCommandFixedVibrato , $06 , $06
+	!by 64
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandEndBlock
+Block08
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandFixedVibrato , $06 , $06
+	!by 71
+	!by <BlockCommandDuration , $08
+	!by 66
+	!by 67
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 66
+	!by 64
+	!by 62
+	!by <BlockCommandDuration , $20
+	!by <BlockCommandEnvelope , $05
+	!by 55
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $06
+	!by 62
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandFixedVibrato , $06 , $06
+	!by 64
+	!by 66
+	!by 67
+	!by 68
+	!by 69
+	!by <BlockCommandDuration , $04
+	!by 70
+	!by <BlockCommandDuration , $10
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 71
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandEndBlock
+Block09
+	!by <BlockCommandEnvelope , $03
+	!by <BlockCommandDuration , $08
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $03
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $02
+	!by 57
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $03
+	!by 56
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 59
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 48
+	!by <BlockCommandEndBlock
+Block0a
+	!by <BlockCommandEnvelope , $03
+	!by <BlockCommandDuration , $08
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 52
+	!by <BlockCommandEnvelope , $03
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $02
+	!by 57
+	!by <BlockCommandEnvelope , $01
+	!by 57
+	!by <BlockCommandEnvelope , $03
+	!by 48
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 50
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandEnvelope , $03
+	!by 56
+	!by <BlockCommandEnvelope , $02
+	!by 59
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 59
+	!by 59
+	!by 59
+	!by <BlockCommandEnvelope , $01
+	!by 59
+	!by <BlockCommandEnvelope , $02
+	!by 59
+	!by <BlockCommandEndBlock
+Block0b
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 64
+	!by <BlockCommandDuration , $04
+	!by 62
+	!by <BlockCommandDuration , $08
+	!by 59
+	!by 62
+	!by 52
+	!by 52
+	!by <BlockCommandDuration , $04
+	!by 59
+	!by <BlockCommandDuration , $08
+	!by 62
+	!by <BlockCommandDuration , $04
+	!by 61
+	!by 62
+	!by 64
+	!by 64
+	!by <BlockCommandDuration , $08
+	!by 62
+	!by <BlockCommandDuration , $04
+	!by 59
+	!by <BlockCommandDuration , $08
+	!by 62
+	!by 59
+	!by 55
+	!by 52
+	!by 50
+	!by <BlockCommandDuration , $04
+	!by 47
+	!by <BlockCommandEndBlock
+Block0c
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $02
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 52
+	!by 40
+	!by 54
+	!by 42
+	!by 55
+	!by 43
+	!by 57
+	!by 45
+	!by <BlockCommandDuration , $08
+	!by 59
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 55
+	!by <BlockCommandDuration , $08
+	!by 54
+	!by 57
+	!by 55
+	!by 54
+	!by <BlockCommandDuration , $08
+	!by 52
+	!by 54
+	!by 55
+	!by 56
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 58
+	!by <BlockCommandDuration , $10
+	!by 59
+	!by <BlockCommandEndBlock
+Block0d
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 59
+	!by <BlockCommandDuration , $08
+	!by 55
+	!by <BlockCommandDuration , $0c
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by <BlockCommandDuration , $08
+	!by 50
+	!by 52
+	!by <BlockCommandDuration , $04
+	!by 55
+	!by 54
+	!by 52
+	!by <BlockCommandDuration , $08
+	!by 50
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by 54
+	!by 55
+	!by 57
+	!by 59
+	!by 60
+	!by <BlockCommandDuration , $08
+	!by 59
+	!by <BlockCommandDuration , $04
+	!by 57
+	!by 59
+	!by <BlockCommandDuration , $08
+	!by 57
+	!by <BlockCommandDuration , $04
+	!by 55
+	!by 57
+	!by <BlockCommandDuration , $08
+	!by 55
+	!by <BlockCommandEndBlock
+Block0e
+	!by <BlockCommandEnvelope , $05
+	!by <BlockCommandDuration , $1c
+	!by 50
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandFixedVibrato , $02 , $06
+	!by 64
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandFixedVibrato , $03 , $08
+	!by 67
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $08
+	!by 69
+	!by 62
+	!by 64
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 62
+	!by 63
+	!by 64
+	!by 63
+	!by 62
+	!by 59
+	!by 62
+	!by 59
+	!by 58
+	!by 57
+	!by 55
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by 59
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandDuration , $04
+	!by 58
+	!by <BlockCommandDuration , $08
+	!by 57
+	!by <BlockCommandEndBlock
+Block0f
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $08
+	!by <BlockCommandFixedVibrato , $06 , $06
+	!by 71
+	!by <BlockCommandDuration , $04
+	!by 67
+	!by <BlockCommandDuration , $0c
+	!by 69
+	!by <BlockCommandDuration , $08
+	!by 64
+	!by <BlockCommandDuration , $04
+	!by 62
+	!by <BlockCommandDuration , $08
+	!by 64
+	!by <BlockCommandDuration , $04
+	!by 67
+	!by 66
+	!by 64
+	!by <BlockCommandDuration , $08
+	!by 62
+	!by <BlockCommandDuration , $04
+	!by 64
+	!by 66
+	!by 67
+	!by 69
+	!by 71
+	!by 72
+	!by <BlockCommandDuration , $08
+	!by 71
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 69
+	!by 71
+	!by 70
+	!by 69
+	!by 68
+	!by <BlockCommandSlurRelease
+	!by 67
+	!by 62
+	!by <BlockCommandFixedVibratoStop
+	!by 63
+	!by <BlockCommandEndBlock
+Block10
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $06
+	!by <BlockCommandDuration , $04
+	!by 64
+	!by 66
+	!by 67
+	!by 69
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by <BlockCommandDuration , $08
+	!by 71
+	!by <BlockCommandFixedVibratoStop
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 52
+	!by 54
+	!by 55
+	!by 57
+	!by <BlockCommandDuration , $08
+	!by 59
+	!by <BlockCommandDuration , $04
+	!by 52
+	!by 54
+	!by 55
+	!by 57
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEnvelope , $06
+	!by 71
+	!by 72
+	!by 71
+	!by 69
+	!by <BlockCommandFixedVibrato , $03 , $06
+	!by <BlockCommandDuration , $08
+	!by 71
+	!by <BlockCommandDuration , $04
+	!by <BlockCommandSlurEnable
+	!by 71
+	!by 72
+	!by <BlockCommandFixedVibratoStop
+	!by 71
+	!by 69
+	!by 67
+	!by 64
+	!by <BlockCommandSlurRelease
+	!by <BlockCommandEnvelope , $04
+	!by <BlockCommandExtendedArpeggio , $01 ,$09
+	!by 59
+	!by 57
+	!by 55
+	!by 52
+	!by <BlockCommandArpeggioStop
+	!by <BlockCommandEndBlock
+TableControlWave	!by $08,$ff,$41,$01,$ff,$81,$41,$40,$82,$ff,$81,$40,$ff,$41,$ff,$21,$ff
+TableValueWave		!by $00,$00,$00,$00,$03,$00,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$00
+TableControlLNNote	!by $00,$00,$00,$00,$0f,$00,$00,$00,$00,$0f,$01,$00,$0f
+TableControlCommandJumpLoNote	!by <NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0b,<NoteTableCommand0f,<NoteTableCommand09,<NoteTableCommand08,<NoteTableCommand0f
+TableValueLNNote		!by $2b,$08,$0c,$30,$04,$f3,$08,$04,$01,$09,$08,$08,$0b
+TableValueHNNote		!by $2b,$08,$0c,$30,$04,$f3,$08,$04,$01,$09,$fd,$0c,$0b
+TableControlPulse	!by $01,$ff,$08,$ff,$04,$ff,$05,$ff,$03,$17,$ff
+TableValuePulse		!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$30,$0a
+TableControlFilter
+TableValueFilter	
+EnvelopesAttackDecay !by $00,$00,$00,$00,$00,$00,$00,$09
+EnvelopesSustainRelease !by $00,$f9,$e9,$f5,$99,$cf,$cc,$c9
+EnvelopesTableWave !by $01,$03,$06,$0b,$0e,$10,$10,$0e
+EnvelopesTableNote !by $00,$00,$01,$06,$00,$0b,$00,$00
+EnvelopesTablePulse !by $00,$01,$03,$05,$07,$00,$00,$09
+EnvelopesTableFilter !by $00,$00,$00,$00,$00,$00,$00,$00
+EnvelopesTableBitMask !by $07,$07,$07,$07,$07,$07,$07,$07
+EnvelopesMiscBitMask !by $00,$80,$00,$00,$80,$80,$80,$80
+TrackStart0 !by 0
+TrackStart1 !by 0
+TrackStart2 !by 0
+kNumSongs = TrackStart1 - TrackStart0
+kStartSong = 1
+}

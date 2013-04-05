@@ -1,0 +1,45 @@
+!zn {
+; Return
+; a = Byte
+GetTapeByte
+	; Use 1 because we wait until we get a carry after eight rols to finish the loop
+	lda #1
+.l1
+	jsr WaitForTapeEdge
+	rol
+	bcc .l1
+	rts
+	
+; Waits for the tape edge, reads the detected bit from the timer, resets the timer.
+; Return: Carry = Tape bit
+!zn
+WaitForTapeEdge
+	pha
+	; Check for Signal level on FLAG pin, datasette input.
+	lda #%10000
+.l1
+	bit CIA1InterruptControl
+	beq .l1
+	; Check to see if the timer stopped.
+	; This is done because CIA1InterruptControl is read above which resets the timer underflow bit and because we don't want to alter CIA2
+	lda CIA1TimerALo
+	cmp CIA1TimerALo
+	beq .impliedCarrySet
+	clc
+.impliedCarrySet
+	; Here carry is set if the timer has not finished counting down, or
+	; the carry is cleared if the timer has finished.
+	lda #%11001
+	sta CIA1TimerAControl		; Start timer again, one shot mode.
+!ifdef NovaishLoad {
+	inc VIC2BorderColour
+} else {
+!ifdef MartyLoad { } else {
+	lda VIC2BorderColour
+	eor #5						; Better border colours with one less byte than using the clc/adc method
+	sta VIC2BorderColour
+}
+}
+	pla
+	rts
+}

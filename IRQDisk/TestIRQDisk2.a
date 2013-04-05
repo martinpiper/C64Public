@@ -1,0 +1,492 @@
+;IRQDisk test code
+
+; MPi: TODO
+
+
+!source "../stdlib/stdlib.a"
+!to "TestIRQDisk.prg", cbm
+!sl "TestIRQDisk.map"
+!svl "TestIRQDisk.lbl"
+!cpu 6510
+!ct pet
+
+!source "IRQDiskVars.a"
+IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
+IRQDisk_Retries = 5
+IRQDisk_LEDFlash = 15
+;IRQDisk_UseATN = 1
+
+;!source "../stdlib/BASICEntry900.a"
+;*=BASICEntry
+* = $c000
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	lda #VIC2Colour_Black
+	ldx #0
+.l1
+	sta COLOURRAM ,x
+	sta COLOURRAM + $100,x
+	sta COLOURRAM + $200 ,x
+	sta COLOURRAM + $2e8 ,x
+	dex
+	bne .l1
+	lda #128+' '
+.l2
+	sta SCREENRAM ,x
+	sta SCREENRAM + $100,x
+	sta SCREENRAM + $200 ,x
+	sta SCREENRAM + $2e8 ,x
+	dex
+	bne .l2
+
+	+DisplayReversedTextMiddle_AX .message8,.message8End,SCREENRAM + (24*40)
+	+DisplayReversedTextMiddle_AX .message7,.message7End,SCREENRAM + (10*40)
+	+DisplayReversedTextMiddle_AX .message5,.message5End,SCREENRAM + (12*40)
+	+DisplayReversedTextMiddle_AX .message6,.message6End,SCREENRAM + (14*40)
+
+	jsr InitVideo
+
+.rl0
+	ldy #50
+	inc .colourCounter
+	lda .colourCounter
+	and #31
+	sta .colourCounter
+	tax
+.rl1
+	lda ColourTable,x
+.rl2
+	cpy VIC2Raster
+	bne .rl2
+	sta VIC2ScreenColour
+	inx
+	txa
+	and #31
+	tax
+	iny
+	cpy #240
+	bne .rl1
+
+	lda #%01000
+	bit CIA1KeyboardRowsJoystickB
+	beq .gotRight
+	bit CIA1KeyboardColumnJoystickA
+	beq .gotRight
+
+	lda #%00100
+	bit CIA1KeyboardRowsJoystickB
+	beq .gotLeft
+	bit CIA1KeyboardColumnJoystickA
+	beq .gotLeft
+	jmp .rl0
+
+.gotRight
+
+	jsr ClearScreen
+
+	+MACRODisableUpperLowerCaseChange_A
+
+	+DisplayColourTextMiddle_AX .message1a,.message1aEnd,SCREENRAM + (12*40) , VIC2Colour_White
+
+	+InitKERNALIO_AXY
+
+	+MACRODisableCursorFlash_A
+
+	cli
+
+	lda #0
+	jsr SETMSG
+
+	lda #<StopKeyCheck
+	sta STOPVectorLo
+	lda #>StopKeyCheck
+	sta STOPVectorHi
+
+	lda #8
+	ldx ZPCurrentFileDeviceNumber
+	ldy #1
+	jsr SETLFS
+	lda #.nameTestEnd-.nameTest
+	ldx #<.nameTest
+	ldy #>.nameTest
+	jsr SETNAM
+	lda #0
+	ldx #$ff
+	ldy #$ff
+	jsr LOAD
+	bcs .lloadError
+	lda #$c0
+	jsr SETMSG
+	ldx #<DefaultSTOPVector
+	ldy #>DefaultSTOPVector
+	stx STOPVectorLo
+	sty STOPVectorHi
+
+	jmp .executeLoadedCode
+
+.lloadError jmp .loadError
+
+.gotLeft
+
+	jsr ClearScreen
+
+	+DisplayColourTextMiddle_AX .message4,.message4End,SCREENRAM + (12*40) , VIC2Colour_White
+
+	lda ZPCurrentFileDeviceNumber
+	jsr IRQDisk_Init
+	bcc .noError
+	+DisplayColourTextMiddle_AX .message3,.message3End,SCREENRAM + (12*40) , VIC2Colour_White
+	inc .gotError
+	jmp .gotError2
+.noError
+
+	+DisplayColourTextMiddle_AX .message1,.message1End,SCREENRAM + (12*40) , VIC2Colour_White
+
+.gotError2
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	jsr InitIRQ
+
+	lda .gotError
+	bne *
+
+;	jmp *
+
+	lda #.nameTestEnd-.nameTest
+	ldx #<.nameTest
+	ldy #>.nameTest
+	jsr IRQDisk_Load
+
+	bcs .loadError
+
+.executeLoadedCode
+
+!if 0 {
+	; Stop the IRQs, then blank the screen colour, then display a message in an unused portion
+	; of extended zero page.
+	sei
+	ldx #0
+	lda #VIC2Colour_Black
+.cl1
+	sta COLOURRAM ,x
+	sta COLOURRAM + $100 ,x
+	sta COLOURRAM + $200 ,x
+	sta COLOURRAM + $2e8 ,x
+	dex
+	bne .cl1
+
+	; If using a picture linked file it isn't necessary to display the "Decompressing..." here
+	; since it already displays the message very quickly after running.
+	+DisplayColourTextMiddle_AX .decompressing , .decompressingEnd , $0000 + (14*40) , VIC2Colour_White
+	lda #%100
+	sta VIC2MemorySetup
+}
+
+	; Start the compressed code from the picture linked file.
+	; NOTE: This address changes as the size of the compressed file changes.
+	jmp 35328
+
+.loadError
+	+DisplayColourTextMiddle_AX .message2,.message2End,SCREENRAM + (12*40) , VIC2Colour_White
+	jmp *
+
+.colourCounter !by 0
+
+.message1 !scr "MartyLoad loading Berzerk..."
+.message1End
+
+.message1a !scr "Loading Berzerk..."
+.message1aEnd
+
+.message2 !scr "Load error! Check your disk."
+.message2End
+
+.message3 !scr "Cannot initialise the drive."
+.message3End
+
+.message4 !scr "Initialising the drive."
+.message4End
+
+.message5 !scr "Move stick left for the fast load"
+.message5End
+
+.message6 !scr "Move stick right for the kernal load"
+.message6End
+
+.message7 !scr "Berzerk disk menu"
+.message7End
+
+.message8 !scr "Limited RGCD Release"
+.message8End
+
+;.decompressing !scr "Decompressing..."
+;.decompressingEnd
+
+.gotError !by 0
+
+	; Note, the ct raw is used here
+.nameTest !raw "GAME"
+.nameTestEnd = *
+
+!zn
+TestIRQ
+	pha
+	txa
+	pha
+	tya
+	pha
+	ldx VIC2Raster
+.l1
+	cpx VIC2Raster
+	beq .l1
+	ldy #1
+.l2
+	dey
+	bne .l2
+	nop
+	lda #VIC2Colour_White
+	; Set the screen while in the right border
+	sta VIC2ScreenColour
+	; Set the border on the far left on the next line
+	sta VIC2BorderColour
+	lda #VIC2Colour_Blue
+	ldy #11
+.l3
+	dey
+	bne .l3
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+	lda #<TestIRQ2
+	sta KERNALIRQServiceRoutineLo
+	lda #>TestIRQ2
+	sta KERNALIRQServiceRoutineHi
+	; Raster position
+	lda #VIC2SpriteYBorderTop + (14*8) - 4
+	sta VIC2Raster
+
+	+MACROAckRasterIRQ_A
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+!zn
+TestIRQ2
+	pha
+	txa
+	pha
+	tya
+	pha
+	ldx VIC2Raster
+.l1
+	cpx VIC2Raster
+	beq .l1
+	ldy #10
+.l2
+	dey
+	bne .l2
+	lda #VIC2Colour_White
+	; Set the screen while in the right border
+	sta VIC2ScreenColour
+	; Set the border on the far left on the next line
+	sta VIC2BorderColour
+	lda #VIC2Colour_Black
+	ldy #11
+.l3
+	dey
+	bne .l3
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+	lda #<TestIRQ
+	sta KERNALIRQServiceRoutineLo
+	lda #>TestIRQ
+	sta KERNALIRQServiceRoutineHi
+	; Raster position
+	lda #VIC2SpriteYBorderTop + (11*8)
+	sta VIC2Raster
+
+	; Find out where the file loading progress is and display it
+	jsr IRQDisk_GetLastStoredHi
+
+	jsr DisplayLoadingCounter
+
+	+MACROAckRasterIRQ_A
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+DisplayLoadingCounter
+	cmp #8
+	; If it isn't loading yet then ignore it
+	bcc .notLoadingYet
+	; Subtract BASIC start
+	sec
+	sbc #8
+	; Reverse subtract with ...
+	eor #255
+	clc
+	; ... the hi of the file length.
+	adc #166
+	tax
+	lda ValMod10Tab,x
+	clc
+	adc #'0'
+	sta SCREENRAM + (16*40) + 21
+
+	ldy ValDiv10Tab,x
+	lda ValMod10Tab,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (16*40) + 20
+
+	lda ValDiv10Tab,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (16*40) + 19
+
+
+
+	lda #VIC2Colour_White
+	sta COLOURRAM + (16*40) + 19
+	sta COLOURRAM + (16*40) + 20
+	sta COLOURRAM + (16*40) + 21
+.notLoadingYet
+	rts
+
+InitVideo
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+	lda #VIC2MemorySetupDefault | 2
+	sta VIC2MemorySetup
+	lda #%11
+	sta CIA2PortASerialBusVICBank
+	rts
+
+InitIRQ
+	sei
+	; Grab the IRQ
+	lda #<TestIRQ
+	sta KERNALIRQServiceRoutineLo
+	lda #>TestIRQ
+	sta KERNALIRQServiceRoutineHi
+	; Raster position
+	lda #VIC2SpriteYBorderTop + (11*8)
+	sta VIC2Raster
+	; VIC IRQ control
+	lda #1
+	sta VIC2InteruptControl
+	+MACROAckRasterIRQ_A
+	cli
+	rts
+
+; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
+!zn {
+; Include the private code for each machine type
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeVIC20 {
+!source "IRQDiskVIC20.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC16 {
+!source "IRQDiskC16.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC64 {
+!source "IRQDiskC64.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC128 {
+!source "IRQDiskC128.a"
+}
+!source "IRQDisk.a"
+!source "stdlib1541.a"
+!source "IRQDiskDriveCode.a"
+}
+
+!source "../stdlib/Initialise.a"
+
+StopKeyCheck
+
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	lda ZPAddressToLoad+1
+	jsr DisplayLoadingCounter
+
+	pla
+	tay
+	pla
+	tax
+	pla
+
+	; This flashes the border during loading because the load routine checks the stop key.
+	lda #1
+	sta VIC2BorderColour
+	dec VIC2BorderColour
+	; Tell the kernal we are not pressing the stop key, honest
+	lda #$ff
+	rts
+
+!zn
+ClearScreen
+	lda #' '
+	ldx #0
+	stx VIC2ScreenColour
+.l3
+	sta SCREENRAM ,x
+	sta SCREENRAM + $100,x
+	sta SCREENRAM + $200 ,x
+	sta SCREENRAM + $2e8 ,x
+	dex
+	bne .l3
+	rts
+
+ValDiv10Tab
+!for .table1,256 {!by ((.table1-1) / 10) }
+ValMod10Tab
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+	!by 0,1,2,3,4,5,6,7,8,9
+
+ColourTable
+	!by VIC2Colour_Black,VIC2Colour_Blue,VIC2Colour_Brown,VIC2Colour_Red
+	!by VIC2Colour_DarkGrey,VIC2Colour_Purple,VIC2Colour_Orange,VIC2Colour_Grey
+	!by VIC2Colour_LightBlue,VIC2Colour_Green,VIC2Colour_LightRed,VIC2Colour_Cyan
+	!by VIC2Colour_LightGrey,VIC2Colour_Yellow,VIC2Colour_LightGreen,VIC2Colour_White
+	!by VIC2Colour_LightGreen,VIC2Colour_Yellow,VIC2Colour_LightGrey,VIC2Colour_Cyan
+	!by VIC2Colour_LightRed,VIC2Colour_Green,VIC2Colour_LightBlue,VIC2Colour_Grey
+	!by VIC2Colour_Orange,VIC2Colour_Purple,VIC2Colour_DarkGrey,VIC2Colour_Red
+	!by VIC2Colour_Brown,VIC2Colour_Blue,VIC2Colour_Black,VIC2Colour_Black

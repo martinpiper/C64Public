@@ -1,0 +1,635 @@
+!zn
+.message1
+!scr "programming - martin piper"
+.message1End
+.message2
+!scr "art - zeldin/cascade"
+.message2End
+.message3
+!scr "press fire to start"
+.message3End
+.message4 !scr "high scores"
+.message4End
+.message5
+!scr "music - necropolo , richard bayliss"
+.message5End
+.message6
+!scr "charset - groepaz"
+.message6End
+
+
+
+.messageb1
+!scr "a limited special edition"
+.messageb1End
+.messageb2
+!scr "rgcd cartridge"
+.messageb2End
+.messageb5
+!scr "box artwork - flemming dupont"
+.messageb5End
+.messageb6
+!scr "rgcd - james monkman"
+.messageb6End
+
+
+.messageVer
+!scr "v1.18 - "
+!scr "(c) 2010 element 114 software"
+.messageVerEnd
+
+.colourTab1 !by VIC2Colour_DarkGrey,VIC2Colour_Grey,VIC2Colour_LightGrey,VIC2Colour_White
+!by VIC2Colour_LightGrey,VIC2Colour_Grey,VIC2Colour_DarkGrey,VIC2Colour_Black
+
+.colourTabWhite !by VIC2Colour_DarkGrey,VIC2Colour_DarkGrey
+!by VIC2Colour_DarkGrey,VIC2Colour_Grey,VIC2Colour_LightGrey,VIC2Colour_White
+!by VIC2Colour_LightGrey,VIC2Colour_Grey,VIC2Colour_DarkGrey,VIC2Colour_DarkGrey
+!by VIC2Colour_DarkGrey,VIC2Colour_DarkGrey
+
+.colourTabRed !by VIC2Colour_Red, VIC2Colour_Red
+!by VIC2Colour_Red,VIC2Colour_LightRed,VIC2Colour_LightGrey,VIC2Colour_White
+!by VIC2Colour_LightGrey,VIC2Colour_LightRed,VIC2Colour_Red,VIC2Colour_Red
+!by VIC2Colour_Red, VIC2Colour_Red
+
+.colourTabBlue !by VIC2Colour_Blue, VIC2Colour_Blue
+!by VIC2Colour_Blue,VIC2Colour_LightBlue,VIC2Colour_LightGrey,VIC2Colour_White
+!by VIC2Colour_LightGrey,VIC2Colour_LightBlue,VIC2Colour_Blue,VIC2Colour_Blue
+!by VIC2Colour_Blue, VIC2Colour_Blue
+
+.colourTabGreen !by VIC2Colour_Green, VIC2Colour_Green
+!by VIC2Colour_Green,VIC2Colour_LightGreen,VIC2Colour_LightGrey,VIC2Colour_White
+!by VIC2Colour_LightGrey,VIC2Colour_LightGreen,VIC2Colour_Green,VIC2Colour_Green
+!by VIC2Colour_Green, VIC2Colour_Green
+
+.message7
+!scr "you, the humanoid"
+.message7End
+.message8
+!scr "robots, the enemy"
+.message8End
+.message9
+!scr "evil otto, cannot be killed"
+.message9End
+.message10
+!scr "kill the robots and escape!"
+.message10End
+
+.colourTabCycle !by 0
+.rasterTabCycle !by 0
+
+.stateCounter !by 0
+
+.screenState1Init
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	jsr ClearAllSprites
+	jsr Multiplex_Sort
+
+	; Note the reversed text and colour RAM to black clear order
+	jsr .clearMiddlePartColour
+	lda #' '+128
+;	lda #' '
+	jsr .clearMiddlePart
+
+
+	+DisplayReversedTextMiddle_AX .message3 , .message3End , MainScreen + (12*40)
+
+	+DisplayReversedTextMiddle_AX .message1 , .message1End , MainScreen + (15*40)
+	+DisplayReversedTextMiddle_AX .message2 , .message2End , MainScreen + (17*40)
+	+DisplayReversedTextMiddle_AX .message5 , .message5End , MainScreen + (19*40)
+	+DisplayReversedTextMiddle_AX .message6 , .message6End , MainScreen + (21*40)
+
+	lda #200
+	sta .stateCounter
+
+	; Display the version so people know what they're downloading and playing
+	+DisplayReversedTextMiddle_AX .messageVer , .messageVerEnd , MainScreen + (24*40)
+!ifdef GameLogicTimings {
+	dec VIC2BorderColour
+}
+	rts
+.screenState1Run
+	lda #1
+	sta .enableRasters
+
+	; Because the raster test uses a range we have to waste some time
+	ldy #20
+.cl0
+	dey
+	bpl .cl0
+
+	lda SamplePlaying
+	bne .skipRasterUpdate
+
+	; Flash some text by changing part of the raster table
+	inc .colourTabCycle
+	lda .colourTabCycle
+	lsr
+	lsr
+	and #7
+	tax
+
+	lda .colourTab1,x
+	ldx #12
+.cl1
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (12*8),x
+	dex
+	bpl .cl1
+
+
+	ldx .rasterTabCycle
+	cpx #12
+	bcs .skipRasterUpdate
+	lda .colourTabWhite,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (15*8),x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (24*8),x
+	lda .colourTabRed,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (17*8),x
+	lda .colourTabBlue,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (19*8),x
+	lda .colourTabGreen,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (21*8),x
+	inc .rasterTabCycle
+.skipRasterUpdate
+
+
+
+	dec .stateCounter
+	beq .screenState1bInit
+
+	jmp .screenStateRet
+
+.clearMiddlePart
+	ldx #39
+.cmp1
+	sta MainScreen + (11*40) ,x
+	sta MainScreen + (12*40) ,x
+	sta MainScreen + (13*40) ,x
+	sta MainScreen + (14*40) ,x
+	sta MainScreen + (15*40) ,x
+	sta MainScreen + (16*40) ,x
+	sta MainScreen + (17*40) ,x
+	sta MainScreen + (18*40) ,x
+	sta MainScreen + (19*40) ,x
+	sta MainScreen + (20*40) ,x
+	sta MainScreen + (21*40) ,x
+	sta MainScreen + (22*40) ,x
+	sta MainScreen + (23*40) ,x
+	sta MainScreen + (24*40) ,x
+	dex
+	bpl .cmp1
+	rts
+
+.clearMiddlePartColour
+	ldx #39
+	lda #VIC2Colour_Black
+.cmpc1
+	sta COLOURRAM + (12*40) ,x
+	sta COLOURRAM + (13*40) ,x
+	sta COLOURRAM + (14*40) ,x
+	sta COLOURRAM + (15*40) ,x
+	sta COLOURRAM + (16*40) ,x
+	sta COLOURRAM + (17*40) ,x
+	sta COLOURRAM + (18*40) ,x
+	sta COLOURRAM + (19*40) ,x
+	sta COLOURRAM + (20*40) ,x
+	sta COLOURRAM + (21*40) ,x
+	sta COLOURRAM + (22*40) ,x
+	sta COLOURRAM + (23*40) ,x
+	sta COLOURRAM + (24*40) ,x
+	dex
+	bpl .cmpc1
+	rts
+
+
+
+
+
+
+.screenState1bInit
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+
+	; Note the reversed text and colour RAM to black clear order
+	jsr .clearMiddlePartColour
+	lda #' '+128
+;	lda #' '
+	jsr .clearMiddlePart
+
+	lda #<.screenState1bRun
+	sta .screenState
+	lda #>.screenState1bRun
+	sta .screenState+1
+	lda #200
+	sta .stateCounter
+
+	+DisplayReversedTextMiddle_AX .message3 , .message3End , MainScreen + (12*40)
+
+	+DisplayReversedTextMiddle_AX .messageb1 , .messageb1End , MainScreen + (15*40)
+	+DisplayReversedTextMiddle_AX .messageb2 , .messageb2End , MainScreen + (17*40)
+	+DisplayReversedTextMiddle_AX .messageb5 , .messageb5End , MainScreen + (19*40)
+	+DisplayReversedTextMiddle_AX .messageb6 , .messageb6End , MainScreen + (21*40)
+
+	lda #200
+	sta .stateCounter
+
+!ifdef GameLogicTimings {
+	dec VIC2BorderColour
+}
+	jmp .screenStateRet
+.screenState1bRun
+	lda #1
+	sta .enableRasters
+
+	; Because the raster test uses a range we have to waste some time
+	ldy #20
+.cl0b
+	dey
+	bpl .cl0b
+
+	lda SamplePlaying
+	bne .skipRasterUpdateb
+
+	; Flash some text by changing part of the raster table
+	inc .colourTabCycle
+	lda .colourTabCycle
+	lsr
+	lsr
+	and #7
+	tax
+
+	lda .colourTab1,x
+	ldx #12
+.cl1b
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (12*8),x
+	dex
+	bpl .cl1b
+
+
+	ldx .rasterTabCycle
+	cpx #12
+	bcs .skipRasterUpdateb
+	lda .colourTabWhite,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (15*8),x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (24*8),x
+	lda .colourTabRed,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (17*8),x
+	lda .colourTabBlue,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (19*8),x
+	lda .colourTabGreen,x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 2 + (21*8),x
+	inc .rasterTabCycle
+.skipRasterUpdateb
+
+
+
+	dec .stateCounter
+	beq .screenState2Init
+
+	jmp .screenStateRet
+
+
+
+
+
+
+
+
+.screenState2Init
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	lda #0
+	sta .enableRasters
+	lda #' '
+	jsr .clearMiddlePart
+	lda #<.screenState2Run
+	sta .screenState
+	lda #>.screenState2Run
+	sta .screenState+1
+	lda #200
+	sta .stateCounter
+	+DisplayColourTextMiddle_AX .message4 , .message4End , MainScreen + (12*40) , VIC2Colour_Green
+	jsr DrawHighScore1
+	jsr DrawHighScore2
+	jsr DrawHighScore3
+	jsr DrawHighScore4
+	jsr DrawHighScore5
+!ifdef GameLogicTimings {
+	dec VIC2BorderColour
+}
+	jmp .screenStateRet
+
+.screenState2Run
+	dec .stateCounter
+	beq .screenState3Init
+	jmp .screenStateRet
+
+
+
+
+
+
+
+
+.screenState3Init
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	lda #' '
+	jsr .clearMiddlePart
+	lda #<.screenState3Run
+	sta .screenState
+	lda #>.screenState3Run
+	sta .screenState+1
+	lda #200
+	sta .stateCounter
+	lda #0
+	sta AnimationPlayer_Counter
+	+DisplayColourTextMiddle_AX .message10 , .message10End , MainScreen + (12*40) , VIC2Colour_White
+	+DisplayColourTextMiddle_AX .message7 , .message7End , MainScreen + (15*40) , VIC2Colour_Green
+	+DisplayColourTextMiddle_AX .message8 , .message8End , MainScreen + (19*40) , VIC2Colour_Red
+	+DisplayColourTextMiddle_AX .message9 , .message9End , MainScreen + (23*40) , VIC2Colour_Yellow
+
+	; Display some in game sprites next to the text
+	lda #VIC2SpriteXBorderLeft + (10*8)
+	sta Multiplex_XPosLo
+	lda #0
+	sta Multiplex_XPosHi
+	lda #VIC2SpriteYBorderTop + (15*8) - 4
+	sta Multiplex_YPos
+	lda AnimationPlayer_MoveRight+2
+	sta Multiplex_SpriteFrame
+	lda #VIC2Colour_Green
+	sta Multiplex_Colour
+
+	lda #VIC2SpriteXBorderLeft + (10*8)
+	sta Multiplex_XPosLo+1
+	lda #0
+	sta Multiplex_XPosHi+1
+	lda #VIC2SpriteYBorderTop + (19*8) - 2
+	sta Multiplex_YPos+1
+	lda AnimationRobot_EyeSpin
+	sta Multiplex_SpriteFrame+1
+	lda #VIC2Colour_Red
+	sta Multiplex_Colour+1
+
+	lda #VIC2SpriteXBorderLeft + (5*8)
+	sta Multiplex_XPosLo+2
+	lda #0
+	sta Multiplex_XPosHi+2
+	lda #VIC2SpriteYBorderTop + (23*8) + 4
+	sta Multiplex_YPos+2
+	lda AnimationOtto_Appear+3
+	sta Multiplex_SpriteFrame+2
+	lda #VIC2Colour_White
+	sta Multiplex_Colour+2
+
+	jsr Multiplex_Sort
+
+
+
+
+
+!ifdef GameLogicTimings {
+	dec VIC2BorderColour
+}
+	jmp .screenStateRet
+.screenState3Run
+	ldy AnimationPlayer_Counter
+	iny
+	cpy #7
+	bne .oo1
+	ldy #0
+.oo1
+	sty AnimationPlayer_Counter
+	lda AnimationPlayer_MoveRight,y
+	sta Multiplex_SpriteFrame
+
+	lda .stateCounter
+	lsr
+	lsr
+	and #15
+	eor #15
+	tay
+	lda AnimationRobot_EyeSpin,y
+	sta Multiplex_SpriteFrame+1
+
+	lda .stateCounter
+	lsr
+	and #15
+	eor #15
+	tay
+	lda #VIC2SpriteYBorderTop + (23*8) + 4
+	sec
+	sbc AnimationOtto_BouncesYPos,y
+	sta Multiplex_YPos+2
+	lda AnimationOtto_BouncesYPos,y
+	bne .notFloorHit
+	lda AnimationOtto_Appear+2
+	jmp .notFloorHit2
+.notFloorHit
+	lda AnimationOtto_Appear+3
+.notFloorHit2
+	sta Multiplex_SpriteFrame+2
+
+
+	dec .stateCounter
+	bne .oscreenState3Init
+	jsr .screenState1Init
+	lda #<.screenState1Run
+	sta .screenState
+	lda #>.screenState1Run
+	sta .screenState+1
+.oscreenState3Init
+	jmp .screenStateRet
+
+
+
+.screenState !by 0,0
+.enableRasters !by 0
+
+DisplayTitleScreen
+	jsr TurnOffScreenWithBlank
+	jsr ClearMainScreen
+	jsr ClearAllSprites
+
+	lda #0
+	sta .enableRasters
+	sta .colourTabCycle
+	sta .rasterTabCycle
+	tax
+.clc0
+	sta TemporaryBufferSpace,x
+	dex
+	bne .clc0
+
+	; Initialise the raster table colours for this inverted video.
+	; 8 pixels char height plus 4 tweak value to account for any speech NMI or multiplexor IRQ wobble
+	ldx #12
+.clc1
+	lda #VIC2Colour_White
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (15*8),x
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (24*8),x
+	lda #VIC2Colour_LightRed
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (17*8),x
+	lda #VIC2Colour_LightBlue
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (19*8),x
+	lda #VIC2Colour_LightGreen
+	sta TemporaryBufferSpace + VIC2SpriteYBorderTop - 4 + (21*8),x
+	dex
+	bpl .clc1
+
+	lda #1
+	jsr IRQDisk_SetPulseSpeed
+
+	jsr .screenState1Init
+	lda #<.screenState1Run
+	sta .screenState
+	lda #>.screenState1Run
+	sta .screenState+1
+
+
+	ldx #0
+;	stx .FirePressed
+.l1
+	lda LogoColours,x
+	sta COLOURRAM,x
+	lda LogoColours+$90,x
+	sta COLOURRAM+$90,x
+	dex
+	bne .l1
+
+	; Blank out the line here
+	ldx #39
+.l3
+	lda #VIC2Colour_Black
+	sta COLOURRAM + (11*40),x
+	dex
+	bpl .l3
+
+	jsr WaitForBottomIRQ
+	jsr Multiplex_Sort
+
+	; The sound initialisation order here is important since the music player needs to be initialised
+	; first, then the SamplePlaySequence will setup the third voice for using the sample.
+
+	; Init our music
+	lda #0
+	; Stops the SFX engine running on the IRQ while we try to play music
+	sta SFXCall
+	jsr MusicPlayerInit
+
+	jsr SampleResetSequence
+	+SampleUpdateSequence 0 , Sample_Coins , SampleEnd_Coins
+	+SampleUpdateSequence 1 , Sample_Detected , SampleEnd_Detected
+	+SampleUpdateSequence 2 , Sample_In , SampleEnd_In
+	+SampleUpdateSequence 3 , Sample_Pocket , SampleEnd_Pocket
+	lda #SampleMidRangeFrequencyShift
+	jsr SamplePlaySequence
+
+	; Wait around for fire to be pressed and released and also do the screen split
+.ft1
+	jsr WaitForBottomIRQ
+	; Setup the logo display which is 10 chars high
+	lda #%11000
+	sta VIC2ScreenControlH
+	lda #%111011
+	sta VIC2ScreenControlV
+	lda #%11001000
+	sta VIC2MemorySetup
+
+	lda SamplePlaying
+	bne .skipMusic
+	jsr MusicPlayerPlay
+.skipMusic
+
+	jmp (.screenState)
+.screenStateRet
+
+	; Make the starting room a bit more random this changes CurrentRoom based on how long it
+	; takes someone to start from the attract mode.
+	inc CurrentRoom
+
+.lastLogoLine = 74
+.enableScreenLine = .lastLogoLine+1+8+8
+
+	; The very first empty line after the bitmap logo
+	lda #VIC2SpriteYBorderTop+.lastLogoLine
+.wfr1
+	cmp VIC2Raster
+	bcs .wfr1
+
+	; With ECM+BM to display black for a while while we change screen mode
+	; This is just to be really safe, usually we are displaying a nice black row of pixels anyway
+	lda #%1110000
+	ora VIC2ScreenControlV
+	sta VIC2ScreenControlV
+
+	; Delay a touch before updating the memory setup
+	lda #VIC2SpriteYBorderTop+.lastLogoLine+2
+.wfr2
+	cmp VIC2Raster
+	bcs .wfr2
+
+	lda #%10 ; Tell VIC to display a char screen starting at $c000 with chars at $c800
+	sta VIC2MemorySetup
+	lda #%01000
+	sta VIC2ScreenControlH
+
+	; Delay a touch before enabling the screen to give the VIC the chance to read in the new characters
+	lda #VIC2SpriteYBorderTop+.enableScreenLine
+.wfr3
+	cmp VIC2Raster
+	bcs .wfr3
+
+	; Without ECM+BM to really enable the screen
+	lda #%0011111
+	and VIC2ScreenControlV
+	sta VIC2ScreenControlV
+
+	; Delay a touch before setting background colours to mask any nonsense
+	lda #VIC2SpriteYBorderTop+.enableScreenLine+2
+.wfr4
+	cmp VIC2Raster
+	bcs .wfr4
+
+
+	; MPi: TODO: Might need some more exact timing when not playing the sample
+	; Draw rasters here
+	lda .enableRasters
+	beq .noRasters
+.rl1
+	ldx VIC2Raster
+	lda TemporaryBufferSpace,x
+.stab1	cpx VIC2Raster
+	beq .stab1
+	sta VIC2ScreenColour
+	lda BottomIRQDone
+	beq .rl1
+
+	; Then reset the colour to what it should be ready for the top of the screen
+	lda #VIC2Colour_Black
+	sta VIC2ScreenColour
+
+
+.noRasters
+;	lda .FirePressed
+;	bne .ft2
+;	inc VIC2BorderColour
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	bne .ft1
+;	lda #1
+;	sta .FirePressed
+;.ft2
+;	lda CIA1KeyboardColumnJoystickA
+;	and #%10000
+;	bne .oft1
+;	jmp .ft1
+;.oft1
+	rts
+; Fire button debounce removed, don't need it, it is a start button. :)
+;.FirePressed !by 0

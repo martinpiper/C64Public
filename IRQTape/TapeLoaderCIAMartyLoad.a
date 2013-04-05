@@ -1,0 +1,181 @@
+; This tape loader just uses the CIA without any IRQ being active. It is designed to fit into a
+; small space at the bottom of memory in zero page.
+; In a zone so that all this block of code which is actually split into three chunks gets treated as one block
+!zn {
+
+TapeLoaderStoringToLo					= $06
+TapeLoaderStoringToHi					= $07
+.checksum								= $08
+.loadColPos								= $09
+startBlock
+; The code entry point.
+; Must not end beyond $0301 in real terms
+; Constants for zp variables
+!pseudopc $02a7 {
+TapeRelocatedStart
+MainLoaderEntry
+	; Demonstrate some code that uses the timer but doesn't use an IRQ to read bytes.
+	; Instead IRQs are turned off and a tight loop is used to read bytes from the tape.
+	; Here we know the ROM calls us so we can assume the ROMs and IO are enabled.
+
+	; Some of the IRQ setup code is a little less robust than other loaders because of the reduced code space.
+	; It still works though.
+
+	sei
+	jsr CLRSCR
+
+	+MACROCIAIRQControlDisable_A
+
+	; Turns on cassette motor and removes ROMs
+	lda #%101
+	sta ZPProcessorPort
+
+	; Clear CIA timers and VIC to a known state
+	ldx #0
+	stx VIC2BorderColour
+	stx VIC2ScreenColour
+	stx .checksum
+	stx .loadColPos
+	ldx #39
+.sl1
+	lda #VIC2Colour_White
+	sta COLOURRAM+(12*40),x
+	sta COLOURRAM+(8*40),x
+	sta COLOURRAM+(16*40),x
+	lda #VIC2Colour_LightGreen
+	sta COLOURRAM+(11*40),x
+	sta COLOURRAM+(13*40),x
+	lda .ScreenText,x
+	sta SCREENRAM+(12*40),x
+	lda #$43
+	sta SCREENRAM+(11*40),x
+	sta SCREENRAM+(13*40),x
+	lda #$a0 ; Inverted space char
+	sta SCREENRAM+(10*40),x
+	sta SCREENRAM+(14*40),x
+	dex
+	bpl .sl1
+	; Grab everything on the stack earlier
+	txs
+
+	+MACROSetTurboTimer
+
+	ldx #39
+	bne .TapeHeaderCode
+}
+endBlock
+; Just to introduce a warning if the above code oversteps its boundary
+*=startBlock + $5b
+FreeBlock1 = $5b - (endBlock - startBlock)
+
+; Now we are effectively at $0302
+; Set the vector "BASIC Input Line and Decode" so that it gets saved and when our routine loads it gets called when the load finishes.
+; We set this vector because the BASIC LOAD command (also shift-runstop) starts at $e168.
+; After the load this function will e1b2 jmp $a52a which then does a530 jmp $a480 which then follows on to do a480 jmp ($302)
+!by <MainLoaderEntry , >MainLoaderEntry
+
+startBlock2
+; Must not end beyond $0313 in real terms
+!pseudopc $0304 {
+.PlotColour
+	sta COLOURRAM+(10*40),x
+	sta COLOURRAM+(14*40),x
+	rts
+.ColourTest
+	cpx #40
+	bne .r1
+	ldx #0
+.r1
+	; Prepare the colour for the next draw
+	lda #VIC2Colour_Red
+	rts
+}
+endBlock2
+; Just to introduce a warning if the above code oversteps its boundary
+*=startBlock2 + $10
+FreeBlock2 = $10 - (endBlock2 - startBlock2)
+
+; Effectively at $0314
+!by <DefaultIRQServiceRoutine , >DefaultIRQServiceRoutine
+
+TapeTurboEndOfExtendedZeroPageCodeAndIRQ
+
+tapeHeader
+; Must not end beyond $03fb in real terms
+!pseudopc $0351 {
+
+.TapeHeaderCode
+.sl2
+	lda #VIC2Colour_Yellow
+	jsr .PlotColour
+	lda #$63
+	sta SCREENRAM+(8*40),x
+	lda #$64
+	sta SCREENRAM+(16*40),x
+	dex
+	bpl .sl2
+	; x = $ff
+
+	; Because the kernal loader has been interrupted we have to switch on the screen :)
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	; First loop until we get a valid tape sync code
+.l1
+	jsr WaitForTapeEdge
+	rol
+	cmp #TapeSyncCode
+	bne .l1
+
+	; Much shorter version because it assumes the load address and end address
+	; No file name byte check, no checksum check. :)
+
+	; Then check the next byte is actually from the header
+	jsr GetTapeByte
+	cmp #TapeHeaderByteEx3
+	bne .l1
+
+.l2
+	jsr GetTapeByte
+.sm1
+	sta MainSecondLoaderStart
+;	eor .checksum
+;	sta .checksum
+	lda .sm1+1
+	and #7
+	bne .skipCol
+	lda #VIC2Colour_Yellow
+	ldx .loadColPos
+	jsr .PlotColour
+	inx
+	jsr .ColourTest
+	jsr .PlotColour
+	stx .loadColPos
+.skipCol
+	inc .sm1+1
+	bne .l3
+	inc .sm1+2
+	inc VIC2BorderColour
+.l3
+	; Now check for the end of the file being reached
+	lda .sm1+1
+	cmp #< (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+	bne .l2
+	lda .sm1+2
+	cmp #> (MainSecondLoaderStart + (RealCodeEnd - RealCodeStart))
+	bne .l2
+
+	; Call the loaded code
+	jmp MainSecondLoaderStart
+
+.ScreenText
+	!scr "  martyload now loading: name of game!  "
+
+!source "TapeLoaderCIACommon.a"
+
+}
+endTapeHeader
+; Just to introduce a warning if the above code oversteps its boundary
+*=tapeHeader + $ab
+FreeBlockHeader = $ab - (endTapeHeader - tapeHeader)
+}

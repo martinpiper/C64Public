@@ -1,0 +1,133 @@
+!zn {
+; This entry point for this module *must* be four jmps.
+IRQStartPlay jmp startzx				; 0
+IRQStopPlay jmp stopplay				; 3
+IRQIncrTune jmp incrtune				; 6
+IRQDecrTune jmp decrtune				; 9
+
+startzx
+	sei
+IRQBorderColour = tn1 + 1
+tn1	lda #0
+	jsr MusicPlayerStart
+	lda #$7f
+	sta CIA1InterruptControl
+	lda #1
+	sta VIC2InteruptControl
+	lda VIC2ScreenControlV
+	and #%01111111
+	sta VIC2ScreenControlV
+	lda #250
+	sta VIC2Raster
+	lda #<irq1
+	sta IRQServiceRoutineLo
+	lda #>irq1
+	sta IRQServiceRoutineHi
+	; Ack any interrupts that might have happened from the CIAs
+	lda CIA1InterruptControl
+	lda CIA2InterruptControl
+	; Ack any interrupts that have happened from the VIC2
+	lda #255
+	sta VIC2InteruptStatus
+	cli
+	lda #1
+	sta playflag
+	rts
+
+stopplay
+	lda #0
+	sta playflag
+	sta SIDVolumeFilter
+	rts
+
+incrtune
+	inc tn1+1
+	jmp IRQStartPlay
+
+decrtune
+	lda tn1+1
+	beq incrtune-1
+	dec tn1+1
+	jmp IRQStartPlay
+
+irq1
+	lda $fb
+	pha
+	lda $fc
+	pha
+	lda $fd
+	pha
+
+	ldx tn1+1
+	inx
+	inx
+	stx VIC2BorderColour
+	lda playflag
+	beq split
+	jsr MusicPlayerPlay
+split
+	ldx #0
+	stx VIC2BorderColour
+	lda #1
+	sta VIC2InteruptStatus
+	lda 197
+	cmp #4
+	beq startAgain
+	ldx #0
+	stx startAgainFlag
+	cmp #3
+	beq more1
+	cmp #6
+	beq startit
+	cmp #5
+	beq stopit
+more2
+
+	pla
+	sta $fd
+	pla
+	sta $fc
+	pla
+	sta $fb
+	inc VIC2Sprite0Colour
+	jmp DefaultIRQServiceRoutine
+more1
+	lda playflag
+	beq more1Skip
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+	jsr MusicPlayerPlay
+more1Skip
+	jmp more2
+
+stopit
+	jsr stopplay
+	jmp more2
+
+startit
+	lda #1
+	sta playflag
+	lda #15
+	sta SIDVolumeFilter
+	jmp more2
+
+startAgainFlag !by 0
+
+startAgain
+	lda storeageInFileOperation
+	bne more2
+	lda startAgainFlag
+	bne more2
+	lda #1
+	sta playflag
+	sta startAgainFlag
+	lda tn1+1
+	jsr MusicPlayerStart
+	jmp more2
+
+playflag !by 0
+}

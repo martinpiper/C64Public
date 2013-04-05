@@ -1,0 +1,344 @@
+	Music Studio V1.2 help.
+
+To use the pop up menus:
+
+1)	Move the highlight bar using the cursor keys.
+2)	Select the required option using the 'RETURN' key.
+3)	Options can also be selected by pressing the hot key, which is highlighted.
+4)	Pressing '<-' at any time returns you to the previous menu.
+
+Note: These menus do not support a mouse driver.
+
+
+
+
+General:
+
+There are several formats in which music data is stored. The most efficient being a double compression technique used in 'LOAD ALL' and 'SAVE ALL' found on the control menu.
+
+From the 'STORAGE' menu music can be stored and retrieved in two further ways. These are uncompressed and are ideal for importing into external routines.
+
+
+
+Using the file requestor:
+
+When prompted for a filename you can enter it or press the 'F1' key to call up a directory listing and select the filename from there (disk only).
+
+Remember press '<-' to return to the previous menu.
+
+If saving over a file on disk then a prompt will ask if you wish to proceed.
+
+
+
+
+
+Loading:
+
+'LOAD ALL'	- This loads a double compressed file.
+'LOAD RAW'	- This loads an uncompressed file.
+
+'TAPE' or 'disk' can be chosen by selecting Tape or disk from the fist menu, doing this will toggle between the two devices.
+
+
+Note: External music data files may be converted to RAW DATA format by the 'E114 Music Converter.'
+
+
+Saving:
+
+'SAVE ALL'	- This saves a double compressed file.
+'SAVE RAW'	- This saves an uncompressed file.
+
+'SAVE RELOCATED' (At ssss) :-
+
+This saves a relocated file that starts at location 'ssss'. This creates a user module that contains a music player, high fidelity sound multiplexor and music data. For tape users the address 'ssss' is fixed at $3f00 or 16128.
+
+
+Using relocated user modules:
+The start of the relocated music has three JMP instructions. The first uses the Accumulator to set the music track to play. The second plays the music and must be called once per frame. The third stop any currently playing music.
+For example assuming relocated music was saved from $3f00 then this code will play the music:
+
+*=$c000
+	; Turn off IRQs and initialise music track 0
+	sei
+	lda #$00
+	jsr $3f00
+	; Now wait for the raster at $80
+.loop
+	lda #$80
+.wait
+	cmp $d012
+	bne .wait
+	; Play one frame of music and then loop around again
+	jsr $3f03
+	jmp .loop
+
+
+
+
+
+Using the music editor:
+
+'PLAY MUS'	- Resets and starts the music player.
+'STOP MUS'	- Stops the music player.
+
+'F1'	- Restart current track.
+'F3'	- Pause music.
+'F5'	- Continue music.
+'F7'	- Fast forward music.
+
+F1, F3, F5, F7 Can be used any time except during file operations.
+
+
+
+'PLAY NEXT'	- Plays next song.
+'PLAY PREV'	- Plays previous song.
+
+
+'EDIT' - Edits the tracks using the cursor and alphanumeric keys. The cursor can be seen after selecting 'EDIT' from the submenu.
+
+'CTRL and 1,2,3' Will move the cursor to each track, when moving the cursor up or down to the bottom of each track it will scroll up or down to bring more into view.
+
+
+
+
+Track control codes:
+
+'00'-'3F'	- Play specified block.
+'40'-'7F'	- Repeats next block by 'xx-$40' times.
+'80'-'EF'	- Play all following blocks transposed up by 'xx-$80' semitones. If the number is >= $b0 then the note is transposed down rather than up.
+'FD'	- Stops track.
+'FE'	- Stops all tracks.
+'FF'	- Loops track to beginning of song.
+
+
+
+Using multiple songs:
+
+To edit and play multiple songs finish the previous song with 'FD'-'FF' and continue to edit as normal. Using 'PLAY NEXT' and 'PLAY PREV' enables you to play these other songs.
+
+Track pointers:
+
+While editing and playing you may notice white markers on the tracks. These indicate the current offset of each track as it is being played. This can be used as a debugging tool.
+
+For example:
+Song 1      Song 2      Song3
+00 01 02 ff 43 02 fd 82 01 41 03 fe etc
+
+The first song would play blocks 00 then 01 then 02 and loop around.
+
+Song two would play 02 four times and stop the track but not all the song.
+
+Song three would play 01 transposed by two semitones and then play 03 twice still transposed then stop all the tracks, finishing the song.
+
+
+
+Simple start:
+
+The blocks are labelled 00 - 3f and are able to be played on any track and can be transposed by different values on different tracks.
+
+To make music the blocks must be programmed with notes, durations and which sound to play. Not necessarily in that order. An overview of commands can be seen on the next page.
+
+
+
+Block commands:
+ENV:00	- Sets all notes afterwards to play envelope 00.
+DUR:08	- Sets the duration for all notes to eight (about a minim)
+C-1	- Plays the note C in octave 1.
+D#2	- Plays the note D with a sharp in octave 2. (E flat)
+
+GL:01,4	- Glides the last note played upwards (quit slowly) after counting four (half a minim).
+GL:02,2	- Glides the last note played upwards (a bit faster) after counting two (quarter minim). As can be seen the larger the number the faster the glide.
+GL:83,0	- Glides the note down very fast after no delay. This means glide down.
+
+FLL:XX	- Controls the value sent to $d415 SIDFilterCutoffFreqLo. So FLL:10 will put $10 into $d415
+FLH:XX	- Does the same but for $d416 SIDFilterCutoffFreqHi
+FLC:XX	- Does the same but for $d417 SIDFilterControl. So FLC:F7 will set filter resonance F with voices 0,1 and 2 active (bits 0/1/2 = 7).
+FLP:XX	- Does the same with $d418 SIDVolumeFilter. So FLP:10 will set bit 4 which is the low pass filter. The lower nybble maps to the volume control, don't set these values, keep it at 0 for now.
+FG:XX,YY	- Filter glide controls the filter frequency in a sinus pattern. XX controls the step size. YY controls the speed of the sinus pattern. If YY is 01 then the change will be slow, 02 is faster, 03 is even faster and so on. If YY has $80 added then the initial sinus pattern is falling instead of rising. For example $81 will fall slowly, $82 will fall faster etc.
+
+VOL:XX	- This block command that allows you to set the volume. Setting a volume of 0 will stop the player. So valid number ranges are VOL:01 to VOL:0F
+
+
+Example block (put this in block 01):
+
+FLL:10
+FLH:80
+FLC:F7
+FLP:10
+ENV:03
+DUR:10
+FG:08,04
+C-2
+C-3
+E-3
+C-3
+**STOP**
+
+And change the 00 ff in track one to read 01 ff and choose from the menu play all. Your block should be playing.
+This example is saved as "p.filter test 2"
+
+
+
+
+
+
+
+
+The envelope editor:
+
+The envelope is a hunk of nine bytes for each sound effect. This can control waveform mixing, arpeggio, pitch, gliding and envelope (attack, decay, sustain, release) for each voice.
+
+At the moment it is just hex number editing but it is hoped to make this much better in the next versions, on the next couple of pages the different bytes are explained.
+
+Bytes 1/2	- Controls the SID envelope attack, decay, sustain and release registers. For example the two bytes 12/fc are attack 1, decay 2, sustain F and decay C.
+Byte 3	- Controls the primary waveform to use for this instrument with an optional pulse width parameter.
+Byte 4	- Controls pulse width and the variance.
+Bytes 5/6	- Up and down control for vibrato step and timing.
+Byte 7	- Controls drum sounds and vibrato speed.
+Byte 8	- Controls arpeggio.
+Byte 9	- Controls waveform mixing.
+
+A blank sound, one that mutes the channel, should be defined as:
+00 00 01 00 00 00 00 00 00
+The 01 is to ensure the silent note sets the gate bit so SID can trigger the next note cleanly.
+
+
+
+
+Primary waveform
+Byte 3 controls which primary waveform to play and is like the normal SID sound wave control register (below).
+bit7	Noise
+bit6	Pulse
+bit5	Sawtooth
+bit4	Triangle
+bit3	Test (ignored)
+bit2	Ring modulation
+bit1	Sync (ignored)
+bit0	Gate
+The above bit allocation changes slightly if the pulse waveform is chosen, which is explained on the next page.
+
+
+
+If a pulse waveform is chosen (bit 6) then the pulse width can be controlled by using a number from 0-F in the right half of the pulse width control byte 4. But also while playing the pulse waveform its pulse width can vary in three ways and the speed at which these changes happen is controlled by the bits 5,4,3 in the waveform control byte as follows:
+Bits  5 4 3
+0 0 0	no pulse change
+0 0 1	slow pulse change
+0 1 0
+0 1 1
+1 0 0	medium pulse chg
+1 0 1
+1 1 0
+1 1 1	fast pulse change
+Normally these bits control the other waveforms but the sound chip cannot play these with pulse so these bits are reused.
+
+Pulse width control
+The pulse width control byte 4 bits are used as follows:
+bit 7,6	- Step size used as PD below.
+bit 5,4	- 0 0	= no change
+	0 1	= pulse width + (PD+1)
+	1 0	= pulse width - (PD+1)
+	1 1 = pulse width wobbles up and down (+/-) (PD+1)
+bit 3,2,1,0	- The lower number controls the starting pulse width high value.
+
+
+
+Drum control and vibrato
+The drum control byte 7 will cause the voice to play a drum sound if the number starts with 8. For example:
+80	= Drum 0 snare  
+81	= Drum 1 bass  
+82	= Drum 2 tomtom1
+83	= Drum 3 tomtom2
+If the drum sound is defined with 4 added then the drum sound will start playing from the second position in the drum sound table, skipping the first entry. Or if the drum sound has 8 added then it will start at the third entry, skipping the first two entries. And so on. So for example a snare drum defined as $84 or a bass drum defined as $85 will both skip the first entry in the drum sound tables. A tom-tom defined as $8a will skip the first two entries in the drum sound table.
+For example this allows a tom-tom sound to be defined with a very high pitched noise waveform in the first two entries of the drum sound table. Then using $82 will use this high pitched noise sound and $8a will skip the two noise entries.
+
+The drum control byte 7 without a starting 8 causes the vibrato speed to be set for the voice. For example:
+As long as one of the large vibrato times for the up or down control is set then the vibrato will be enabled.
+If byte 7 contains 00 then there is no vibrato.
+If byte 7 contains 01 then there is fast vibrato.
+If byte 7 contains 08 then there is slower vibrato.
+If byte 5, 6 and 7 contain 1F 1F 02 then the note will change every two ticks and bend up 1 semitone for 15 (F) steps then down 1 semitone for 15 steps and repeat the pattern. This would produce a siren effect.
+If byte 6 is set to F1 the note would bend up slowly as before and then 'jump' down 15 semitones in one step making a very different sound. Changing the step and timing can produce many different rising and falling sound effects.
+
+
+
+
+Arpeggio
+The arpeggio byte 8 is in the format XY where the first root note is unchanged, next the root note is transposed X semitones. Next the root note is transposed Y semitones. The note pattern then loops.
+
+
+Waveform mixing
+The waveform mixing byte 9 is used to alternate the waveform control each frame.
+If the value is 00 then there is no wave mixing for this envelope.
+For example: If the wave control byte is 11 it uses triangle waveform. But if the waveform mixing byte is 30 then each frame it will alternate sawtooth and triangle because the mix value alternates both sawtooth and triangle together. This is because sawtooth+triangle = 30
+Also for example: If the wave control byte uses triangle as before and if the waveform mixing byte is 20 then each frame it will alternate between sawtooth with triangle and then just triangle. This is because the base waveform is triangle and sawtooth is alternately added and removed each frame.
+
+
+
+
+Some example envelopes:
+B0 FB 53 D8 1F F1 01 00 00 = Siren
+Siren with pulse width varying...
+
+B0 FB 43 08 1F F1 01 00 00 = Siren
+Siren with no pulse width varying...
+
+00 FF 73 F8 F1 F1 0F 00 00 = Police
+Police Two tone weeh waah...
+
+00 FB 63 D6 F1 1F 01 00 00 = Alarm hooter
+Paradroid style...
+
+00 FB 63 D6 33 33 04 00 00 = Rising falling
+
+00 FB 63 D6 36 33 03 00 00 = Odd
+
+22 FD 53 FE 1F 25 01 73 50 = Complex.
+Pulse width variance, large vibrato and arpeggio all running. Mixed with alternate frames of pulse and triangle waveforms.
+
+00 f8 71 f8 11 35 01 17 c0
+Sounds a bit like a snare drum, without using a drum pattern.
+
+
+
+
+Drum editing
+Available from the Envelope->Drums menu option.
+Each of the four drums has a layout like this snare drum example:
+2b 08 0c 8f 82 0d 00 00
+81 40 40 80 80 40 00 00
+03 loop start
+06 loop end   
+The first line contains the hi-note value for each frame the drum sound is playing.
+The second line contains the waveform used each frame the drum sound is playing. In this example the waveform starts with 80 and 40, noise waveform and then pulse. Then the drum sound will change to using alternate pulse and noise for each frame.
+The pulse width is set from the envelope being used for the drum.
+
+The gate bit is always used for the first frame of each drum sound. If the drum sound table contains the gate bit it is also used.
+
+The loop end is set to 6 meaning that position 6 is reached the waves and notes used will loop back to position 3. In this example the waveform will change like this for each frame:
+81 40 40 80 80 40 <loop> 80 80 40
+<loop> 80 80 40 and so on...
+
+The first two drum sounds use the hi-note sounds from the table directly. The last two drum sounds are tuned drums. This means the hinote is actually an offset accumulated with the note being played each frame to produce a bending sound. However if the waveform is noise then the hinote is the actual hinote used for that frame.
+
+For example:
+09 fe fe fe fe fe fe 09
+80 40 40 40 40 40 40 80
+03 loop start
+08 loop end
+
+The waveform used is:
+81 40 40 40 40 40 40 80 <loop>
+40 40 40 40 80 <loop>
+40 40 40 40 80 <loop>
+
+The note changes by minus 2 ($fe) each frame producing a falling sound unless the waveform is 80 in which case the hinote used is 8 or 9.
+
+	The End!
+
+Credits:
+Martin Piper and Alan Peters - Code
+Alan Peters - Demo music
+Richard Bayliss - Demo music Berzerk and "Mfit remix"
+NecroPolo - Demo music "Mood blender", "Bare knuckle", Lobster and Model
+
+This is the end of the help text file.

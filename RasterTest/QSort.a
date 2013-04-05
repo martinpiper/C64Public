@@ -1,0 +1,166 @@
+!zn {
+; This is faster than a bubble sort but still quite slow as it is not a stable sort.
+; Example usage:
+;	; Try sorting the first non-blank line of the boot screen
+;	ldx #<$0400 + 40
+;	ldy #>$0400 + 40
+;	jsr QSortSetData
+;	; Using the next non-blank line as the index
+;	ldx #<$0400 + 40 + 40 + 40
+;	ldy #>$0400 + 40 + 40 + 40
+;	jsr QSortSetIndex
+;	; Sort the whole line from 0 to 39 inclusive
+;	ldx #0
+;	ldy #39
+;	jsr QSort
+
+; x,y lo/hi of data
+QSortSetData
+	; Store any self modifying values here
+	stx .smtb1+1
+	sty .smtb1+2
+	stx .smtb2+1
+	sty .smtb2+2
+	stx .smtb3+1
+	sty .smtb3+2
+	stx .smtb4+1
+	sty .smtb4+2
+	stx .smtb5+1
+	sty .smtb5+2
+	stx .smtb6+1
+	sty .smtb6+2
+	rts
+
+; x,y lo/hi of index
+QSortSetIndex
+	stx .smti2+1
+	sty .smti2+2
+	stx .smti3+1
+	sty .smti3+2
+	stx .smti4+1
+	sty .smti4+2
+	stx .smti5+1
+	sty .smti5+2
+	rts
+
+; Sort range from z to y inclusive
+; x = left index
+; y = right index
+; \return Nothing preserved
+QSort
+	; Save all
+	pha
+	txa
+	pha
+	tya
+	pha
+	stx .sm1+1
+.sm1	cpy #0		; if (right > left) ; Self modify of y value
+	bmi .ret
+	beq .ret
+	tya
+	pha				; Save right
+
+	; x = left
+	; y = right
+	jsr .Partition
+
+	; a = newPivotIndex
+	cmp #1
+	bmi .testRight
+
+	tay
+	dey				; newPivotIndex-1
+
+	pha				; Save newPivotIndex
+	; x = left
+	; y = newPivotIndex-1
+	jsr QSort
+	pla				; Restore newPivotIndex
+
+.testRight
+	tax				; x = newPivotIndex
+	inx				; newPivotIndex++
+	pla
+	tay				; Restore right
+	sty .sm2+1
+.sm2	cpx #0		; if (newPivotIndex < right) ; Self modify of y value
+	bpl	.ret
+	beq .ret
+	; x = newPivotIndex
+	; y = right
+	jsr QSort
+.ret
+	; Restore all
+	pla
+	tay
+	pla
+	tax
+	pla
+	rts
+
+; x = left
+; y = right
+; \return x,y preserved a = newPivotIndex
+.Partition
+	txa
+	pha
+	tya
+	pha
+; MPi: TODO: There is potential for optimisation here by using Y as the pivotValue and swapping the < check below
+.smtb1	lda $1234,x
+	sta .pivotValue
+	jsr .Swap		; Move out of the way to the end of the section
+	stx .storeIndex
+	sty .sm3+1
+.loop1
+.smtb6	lda $1234,x
+	cmp .pivotValue
+	bpl .SkipStore
+	beq .SkipStore
+	ldy .storeIndex
+	jsr .Swap
+	inc .storeIndex
+.SkipStore
+	inx
+.sm3	cpx #0		; for (;left<right;left++) ; Self modify of y value
+	bmi .loop1
+
+	; Move back again
+	ldx .storeIndex
+	ldy .sm3+1
+	jsr .Swap
+
+	pla
+	tay
+	pla
+	tax
+	lda .storeIndex	; Return then new pivot position
+	rts
+
+; x = left
+; y = right
+; \return x,y preserved
+.Swap
+	; Data
+.smtb2	lda $1234,x
+	pha
+.smtb3	lda $1234,y
+.smtb4	sta $1234,x
+	pla
+.smtb5	sta $1234,y
+
+	; Index
+.smti2	lda $1234,x
+	pha
+.smti3	lda $1234,y
+.smti4	sta $1234,x
+	pla
+.smti5	sta $1234,y
+
+	rts
+
+.pivotValue !by 0
+.storeIndex !by 0
+
+}

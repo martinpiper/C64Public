@@ -1,0 +1,323 @@
+; Cheat mode: Change levelStart to skip to that level. The usual value is 0.
+levelStart = 0
+
+; Controls when the level should scroll, be still, when to draw, when to stop etc.
+LevelStaticCountSeconds !by 0
+; The count in frames
+LevelStaticCountFrames !by 0
+LevelScrollToggle !by 0
+LevelWantPushScroll !by 0
+LevelIsPushScrolled !by 0
+
+!ifdef Scroller_IsHorizontal {
+LevelPositionAdjustment = 8
+} else {
+LevelPositionAdjustment = 5
+}
+
+; Lo/hi of the current level properties
+LevelPointer !by 0,0
+
+!zn
+LevelStaticTicks = 50
+LevelInit
+	lda #0
+	sta LevelStaticCountSeconds
+	sta LevelScrollToggle
+	sta LevelWantPushScroll
+	sta LevelIsPushScrolled
+	lda #<(LevelProperties + (levelStart * 7))
+	sta tempWork0
+	sta LevelPointer
+	lda #>(LevelProperties + (levelStart * 7))
+	sta tempWork1
+	sta LevelPointer+1
+
+	jsr LevelSetupNextLevel
+	rts
+
+; Call this every frame
+!zn
+.notStillS jmp .notStill
+.oldScrollMapHY !by 0
+.oldScrollMapHY2 !by 0
+LevelFrameLogic
+	; Reset any scroll and let this level logic figure out what to do each frame
+	lda #0
+	sta frameTargetVelY
+
+	lda LevelPointer
+	sta tempWork0
+	lda LevelPointer+1
+	sta tempWork0+1
+	ldy #5
+	lda (tempWork0),y
+	and #%11000000
+	bne .notStillS
+	; Must be the still type so process the counters
+	lda LevelStaticCountSeconds
+	beq .doNextLevel
+	lda LevelStaticCountFrames
+	bne .exitEndOfLogicS
+	lda #LevelStaticTicks
+	sta LevelStaticCountFrames
+	dec LevelStaticCountSeconds
+	beq .doNextLevel
+.exitEndOfLogicS	jmp .exitEndOfLogic
+.doNextLevel
+	; Preserve where we are in the map so far, with the top of the screen adjustment
+	lda scrollMapHPos
+	sec
+	sbc #LevelPositionAdjustment
+	sta .oldScrollMapHY
+	lda scrollMapHPos2
+	bcs .noWrap2
+	sec
+	sbc #1
+.noWrap2
+	sta .oldScrollMapHY2
+
+	ldy #6
+	lda (tempWork0),y
+	bne .notRedraw
+
+	; Must be redraw
+	jsr LevelProgress
+
+	jsr .doDislocationTest
+
+	; If the next type is scroll then we delete the enemies.
+	; If it is still or push we do not. (This supports the SEUCK demo game files)
+	ldy #5
+	lda (tempWork0),y
+	and #%11000000
+	beq .noClear	; Is currently still
+	cmp #%11000000
+	beq .noClear	; Is currently push
+	jsr AnimationKillEverythingExceptPlayers
+.noClear
+	jsr DrawMap
+	lda #$cb
+	jsr Multiplex_SetSpritePointer
+;	jsr ScrollerDemoWaitTopIRQWithReSync
+	jmp .exitEndOfLogic
+
+.notRedraw
+	cmp #$ff
+	bne .notLoop
+
+	; Must be loop
+	jsr AnimationKillEverythingExceptPlayers
+	lda #<LevelProperties
+	sta tempWork0
+	sta LevelPointer
+	lda #>LevelProperties
+	sta tempWork1
+	sta LevelPointer+1
+	jsr LevelSetupNextLevel
+	jsr LevelCalculateTotalScrollValue
+	jsr AnimationEnemyTriggerInit
+	jsr AnimationEnemyTriggerSkipMap
+	jsr DrawMap
+	lda #$cb
+	jsr Multiplex_SetSpritePointer
+;	jsr ScrollerDemoWaitTopIRQWithReSync
+	jmp .exitEndOfLogic
+
+.doDislocationTest
+	; Did the map pointer just change from what we have previously?
+	lda scrollMapHPos
+	cmp .oldScrollMapHY
+	bne .changed
+	lda scrollMapHPos2
+	cmp .oldScrollMapHY2
+	bne .changed
+	jmp .noChange
+.changed
+	jsr LevelCalculateTotalScrollValue
+	jsr AnimationEnemyTriggerInit
+	jsr AnimationEnemyTriggerSkipMap
+	; Restore pointers splatted by the above function calls
+	lda LevelPointer
+	sta tempWork0
+	lda LevelPointer+1
+	sta tempWork0+1
+.noChange
+	rts
+
+.notLoop
+	; Must be continue, the scroll continues on from whatever is on the screen
+	jsr LevelProgress
+
+	; But we must adjust the level scroll position to do the enemy map tests
+	lda scrollMapHPos
+	sec
+	sbc #5		; MPi: TODO: This magic number 5 is actually the LevelPositionAdjustment used
+				; by the vertical scrolling version. This might indicate a bug in the current
+				; version of horizontal SEUCK where the map position is fudged. To be checked.
+	sta scrollMapHPos
+	lda scrollMapHPos2
+	bcs .noWrap4
+	sec
+	sbc #1
+.noWrap4
+	sta scrollMapHPos2
+
+	jsr .doDislocationTest
+
+	lda scrollMapHPos
+	clc
+	adc #LevelPositionAdjustment
+	sta scrollMapHPos
+	lda scrollMapHPos2
+	bcc .noWrap5
+	clc
+	adc #1
+.noWrap5
+	sta scrollMapHPos2
+
+.exitEndOfLogic
+	dec LevelStaticCountFrames
+	; There is a bug in SEUCK where the first level static count is twice as fast as it should be.
+	; So test the level pointer with the start of the data and make the counter twice as fast if
+	; needed.
+	lda #<LevelProperties
+	cmp LevelPointer
+	bne .notFirst
+	lda #>LevelProperties
+	cmp LevelPointer+1
+	bne .notFirst
+	dec LevelStaticCountFrames
+.notFirst
+	jmp .exitLevelLogic
+
+.notStill
+	and #%01000000
+	bne .isPush
+	lda #0
+	sta LevelIsPushScrolled
+.performScroll
+	; Must be scroll type or the push scroll came in here
+	lda (tempWork0),y
+	and #1
+	bne .scrollSpeed1
+	; Scroll speed 0
+	lda LevelScrollToggle
+	eor #1
+	sta LevelScrollToggle
+	bne .exitLevelLogic
+.scrollSpeed1
+	lda #1
+	sta frameTargetVelY
+.performEndOfLevelCheckForScrollingTypes	
+	; Check to see if we have reached the end of the scroll area and if so then progress the level
+	lda frameScrollPos
+	cmp #0
+	bne .notWholeBlockYet
+	lda scrollMapLPos
+	cmp #4
+	bne .notWholeBlockYet
+
+	lda scrollMapHPos
+	sec
+	sbc #LevelPositionAdjustment
+	sta .tempYP
+	lda scrollMapHPos2
+	bcs .noWrap
+	sec
+	sbc #1
+.noWrap
+	ldy #3
+	cmp (tempWork0),y
+	bne .notWholeBlockYet
+
+	lda .tempYP
+	ldy #2
+	cmp (tempWork0),y
+	bne .notWholeBlockYet
+	jmp .doNextLevel
+.tempYP !by 0
+.notWholeBlockYet
+
+	jmp .exitLevelLogic
+
+.isPush
+	lda #1
+	sta LevelIsPushScrolled
+	lda LevelWantPushScroll
+	bne .performScroll
+	; If we are not push scrolling we might have got there the previous frame so we check.
+	jmp .performEndOfLevelCheckForScrollingTypes
+
+.exitLevelLogic
+	lda #0
+	sta LevelWantPushScroll
+	rts
+
+!zn
+LevelCalculateTotalScrollValue
+	; loop around calculating the starting 16 bit map position from what we are drawing
+	lda #0
+	sta TotalScrollPosition
+	sta TotalScrollPosition+1
+	ldx scrollMapHPos
+	beq .calcl3
+.calcl1
+	lda TotalScrollPosition
+	clc
+	adc #40
+	sta TotalScrollPosition
+	bcc .calcl2
+	inc TotalScrollPosition+1
+.calcl2
+	dex
+	bne .calcl1
+.calcl3
+	ldx scrollMapHPos2
+	beq .calcl5
+.calcl4
+	; Add on 256 * 40
+	lda TotalScrollPosition+1
+	clc
+	adc #40
+	sta TotalScrollPosition+1
+	dex
+	bne .calcl4
+.calcl5
+
+	rts
+
+!zn
+LevelSetupNextLevel
+	ldy #0
+	lda (tempWork0),y
+	sta scrollMapHPos
+	iny
+	lda (tempWork0),y
+	sta scrollMapHPos2
+	ldy #4
+	lda (tempWork0),y
+	sta LevelStaticCountSeconds
+	; Stop any scroll that might be floating around during a level transition.
+	lda #0
+	sta frameTargetVelY
+	lda #LevelStaticTicks
+	sta LevelStaticCountFrames
+	rts
+
+!zn
+LevelProgress
+	lda tempWork0
+	clc
+	adc #7
+	sta tempWork0
+	; Carry the carry
+	bcc .noCarry
+	inc tempWork1
+.noCarry
+	jsr LevelSetupNextLevel
+	lda tempWork0
+	sta LevelPointer
+	lda tempWork1
+	sta LevelPointer+1
+	rts

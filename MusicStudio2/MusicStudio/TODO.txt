@@ -1,0 +1,183 @@
+To build:
+cd /D C:\Work\C64\MusicStudio2\MusicStudio
+..\..\acme.exe --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
+
+Or:
+cd /D C:\Work\C64\MusicStudio2\MusicStudio
+..\..\acme.exe --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
+
+
+TODO
+
+// MPi: TODO: channelToTrackMap should map channels to the tracks, but at the moment it just flags if a channel should be converted to track 1 ( not track 2 or 3 )
+
+
+
+Use the UserServer lobby functionality to backup and restore user's personal preferences for all values and subkeys under:
+HKEY_CURRENT_USER\Software\Element 114 Software\MusicStudio\Configuration
+HKEY_CURRENT_USER\Software\Element 114 Software\MusicStudio\DebugConfiguration
+HKEY_CURRENT_USER\Software\Element 114 Software\MusicStudio\Workspace
+
+
+
+During a tracker block scroll it is CPU expensive on some crap machines with poor graphics HW acceleration.
+In CMusicStudioView::DrawTrackerBlocks() for mTrackerModeEdits and similar cache the value and don't set if it doesn't change.
+Also see if the OnEnChange can be temporarily suspended during the update.
+Also cache the enable/disable state and don't keep on setting it during a scroll.
+
+
+Real time note entry in tracker mode. Detect key off as release. Have the number keys programmed with some envelopes.
+
+
+In the saved SID in the memory that is cleared to zeros it should be possible to include the
+author information.
+
+
+Ripping preferences window. Tracker block length. Extract instruments etc.
+
+
+- minute:seconds.miliseconds display mode
+
+- option of setting the timer itself to zero again when the tune starts looping
+
+- in tracker mode, sound playback while editing would be great, maybe checking the last used envelope setting in the upper lines and adding AWSEDFTGZHUJK keys for input mode as synth-kelyboards like in DMC or Goat Tracker would work just fine.
+
+
+- play/stop keyboard commands would be welcome :) F1 start, F4 stop or something like that
+
+
+- for the music player code, some track editor command that doesn't play the tune from the start after playing the final block in the actual track but loop from a certain position would add the option of starting the actual (sub)tune with an intro, then loop skipping the intro. FF is preserved as loop from start, FE is stop, what about using FC as a "loop from position xx" command? For example, in the "Thanx iAN" tune:
+
+
+
+
+
+Make OnChangeBlockEditTrackerTempoEdit1() etc use common code
+
+Replace "(i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty()" with a common bool isInitialRest
+Also spot when i==0 && mBlockTrackerRows[currentBlock][i][0] == "+++" and flag the same.
+
+
+
+
+Add the option to import goat track tables, so compatible functionality is needed.
+Try adding GT glide and arp import
+
+
+Spot the case when TableControlLN is all zero (excluding the jump and command 0 which ignores it)
+and optimise the code to ignore the delay.
+
+
+Go through used note table commands and generate some conditional assembly for them.
+
+
+Check TODOs in the player source.
+
+
+Next major version...
+
+
+
+The default size of the window at first start will also change.
+
+Have a tempo that can be set for each channel. The tempo defines how many frames for each duration takes.
+At the moment the duration is always multipled by 2 internally, so this will give us longer notes.
+But also some slightly more headaches updating two values. Oh well. :)
+
+
+Note table
+2 = Start the wave table ZZ = pos 0 = stop. Does this once at the start of the command.
+3 = Start the pulse table ZZ = pos 0 = stop. Does this once at the start of the command.
+4 = Start the filter table ZZ = pos 0 = stop. Does this once at the start of the command.
+
+
+Filter table could do with a command to enable/disable filter on the current channel.
+ 
+Stereo SID generation. Six tracks instead of three.
+
+
+Add the ability to define frequency table entries for each music file. This is for PAL and NTSC versions.
+
+
+Optimise small vibrato to fixed vibrato conversion menu option.
+And fixed to small vibrato conversion menu option
+
+NTSC switch
+
+SID revision choice from reSID.
+
+Self running demo add multiple song play option.
+
+
+If transpose or loop are not used then don't include the code in the player.
+
+
+Flag a block error when ERP is used with a zero length extended arpeggio.
+
+
+Before saving loop through all tracks and block and remove commands that have no effect.
+Like duplicate ENV with no note or duplicate DUR or glide etc.
+
+
+Small vibrato has some common code that could be subroutined.
+
+
+"P.TUSARI LEVEL1.PRG" is missing end of track markers on tracks 2 & 3.
+"P.BARE KNUCKLE.PRG" doesn't sync properly at the end, so just tweak to stop the music.
+"P.MODEL.PRG" doesn't sync properly at the end, so just tweak to stop the music.
+
+
+Playing individual blocks in the editor.
+
+
+Digitised sound sequencing. Since digitised sounds need one channel to play pulse, demonstrated
+by Berzerk Redux, to be compatible with 8580 chip types then maybe I can add a special command
+"DIG" to enable this sound that will use an unused envelope and set the sound on the channel
+then start the sample to play.
+
+
+
+Have the option to specify what variables can be stored in zeropage, so speed up memory access.
+*Perhpas even have the option to automatically calculate what variables will benefit the raster time most by timing assembled code with different variables set.
+*The whole music could be played to find out the peak and average raster time and allow the automatic system to find the best match for either peak or average or both combined.
+*Basically like genetic code optimisation.
+
+
+
+; TODO - Player code
+
+; There is scope of using directly stored self modifying SID writes instead of the memory
+; tables. Have the internal variables need per channel grouped in blocks of 7 bytes, followed
+; by 14 bytes of blank data which will store the other two voices. This then means the SID store
+; and update of internal registers can happen without needing extra multiply by 7.
+
+
+;*TODO: Can also add a function to return the three channel note durations.
+;	Instead of another function use an invalid SFX value and that can return the values in registers.
+;*TODO: See if all the drum code can be made common. Maybe using $fb/$fc as an indirect.
+;		Or at least make the snare/bass common and the two tomtoms common.
+;*TODO: Think about adding pulse width variance while playing drums.
+
+;Péter's feedback:
+;*Ringmod or gate block control commands.
+;*Editor bookmark for quick playback from a certain point.
+
+
+; Check existing music files for DUR >= $80 and make them DUR $7F maximum
+
+; Add the ability to trigger notes with effects in the least used channel or specific channels.
+; Useful if the effects editor is expanded and also useful for game sound effects.
+
+; Add the ability to play a block on a certain voice, then stop playing that voice. Useful if the
+; block editor gets expanded.
+
+; Update the music editor to really expand sound effect editing. Sliders controls? Maybe?
+; Definitely needs a new full screen anyway.
+
+; Expand the block editor by making it possible to play the currently editing block with two others.
+; Perhaps store out nice sounding blocks ready to be imported.
+; Add a block length (ie. in terms of total time, not bytes) print while editing.
+
+; To avoid the slightly expensive always copy to the SID we will store directly to the SID instead.
+; These variables can be stored directly and only those with a * have some read access:
+; *.atde , .sure , 

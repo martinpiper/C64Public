@@ -1,0 +1,61 @@
+!zn {
+getkey
+	; Detect joystick and fake cursor and return keys
+	lda #%00001
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+	lda #$91
+	rts
+.notUp
+
+	lda #%00010
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+	lda #$11
+	rts
+.notDown
+
+	lda #%00100
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	lda #$9d
+	rts
+.notLeft
+
+	lda #%01000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	lda #$1d
+	rts
+.notRight
+
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notFire
+
+	lda #%10000
+.isStillFire
+	bit CIA1KeyboardColumnJoystickA
+	beq .isStillFire
+
+	lda #$0d
+	rts
+.notFire
+
+	; No joystick input so read the keyboard
+	; Gets a key from the keyboard buffer
+	jsr $f142
+	cmp #0
+	bne .something
+	; Fake a really silly key
+	lda #$ff
+	rts
+.something
+	rts
+
+InitKeyboard
+	jsr CLRCHN
+	lda #0
+	sta ZPKeyBufferLength
+	rts
+}

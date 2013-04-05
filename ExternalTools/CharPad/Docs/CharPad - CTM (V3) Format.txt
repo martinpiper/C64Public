@@ -1,0 +1,109 @@
+
+
+----------------------------------------------------- 
+CharPad - CTM (v3) File Format - Used by CharPad 1.8
+-----------------------------------------------------
+ 
+
+The CTM file is a CharPad project's native file format and is used to store all the required project data in a single file.
+ 
+NB. CTM = Chars, Tiles, Map.
+
+It is not intended or required to be implemented by any C64 project but is included here for information only.
+
+C64 Programmers should consult the help file for CharPad's export file formats. 
+
+
+Note: This format version was created to support the 'Per Tile Cell' colouring mode of CharPad 1.8 and adds features or
+      structural improvements that were absent or inadequate in previous versions.
+
+      Notably the potential for exclusion of the CELL_DATA block when a charset is saved in "expanded" form as this was 
+      previously a waste of disk space.
+
+      Also the addition to the header of a "charset EXPANDED" flag although this status may be determined by other means.
+
+      Also the CHAR_DATA block is now 8 bytes per character rather than 9 as opposed to CTM version 2, this supports the 
+      new system in CharPad 1.8 to maintain a "Master" cell-attribute table (CELL_ATTRIBS) at all times, regardless of the 
+      particular colouring mode used. 
+
+      The previous system just stored 'cell material' attributes and only stored them with the charset data. 
+
+      CharPad 1.8 now maintains a master table of "RAM colour" and "Material" attributes for each cell of each tile and can 
+      selectively include/exclude either attribute group when configuring the character set.
+    
+
+-----------------------------------------------------------------------------------------------------
+
+File Header, 20 bytes...
+
+
+ID          [00-02]    3 bytes  : ASCII ID string... "CTM"
+VERSION     [03]       1 byte   : version number, currently $03.
+COLOURS     [04-07]    4 bytes  : BGR, MC1, MC2, RAM.
+COLOUR_MODE [08]       1 byte   : 0 = Global, 1 = Per Tile, 2 = Per Tile Cell.
+VIC_RES     [09]       1 byte   : 0 = Hi Resolution, 1 = Multicolour.
+
+MAP_WID     [10,11]    2 bytes  : 16-bit Map width (low, high).
+MAP_HEI     [12,13]    2 bytes  : 16-bit Map height (low, high).
+
+NUM_CHARS   [14,15]    2 bytes  : 16-bits, Number of chars -1 (low, high).
+NUM_TILES   [16]       1 byte   : Number of tiles -1.
+TILE_SIZE   [17]       1 byte   : Tile Size (currently 1-5 square).
+
+EXPANDED    [18]       1 byte   : Boolean flag, 1 = CHAR_DATA is in "Expanded" form (CELL_DATA is unnecessary and absent).
+RESERVED    [19]       1 byte   : (total header size is 20)
+
+
+
+File Data...
+
+
+CHAR_DATA.      The character set. Size = NUM_CHARS * 8 bytes.
+
+                NB. NUM_CHARS should equal NUM_TILES * TILE_SIZE * TILE_SIZE for an "Expanded" char-set.
+                
+
+                An expanded char-set is one where CHAR_DATA contains one unique (8 byte) character definition for each
+                and every cell for each tile in the tile-set.
+
+                In such a case the CELL_DATA would simply be an ascending series starting at 0, easily recreated, and as 
+                such it will be omitted from the file.
+
+
+
+CELL_DATA.      Size = NUM_TILES * TILE_SIZE * TILE_SIZE bytes * 2 bytes. (only exists if CHAR_DATA is not "Expanded")
+
+                NB. CELL_DATA is a stream of 16-bit character codes to be arranged left-to-right, top-to-bottom for each tile.
+
+                The largest contained character code should not be greater than NUM_CHARS - 1.
+
+                In the case that the CHAR_DATA is saved in "Expanded" form, CELL_DATA will be absent as its values would just
+                be an ascending series starting at 0.
+
+                NB. The format of each (16-bit) code is Low Byte, High Byte.
+
+
+
+CELL_ATTRIBS.   Size = NUM_TILES * TILE_SIZE * TILE_SIZE bytes (exists for ALL modes)
+                
+                1 attribute byte for each cell of each tile. 
+                
+                Upper 4 bits = cell Material value (0-15)
+                Lower 4 bits = cell "Colour RAM" value (0-15)    nb. only when COLOUR_MODE = 2 (Per Tile Cell)
+
+                NB. CELL_ATTRIBS is a stream of 8-bit attribute codes arranged left-to-right, top-to-bottom for each tile.
+
+
+TILE_ATTRIBS.   Size = NUM_TILES bytes (1 byte per tile = "RAM colour". only exists if COLOR_MODE = 1 (Per Tile)
+
+
+MAP_DATA.        Size =  MAP_WID x MAP_HEI bytes.
+
+
+
+
+.
+
+
+
+

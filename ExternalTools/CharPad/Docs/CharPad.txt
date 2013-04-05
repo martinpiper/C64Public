@@ -1,0 +1,370 @@
+
+-------------------------------------------
+Char Pad 1.8 - (C) Subchrist Software 2011
+-------------------------------------------
+
+
+Welcome to CharPad!. 
+
+
+This tool is intended for the development of 'Commodore 64' game graphics using a modern Microsoft 
+Windows environment.
+
+It may also be usable for this purpose for other 8-bit computers with similar graphics hardware.
+
+
+As the name suggests, the graphics you can design using this tool are for the C64's character mode
+as opposed to it's bitmap mode.
+
+It has been developed with the concept of "software tiles" in mind, this is a compression technique 
+which treats the set of 256 customizable graphics characters as a library for the construction of 
+larger rectangular graphic areas (tiles).
+
+It is the same technique as employed in Palace Software's (1987) "Shoot'em Up Construction Kit" 
+(SEUCK) for the creation of much larger game environments than would be possible using maps of single 
+characters alone (given the Commodore 64's memory limitations).
+
+CharPad can create, load and save background files which are compatible with the 
+"Shoot'em Up Construction Kit" but it is also intended for game developers using other means of
+development such as BASIC or assembly-language programming.
+
+
+
+
+Working with CharPad
+---------------------
+
+In the "Shoot'em Up Construction Kit" (SEUCK) the background creation process goes like this...
+
+  -> Draw characters 
+    -> Define tiles (size = 5x5) using character codes 
+      -> Create game map using tile codes.
+
+
+In CharPad it goes like this...
+
+  -> Draw tiles 
+    -> (Characters and tile data are automatically generated and managed)
+       -> Create game map using tile codes.
+
+
+So the process is faster and simpler as there is no "middle step" or fiddly re-organizations to worry
+about.
+
+
+CharPad also has the ability to create tiles of varying sizes.
+
+
+
+
+
+Choose a Tile Size
+------------------- 
+
+You can choose between 1x1, 2x2, 3x3, 4x4 or 5x5 square character tiles.
+
+Choose whichever size you prefer and consider the most suitable for your project.
+
+The larger the tile size you use, the larger your game map can be, however, each tile will potentially 
+require more characters for its own use from the limited set of 256, especially if you want to use large
+and highly detailed tile images where fewer optimizations are possible.
+
+For instance, a very detailed 5x5 tile will likely require a full 25 characters, so you would only be able 
+to create 10 of this size and detail before almost running out of characters!.
+
+In contrast, a very plain 5x5 tile, all one colour perhaps, or a repetitive design, would require just one 
+or two different characters.
+
+In general, the larger the map you use, the greater the number of tiles you should use in order to keep it
+interesting for the player, and using a greater numbers of tiles will require that you make each less 
+detailed so that you don't run out of characters.
+
+The choices are yours and they really depend on your intended style and size of game but this natural 
+trade-off between size and detail* is good to be aware of.
+
+(* due to a limited character set of 2048 bytes, 2KB, being the source of all your background's pixels)
+
+The "middle way" often works out best, medium size map, medium number of tiles, medium detail.
+
+
+
+
+
+Choose a Colouring System
+--------------------------
+
+The colouring systems in CharPad exactly reflects what is (and is not) possible on the real C64 hardware.
+
+CharPad supports both high resolution and multi-colour mode character graphics as directly supported by 
+the C-64's VIC graphics chip.
+
+In addition to these two basic modes, three other modes of "software" RAM colouring are supported...
+
+Each one employs a different method for rendering the tiles "RAM" colours.
+
+
+1. Global 
+
+ - In this mode all tiles use the same RAM colour, it is the simplest and fastest to write rendering code for
+   as the c-64's colour RAM need only be filled once and need not be updated as tiles are moved around.
+
+
+2. Per Tile
+
+ - In this mode each tile uses one single RAM colour for all its cells, rendering code can use a simple 
+   "per tile" lookup table to determine colours at run-time and fill the relevant area of colour RAM accordingly.
+
+   Rendering code may take advantage of the fact that as tiles move (usually in single cell increments), 
+   not ALL of the relevant colour RAM area need be updated. 
+
+
+3. Per Tile Cell 
+
+ - In this mode each one of a tile's cells has it's own RAM colour, it offers the most powerful colouring 
+   possibilities of any mode but is also the most computationally expensive to render as ALL of the colour RAM
+   behind the tiles will need to be updated as tiles scroll or move around.
+
+   For this reason it may not be suitable for fast scrolling games without the use of highly optimal coding 
+   techniques both in the renderer and other game logic routines.  
+
+
+
+
+
+Material Editing
+-----------------
+
+All of CharPad's colouring modes allow the possibility to define "per tile cell" material attributes and optionally
+as a compressor option, "per-character" material attributes.
+
+This feature allows a look-up table to be developed with one entry for each tile cell (or each character) and this 
+table may then be used at run-time to determine what action might be taken when a player makes contact with any
+particular tile cell (or any particular character).
+
+16 material types are available and may be applied to tiles using the "Cell Marker - Material"  tool.
+
+The interpretation of any particular material number and it's affect on a player is entirely up to the 
+programmer. 
+
+As a feature of this system, CharPad offers an option to "Sort characters by material".
+
+If this option is chosen CharPad's compressor will sort the character set by Material type in ascending order.
+
+This feature is intended to provide programmers with an easy means of performing "software collision detection"
+whereby characters that affect the player in different ways may be grouped together in the final compressed 
+character set and it may provide a simpler/faster alternative to using a per-cell "material" lookup table.
+
+For example, when characters are sorted by material, software collision detection may be done by using 
+simple algorithms like...
+
+
+<PSEUDOCODE>
+
+BGCHAR = NEXT_PLAYER_POSITION
+
+IF BGCHAR > 150 AND BGCHAR < 200 THEN PLAYER STOPS 
+
+IF BGCHAR > 199 AND BGCHAR < 230 THEN PLAYER IS HURT 
+
+IF BGCHAR > 229 AND BGCHAR < 256 THEN PLAYER IS KILLED 
+
+</PSEUDOCODE>
+
+
+Note: This method is used by the "Shoot 'em up Construction Kit", although the kit only supports 3 collision 
+      groups. 
+
+
+
+
+
+Colour RAM Editing
+---------------
+
+In "Global" and "Per Tile" colouring modes, editing a tile's RAM colours is very simple, just select a colour 
+for the "RAM colour" pen and either the whole tile or all tiles will be attributed with that RAM colour.
+
+In the new "Per Tile Cell" colouring mode however you need the ability to set RAM colour for individual cells of 
+a tile and so the "Cell Marker - RAM Colour" tool has been introduced.
+
+To use this tool simply select it, then choose a colour from the palette and click onto the cells where you want
+to apply that colour.
+
+Note: A change will only be seen if that cell already contains pixels of type "RAM Colour". 
+
+
+
+
+
+Attribute Tables
+-----------------
+
+Attribute tables are used by CharPad for storing data about each tile's colours and materials.
+
+CharPad employs 3 types of exportable lookup tables...
+
+
+ - a "Cell" attribute lookup table. (contains one attribute byte for each cell of each tile).
+
+      The format of each byte is... MMMMCCCC, where M is one of 4 material bits and C is one of 4 colour bits. 
+
+
+ - a "Character" attribute lookup table. (contains one attribute byte for each character in the set)
+ 
+      The format of each byte is... MMMMCCCC, where M is one of 4 material bits and C is one of 4 colour bits. 
+
+
+ - a "Tile" attribute lookup table. (Contains one attribute byte for each tile)
+
+      The format of each byte is... XXXXCCCC, where C is one of 4 colour bits and bits marked X are unused.
+
+
+
+Depending on your intended use, you may need just one of these attribute tables, some combination of them, or 
+possibly, none of them.
+
+If your tiles are designed using "Per Tile" RAM colouring, you will likely need the "Tile" attribute table for 
+colour information and possibly a separate material lookup table, either the per-cell or the per-character version
+or perhaps neither if you have opted to use the "Sort Characters by material" option instead.
+
+
+The "Cell" attribute table can contain both material and colour information for each tile cell, colour information
+will only be available whilst in "Per Tile Cell" colouring mode.
+
+This is the largest lookup table available but may also prove to be the slowest to retrieve information from
+when used by your game's rendering and collision code.
+
+For this reason, a "Character" attribute table is now available and provides a faster alternative.
+
+You will now find compressor options for copying data from the "Cell" attribute table to the "Character" attribute 
+table before the character set is compressed.
+
+Either material values and/or colour values may be copied over and the resulting character set will have 
+one attribute byte per character in the "per character" lookup table which will likely be much smaller in size
+when the character set is compressed than the "per cell" or "expanded" version. 
+
+NB. The downside to using a character attribute table is that identical characters that could have been
+"compressed away" may now have differing attributes which forces them to resist compression and eat into
+the precious (2K) character set.
+
+(ie. the compressor will now consider 2 or more identical characters as different even though their pixel data is
+ identical, their materials or colour attributes may differ).    
+
+
+Any type of the above attribute tables may be exported using CharPad's Export option (File->Export Data...).
+
+
+
+CharPad Files
+--------------
+
+CharPad's native file format is the CTM file, this single file type holds together all information and data
+for a project, the character set, the tile data, the map data, the colour scheme etc.
+
+The CTM file format is provided for convenience whilst using CharPad but when you need to use your project's
+data on the Commodore 64 (or emulator) you should export the project's elements as separate files.
+
+Exported files use no special format, you may only choose to export data in either RAW or PRG formats 
+where RAW is simply a raw headerless data file, and PRG is the same but with a user specified 16-bit load 
+address in the first 2 bytes of the file, in low-byte, high-byte format.
+
+For instance, an exported map data file in raw format will be exactly the same size in bytes as your map's
+width multiplied by your map's height.
+
+In this case it is up to the programmer to interpret the file correctly based on the known map dimensions
+or to add their own custom header information to the file before using it.
+
+For further information see "CharPad - Export Formats.txt" in the Docs folder.
+
+
+
+
+Good Practice
+--------------
+
+As you design your tile-set and game map you should occasionally stop and enable the "Compressor" to make sure
+your tiles are not using more than 256 characters as this is the maximum you will be able to use at any one 
+time on the Commodore 64.
+
+Much of CharPad's power comes from the fact it does not have this 256 character limitation and it will not warn
+you if you exceed the C64's own limits.
+
+(update: The character count, visible above the character set, will be rendered in RED if the count exceeds 256).
+
+With the Compressor switched OFF (Expanded) it is not unusual for a tile set to contain thousands of characters
+as there will be exactly 1 character for every cell in every tile.
+
+If you find the compressor cannot shrink your character set to a count of 256 or less, you will need to lose some
+tiles or adjust existing ones so they are more optimizable by creating more common areas.
+
+
+
+
+Other Features
+---------------
+
+VICE Snapshot Ripper...
+
+
+You may use the VICE Snapshot Ripper to extract graphic data from snapshot files (.vsf) made with the popular VICE 
+emulator.
+
+The tool can extract character, tile and map data.
+
+Before using it you should set your project to use the correct (or suspected) tile size and sufficient tile quantity 
+as these cannot be altered once the Snapshot ripper is launched.
+
+Once launched, simply open the required snapshot file and then move the "Character Set" scrollbar until the correct set
+is visible in CharPad's main window. 
+
+Once the correct character set is located, you may then attempt to locate a tile set and map using the scrollbars
+and offset controllers for those elements.
+
+There is no guarantee that the game you are attempting to retrieve data from will use data formats that are compatible 
+with CharPad but many games that employ tile and map data will use the very common format where data is layed out in
+rows going left-to-right then each succesive row following in a top-to-bottom format.
+
+This simple format is employed in CharPad both for tile data and map data.
+
+Note: Successfully and correctly ripping data from a snapshot file can be a time consuming and expert task!.
+
+  
+
+
+
+
+Happy pixelling!.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

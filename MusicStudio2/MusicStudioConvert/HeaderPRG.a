@@ -1,0 +1,13 @@
+; Creates a relocated player and data.
+
+!source "stdlib/stdlib.a"
+!to "t.prg", cbm
+!sal
+!sl "t.map"
+!svl "t.lbl"
+!cpu 6510
+!ct pet
+
+;MusicPlayer_DebugBorder = 1
+
+!source "t.a"

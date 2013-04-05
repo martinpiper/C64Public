@@ -1,0 +1,329 @@
+!zn
+Score !by 0,0,0,0,0,0
+; ScorePlayer1Updated must be directly after ScorePlayer1 because of ScoreAdd
+ScorePlayer1Updated !by 0
+ScorePlayer1LivesUpdated !by 0
+!macro DrawOneScoreChar .Score , .pos , .scr , .drawnYet {
+	lda .Score + .pos
+	bne .drawIt
+	ldy .drawnYet
+	beq .skipIt
+.drawIt
+	asl
+	clc
+	adc #79
+	tay
+	sty .scr
+	iny
+	sty .scr+1
+	lda #1
+	sta .drawnYet
+.skipIt
+}
+
+DrawScore
+	txa
+	pha
+	tya
+	pha
+	lda #0
+	sta .drawnYet
+	+DrawOneScoreChar Score , 0 , MainScreen + (24*40) + 0, .drawnYet
+	+DrawOneScoreChar Score , 1 , MainScreen + (24*40) + 2, .drawnYet
+	+DrawOneScoreChar Score , 2 , MainScreen + (24*40) + 4, .drawnYet
+	+DrawOneScoreChar Score , 3 , MainScreen + (24*40) + 6, .drawnYet
+	+DrawOneScoreChar Score , 4 , MainScreen + (24*40) + 8, .drawnYet
+	lda #1
+	sta .drawnYet
+	+DrawOneScoreChar Score , 5 , MainScreen + (24*40) + 10, .drawnYet
+
+	ldx #19
+	lda #VIC2Colour_Green
+.ds1
+	sta COLOURRAM + (24*40),x
+	dex
+	bpl .ds1
+
+	lda ScorePlayer1LivesUpdated
+	beq .notUpd
+	lda #0
+	sta ScorePlayer1LivesUpdated
+	lda #3
+	jsr SFXInit
+	lda #3
+	jsr SFXInit
+	lda #3
+	jsr SFXInit
+	inc AnimationPlayer_Lives
+.notUpd
+	ldx AnimationPlayer_Lives
+	cpx #5
+	bcc .o1
+	ldx #5
+.o1
+	cpx #0
+	beq .l2
+	ldy #0
+	lda #99
+.l1
+	sta MainScreen + (24*40) + 13,y
+	iny
+	dex
+	bne .l1
+.l2
+	lda #32
+	sta MainScreen + (24*40) + 13,y
+
+	pla
+	tay
+	pla
+	tax
+	rts
+
+!macro DrawScoreAt .HiScore , .MainScreen , .drawnYet , .pos {
+	; Initials
+	lda .HiScore + 6
+	bne .display
+	rts
+.display
+	sta .MainScreen + 13
+	lda .HiScore + 7
+	sta .MainScreen + 14
+	lda .HiScore + 8
+	sta .MainScreen + 15
+	lda #VIC2Colour_Purple
+	sta COLOURRAM + (.MainScreen & $3ff) + 13
+	sta COLOURRAM + (.MainScreen & $3ff) + 14
+	sta COLOURRAM + (.MainScreen & $3ff) + 15
+	; Position
+	lda #.pos
+	sta .MainScreen - 3
+	lda #VIC2Colour_Red
+	sta COLOURRAM + (.MainScreen & $3ff) - 3
+	txa
+	pha
+	tya
+	pha
+	lda #0
+	sta .drawnYet
+	+DrawOneScoreChar .HiScore , 0 , .MainScreen + 0, .drawnYet
+	+DrawOneScoreChar .HiScore , 1 , .MainScreen + 2, .drawnYet
+	+DrawOneScoreChar .HiScore , 2 , .MainScreen + 4, .drawnYet
+	+DrawOneScoreChar .HiScore , 3 , .MainScreen + 6, .drawnYet
+	+DrawOneScoreChar .HiScore , 4 , .MainScreen + 8, .drawnYet
+	lda #1
+	sta .drawnYet
+	+DrawOneScoreChar .HiScore , 5 , .MainScreen + 10, .drawnYet
+
+	lda #VIC2Colour_Yellow
+	ldx #11
+.cl1
+	sta COLOURRAM + (.MainScreen & $3ff) + 0,x
+	dex
+	bpl .cl1
+
+	pla
+	tay
+	pla
+	tax
+	rts
+}
+
+DrawHighScore1	+DrawScoreAt HiScore + (16*0) , MainScreen + (14*40) + 14 , .drawnYet , '1'
+DrawHighScore2	+DrawScoreAt HiScore + (16*1) , MainScreen + (16*40) + 14 , .drawnYet , '2'
+DrawHighScore3	+DrawScoreAt HiScore + (16*2) , MainScreen + (18*40) + 14 , .drawnYet , '3'
+DrawHighScore4	+DrawScoreAt HiScore + (16*3) , MainScreen + (20*40) + 14 , .drawnYet , '4'
+DrawHighScore5	+DrawScoreAt HiScore + (16*4) , MainScreen + (22*40) + 14 , .drawnYet , '5'
+
+
+.drawnYet !by 0
+
+; Input: A = points
+; tempWork0/tempWork1 lo/hi of the score to use
+; Return: NE = Tens of thousands column changed, useful for triggering an extra life.
+!zn
+.tempY !by 0
+.tensOfThousandsBefore !by 0
+ScoreAdd
+	bne .toAdd
+	rts
+.toAdd
+	sty .tempY
+	; First remember what the tens of thousands column is at
+	pha
+	ldy #1
+	lda (tempWork0),y
+	sta .tensOfThousandsBefore
+	pla
+	; Add A to the tens and then proceed to carry the result
+	; 4 = Tens
+	ldy #4
+	clc
+	adc (tempWork0),y
+	sta (tempWork0),y
+	bcs .over1
+	lda (tempWork0),y
+.l1
+	cmp #10
+	bcc .noOver1
+	sec
+.over1
+	sbc #10
+	sta (tempWork0),y
+	dey
+	bmi .noMore1
+	pha
+	; Carry
+	lda (tempWork0),y
+	clc
+	adc #1
+	sta (tempWork0),y
+	pla
+.noMore1
+	iny
+	jmp .l1
+.noOver1
+	dey
+	bmi .noOver2
+	lda (tempWork0),y
+	cmp #10
+	bcs .over1
+
+.noOver2
+	lda #1
+	ldy #6
+	sta (tempWork0),y
+
+	; Now do the tens of thousands number check
+	ldy #1
+	lda (tempWork0),y
+	; Remember to restore Y
+	ldy .tempY
+	; Last thing, the status result of the check
+	cmp .tensOfThousandsBefore
+	beq .nch1
+	lda #1
+	sta ScorePlayer1LivesUpdated
+.nch1
+	rts
+
+!macro HiScoreTest .pos , .exitHiscoreTest {
+	ldx #0
+	; Initials being blank test
+	lda HiScore + (.pos*16) + 6
+	beq .foundSpace
+.st1
+	lda HiScore + (.pos*16),x
+	cmp Score,x
+	; Equal? Compare the next column
+	beq .nt1
+	bcs .ghs1
+	; Must hi-score be less than the score so use it
+.foundSpace
+	; Got the hi-score so make space, copy it and display the initials entry screen
+	ldx #.pos
+	jsr HiScoreMakeSpace
+	ldx #5
+.st2
+	lda Score,x
+	sta HiScore + (.pos*16),x
+	dex
+	bpl .st2
+	jsr EnterInitials
+	lda EnteringInitials
+	sta Initials + (.pos*16)
+	lda EnteringInitials + 1
+	sta Initials + (.pos*16) + 1
+	lda EnteringInitials + 2
+	sta Initials + (.pos*16) + 2
+	jsr SaveHiScore
+	jmp .exitHiscoreTest
+.nt1
+	inx
+	cpx #6
+	bne .st1
+	; If the score and hi-score are equal all the way to the last column then this must be the space
+	; we are looking for.
+	jmp .foundSpace
+.ghs1
+}
+
+!zn
+HiScoreMakeSpace
+	cpx #4
+	beq .ex1
+	stx .smcmp+1
+	ldx #3
+.l1
+	txa
+	asl
+	asl
+	asl
+	asl
+	tay
+	lda HiScore,y
+	sta HiScore+16,y
+	lda HiScore+1,y
+	sta HiScore+16+1,y
+	lda HiScore+2,y
+	sta HiScore+16+2,y
+	lda HiScore+3,y
+	sta HiScore+16+3,y
+	lda HiScore+4,y
+	sta HiScore+16+4,y
+	lda HiScore+5,y
+	sta HiScore+16+5,y
+	; Initials
+	lda HiScore+6,y
+	sta HiScore+16+6,y
+	lda HiScore+7,y
+	sta HiScore+16+7,y
+	lda HiScore+8,y
+	sta HiScore+16+8,y
+.smcmp	cpx #0
+	beq .ex1
+	dex
+	jmp .l1
+.ex1
+	rts
+
+!zn
+MessageAccessingDisk !scr "accessing the disk..."
+MessageAccessingDiskEnd
+SaveHiScore
+	; If we didn't load the score then just skip the save attempt. We will assume there is no
+	; valid disk or drive.
+	lda LoadedOK
+	beq .skipSave
+	jsr ClearMainScreen
+	+DisplayColourTextMiddle_AX MessageAccessingDisk , MessageAccessingDiskEnd , MainScreen + (10*40) , VIC2Colour_White
+
+	jsr CalculateScoreChecksum
+	sta ScoreChecksum
+
+	lda #SaveNameEnd-SaveNameStart
+	ldx #<SaveNameStart
+	ldy #>SaveNameStart
+	jsr IRQDisk_WriteSetName
+	; The length of the data to write comes from the drive's copy of the file
+	ldx #<HiScore
+	ldy #>HiScore
+	jsr IRQDisk_WriteData
+	; It saved OK
+	bcc .skipSave
+	; Got a save error so we don't try again
+	lda #0
+	sta LoadedOK
+.skipSave
+	rts
+
+!zn
+CalculateScoreChecksum
+	ldx #(5*16)-1
+	lda #0
+	clc
+.l1
+	adc HiScore,x
+	dex
+	bpl .l1
+	rts

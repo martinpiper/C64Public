@@ -1,0 +1,108 @@
+;Music editor help reader for the C64
+;Converted from the original 6510+ assembler source code
+!source "../stdlib/stdlib.a"
+!to "MusicEditorHelp.prg", cbm
+!sal
+!sl "MusicEditorHelp.map"
+!svl "MusicEditorHelp.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry900.a"
+
+; To compress the help file:
+;..\bin\LZMPi.exe -c HELP.bin Help.cmp
+
+
+*=BASICEntry
+	lda #ProcessorPortAllRAM
+	jsr InitialiseMachine
+
+	; Move the compressed data to the end of RAM
+	ldx #0
+.cp1
+	lda HelpScreens,x
+	sta $c000,x
+	dex
+	bne .cp1
+	inc .cp1+2
+	inc .cp1+5
+	bne .cp1
+
+	; Decompress the help screen data
+ 	ldx #<HelpScreens
+ 	ldy #>HelpScreens
+ 	jsr RNXPCompressionDecompress_InitStore
+ 	ldx #<$c000
+ 	ldy #>$c000
+ 	jsr RNXPCompressionDecompress
+
+	; Now start the rest of the code
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	jsr setint
+	; Display the screen
+.l1
+	lda currentScreen
+	jsr retrevescr
+
+.l2
+	jsr SCNKEY
+	jsr GETIN
+	cmp #'n'
+	beq .next
+	cmp #'p'
+	beq .prev
+	jmp .l2
+
+.next
+	lda currentScreen
+	cmp #25
+	beq .l2
+	inc currentScreen
+	jmp .l1
+
+.prev
+	lda currentScreen
+	beq .l2
+	dec currentScreen
+	jmp .l1
+
+currentScreen !by  0
+
+!source "../stdlib/Initialise.a"
+!source "prnhlp.a"
+
+!macro RNXPCompressionIncBorder_A {
+	lda ZPProcessorPort
+	pha
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	inc VIC2BorderColour
+	pla
+	sta ZPProcessorPort
+}
+
+!source "../Decompression/Decompression.a"
+!source "../Decompression/DecompressionP2.a"
+!source "../Decompression/DecompressionVars.a"
+
+CompressionStartOfHistoryBufferTables = *
+
+*=$3000
+maxBlocks = $40
+!source "../MusicEditor/MusicPlayer.a"
+*=MusicPlayerDataStart
+!bin "HELPMUS.D",,MusicPlayerCodeToDataOffset+2
+
+*=$40c0
+HelpScreens
+;help.lin comes from the original disk
+;!bin "help.lin" ,, $c2
+
+;help.bin is the help.lin file but the starting $c2 bytes are trimmed
+;!bin "help.bin"
+
+;help.cmp is the help.bin file compressed with LZMPi. We don't need the first 2 bytes as this just holds the original length of the file.
+!bin "help.cmp",,2

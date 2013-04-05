@@ -1,0 +1,803 @@
+; Handles updating the score and score sprite data
+
+;MPi: TODO: A lot of functions in here can be macroed
+
+DrawnScoreSprites = $fdc0
+
+ScorePlayer1 !fill 6
+; ScorePlayer1Updated must be directly after ScorePlayer1 because of ScoreAdd
+ScorePlayer1Updated !by 0
+ScorePlayer1LivesUpdated !by 0
+ScorePlayer2 !fill 6
+; ScorePlayer2Updated must be directly after ScorePlayer2 because of ScoreAdd
+ScorePlayer2Updated !by 0
+ScorePlayer2LivesUpdated !by 0
+
+!zn
+InitScore
+	lda #0
+	ldx #5
+.l1
+	sta ScorePlayer1,x
+	sta ScorePlayer2,x
+	dex
+	bpl .l1
+
+	; Clear the score sprites
+	ldx #0
+	txa
+.l2
+	sta DrawnScoreSprites,x
+	sta DrawnScoreSprites+$100,x
+	dex
+	bne .l2
+	rts
+
+	; MPi: TODO: Macro this function
+ScoreSpriteRenderSingle
+	ldy #0
+	lda (tempWork0),y
+	sta (tempWork4),y
+
+	ldy #1
+	lda (tempWork0),y
+	ldy #3
+	sta (tempWork4),y
+
+	ldy #2
+	lda (tempWork0),y
+	ldy #6
+	sta (tempWork4),y
+
+	ldy #3
+	lda (tempWork0),y
+	ldy #9
+	sta (tempWork4),y
+
+	ldy #4
+	lda (tempWork0),y
+	ldy #12
+	sta (tempWork4),y
+
+	ldy #5
+	lda (tempWork0),y
+	ldy #15
+	sta (tempWork4),y
+
+	ldy #6
+	lda (tempWork0),y
+	ldy #18
+	sta (tempWork4),y
+
+	ldy #7
+	lda (tempWork0),y
+	ldy #21
+	sta (tempWork4),y
+	rts
+
+
+	; MPi: TODO: Macro this function
+ScoreSpriteRender
+	ldy #0
+	lda (tempWork0),y
+	sta (tempWork4),y
+	lda (tempWork2),y
+	ldy #1
+	sta (tempWork4),y
+
+	ldy #1
+	lda (tempWork0),y
+	ldy #3
+	sta (tempWork4),y
+	ldy #1
+	lda (tempWork2),y
+	ldy #4
+	sta (tempWork4),y
+
+	ldy #2
+	lda (tempWork0),y
+	ldy #6
+	sta (tempWork4),y
+	ldy #2
+	lda (tempWork2),y
+	ldy #7
+	sta (tempWork4),y
+
+	ldy #3
+	lda (tempWork0),y
+	ldy #9
+	sta (tempWork4),y
+	ldy #3
+	lda (tempWork2),y
+	ldy #10
+	sta (tempWork4),y
+
+	ldy #4
+	lda (tempWork0),y
+	ldy #12
+	sta (tempWork4),y
+	ldy #4
+	lda (tempWork2),y
+	ldy #13
+	sta (tempWork4),y
+
+	ldy #5
+	lda (tempWork0),y
+	ldy #15
+	sta (tempWork4),y
+	ldy #5
+	lda (tempWork2),y
+	ldy #16
+	sta (tempWork4),y
+
+	ldy #6
+	lda (tempWork0),y
+	ldy #18
+	sta (tempWork4),y
+	ldy #6
+	lda (tempWork2),y
+	ldy #19
+	sta (tempWork4),y
+
+	ldy #7
+	lda (tempWork0),y
+	ldy #21
+	sta (tempWork4),y
+	ldy #7
+	lda (tempWork2),y
+	ldy #22
+	sta (tempWork4),y
+	rts
+
+	; MPi: TODO: Macro this function
+ScoreSpriteRender2
+	ldy #0
+	lda (tempWork0),y
+	sta (tempWork4),y
+	lda (tempWork2),y
+	ldy #1+64-3
+	sta (tempWork4),y
+
+	ldy #1
+	lda (tempWork0),y
+	ldy #3
+	sta (tempWork4),y
+	ldy #1
+	lda (tempWork2),y
+	ldy #4+64-3
+	sta (tempWork4),y
+
+	ldy #2
+	lda (tempWork0),y
+	ldy #6
+	sta (tempWork4),y
+	ldy #2
+	lda (tempWork2),y
+	ldy #7+64-3
+	sta (tempWork4),y
+
+	ldy #3
+	lda (tempWork0),y
+	ldy #9
+	sta (tempWork4),y
+	ldy #3
+	lda (tempWork2),y
+	ldy #10+64-3
+	sta (tempWork4),y
+
+	ldy #4
+	lda (tempWork0),y
+	ldy #12
+	sta (tempWork4),y
+	ldy #4
+	lda (tempWork2),y
+	ldy #13+64-3
+	sta (tempWork4),y
+
+	ldy #5
+	lda (tempWork0),y
+	ldy #15
+	sta (tempWork4),y
+	ldy #5
+	lda (tempWork2),y
+	ldy #16+64-3
+	sta (tempWork4),y
+
+	ldy #6
+	lda (tempWork0),y
+	ldy #18
+	sta (tempWork4),y
+	ldy #6
+	lda (tempWork2),y
+	ldy #19+64-3
+	sta (tempWork4),y
+
+	ldy #7
+	lda (tempWork0),y
+	ldy #21
+	sta (tempWork4),y
+	ldy #7
+	lda (tempWork2),y
+	ldy #22+64-3
+	sta (tempWork4),y
+	rts
+
+
+
+
+
+!zn
+ScorePlayer1Render
+	lda ScorePlayer1Updated
+	bne .doIt
+	rts
+.doIt
+ScorePlayer1RenderForce
+	lda #0
+	sta ScorePlayer1Updated
+
+	lda #>SpriteScoreChars
+	sta tempWork1
+	sta tempWork3
+
+	lda ScorePlayer1
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites
+	sta tempWork4
+	lda #>DrawnScoreSprites
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer1+1
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+2
+	sta tempWork5
+	jsr ScoreSpriteRender2
+
+	lda ScorePlayer1+2
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+1+64
+	sta tempWork4
+	lda #>DrawnScoreSprites+1+64
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer1+3
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+128
+	sta tempWork4
+	lda #>DrawnScoreSprites+128
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer1+4
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+2+128
+	sta tempWork4
+	lda #>DrawnScoreSprites+2+128
+	sta tempWork5
+	jsr ScoreSpriteRender2
+
+	lda ScorePlayer1+5
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+1+192
+	sta tempWork4
+	lda #>DrawnScoreSprites+1+192
+	sta tempWork5
+	jsr ScoreSpriteRender
+	rts
+
+
+!zn
+ScorePlayer1RenderLives
+	lda ScorePlayer1LivesUpdated
+	bne .doIt
+	rts
+.doIt
+ScorePlayer1RenderLivesForce
+	lda #0
+	sta ScorePlayer1LivesUpdated
+
+	lda #(10*8*2)+8
+	ldx Player1Information+PlayerGameOffset_Lives
+	beq .notGotLife1
+	bmi .notGotLife1
+	lda #10*8*2
+.notGotLife1
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife2
+	bmi .notGotLife2
+	lda #10*8*2
+.notGotLife2
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife3
+	bmi .notGotLife3
+	lda #10*8*2
+.notGotLife3
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife4
+	bmi .notGotLife4
+	lda #10*8*2
+.notGotLife4
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+64+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+64+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife5
+	bmi .notGotLife5
+	lda #10*8*2
+.notGotLife5
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+64+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+64+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife6
+	bmi .notGotLife6
+	lda #10*8*2
+.notGotLife6
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+64+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+64+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife7
+	bmi .notGotLife7
+	lda #10*8*2
+.notGotLife7
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+128+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+128+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife8
+	bmi .notGotLife8
+	lda #10*8*2
+.notGotLife8
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+128+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+128+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife9
+	bmi .notGotLife9
+	lda #10*8*2
+.notGotLife9
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+128+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+128+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	rts
+
+
+!zn
+ScorePlayer2RenderLives
+	lda ScorePlayer2LivesUpdated
+	bne .doIt
+	rts
+.doIt
+ScorePlayer2RenderLivesForce
+	lda #0
+	sta ScorePlayer2LivesUpdated
+
+	lda #(10*8*2)+8
+	ldx Player2Information+PlayerGameOffset_Lives
+	beq .notGotLife1
+	bmi .notGotLife1
+	lda #10*8*2
+.notGotLife1
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife2
+	bmi .notGotLife2
+	lda #10*8*2
+.notGotLife2
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife3
+	bmi .notGotLife3
+	lda #10*8*2
+.notGotLife3
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife4
+	bmi .notGotLife4
+	lda #10*8*2
+.notGotLife4
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+64+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+64+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife5
+	bmi .notGotLife5
+	lda #10*8*2
+.notGotLife5
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+64+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+64+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife6
+	bmi .notGotLife6
+	lda #10*8*2
+.notGotLife6
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+64+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+64+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife7
+	bmi .notGotLife7
+	lda #10*8*2
+.notGotLife7
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+128+24
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+128+24
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife8
+	bmi .notGotLife8
+	lda #10*8*2
+.notGotLife8
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+128+24+1
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+128+24+1
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	lda #(10*8*2)+8
+	dex
+	beq .notGotLife9
+	bmi .notGotLife9
+	lda #10*8*2
+.notGotLife9
+	sta tempWork0
+	lda #>SpriteScoreChars
+	sta tempWork1
+	lda #<DrawnScoreSprites+256+128+24+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+128+24+2
+	sta tempWork5
+	jsr ScoreSpriteRenderSingle
+
+	rts
+
+
+
+!zn
+ScorePlayer2Render
+	lda ScorePlayer2Updated
+	bne .doIt
+	rts
+.doIt
+ScorePlayer2RenderForce
+	lda #0
+	sta ScorePlayer2Updated
+
+	lda #>SpriteScoreChars
+	sta tempWork1
+	sta tempWork3
+
+	lda ScorePlayer2
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256
+	sta tempWork4
+	lda #>DrawnScoreSprites+256
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer2+1
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256+2
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+2
+	sta tempWork5
+	jsr ScoreSpriteRender2
+
+	lda ScorePlayer2+2
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256+1+64
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+1+64
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer2+3
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256+128
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+128
+	sta tempWork5
+	jsr ScoreSpriteRender
+
+	lda ScorePlayer2+4
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256+2+128
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+2+128
+	sta tempWork5
+	jsr ScoreSpriteRender2
+
+	lda ScorePlayer2+5
+	asl
+	asl
+	asl
+	asl
+	sta tempWork0
+	clc
+	adc #8
+	sta tempWork2
+	lda #<DrawnScoreSprites+256+1+192
+	sta tempWork4
+	lda #>DrawnScoreSprites+256+1+192
+	sta tempWork5
+	jsr ScoreSpriteRender
+	rts
+
+
+; Input: A = points
+; tempWork0/tempWork1 lo/hi of the score to use
+; Return: NE = Tens of thousands column changed, useful for triggering an extra life.
+!zn
+.tempY !by 0
+.tensOfThousandsBefore !by 0
+ScoreAdd
+	bne .toAdd
+	rts
+.toAdd
+	sty .tempY
+	; First remember what the tens of thousands column is at
+	pha
+	ldy #1
+	lda (tempWork0),y
+	sta .tensOfThousandsBefore
+	pla
+	; Add A to the tens and then proceed to carry the result
+	; 4 = Tens
+	ldy #4
+	clc
+	adc (tempWork0),y
+	sta (tempWork0),y
+	bcs .over1
+	lda (tempWork0),y
+.l1
+	cmp #10
+	bcc .noOver1
+	sec
+.over1
+	sbc #10
+	sta (tempWork0),y
+	dey
+	bmi .noMore1
+	pha
+	; Carry
+	lda (tempWork0),y
+	clc
+	adc #1
+	sta (tempWork0),y
+	pla
+.noMore1
+	iny
+	jmp .l1
+.noOver1
+	dey
+	bmi .noOver2
+	lda (tempWork0),y
+	cmp #10
+	bcs .over1
+
+.noOver2
+	lda #1
+	ldy #6
+	sta (tempWork0),y
+
+	; Now do the tens of thousands number check
+	ldy #1
+	lda (tempWork0),y
+	; Remember to restore Y
+	ldy .tempY
+	; Last thing, the status result of the check
+	cmp .tensOfThousandsBefore
+	rts

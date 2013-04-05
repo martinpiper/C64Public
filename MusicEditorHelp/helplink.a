@@ -1,0 +1,104 @@
+!"@0:helplink.s"
+*=$0400
+table=$40c0
+lda #0
+sta 157
+sta cnt1
+ldx #$3f
+hl1 !
+sta table,x
+dex
+bpl hl1
+lda #$41
+sta table+1
+lda #48
+sta file1+4
+sta file1+5
+hl2 !
+lda cnt1
+asl a
+tax
+lda table,x
+sta loadlo
+lda table+1,x
+sta loadhi
+jsr incr1
+lda #8
+ldx #<file1
+ldy #>file1
+jsr $ffbd
+lda #1
+ldx #8
+ldy #0
+jsr $ffba
+lda #0
+ldx loadlo
+ldy loadhi
+jsr $ffd5
+bcs error
+inc cnt1
+lda cnt1
+asl a
+tax
+lda 174
+sta table,x
+lda 175
+sta table+1,x
+jmp hl2
+incr1 !
+inc file1+5
+lda file1+5
+cmp #58
+bne i1
+inc file1+4
+lda #48
+sta file1+5
+i1 !
+rts
+file1 byt "help00.d"
+cnt1 byt 0
+error !
+rts
+ldx #$c1
+er1 !
+lda $5000,x
+clc
+adc #$40
+sta $5000,x
+inx
+inx
+cpx #1
+bne er1
+jsr moveit
+rts
+loadlo byt 0
+loadhi byt 0
+!
+moveit !
+inc loadhi
+lda $d020
+pha
+lda #$50
+sta mi1m+2
+sta mi3m+2
+lda #$90
+sta mi2m+2
+ldx #0
+sei
+mi1m lda $5000,x
+mi2m sta $9000,x
+sta $d020
+lda #0
+mi3m sta $5000,x
+inx
+bne mi1m
+inc mi1m+2
+inc mi2m+2
+inc mi3m+2
+lda mi1m+2
+cmp loadhi
+bne mi1m
+cli
+pla
+sta $d020
+rts

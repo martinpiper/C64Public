@@ -1,0 +1,663 @@
+;Music file conversion from Future Composer to E114 music editor
+
+!source "../stdlib/stdlib.a"
+!to "MusicConvert.prg", cbm
+!sl "MusicConvert.map"
+!svl "MusicConvert.lbl"
+!cpu 6510
+!ct pet
+
+
+
+*=$800
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	+InitKERNALStringDisplay_AXY
+	jsr CLRSCR
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreen_A
+
+
+	cli
+
+	jsr start
+
+	sei
+
+	lda #0
+	jsr MusicPlayerInit
+.l1
+	lda #$ff
+.l2
+	cmp VIC2Raster
+	bne .l2
+	inc VIC2BorderColour
+	jsr MusicPlayerPlay
+	dec VIC2BorderColour
+	jmp .l1
+
+!source "../stdlib/Initialise.a"
+!source "../stdlib/PETSCII.a"
+
+scr = $c000
+
+
+
+enter
+!by CHR_Clear, CHR_LightBlue
+!tx "enter future composer filename"
+!by CHR_LightRed
+!by CHR_Return
+!tx "  music1*"
+!by CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left
+!by 0
+
+tosave
+!by CHR_LightBlue
+!tx "enter filename to save or return to skip"
+!by CHR_LightRed
+!by CHR_Return
+!by 0
+
+
+
+startm
+!by CHR_Clear, CHR_LightBlue
+!tx "start $1800 to "
+!by 0
+
+endm
+!tx "end $"
+!by 0
+
+searchm
+!by CHR_Down
+!tx "searching for tracks"
+!by CHR_Return
+!by 0
+
+foundm
+!by CHR_Down, CHR_Yellow
+!tx "found "
+!by CHR_ReverseOn, CHR_Red
+!by 208,208,208,208,208,208
+!by CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left,CHR_Left
+!by 0
+
+foundcm
+!by CHR_Green, CHR_ReverseOn, 208
+!by 0
+
+endingm
+!by CHR_LightBlue
+!tx "ending"
+!by CHR_Return
+!by 0
+
+lookingm
+!by CHR_Down, CHR_LightGreen
+!tx "looking for blocks"
+!by CHR_Return
+!by 0
+
+foundbm
+!by CHR_Home,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down
+!by CHR_LightGrey, CHR_ReverseOn
+!tx "found block"
+!by CHR_ReverseOff, CHR_Yellow
+!by 0
+
+convertm
+!by CHR_Home,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down,CHR_Down
+!by CHR_White
+!tx "converting sound fx"
+!by CHR_Return
+!by 0
+
+endaddrm
+!by CHR_Down, CHR_Down, CHR_LightBlue
+!tx "start $4600 to end $"
+!by 0
+
+hexaddr
+!tx "0000"
+chrret
+!by CHR_Return
+!by 0
+
+loadError
+!by CHR_LightBlue
+!tx "load error, press return"
+!by 0
+
+hextab !tx "0123456789abcdef"
+
+blocks !by  0
+fxcnt  !by  0
+tmpa !by  0
+tmpx !by  0
+tmpy !by  0
+labg !by  0
+
+timer
+rts
+	pha
+	txa
+	pha
+	tya
+	pha
+	ldx #34
+	lda $fb
+	pha
+	lda $fc
+	pha
+ti1
+	ldy #255
+ti2
+	lda ($fb),y
+	sta $d020
+	dey
+	bne ti2
+	dex
+	bne ti1
+	pla
+	sta $fc
+	pla
+	sta $fb
+	pla
+	tay
+	pla
+	tax
+	pla
+	rts
+
+hexfig
+	sta tmpa
+	stx tmpx
+	and #15
+	tax
+	lda hextab,x
+	sta hexaddr+1
+	lda tmpa
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	lda hextab,x
+	sta hexaddr+0
+	lda tmpx
+	and #15
+	tax
+	lda hextab,x
+	sta hexaddr+3
+	lda tmpx
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	lda hextab,x
+	sta hexaddr+2
+	lda #<hexaddr
+	ldy #>hexaddr
+	jsr BASICTextPrint
+	lda tmpa
+	ldx tmpx
+rts
+
+.lloadError
+	lda #<loadError
+	ldy #>loadError
+	jsr BASICTextPrint
+	jsr $e112
+	jmp start
+
+start
+	lda #<enter
+	ldy #>enter
+	jsr BASICTextPrint
+
+	jsr InputName
+	stx .smnameLen+1
+
+	lda #CHR_Return
+	jsr $e10c
+
+	lda #8
+	ldx ZPCurrentFileDeviceNumber
+	ldy #1
+	jsr SETLFS
+.smnameLen	lda #0
+	ldx #<$200
+	ldy #>$200
+	jsr SETNAM
+	lda #0
+	ldx #$ff
+	ldy #$ff
+	jsr LOAD
+	bcs .lloadError
+
+
+	lda #<startm
+	ldy #>startm
+	jsr BASICTextPrint
+	lda #<endm
+	ldy #>endm
+	jsr BASICTextPrint
+
+	lda ZPAddressToLoad+1
+	ldx ZPAddressToLoad
+	jsr hexfig
+
+	lda #<searchm
+	ldy #>searchm
+	jsr BASICTextPrint
+	lda #<foundm
+	ldy #>foundm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #127
+l1
+	lda 31*256,x
+	sta 70*256,x
+	dex
+	bpl l1
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #255
+l2
+	lda #0
+	sta 70*256,x
+	dex
+	bmi l2
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #127
+l3
+	lda 31*256+128,x
+	sta 71*256,x
+	dex
+	bpl l3
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #255
+l4
+	lda #0
+	sta 71*256,x
+	dex
+	bmi l4
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #127
+l5
+	lda 32*256+80,x
+	sta 72*256,x
+	dex
+	bpl l5
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	ldx #255
+l6
+	lda #0
+	sta 72*256,x
+	dex
+	bmi l6
+	lda #<foundcm
+	ldy #>foundcm
+	jsr BASICTextPrint
+	jsr timer
+	lda #<chrret
+	ldy #>chrret
+	jsr BASICTextPrint
+	ldx #31
+	lda #0
+l7
+	sta scr,x
+	dex
+	bpl l7
+	ldx #49
+l8
+	sta scr+40,x
+	sta scr+120,x
+	dex
+	bpl l8
+	lda #<lookingm
+	ldy #>lookingm
+	jsr BASICTextPrint
+	lda #0
+	sta $fb
+	lda #$4b
+	sta $fc
+	lda #0
+	sta blocks
+	lda 7847
+	sta $fd
+	lda 7848
+	sta $fe
+
+figblk1
+	jsr timer
+	lda #<foundbm
+	ldy #>foundbm
+	jsr BASICTextPrint
+	jsr timer
+	lda #0
+	ldx blocks
+	jsr hexfig
+	ldx blocks
+	lda $fc
+	sta scr+40,x
+	lda $fb
+	sta scr+120,x
+	cpx #64
+	bne l500z
+	jmp l500
+l500z cpx #44
+	bcc fb1
+fb2
+	ldy #0
+	lda #253
+	sta ($fb),y
+	inc blocks
+	jsr incra
+	jsr incrt
+	jmp figblk1
+
+fb1
+l370
+	ldy #0
+	lda ($fd),y
+	cmp #255
+	beq fb2
+	cmp #127
+	beq l380
+	bcc l380
+	cmp #128
+	bcs l390
+
+; glide controls
+glcont
+	ldy #0
+	lda #254
+	sta ($fb),y
+	jsr incrt
+	jsr incra
+	lda ($fd),y
+	and #240
+	lsr
+	lsr
+	lsr
+	lsr
+	sta ($fb),y
+	jsr incrt
+	lda ($fd),y
+	and #15
+	sta ($fb),y
+l450
+	jsr incrt
+	jsr incra
+	jmp l370
+l380
+	ldy #0
+	lda ($fd),y
+	sta ($fb),y
+	jmp l450
+l390
+	cmp #191
+	beq l390a
+	bcc l390a
+	cmp #223
+	beq l400a
+	bcc l400a
+	jmp glcont
+l390a
+	ldy #0
+	lda #250
+	sta ($fb),y
+	jsr incrt
+	lda ($fd),y
+	sec
+	sbc #127
+	sta ($fb),y
+	jmp l450
+l400a
+	ldy #0
+	lda #251
+	sta ($fb),y
+	jsr incrt
+	lda ($fd),y
+	sec
+	sbc #192
+	sta ($fb),y
+	jmp l2450
+l500
+	lda #<endingm
+	ldy #>endingm
+	jsr BASICTextPrint
+	ldx #63
+m1
+	lda scr+40,x
+	sta $4a00+64,x
+	lda scr+120,x
+	sta $4a00,x
+	dex
+	bpl m1
+	lda #0
+	sta fxcnt
+	jmp l530
+l2450
+	tax
+	inc scr,x
+	jmp l450
+incra
+	inc $fd
+	bne ia1
+	inc $fe
+ia1
+	rts
+incrt
+	inc $fb
+	bne ia2
+	inc $fc
+ia2
+	rts
+l530
+	lda #<convertm
+	ldy #>convertm
+	jsr BASICTextPrint
+	lda #0
+	ldx fxcnt
+	jsr hexfig
+	lda fxcnt
+	asl
+	asl
+	asl
+	tay
+	lda 8584+2,y
+	sta $4900,y
+	lda 8584+3,y
+	sta $4900+1,y
+	lda 8584+1,y
+	sta $4900+2,y
+	lda 8584+6,y
+	sta $4900+3,y
+	lda #0
+	sta $4900+4,y
+	sta $4900+5,y
+	lda #15
+	sta labg
+	lda 8584+7,y
+	cmp #16
+	bne l574
+	lda 8584+5,y
+	clc
+	adc #128
+	sta labg
+	jmp l580
+l574
+	lda #255
+	sta labg
+	lda 8584+6,y
+	sta $4900+3,y
+l580
+	lda labg
+	sta $4900+6,y
+	cmp #128
+	beq l581
+	cmp #129
+	beq l582
+	cmp #130
+	beq l583
+l58xret
+	lda #0
+	sta $4900+7,y
+	inc fxcnt
+	lda fxcnt
+	cmp #32
+	beq l530z
+	jmp l530
+l530z
+	jmp endaddrstuff
+l581
+	lda #8
+	sta $4900+3,y
+	lda 8584+3,y
+	and #240
+	ora #9
+	sta $4900+1,y
+	jsr l630
+	jmp l58xret
+l582
+	lda #4
+	sta $4900+3,y
+	lda 8584+3,y
+	and #240
+	ora #7
+	sta $4900+1,y
+	jsr l630
+	jmp l58xret
+l583
+	lda #8
+	sta $4900+3,y
+	lda 8584+3,y
+	and #240
+	ora #7
+	sta $4900+1,y
+	jsr l630
+	jmp l58xret
+
+l630
+	lda #0
+	sta $4900,y
+	sta $4900+4,y
+	sta $4900+5,y
+	lda #65
+	sta $4900+2,y
+	rts
+
+endaddrstuff
+	lda #<endaddrm
+	ldy #>endaddrm
+	jsr BASICTextPrint
+	lda scr+40+63
+	ldx scr+120+63
+	jsr hexfig
+
+
+	lda #<tosave
+	ldy #>tosave
+	jsr BASICTextPrint
+
+	jsr InputName
+	stx .smnameLen2+1
+
+	cpx #0
+	beq .noSave
+
+	lda #CHR_Return
+	jsr $e10c
+
+	; Proceed with the save
+	lda #8
+	ldx ZPCurrentFileDeviceNumber
+	ldy #255
+	jsr SETLFS
+.smnameLen2	lda #0
+	ldx #<$200
+	ldy #>$200
+	jsr SETNAM
+	; Setup the address to save
+	lda #<$4600
+	sta 43
+	lda #>$4600
+	sta 44
+	lda 49152+120+63
+	sta 45
+	lda 49152+40+63
+	sta 46
+
+	; Add on a couple of safety bytes for the save end address
+	lda 45
+	clc
+	adc #2
+	sta 45
+	bcc .ni1
+	inc 46
+.ni1
+
+	lda #43
+	ldx 45
+	ldy 46
+	jsr SAVE
+
+.noSave
+
+	rts
+
+
+InputName
+	; Input string. This code is similar to the code at $abf9
+	lda #$3f
+	jsr $e10c
+	lda #$20
+	jsr $e10c
+	ldx #0
+.il1
+	jsr $e112
+	cmp #CHR_Return
+	beq .il2
+	sta $200,x
+	inx
+	cpx #$58
+	bne .il1
+.il2
+	rts
+
+; MPi: TODO: Temporary until the file can be loaded
+*=$1800
+; Produce a warning if the conversion code goes over the place where the FC music file is loaded.
+;!bin "FCMusic1.prg",,2
+
+*=$3f00
+RealMusicPlayerStart
+maxBlocks = $40
+!source "../MusicEditor/MusicPlayer.a"
+
+; The drums
+*=$4a80
+!source "../MusicEditor/DefaultDrumPatterns.a"
+; The waveform modifiers
+*=$4ae0
+!fill 32,0

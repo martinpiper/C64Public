@@ -1,0 +1,350 @@
+; Implements LZMPi decompression for 6502. Most of the lengths and offsets for the PC version use 32 bits, this version uses 16 bits.
+; To use:
+; 	ldx #<decompressTo
+; 	ldy #>decompressTo
+; 	jsr RNXPCompressionDecompress_InitStore
+; 	ldx #<CompressedData
+; 	ldy #>CompressedData
+; 	jsr RNXPCompressionDecompress
+; The macro RNXPCompressionIncBorder_A will need to be defined before including this file. This macro can be useful for changing the border colour during decompression.
+; For example:
+;!macro RNXPCompressionIncBorder_A {
+;	lda ZPProcessorPort
+;	pha
+;	lda #ProcessorPortAllRAMWithIO
+;	sta ZPProcessorPort
+;	inc VIC2BorderColour
+;	pla
+;	sta ZPProcessorPort
+;}
+
+
+;To use these options define the labels below before including this source file.
+;To optimise the code for one escape bit then define the below label below.
+;Decompression_OptimiseForOneEscapeBit = 1
+
+;To optimise the code to remove the changing escape check define the label below.
+;Decompression_OptimiseNoChangingEscape = 1
+
+;To optimise the code to remove the store stub function define the label below.
+;Decompression_OptimiseNoStoreStub = 1
+
+;To allow the decompressor to be split into two sections (useful for low memory linkers) define the label below.
+;Decompression_TwoParts = 1
+
+!zn
+
+; Decompress function
+; Right at the end we reserve space but we don't allocate it in memory
+.historyBufferLenL = CompressionStartOfHistoryBufferTables
+.historyBufferLenH = .historyBufferLenL + $10
+.historyBufferOffsetL = .historyBufferLenH + $10
+.historyBufferOffsetH = .historyBufferOffsetL + $10
+;CompressionEndOFHistoryBufferTables = .historyBufferOffsetH + $10
+
+!ifdef Decompression_OptimiseNoStoreStub { } else {
+RNXPCompressionDecompress_InitStore
+	stx RNXPCompressionDecompress_WriteByte+1
+	sty RNXPCompressionDecompress_WriteByte+2
+	rts
+}
+
+.GetNextBitIntoCarry
+	pha
+	cpx #$80
+	beq .notGotBitsC
+	txa
+	asl
+	tax
+	pla
+	rts
+.notGotBitsC
+	jsr RNXPCompressionDecompress_GetByte
+	; Get carry
+	sec
+	; Set lower flag bit that eventually becomes $80 while getting the upper bit at the same time
+	rol
+	tax
+	pla
+	rts
+
+; Only needs two bytes here for the length and offset related values
+.lastWorkOffset = $02
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+.numEscapeBits = $04
+}
+!ifdef Decompression_OptimiseNoChangingEscape {} else {
+.changingEscape = $05
+}
+.potentialLiteral = $08
+.historyIndex = $09
+
+.workOffset = $fb
+.workLen = $fd
+.tempLoopVal = $ff
+
+
+RNXPCompressionDecompress
+!ifdef Decompression_OptimiseNoStoreStub { } else {
+	stx RNXPCompressionDecompress_GetByte+1
+	sty RNXPCompressionDecompress_GetByte+2
+}
+	; From here on in:
+	; y = free general purpose register
+	; x = currentBits
+
+	ldx #$80	; Flag to say, get next byte and bit
+
+	; lastWorkOffset = 1
+	ldy #1
+	sty .lastWorkOffset
+	dey
+	sty .lastWorkOffset+1
+
+	sty .historyIndex
+	sty .smTheEscape+1
+!ifdef Decompression_OptimiseNoChangingEscape {} else {
+	sty .changingEscape
+}
+	tya
+	;numEscapeBits = MGetNextBit();
+	;numEscapeBits = (numEscapeBits<<1) + MGetNextBit();
+	jsr .GetNextBitIntoCarry
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	rol
+}
+	jsr .GetNextBitIntoCarry
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	rol
+}
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	sta .numEscapeBits
+}
+	; if (numEscapeBits)
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	beq .l1
+	lda #8
+	sec
+	sbc .numEscapeBits
+	sta .smRemainingBitCounts+1
+}
+
+	; changingEscape = MGetNextBit()?true:false;
+	jsr .GetNextBitIntoCarry
+!ifdef Decompression_OptimiseNoChangingEscape {} else {
+	rol .changingEscape
+}
+
+	;	theEscape = 0;
+	;	for (i=0;i<numEscapeBits;i++)
+	;	{
+	;		theEscape = (theEscape<<1) + MGetNextBit();
+	;	}
+	;	escapeMask = (1<<numEscapeBits)-1;
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	ldy .numEscapeBits
+.ge1
+}
+	jsr .GetNextBitIntoCarry
+	rol .smTheEscape+1
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	dey
+	bne .ge1
+}
+	; < if (numEscapeBits)
+
+	; for (;;)
+.l1
+	; u8 potentialLiteral = 0;
+	; bool isEscaped = true;
+	lda #0
+	; if (numEscapeBits)
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	ldy .numEscapeBits
+	beq .noEscapeBits1
+}
+	; for (i=0;i<numEscapeBits;i++)
+.gpl1
+	jsr .GetNextBitIntoCarry
+	rol
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	dey
+	bne .gpl1
+}
+
+	;		if ((potentialLiteral & escapeMask) != theEscape)
+	;		{
+	;			isEscaped = false;
+	;		}
+.smTheEscape	cmp #0
+	bne .getRemainingLiteralBits
+;.isEscaped1
+	; < if (numEscapeBits)
+.noEscapeBits1
+
+	;	if (isEscaped)
+	;	{
+	;		if (MGetNextBit())
+	;		{
+	jsr .GetNextBitIntoCarry
+	bcc .processMatchBlock
+	;			// If escapes are flagged as changing then read in the new escape
+	;			if (changingEscape)
+	;			{
+!ifdef Decompression_OptimiseNoChangingEscape {} else {
+	ldy .changingEscape
+	beq .noChangingEscape
+	;				int i;
+	;				theEscape = 0;
+	ldy #0
+	sty .smTheEscape+1
+	;				for (i=0;i<numEscapeBits;i++)
+	;				{
+	;					theEscape = (theEscape<<1) + MGetNextBit();
+	;				}
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	ldy .numEscapeBits
+.ge2
+}
+	jsr .GetNextBitIntoCarry
+	rol .smTheEscape+1
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	dey
+	bne .ge2
+}
+	;			}
+.noChangingEscape
+}
+	;			if (numEscapeBits)
+	;			{
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+	ldy .numEscapeBits
+	beq .justGetByte
+}
+	;				int i;
+	;				for (i=0;i<8 - numEscapeBits;i++)
+	;				{
+.getRemainingLiteralBits
+.smRemainingBitCounts ldy #7
+	;					potentialLiteral = (potentialLiteral<<1) + MGetNextBit();
+.gpl2
+	jsr .GetNextBitIntoCarry
+	rol
+	dey
+	bne .gpl2
+	;				}
+	;				dest[outLen++] = potentialLiteral;
+	jsr RNXPCompressionDecompress_WriteByte
+	jmp .l1
+	;				continue;
+	;			}
+	;			else
+	;			{
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+.justGetByte
+	;				dest[outLen++] = source[curLen++];
+	;				continue;
+	;			}
+	jsr RNXPCompressionDecompress_GetByte
+	jsr RNXPCompressionDecompress_WriteByte
+	jmp .l1
+}
+
+
+.processMatchBlock
+	;	// The dictionary match is processed here
+	;	u32 workLen = MGetNextBit();
+	;	workLen = (workLen<<1) + MGetNextBit();
+	;	u32 workOffset = 0;
+	lda #0
+	sta .workLen+1
+;	sta .workOffset	; Not needed due to logic changes below with the history match and work offset
+	sta .workOffset+1
+	; RegA holds the workLen LSB
+	jsr .GetNextBitIntoCarry
+	rol
+	jsr .GetNextBitIntoCarry
+	rol
+	beq .processHistoryMatch
+	;	// History match check
+	;	if (workLen == 1)
+	;	{
+	cmp #1
+	bne .justLenDec
+	;		u8 matchIndex = 0;
+	;		int i;
+	;		for (i=0;i<4;i++)
+	;		{
+	;			matchIndex = (matchIndex<<1) + MGetNextBit();
+	;		}
+	lda #0
+	ldy #4
+.chm1
+	jsr .GetNextBitIntoCarry
+	rol
+	dey
+	bne .chm1
+	tay
+	lda .historyBufferLenL,y
+	sta .workLen
+	lda .historyBufferLenH,y
+	sta .workLen+1
+	lda .historyBufferOffsetL,y
+	sta .workOffset
+	lda .historyBufferOffsetH,y
+	sta .workOffset+1
+	jmp .alreadyGotOffset
+
+.gotVeryLongLength
+!ifdef RNXPCompressionDecompress_ExitCodeDefined {
++RNXPCompressionDecompress_ExitCode
+} else {
+	ldx RNXPCompressionDecompress_WriteByte+1
+	ldy RNXPCompressionDecompress_WriteByte+2
+	rts
+}
+
+	;	else if (workLen == 0)
+	;	{
+.processHistoryMatch
+	;		// Escape code for the special case
+	;		workLen = 1;
+	lda #1
+	sta .workLen
+	; Upper byte already set to 0
+	;		do
+	;		{
+.gesc1
+	;			workLen = (workLen<<1) + MGetNextBit();
+	jsr .GetNextBitIntoCarry
+	rol .workLen
+	rol .workLen+1
+	; If a carry is detected this indicates a long series of shifts that is encoding the large value which
+	; signals the end of the encrypted stream. This logic is different to the C routine but works
+	; well with this 6502 version because we don't have shifts for lengths that are over 64K.
+	bcs .gotVeryLongLength
+	;		} while (!MGetNextBit());
+	jsr .GetNextBitIntoCarry
+	bcc .gesc1
+	;		workLen += 1;
+	inc .workLen
+	bne .iwl1
+	inc .workLen+1
+.iwl1
+	jmp .doLengthCheck
+	;	}
+
+	;	else
+	;	{
+.justLenDec
+	;		workLen--;
+	;	}
+	; Only eight bits needed here
+	sta .workLen
+	dec .workLen
+
+	; Fall through
+
+!ifdef Decompression_TwoParts {
+	jmp RNXPCompressionDecompress_SecondPart
+}

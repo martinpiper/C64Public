@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ReSID">
+      <UniqueIdentifier>{e0c731ac-b3d6-42a1-9cd0-858ca7c68c93}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\resid\envelope.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\extfilt.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\filter.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\pot.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\sid.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\version.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\voice.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid\wave.cc">
+      <Filter>ReSID</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resid-builder.cpp" />
+    <ClCompile Include="..\..\resid.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\resid\envelope.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\extfilt.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\filter.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\pot.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\sid.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\voice.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid\wave.h">
+      <Filter>ReSID</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resid-emu.h" />
+    <ClInclude Include="..\..\resid.h" />
+  </ItemGroup>
+</Project>

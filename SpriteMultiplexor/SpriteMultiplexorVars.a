@@ -1,0 +1,91 @@
+; Define "Multiplexor_DebugBorder" to enable border colour debug display.
+; The sprite display IRQs will show different colours depending on how many sprites they have updated in the current band.
+; This is useful for showing how many sprites are updated on average per band.
+; Note: Because the debug border colour change adds code and time patterns of tightly bunched sprites that displayed without a problem may not have enough cycles to display correctly.
+
+; Define the function "MultiplexExt_LastIRQ" before including "SpriteMultiplexor.a" to have this function called from
+; within the last IRQ. It is a good time to update sprite position and call Multiplex_Sort
+; Multiplex_StartTopInterrupt must be called at some point before the top interrupt is due when defining this function.
+; For example if MultiplexExt_LastIRQ doesn't need any further interrupts then use this code:
+; jsr Multiplex_Sort
+; jsr Multiplex_StartTopInterrupt
+; jmp Multiplex_AckExitInterrupt
+; If MultiplexExt_LastIRQ triggers other interrupts then call Multiplex_StartTopInterrupt from within one of those.
+; Or if the interrupt at the top of the screen is replaced then Multiplex_maininterEx may be called instead.
+
+; Multiplex_BottomTriggered is incremented every time the bottom interrupt is triggered.
+
+; These constants must be defined first otherwise the error "Using oversized addressing mode." occurs.
+; Multiplex_VarBase must be defined with a *zero page* base address for the multiplex internal variables.
+; For example: Multiplex_VarBase	= $02
+; Tell the multiplexor where to store sprite frame definitions. It is also possible to call Multiplex_SetSpritePointer with 'a' containing the hi of the sprite frame address to use. The lo is always set to be f8-ff for the hi address.
+; Multiplex_spritepointer	= SPRITEFRAME
+; What IRQ vector to use
+; Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+; Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+
+; Any sprite Y position >= to this value will stop the multiplexor from generating interrupts to draw any further sprites.
+;Multiplex_DiscardSpritesYPos=255
+
+; Use this statement below to allow the sprite sort to use a bit more time but save using an extra exit interrupt.
+; It also helps to save time during the sprite display IRQs which increases the number of sprites that can be displayed.
+;Multiplex_EnableEarlyOut = 1
+
+; If using an exit interrupt that occures on or near Multiplex_DiscardSpritesYPos then these two following checks will ensure the multiplexor raster time never steps over this limit.
+; Typcially using both checks will give the most robust performance but they are separated here to allow extra tweaking if needed.
+; Check during sprite setup
+;Multiplex_OverflowRasterCheck1 = 1
+; Check before starting a later multiplexor interrupt
+;Multiplex_OverflowRasterCheck2 = 1
+
+; Use this statement to enable checks to discard bunches of sprites that violate the maximum of eight sprites on a row.
+; This check takes some extra time but results in more sprites being displayed where problem bunches do happen.
+; If your sprite patterns are crafted to avoid bunches then this option is best left disabled.
+;Multiplex_BunchingCheck = 1
+
+; Must be <= 48 otherwise Multiplex_indextable goes splat
+;Multiplex_items	= 48
+
+; Define the variable Multiplex_LeanAndMean to stop the multiplexor allocating memory space for the following tables:
+;	Multiplex_YPos
+;	Multiplex_XPosLo
+;	Multiplex_XPosHi
+;	Multiplex_Colour
+;	Multiplex_SpriteFrame
+;	Multiplex_Sortlo
+;	Multiplex_Sorthi
+; Each table must be at least Multiplex_items large
+
+
+; Causes each new IRQ to log VIC2SpriteSpriteCollision along with the raster position and
+; what sprites are used in what VIC slots.
+; If Multiplex_EnableEarlyOut or MultiplexExt_LastIRQ are defined then "lda VIC2SpriteSpriteCollision;jsr Multiplexor_UpdateCollisionDetails" will have
+; to be called after the last sprite is displayed to log the last collision flags.
+;Multiplex_LogCollisions = 1
+; If Multiplex_LogCollisions is enabled then use the below to also detect sprite background collisions
+; Use the following if this is enabled: "lda VIC2SpriteSpriteCollision;ora VIC2SpriteBackgroundCollision;jsr Multiplexor_UpdateCollisionDetails"
+;Multiplex_LogCollisionsBackground = 1
+; The following memory localtions must be defined for storage:
+;	Multiplex_CollisionCounter	- One byte that logs how many entries appear in Multiplex_CollisionRegister
+;	Multiplex_CollisionIndexes	- Potentially up to (Multiplex_items-8)*8 items long
+;	Multiplex_CollisionHistory - 8 Bytes
+
+; Define various zeropage working variables
+Multiplex_areg				= Multiplex_VarBase+$00
+Multiplex_xreg				= Multiplex_VarBase+$01
+Multiplex_yreg				= Multiplex_VarBase+$02
+; When Multiplex_MaxSpr is changed Multiplex_InitSort should be called
+Multiplex_MaxSpr			= Multiplex_VarBase+$03
+Multiplex_MaxSprSorted		= Multiplex_VarBase+$04
+Multiplex_counter			= Multiplex_VarBase+$05
+Multiplex_jumplo			= Multiplex_VarBase+$06
+Multiplex_jumphi			= Multiplex_VarBase+$07
+Multiplex_bal				= Multiplex_VarBase+$08
+Multiplex_bah				= Multiplex_VarBase+$09
+Multiplex_BottomTriggered	= Multiplex_VarBase+$0a
+
+; Memory
+Multiplex_indextable		= Multiplex_VarBase+$0b			; Multiplex_items long
+
+; This variable is the next available variable for the user
+Multiplex_endVars			= Multiplex_indextable + Multiplex_items

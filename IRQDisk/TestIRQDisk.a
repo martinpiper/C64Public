@@ -1,0 +1,172 @@
+;IRQDisk test code
+
+!source "../stdlib/stdlib.a"
+!to "TestIRQDisk.prg", cbm
+!sal
+!sl "TestIRQDisk.map"
+!svl "TestIRQDisk.lbl"
+!cpu 6510
+!ct pet
+
+!source "IRQDiskVars.a"
+IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
+IRQDisk_Retries = 5
+IRQDisk_LEDFlash = 15
+;IRQDisk_UseATN = 1
+
+!if 0 {
+!source "../stdlib/BASICEntry900.a"
+
+*=BASICEntry
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+
+
+!source "../stdlib/Initialise.a"
+}
+
+* = $c000
+	lda ZPCurrentFileDeviceNumber
+	jsr IRQDisk_Init
+	lda #8
+	jsr IRQDisk_SetPulseSpeed
+	; Debugging drive bytes, useful for testing patterns to/from the CIA/VIA
+!if 0 {
+	jsr .waitAWhile
+	jsr .waitAWhile
+	jsr .waitAWhile
+	jsr .waitAWhile
+	jsr .waitAWhile
+	sei	; Stop any IRQs from messing with our test
+
+.testL1
+	; C0D0
+	lda #55
+	sta CIA2PortASerialBusVICBank
+	jsr .waitAWhile
+	lda CIA2PortASerialBusVICBank
+
+	; C0D1
+	lda #23
+	sta CIA2PortASerialBusVICBank
+	jsr .waitAWhile
+	lda CIA2PortASerialBusVICBank
+
+	; C1D0
+	lda #39
+	sta CIA2PortASerialBusVICBank
+	jsr .waitAWhile
+	lda CIA2PortASerialBusVICBank
+
+	; C1D1
+	lda #7
+	sta CIA2PortASerialBusVICBank
+	jsr .waitAWhile
+	lda CIA2PortASerialBusVICBank
+
+	jmp .testL1
+
+.waitAWhile
+	ldx #0
+.waw1
+	dex
+	bne .waw1
+	rts
+}
+
+	jsr InitIRQ
+
+	lda #.nameTestEnd-.nameTest
+	ldx #<.nameTest
+	ldy #>.nameTest
+	jsr IRQDisk_Load
+
+!if 1 {
+	; Now try saving the just loaded data to another file of the same length.
+	inc VIC2ScreenColour
+	lda #.nameTestSaveEnd-.nameTestSave
+	ldx #<.nameTestSave
+	ldy #>.nameTestSave
+	jsr IRQDisk_WriteSetName
+	; The drive is in the process of finding the directory entry here.
+	ldx #<BASICSTART
+	ldy #>BASICSTART
+	jsr IRQDisk_WriteData
+}
+
+	rts
+
+	; Note, the ct raw is used here
+.nameTest !raw "TESTFILE"
+.nameTestEnd = *
+
+.nameTestSave !raw "TESTSAVE"
+.nameTestSaveEnd = *
+
+TestIRQ
+	pha
+	txa
+	pha
+	dec VIC2BorderColour
+	; Waste some time
+	ldx #64
+.il1
+	dex
+	bne .il1
+	lda VIC2Raster
+.il2
+	cmp VIC2Raster
+	beq .il2
+	inc VIC2BorderColour
+	+MACROAckRasterIRQ_A
+	pla
+	tax
+	pla
+	jmp DefaultIRQServiceRoutine
+
+InitIRQ
+	sei
+	; Stop the timers generating IRQs
+	lda #$7f
+	sta CIA1InterruptControl
+	sta CIA2InterruptControl
+	; Grab the IRQ
+	lda #<TestIRQ
+	sta IRQServiceRoutineLo
+	lda #>TestIRQ
+	sta IRQServiceRoutineHi
+	; Raster position
+	lda #152
+	sta VIC2Raster
+	lda VIC2ScreenControlV
+	and #$7f
+	sta VIC2ScreenControlV
+	; VIC IRQ control
+	lda #1
+	sta VIC2InteruptControl
+	+MACROAckRasterIRQ_A
+	cli
+	rts
+
+; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
+!zn {
+; Include the private code for each machine type
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeVIC20 {
+!source "IRQDiskVIC20.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC16 {
+!source "IRQDiskC16.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC64 {
+!source "IRQDiskC64.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC128 {
+!source "IRQDiskC128.a"
+}
+!source "IRQDisk.a"
+!source "stdlib1541.a"
+!source "IRQDiskDriveCode.a"
+}

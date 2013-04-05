@@ -1,0 +1,273 @@
+; Use something like this to start samples.
+!if 0 {
+jmp MusicPlayerInitSamples
+jmp MusicPlayerPlay
+jmp MusicPlayerStop
+
+MusicPlayerInitSamples
+	sei
+	jsr MusicPlayerInit
+	jsr MusicPlayerInitNMI
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda #<.blankRti
+	sta KERNALIRQServiceRoutineLo
+	lda #>.blankRti
+	sta KERNALIRQServiceRoutineHi
+	cli
+
+	jsr SampleResetSequence
+	+SampleUpdateSequence 0,$400,$e000,0
+	ldx #<SampleRateHz
+	ldy #>SampleRateHz
+	jsr SamplePlaySequence
+.wl1
+	lda #250
+.wl2
+	cmp VIC2Raster
+	bcc .wl2
+	jsr MusicPlayerPlay
+	jmp .wl1
+
+	jmp *
+	rts
+.blankRti
+	rti
+
+!source "SamplePlayer.a"
+}
+
+!macro SampleUpdateSequence .seq , .sampleStart , .sampleEnd , .freqAdjust {
+	lda #<.sampleStart
+	sta SampleStartLoTab + .seq
+	lda #>.sampleStart
+	sta SampleStartHiTab + .seq
+	lda #<.sampleEnd
+	sta SampleEndLoTab + .seq
+	lda #>.sampleEnd
+	sta SampleEndHiTab + .seq
+	lda #<.freqAdjust
+	sta SampleEndLoTab + .seq
+	lda #>.freqAdjust
+	sta SampleEndHiTab + .seq
+}
+
+SampleRateHz = 8000
+
+MusicPlayerInitNMI
+	sei
+
+	jsr SampleResetSequence
+
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+	lda #<(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerALo
+	lda #>(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerAHi
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+
+	cli
+	rts
+
+
+!zn
+.startNewSampleSequence
+	txa
+	pha
+
+	ldx #0
+	stx SampleStartNewSequence
+	stx SamplePlayingSequence
+
+	jsr .getNext
+
+	lda #1
+	sta SamplePlaying
+
+	pla
+	tax
+	jmp NMISampleAddr
+
+.getNext
+	lda SampleStartLoTab,x
+	sta NMISampleAddr+1
+	lda SampleStartHiTab,x
+	sta NMISampleAddr+2
+
+	lda SampleEndLoTab,x
+	sta NMISampleAddrEndL+1
+	lda SampleEndHiTab,x
+	sta NMISampleAddrEndH+1
+
+	lda SampleFreqOriginal
+	clc
+	adc SampleFreqAdjustLo,x
+	sta CIA2TimerALo
+	lda SampleFreqOriginal+1
+	adc SampleFreqAdjustHi,x
+	sta CIA2TimerAHi
+
+	rts
+
+NMIRet
+	pha
+
+	lda SampleStartNewSequence
+	bne .startNewSampleSequence
+
+	lda SamplePlaying
+	bne NMISampleAddr
+	jmp .justExit4
+
+NMISampleAddr lda $ffff
+	sta .nmiNybble
+	and #15
+	sta SIDVolumeFilter
+	inc NMISampleAddr+1
+	bne .sml2
+	inc NMISampleAddr+2
+.sml2
+NMISampleAddrEndH	lda #0
+	cmp NMISampleAddr+2
+	bne .justExit
+NMISampleAddrEndL	lda #0
+	cmp NMISampleAddr+1
+	bne .justExit
+	txa
+	pha
+	; Perform the end logic
+	inc SamplePlayingSequence
+	ldx SamplePlayingSequence
+	cpx #8
+	beq .endPlaying
+	jsr .getNext
+	; If the start hi is 0 then exit playing the sequence
+	lda NMISampleAddr+2
+	beq .endPlaying
+	; Continue to the next sample
+	pla
+	tax
+	jmp .justExit2
+
+.endPlaying
+	lda #0
+	sta SamplePlaying
+	pla
+	tax
+.justExit4
+	lda #15
+	sta SIDVolumeFilter
+	; Don't ACK the NMI causes it to not trigger again until we are ready
+	jmp .justExit3
+
+.justExit
+	; Switch to playing the other half of the sample
+	lda #<NMIRet2
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet2
+	sta KERNALNMIServiceRoutineHi
+
+.justExit2
+
+	lda CIA2InterruptControl
+
+.justExit3
+!ifdef NMITimings {
+	inc VIC2BorderColour
+}
+	pla
+	rti
+.nmiNybble !by 0
+
+NMIRet2
+	pha
+
+	lda .nmiNybble
+	lsr
+	lsr
+	lsr
+	lsr
+	sta SIDVolumeFilter
+
+	; Switch back to the main sample logic
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+!ifdef NMITimings {
+	inc VIC2BorderColour
+}
+	lda CIA2InterruptControl
+
+	pla
+	rti
+
+SamplePlaying			!by 0
+SampleStartNewSequence	!by 0
+SamplePlayingSequence	!by 0
+SampleStartLoTab		!by 0,0,0,0,0,0,0,0
+SampleStartHiTab		!by 0,0,0,0,0,0,0,0
+SampleEndLoTab			!by 0,0,0,0,0,0,0,0
+SampleEndHiTab			!by 0,0,0,0,0,0,0,0
+SampleFreqAdjustLo		!by 0,0,0,0,0,0,0,0
+SampleFreqAdjustHi		!by 0,0,0,0,0,0,0,0
+SampleFreqOriginal		!by 0,0
+
+!zn
+SampleResetSequence
+	lda #0
+	sta SamplePlaying
+	sta SampleStartHiTab+1
+	sta SampleStartHiTab
+	sta SampleStartHiTab+1
+	sta SampleStartHiTab+2
+	sta SampleStartHiTab+3
+	sta SampleStartHiTab+4
+	sta SampleStartHiTab+5
+	sta SampleStartHiTab+6
+	sta SampleStartHiTab+7
+	rts
+
+!zn
+; X,Y = <,> of new sample frequency
+SamplePlaySequence
+	lda #<(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerALo
+	lda #>(CyclesPerSecondPALC64/SampleRateHz)
+	sta CIA2TimerAHi
+
+	; This solves the missing speech problem with 8580 SID chips at the expense of one voice.
+	; The SFXPlay above needs to be made aware of this, perhaps optionally limit the SFX player
+	; to two voices? Have a toggle flag similar to SFXCall, but use a voice bitfield instead?
+	lda #$00
+	sta SIDVoice3AttackDecay
+	sta SIDVoice3FreqLo
+	sta SIDVoice3FreqHi
+	sta SIDVoice3PulseWidthLo
+	sta SIDVoice3PulseWidthHi
+	lda #$f0
+	sta SIDVoice3SustainRelease
+	lda #$41
+	sta SIDVoice3Control
+
+	lda #1
+	sta SampleStartNewSequence
+	lda CIA2InterruptControl	; ACK Any NMIs generated to start the next one
+	rts

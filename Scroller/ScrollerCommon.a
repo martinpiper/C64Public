@@ -1,0 +1,37 @@
+; A place for common stuff.
+
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+
+!ifdef Scroller_MultiDirection {
+BlockTabL !for .table1,128 {!by <(BlockData + (.table1-1) * 16) }
+BlockTabH !for .table1,128 {!by >(BlockData + ((.table1-1) * 16)) }
+} else {
+BlockTabL !for .table1,128 {!by <(BlockData + (.table1-1) * 25) }
+BlockTabH !for .table1,128 {!by >(BlockData + ((.table1-1) * 25)) }
+}
+
+
+!ifdef IRQOpenBorders {
+; Copy what is at the top of the bank 3 screen to the other pretend screens in bank 0 so the
+; VIC gets the correct character data for the top of the screen fetch.
+!zn
+ScrollerOpenBorderCopyBank0
+	ldx #39
+.more
+	lda $c800,x
+	sta $0800,x
+	dex
+	bpl .more
+	rts
+
+!zn
+ScrollerOpenBorderCopyBank1
+	ldx #39
+.more
+	lda $cc00,x
+	sta $0c00,x
+	dex
+	bpl .more
+	rts
+}

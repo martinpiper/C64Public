@@ -1,0 +1,256 @@
+!zn
+ScrollerDemoInitOneTimeData
+!ifdef Scroller_MultiDirection { } else {
+	; We are going to be reading from under the IO space so we enable RAM there instead of IO
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	; Pre-calculate if there is any sprite data in each sprite.
+	; Starting at sprite 64+MaxSpriteNumber we go backwards through memory.
+	ldx #64+MaxSpriteNumber
+
+	lda #<(SpriteData + (MaxSpriteNumber*64))
+	sta tempWork1
+	lda #>(SpriteData + (MaxSpriteNumber*64))
+	sta tempWork2
+
+.fc3
+	ldy #62
+	lda #0
+	sta tempWork0
+.fc2
+	ora (tempWork1),y
+	dey
+	bpl .fc2
+	; Sets or clears carry depending on if the sprite has any data in it
+	sec
+	cmp #0
+	bne .ov1
+	clc
+.ov1
+	; Shifts in the carry
+	rol SpriteEmptyLookupTab,x
+
+	; Now detect the state of each "char cell" of the sprite
+
+	; Top left
+	ldy #0
+	lda (tempWork1),y
+	ldy #3
+	ora (tempWork1),y
+	ldy #6
+	ora (tempWork1),y
+	ldy #9
+	ora (tempWork1),y
+	ldy #12
+	ora (tempWork1),y
+	ldy #15
+	ora (tempWork1),y
+	ldy #18
+	ora (tempWork1),y
+	ldy #21
+	ora (tempWork1),y
+	sec
+	bne .ov2
+	clc
+.ov2
+	rol SpriteEmptyLookupTab,x
+
+	; Top middle
+	ldy #1
+	lda (tempWork1),y
+	ldy #4
+	ora (tempWork1),y
+	ldy #7
+	ora (tempWork1),y
+	ldy #10
+	ora (tempWork1),y
+	ldy #13
+	ora (tempWork1),y
+	ldy #16
+	ora (tempWork1),y
+	ldy #19
+	ora (tempWork1),y
+	ldy #22
+	ora (tempWork1),y
+	sec
+	bne .ov3
+	clc
+.ov3
+	rol SpriteEmptyLookupTab,x
+
+	; Top right
+	ldy #2
+	lda (tempWork1),y
+	ldy #5
+	ora (tempWork1),y
+	ldy #8
+	ora (tempWork1),y
+	ldy #11
+	ora (tempWork1),y
+	ldy #14
+	ora (tempWork1),y
+	ldy #17
+	ora (tempWork1),y
+	ldy #20
+	ora (tempWork1),y
+	ldy #23
+	ora (tempWork1),y
+	sec
+	bne .ov4
+	clc
+.ov4
+	rol SpriteEmptyLookupTab,x
+
+	; Middle left
+	ldy #24
+	lda (tempWork1),y
+	ldy #27
+	ora (tempWork1),y
+	ldy #30
+	ora (tempWork1),y
+	ldy #33
+	ora (tempWork1),y
+	ldy #36
+	ora (tempWork1),y
+	ldy #39
+	ora (tempWork1),y
+	ldy #42
+	ora (tempWork1),y
+	ldy #45
+	ora (tempWork1),y
+	sec
+	bne .ov5
+	clc
+.ov5
+	rol SpriteEmptyLookupTab,x
+
+	; Middle middle
+	ldy #25
+	lda (tempWork1),y
+	ldy #28
+	ora (tempWork1),y
+	ldy #31
+	ora (tempWork1),y
+	ldy #34
+	ora (tempWork1),y
+	ldy #37
+	ora (tempWork1),y
+	ldy #40
+	ora (tempWork1),y
+	ldy #43
+	ora (tempWork1),y
+	ldy #46
+	ora (tempWork1),y
+	sec
+	bne .ov6
+	clc
+.ov6
+	rol SpriteEmptyLookupTab,x
+
+	; Middle right
+	ldy #26
+	lda (tempWork1),y
+	ldy #29
+	ora (tempWork1),y
+	ldy #32
+	ora (tempWork1),y
+	ldy #35
+	ora (tempWork1),y
+	ldy #38
+	ora (tempWork1),y
+	ldy #41
+	ora (tempWork1),y
+	ldy #44
+	ora (tempWork1),y
+	ldy #47
+	ora (tempWork1),y
+	sec
+	bne .ov7
+	clc
+.ov7
+	rol SpriteEmptyLookupTab,x
+
+	lda #0
+	sta SpriteEmptyLookupTab2,x
+	; Bottom left, only 5 lines instead of 8
+	ldy #48
+	lda (tempWork1),y
+	ldy #51
+	ora (tempWork1),y
+	ldy #54
+	ora (tempWork1),y
+	ldy #57
+	ora (tempWork1),y
+	ldy #60
+	ora (tempWork1),y
+	sec
+	bne .ov8
+	clc
+.ov8
+	rol SpriteEmptyLookupTab2,x
+
+	; Bottom middle, only 5 lines instead of 8
+	ldy #49
+	lda (tempWork1),y
+	ldy #52
+	ora (tempWork1),y
+	ldy #55
+	ora (tempWork1),y
+	ldy #58
+	ora (tempWork1),y
+	ldy #61
+	ora (tempWork1),y
+	sec
+	bne .ov9
+	clc
+.ov9
+	rol SpriteEmptyLookupTab2,x
+
+	; Bottom right, only 5 lines instead of 8
+	ldy #50
+	lda (tempWork1),y
+	ldy #53
+	ora (tempWork1),y
+	ldy #56
+	ora (tempWork1),y
+	ldy #59
+	ora (tempWork1),y
+	ldy #62
+	ora (tempWork1),y
+	sec
+	bne .ov10
+	clc
+.ov10
+	rol SpriteEmptyLookupTab2,x
+
+
+	; Update the counters for the next sprite
+	lda tempWork1
+	sec
+	sbc #64
+	sta tempWork1
+	bcs .noc1
+	dec tempWork2
+.noc1
+	dex
+	cpx #63
+	beq .nfc3
+	jmp .fc3
+.nfc3
+
+	; Clear out the score sprite data
+	ldx #0
+	txa
+.fc1
+	sta DrawnScoreSprites,x
+	sta DrawnScoreSprites+$100,x
+	inx
+	bne .fc1
+
+	; Enable IO again
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+}
+
+	rts

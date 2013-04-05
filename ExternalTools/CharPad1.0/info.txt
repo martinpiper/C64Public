@@ -1,0 +1,112 @@
+
+
+Char Pad 1.0 Information.
+
+
+
+
+File Type                   Extension
+
+char pad package            .ctm
+
+chars                       .chr
+tiles                       .til
+tile colours                .tlc
+map                         .map
+
+
+
+
+
+The ".ctm" format used by char pad is used to hold together all
+information needed for a map design, chars tiles, tile colours and 
+a single map, the format is described at the end of this document.
+
+When you are happy with your map and want to export these various
+parts for use in your game, you should choose "Save As Seperates",
+type a filename (no extension) and you will be prompted to save
+each part in turn.
+
+Here is how the files are saved...
+
+
+
+Character Set (.chr)
+
+File size is always a multiple of 8, 8 bytes per char not exceeding 
+2048 bytes (256 chars).
+
+
+Tiles (.til)
+
+File size is always a multiple of 16, 16 bytes per tile (4*4), not 
+exceeding 4096 bytes (256 tiles), each byte indexes a character in the
+character set.
+
+organization of each tile is as follows...
+
+00 01 02 03
+04 05 06 07
+08 09 0A 0B
+0C 0D 0E 0F
+
+
+
+Map (.map)
+
+File begins with a 4 byte header...
+
+1 byte : map width (low byte)
+1 byte : map width (high byte) 
+1 byte : map height (low byte)
+1 byte : map height (high byte) 
+
+
+Then comes the map data (size = map_width * map_height bytes),
+each byte indexes a tile number in the tile set.
+
+
+Tile colours (.tlc)
+
+The contents of this file depends on the colouring mode being used.
+If the mode is "Per Tile", then 1 byte is saved for each tile.
+
+If "Per Char" mode is used, 16 bytes are saved for each tile.
+
+If "Global" colouring is used then no .tlc file will be saved.
+
+-----------------------------------------
+
+<More info on coming soon!>
+
+
+
+
+
+
+-----------------------------------------
+CTM FILE FORMAT
+
+First comes the header, 20 bytes...
+
+ofst
+
+0     ID         3 bytes  : ASCII ID string... "CTM"
+3     VERSION    1 byte   : version number, currently $01.
+4     COLOURS    4 bytes  : BG,MC1,MC2,RAM.
+8     COL_MODE   1 byte   : 0 = Global, 1 = Per Tile, 2 = Per Char.
+9     VIC_RES    1 byte   : 0 = Hi Resolution, 1 = Multicolour.
+10    MAP_WID    2 bytes  : Map width low, Map width high.
+12    MAP_HEI    2 bytes  : Map height low, Map height high.
+14    NUM_CHARS  1 byte   : number of chars in the set -1
+15    NUM_TILES  1 byte   : number of chars in the set -1
+16    RESERVED   4 bytes (total header size is 20)
+
+Then comes the data...
+
+CHARS    NUM_CHARS*8 bytes
+TILES    NUM_TILES*16 bytes
+COL_PC   NUM_TILES*16 bytes  (per-char colour table, only exists if COL_MODE==2)
+COL_PT   NUM_TILES (per-tile colour table, only exists if COL_MODE==1)
+MAP      MAPWID x MAPHEI bytes.
+-----------------------------------------

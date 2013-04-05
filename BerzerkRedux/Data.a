@@ -1,0 +1,198 @@
+Multiplex_CollisionCounter	!by 0
+Multiplex_CollisionIndexes	!fill (Multiplex_items-8)*8
+Multiplex_CollisionHistory !fill 8
+
+Multiplex_CollisionBackupCounter	!by 0
+Multiplex_CollisionBackupIndexes	!fill (Multiplex_items-8)*8
+
+Animation_Type				!fill Multiplex_items
+
+Animation_RobotThinkDelay	!fill Multiplex_items
+Animation_RobotWalkCounter	!fill Multiplex_items
+; = up, down, left, right bits
+Animation_RobotWalkDirX		!fill Multiplex_items
+Animation_RobotWalkDirY		!fill Multiplex_items
+Animation_RobotLastFired	!fill Multiplex_items
+Animation_BulletSpeedX		!fill Multiplex_items
+Animation_BulletSpeedY		!fill Multiplex_items
+
+AnimationRobot_MoveLeft !by 64+7,64+8
+AnimationRobot_MoveRight !by 64+1,64+6
+AnimationRobot_MoveVert !by 64+15,64+16
+AnimationRobot_EyeSpin
+	!by 64+12,64+13,64+14,64+9,64+10,64+11,64+12,64+12
+	!by 64+12,64+12,64+11,64+10,64+9,64+14,64+13,64+12
+AnimationRobot_DeathStart = 64+46
+AnimationRobot_DeathEnd = 64+49
+
+AnimationRobot_FootCounter !fill Multiplex_items
+AnimationRobot_FootToggle !fill Multiplex_items
+
+AnimationPlayer_Counter !by 0
+AnimationPlayer_DeathCounter !by 0
+AnimationPlayer_Lives !by 0
+
+AnimationPlayer_StandLeft = 64+44
+AnimationPlayer_StandRight = 64+45
+AnimationPlayer_MoveLeft !by 64+35,64+35,64+31,64+31,64+32,64+32,64+31,64+31
+AnimationPlayer_MoveRight !by 64+20,64+20,64+0,64+0,64+17,64+17,64+0,64+0
+AnimationPlayer_Death !by 64+42,64+43
+; Mapped to the joystick bits
+AnimationPlayer_Fires
+	!by 64+19,64+19,64+19,64+19
+	!by 64+19,64+22,64+26,64+23
+	!by 64+19,64+37,64+41,64+38
+	!by 64+19,64+24,64+25,64+19
+
+AnimationOtto_Appear !by 64+30,64+29,64+28,64+27
+AnimationOtto_RealY !by 0
+AnimationOtto_BouncesYPos
+	!by 0,4,8,11,13,14,15,15
+	!by 15,15,14,13,11,8,4,0
+
+AnimationOtto_AppearSecs !by 0
+AnimationOtto_AppearFrames !by 0
+AnimationOtto_Active !by 0
+AnimationOtto_AppearFramesCount !by 0
+AnimationOtto_BounceFramesCount !by 0
+
+
+SFXTable
+!bin "../SEUCK/BRZRKSFX.P00",$f0,$1a + 2
+
+Sample_Destroy
+!bin "Destroy.smp"
+SampleEnd_Destroy
+Sample_The
+!bin "The.smp"
+SampleEnd_The
+Sample_Humanoid
+!bin "Humanoid.smp"
+SampleEnd_Humanoid
+
+Sample_Attack
+!bin "Attack.smp"
+SampleEnd_Attack
+Sample_Chicken
+!bin "Chicken.smp"
+SampleEnd_Chicken
+
+Sample_Intruder
+!bin "Intruder.smp"
+SampleEnd_Intruder
+Sample_Alert
+!bin "Alert.smp"
+SampleEnd_Alert
+
+Sample_Must
+!bin "Must.smp"
+SampleEnd_Must
+Sample_Not
+!bin "Not.smp"
+SampleEnd_Not
+Sample_Escape
+!bin "Escape.smp"
+SampleEnd_Escape
+
+
+Sample_Coins
+!bin "Coins.smp"
+SampleEnd_Coins
+Sample_Detected
+!bin "Detected.smp"
+SampleEnd_Detected
+Sample_Pocket
+!bin "Pocket.smp"
+SampleEnd_Pocket
+
+Sample_Fight
+!bin "Fight.smp"
+SampleEnd_Fight
+Sample_Like
+!bin "Like.smp"
+SampleEnd_Like
+Sample_Robot
+!bin "Robot.smp"
+SampleEnd_Robot
+Sample_Kill
+!bin "Kill.smp"
+SampleEnd_Kill
+
+Sample_BzztGTHGTI
+!bin "BzztGTHGTI.smp"
+SampleEnd_BzztGTHGTI
+
+*=*
+
+*=$b700
+MusicPlayerInit = *
+MusicPlayerPlay = * + $3
+MusicPlayerStop = * + $6
+!bin "BerzerkMusic.prg",,2
+!zn
+; Main screen
+*=$c000
+MainScreen
+	!fill 40*25 , 0
+
+*=$c400
+;Technically the second screen, but for now use it as a temporary buffer space.
+TemporaryBufferSpace = *
+
+; Characters
+*=$c800
+TitleScreenChars = *
+!bin "Chars.ctm",$800,$14
+
+
+; Sprites
+*=$d000
+!bin "Sprites.spr"
+
+; We will be sneaky and use this last bit of space for the logo since we don't have that
+; many sprite frames.
+*=$e000
+!bin "BerzerkLogo.prg",40*10*8,2
+LogoColours
+!bin "BerzerkLogo.prg",40*10,2 + 8000 + 1000
+*=$f000
+!bin "BerzerkLogo.prg",40*10,2 + 8000
+
+Sample_Charge
+!bin "Charge.smp"
+SampleEnd_Charge
+Sample_It
+!bin "It.smp"
+SampleEnd_It
+Sample_A
+!bin "A.smp"
+SampleEnd_A
+Sample_In
+!bin "In.smp"
+SampleEnd_In
+
+; Just after the last sample data is the hi-score table
+; Five entries each 16 bytes long
+*=$ff80
+HiScore !by 0,0,1,7,5,0
+Initials !scr "mlp"
+!align 15,0
+
+!by 0,0,1,5,0,0
+!scr "mlp"
+!align 15,0
+
+!by 0,0,1,2,5,0
+!scr "mlp"
+!align 15,0
+
+!by 0,0,0,2,0,0
+!scr "mlp"
+!align 15,0
+
+!by 0,0,0,0,0,0
+!by 0,0,0
+!align 15,0
+
+;!fill 16*4,0
+ScoreChecksum !by 0

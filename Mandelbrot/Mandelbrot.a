@@ -1,0 +1,256 @@
+;Mandelbrot test code
+
+!source "../stdlib/stdlib.a"
+!to "Mandelbrot.prg", cbm
+!sal
+!sl "Mandelbrot.map"
+!svl "Mandelbrot.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+!macro OutputFAC {
+	jsr $bddd	; Convert FAC#1 to ASCII String. Kills FAC#2
+	jsr $b487	; Set Up String
+	jsr $ab21	; Output String
+}
+
+LDFAC = $bba2
+STFAC = $bbd4
+SUBFAC = $b850
+DIVFAC = $bb0f
+CMPFAC = $bc5b
+MULFAC = $ba28
+ADDFAC = $b867
+SETFAC = $b391
+
+!macro LoadFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr LDFAC
+}
+
+!macro StoreFAC .addr {
+	ldx #<.addr
+	ldy #>.addr
+	jsr STFAC
+}
+
+!macro SubMemFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr SUBFAC
+}
+!macro SubFACMem .addr {
+	+StoreFAC Temp
+	+LoadFAC .addr
+	+SubMemFAC Temp
+}
+
+!macro DivMemFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr DIVFAC
+}
+!macro DivFACMem .addr {
+	+StoreFAC Temp
+	+LoadFAC .addr
+	+DivMemFAC Temp
+}
+
+!macro CmpFACMem .addr {
+	+StoreFAC Temp
+	+LoadFAC .addr
+	+CmpMemFAC Temp
+}
+!macro CmpMemFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr CMPFAC
+}
+
+!macro MulMemFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr MULFAC
+}
+
+!macro AddMemFAC .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr ADDFAC
+}
+
+!macro SetFAC_Y {
+	lda #0
+	jsr SETFAC
+}
+
+kMaxIterations = 26
+
+!zn
+*=BASICEntry
+	cld
+	jsr CINT
+
+;xs=(xmax-xmin)/40.0;
+	+LoadFAC xmin
+	+SubMemFAC xmax
+	+DivFACMem ScrW
+	+StoreFAC xs
+
+;ys=(ymax-ymin)/24.0;
+	+LoadFAC ymin
+	+SubMemFAC ymax
+	+DivFACMem ScrH
+	+StoreFAC ys
+
+;for (y=0;y<24;y++) {
+	lda #0
+	sta y
+
+.l1
+;   for (x=0;x<40;x++) {
+	lda #0
+	sta x
+
+.l2
+;      p=xmin+(x*xs);
+	ldy x
+	+SetFAC_Y
+	+MulMemFAC xs
+	+AddMemFAC xmin
+	+StoreFAC p
+	
+
+;      q=ymin+(y*ys);
+	ldy y
+	+SetFAC_Y
+	+MulMemFAC ys
+	+AddMemFAC ymin
+	+StoreFAC q
+
+
+;         xtemp=0;
+;         x0=0;
+;         y0=0;
+	ldy #0
+	+SetFAC_Y
+	+StoreFAC x0
+	+StoreFAC y0
+
+
+;         i=0;
+	lda #0
+	sta i
+
+.while
+;         while (((x0*x0)+(y0*y0))<4 && ++i<kMaxIterations)  {
+	; i check, first, simple integer check
+	lda i
+	cmp #kMaxIterations
+	bcc .ltkMaxIterations
+
+	jmp .escape
+.ltkMaxIterations
+
+	; mul check
+	+LoadFAC x0
+	+MulMemFAC x0
+	+StoreFAC Temp2
+	+LoadFAC y0
+	+MulMemFAC y0
+	+AddMemFAC Temp2
+	+CmpFACMem Escape
+	bcc .lt4
+	jmp .escape
+.lt4
+
+	;++i
+	inc i
+
+;			xtemp = (x0*x0) - (y0*y0) + p
+	+LoadFAC x0
+	+MulMemFAC x0
+	+StoreFAC Temp2
+	+LoadFAC y0
+	+MulMemFAC y0
+	+SubMemFAC Temp2
+	+AddMemFAC p
+	+StoreFAC xtemp
+
+;            y0=(2 * x0 * y0) +q;
+	+LoadFAC x0
+	+MulMemFAC y0
+	+StoreFAC Temp2
+	ldy #2
+	+SetFAC_Y
+	+MulMemFAC Temp2
+	+AddMemFAC q
+	+StoreFAC y0
+
+
+;            x0=xtemp;
+	+LoadFAC xtemp
+	+StoreFAC x0
+
+;            }
+	jmp .while
+
+.escape
+	; Range check to adjust for printable characters
+	lda i
+;	lsr			; Potential for shit adjustment, change kMaxIterations to accomodate
+	cmp #26		; Letters in the alphabet!
+	bcc .okChar
+	lda #' '
+	jmp .rawOut
+.okChar
+	clc
+	adc #64
+.rawOut
+	jsr CHROUT
+
+	; Finish for loops
+	inc x
+	lda x
+	cmp #40
+	beq .ol2
+	jmp .l2
+.ol2
+	inc y
+	lda y
+	cmp #24		; MPi: TOOD: Keep the last line clear for an IRQ scrolling message
+	beq .ol1
+	jmp .l1
+.ol1
+
+.flash
+;	inc VIC2BorderColour
+	jmp .flash
+
+; C64 Floating point values
+; MPi: TODO: Must update the assembler to create these
+xmin	!by $82, $a0, $00, $00, $00		; -2.5
+xmax	!by $81, $40, $00, $00, $00		; 1.5
+ymin	!by $81, $c0, $00, $00, $00		; -1.5
+ymax	!by $81, $40, $00, $00, $00		; 1.5
+ScrW	!by $86, $20, $00, $00, $00		; 40
+ScrH	!by $85, $40, $00, $00, $00		; 24
+Escape	!by $83, $00, $00, $00, $00		; 4
+
+; Float storage
+Temp	= *
+Temp2	= * + 5
+xs		= * + 10
+ys		= * + 15
+p		= * + 20
+q		= * + 25
+xtemp	= * + 30
+x0		= * + 35
+y0		= * + 40
+; Bytes
+x		= * + 45
+y		= * + 46
+i		= * + 47

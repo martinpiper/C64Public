@@ -1,0 +1,270 @@
+;PictureLink demonstrates linking a picture with another prg
+
+!source "../stdlib/stdlib.a"
+!to "PictureLink.prg", cbm
+!sl "PictureLink.map"
+!svl "PictureLink.lbl"
+!cpu 6510
+!ct pet
+
+!if 1 {
+; Add our own SYS address to start with
+*= BASICSTART
+!byte $0c,$08,$0a,$00,$9e		; Line 10 SYS
+!convtab pet
+!tx "35328"						; Address for sys start to RealStart in text
+!byte $00,$00,$00				; This is really the end of our BASIC program
+}
+
+; Strip out the BASIC start SYS from the compressed code
+*=2062
+; +1 here because our new SYS start address is one byte longer, so we strip out the 0x78 SEI
+!bin "../BerzerkRedux/BerzerkRedux.prg",,2 + (2061-2049) + 1
+
+
+!align 255,0
+RealStart
+*=*
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	jsr PrintDecompressing
+
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	ldx #<$d000
+	ldy #>$d000
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<PressFire
+	ldy #>PressFire
+	jsr RNXPCompressionDecompress
+
+	ldx #<$c000
+	ldy #>$c000
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<CompMusic
+	ldy #>CompMusic
+	jsr RNXPCompressionDecompress
+
+	ldx #<$dc00
+	ldy #>$dc00
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoScreen
+	ldy #>LogoScreen
+	jsr RNXPCompressionDecompress
+
+	ldx #64	; Sprite frames are at $d000+
+	stx $dc00 + SPRITEFRAMESCROFF +0
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +1
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +2
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +3
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +4
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +5
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +6
+	inx
+	stx $dc00 + SPRITEFRAMESCROFF +7
+
+	ldy #$20
+	ldx #0
+	txa
+.cl2
+	sta $e000,x
+	dex
+	bne .cl2
+	inc .cl2+2
+	dey
+	bne .cl2
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+
+	; Setup a row of eight hires sprites for the bottom border status bar
+	ldx #0
+	stx VIC2SpriteMulticolour
+	lda #VIC2SpriteXBorderLeft
+.sl1
+	sta VIC2Sprite0X,x
+	clc
+	adc #VIC2SpriteSizeX
+
+	inx
+	inx
+	cpx #16
+	bne .sl1
+
+	ldx #0
+.sl2
+	lda #VIC2SpriteYBorderBottom+4
+	sta VIC2Sprite0Y,x
+	inx
+	inx
+	cpx #16
+	bne .sl2
+
+	lda #0
+	ldx #7
+.sl3
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .sl3
+
+	lda #0
+	sta VIC2SpriteXMSB
+
+	lda #%11111111
+	sta VIC2SpriteEnable
+
+
+
+	lda #0
+	jsr $c000
+
+	jsr WaitRaster
+	ldx #0
+	stx VIC2ScreenControlV
+
+	ldx #<COLOURRAM
+	ldy #>COLOURRAM
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoColour
+	ldy #>LogoColour
+	jsr RNXPCompressionDecompress
+
+	lda #0
+	sta CIA2PortASerialBusVICBank
+	lda #%01111000
+	sta VIC2MemorySetup
+	lda #%11000
+	sta VIC2ScreenControlH
+
+	jsr WaitRaster
+
+	lda #%111011
+	sta VIC2ScreenControlV
+
+	ldx #<$e000
+	ldy #>$e000
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<LogoBitmap
+	ldy #>LogoBitmap
+	jsr RNXPCompressionDecompress
+
+.l2
+	; Open the bottom borders
+	+MACROWaitForRaster VIC2SpriteYBorderBottom-2
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	lda SprColTabCounter2
+	beq .pulse
+	dec SprColTabCounter2
+	jmp .skipPulse
+.pulse
+	inc SprColTabCounter
+	lda SprColTabCounter
+	lsr
+	lsr
+	and #15
+	tax
+	lda SprColTab,x
+	ldx #7
+.sl4
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .sl4
+.skipPulse
+	+MACROWaitForRaster 255
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	jsr $c003
+
+	lda CIA1KeyboardColumnJoystickA
+	and #%10000
+	bne .l2
+
+
+	lda #0
+	sta SIDVolumeFilter
+	jsr PrintDecompressing
+
+	; IRQs already off, jump to the decompressor while skipping the 0x78 SEI
+	jmp 2061 + 1
+
+PrintDecompressing
+	; Stop the IRQs, then blank the screen colour, then display a message in an unused porition
+	; of extended zero page.
+	jsr WaitRaster
+	ldx #0
+	stx VIC2ScreenControlV
+	lda #VIC2Colour_Black
+.cl1
+	sta COLOURRAM ,x
+	sta COLOURRAM + $100 ,x
+	sta COLOURRAM + $200 ,x
+	sta COLOURRAM + $2e8 ,x
+	dex
+	bne .cl1
+
+	+DisplayColourTextMiddle_AX .decompressing , .decompressingEnd , $0000 + (14*40) , VIC2Colour_White
+
+	lda #3
+	sta CIA2PortASerialBusVICBank
+	lda #4
+	sta VIC2MemorySetup
+	lda #%01000
+	sta VIC2ScreenControlH
+	lda #%11011
+	sta VIC2ScreenControlV
+	rts
+
+WaitRaster
+	lda #255
+.wr1
+	cmp VIC2Raster
+	bne .wr1
+	rts
+
+.decompressing !scr "decompressing..."
+.decompressingEnd
+
+SprColTabCounter !by 0
+SprColTabCounter2 !by 250	; 5 seconds of no press fire message
+SprColTab !by VIC2Colour_Black , VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_White
+!by VIC2Colour_White , VIC2Colour_White , VIC2Colour_White , VIC2Colour_LightGrey , VIC2Colour_Grey , VIC2Colour_DarkGrey
+
+!source "../stdlib/Initialise.a"
+
+LogoBitmap
+!bin "PicBitmap",,2
+LogoColour
+!bin "PicColour",,2
+LogoScreen
+!bin "PicScreen",,2
+
+CompMusic
+!bin "fw86atc000Comp.prg",,2
+
+PressFire
+!bin "../BerzerkReduxCart/PressFireComp.prg",,2
+
+
+!macro RNXPCompressionIncBorder_A {}
+!source "../Decompression/Decompression.a"
+!source "../Decompression/DecompressionP2.a"
+
+!source "../Decompression/DecompressionVars.a"
+CompressionStartOfHistoryBufferTables = *
+
+* = * + $40
+CompressedData

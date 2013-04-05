@@ -1,0 +1,2265 @@
+; Animation types used in this game
+AnimationType_Player = 0
+AnimationType_Robot = 1
+AnimationType_Otto = 2
+AnimationType_Bullet = 3
+AnimationType_RobotDeath = 4
+
+RobotWidth = 8
+RobotHeight = 11
+
+isMasterRobotRoom !by 0
+
+!zn
+InitGame
+	jsr TurnOffScreenWithBlank
+	jsr SFXSIDInit
+	lda #1
+	sta SFXCall
+	; Init the variables used for this game
+	lda #0
+	sta PreviousThousandsScore
+	sta RobotTypeForRoom
+	sta ScorePlayer1Updated
+	sta ScorePlayer1LivesUpdated
+	sta LastExitWasChicken
+	sta SamplePlaying
+	sta Score
+	sta Score+1
+	sta Score+2
+	sta Score+3
+	sta Score+4
+	sta Score+5
+	lda #2
+	sta AnimationPlayer_Lives
+	jsr ResetPlayerPosition
+	; Hmm problematic, doubling the scale produces sprites too large to accurately represent the
+	; arcade game on the 320 x 200 C64 screen. But the original arcade game 8 pixel wide sprites
+	; are too small for the 320 width C64 screen compared to the arcade's 256 x 224 screen.
+	; So for now we'll use the unexpanded sprites and have a slightly larger than arcade maze room
+	; instead. :)
+;	lda #$ff
+;	sta VIC2SpriteDoubleHeight
+;	sta VIC2SpriteDoubleWidth
+	lda #$00
+	sta VIC2SpriteMulticolour
+
+	jsr ClearMainScreen
+	jsr ClearAllSpritesExceptPlayer
+	; Random starting room number
+;	lda CurrentRoom
+;	ldy CurrentRoom+1
+	; Static starting room number
+	lda #0
+	ldy #0
+	; Enable this to force an exit right to enter the master robot room
+;	lda #$14-2
+;	ldy #$05
+	; Always start on the left
+	ldx #2
+	jsr UpdateRoomEx
+	jsr DrawScore
+	jsr EnableScreenWithIRQWait
+
+	; Greet the player. This is only done once at the start of the game, not each player respawn.
+	jsr PlayNonChickenSpeech
+
+	rts
+
+!zn
+EnableScreenWithIRQWait
+	jsr WaitForBottomIRQ
+EnableScreen
+	lda #%10 ; Tell VIC to display a char screen starting at $c000 with chars at $c800
+	sta VIC2MemorySetup
+	lda #%01000
+	sta VIC2ScreenControlH
+	lda #%11011
+	sta VIC2ScreenControlV
+	rts
+
+!zn
+ResetPlayerPosition
+	lda #VIC2SpriteXBorderLeft + 16
+	sta Multiplex_XPosLo
+	lda #0
+	sta Multiplex_XPosHi
+	lda #VIC2SpriteYBorderTop + (11*8)
+	sta Multiplex_YPos
+	lda AnimationPlayer_MoveRight+2
+	sta Multiplex_SpriteFrame
+	lda #AnimationType_Player
+	sta Animation_Type
+	lda #VIC2Colour_Green
+	sta Multiplex_Colour
+;	lda #VIC2Colour_White
+;	sta VIC2ExtraSpriteColour1
+;	lda #VIC2Colour_DarkGrey
+;	sta VIC2ExtraSpriteColour2
+	rts
+
+!zn
+AnimationFindEmptySlot
+	ldy #0
+.l1
+	lda Animation_Type,y
+	cmp #$ff
+	beq .l2
+	iny
+	cpy #Multiplex_items
+	bne .l1
+	clc
+	rts
+.l2
+	sec
+	rts
+
+!zn
+GameLogic
+	jsr WaitForBottomIRQ
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+	jsr Multiplex_Sort
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+
+	lda PlayerSwitchRoomsIgnoreCollision
+	beq .oplsric2
+	dec PlayerSwitchRoomsIgnoreCollision
+.oplsric2
+
+
+.occ2
+	ldy Multiplex_CollisionBackupCounter
+.cc1
+	dey
+	bpl .occ2a
+	jmp .cc2
+.occ2a
+	ldx Multiplex_CollisionBackupIndexes,y
+	; Check here
+	; MPi: TODO: Needs something that really checks the enemy type here
+	lda Animation_Type,x
+	cmp #AnimationType_Player
+	beq .lisPlayer
+	cmp #AnimationType_Robot
+	beq .isRobot
+	cmp #AnimationType_Bullet
+	bne .oovc1
+	jmp .ovc1
+.lisPlayer jmp .isPlayer
+.oovc1
+	; Otto doesn't die
+	jmp .cc1
+;	inc Multiplex_Colour,x
+	; Enable this below to stop killing the robots
+;	jmp .cc1
+.isRobot
+	lda #AnimationType_RobotDeath
+	sta Animation_Type,x
+	lda AnimationOtto_AppearSecs
+	beq .ignoreOttoTime
+	; When we kill a robot then slightly decrease the amount of time until Otto appears
+	dec AnimationOtto_AppearSecs
+.ignoreOttoTime
+	lda #AnimationRobot_DeathStart
+	sta Multiplex_SpriteFrame,x
+	lda #0
+	sta AnimationRobot_FootCounter,x
+	lda #16
+	jsr SFXInit
+	lda #17
+	jsr SFXInit
+	lda #<Score
+	sta tempWork0
+	lda #>Score
+	sta tempWork1
+
+	lda #5
+	jsr ScoreAdd
+
+	lda isMasterRobotRoom
+	beq .notmr1
+
+.moreScore
+	lda #100
+	jsr ScoreAdd
+	dec isMasterRobotRoom
+	bne .moreScore
+
+.notmr1
+	jsr DrawScore
+
+	dec RobotsActive
+	bne .someLeft
+
+	ldx #4
+.bsp1
+	lda InitialRobotsActiveText,x
+	sta MainScreen+(24*40)+20,x
+	lda #VIC2Colour_LightGrey
+	sta COLOURRAM+(24*40)+20,x
+	dex
+	bpl .bsp1
+
+	ldx InitialRobotsActive
+	dex
+	txa
+	asl
+	asl
+	tax
+	lda InitialRobotsActiveStrings,x
+	sta MainScreen+(24*40)+26
+	lda InitialRobotsActiveStrings+1,x
+	sta MainScreen+(24*40)+26+1
+	lda InitialRobotsActiveStrings+2,x
+	sta MainScreen+(24*40)+26+2
+	lda #VIC2Colour_LightGrey
+	sta COLOURRAM+(24*40)+26
+	sta COLOURRAM+(24*40)+26+1
+	sta COLOURRAM+(24*40)+26+2
+
+.someLeft
+	jsr UpdateDriveLightFlash
+	jmp .cc1
+
+.isPlayer
+	; Cheat mode, enable the following line to stop the player death check
+;	jmp .cc1
+	lda AnimationPlayer_DeathCounter
+	beq .occ1z
+	jmp .cc1
+.occ1z
+	lda PlayerSwitchRoomsIgnoreCollision
+	beq .oplsric1
+	jmp .cc1
+.oplsric1
+	; Debugging, ignores the collision and cycles the player colour instead
+;	inc Multiplex_Colour,x
+;jmp *
+;	jmp .cc1
+
+	lda #150
+	sta AnimationPlayer_DeathCounter
+
+	jsr SampleResetSequence
+	+SampleUpdateSequence 0 , Sample_BzztGTHGTI , SampleEnd_BzztGTHGTI
+	lda #SampleMidRangeFrequencyShift
+	jsr SamplePlaySequence
+.ovc1
+	cpx #0
+	bne .occ1
+	jmp .cc1
+.occ1
+	lda #$ff
+	sta Multiplex_YPos,x
+	sta Animation_Type,x
+	jmp .cc1
+.cc2
+	; Now proceed with the rest of the game logic
+
+	; Animate the player and other player logic
+	; Check to see if we are making the player die, or not
+	lda AnimationPlayer_DeathCounter
+	beq .notDeadYet
+	cmp #50
+	bcs .stillOnTheScreen
+	lda #$ff
+	sta Multiplex_YPos
+.stillOnTheScreen
+	dec AnimationPlayer_DeathCounter
+	bne .stillDoingDeath
+	dec AnimationPlayer_Lives
+	bpl .canRespawn
+	; Exit the GameLogic loop and back to MainLine
+	rts
+
+.canRespawn
+	jsr ResetPlayerPosition
+	jmp .resetPlayerAfterDeath
+	; Reset the player position, draw a new room etc
+.stillDoingDeath
+	inc Multiplex_Colour
+	lda AnimationPlayer_DeathCounter
+	and #1
+	tax
+	lda AnimationPlayer_Death,x
+	sta Multiplex_SpriteFrame
+	jmp .noDrawRoom
+.notDeadYet
+	; Check the player fire timings and sprite frame
+	lda LastFireTime
+	beq .ov1
+	dec LastFireTime
+	jmp .notResetPlayerAnimation
+.ov1
+	lda #AnimationPlayer_StandRight
+	sta Multiplex_SpriteFrame
+.notResetPlayerAnimation
+
+	lda CIA1KeyboardColumnJoystickA
+	and #15
+	sta LastGoodDirection
+	cmp #15
+	bne .onotFire
+	jmp .notFire
+.onotFire
+
+	; Test for fire
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notFire
+
+	lda LastFireTime
+	beq .yesFire
+	jmp .notFireButStand
+.yesFire
+	ldy LastGoodDirection
+	lda AnimationPlayer_Fires,y
+	sta Multiplex_SpriteFrame
+
+	jsr AnimationFindEmptySlot
+	bcs .yesFire2
+	jmp .notFireButStand
+.yesFire2
+	lda #30
+	sta LastFireTime
+	lda Multiplex_Colour
+	sta Multiplex_Colour,y
+	lda Multiplex_XPosLo
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi
+	sta Multiplex_XPosHi,y
+	lda Multiplex_YPos
+	sta Multiplex_YPos,y
+	lda #0
+	jsr SFXInit
+;	lda #1
+;	jsr SFXInit
+	ldx LastGoodDirection
+	lda .playerbulletSprite,x
+	sta Multiplex_SpriteFrame,y
+	lda #AnimationType_Bullet
+	sta Animation_Type,y
+	lda .playerBulletOftX,x
+	sta Animation_BulletSpeedX,y
+	lda .playerBulletOftY,x
+	sta Animation_BulletSpeedY,y
+	lda .playerBulletSpeedX,x
+	sta .tmps
+	lda .playerBulletSpeedY,x
+	sta .tmps+1
+	tya
+	tax
+	jsr .HandleBulletMove
+	lda .tmps
+	sta Animation_BulletSpeedX,x
+	lda .tmps+1
+	sta Animation_BulletSpeedY,x
+
+	jmp .notFireButStand
+.notFire
+	ldy AnimationPlayer_Counter
+	iny
+	cpy #7
+	bne .oo1
+	ldy #0
+.oo1
+	sty AnimationPlayer_Counter
+
+	lda #%00001
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+	lda AnimationPlayer_MoveRight,y
+	sta Multiplex_SpriteFrame
+	dec Multiplex_YPos
+.notUp
+	lda #%00010
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+	lda AnimationPlayer_MoveRight,y
+	sta Multiplex_SpriteFrame
+	inc Multiplex_YPos
+.notDown
+	lda #%01000
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	lda AnimationPlayer_MoveRight,y
+	sta Multiplex_SpriteFrame
+	lda Multiplex_XPosLo
+	clc
+	adc #1
+	sta Multiplex_XPosLo
+	bcc .notRight
+	lda #1
+	sta Multiplex_XPosHi
+.notRight
+	lda #%00100
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	lda AnimationPlayer_MoveLeft,y
+	sta Multiplex_SpriteFrame
+	lda Multiplex_XPosLo
+	sec
+	sbc #1
+	sta Multiplex_XPosLo
+	bcs .notLeft
+	lda #0
+	sta Multiplex_XPosHi
+.notLeft
+.notFireButStand
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+
+	lda Multiplex_YPos
+	cmp #VIC2SpriteYBorderTop
+	bcs .notExitTop
+	jsr ExitRoomSpeechTest
+	lda #VIC2SpriteYBorderBottom - 30
+	sta Multiplex_YPos
+	ldx #1
+	jmp .updateRoom
+.notExitTop
+	lda Multiplex_YPos
+	cmp #VIC2SpriteYBorderBottom - 24
+	bcc .notExitBottom
+	jsr ExitRoomSpeechTest
+	lda #VIC2SpriteYBorderTop + 8
+	sta Multiplex_YPos
+	ldx #0
+	jmp .updateRoom
+.notExitBottom
+
+	lda Multiplex_XPosHi
+	bne .notExitLeft
+	lda Multiplex_XPosLo
+	cmp #VIC2SpriteXBorderLeft
+	bcs .notExitLeft
+	jsr ExitRoomSpeechTest
+	lda #<(VIC2SpriteXBorderRight - 20)
+	sta Multiplex_XPosLo
+	lda #1
+	sta Multiplex_XPosHi
+	ldx #3
+	jmp .updateRoom
+.notExitLeft
+	lda Multiplex_XPosHi
+	beq .notExitRight
+	lda Multiplex_XPosLo
+	cmp #<(VIC2SpriteXBorderRight - 8)
+	bcc .notExitRight
+	jsr ExitRoomSpeechTest
+.resetPlayerAfterDeath
+	lda #VIC2SpriteXBorderLeft + 12
+	sta Multiplex_XPosLo
+	lda #0
+	sta Multiplex_XPosHi
+	ldx #2
+	jmp .updateRoom
+.notExitRight
+
+.noDrawRoom
+!ifdef GameLogicTimings {
+	inc VIC2BorderColour
+}
+HandleGameObjects
+	; Make Otto active now?
+	lda AnimationOtto_Active
+	beq .onoo1
+	jmp .noo1
+.onoo1
+	; Do not start Otto when the player is dying
+	lda AnimationPlayer_DeathCounter
+	beq .onoo1a
+	jmp .noo1
+
+.onoo1a
+	; Check the Otto timer for some sample playing during the level
+	lda AnimationOtto_AppearSecs
+	cmp #6
+	bne .checkNextTime1
+	lda AnimationOtto_AppearFrames
+	cmp #20
+	bne .checkNextTime1
+	jmp .yesPlay
+
+.checkNextTime1
+	lda AnimationOtto_AppearSecs
+	cmp #13
+	bne .notYet1
+	lda AnimationOtto_AppearFrames
+	cmp #20
+	bne .notYet1
+	; Fall through to play the sample
+.yesPlay
+	lda LastExitWasChicken
+	bne .ldoChicken
+	jsr PlayNonChickenSpeech
+	jmp .notYet1
+.lnoo1 jmp .noo1
+
+.ldoChicken jsr PlayChickenSpeech
+	; Fall thorugh to .notYet1
+
+.notYet1
+	; Check for Otto spawn time
+	lda AnimationOtto_AppearSecs
+	beq .noo2
+	dec AnimationOtto_AppearFrames
+	bne .lnoo1
+	lda #50
+	sta AnimationOtto_AppearFrames
+	dec AnimationOtto_AppearSecs
+	bne .lnoo1
+.noo2
+	; Make Otto appear
+	jsr SampleResetSequence
+	+SampleUpdateSequence 0 , Sample_Intruder , SampleEnd_Intruder
+	+SampleUpdateSequence 1 , Sample_Alert , SampleEnd_Alert
+	+SampleUpdateSequence 2 , Sample_Intruder , SampleEnd_Intruder
+	+SampleUpdateSequence 3 , Sample_Alert , SampleEnd_Alert
+	lda #SampleMidRangeFrequencyShift
+	jsr SamplePlaySequence
+
+	; Spawn Evil Otto
+	lda #1
+	sta AnimationOtto_Active
+	jsr AnimationFindEmptySlot
+	bcc .noo1
+	lda #VIC2Colour_White
+	sta Multiplex_Colour,y
+	lda LastPlayerEntry_XLo
+	sta Multiplex_XPosLo,y
+	lda LastPlayerEntry_XHi
+	sta Multiplex_XPosHi,y
+	lda LastPlayerEntry_Y
+	sta Multiplex_YPos,y
+	sta AnimationOtto_RealY
+	lda AnimationOtto_Appear
+	sta Multiplex_SpriteFrame,y
+	lda #0
+	sta AnimationOtto_AppearFramesCount
+	sta AnimationOtto_BounceFramesCount
+	lda #AnimationType_Otto
+	sta Animation_Type,y
+.noo1
+	lda .workingNumBullets
+	sta .realLastBullets
+	lda #0
+	sta .workingNumBullets
+	; Now handle the robot AI and bullets
+	ldx #Multiplex_items-1
+.rl1
+	; Double paranoia check :)
+	lda Multiplex_YPos,x
+	cmp #$ff
+	beq .rl2
+	; MPi: TODO: Replace this with animation types and a jump table with the existing animation engine
+	lda Animation_Type,x
+	bmi .rl2
+	cmp #AnimationType_Robot
+	beq .lHandleRobot
+	cmp #AnimationType_Bullet
+	beq .lHandleBullet
+	cmp #AnimationType_Bullet
+	beq .lHandleBullet
+	cmp #AnimationType_Bullet
+	beq .lHandleBullet
+	cmp #AnimationType_Bullet
+	beq .lHandleBullet
+	cmp #AnimationType_Otto
+	beq .lHandleOtto
+	cmp #AnimationType_RobotDeath
+	beq .lHandleRobotDeath
+.rl2
+	dex
+	bne .rl1
+
+!ifdef GameLogicTimings {
+	lda #0
+	sta VIC2BorderColour
+}
+
+	jmp GameLogic
+
+.lHandleRobot
+	jmp .HandleRobot
+
+.lHandleBullet
+	jmp .HandleBullet
+
+.lHandleOtto
+	jmp .HandleOtto
+
+.lHandleRobotDeath
+	jmp .HandleRobotDeath
+
+.HandleRobot
+	lda Multiplex_Colour,x
+	cmp #VIC2Colour_Orange
+	bne .notm2
+	; Master robots can rapidly fire by adjusting the last fired count to be lower
+	lda Animation_RobotLastFired,x
+	cmp #2
+	bcc .notm2
+	lda #2
+	sta Animation_RobotLastFired,x
+.notm2
+	inc AnimationRobot_FootCounter,x
+	lda AnimationRobot_FootCounter,x
+	and #7
+	sta AnimationRobot_FootCounter,x
+	lsr
+	lsr
+	sta AnimationRobot_FootToggle,x
+
+	lda Animation_RobotLastFired,x
+	beq .no1
+	dec Animation_RobotLastFired,x
+.no1
+	; During the robot walk check if it is in line with the player, if so then stop moving.
+	lda Multiplex_XPosHi,x
+	lsr
+	lda Multiplex_XPosLo,x
+	ror
+	lsr
+	lsr
+	sta .smRPx2+1
+	lda Multiplex_XPosHi
+	lsr
+	lda Multiplex_XPosLo
+	ror
+	lsr
+	lsr
+	sec
+.smRPx2	sbc #$ff
+	sta .diaXCheck
+
+	; During the robot walk check if it is in line with the player, if so then stop moving.
+	lda Multiplex_YPos,x
+	lsr
+	lsr
+	lsr
+	sta .smRPy1+1
+	lda Multiplex_YPos
+	lsr
+	lsr
+	lsr
+
+	sec
+.smRPy1	sbc #$ff
+	sta .diaYCheck
+
+	lda .diaXCheck
+	beq .ldoVFireChecks
+
+	lda .diaYCheck
+	beq .ldoHFireChecks
+
+	; Do the diagonal fire checks here
+	lda #0
+	sec
+	sbc .diaXCheck
+	bpl .nod1
+	cmp .diaYCheck
+	beq .ldoURFireCheck
+.nod1
+	lda #0
+	sec
+	sbc .diaXCheck
+	bmi .nod2
+	cmp .diaYCheck
+	beq .ldoDLFireCheck
+.nod2
+	lda .diaXCheck
+	bpl .nod3
+	cmp .diaYCheck
+	beq .ldoULFireCheck
+.nod3
+	lda .diaXCheck
+	bmi .nod4
+	cmp .diaYCheck
+	beq .ldoDRFireCheck
+.nod4
+
+
+
+.justContinueDoingStuff
+	lda Animation_RobotWalkCounter,x
+	beq .oendThinkNowWalk
+	jmp .endThinkNowWalk
+.oendThinkNowWalk
+	lda AnimationRobot_EyeSpin
+	sta Multiplex_SpriteFrame,x
+	lda Animation_RobotThinkDelay,x
+	cmp #64
+	bcs .nes1
+	lsr
+	lsr
+	tay
+	lda AnimationRobot_EyeSpin,y
+	sta Multiplex_SpriteFrame,x
+.nes1
+	dec Animation_RobotThinkDelay,x
+	bne .oendThinkNowDo
+	jmp .endThinkNowDo
+.oendThinkNowDo
+	jmp .rl2
+.ldoHFireChecks jmp .doHFireChecks
+.ldoVFireChecks jmp .doVFireChecks
+.ldoULFireCheck jmp .doULFireCheck
+.ldoURFireCheck jmp .doURFireCheck
+.ldoDLFireCheck jmp .doDLFireCheck
+.ldoDRFireCheck jmp .doDRFireCheck
+.commonRobotBullet
+	inc .realLastBullets
+	sta Multiplex_SpriteFrame,y
+	lda #8
+	jsr SFXInit
+	lda #9
+	jsr SFXInit
+	lda #AnimationType_Bullet
+	sta Animation_Type,y
+	lda Multiplex_Colour,x
+	sta Multiplex_Colour,y
+	rts
+.doURFireCheck
+	jsr .testCanFire
+	bcc .justContinueDoingStuff
+	jsr AnimationFindEmptySlot
+	bcc .justContinueDoingStuff
+
+	lda #64+5
+	jsr .commonRobotBullet
+
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedX,y
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedY,y
+
+	lda Multiplex_XPosLo,x
+	clc
+	adc #RobotWidth
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+	bcc .oc3
+	lda #1	
+	sta Multiplex_XPosHi,y
+.oc3
+	lda Multiplex_YPos,x
+	sec
+	sbc #8
+	sta Multiplex_YPos,y
+	jmp .rl2
+
+.ljustContinueDoingStuff jmp .justContinueDoingStuff
+.doULFireCheck
+	jsr .testCanFire
+	bcc .ljustContinueDoingStuff
+	jsr AnimationFindEmptySlot
+	bcc .ljustContinueDoingStuff
+
+	lda #64+4
+	jsr .commonRobotBullet
+
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedX,y
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedY,y
+
+	lda Multiplex_XPosLo,x
+	sec
+	sbc #RobotWidth
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+	bcs .oc5
+	lda #0	
+	sta Multiplex_XPosHi,y
+.oc5
+	lda Multiplex_YPos,x
+	sec
+	sbc #8
+	sta Multiplex_YPos,y
+	jmp .rl2
+
+.ljustContinueDoingStuff2 jmp .justContinueDoingStuff
+.doDLFireCheck
+	jsr .testCanFire
+	bcc .ljustContinueDoingStuff2
+	jsr AnimationFindEmptySlot
+	bcc .ljustContinueDoingStuff2
+
+	inc .realLastBullets
+	lda #64+5
+
+	jsr .commonRobotBullet
+
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedX,y
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedY,y
+
+	lda Multiplex_XPosLo,x
+	sec
+	sbc #RobotWidth
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+	bcs .oc4
+	lda #0	
+	sta Multiplex_XPosHi,y
+.oc4
+	lda Multiplex_YPos,x
+	clc
+	adc #RobotHeight
+	sta Multiplex_YPos,y
+	jmp .rl2
+
+.doDRFireCheck
+	jsr .testCanFire
+	bcc .ljustContinueDoingStuff2
+	jsr AnimationFindEmptySlot
+	bcc .ljustContinueDoingStuff2
+
+	lda #64+4
+	jsr .commonRobotBullet
+
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedX,y
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedY,y
+
+	lda Multiplex_XPosLo,x
+	clc
+	adc #RobotWidth
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+	bcc .oc6
+	lda #1	
+	sta Multiplex_XPosHi,y
+.oc6
+	lda Multiplex_YPos,x
+	clc
+	adc #RobotHeight
+	sta Multiplex_YPos,y
+	jmp .rl2
+
+
+.doVFireChecks
+	jsr .testCanFire
+	bcc .ljustContinueDoingStuff3
+	jsr AnimationFindEmptySlot
+	bcc .ljustContinueDoingStuff3
+
+	lda #64+3
+	jsr .commonRobotBullet
+
+	lda #0
+	sta Animation_BulletSpeedX,y
+
+	lda Multiplex_XPosLo,x
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+
+	lda .diaYCheck
+	bpl .o5
+
+	lda Multiplex_YPos,x
+	sec
+	sbc #8
+	sta Multiplex_YPos,y
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedY,y
+	jmp .rl2
+.o5
+	lda Multiplex_YPos,x
+	clc
+	adc #RobotHeight
+	sta Multiplex_YPos,y
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedY,y
+	jmp .rl2
+
+.ljustContinueDoingStuff3 jmp .justContinueDoingStuff
+.doHFireChecks
+	jsr .testCanFire
+	bcc .ljustContinueDoingStuff3
+	jsr AnimationFindEmptySlot
+	bcc .ljustContinueDoingStuff3
+
+	lda #64+2
+	jsr .commonRobotBullet
+
+	lda #0
+	sta Animation_BulletSpeedY,y
+
+	lda Multiplex_YPos,x
+	sta Multiplex_YPos,y
+
+	lda Multiplex_XPosHi,x
+	sta Multiplex_XPosHi,y
+	lda Multiplex_XPosLo,x
+	sta Multiplex_XPosLo,y
+	lda .diaXCheck
+	bpl .o3
+
+
+	lda Multiplex_XPosLo,y
+	sec
+	sbc #RobotWidth
+	sta Multiplex_XPosLo,y
+	bcs .oc1
+	lda #0
+	sta Multiplex_XPosHi,y
+.oc1
+	lda RobotBulletSpeedNeg
+	sta Animation_BulletSpeedX,y
+	jmp .rl2
+.o3
+	lda Multiplex_XPosLo,y
+	clc
+	adc #RobotWidth
+	sta Multiplex_XPosLo,y
+	bcc .oc2
+	lda #1
+	sta Multiplex_XPosHi,y
+.oc2
+	lda RobotBulletSpeed
+	sta Animation_BulletSpeedX,y
+	jmp .rl2
+
+.diaXCheck !by 0
+.diaYCheck !by 0
+
+
+.endThinkNowDo
+	jsr Rand
+	and #7
+	asl
+	asl
+	asl
+	clc
+	; Minimum time spent moving
+	adc #20
+	sta Animation_RobotWalkCounter,x
+	jsr Rand
+	and #%1100
+	sta Animation_RobotWalkDirX,x
+	jsr Rand
+	and #%0011
+	sta Animation_RobotWalkDirY,x
+	; Sometimes rarely this robot will decide to move in a random direction :)
+	jsr Rand
+	and #63
+	beq .endThinkNowWalk
+	jsr Rand
+	and #3
+	; Randomly choose not to go vertical
+	beq .stationaryY
+	; Otherwise
+	; Choose a direction to move
+	lda Multiplex_YPos
+	lsr
+	lsr
+	sta .smcpy+1
+	lda Multiplex_YPos,x
+	lsr
+	lsr
+.smcpy cmp #0
+	beq .stationaryY
+	lda #%0010
+	bcc .wantMoveY
+	lda #%0001
+	jmp .wantMoveY
+.stationaryY
+	lda #0
+.wantMoveY
+	sta Animation_RobotWalkDirY,x
+	jsr Rand
+	and #3
+	; Randomly choose not to go horizontal
+	beq .stationaryX
+	lda Multiplex_XPosHi,x
+	lsr
+	lda Multiplex_XPosLo,x
+	ror
+	lsr
+	lsr
+	sta .smRPx+1
+	lda Multiplex_XPosHi
+	lsr
+	lda Multiplex_XPosLo
+	ror
+	lsr
+	lsr
+	; 0,1,2,3 = up, down, left, right
+.smRPx	cmp #$ff
+	beq .stationaryX
+	lda #%0100
+	bcc .wantMoveX
+	lda #%1000
+	jmp .wantMoveX
+.stationaryX
+	lda #0
+.wantMoveX
+	sta Animation_RobotWalkDirX,x
+
+.endThinkNowWalk
+	; If while walking both of the directions become stationary, like when it walks into a corner,
+	; then the robot starts to think again
+	lda Animation_RobotWalkDirX,x
+	ora Animation_RobotWalkDirY,x
+	bne .willWalk
+.makeThinkInstead
+	jsr Rand
+	and #15
+	asl
+	asl
+	asl
+	clc
+	; Always add on while to make the robots all pause for a while before moving
+	adc #10
+	sta Animation_RobotThinkDelay,x
+	lda #0
+	sta Animation_RobotWalkCounter,x
+	jmp .rl2
+
+.willWalk
+	dec Animation_RobotWalkCounter,x
+	beq .makeThinkInstead
+
+	lda Animation_RobotWalkCounter,x
+	and #3
+	cmp RobotSpeedSubFrame
+	bcs .doFrameMove
+	jmp .rl2
+.doFrameMove
+	; stop moving. The in line check can also cause a bullet to be fired depending on counters
+	; and a bit of random.
+	; Edge of screen check and map character cells avoidance check needed too, also with a bit of
+	; random because the original had stupid robots that would hit the walls.
+
+	jsr AnimationToScreenOffset
+	sty tempWork0
+	sta tempWork1
+	; Adjust for the middle of the sprite
+	lda tempWork0
+	sec
+	sbc #41
+	sta tempWork0
+	lda tempWork1
+	sbc #0
+	sta tempWork1
+
+	lda Animation_RobotWalkDirY,x
+	and #%0001
+	bne .moveUp
+	lda Animation_RobotWalkDirY,x
+	and #%0010
+	bne .moveDown
+
+.robotMoveRetY
+	lda Animation_RobotWalkDirX,x
+	and #%0100
+	bne .moveLeft
+	lda Animation_RobotWalkDirX,x
+	and #%1000
+	bne .lmoveRight
+	jmp .rl2
+.lmoveRight jmp .moveRight
+.moveUp
+	ldy #1
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove1
+	lda #0
+	sta Animation_RobotWalkDirY,x
+	jmp .robotMoveRetY
+.allowMove1
+	lda Multiplex_YPos,x
+	sec
+	sbc #RobotSpeed
+	sta Multiplex_YPos,x
+
+	ldy AnimationRobot_FootToggle,x
+	lda AnimationRobot_MoveVert,y
+	sta Multiplex_SpriteFrame,x
+	jmp .robotMoveRetY
+
+.moveDown
+	ldy #121
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove2
+	lda #0
+	sta Animation_RobotWalkDirY,x
+	jmp .robotMoveRetY
+.allowMove2
+
+	lda Multiplex_YPos,x
+	clc
+	adc #RobotSpeed
+	sta Multiplex_YPos,x
+	ldy AnimationRobot_FootToggle,x
+	lda AnimationRobot_MoveVert,y
+	sta Multiplex_SpriteFrame,x
+	jmp .robotMoveRetY
+
+.moveLeft
+	ldy #40
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove3
+	lda #0
+	sta Animation_RobotWalkDirX,x
+	jmp .rl2
+.allowMove3
+	ldy #80
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove3a
+	jmp .makeThinkInstead
+.allowMove3a
+
+	lda Multiplex_XPosLo,x
+	sec
+	sbc #RobotSpeed
+	sta Multiplex_XPosLo,x
+	bcs .o1
+	lda #0
+	sta Multiplex_XPosHi,x
+.o1
+	ldy AnimationRobot_FootToggle,x
+	lda AnimationRobot_MoveLeft,y
+	sta Multiplex_SpriteFrame,x
+	jmp .rl2
+
+.moveRight
+	ldy #42
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove4
+	lda #0
+	sta Animation_RobotWalkDirX,x
+	jmp .rl2
+.allowMove4
+	ldy #82
+	lda (tempWork0),y
+	cmp #64
+	bcc .allowMove4a
+	jmp .makeThinkInstead
+.allowMove4a
+
+	lda Multiplex_XPosLo,x
+	clc
+	adc #RobotSpeed
+	sta Multiplex_XPosLo,x
+	bcc .o2
+	lda #1
+	sta Multiplex_XPosHi,x
+.o2
+	ldy AnimationRobot_FootToggle,x
+	lda AnimationRobot_MoveRight,y
+	sta Multiplex_SpriteFrame,x
+	jmp .rl2
+
+.testCanFire
+	lda .realLastBullets
+	cmp RobotMaxBullets
+	bcs .notNow
+	lda Animation_RobotLastFired,x
+	bne .notNow
+	jsr Rand
+	and #7
+	bne .notNow
+	lda #50
+	sta Animation_RobotLastFired,x
+	lda #0
+	sta Animation_RobotWalkCounter,x
+	lda #20
+	sta Animation_RobotThinkDelay
+
+.yesCanFire
+	sec
+	rts
+.notNow
+	clc
+	rts	
+
+.HandleBulletMove
+	lda Animation_BulletSpeedX,x
+	bmi .nmx
+	lda Multiplex_XPosLo,x
+	clc
+	adc Animation_BulletSpeedX,x
+	sta Multiplex_XPosLo,x
+	bcc .mvy
+	lda #1
+	sta Multiplex_XPosHi,x
+	jmp .mvy
+.nmx
+	lda Multiplex_XPosLo,x
+	clc
+	adc Animation_BulletSpeedX,x
+	sta Multiplex_XPosLo,x
+	bcs .mvy
+	lda #0
+	sta Multiplex_XPosHi,x
+.mvy
+	lda Animation_BulletSpeedY,x
+	bmi .nmy
+	lda Multiplex_YPos,x
+	clc
+	adc Animation_BulletSpeedY,x
+	sta Multiplex_YPos,x
+	rts
+.nmy
+	lda Multiplex_YPos,x
+	clc
+	adc Animation_BulletSpeedY,x
+	sta Multiplex_YPos,x
+	rts
+.HandleBullet
+	inc .workingNumBullets
+	jsr .HandleBulletMove
+
+	lda Multiplex_YPos,x
+	cmp #VIC2SpriteYBorderTop+23*8
+	bcs .removeBullet
+	lda Multiplex_YPos,x
+	cmp #VIC2SpriteYBorderTop
+	bcc .removeBullet
+	lda Multiplex_XPosHi,x
+	beq .ov2
+	lda Multiplex_XPosLo,x
+	cmp #<(VIC2SpriteXBorderRight-8)
+	bcs .removeBullet
+	jmp .rl2
+.ov2
+	lda Multiplex_XPosLo,x
+	cmp #VIC2SpriteXBorderLeft
+	bcc .removeBullet
+
+	jmp .rl2
+.removeBullet
+	lda #$ff
+	sta Multiplex_YPos,x
+	sta Animation_Type,x
+	jmp .rl2
+
+.HandleRobotDeath
+	inc AnimationRobot_FootCounter,x
+	lda AnimationRobot_FootCounter,x
+	cmp #3
+	bne .dorl2
+	lda #0
+	sta AnimationRobot_FootCounter,x
+	lda Multiplex_SpriteFrame,x
+	clc
+	adc #1
+	cmp #AnimationRobot_DeathEnd+1
+	beq .reallyDeadRobot
+	sta Multiplex_SpriteFrame,x
+.dorl2	jmp .rl2
+.reallyDeadRobot
+	lda #$ff
+	sta Multiplex_YPos,x
+	sta Animation_Type,x
+	jmp .rl2
+
+.HandleOtto
+	lda AnimationOtto_AppearFramesCount
+	lsr
+	lsr
+	cmp #4
+	beq .ottoAppeared
+	tay
+	lda AnimationOtto_Appear,y
+	sta Multiplex_SpriteFrame,x
+	inc AnimationOtto_AppearFramesCount
+	jmp .rl2
+.ottoAppeared
+	inc AnimationOtto_BounceFramesCount
+	lda AnimationOtto_BounceFramesCount
+	lsr
+	and #15
+	tay
+	lda AnimationOtto_RealY
+	sec
+	sbc AnimationOtto_BouncesYPos,y
+	sta Multiplex_YPos,x
+	lda AnimationOtto_BouncesYPos,y
+	bne .notFloorHit
+	lda AnimationOtto_Appear+2
+	jmp .notFloorHit2
+.notFloorHit
+	lda AnimationOtto_Appear+3
+.notFloorHit2
+	sta Multiplex_SpriteFrame,x
+
+	; Move Otto closer to the player position
+	lda Multiplex_XPosHi,x
+	lsr
+	lda Multiplex_XPosLo,x
+	ror
+	lsr
+	sta .smottoPos+1
+	; Get the player pos and test the intended movement
+	lda Multiplex_XPosHi
+	lsr
+	lda Multiplex_XPosLo
+	ror
+	lsr
+	; Test player pos to Otto pos in X
+.smottoPos	cmp #0
+	beq .noxMove
+	bcc .islt1
+
+	lda Multiplex_XPosLo,x
+	clc
+	adc #1
+	sta Multiplex_XPosLo,x
+	bcc .noxMove
+	lda #1
+	sta Multiplex_XPosHi,x
+	jmp .noxMove
+.islt1
+	lda Multiplex_XPosLo,x
+	sec
+	sbc #1
+	sta Multiplex_XPosLo,x
+	bcs .noxMove
+	lda #0
+	sta Multiplex_XPosHi,x
+.noxMove
+	lda Multiplex_YPos
+	cmp AnimationOtto_RealY
+	beq .noyMove
+	bcc .islt2
+	inc AnimationOtto_RealY
+	jmp .noyMove
+.islt2
+	dec AnimationOtto_RealY
+.noyMove
+	; MPi: TODO: Anything else here, like random sample playing for Otto?
+	jmp .rl2
+
+CurrentRoom !by 0,0
+; X - 0/1/2/3 for exiting room by the bottom/top/right/left exit
+.updateRoom
+	; Preserve the room exit direction value
+	stx .smThisMove2+1
+	; Now calculate some value to update the current room 16 bit value
+	cpx #0
+	bne .not0
+	ldx #64
+	jmp .notOver
+.not0
+	cpx #1
+	bne .not1
+	ldx #128
+.not1
+.notOver
+	; So now X = 64/128/2/3 for bottom/top/right/left exit
+	stx .smThisMove+1
+
+	; Backup the player sprite
+	lda Multiplex_YPos
+	sta .smplayerYPos+1
+	lda Animation_Type
+	sta .smplayerType+1
+
+	; Clear the old sprites while redrawing the room.
+	jsr ClearAllSprites
+	jsr Multiplex_Sort
+
+	; Room wipe effect here
+	lda .smThisMove2+1
+	cmp #2
+	bne .notXLeft
+	jsr ClearScrollLeft
+	jmp .finScroll
+.notXLeft
+	cmp #3
+	bne .notXRight
+	jsr ClearScrollRight
+	jmp .finScroll
+.notXRight
+	cmp #0
+	bne .notXUp
+	jsr ClearScrollUp
+	jmp .finScroll
+.notXUp
+	cmp #1
+	bne .notXDown
+	jsr ClearScrollDown
+	jmp .finScroll
+.notXDown
+
+.finScroll
+
+	; Enable the player again. UpdateRoomEx needs the player position.
+.smplayerYPos	lda #0
+	sta Multiplex_YPos
+.smplayerType	lda #0
+	sta Animation_Type
+;	jsr Multiplex_Sort
+
+
+	lda CurrentRoom
+	clc
+.smThisMove	adc #0
+	sta CurrentRoom
+	bcc .noCarry
+	inc CurrentRoom+1
+.noCarry
+	ldy CurrentRoom+1
+.smThisMove2	ldx #0
+	jsr UpdateRoomEx
+
+
+	jmp .noDrawRoom
+
+LastPlayerEntry_XLo !by 0
+LastPlayerEntry_XHi !by 0
+LastPlayerEntry_Y !by 0
+PlayerSwitchRoomsIgnoreCollision !by 0
+
+.maxTimes !by 0
+UpdateRoomEx
+	sta CurrentRoom
+	sty CurrentRoom+1
+
+	jsr DisplayMazeRoom
+
+	; Remember this so that Otto can start there
+	lda Multiplex_XPosLo
+	sta LastPlayerEntry_XLo
+	lda Multiplex_XPosHi
+	sta LastPlayerEntry_XHi
+	lda Multiplex_YPos
+	sta LastPlayerEntry_Y
+
+	; Calculate a low res version of the player position so we can check for a robot spawning too
+	; near to the player
+	lda Multiplex_XPosHi
+	lsr
+	lda Multiplex_XPosLo
+	ror
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .smpxpos+1
+	lda Multiplex_YPos
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta .smpypos+1
+
+	lda #5
+	sta PlayerSwitchRoomsIgnoreCollision
+
+	lda #0
+	sta .maxTimes
+	sta isMasterRobotRoom
+
+	; One of the easiest ways to reach this room is to exit ten rooms north then ten east.
+	; However due to the nature of the maze a number of different routes can be used instead.
+	lda CurrentRoom
+	cmp #$14
+	bne .notMasterRobotRoom
+	lda CurrentRoom+1
+	cmp #$05
+	bne .notMasterRobotRoom
+
+	lda #10			; Actually this number is the number of 1000 points bonus you get for killing the master robot
+	sta isMasterRobotRoom
+
+	lda #1	; Only one master robot, but it is deadly
+	jmp .doRobots
+
+.notMasterRobotRoom
+	; Display a random number of robots
+	jsr Rand
+	and #7
+	clc
+	adc #5
+	; Force 15 robots to be displayed
+;	lda #15
+	; Force one robot
+;	lda #1
+
+.doRobots
+	tax
+
+	lda #0
+	sta InitialRobotsActive
+
+.srl1
+	dec .maxTimes
+	bne .continueSearch
+	; This stops the robot finding routine from endlessly searching
+	jmp .osrl1
+.continueSearch
+	; Convert some random positions into robot positions
+	jsr Rand
+	and #7
+	tay
+	lda xTabStarts,y
+	sta .wantXScr
+	asl
+	asl
+	; This last asl could generate carry
+	asl
+	sta .wantX
+	lda #0
+	rol
+	sta .wantX+1
+	lda .wantX
+	clc
+	adc #(VIC2SpriteXBorderLeft + 16)
+	sta .wantX
+	lda .wantX+1
+	adc #0
+	sta .wantX+1
+
+	jsr Rand
+	and #7
+	tay
+	lda yTabStarts,y
+	sta .wantYScr
+	asl
+	asl
+	asl
+	clc
+	adc #(VIC2SpriteYBorderTop + 12)
+	sta .wantY
+
+	; Check to see if the screen position can be reached by the human
+	ldy .wantYScr
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	clc
+	adc #>MainScreen
+	sta tempWork1
+	ldy .wantXScr
+	lda (tempWork0),y
+	beq .srl1
+	iny
+	lda (tempWork0),y
+	beq .srl1
+	tya
+	clc
+	adc #39
+	tay
+	lda (tempWork0),y
+	beq .srl1
+	iny
+	lda (tempWork0),y
+	beq .srl1
+
+	; Now check that what we want is not the same as any other robot
+	ldy #Multiplex_items-1
+.cl1
+	dey
+	beq .ok1
+	lda Multiplex_YPos,y
+	cmp .wantY
+	bne .cl1
+	lda Multiplex_XPosLo,y
+	cmp .wantX
+	bne .cl1
+	lda Multiplex_XPosHi,y
+	cmp .wantX+1
+	bne .cl1
+	jmp .srl1
+.ok1
+
+	; Now check the player
+	lda .wantX+1
+	lsr
+	lda .wantX
+	ror
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+.smpxpos cmp #0
+	bne .notClose
+	lda .wantY
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+.smpypos cmp #0
+	bne .notClose
+	jmp .srl1
+.notClose
+	lda #0
+	sta .maxTimes
+	; Store the position for this robot
+	inc InitialRobotsActive
+	lda .wantX
+	sta Multiplex_XPosLo,x
+	lda .wantX+1
+	sta Multiplex_XPosHi,x
+	lda .wantY
+	sta Multiplex_YPos,x
+
+	ldy RobotTypeForRoom
+	lda RobotColourForRoom,y
+	sta Multiplex_Colour,x
+	lda #64+1
+	sta Multiplex_SpriteFrame,x
+	lda #AnimationType_Robot
+	sta Animation_Type,x
+
+	jsr Rand
+	and #7
+	asl
+	asl
+	asl
+	asl
+	asl
+	clc
+	; Always add on a second to make the initial robots all pause for a while before moving
+	adc #50
+	sta Animation_RobotThinkDelay,x
+	lda #0
+	sta Animation_RobotWalkCounter,x
+	sta AnimationRobot_FootCounter,x
+	; Give the player some time to figure out where to run before they all start shooting :)
+	lda #150
+	sta Animation_RobotLastFired,x
+
+	dex
+	beq .osrl1
+	jmp .srl1
+.osrl1
+
+	; Update the score, Otto timer and drive light flash rate depending on how many robots there
+	; really are active.
+	lda InitialRobotsActive
+	sta RobotsActive
+	jsr UpdateDriveLightFlash
+	; Otto appears after so many seconds based on how many robots there are
+	asl
+	clc
+	adc #5
+	sta AnimationOtto_AppearSecs
+	lda #50
+	sta AnimationOtto_AppearFrames
+	lda #0
+	sta AnimationOtto_Active
+
+
+	ldx RobotTypeForRoom
+	lda RobotBulletSpeedForRoom,x
+	sta RobotBulletSpeed
+	lda #0
+	sec
+	sbc RobotBulletSpeedForRoom,x
+	sta RobotBulletSpeedNeg
+	lda RobotBulletNumForRoom,x
+	sta RobotMaxBullets
+	lda RobotSpeedSubFrameForRoom,x
+	sta RobotSpeedSubFrame
+
+	lda isMasterRobotRoom
+	beq .notm1
+
+	; Make the master robot orange since the colour is not normally used.
+	lda #VIC2Colour_Orange
+	sta Multiplex_Colour+1
+	lda #50
+	sta Animation_RobotThinkDelay+1
+	; A very deadly room with lots of fast bullets
+	lda #10
+	sta RobotMaxBullets
+	lda #4
+	sta RobotBulletSpeed
+	lda #-4
+	sta RobotBulletSpeedNeg
+	lda #0
+	sta RobotSpeedSubFrame
+	lda #60
+	sta AnimationOtto_AppearSecs
+	lda #100
+	jsr UpdateDriveLightFlash
+	lda #15
+	sta InitialRobotsActive	; A 150 bonus for escaping the master robot room
+
+	+DisplayColourTextAt_AX BossRoomStart1 , BossRoomEnd1 , MainScreen + (20*40) + 1, VIC2Colour_LightGrey
+	+DisplayColourTextAt_AX BossRoomStart2 , BossRoomEnd2 , MainScreen + (21*40) + 1, VIC2Colour_White
+	+DisplayColourTextAt_AX BossRoomStart3 , BossRoomEnd3 , MainScreen + (22*40) + 1, VIC2Colour_LightRed
+
+.notm1
+
+
+	lda #0
+	sta BottomIRQDone
+
+	rts
+
+.workingNumBullets !by 0
+.realLastBullets !by 0
+
+.tmps !by 0,0
+LastGoodDirection !by 0
+LastFireTime !by 0
+; MPi: TODO: Proper tables needed related to the joystick bits
+; 1110 = 14	= u
+; 1101 = 13	= d
+; 1011 = 11	= l
+; 0111 = 7	= r
+; 1010 = 10	= ul
+; 0110 = 6	= ur
+; 1001 = 9	= dl
+; 0101 = 5	= dr
+.playerbulletSprite
+	!by 64+2,64+2,64+2,64+2
+	!by 64+2,64+4,64+5,64+2
+	!by 64+2,64+5,64+4,64+2
+	!by 64+2,64+3,64+3,64+2
+.playerBulletOftX
+	!by  8, 8, 8, 8
+	!by  8, 8, 8, 8
+	!by  8,-8,-8,-8
+	!by  8, 3, 4, 8
+.playerBulletOftY
+	!by  0, 0, 0, 0
+	!by  0, 8,-7, 0
+	!by  0, 8,-8, 0
+	!by  0,16,-8, 0
+.playerBulletSpeedX
+	!by  3, 3, 3, 3
+	!by  3, 3, 3, 3
+	!by  3,-3,-3,-3
+	!by  3, 0, 0, 3
+.playerBulletSpeedY
+	!by  0, 0, 0, 0
+	!by  0, 3,-3, 0
+	!by  0, 3,-3, 0
+	!by  0, 3,-3, 0
+
+
+.wantX !by 0,0
+.wantY !by 0
+
+.wantXScr !by 0
+.wantYScr !by 0
+
+RobotSpeed = 1
+RobotSpeedSubFrame !by 3
+
+RobotColourForRoom
+	!by VIC2Colour_Yellow, VIC2Colour_Red, VIC2Colour_White, VIC2Colour_Green
+	!by VIC2Colour_LightRed, VIC2Colour_Yellow, VIC2Colour_White, VIC2Colour_Red
+	!by VIC2Colour_Green, VIC2Colour_LightRed, VIC2Colour_Yellow, VIC2Colour_White
+	!by VIC2Colour_LightRed, VIC2Colour_Purple, VIC2Colour_White, VIC2Colour_LightBlue
+
+RobotBulletSpeedForRoom
+	!by 0, 1, 1, 1
+	!by 1, 1, 2, 2
+	!by 2, 2, 2, 3
+	!by 3, 3, 3, 3
+
+RobotBulletNumForRoom
+	!by 0, 1, 2, 3
+	!by 4, 5, 1, 2
+	!by 3, 4, 5, 1
+	!by 2, 3, 4, 5
+
+RobotSpeedSubFrameForRoom
+	!by 3, 2, 1, 0
+	!by 0, 1, 1, 0
+	!by 0, 1, 1, 0
+	!by 0, 1, 1, 0
+
+
+RobotBulletSpeed !by 0
+RobotBulletSpeedNeg !by 0
+RobotMaxBullets !by 0
+
+!zn
+LastExitWasChicken !by 0
+PreviousThousandsScore !by 0
+InitialRobotsActive !by 0
+RobotsActive !by 0
+.ldoChickenSpeech jmp .doChickenSpeech
+ExitRoomSpeechTest
+	lda Score+2
+	cmp PreviousThousandsScore
+	beq .noHarderLevel
+	sta PreviousThousandsScore
+	; A handy place to update the robot type
+	lda RobotTypeForRoom
+	clc
+	adc #1
+	cmp #15
+	bcc .ok
+	lda #15
+.ok
+	sta RobotTypeForRoom
+.noHarderLevel
+
+	; Check to see if there are any robots left
+	ldy #Multiplex_items-1
+.cl1
+	lda Animation_Type,y
+	cmp #AnimationType_Robot
+	beq .ldoChickenSpeech
+	dey
+	bne .cl1
+
+	lda InitialRobotsActive
+	jsr ScoreAdd
+
+	lda #0
+	sta LastExitWasChicken
+
+	jsr SampleResetSequence
+	+SampleUpdateSequence 0 , Sample_The , SampleEnd_The
+	jsr Rand
+	and #1
+	beq .other
+	+SampleUpdateSequence 1 , Sample_Humanoid , SampleEnd_Humanoid
+	jmp .other2
+.other
+	+SampleUpdateSequence 1 , Sample_Intruder , SampleEnd_Intruder
+.other2
+	+SampleUpdateSequence 2 , Sample_Must , SampleEnd_Must
+	+SampleUpdateSequence 3 , Sample_Not , SampleEnd_Not
+	+SampleUpdateSequence 4 , Sample_Escape , SampleEnd_Escape
+	jsr Rand
+	and #(SampleMidRangeFrequencyShift*2)-1
+	jsr SamplePlaySequence
+
+	rts
+.doChickenSpeech
+	lda #1
+	sta LastExitWasChicken
+
+	jsr SampleResetSequence
+	jsr Rand
+	and #1
+	beq .other3
+	+SampleUpdateSequence 0 , Sample_Kill , SampleEnd_Kill
+	+SampleUpdateSequence 1 , Sample_The , SampleEnd_The
+	+SampleUpdateSequence 2 , Sample_Chicken , SampleEnd_Chicken
+	jsr Rand
+	and #(SampleMidRangeFrequencyShift*2)-1
+	jmp SamplePlaySequence
+
+.other3
+	+SampleUpdateSequence 0 , Sample_Chicken , SampleEnd_Chicken
+	+SampleUpdateSequence 1 , Sample_Fight , SampleEnd_Fight
+	+SampleUpdateSequence 2 , Sample_Like , SampleEnd_Like
+	+SampleUpdateSequence 3 , Sample_A , SampleEnd_A
+	+SampleUpdateSequence 4 , Sample_Robot , SampleEnd_Robot
+	jsr Rand
+	and #(SampleMidRangeFrequencyShift*2)-1
+	jmp SamplePlaySequence
+
+RobotTypeForRoom !by 0
+
+InitialRobotsActiveStrings
+	!scr " 10 "
+	!scr " 20 "
+	!scr " 30 "
+	!scr " 40 "
+	!scr " 50 "
+	!scr " 60 "
+	!scr " 70 "
+	!scr " 80 "
+	!scr " 90 "
+	!scr "100 "
+	!scr "110 "
+	!scr "120 "
+	!scr "130 "
+	!scr "140 "
+	!scr "150 "
+InitialRobotsActiveText
+	!scr "bonus"
+
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+
+; Input: X animation index
+; Output Y,A screen offset lo/hi
+!zn
+AnimationSpriteXDiv2ToChar
+; First 24/2 pixels
+!fill 12,0
+; Now the x/2 positions
+!for .table1,160 {!by ((.table1-1) / 4) }
+; Now the rest clamped
+!fill 84,39
+
+AnimationSpriteYToCharOffsetLo
+; First 50 pixels
+!fill 50,0
+; Now the y positions
+!for .table1,200 {!by <(((.table1-1) / 8) * 40) }
+; Now the rest clamped
+!fill 6,<(24 * 40)
+
+AnimationSpriteYToCharOffsetHi
+; First 50 pixels
+!fill 50,>MainScreen
+; Now the y positions
+!for .table1,200 {!by >(MainScreen+(((.table1-1) / 8) * 40)) }
+; Now the rest clamped
+!fill 6,>(MainScreen+(24 * 40))
+
+AnimationToScreenOffset
+	; MPi: TODO: Pass in the hi in A and use sta .smHi+1 there it is the adc #0 below to save some cycles when exiting this routine
+	; for the common use where this is called and there is a following clc/adc# pair.
+	; Convert the 9 bit x position to char coords
+	lda Multiplex_XPosHi,x
+	lsr
+	lda Multiplex_XPosLo,x
+	ror
+	tay
+	lda AnimationSpriteXDiv2ToChar,y
+	sta .tempWorksm1+1
+	; Convert Y to char index
+	ldy Multiplex_YPos,x
+	lda AnimationSpriteYToCharOffsetLo,y
+	clc
+	adc .tempWorksm1+1
+	sta .tempWorksm1+1
+	lda AnimationSpriteYToCharOffsetHi,y
+	; Add the carry from the x pos if there is one
+	adc #0
+.tempWorksm1	ldy #0
+	rts
+
+!zn
+UpdateDriveLightFlash
+	pha
+	lda LoadedOK
+	beq .lcc1
+	lda RobotsActive
+	clc
+	adc #1
+	jsr IRQDisk_SetPulseSpeed
+	bcc .lcc1
+	; Any error talking to the drive means we don't save hi-score later on
+	lda #0
+	sta LoadedOK
+.lcc1
+	pla
+	rts
+
+!zn
+PlayNonChickenSpeech
+	jsr SampleResetSequence
+	; Choose a "random" phrase to say
+	jsr Rand
+	and #1
+	beq .ldoCharge
+
+	+SampleUpdateSequence 0 , Sample_Destroy , SampleEnd_Destroy
+.endingPositive
+	jsr Rand
+	and #1
+	bne .doTheSomething
+	+SampleUpdateSequence 1 , Sample_It , SampleEnd_It
+	jmp .localSamplePlaying
+.ldoCharge jmp .doCharge
+.doTheSomething
+	+SampleUpdateSequence 1 , Sample_The , SampleEnd_The
+	jsr Rand
+	and #1
+	beq .doIntruder
+	+SampleUpdateSequence 2 , Sample_Humanoid , SampleEnd_Humanoid
+	jmp .localSamplePlaying
+
+.doIntruder
+	+SampleUpdateSequence 2 , Sample_Intruder , SampleEnd_Intruder
+
+.localSamplePlaying
+	jsr Rand
+	and #(SampleMidRangeFrequencyShift*2)-1
+	; Implied RTS
+	jmp SamplePlaySequence
+
+.doCharge
+	+SampleUpdateSequence 0 , Sample_Charge , SampleEnd_Charge
+	jmp .endingPositive
+
+PlayChickenSpeech
+	jsr SampleResetSequence
+	jsr Rand
+	and #1
+	beq .doKill
+	+SampleUpdateSequence 0 , Sample_Attack , SampleEnd_Attack
+	jmp .doKill2
+.doKill
+	+SampleUpdateSequence 0 , Sample_Kill , SampleEnd_Kill
+.doKill2
+	+SampleUpdateSequence 1 , Sample_The , SampleEnd_The
+	+SampleUpdateSequence 2 , Sample_Chicken , SampleEnd_Chicken
+	jmp .localSamplePlaying
+
+
+
+!zn
+!macro MAdd40 .addr {
+	lda .addr
+	clc
+	adc #40
+	sta .addr
+	bcc .ni1
+	inc .addr+1
+.ni1
+}
+Add40ToAll
+	+MAdd40 tempWork1
+	+MAdd40 tempWork3
+	+MAdd40 tempWork5
+	+MAdd40 tempWork7
+	rts
+
+!zn
+!macro MSub40 .addr {
+	lda .addr
+	sec
+	sbc #40
+	sta .addr
+	bcs .ni1
+	dec .addr+1
+.ni1
+}
+Sub40ToAll
+	+MSub40 tempWork1
+	+MSub40 tempWork3
+	+MSub40 tempWork5
+	+MSub40 tempWork7
+	rts
+
+!zn
+ClearScrollLeft
+	lda #39
+	sta tempWork0
+.cll1
+	jsr WaitForBottomIRQ
+
+	ldx #0
+
+	lda #0
+	sta tempWork1
+	sta tempWork5
+	lda #1
+	sta tempWork3
+	sta tempWork7
+	lda #>MainScreen
+	sta tempWork2
+	sta tempWork4
+	lda #>COLOURRAM
+	sta tempWork6
+	sta tempWork8
+.cll2
+	ldy #0
+.cll3
+	lda (tempWork3),y
+	sta (tempWork1),y
+	lda (tempWork7),y
+	sta (tempWork5),y
+	iny
+	cpy #39
+	bne .cll3
+
+	lda #' '
+	sta (tempWork1),y
+
+	jsr Add40ToAll
+
+	inx
+	cpx #24
+	bne .cll2
+
+	dec tempWork0
+	beq .ocll1
+	jmp .cll1
+.ocll1
+	rts
+
+
+
+
+
+!zn
+ClearScrollRight
+	lda #39
+	sta tempWork0
+.cll1
+	jsr WaitForBottomIRQ
+
+	ldx #0
+
+	lda #1
+	sta tempWork1
+	sta tempWork5
+	lda #0
+	sta tempWork3
+	sta tempWork7
+	lda #>MainScreen
+	sta tempWork2
+	sta tempWork4
+	lda #>COLOURRAM
+	sta tempWork6
+	sta tempWork8
+.cll2
+	ldy #38
+.cll3
+	lda (tempWork3),y
+	sta (tempWork1),y
+	lda (tempWork7),y
+	sta (tempWork5),y
+	dey
+	bpl .cll3
+
+	ldy #0
+	lda #' '
+	sta (tempWork3),y
+
+	jsr Add40ToAll
+
+	inx
+	cpx #24
+	bne .cll2
+
+	dec tempWork0
+	beq .ocll1
+	jmp .cll1
+.ocll1
+	rts
+
+
+
+
+
+
+!zn
+ClearScrollUp
+	lda #25
+	sta tempWork0
+.cll1
+	jsr WaitForBottomIRQ
+
+	ldx #0
+
+	lda #0
+	sta tempWork1
+	sta tempWork5
+	lda #40
+	sta tempWork3
+	sta tempWork7
+	lda #>MainScreen
+	sta tempWork2
+	sta tempWork4
+	lda #>COLOURRAM
+	sta tempWork6
+	sta tempWork8
+.cll2
+	ldy #39
+.cll3
+	lda (tempWork3),y
+	sta (tempWork1),y
+	lda (tempWork7),y
+	sta (tempWork5),y
+	dey
+	bpl .cll3
+
+	jsr Add40ToAll
+
+	inx
+	cpx #23
+	bne .cll2
+
+	lda #' '
+	ldy #39
+.cll4
+	sta MainScreen + (23*40),y
+	dey
+	bpl .cll4
+
+	dec tempWork0
+	beq .ocll1
+	jmp .cll1
+.ocll1
+	rts
+
+
+
+
+!zn
+ClearScrollDown
+	lda #25
+	sta tempWork0
+.cll1
+	jsr WaitForBottomIRQ
+
+	ldx #0
+
+	lda #<(23*40)
+	sta tempWork1
+	sta tempWork5
+	lda #<(22*40)
+	sta tempWork3
+	sta tempWork7
+	lda #>(MainScreen + (23*40))
+	sta tempWork2
+	lda #>(MainScreen + (22*40))
+	sta tempWork4
+	lda #>(COLOURRAM + (23*40))
+	sta tempWork6
+	lda #>(COLOURRAM + (22*40))
+	sta tempWork8
+.cll2
+	ldy #39
+.cll3
+	lda (tempWork3),y
+	sta (tempWork1),y
+	lda (tempWork7),y
+	sta (tempWork5),y
+	dey
+	bpl .cll3
+
+	jsr Sub40ToAll
+
+	inx
+	cpx #23
+	bne .cll2
+
+	lda #' '
+	ldy #39
+.cll4
+	sta MainScreen,y
+	dey
+	bpl .cll4
+
+	dec tempWork0
+	beq .ocll1
+	jmp .cll1
+.ocll1
+	rts
+

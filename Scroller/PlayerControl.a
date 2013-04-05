@@ -1,0 +1,800 @@
+; Handles player logic
+!zn
+PlayerGameOffset_AnimationIndex = 0
+PlayerGameOffset_TargetVelX		= 1
+PlayerGameOffset_TargetVelY		= 2
+PlayerGameOffset_FireSpeedNeg	= 3
+PlayerGameOffset_LeftStopDiv2	= 4
+PlayerGameOffset_RightStopDiv2	= 5
+PlayerGameOffset_Lives			= 6
+PlayerGameOffset_Invulnerable	= 7
+PlayerGameOffset_FirePressed	= 8
+PlayerGameOffset_JoyStickPort	= 9
+PlayerGameOffset_LastSafePosXLo	= 10
+PlayerGameOffset_LastSafePosXHi	= 11
+PlayerGameOffset_LastSafePosY	= 12
+!ifdef Scroller_LOTD {
+PlayerGameOffset_Spells			= 13
+}
+
+; Each player data bytes
+!ifdef Scroller_LOTD {
+Player1Information !fill 14
+Player2Information !fill 14
+} else {
+Player1Information !fill 13
+Player2Information !fill 13
+}
+
+PlayerInvulnerableTime = 200
+
+!macro MACROPlayerInit .playerInformation , .playerProperties {
+!ifdef Scroller_LOTD {
+	lda #1
+	sta .playerInformation+PlayerGameOffset_Spells
+}
+	lda #0
+	sta .playerInformation+PlayerGameOffset_FirePressed
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+	sec
+	sbc .playerProperties+PlayerOffset_BulletSpeed
+	sta .playerInformation+PlayerGameOffset_FireSpeedNeg
+
+	lda .playerProperties+PlayerOffset_LeftStopHi
+	ror
+	lda .playerProperties+PlayerOffset_LeftStopLo
+	ror
+	sta .playerInformation+PlayerGameOffset_LeftStopDiv2
+
+	lda .playerProperties+PlayerOffset_RightStopHi
+	ror
+	lda .playerProperties+PlayerOffset_RightStopLo
+	ror
+	sta .playerInformation+PlayerGameOffset_RightStopDiv2
+
+	ldy #-1
+	sty .playerInformation+PlayerGameOffset_Lives
+
+	lda #PlayerInvulnerableTime
+	sta .playerInformation+PlayerGameOffset_Invulnerable
+
+	lda #$ff
+	sta .playerInformation+PlayerGameOffset_AnimationIndex
+
+	lda .playerProperties+PlayerOffset_StartXPosLo
+	sta .playerInformation+PlayerGameOffset_LastSafePosXLo
+	lda .playerProperties+PlayerOffset_StartXPosHi
+	sta .playerInformation+PlayerGameOffset_LastSafePosXHi
+	lda .playerProperties+PlayerOffset_StartYPos
+	sta .playerInformation+PlayerGameOffset_LastSafePosY
+}
+
+InitPlayers
+	+MACROPlayerInit Player1Information , Player1Properties
+	+MACROPlayerInit Player2Information , Player2Properties
+
+	rts
+
+
+
+!macro MACROPlayerControl .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath {
+	; Check if the player is alive :)
+	ldx .playerInformation+PlayerGameOffset_AnimationIndex
+	cpx #$ff
+	beq .notAlive
+	lda AnimationType,x
+	cmp #.animationType_Player
+	beq .playerIsAlive
+.notAlive
+	rts
+.playerIsAlive
+	; Update the joystick
+	lda .playerInformation+PlayerGameOffset_JoyStickPort
+	sta .smj1+1
+	sta .smj2+1
+	sta .smj3+1
+	sta .smj4+1
+	sta .smj5+1
+
+	lda .playerInformation+PlayerGameOffset_Invulnerable
+	beq .noInvDec
+	; Cheat mode: To make the player always invulnerable disable the next line.
+	dec .playerInformation+PlayerGameOffset_Invulnerable
+.noInvDec
+
+	lda #0
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+	; Update the velocity at which we want to travel
+	lda #%1000
+.smj1	bit CIA1KeyboardColumnJoystickA
+	bne .o1
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	clc
+	adc .playerProperties+PlayerOffset_Speed
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+.o1
+	lda #%0100
+.smj2	bit CIA1KeyboardColumnJoystickA
+	bne .o2
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	sec
+	sbc .playerProperties+PlayerOffset_Speed
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+.o2
+	lda #%0010
+.smj3	bit CIA1KeyboardColumnJoystickA
+	bne .o3
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	clc
+	adc .playerProperties+PlayerOffset_Speed
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+.o3
+	lda #%0001
+.smj4	bit CIA1KeyboardColumnJoystickA
+	bne .o4
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	sec
+	sbc .playerProperties+PlayerOffset_Speed
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+.o4
+	; Background collision detection. If the colision type is to stop the player then:
+	; Do up, down, left and right collision checks with the player speed unwanted character types and if they are found then check to see if the movement in that direction
+	; from the joystick, if yes, cancel the movement from the joystick in that direction.
+	; If the colision type is to die when touching such a character then simply don't stop the player and detect the character under the player and kill the player if
+	; needed.
+
+	jsr AnimationToScreenOffset
+	sty tempWork0
+	clc
+	adc ScreenVisibleHi
+	sta tempWork1
+
+	; If the player in invulnerable then use the char stop collision instead
+	lda .playerInformation+PlayerGameOffset_Invulnerable
+	bne .doCharStopCollsion
+	lda .playerProperties+PlayerOffset_DieOrStop
+	beq .doCharStopCollsion
+	; Must be the deadly character type check
+	ldy #40+1
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcc .positionIsSafe
+	jsr PlayerDeath
+	rts
+
+.doCharStopCollsion
+	; First, if the player is standing right on a stopping character then temporarily ignore collision detection to help the player escape
+	; MPi: TODO: Tweak this to stop all movements being valid and do a wider search instead?
+	; MPi: TODO: Bug: If the player is standing on the top left of a character with stopping chars up and left then proceeds to move diagonally up-left they will move through the zero pixel diagonal to the non-stopping character.
+	ldy #40+1
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcs .ignoreCollision
+
+	; Now check up, down, left, right
+	ldy #1
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcc .notHitUp
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	bpl .notHitUp
+	lda #0
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+.notHitUp
+	ldy #1+40+40
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcc .notHitDown
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	bmi .notHitDown
+	lda #0
+	sta .playerInformation+PlayerGameOffset_TargetVelY
+.notHitDown
+	ldy #40
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcc .notHitLeft
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	bpl .notHitLeft
+	lda #0
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+.notHitLeft
+	ldy #40+2
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcc .notHitRight
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	bmi .notHitRight
+	lda #0
+	sta .playerInformation+PlayerGameOffset_TargetVelX
+.notHitRight
+
+.positionIsSafe
+	ldx .playerInformation+PlayerGameOffset_AnimationIndex
+
+	lda AnimationXPosLo,x
+	sta .playerInformation+PlayerGameOffset_LastSafePosXLo
+	lda AnimationXPosHi,x
+	sta .playerInformation+PlayerGameOffset_LastSafePosXHi
+	lda AnimationYPos,x
+	sta .playerInformation+PlayerGameOffset_LastSafePosY
+
+.ignoreCollision
+	; Convert our movement speed to a directional and store it for player 1
+	ldx .playerInformation+PlayerGameOffset_TargetVelX
+	ldy .playerInformation+PlayerGameOffset_TargetVelY
+	jsr AnimationConvertXYToDirection
+
+	ldx .playerInformation+PlayerGameOffset_AnimationIndex
+
+	cmp AnimationDirectionIn,x
+	beq .noChange
+	; If there is a change then force an animation frame fetch
+	pha
+	lda #0
+	sta AnimationSpriteFrameCountDelay,x
+	pla
+.noChange
+	sta AnimationDirectionIn,x
+
+	; Process the velocity
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	beq .notXMSB	; Early out check
+	bmi .negX
+	lda AnimationXPosLo,x
+	clc
+	adc .playerInformation+PlayerGameOffset_TargetVelX
+	sta AnimationXPosLo,x
+	bcc .notXMSB
+	inc AnimationXPosHi,x
+	jmp .notXMSB
+.negX
+	lda AnimationXPosLo,x
+	clc
+	adc .playerInformation+PlayerGameOffset_TargetVelX
+	sta AnimationXPosLo,x
+	bcs .notXMSB
+	dec AnimationXPosHi,x
+.notXMSB
+	; Process the Y movement
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	beq .notYMov	; Early out check
+	bmi .negY
+	lda AnimationYPos,x
+	clc
+	adc .playerInformation+PlayerGameOffset_TargetVelY
+	sta AnimationYPos,x
+	jmp .notYMov
+.negY
+	lda AnimationYPos,x
+	clc
+	adc .playerInformation+PlayerGameOffset_TargetVelY
+	sta AnimationYPos,x
+.notYMov
+
+	; This boundary checking code doesn't need to cancel movement, this means the player will animation when pushing the edge, which is what we want because SEUCK also
+	; has the same behaviour.
+
+	; Process the player boundary code
+	lda .playerProperties+PlayerOffset_UpStop
+	clc
+	adc #1
+	cmp AnimationYPos,x
+	bcc .notUpper
+	sta AnimationYPos,x
+
+!ifdef Scroller_IsHorizontal { } else {
+	; Check if we are really pushing or just at the top of the screen
+	lda .playerInformation+PlayerGameOffset_TargetVelY
+	bpl .notUpper
+
+	; Flag we might want a scroll
+	lda #1
+	sta LevelWantPushScroll
+
+	; Check the other player and if they are active then check their y position would not scroll off the bottom
+	; Save the current animation index
+	txa
+	pha
+!if .playerInformation = Player1Information {
+	ldx Player2Information+PlayerGameOffset_AnimationIndex
+} else {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+}
+	bmi .playerIsNotAlive
+	lda AnimationType,x
+	; Only check if the player is alive, if they are animating a death animation then we allow the push to happen.
+!if .playerInformation = Player1Information {
+	cmp #AnimationType_Player2
+} else {
+	cmp #AnimationType_Player1
+}
+	bne .playerIsNotAlive
+	lda AnimationYPos,x
+!if .playerInformation = Player1Information {
+	cmp Player2Properties+PlayerOffset_DownStop
+} else {
+	cmp Player1Properties+PlayerOffset_DownStop
+}
+	bcc .playerIsNotAlive
+	; Block the scroll from happening
+	lda #0
+	sta LevelWantPushScroll
+.playerIsNotAlive
+	; Restore what was saved
+	pla
+	tax
+}
+
+.notUpper
+
+	lda AnimationYPos,x
+	cmp .playerProperties+PlayerOffset_DownStop
+	bcc .notLower
+	lda .playerProperties+PlayerOffset_DownStop
+	sta AnimationYPos,x
+.notLower
+
+	; This does a check with the position divided by 2
+	lda AnimationXPosHi,x
+	ror
+	lda AnimationXPosLo,x
+	ror
+	cmp .playerInformation+PlayerGameOffset_LeftStopDiv2
+	bcs .notLeftP
+	lda .playerInformation+PlayerGameOffset_LeftStopDiv2
+	rol
+	sta AnimationXPosLo,x
+	lda #0
+	bcc .isZero1
+	lda #1
+.isZero1
+	sta AnimationXPosHi,x
+
+
+!ifdef Scroller_IsHorizontal {
+	; Check if we are really pushing or just at the left of the screen
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	bpl .notLeftP
+
+	; Flag we might want a scroll
+	lda #1
+	sta LevelWantPushScroll
+
+	; Check the other player and if they are active then check their y position would not scroll off the bottom
+	; Save the current animation index
+	txa
+	pha
+!if .playerInformation = Player1Information {
+	ldx Player2Information+PlayerGameOffset_AnimationIndex
+} else {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+}
+	bmi .playerIsNotAlive
+	lda AnimationType,x
+	; Only check if the player is alive, if they are animating a death animation then we allow the push to happen.
+!if .playerInformation = Player1Information {
+	cmp #AnimationType_Player2
+} else {
+	cmp #AnimationType_Player1
+}
+	bne .playerIsNotAlive
+	lda AnimationXPosHi,x
+	ror
+	lda AnimationXPosLo,x
+	ror
+!if .playerInformation = Player1Information {
+	cmp Player2Information+PlayerGameOffset_RightStopDiv2
+} else {
+	cmp Player1Information+PlayerGameOffset_RightStopDiv2
+}
+	bcc .playerIsNotAlive
+	; Block the scroll from happening
+	lda #0
+	sta LevelWantPushScroll
+.playerIsNotAlive
+	; Restore what was saved
+	pla
+	tax
+}
+
+
+.notLeftP
+
+	; This does a check with the position divided by 2
+	lda AnimationXPosHi,x
+	ror
+	lda AnimationXPosLo,x
+	ror
+	cmp .playerInformation+PlayerGameOffset_RightStopDiv2
+	bcc .notRightP
+	beq .notRightP
+	lda .playerInformation+PlayerGameOffset_RightStopDiv2
+	rol
+	sta AnimationXPosLo,x
+	lda #0
+	bcc .isZero2
+	lda #1
+.isZero2
+	sta AnimationXPosHi,x
+.notRightP
+
+
+	; Cheat mode: Enable the following line to have auto rapid fire
+;	jmp .cheatFire
+
+
+	lda #%10000
+.smj5	bit CIA1KeyboardColumnJoystickA
+	beq .fireBullet
+	; Reset debounce
+	lda #0
+	sta .playerInformation+PlayerGameOffset_FirePressed
+.justRet
+	rts
+
+.fireBullet
+	; Debounce test
+	lda .playerInformation+PlayerGameOffset_FirePressed
+	bne .justRet
+	inc .playerInformation+PlayerGameOffset_FirePressed
+	; Fire!
+.cheatFire
+
+	; Zero based *sigh*
+	lda .playerProperties+PlayerOffset_NumBullets
+!if .playerInformation = Player1Information {
+	cmp AnimationPlayer1BulletCount
+} else {
+	cmp AnimationPlayer2BulletCount
+}
+	bcs .over1
+	jmp .noFireBulletJustRet
+.over1
+	txa
+	pha
+
+	ldy #.animationType_PlayerBullet
+	jsr AnimationFindFreeSlot
+	bcs .noFireBullet
+
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+!if .playerInformation = Player1Information {
+	lda #0
+} else {
+	lda #0+4
+}
+	jsr SFXInit
+}
+
+	lda .playerProperties+PlayerOffset_BulletDuration
+	sta AnimationBulletDuration,x
+
+	pla
+	tay
+
+	lda AnimationXPosLo,y
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,y
+	sta AnimationXPosHi,x
+	lda AnimationYPos,y
+	sta AnimationYPos,x
+
+	; Decide to use directional or not from the loaded player properties
+	lda .playerProperties+PlayerOffset_Directional
+	bne .doDirectional
+	jmp .justFireUp
+.doDirectional
+
+	; Now decide what direction to use
+	lda AnimationDirectionIn,y
+	bne .other
+	lda AnimationDirectionLastValidIn,y
+	bne .other
+.justFireUp
+	; If no valid moves then default to firing in a certain fixed direction
+!ifdef Scroller_IsHorizontal {
+	lda #2
+} else {
+	lda #8
+}
+.other
+	sta AnimationDirectionIn,x
+	sta .playerLastValidMove
+
+	lda #0
+	sta AnimationBulletSpeedX,x 
+	sta AnimationBulletSpeedY,x 
+
+	; Directional fire
+	lda #1
+	bit .playerLastValidMove
+	beq .notRight
+	lda .playerProperties+PlayerOffset_BulletSpeed
+	sta AnimationBulletSpeedX,x 
+.notRight
+
+	lda #2
+	bit .playerLastValidMove
+	beq .notLeft
+	lda .playerInformation+PlayerGameOffset_FireSpeedNeg
+	sta AnimationBulletSpeedX,x 
+.notLeft
+
+	lda #4
+	bit .playerLastValidMove
+	beq .notDown
+	lda .playerProperties+PlayerOffset_BulletSpeed
+	sta AnimationBulletSpeedY,x 
+.notDown
+
+	lda #8
+	bit .playerLastValidMove
+	beq .notUp
+	lda .playerInformation+PlayerGameOffset_FireSpeedNeg
+	sta AnimationBulletSpeedY,x 
+.notUp
+	rts
+
+.playerLastValidMove !by 0
+
+.noFireBullet
+	pla
+	tax
+
+.noFireBulletJustRet
+	rts
+}
+
+!zn
+.player1Control
+	+MACROPlayerControl Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death
+.player2Control
+	+MACROPlayerControl Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death
+
+HandleUserInput
+	jsr .player1Control
+	jsr .player2Control
+	rts
+
+
+!macro MACROPlayerDeath .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath {
+	lda .playerInformation+PlayerGameOffset_Invulnerable
+	sec
+	bne .dontDieYet1
+	ldy #.animationType_PlayerDeath
+	jsr AnimationMutateToType
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+!if .playerInformation = Player1Information {
+	lda #1
+} else {
+	lda #1+4
+}
+	jsr SFXInit
+}
+	clc
+.dontDieYet1
+}
+
+!zn
+; Causes the player to die but does test the .playerInformation+PlayerGameOffset_Invulnerable counter
+; Input: X = Player animation index
+; Output: Carry clear = Player did die
+; Carry set = Player did not die
+PlayerDeath
+	; Take into account the player animation index
+	cpx Player2Information+PlayerGameOffset_AnimationIndex
+	beq .isPlayer2
+	+MACROPlayerDeath Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death
+	rts
+.isPlayer2
+	+MACROPlayerDeath Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death
+	rts
+
+
+
+!macro MACROPlayerRespawn .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath , ~.playerTestSpawnPosition {
+	; Cheat mode: Comment out the following line to disable player lives loss.
+	dec .playerInformation+PlayerGameOffset_Lives
+	beq .moreLives
+	bpl .moreLives
+	lda #$ff
+	sta AnimationType,x
+	sta .playerInformation+PlayerGameOffset_AnimationIndex
+
+	; Check the other player being dead at this point and then only set ScrollerExitMainLineCounter if needed
+!if .playerInformation = Player1Information {
+	lda Player2Information+PlayerGameOffset_Lives
+} else {
+	lda Player1Information+PlayerGameOffset_Lives
+}
+	bpl .noExitGame
+	; This is a small time delay when players dieto let the game run, tweak as required.
+	lda #50
+	sta ScrollerExitMainLineCounter
+	sec
+	rts
+.noExitGame
+	sec
+	rts
+.moreLives
+	ldy #.animationType_Player
+	jsr AnimationMutateToType
+	; No error check needed since animations have just been initialised
+
+	; The functions InitPlayer1 and InitPlayer2 can enter at this point with X set to check the new spawn position
+.playerTestSpawnPosition
+
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+!if .playerInformation = Player1Information {
+	lda #2
+} else {
+	lda #2+4
+}
+	jsr SFXInit
+}
+	lda #PlayerInvulnerableTime
+	sta .playerInformation+PlayerGameOffset_Invulnerable
+
+	lda .playerProperties+PlayerOffset_StartXPosLo
+	sta AnimationXPosLo,x
+	lda .playerProperties+PlayerOffset_StartXPosHi
+	sta AnimationXPosHi,x
+	lda .playerProperties+PlayerOffset_StartYPos
+	sta AnimationYPos,x
+
+	; MPi: TODO: This repawning code needs improvement to stop the position sometimes appearing
+	; inside deadly chars in the level.
+
+	; Test the respawn position. If the character would cause death or block for the
+	; player then we use a previously saved safe position instead and hope it is fine.
+	jsr AnimationToScreenOffset
+	sty tempWork0
+	clc
+	adc ScreenVisibleHi
+	sta tempWork1
+
+	; Load what is under the player and test it with the collision character
+	ldy #40+1
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcs .positionIsNotSafe
+
+	clc
+	rts
+
+.positionIsNotSafe
+	lda .playerInformation+PlayerGameOffset_LastSafePosXLo
+	sta AnimationXPosLo,x
+	lda .playerInformation+PlayerGameOffset_LastSafePosXHi
+	sta AnimationXPosHi,x
+	lda .playerInformation+PlayerGameOffset_LastSafePosY
+	sta AnimationYPos,x
+
+	; Test the respawn position again. If the character would cause death or block for the
+	; player then we use a previously saved safe position for the other player instead and hope it is fine.
+	jsr AnimationToScreenOffset
+	sty tempWork0
+	clc
+	adc ScreenVisibleHi
+	sta tempWork1
+
+	; Load what is under the player and test it with the collision character
+	ldy #40+1
+	lda (tempWork0),y
+	cmp .playerProperties+PlayerOffset_CharacterCollision
+	bcs .positionIsNotSafe2
+
+	clc
+	rts
+
+.positionIsNotSafe2
+!if .playerInformation = Player1Information {
+	.playerInformationOther = Player2Information
+} else {
+	.playerInformationOther = Player1Information
+}
+	lda .playerInformationOther+PlayerGameOffset_LastSafePosXLo
+	sta AnimationXPosLo,x
+	lda .playerInformationOther+PlayerGameOffset_LastSafePosXHi
+	sta AnimationXPosHi,x
+	lda .playerInformationOther+PlayerGameOffset_LastSafePosY
+	sta AnimationYPos,x
+
+	clc
+	rts
+}
+
+!zn
+; Input: X = Player animation index
+; Return: Carry set if there are no more lives
+; Carry clear if the player can respawn
+PlayerRespawn
+	; Take into account the player animation index
+	cpx Player1Information+PlayerGameOffset_AnimationIndex
+	beq .isPlayer1
+	jmp .isPlayer2
+.isPlayer1
+	lda #1
+	sta ScorePlayer1LivesUpdated
+	+MACROPlayerRespawn Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death , ~Player1TestSpawnPosition
+	rts
+.isPlayer2
+	lda #1
+	sta ScorePlayer2LivesUpdated
+	+MACROPlayerRespawn Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , ~Player2TestSpawnPosition
+	rts
+
+
+
+
+;--------------------------------------------------
+;Spells
+;--------------------------------------------------
+;Make screen fade effect, to show spell that has been cast, due to spell activation
+
+!ifdef Scroller_LOTD {
+!zn
+SpellColourReset
+	lda #$00
+	ldx #$0d
+	sta .fadeDelay
+	stx .fadeCounter
+	lda BackgroundFixedColours+2
+	sta SpellEffectColour
+	rts
+
+SpellColourStart
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #15
+	jsr SFXInit
+}
+	lda #$00
+	ldx #$00
+	sta .fadeDelay
+	stx .fadeCounter
+	rts
+
+SpellColourFadeRoutine
+	lda .fadeCounter
+	cmp #$0d
+	beq .nothing
+	lda .fadeDelay
+	cmp #$01
+	beq .fadeProcess
+	inc .fadeDelay
+.nothing
+	rts
+
+;Actual screen process
+
+.fadeProcess
+	lda #$00
+	sta .fadeDelay ;Reset delaycounter
+
+	ldx .fadeCounter
+	lda .spellColourTable,x
+	sta SpellEffectColour
+	inx
+	stx .fadeCounter
+	cpx #$0d
+	beq .resetColours
+	rts
+
+.resetColours
+	lda BackgroundFixedColours+2
+	sta SpellEffectColour
+	rts	
+
+.spellColourTable
+!by $00,$09,$02,$08
+!by $0a,$07,$01,$07
+!by $0a,$08,$02,$09
+!by $00
+
+.fadeDelay !by $00
+.fadeCounter !by $00
+SpellEffectColour !by 0
+}

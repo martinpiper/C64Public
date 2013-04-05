@@ -1,0 +1,1111 @@
+;HelpViewer code
+
+!source "../stdlib/stdlib.a"
+!to "HelpViewer.prg", cbm
+!sl "HelpViewer.map"
+!sal
+!svl "HelpViewer.lbl"
+!cpu 6510
+!ct pet
+
+BitmapColours = $5c00
+BitmapPixels = $6000
+
+letterDrawToAddr		= $02
+letterDrawToWorkAddr	= $04
+letterDrawToWork2Addr	= $06
+
+drawingXPosLo = $08
+drawingXPosHi = $09
+drawingYPos = $0a
+
+fontTableAddr = $0b
+fontDataAddr = $0d
+
+!zn
+*=$400
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	lda #0
+	jsr MusicPlayerInit
+
+	jsr DrawSprites
+
+	; Setup a row of eight hires sprites for the bottom border status bar
+	ldx #0
+	stx VIC2SpriteMulticolour
+	lda #VIC2SpriteXBorderLeft
+.sl1
+	sta VIC2Sprite0X,x
+	clc
+	adc #VIC2SpriteSizeX
+	inx
+	inx
+	cpx #16
+	bne .sl1
+
+	ldx #0
+.sl2
+	lda #VIC2SpriteYBorderBottom+4
+	sta VIC2Sprite0Y,x
+	inx
+	inx
+	cpx #16
+	bne .sl2
+
+	lda #VIC2Colour_Red
+	ldx #7
+.sl3
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .sl3
+
+	lda #0
+	sta VIC2SpriteXMSB
+
+;	+WaitForFireB_A
+	+MACROWaitForTheLastScan_A
+
+	lda #VIC2Colour_LightGrey
+	sta VIC2BorderColour
+	lda #VIC2Colour_White
+	sta VIC2ScreenColour
+
+	; Setup a hires bitmap display
+	lda #%10
+	sta CIA2PortASerialBusVICBank
+	lda #%01111000
+	sta VIC2MemorySetup
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+	lda #%00111011
+	sta VIC2ScreenControlV
+	lda #%11111111
+	sta VIC2SpriteEnable
+
+	jsr SetupIRQs
+
+	; Initialise the font character lookup table
+	ldx #0
+.it1
+	lda CharacterOrderingTab,x
+	tay
+	txa
+	sta CharacterReverseOrderingTab,y
+	inx
+	cpx #CharacterCount
+	bne .it1
+
+
+!if 1 {
+	jsr ClearBitmapScreen
+
+	; Display some text from TextToDisplay
+.dl1
+	; Read the next word to draw, convert it to font chars, check for x&y pos range,
+	; update letterDrawToAddr from x&y pos, draw word by calling FontDrawLetter, update xpos,
+	; loop.
+
+	; Read the next word to draw
+.sm1	ldx TextToDisplay
+	cpx #32
+	bne .notSpace
+	lda #4
+	jsr FontMoveXPosRight
+	jmp .skipThisChar
+.notSpace
+.tabSize = 32	; must be a power of two.
+	cpx #$09
+	bne .notTab
+	lda drawingXPosLo
+	and #.tabSize-1
+	eor #.tabSize-1
+	clc
+	adc #1
+	and #.tabSize-1
+	bne .needMove
+	lda #.tabSize
+.needMove
+	jsr FontMoveXPosRight
+	jmp .skipThisChar
+.notTab
+	cpx #$0d
+	bne .notCarriageReturn
+	lda drawnAnyCharacter
+	beq .noMoveSkip
+	jsr FontCarriageReturn
+.noMoveSkip
+	jmp .skipThisChar
+.notCarriageReturn
+	lda CharacterReverseOrderingTab,x
+	bmi .skipThisChar
+
+	lda #1
+	sta drawnAnyCharacter
+
+	; Now find the end of the word and also store the converted word in convertedWord
+	lda .sm1+1
+	sta letterDrawToWorkAddr
+	lda .sm1+2
+	sta letterDrawToWorkAddr+1
+	ldy #0
+.dl2
+	ldx #0
+	lda (letterDrawToWorkAddr,x)
+	tax
+	lda CharacterReverseOrderingTab,x
+	bmi .endOfWord
+	sta .convertedWord,y
+
+	inc letterDrawToWorkAddr
+	bne .dl3
+	inc letterDrawToWorkAddr+1
+.dl3
+
+	iny
+	cpy #.convertedWordEnd-.convertedWord
+	bne .dl2
+.endOfWord
+
+	sty .convertedWordLength
+
+	; Find the length of the word
+	lda #<.convertedWord
+	ldx #>.convertedWord
+	; And uses Y from above
+	jsr FontWordLength
+	sta .calculatedWordLength
+
+	; Check for word wrapping
+	clc
+	adc drawingXPosLo
+	sta .tempXPosCalc
+	lda drawingXPosHi
+	adc #0
+	beq .notHi1
+	lda .tempXPosCalc
+	cmp #<320
+	bcc .notHi1
+	jsr FontCarriageReturn
+
+	; If this wraps off the bottom of the page then save this word for the next page
+	lda drawingYPos
+	cmp #185
+	bcs .bottomOfThePage
+
+.notHi1
+
+	; Update the position ready for the next word
+	lda letterDrawToWorkAddr
+	sta .sm1+1
+	lda letterDrawToWorkAddr+1
+	sta .sm1+2
+
+	; Update letterDrawToAddr from x&y pos
+	jsr FontSetupFromXYPos
+
+	; Draw chars
+	ldx #0
+.dl4
+	txa
+	pha
+	lda .convertedWord,x
+	tax 
+	jsr FontDrawLetter
+	pla
+	tax
+	inx
+	cpx .convertedWordLength
+	bne .dl4
+
+	lda .calculatedWordLength
+	jsr FontMoveXPosRight
+
+	; Detect the end of the file and stop drawing
+	jmp .it3
+
+.skipThisChar
+	inc .sm1+1
+	bne .it3
+	inc .sm1+2
+.it3
+
+	lda drawingYPos
+	cmp #185
+	bcc .continueDrawing
+
+.bottomOfThePage
+	; Clear the screen and start on the next page
+	+WaitForFireB_A
+	jsr ClearBitmapScreen
+
+	inc SpriteText2+19
+	lda SpriteText2+19
+	cmp #'9'+1
+	bne .noCarry
+	lda #'0'
+	sta SpriteText2+19
+	inc SpriteText2+18
+.noCarry
+	jsr DrawSprites
+
+
+.continueDrawing
+	lda .sm1+2
+	cmp #>TextToDisplayEnd
+	bcc .ldl1
+	beq .samePage
+	bcs .definitelyDone
+.samePage
+	lda .sm1+1
+	cmp #<TextToDisplayEnd
+	bcs .definitelyDone
+.ldl1	jmp .dl1
+.definitelyDone
+
+	lda #<TextToDisplay
+	sta .sm1+1
+	lda #>TextToDisplay
+	sta .sm1+2
+
+	lda #'0'
+	sta SpriteText2+18
+	sta SpriteText2+19
+
+	jmp .bottomOfThePage
+
+.calculatedWordLength !by 0
+.tempXPosCalc !by 0
+}
+
+.speedTest
+	+MACROWaitForTheLastScan_A
+	inc VIC2BorderColour
+
+	; The address
+	lda #<BitmapPixels
+	sta letterDrawToAddr
+	lda #>BitmapPixels
+	sta letterDrawToAddr+1
+	; The letter
+	; The pixel shift
+	ldy #0
+	; The letter index
+	ldx #0
+.l2
+	jsr FontDrawLetter
+	inx
+;	cpx #12
+	cpx #26
+	bne .l2
+
+;	dec VIC2BorderColour
+;	jmp .speedTest
+
+
+	lda #<BitmapPixels+(40*8*2)
+	sta letterDrawToAddr
+	lda #>BitmapPixels+(40*8*2)
+	sta letterDrawToAddr+1
+	; The letter
+	; The pixel shift
+	ldy #0
+	; The letter index
+	ldx #26
+.l3
+	jsr FontDrawLetter
+	inx
+	cpx #52
+	bne .l3
+
+	lda #<BitmapPixels+(40*8*4)
+	sta letterDrawToAddr
+	lda #>BitmapPixels+(40*8*4)
+	sta letterDrawToAddr+1
+	; The letter
+	; The pixel shift
+	ldy #0
+	; The letter index
+	ldx #52
+.l4
+	jsr FontDrawLetter
+	inx
+	cpx #CharacterCount
+	bne .l4
+
+.l1
+	jmp .l1
+
+.convertedWord !fill 32
+.convertedWordEnd
+.convertedWordLength !by 0
+
+!zn
+SpriteText1 !scr "Music Studio V1.2 help. "
+; The "Page 01" is important for the initial data.
+SpriteText2 !scr "Press space. Page 01    "
+!macro MACRODrawSprites .spriteText , .spriteXToAddrLo , .spriteXToAddrHi {
+	ldx #0
+.l1
+	lda .spriteText,x
+	asl
+	asl
+	asl
+	sta .sm1+1
+	lda .spriteText,x
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	clc
+	adc #>CharData+$800
+	sta .sm1+2
+
+	lda .spriteXToAddrLo,x
+	sta .sm2+1
+	lda .spriteXToAddrHi,x
+	sta .sm2+2
+
+	ldy #0
+.sm1 lda $0000,y
+.sm2 sta $0000
+	lda .sm2+1
+	clc
+	adc #3
+	sta .sm2+1
+	iny
+	cpy #8
+	bne .sm1
+
+	inx
+	cpx #24
+	bne .l1
+}
+DrawSprites
+	+MACRODrawSprites SpriteText1 , .spriteXToAddrLo , .spriteXToAddrHi
+	+MACRODrawSprites SpriteText2 , .spriteXToAddr2Lo , .spriteXToAddr2Hi
+	rts
+
+.spriteXToAddrLo
+!for .xspr,8 {
+!for .xpos,3 { !by <(SpriteData + ((.xspr-1)*64) +  (.xpos-1)) }
+}
+.spriteXToAddrHi
+!for .xspr,8 {
+!for .xpos,3 { !by >(SpriteData + ((.xspr-1)*64) +  (.xpos-1)) }
+}
+
+.spriteXToAddr2Lo
+!for .xspr,8 {
+!for .xpos,3 { !by <(SpriteData + 24 + ((.xspr-1)*64) +  (.xpos-1)) }
+}
+.spriteXToAddr2Hi
+!for .xspr,8 {
+!for .xpos,3 { !by >(SpriteData + 24 + ((.xspr-1)*64) +  (.xpos-1)) }
+}
+
+!zn
+ClearBitmapScreen
+	lda #>BitmapPixels
+	sta .cl1+2
+	; Start one pixel down from the top of the screen
+	lda #1
+	sta drawingYPos
+	lda #0
+	sta drawingXPosLo
+	sta drawingXPosHi
+	sta drawnAnyCharacter
+	tax
+.cl1
+	sta BitmapPixels,x
+	inx
+	bne .cl1
+	inc .cl1+2
+	bpl .cl1
+	rts
+drawnAnyCharacter !by 0
+
+
+!zn
+; Moves the drawingXPos right by the number of pixels and also detects if a carriage return is
+; needed.
+; Input
+; A = X pos to move
+; Output
+; drawingXPosLo
+; drawingXPosHi
+; drawingYPos
+FontMoveXPosRight
+	clc
+	adc drawingXPosLo
+	sta drawingXPosLo
+	bcc .noHigh
+	inc drawingXPosHi
+.noHigh
+	lda drawingXPosHi
+	beq .notEndOfLine
+	lda drawingXPosLo
+	cmp #<320
+	bcc .notEndOfLine
+FontCarriageReturn
+	lda #0
+	sta drawingXPosLo
+	sta drawingXPosHi
+	lda #15
+	jmp FontMoveYPosDown
+.notEndOfLine
+	rts
+
+!zn
+; Input
+; A = Y pos to move
+; Output
+; drawingYPos
+FontMoveYPosDown
+	clc
+	adc drawingYPos
+	sta drawingYPos
+	rts
+
+!zn
+.pixelWidth !by 0
+.pixelWork !by 0
+.pixelHeight !by 0
+.pixelHeightWork !by 0
+.pixelYOffset !by 0
+.pixelShift !by 0
+.origAddr !by 0,0
+
+!macro MACROFontDrawColumn .pixelShift , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1 {
+	; Draw a column
+!if .pixelShift = 0 {
+	; Byte aligned
+	lda (fontDataAddr),y
+	ora (letterDrawToAddr,x)
+	sta (letterDrawToAddr,x)
+	jmp .nextLine
+} else {
+	lda (fontDataAddr),y
+	sta letterDrawToWork2Addr
+	sty letterDrawToWork2Addr+1
+!if .pixelShift = 1 {
+	lsr
+}
+!if .pixelShift = 2 {
+	lsr
+	lsr
+}
+!if .pixelShift = 3 {
+	lsr
+	lsr
+	lsr
+}
+!if .pixelShift >= 4 {
+	tax
+	lda .shiftRBy1 + ((.pixelShift-1)*256),x
+	ldx #0
+}
+
+	ora (letterDrawToAddr,x)
+	sta (letterDrawToAddr,x)
+
+.pixelShift2 = 8-.pixelShift
+!if .pixelShift2 = 1 {
+	lda letterDrawToWork2Addr
+	asl
+}
+!if .pixelShift2 = 2 {
+	lda letterDrawToWork2Addr
+	asl
+	asl
+}
+!if .pixelShift2 = 3 {
+	lda letterDrawToWork2Addr
+	asl
+	asl
+	asl
+}
+!if .pixelShift2 >= 4 {
+	ldx letterDrawToWork2Addr
+	lda .shiftLBy1 + ((.pixelShift2-1)*256),x
+	ldx #0
+}
+
+	; Y = 8 to plot to the next char to the right
+	ldy #8
+	ora (letterDrawToAddr),y
+	sta (letterDrawToAddr),y
+	ldy letterDrawToWork2Addr+1
+	jmp .nextLine
+}
+}
+
+
+; Input
+; drawingXPosLo
+; drawingXPosHi
+; drawingYPos
+; Output
+; letterDrawToAddr
+; Y = pixel adjust
+FontSetupFromXYPos
+	ldy drawingYPos
+	lda .fontYTabLo,y
+	sta letterDrawToAddr
+	lda .fontYTabHi,y
+	sta letterDrawToAddr+1
+
+	lda drawingXPosLo
+	and #$f8
+	adc letterDrawToAddr
+	sta letterDrawToAddr
+	lda letterDrawToAddr+1
+	adc drawingXPosHi
+	sta letterDrawToAddr+1
+	lda drawingXPosLo
+	and #7
+	tay
+	rts
+
+.fontYTabLo
+!for .ychar,25 {
+!for .ypix,8 {
+!by <(BitmapPixels + ((.ychar-1)*40*8) + (.ypix-1) )
+}
+}
+
+.fontYTabHi
+!for .ychar,25 {
+!for .ypix,8 {
+!by >(BitmapPixels + ((.ychar-1)*40*8) + (.ypix-1) )
+}
+}
+
+; Calculates the length in pixels of a word
+; Input
+; A = Lo
+; X = Hi
+; Y = Char length
+; Output
+; A = Length of the word in pixels.
+.fwlWork !by 0
+FontWordLength
+	sta letterDrawToWork2Addr
+	stx letterDrawToWork2Addr+1
+	lda #0
+	sta .fwlWork
+	dey
+.fwl1
+	lda (letterDrawToWork2Addr),y
+	tax
+	jsr .FontSetupTablePointer
+	; Adjust for spacing
+	lda .pixelWidth
+	clc
+	adc #1
+	; Accumulate the length of the word from its characters
+	adc .fwlWork
+	sta .fwlWork
+	dey
+	bpl .fwl1
+	; Adjust for the last pixel not being part of the word length
+	dec .fwlWork
+	; Returns A
+	lda .fwlWork
+	rts
+
+; Input
+; X = Letter
+.FontSetupTablePointer
+	pha
+	tya
+	pha
+	txa
+	pha
+
+	lda .mulByFiveTabLo,x
+	sta fontTableAddr
+	lda .mulByFiveTabHi,x
+	clc
+	adc #>FontData
+	sta fontTableAddr+1
+
+	ldy #1
+	lda (fontTableAddr),y
+	sta fontDataAddr
+	iny
+	lda (fontTableAddr),y
+	clc
+	adc #>FontData
+	sta fontDataAddr+1
+
+	iny
+	lda (fontTableAddr),y
+	sta .pixelWidth
+	iny
+	lda (fontTableAddr),y
+	sta .pixelHeight
+	sta .pixelHeightWork
+	iny
+	lda (fontTableAddr),y
+	sta .pixelYOffset
+
+	pla
+	tax
+	pla
+	tay
+	pla
+	rts
+
+; Draws a letter to the position held by letterDrawToAddr with a shift to the right of Y pixels
+; Input
+; letterDrawToAddr
+; X = Letter
+; Y = Pixel shift (0-7)
+; Output
+; A,X preserved
+; Y = New pixel shift
+FontDrawLetter
+	pha
+	txa
+	pha
+
+	sty .pixelShift
+
+	lda letterDrawToAddr
+	sta .origAddr
+	lda letterDrawToAddr+1
+	sta .origAddr+1
+
+	jsr .FontSetupTablePointer
+
+	lda .pixelHeight
+	sta .pixelHeightWork
+
+	; Adjust for the font character Y offset
+.doAdjust
+	lda .pixelYOffset
+	beq .doneAdjust
+	jsr .MoveLineDown
+	dec .pixelYOffset
+	jmp .doAdjust
+.doneAdjust
+
+!if 1 {
+	; At the moment this code is quicker than the other format data. Keep both formats for a while
+	; until the most efficient format is properly tested with other drawing options.
+	ldy #0
+	lda .pixelWidth
+	sec
+	sbc #1
+	lsr
+	lsr
+	lsr
+	; How many bytes across to draw
+	sta .pixelWork
+
+	; Backup the position
+	lda letterDrawToAddr
+	sta letterDrawToWorkAddr
+	lda letterDrawToAddr+1
+	sta letterDrawToWorkAddr+1
+
+	ldx .pixelShift
+	lda .pixelPlotTabLo,x
+	sta .pixelPlotJump
+	lda .pixelPlotTabHi,x
+	sta .pixelPlotJump+1
+
+	; Draw each column
+	; During this routiine X is always 0 when storing pixels
+	ldx #0
+	; Y is the index into the font data
+	ldy #0
+.l1
+	lda .pixelHeight
+	sta .pixelHeightWork
+
+.l2
+	jmp (.pixelPlotJump)
+
+.aligned0
+	+MACROFontDrawColumn 0 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned1
+	+MACROFontDrawColumn 1 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned2
+	+MACROFontDrawColumn 2 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned3
+	+MACROFontDrawColumn 3 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned4
+	+MACROFontDrawColumn 4 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned5
+	+MACROFontDrawColumn 5 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned6
+	+MACROFontDrawColumn 6 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+.aligned7
+	+MACROFontDrawColumn 7 , fontDataAddr , .nextLine , .shiftRBy1 , .shiftLBy1
+
+.nextLine
+	iny
+	jsr .MoveLineDown
+	dec .pixelHeightWork
+	beq .ol2
+	jmp .l2
+.ol2
+
+	dec .pixelWork
+	bmi .noMoreColumns
+	; Next column
+	lda letterDrawToWorkAddr
+	clc
+	adc #8
+	sta letterDrawToWorkAddr
+	bcc .noCarry
+	inc letterDrawToWorkAddr+1
+.noCarry
+	lda letterDrawToWorkAddr
+	sta letterDrawToAddr
+	lda letterDrawToWorkAddr+1
+	sta letterDrawToAddr+1
+	jmp .l1
+.noMoreColumns
+
+}
+
+!if 0 {
+	; The other format, ordered by row rather than column
+	ldy #0
+.l1
+	lda .pixelWidth
+	sec
+	sbc #1
+	lsr
+	lsr
+	lsr
+	sta .pixelWork
+
+	lda letterDrawToAddr
+	sta letterDrawToWorkAddr
+	lda letterDrawToAddr+1
+	sta letterDrawToWorkAddr+1
+
+.l2
+	ldx .pixelShift
+	bne .notByteAligned
+
+.byteAligned
+	lda (fontDataAddr),y
+	ldx #0
+	ora (letterDrawToWorkAddr,x)
+	sta (letterDrawToWorkAddr,x)
+
+	iny
+
+	lda .pixelWork
+	beq .l4a
+
+	lda letterDrawToWorkAddr
+	clc
+	adc #8
+	sta letterDrawToWorkAddr
+	bcc .l4
+	inc letterDrawToWorkAddr+1
+.l4
+	dec .pixelWork
+	jmp .byteAligned
+
+.l4a
+	jmp .nextLine
+
+.notByteAligned
+	lda (fontDataAddr),y
+	ldx .pixelShift
+.l7
+	lsr
+	dex
+	bne .l7
+
+	ldx #0
+	ora (letterDrawToWorkAddr,x)
+	sta (letterDrawToWorkAddr,x)
+
+	lda letterDrawToWorkAddr
+	clc
+	adc #8
+	sta letterDrawToWorkAddr
+	bcc .l8
+	inc letterDrawToWorkAddr+1
+.l8
+
+
+	lda (fontDataAddr),y
+	iny
+	ldx .pixelShift
+.l9
+	asl
+	inx
+	cpx #8
+	bne .l9
+
+	ldx #0
+	ora (letterDrawToWorkAddr,x)
+	sta (letterDrawToWorkAddr,x)
+
+	; Already at the next byte over position so just loop
+	dec .pixelWork
+	bpl .notByteAligned
+
+.l10
+
+
+.nextLine
+
+	jsr .MoveLineDown
+
+	dec .pixelHeight
+	beq .ol1
+	jmp .l1
+.ol1
+}
+
+	; Now update the position and the output pixel shift
+	lda .origAddr
+	sta letterDrawToAddr
+	lda .origAddr+1
+	sta letterDrawToAddr+1
+
+	; Spacing adjustent
+	lda .pixelWidth
+	clc
+	adc #1
+	sta .pixelWidth
+
+	; Now adjust the input position screen address
+	clc
+	adc .pixelShift
+	; Same as int((pixelWidth + pixelShift + 1) / 8) * 8
+	and #%11111000
+	adc letterDrawToAddr
+	sta letterDrawToAddr
+	bcc .s1
+	inc letterDrawToAddr+1
+.s1
+
+	; Now adjust the input pixel shift
+	lda .pixelWidth
+	clc
+	adc .pixelShift
+	and #7
+	tay	; To output pixel shift
+
+	pla
+	tax
+	pla
+
+	rts
+
+.MoveLineDown
+	inc letterDrawToAddr
+	bne .l5
+	inc letterDrawToAddr+1
+.l5
+	; Every eight lines we have to hop down another 39 chars
+	lda letterDrawToAddr
+	and #7
+	bne .l6
+
+	lda letterDrawToAddr
+	clc
+	adc #<(39*8)
+	sta letterDrawToAddr
+	lda letterDrawToAddr+1
+	adc #>(39*8)
+	sta letterDrawToAddr+1
+.l6
+	rts
+
+!align 255,0
+.mulByFiveTabLo	!for .table1,256 {!by <((.table1-1) * 5) }
+.mulByFiveTabHi	!for .table1,256 {!by >((.table1-1) * 5) }
+
+.shiftLBy1	!for .table1,256 {!by <((.table1-1) << 1) }
+.shiftLBy2	!for .table1,256 {!by <((.table1-1) << 2) }
+.shiftLBy3	!for .table1,256 {!by <((.table1-1) << 3) }
+.shiftLBy4	!for .table1,256 {!by <((.table1-1) << 4) }
+.shiftLBy5	!for .table1,256 {!by <((.table1-1) << 5) }
+.shiftLBy6	!for .table1,256 {!by <((.table1-1) << 6) }
+.shiftLBy7	!for .table1,256 {!by <((.table1-1) << 7) }
+
+.shiftRBy1	!for .table1,256 {!by <((.table1-1) >> 1) }
+.shiftRBy2	!for .table1,256 {!by <((.table1-1) >> 2) }
+.shiftRBy3	!for .table1,256 {!by <((.table1-1) >> 3) }
+.shiftRBy4	!for .table1,256 {!by <((.table1-1) >> 4) }
+.shiftRBy5	!for .table1,256 {!by <((.table1-1) >> 5) }
+.shiftRBy6	!for .table1,256 {!by <((.table1-1) >> 6) }
+.shiftRBy7	!for .table1,256 {!by <((.table1-1) >> 7) }
+
+CharacterReverseOrderingTab !fill 256,255
+
+.pixelPlotTabLo !by <.aligned0,<.aligned1,<.aligned2,<.aligned3,<.aligned4,<.aligned5,<.aligned6,<.aligned7
+.pixelPlotTabHi !by >.aligned0,>.aligned1,>.aligned2,>.aligned3,>.aligned4,>.aligned5,>.aligned6,>.aligned7
+!align 1,0
+.pixelPlotJump !by 0,0
+
+CharacterCount = 94
+CharacterOrderingTab !bin "CharacterOrdering.txt",CharacterCount
+
+
+!align 255,0
+FontData = *
+FontTable = FontData + 1
+!bin "TimesNewRoman10.cft"
+
+!source "../stdlib/Initialise.a"
+
+!zn
+SetupIRQs
+	sei
+	; Setup raster IRQ
+	lda #<IrqBotOfScreen
+	sta KERNALIRQServiceRoutineLo
+	lda #>IrqBotOfScreen
+	sta KERNALIRQServiceRoutineHi
+	lda #1
+	sta VIC2InteruptControl
+	lda #VIC2SpriteYBorderBottom-2
+	sta VIC2Raster
+
+	+MACROAckAllIRQs_A
+
+	cli
+	rts
+
+!align 255,0
+!zn
+IrqBotOfScreen
+	pha
+	txa
+	pha
+
+	; Step 1 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	; Turn on multicolour mode to enable the white border (screen) colour below
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+
+	lda #<IrqBotOfScreen2
+	sta KERNALIRQServiceRoutineLo
+	lda #>IrqBotOfScreen2
+	sta KERNALIRQServiceRoutineHi
+	lda #255
+	sta VIC2Raster
+
+	; Fake the light grey bottom border at the point when the raster changes
+	lda #VIC2Colour_LightGrey
+	ldx #VIC2SpriteYBorderBottom
+.l1
+	cpx VIC2Raster
+	bne .l1
+	sta VIC2ScreenColour
+
+	+MACROAckRasterIRQ_A
+	pla
+	tax
+	pla
+	rti
+
+!zn
+IrqBotOfScreen2
+	pha
+	; Step 2 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	sta VIC2ScreenControlV
+
+	lda #<IrqTopOfScreen
+	sta KERNALIRQServiceRoutineLo
+	lda #>IrqTopOfScreen
+	sta KERNALIRQServiceRoutineHi
+	lda #VIC2SpriteYBorderTop+1
+	sta VIC2Raster
+
+	+MACROAckRasterIRQ_A
+	pla
+	rti
+
+!zn
+IrqTopOfScreen
+	pha
+	txa
+	pha
+	tya
+	pha
+
+
+	; Turn off multicolour mode
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+
+	; Setup the white screen for multicolour when opening the border mode later on
+	lda #VIC2Colour_White
+	sta VIC2ScreenColour
+
+;	inc VIC2BorderColour
+	jsr MusicPlayerPlay
+;	dec VIC2BorderColour
+
+
+	lda #<IrqBotOfScreen
+	sta KERNALIRQServiceRoutineLo
+	lda #>IrqBotOfScreen
+	sta KERNALIRQServiceRoutineHi
+	lda #VIC2SpriteYBorderBottom-2
+	sta VIC2Raster
+
+	+MACROAckRasterIRQ_A
+
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+; The char data for the sprite status bar
+*=$4000
+CharData
+!bin "char.rom"
+
+; Sprite data for the status bar in the bottom border
+*=$5000
+SpriteData
+!fill 64*8,0
+
+*=BitmapColours + SPRITEFRAMESCROFF
+!by 64,65,66,67,68,69,70,71
+
+*=BitmapColours
+	; Black pixel data, white background
+	!fill (40*25) , $01
+*=BitmapPixels
+	!fill (40*25*8) , 0
+
+	; Clear the last byte in the bank for the opened borders
+*=$7fff
+	!by 0
+
+*=$8000
+TextToDisplay !bin "../MusicEditor/MusicEditorHelp.txt"
+TextToDisplayEnd
+
+*=$e000
+maxBlocks = $40
+!source "../MusicEditor/Musicplayer.a"
+*=$e700
+;!bin "BNE000.P00",,$1a + 2 + MusicPlayerCodeToDataOffset
+!bin "MBE000.P00",,$1a + 2 + MusicPlayerCodeToDataOffset

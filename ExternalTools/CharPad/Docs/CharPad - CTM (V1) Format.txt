@@ -1,0 +1,23 @@
+
+CTM V1 FILE FORMAT - Used by CharPad 1.0
+
+First comes the header, 20 bytes...
+
+ID         [00-02]    3 bytes  : ASCII ID string... "CTM"
+VERSION    [03]       1 byte   : version number, currently $01.
+COLOURS    [04-07]    4 bytes  : BG,MC1,MC2,RAM.
+COL_MODE   [08]       1 byte   : 0 = Global, 1 = Per Tile, 2 = Per Cell.
+VIC_RES    [09]       1 byte   : 0 = Hi Resolution, 1 = Multicolour.
+MAP_WID    [10-11]    2 bytes  : Map width low, Map width high.
+MAP_HEI    [12-13]    2 bytes  : Map height low, Map height high.
+NUM_CHARS  [14]       1 byte   : Number of characters - 1.
+NUM_TILES  [15]       1 byte   : Number of tiles - 1.
+RESERVED   [16-19]    4 bytes (total header size is 20)
+
+Then comes the data...
+
+CHARS    NUM_CHARS * 8 bytes
+TILES    NUM_TILES * 16 bytes
+COL_PC   NUM_TILES * 16 bytes  (per-cell colour table, only exists if COL_MODE = 2)
+COL_PT   NUM_TILES (per-tile colour table, only exists if COL_MODE = 1)
+MAP      (MAP_WID x MAP_HEI) bytes.

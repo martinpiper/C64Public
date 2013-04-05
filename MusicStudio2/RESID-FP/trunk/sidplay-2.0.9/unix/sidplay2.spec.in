@@ -1,0 +1,63 @@
+%define major    2
+%define oname    @PACKAGE@
+%define name     %{oname}%{major}
+%define version  @VERSION@
+%define frelease 1
+%define release  %{frelease}
+%define libsidplay2 2.1.0
+%define libsidutils 1.0.2
+
+Summary:        A Commodore 64 music player and SID chip emulator.
+Name:           %{name}
+Version:        %{version}
+Release:        %{release}
+Source:         %{oname}-%{version}-%{frelease}.tar.bz2
+Copyright:      GPL
+Group:          Applications/Multimedia
+URL:            http://sidplay2.sourceforge.net/
+BuildRoot:      %{_tmppath}/%{name}-buildroot
+Prefix:         %{_prefix}
+Requires:       libsidplay >= %{libsidplay2} libsidutils >= %{libsidutils}
+BuildRequires:  libsidplay2-devel >= %{libsidplay2} libsidutils-devel >= %{libsidutils}
+
+%description
+Sidplay2 is the second in the Sidplay series and provides a console front end for the
+libsidplay2 library.  This library is cycle accurate for improved sound reproduction
+and is capable of playing all C64 mono and stereo file formats.  Also supported is a
+full C64 emulation environment, which allows tunes to be taken directly from the C64
+without the need for special modifications.
+
+%prep
+rm -rf $RPM_BUILD_ROOT 
+%setup -n %{oname}-%{version} -q
+
+%build
+%configure
+%make
+
+%install
+%makeinstall
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%doc AUTHORS COPYING ChangeLog README TODO
+%{_mandir}/man*/*
+%{_bindir}/*
+
+%changelog
+* Mon Jun 14 2004 Simon White <s_a_white@email.com> 2.0.9-1
+- Imported a few Windows changes and externally supplied audio driver patches.
+
+* Wed Dec 05 2001 Simon White <s_a_white@email.com> 2.0.8-1
+- Interface update to support hardsid and new libsidplay2 interface.
+
+* Wed Apr 10 2001 Simon White <s_a_white@email.com> 2.0.7-2
+- Use non Mandrake specific release number.
+
+* Sun Apr 1 2001 Simon White <s_a_white@email.com> 2.0.7-1mdk
+- First spec file.
+
+# end of file

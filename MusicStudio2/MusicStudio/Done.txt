@@ -1,0 +1,215 @@
+V2.1
+Expanded the number of instruments to 255.
+
+The track editor block indicator was not updating if the currently playing track offset was
+not visible.
+
+Wave table: XX YY
+YY is always the frame delay.
+XX:
+0 = Don't change wave this frame
+FF = Jump to position. pos 0 = stop
+
+Pulse table
+Only executes when pulse waveform bit is set
+XY ZZ
+X = 0 Set pulse Y & ZZ = Pulse
+X = 1 Pulse add with unsigned ZZ for Y ticks (ticks zero based)
+X = 2 Pulse subtract with unsigned ZZ for Y ticks (ticks zero based)
+FF = Jump to position. pos 0 = stop
+
+Note table
+XY ZZ
+Y = Except command 0 frame delay (0-15) (ticks zero based)
+X = Command
+Command:
+*DONE*00 (both nybbles XY) = No note change. Do nothing. Delay time in ZZ
+*DONE*1 = Set absolute note ZZ = note. Does this once at the start of the command. Effects can be active.
+*DONE*8 = Timed note step add upper nybble Z+1 with time of lower nybble+1 (zero based). Effect does not execute on first frame.
+*DONE*9 = Timed note step sub upper nybble Z-1 with time of lower nybble+1 (zero based). Effect does not execute on first frame.
+
+*DONE*A = Relative note step ZZ = step signed 8 bit value each frame
+*DONE*B = Set hi frequency to ZZ lo is zeroed. Skips other effects for the duration of this effect.
+*DONE*FF = Jump to position and frame delay ignored. XX = pos 0 = stop
+
+
+*DONE*While saving to C64 create a bit pattern of used tables for the envelope from the active
+flags. Save this as an extra envelope parameter.
+Update the player code to:
+*DONE*Play the wave table.
+*DONE*Then the pulse table.
+*DONE*Then the note table parsing. Update the existing envelope vibrato code to use the note table
+	triggered values.
+*DONE*Remove old drums code. (Not that it will be enabled since the save routine won't flag them as used.)
+
+
+*DONE*Remove drums from the views.
+*DONE*Add wave and note table editing.
+*DONE*Update the code that updates the music file from the document, then save to C64 and player.
+*DONE*Update save and load.
+
+
+There needs to be an instrument flag to say "Do not allow arpeggio and other effects" to
+easily emulate the drums just using the wave/note/pulse tables.
+
+
+Update load old versions <= 4 so that they convert drums to the new wave table.
+	Use the test tables values as examples.
+UI Changes that need corresponding table entries created during import
+Wave mix removed
+Wave removed
+Pulse and variance control removed
+Drum removed, plus drum start offset
+Vibrato removed, plus the vibrato time and initial direction bit.
+
+
+
+Pack duplicate table entries into the same spot whilst saving of course.
+Try to create common code so that I can pack tables for the editor data on a menu item and also whilst saving.
+
+
+When adding or removing a table entry update all corresponding intruments that use it.
+Even if the instrument is greyed out the value still needs updating.
+If the jump is deleted for the instrument then check the destination and set that instead.
+If the destination is 0 then remove it from the instrument.
+
+
+Note table optimised with cached jump table.
+>Especially with regards to a cached jump table for the note table.
+
+
+If there are no note table commands 8 and 9 then it is not necessary to save the second optimised/split note table values.
+
+
+*Done* Hard restart can be edited for each channel.
+Include in the docs that if channel commands are used the start of the music must set the
+hard restart to expected values.
+*Done* Spot the case where hard restart is constant for all three channels and do an immediate
+load instead of the per channel index.
+*Done* Allow hard restart to be set to two frames instead of one.
+*Done* Each channel can also have command to edit the hard restart values as the music runs.
+HAD, HSR, HWV, HTI
+
+
+; Make the zero page usage configurable instead of using hard coded $fb/$fc values
+Extended view edit page.
+
+
+Added filter table updates
+
+
+Added table block commands:
+TWV:XX
+TNT:XX
+TPL:XX
+TFL:XX
+
+
+
+Spot when the tables are not used and remove that code.
+
+
+Gate can still be timed etc. Can have a new split dur command where the release duration is another byte separate to the overall note length.
+DTI:xx,yy
+
+
+The ACME window popping up will disappear in the next version.
+
+If the t.prg or t.sid file is not output then report the error in the build log.
+
+
+Try making the player play routine multi-threaded and see if that improves the drawing.
+
+
+Editing the tempo on a block that is mBlockLastEditedAsTracker does not alter the length of the block, it just
+changes how fast it is played.
+
+
+
+OnEditNumOnSetValue when it processes the updated row (kTrackerBlockEditingIndex), make the replacementBlockText
+update common code inside CMusicStudioDoc then call it when loading existing files.
+Then remove the mBlocks save and load.
+
+
+Upon play the UpdateDocumentDataToInternalFile() needs to call the common code.
+
+
+The rows delete to a blank edit box needs implementing. Can use the common block update.
+
+
+
+Tracker style entry, three blocks side by side type of thing. Each block can be marked as tracker style or dur style editing. So a tune can use both styles of blocks. For the player it doesn't care because the data internally is the same.
+ 
+
+Have a button that switches between DUR entry or tracker entry style for a particular block.
+
+
+Maybe need a sustained duration plus a duration that includes an initial gate off, or fix the DTI so it can do a
+zero frame gate off.
+
+Added === command.
+
+
+Add a higher resolution timer in the SID player assembly.
+
+
+- maybe, some playback optimalisation is needed in tracker mode of the editor, sometimes it plays a little choppy
+I've made a note to check this, maybe the ReSID preferences need tweaking to lower the sample rate. Or the re-draw rate for the windows drawing stuff needs to be tweaked down.
+
+
+The Menu->Help->Configuration option allows the window update and ReSID parameters to be changed.
+Add sample playback options in the editor and also tracker screen update speed config.
+int gSoftMAXBUFBLOCKS
+int gSoftBufSizeDivisor
+int gSoftViewRefreshTime
+Need frequency adjustment	SID2_DEFAULT_SAMPLING_FREQ
+	CommonStartPlaying() can pass command lin flags to AllocatePlayer()
+	Can use GetProfileInt
+Have these updated by a preferences dialog box. Can also have three preset buttons, slow PC, normal, high performance.
+
+
+Need to check the sound effect play hard restart, it killes the attack/decay.
+
+
+Save and load instrument data.
+
+
+I'm using the reSID player code. Obviously I can use it to play other people's SID files. I can then get the SID player code to tell me when each channel's notes start with gate on and end with gate off, ADSR, waveform and the filter parameters. It would be possible to record these into the tracker editor as the SID is playing. This would give the editor the ability to "rip" almost any piece of music so it can be edited. Getting the exact instrument sounds from all SIDs would be a little tricky but something should be able to be found.
+Need to hook Player::writeMemByte_playsid()
+
+
+Improved the table packing to spot duplicate loops within a segment.
+
+
+Updated to use ReplicaNet V7.0, the amalgamated source.
+
+
+The check "if (!GetDocument()->mBlockLastEditedAsTracker[currentBlock])" is always passing, which means the mBlockTrackerRows is always being calculated,
+** which is V.V.V. expensive.
+
+
+Max sample frequency is now 48000 for those with cheap onboard HW that can't switch.
+
+
+2.2
+2.2.0.1
+Choosing Edit->Optimise will mark the file as updated if there were changes to the tables.
+
+8 MRU items (LoadStdProfileSettings)
+
+
+Tweaked the MainFrm startup dimensions so by default that on a 1024x768 screen it fits without displaying scroll bars.
+
+
+Find the MIDI library and include it for importing blocks.
+http://midifile.sapp.org/
+http://www.ccarh.org/courses/253/handout/smf/
+http://faydoc.tripod.com/formats/mid.htm
+
+
+
+Improve MIDI reading, separate blocks for each track or merge blocks.
+Added a dialog CImportMIDI that allows options to be tweaked before parsing the MIDI file.
+
+
+Fixed a small bug when switching between an unedited duration block to the tracker block view. The tracker block would not have the correct length set and would not display notes beyond that time.
