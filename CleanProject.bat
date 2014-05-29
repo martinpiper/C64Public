@@ -22,3 +22,7 @@ del /q IRQTape\TapeTool\Release\*.*
 del /q MakeCart\Debug\*.*
 del /q MakeCart\Release\*.*
 del /q MakeCart\ipch\*.*
+
+del /q TestVerlet\Debug\*.*
+del /q TestVerlet\Release\*.*
+del /q TestVerlet\ipch\*.*

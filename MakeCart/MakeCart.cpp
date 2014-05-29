@@ -1,9 +1,6 @@
 // Assemble all the banks for the Berzerk Redux cartridge
 // -n -b 0 -r ../BerzerkReduxCart/BerzerkReduxCart.prg -c 0 2 $ffff -w -r ../BerzerkRedux/BerzerkRedux.prg -b 1 -c 0 $0001 $ffff -w -b 2 -c 0 $2001 $ffff -w -b 3 -c 0 $4001 $ffff -w -b 4 -c 0 $6001 $ffff -w -b 5 -c 0 $8001 $ffff -w -b 6 -c 0 $a001 $ffff -w -b 7 -r ../BerzerkReduxCart/fw86muscomp.prg -c 0 2 $ffff -w -o test.crt
 
-// MPi: TODO: Add help documentation
-// MPi: TODO: Add verbose levels. Default, no progress messages. Then final output size. Then all stages verbosity.
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -28,6 +25,10 @@ int main( int argc , char **argv )
 	static unsigned char bankData[0x2000];
 	DynamicMessageHelper output;
 	bool displayHelp = false;
+	if ( argc <= 1 )
+	{
+		displayHelp = true;
+	}
 
 	DynamicMessageHelper workBuffer;
 
@@ -168,7 +169,15 @@ int main( int argc , char **argv )
 
 	if ( displayHelp )
 	{
-		printf("MakeCart help\n");
+		printf("MakeCart help\n\
+-n : Output new cartridge header into the cartridge data buffer. This has to be before -b is used.\n\
+-b <bank> : Clear the temporary 8K bank data with the current bank number.\n\
+-r <file> : Read data file to the internal work buffer.\n\
+-c <bank offset> <start work buffer> <end work buffer> : Copy Data from start to end work buffer offsets into the temporary bank data with the bank offset. If the data is over the end of the temporary bank size of 8K then it is truncated. Any data from any file can be written to any offset in the temporary bank data\n\
+-w : Write the 8K temporary bank data with the chip/bank number from the preceding -b <bank> to the cartridge data buffer\n\
+-o : Output the whole cartridge data buffer to the file.\n\
+" );
+
 	}
 
 	return 0;

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MusicStudio", "MusicStudio.vcxproj", "{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hardsid-builder", "..\RESID-FP\trunk\sidplay-libs-2.1.1\builders\hardsid-builder\win\VC\hardsid_builder.vcxproj", "{FA4051A9-6A7A-4955-8C1D-617DBEBBDD2E}"
@@ -14,6 +14,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sidutils", "..\RESID-FP\trunk\sidplay-libs-2.1.1\utils\win\VC\libsidutils.vcxproj", "{63370DF9-1079-4428-9403-E7912DD39505}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MusicStudioLauncher", "..\MusicStudioLauncher\MusicStudioLauncher.vcxproj", "{39135231-0247-4035-B25E-0E5004C53189}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6} = {3B62A0B8-2AC2-4FF0-9249-E8F368A3E2C6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

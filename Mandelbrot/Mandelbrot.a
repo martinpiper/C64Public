@@ -94,6 +94,38 @@ kMaxIterations = 26
 	cld
 	jsr CINT
 
+
+	; Speed testing for some FP ops. As we can see even some simple operations are very slow
+!if 0 {
+	sei
+.tl1
+	lda #0
+	sta VIC2BorderColour
+	+MACROWaitForRaster 64
+	inc VIC2BorderColour
+
+	+LoadFAC xmin
+	inc VIC2BorderColour
+
+	+SubMemFAC xmax
+	inc VIC2BorderColour
+
+	+DivFACMem ScrW
+	inc VIC2BorderColour
+
+	+StoreFAC xs
+	inc VIC2BorderColour
+
+	+MulMemFAC xs
+	inc VIC2BorderColour
+
+	+StoreFAC xs
+	inc VIC2BorderColour
+
+	jmp .tl1
+}
+
+	; The main Mandelbrot code.
 ;xs=(xmax-xmin)/40.0;
 	+LoadFAC xmin
 	+SubMemFAC xmax

@@ -1,0 +1,208 @@
+;-truedrive -cartcrt Verlet.crt
+;Verlet test code
+
+!source "../stdlib/stdlib.a"
+!to "Verlet.prg", cbm
+!sl "Verlet.map"
+!svl "Verlet.lbl"
+!cpu 6510
+!ct pet
+
+multiplier = $f0
+multiplicand = $f4
+product = $f8
+
+T1 = $02
+T2 = $04
+PRODUCT = $06
+
+!macro MCartMulAY88 .result1 , .result2 {
+	tax
+	and #$f
+	asl
+	ora #$80
+	sta .smm1+2
+	adc #1	; Carry is clear
+	sta .smm2+2
+	lda CartMulBankTab,x
+	sta $de00	; Bank
+.smm1	lda $1200,y
+	sta .result1
+.smm2	lda $1200,y
+	sta .result2
+}
+
+
+*=$0400
+	sei
+	; Allow the cart to be seen at $8000 still
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	jsr GenerateMultiplyTables
+
+;	lda #VIC2ScreenControlVDefault
+;	sta VIC2ScreenControlV
+
+.l1
+	lda #0
+	sta VIC2BorderColour
+	+MACROWaitForRaster 64
+
+!if 1 {
+	inc VIC2BorderColour
+
+	; It's loop based, so try to fill some bits to test an average case
+	lda #73
+	sta multiplier
+	sta multiplier+1
+	sta multiplicand
+	sta multiplicand+1
+
+	inc VIC2BorderColour
+
+mult16
+	lda #$00
+	sta product+2 ; clear upper bits of product
+	sta product+3
+	ldx #$10 ; set binary count to 16
+shift_r
+	lsr multiplier+1 ; divide multiplier by 2
+	ror multiplier
+	bcc rotate_r
+	lda product+2 ; get upper half of product and add multiplicand
+	clc
+	adc multiplicand
+	sta product+2
+	lda product+3
+	adc multiplicand+1
+rotate_r
+	ror ; rotate partial product
+	sta product+3
+	ror product+2
+	ror product+1
+	ror product
+	dex
+	bne shift_r
+
+	inc VIC2BorderColour
+
+	lda #73
+	sta multiplier
+	sta multiplier+1
+	sta multiplier+2
+	sta multiplier+3
+	sta multiplicand
+	sta multiplicand+1
+	sta multiplicand+2
+	sta multiplicand+3
+
+	inc VIC2BorderColour
+
+mult32
+	lda #$00
+	sta product+4 ; clear upper bits of product
+	sta product+5
+	sta product+6
+	sta product+7
+	ldx #$20 ; set binary count to 32
+shift_r2
+	lsr multiplier+3 ; divide multiplier by 2
+	ror multiplier+2
+	ror multiplier+1
+	ror multiplier
+	bcc rotate_r2
+	lda product+4 ; get upper half of product and add multiplicand
+	clc
+	adc multiplicand
+	sta product+4
+	lda product+5
+	adc multiplicand+1
+	sta product+5
+	lda product+6
+	adc multiplicand+2
+	sta product+6
+	lda product+7
+	adc multiplicand+3
+rotate_r2
+	ror ; rotate partial product
+	sta product+7
+	ror product+6
+	ror product+5
+	ror product+4
+	ror product+3
+	ror product+2
+	ror product+1
+	ror product
+	dex
+	bne shift_r2
+
+	inc VIC2BorderColour
+
+	; It is table based the input values do not cause the code to vary much (only a little) in runtime.
+	lda #<1097
+	sta T1
+	lda #>1097
+	sta T1+1
+	lda #<2059
+	sta T2
+	lda #>2059
+	sta T2+1
+
+	inc VIC2BorderColour
+
+	sec
+	jsr multiply_16bit_unsignedSetT1
+	inc VIC2BorderColour
+
+	clc
+	jsr multiply_16bit_unsigned
+}
+
+!if 0 {
+	; This multiply method is not quicker, use the cart for a divide lookup table instead
+	inc VIC2BorderColour
+	; A multiply routine that uses a huge cartridge based table
+	; Test 8x8 = 16 result using cartridge
+	; Input a * y
+	lda #$23
+	sta $10
+	lda #$12
+	sta $11
+	lda #$73
+	sta $18
+	lda #$87
+	sta $19
+
+	; Routine
+	lda $10
+	ldy $18
+	+MCartMulAY88 $20 , $21
+	lda $10
+	ldy $19
+	+MCartMulAY88 $22 , $23
+	lda $11
+	ldy $18
+	+MCartMulAY88 $24 , $25
+	lda $11
+	ldy $19
+	+MCartMulAY88 $26 , $27
+}
+
+
+	lda #0
+	sta VIC2BorderColour
+	jmp .l1
+
+
+	lda #0
+	sta VIC2BorderColour
+	jmp .l1
+
+
+!source "Mul8816.a"
+
+!source "../stdlib/Initialise.a"
+
+CartMulBankTab
+!for i, 256 { !byte (i>>4)+1 }

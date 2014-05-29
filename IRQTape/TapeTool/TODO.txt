@@ -2,6 +2,19 @@ TapeTool TODO file started 12 September 2012
 A tool to provide a command line interface that enables C64 format TAP files to be created with kernal and turbo data.
 ********************************************
 
+
+Explain the label values used from the map file for ocb1, otft, otf, otfb
+
+
+1/2/3 Paralax scrolling raster bars while loading, with the normal tape loading colour effects behind.
+Could use an IRQ counter as the raster bar position index which is slightly desynced from the screen refresh time to produce a scrolling effect.
+Or could update 64ish bytes table all the time in the background with effects and use the current timer anded with 64 and indexed into the table.
+Try to keep the mainline clear so music can still be played and scrollers added.
+The tape loading itself would really have to be NMI based.
+
+
+
+
 *Instead of saving $ea31 into $314 to make it escape the block loader earlier, instead save $ea2f
 This executes one extra instruction from the normal tape loader which should be $f92c
 This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (SKB #$60)

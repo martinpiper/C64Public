@@ -8,6 +8,7 @@
 #include "MusicStudioView2.h"
 #include "ChildFrm.h"
 #include "ImportMIDI.h"
+#include "RNPlatform/Inc/MessageHelper.h"
 
 
 #ifdef _DEBUG
@@ -18,7 +19,7 @@ static int sLenLeft = 0;
 
 static bool sDataPushed = false;
 unsigned char sThePushedData = 0;
-static unsigned char ReadUChar(CArchive &ar)
+static unsigned char ReadUChar(RNReplicaNet::DynamicMessageHelper &theFile)
 {
 	if ( sDataPushed )
 	{
@@ -27,47 +28,47 @@ static unsigned char ReadUChar(CArchive &ar)
 	}
 	unsigned char ret = 0;
 
-	ar.Read( &ret , 1 );
+	theFile >> ret;
 
 	sLenLeft--;
 
 	return ret;
 }
 
-static int ReadMSBInt(CArchive &ar)
+static int ReadMSBInt(RNReplicaNet::DynamicMessageHelper &theFile)
 {
 	int ret = 0;
 
-	ret = ((int)ReadUChar( ar )) << 24;
-	ret |= ((int)ReadUChar( ar )) << 16;
-	ret |= ((int)ReadUChar( ar )) << 8;
-	ret |= ((int)ReadUChar( ar ));
+	ret = ((int)ReadUChar( theFile )) << 24;
+	ret |= ((int)ReadUChar( theFile )) << 16;
+	ret |= ((int)ReadUChar( theFile )) << 8;
+	ret |= ((int)ReadUChar( theFile ));
 
 	sLenLeft -= 4;
 
 	return ret;
 }
 
-static short ReadMSBShort(CArchive &ar)
+static short ReadMSBShort(RNReplicaNet::DynamicMessageHelper &theFile)
 {
 	short ret = 0;
 
-	ret = ((int)ReadUChar( ar )) << 8;
-	ret |= ((int)ReadUChar( ar ));
+	ret = ((int)ReadUChar( theFile )) << 8;
+	ret |= ((int)ReadUChar( theFile ));
 
 	sLenLeft -= 2;
 
 	return ret;
 }
 
-static int ReadVTime(CArchive &ar)
+static int ReadVTime(RNReplicaNet::DynamicMessageHelper &theFile)
 {
 	int ret = 0;
 	unsigned char theByte;
 
 	do
 	{
-		theByte = ReadUChar( ar );
+		theByte = ReadUChar( theFile );
 		ret = (ret << 7) | ( theByte & 0x7f );
 
 	} while ( theByte & 0x80 );
@@ -77,7 +78,7 @@ static int ReadVTime(CArchive &ar)
 
 static bool ReportParseError( void )
 {
-	MessageBoxA( 0 , "This MIDI file has an expected format, please send it with a bug report to martin.piper@gmail.com" , "Error!" , MB_OK );
+	MessageBoxA( 0 , "This MIDI file has an unexpected format, please send it with a bug report to martin.piper@gmail.com" , "Error!" , MB_OK );
 	return false;
 }
 
@@ -111,8 +112,73 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 	mTablesControls[0][1] = 0x11;
 	mTablesControls[0][2] = 0xff;
 
-	CImportMIDI dlg;
+	char buffer[1024];
+	RNReplicaNet::DynamicMessageHelper theFile;
+	UINT gotBytes = 0;
+	do 
+	{
+		gotBytes = ar.Read( buffer , sizeof( buffer ) );
+		if ( gotBytes )
+		{
+			theFile.AddData( buffer , gotBytes );
+		}
+	} while ( gotBytes );
+
+	theFile.SetSize( 0 );
+
+	int len = ReadMSBInt( theFile );
+	short format = ReadMSBShort( theFile );
+	short numTrackBlocks = ReadMSBShort( theFile );
+	short timeDivision = ReadMSBShort( theFile );
+	int channel;
+	int channelSizes[16];
+	memset( channelSizes , 0 , sizeof( channelSizes ) );
+
+	for ( channel = 0 ; channel < numTrackBlocks ; channel++ )
+	{
+		LONGLONG theTime = 0;
+		LONGLONG lastNoteTime = 0;
+
+		int header = ReadMSBInt( theFile );
+		len = ReadMSBInt( theFile );
+
+		if ( header != 0x4d54726b )
+		{
+			return ReportParseError();
+		}
+
+		sLenLeft = len;
+
+		// Skip channels we don't want to map to a track
+		while ( sLenLeft > 0 )
+		{
+			unsigned char temp = ReadUChar( theFile );
+			channelSizes[ channel ]++;
+		}
+	}
+
+	theFile.SetSize( 0 );
+
 	// Some sensible default values
+	CImportMIDI dlg;
+
+	dlg.mBytesUsed0 = channelSizes[0];
+	dlg.mBytesUsed1 = channelSizes[1];
+	dlg.mBytesUsed2 = channelSizes[2];
+	dlg.mBytesUsed3 = channelSizes[3];
+	dlg.mBytesUsed4 = channelSizes[4];
+	dlg.mBytesUsed5 = channelSizes[5];
+	dlg.mBytesUsed6 = channelSizes[6];
+	dlg.mBytesUsed7 = channelSizes[7];
+	dlg.mBytesUsed8 = channelSizes[8];
+	dlg.mBytesUsed9 = channelSizes[9];
+	dlg.mBytesUsed10 = channelSizes[10];
+	dlg.mBytesUsed11 = channelSizes[11];
+	dlg.mBytesUsed12 = channelSizes[12];
+	dlg.mBytesUsed13 = channelSizes[13];
+	dlg.mBytesUsed14 = channelSizes[14];
+	dlg.mBytesUsed15 = channelSizes[15];
+
 	dlg.mTimeMultiplier = 10;
 	dlg.mBlockLength = 256;
 	dlg.mReleaseNoteAfterHalfDuration = FALSE;
@@ -168,19 +234,18 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 		mTracks[i][0] = MusicStudio1::kMusicPlayer_StopTrack;
 	}
 
-	int len = ReadMSBInt( ar );
-	short format = ReadMSBShort( ar );
-	short numTrackBlocks = ReadMSBShort( ar );
-	short timeDivision = ReadMSBShort( ar );
+	len = ReadMSBInt( theFile );
+	format = ReadMSBShort( theFile );
+	numTrackBlocks = ReadMSBShort( theFile );
+	timeDivision = ReadMSBShort( theFile );
 
-	int channel;
 	for ( channel = 0 ; channel < numTrackBlocks ; channel++ )
 	{
 		LONGLONG theTime = 0;
 		LONGLONG lastNoteTime = 0;
 
-		int header = ReadMSBInt( ar );
-		len = ReadMSBInt( ar );
+		int header = ReadMSBInt( theFile );
+		len = ReadMSBInt( theFile );
 
 		if ( header != 0x4d54726b )
 		{
@@ -194,7 +259,7 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 		{
 			while ( sLenLeft > 0 )
 			{
-				unsigned char temp = ReadUChar( ar );
+				unsigned char temp = ReadUChar( theFile );
 			}
 			continue;
 		}
@@ -202,9 +267,9 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 		unsigned char lastEvent = 0;
 		while ( sLenLeft > 0 )
 		{
-			int deltaTime = ReadVTime( ar );
+			int deltaTime = ReadVTime( theFile );
 			theTime += deltaTime;
-			unsigned char theEvent = ReadUChar( ar );
+			unsigned char theEvent = ReadUChar( theFile );
 
 			// Running mode check
 			if ( theEvent <= 127 )
@@ -221,12 +286,12 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 			if ( theEvent == 0xff )
 			{
 				// Meta event
-				unsigned char theCommand = ReadUChar( ar );
-				unsigned char commandLength = ReadUChar( ar );
+				unsigned char theCommand = ReadUChar( theFile );
+				unsigned char commandLength = ReadUChar( theFile );
 				while ( commandLength != 0 )
 				{
 					// Just skip the data
-					unsigned char temp = ReadUChar( ar );
+					unsigned char temp = ReadUChar( theFile );
 					commandLength--;
 				}
 			}
@@ -259,8 +324,8 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 					case 0x80:
 					{
 						// Note off
-						unsigned char noteNumber = ReadUChar( ar );
-						unsigned char velocity = ReadUChar( ar );
+						unsigned char noteNumber = ReadUChar( theFile );
+						unsigned char velocity = ReadUChar( theFile );
 
 						if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
 						{
@@ -273,8 +338,8 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 					case 0x90:
 					{
 						// Note on
-						unsigned char noteNumber = ReadUChar( ar );
-						unsigned char velocity = ReadUChar( ar );
+						unsigned char noteNumber = ReadUChar( theFile );
+						unsigned char velocity = ReadUChar( theFile );
 
 						// Any previous note to release?
 						if ( releaseNoteAfterHalfDuration && ( lastNoteTime > 0 ) )
@@ -314,37 +379,37 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 					case 0xa0:
 					{
 						// After touch
-						unsigned char noteNumber = ReadUChar( ar );
-						unsigned char velocity = ReadUChar( ar );
+						unsigned char noteNumber = ReadUChar( theFile );
+						unsigned char velocity = ReadUChar( theFile );
 						break;
 					}
 
 					case 0xb0:
 					{
 						// Controller change
-						unsigned char controller = ReadUChar( ar );
-						unsigned char newValue = ReadUChar( ar );
+						unsigned char controller = ReadUChar( theFile );
+						unsigned char newValue = ReadUChar( theFile );
 						break;
 					}
 
 					case 0xc0:
 					{
 						// Patch change
-						unsigned char programNumber = ReadUChar( ar );
+						unsigned char programNumber = ReadUChar( theFile );
 						break;
 					}
 
 					case 0xd0:
 					{
 						// Channel after touch
-						unsigned char channelNumber = ReadUChar( ar );
+						unsigned char channelNumber = ReadUChar( theFile );
 						break;
 					}
 
 					case 0xe0:
 					{
 						// Pitch wheel change
-						short wheelChange = ReadMSBShort( ar );
+						short wheelChange = ReadMSBShort( theFile );
 						break;
 					}
 
@@ -357,118 +422,6 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 			} //< if ( theEvent == 0xff )
 		} //< while ( sLenLeft > 0 )
 	}
-
-#if 0
-	for (i=0;i<numBlocks;i++)
-	{
-		unsigned char blockLen;
-		ar >> blockLen;
-
-		bool anyNoteOutput = false;
-		unsigned char currentNote = 0;
-		int lastBlockTime = 0;
-		unsigned char currentBlockTime = 0;
-		unsigned char lastBlockEnv = 0;
-		unsigned char lastBlockEnvOutput = 255;
-		int lastBlockDurOutput = -1;
-
-		mBlocks[i].Empty();
-
-		while (blockLen)
-		{
-			if (version == kGoatTrackerV1)
-			{
-				blockLen -= 3;
-			}
-			else if (version == kGoatTrackerV2)
-			{
-				blockLen--;
-			}
-
-			unsigned char blockNoteRead;
-			ar >> blockNoteRead;
-			unsigned char blockSoundRead;
-			ar >> blockSoundRead;
-			unsigned char blockControlRead;
-			ar >> blockControlRead;
-
-			if (version == kGoatTrackerV2)
-			{
-				ar >> tempUChar;
-				if ((blockNoteRead >= 0x60) && (blockNoteRead <= 0xbc))
-				{
-					blockNoteRead -= 0x60;
-				}
-			}
-
-			CStringA command;
-			
-			if (((blockNoteRead == 0xff) || (blockNoteRead < 0x5e)) && (currentBlockTime > 0))
-			{
-				int nextDur = currentBlockTime - lastBlockTime;
-				int durSetThisChunk;
-				while (nextDur > 0)
-				{
-					durSetThisChunk = nextDur;
-					if (durSetThisChunk > 0x7f)
-					{
-						durSetThisChunk = 0x7f;
-					}
-					if (lastBlockDurOutput != durSetThisChunk)
-					{
-						command.Format("DUR:%02x\r\n",(unsigned char)durSetThisChunk);
-						mBlocks[i].Append(CString(command));
-						lastBlockDurOutput = durSetThisChunk;
-					}
-
-					if (lastBlockEnvOutput != lastBlockEnv)
-					{
-						if (lastBlockEnv && (blockNoteRead < 0x5e))
-						{
-							command.Format("ENV:%02x\r\n",lastBlockEnv);
-							mBlocks[i].Append(CString(command));
-							lastBlockEnvOutput = lastBlockEnv;
-						}
-					}
-
-					if (lastBlockEnv)
-					{
-						command = MusicStudio1::BlockEntry::GetNoteFromNumber(currentNote).c_str();
-						anyNoteOutput = true;
-					}
-					else
-					{
-						command = "+++";
-					}
-
-					mBlocks[i].Append(CString(command) + _T("\r\n"));
-
-					nextDur -= durSetThisChunk;
-				}
-			}
-
-			if (blockNoteRead < 0x5e)
-			{
-				currentNote = blockNoteRead;
-				lastBlockTime = currentBlockTime;
-				if (version == kGoatTrackerV1)
-				{
-					lastBlockEnv = blockSoundRead / 8;
-				}
-				else if (version == kGoatTrackerV2)
-				{
-					lastBlockEnv = blockSoundRead;
-				}
-
-			}
-			else if (blockNoteRead == 0x5e)
-			{
-			}
-			
-			currentBlockTime+=3;
-		}
-	}
-#endif
 
 	return true;
 }

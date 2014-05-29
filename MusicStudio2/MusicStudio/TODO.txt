@@ -9,7 +9,26 @@ cd /D C:\Work\C64\MusicStudio2\MusicStudio
 
 TODO
 
+Add a flag opcode/command.
+Used for syncing effects to music. Can set a specific memory location with a value, or use jsr for example.
+
+
+
+MIDI conversion
+http://phpmidiparser.com/generate
 // MPi: TODO: channelToTrackMap should map channels to the tracks, but at the moment it just flags if a channel should be converted to track 1 ( not track 2 or 3 )
+
+
+
+
+OK, I think what I can do is add the ability to set the length of a musical bar (or perhaps the tempo in MIDI ticks) and also the number of beats in a bar, the importer can then round the notes to the nearest beat. That sound OK?
+I will also try to spot duplicate bars and optimise them. :)
+*MIDI has a meta code for tempo http://www.blitter.com/~russtopia/MIDI/~jglatt/tech/midifile/ppqn.htm
+*http://www.blitter.com/~russtopia/MIDI/~jglatt/tech/midifile/tempo.htm
+
+
+
+
 
 
 

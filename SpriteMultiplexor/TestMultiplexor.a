@@ -3,6 +3,7 @@
 !sal
 !sl "TestMultiplexor.map"
 !svl "TestMultiplexor.lbl"
+!pdb "TestMultiplexor.pdb"
 !cpu 6510
 !ct pet
 
@@ -56,9 +57,6 @@ yoffset	= Multiplex_endVars+$09
 
 !source "../stdlib/BASICEntry900.a"
 
-!macro SpriteLine .v {
-	!by .v>>16, (.v>>8)&255, .v&255
-}
 ; Some sprite data high up in memory
 *=$3e00
 !by 255,255,255,255,255,255,255,255

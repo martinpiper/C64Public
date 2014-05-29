@@ -211,6 +211,17 @@ int main(int argc,char **argv)
 
 	// MPi: TODO: Add the option to set the input C64Palette
 
+	// MPi: TODO: Add multicolour and hires bitmap screen conversion options.
+	// Multicolour
+	// Bit pair = %00: Pixel has Background Color.
+	// Bit pair = %01: Pixel color is determined by bits #4-#7 of the corresponding screen byte in Screen RAM.
+	// Bit pair = %10: Pixel color is determined by bits #0-#3 of the corresponding screen byte in Screen RAM.
+	// Bit pair = %11: Pixel color is determined by the corresponding color byte in Color RAM.
+	// Make it possible to convert large screens of data, either wide or high. Think about data orientation output in character strips.
+
+	// MPi: TODO: Add the ability to convert large maps into chars/blocks with/without colour blocks of the same colour and with blocks with colours etc.
+	// Variable size map blocks.
+
 	if (showHelp)
 	{
 		printf("Usage: CharPack [-h] [-r] [-m] <-c64remap a b> <input 24bit BMP> [bg colour] [colour 1] [colour 2] [chars file] [screen file] [colours file]\n");

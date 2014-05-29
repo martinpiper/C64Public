@@ -1,0 +1,76 @@
+;-truedrive -cartcrt Verlet.crt
+;Cart boot test code
+
+!source "../stdlib/stdlib.a"
+!to "CartBoot.prg", cbm
+!sl "CartBoot.map"
+!svl "CartBoot.lbl"
+!cpu 6510
+!ct pet
+
+multiplier = $f0
+multiplicand = $f4
+product = $f8
+
+T1 = $02
+T2 = $04
+PRODUCT = $06
+
+
+*=$8000
+!word Boot
+!word Boot
+	!byte $c3 ;c
+	!byte $c2 ;b
+	!byte $cd ;m
+	!byte $38 ;8
+	!byte $30 ;0
+
+Boot
+	sei
+	jsr $fda3 ;prepare irq
+	jsr $fd50 ;init memory
+	jsr $fd15 ;init i/o
+;	jsr $ff5b ;init video
+
+	sei
+
+	ldx #0
+.ms1
+	lda MoveStart,x
+	sta $400,x
+	dex
+	bne .ms1
+	jmp $400
+
+MoveStart
+!pseudopc $400 {
+	lda #<CodeMoveStart
+	sta $fb
+	lda #>CodeMoveStart
+	sta $fc
+	lda #1
+	sta $fd
+	lda #8
+	sta $fe
+	lda #0
+.cpl1
+	lda ($fb),y
+	sta ($fd),y
+	dey
+	bne .cpl1
+	inc $fc
+	inc $fe
+	lda $fc
+	cmp #$a0
+	bne .cpl1
+
+	; Don't kill the cart, we need itlater on
+;	lda #$ff	; Kill the cart
+;	sta $de00
+
+	jmp 2061
+}
+
+CodeMoveStart
+!bin "Verlet.prg",,2

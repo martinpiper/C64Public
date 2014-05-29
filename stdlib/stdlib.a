@@ -902,3 +902,7 @@ CyclesPerSecondPALC64 = 985248
 
 	+InitKERNALIO_AXY
 }
+
+!macro SpriteLine .v {
+	!by .v>>16, (.v>>8)&255, .v&255
+}

@@ -32,8 +32,23 @@ CImportMIDI::CImportMIDI(CWnd* pParent /*=NULL*/)
 	, mChannelMap14(0)
 	, mChannelMap15(0)
 	, mReleaseNoteAfterHalfDuration(FALSE)
+	, mBytesUsed0(0)
+	, mBytesUsed1(0)
+	, mBytesUsed2(0)
+	, mBytesUsed3(0)
+	, mBytesUsed4(0)
+	, mBytesUsed5(0)
+	, mBytesUsed6(0)
+	, mBytesUsed7(0)
+	, mBytesUsed8(0)
+	, mBytesUsed9(0)
+	, mBytesUsed10(0)
+	, mBytesUsed11(0)
+	, mBytesUsed12(0)
+	, mBytesUsed13(0)
+	, mBytesUsed14(0)
+	, mBytesUsed15(0)
 {
-
 }
 
 CImportMIDI::~CImportMIDI()
@@ -80,6 +95,22 @@ void CImportMIDI::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT67, mChannelMap15);
 	DDV_MinMaxInt(pDX, mChannelMap15, 0, 3);
 	DDX_Check(pDX, IDC_CHECK1, mReleaseNoteAfterHalfDuration);
+	DDX_Text(pDX, IDC_EDIT13, mBytesUsed0);
+	DDX_Text(pDX, IDC_EDIT68, mBytesUsed1);
+	DDX_Text(pDX, IDC_EDIT69, mBytesUsed2);
+	DDX_Text(pDX, IDC_EDIT70, mBytesUsed3);
+	DDX_Text(pDX, IDC_EDIT52, mBytesUsed4);
+	DDX_Text(pDX, IDC_EDIT17, mBytesUsed5);
+	DDX_Text(pDX, IDC_EDIT18, mBytesUsed6);
+	DDX_Text(pDX, IDC_EDIT53, mBytesUsed7);
+	DDX_Text(pDX, IDC_EDIT20, mBytesUsed8);
+	DDX_Text(pDX, IDC_EDIT71, mBytesUsed9);
+	DDX_Text(pDX, IDC_EDIT72, mBytesUsed10);
+	DDX_Text(pDX, IDC_EDIT73, mBytesUsed11);
+	DDX_Text(pDX, IDC_EDIT74, mBytesUsed12);
+	DDX_Text(pDX, IDC_EDIT25, mBytesUsed13);
+	DDX_Text(pDX, IDC_EDIT26, mBytesUsed14);
+	DDX_Text(pDX, IDC_EDIT75, mBytesUsed15);
 }
 
 

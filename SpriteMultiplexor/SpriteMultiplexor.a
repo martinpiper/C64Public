@@ -27,8 +27,10 @@
 ; Added Multiplex_LogCollisionsBackground to include the VIC background sprite collision register.
 
 ; TODO
-; It should be possible to have the Multiplex_XPosHi or maybe even the high nybble of the colour to contain multicolour enable and X/Y expansion flags.
-;*The calculation invloving Multiplex_spriteHeightTweak will need to be tweaked for Y expanded sprites.
+; It should be possible to have the Multiplex_XPosHi or maybe even the high nybble of the colour to contain multicolour enable and X/Y expansion flags and sprite background priority.
+;*The calculation involving Multiplex_spriteHeightTweak will need to be tweaked for Y expanded sprites.
+;*Make the code beneath "lda Multiplex_XPosHi,y" generic and able to optionally update the other bitfields for x/y expansion, multicolour and background priority.
+;*The code after ".over	sta VIC2SpriteXMSB" would need updating to also include any extra bitfield flags for x/y expansion, multicolour and background priority.
 ;MACROMultiplex_SpriteChunk might be more optimal if the MSB and potentially other flags are not calculated all at the same time.
 
 

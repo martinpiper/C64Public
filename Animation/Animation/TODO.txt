@@ -1,0 +1,17 @@
+RawFrames7 has 128 frames
+But the frames are too big to fit inside 64K of memory.
+Using LZLMpi to compress each *.sch file also produces too much data.
+
+So consider:
+1) Using a static screen layout of 16x16 chars in the screen conversion and producing character data to fit that static screen instead.
+Then delta compressing just the char data and displaying the static 16x16 char screen.
+This means the decompressed char data should not end at $ffff. This means the screen data is going to have to be lower down in memory, probably around $c000 instead.
+The delta frames can be arranged around this.
+
+2) If the above option still prodcues too much delta data then use LZMPi on just the char data instead.
+See if thsta works
+Compressing sch data: 107,326 bytes
+Compressing just char data: 79,764 bytes
+
+
+3) If not then start adding some lossy encoding to the delta compressor. Make it possible to insert key frames especially for the end frame loop.

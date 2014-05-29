@@ -8,4 +8,5 @@ if not exist BlankProjectComp.prg goto error
 goto end
 :error
 echo BlankProjectComp.prg not created!
+exit -1
 :end

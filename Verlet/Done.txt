@@ -1,0 +1,26 @@
+Things done...
+
+Prototype some very simple verlet code.
+To start with probably do some very simple Windows GUI application drawing lines.
+Probably use the basic TestDraw example code as a framework.
+This would also potentially allow me to create animation data for a quick C64 lines/sprites demo.
+*But I really want to make the C64 demo realtime not an animation.
+*So only really use the Windows application to check maths ranges and maybe some integer code that would be translated to the C64.
+
+
+Swigning rope test works well.
+
+
+
+For the ConstraintQuad the point to line test works not too badly.
+However it doesn't cope well then an edge moves into a corner where the edge verts do not enter the corner.
+Perhaps some circles, one for the center and one smaller one for each of the corners, would would better?
+Then it would be possible to move the offending vert (or quad verts (center point)) out of the offending circle instead.
+*Make ConstraintRadius use the circles method, it gets both quads passed in
+
+
+Fixed the point in quad constraint so it moves points more realistically out of the quad.
+The edge test was wrong.
+
+
+Quad test, with eight quads, works well now.

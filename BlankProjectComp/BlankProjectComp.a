@@ -4,6 +4,7 @@
 !to "BlankProjectComp.prg", cbm
 !sl "BlankProjectComp.map"
 !svl "BlankProjectComp.lbl"
+!pdb "BlankProjectComp.pdb"
 !cpu 6510
 !ct pet
 
@@ -13,6 +14,21 @@
 	jsr InitialiseMachine
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
+
+!if 1 {
+	lda #(VIC2ScreenControlHDefault | %10000)
+	sta VIC2ScreenControlH
+
+	lda #VIC2Colour_Grey
+	sta VIC2ExtraBackgroundColour1
+	lda #VIC2Colour_LightGrey
+	sta VIC2ExtraBackgroundColour2
+
+.l1 jmp .l1
+
+}
+
+!if 0 {
 	ldx #7
 .f0
 	lda # ($700 / 64)
@@ -43,7 +59,8 @@
 	dec VIC2BorderColour
 	jmp .l1
 
-!source "../stdlib/Initialise.a"
-
 *=$700
 !fill 63, 255
+}
+
+!source "../stdlib/Initialise.a"
