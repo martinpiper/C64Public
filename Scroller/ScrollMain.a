@@ -106,8 +106,12 @@ InitialiseGame
 
 	; Initialise the multiplexor
 !ifdef Scroller_MultiDirection { } else {
+!ifdef Multiplex_LogCollisions {
+!ifdef Multiplexor_UpdateCollisionDetailsSoftEnable {
 	lda #$ff
 	sta Multiplexor_UpdateCollisionDetailsSoftEnableFlag
+}
+}
 }
 	lda #Multiplex_items
 	sta Multiplex_MaxSpr

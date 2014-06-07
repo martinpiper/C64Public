@@ -661,9 +661,11 @@ BottomBorder3
 	sta VIC2ScreenControlV
 
 !ifdef Scroller_MultiDirection { } else {
+!ifdef Multiplex_LogCollisions {
 	lda .backupCollision
 	jsr Multiplexor_UpdateCollisionDetails
 	jsr AnimationBackupLastCollisionFrame
+}
 }
 
 	lda #0

@@ -25,7 +25,11 @@ DisplayTitleScreen
 	sta VIC2SpriteEnable
 	sta VIC2BorderColour
 	sta VIC2ScreenColour
+!ifdef Multiplex_LogCollisions {
+!ifdef Multiplexor_UpdateCollisionDetailsSoftEnable {
 	sta Multiplexor_UpdateCollisionDetailsSoftEnableFlag
+}
+}
 	; Init music
 !ifdef Scroller_NoMusic {} else {
 	lda #0

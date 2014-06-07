@@ -46,6 +46,9 @@
 ; Must be <= 48 otherwise Multiplex_indextable goes splat
 ;Multiplex_items	= 48
 
+; Define this to maintain sprite priority based on the Y coordinate whenever possible
+;Multiplex_MaintainPriority	= 1
+
 ; Define the variable Multiplex_LeanAndMean to stop the multiplexor allocating memory space for the following tables:
 ;	Multiplex_YPos
 ;	Multiplex_XPosLo

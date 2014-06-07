@@ -19,11 +19,24 @@ Multiplex_spritepointer	= SPRITEFRAME
 Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
 Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
 Multiplex_DiscardSpritesYPos=255
+
+;Multiplex_MaintainPriority	= 1
+
 !ifdef Multiplex_LogCollisions {
-Multiplex_items	= 24
+	!ifdef Multiplex_MaintainPriority {
+	Multiplex_items	= 16
+	} else {
+	Multiplex_items	= 24
+	}
 } else {
-Multiplex_items	= 48
+	!ifdef Multiplex_MaintainPriority {
+	Multiplex_items	= 16
+	} else {
+	Multiplex_items	= 48
+	}
 }
+
+
 !source "SpriteMultiplexorVars.a"
 
 ; Uncomment this to enable debug borders to be drawn
@@ -163,13 +176,15 @@ Start
 	lda #>NMIRet
 	sta KERNALNMIServiceRoutineHi
 
-	; Two frames worth of static 48 sprites
+	; Some frames worth of static 48 sprites
+!ifdef Multiplex_MaintainPriority { } else {
 	lda #100
 	sta countDown
 	lda #210
 	sta countDown2
 	lda #210
 	sta countDown3
+}
 
 	; Clear zero page to something we know so that we can display it later on to check none of the variables are out of range.
 	ldx #$02
@@ -210,6 +225,10 @@ Start
 	lda #1
 	sta VIC2InteruptStatus
 
+!ifdef Multiplex_MaintainPriority {
+	jsr move
+	jsr Multiplex_Sort
+}
 	cli
 
 !ifdef EnableMusic {
@@ -281,6 +300,27 @@ NMIRet
 ; This function is defined before including "SpriteMultiplexor.a" which then causes the last IRQ to call this
 !zn {
 MultiplexExt_LastIRQ
+!if Multiplex_items <= 24 {
+	lda #255
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+}
+
+!ifdef Multiplex_LogCollisions {
+	lda VIC2SpriteSpriteCollision
+	jsr Multiplexor_UpdateCollisionDetails
+}
+
 	lda #$ef
 	cmp CIA1KeyboardRowsJoystickB
 	beq .over
@@ -297,9 +337,11 @@ MultiplexExt_LastIRQ
 	dex
 	stx countDown2
 	bne .notYet
-	; Switch to animating a maximum of 44 sprites
-	lda #Multiplex_items-4
+	; Switch to animating a maximum of 44 sprites with sin tables
+!if Multiplex_items >= 44 {
+	lda #44
 	sta Multiplex_MaxSpr
+}
 	jsr Multiplex_InitSort
 	jmp .over
 .notYet
@@ -373,8 +415,62 @@ countDown	!by 0
 countDown2	!by 0
 countDown3	!by 0
 
+!macro MSetSprite .sprite , .xpos , .ypos {
+	lda #(.xpos & 0xff)
+	sta Multiplex_XPosLo + .sprite
+	!if .ypos >= 256 {
+		sty Multiplex_XPosHi + .sprite
+	} else {
+		stx Multiplex_XPosHi + .sprite
+	}
+	lda #.ypos
+	sta Multiplex_YPos + .sprite
+	lda #$f8
+	sta Multiplex_SpriteFrame + .sprite
+}
+
 !zn {
 move	
+!ifdef Multiplex_MaintainPriority {
+;!if 1 {
+	ldx #0
+	ldy #1
+
+	+MSetSprite  0 , 50 , 50
+	+MSetSprite  1 , 55 , 51
+	+MSetSprite  2 , 160 , 52
+	+MSetSprite  3 , 165 , 53
+
+	+MSetSprite  4 , 100 , 120
+	+MSetSprite  5 , 105 , 121
+	+MSetSprite  6 , 210 , 122
+	+MSetSprite  7 , 215 , 123
+
+	+MSetSprite  8 , 150 , 180
+	+MSetSprite  9 , 155 , 181
+	+MSetSprite 10 , 60 , 182
+	+MSetSprite 11 , 65 , 183
+
+	+MSetSprite 12 , 200 , 230
+	+MSetSprite 13 , 205 , 231
+	+MSetSprite 14 , 110 , 232
+	+MSetSprite 15 , 115 , 233
+
+!if 1 {
+	lda counterx1
+	sta Multiplex_YPos + 12
+	clc
+	adc #5
+	sta Multiplex_YPos + 13
+	lda counterx1
+	eor #$ff
+	adc #1
+;	sta Multiplex_YPos + 14
+	adc #1
+;	sta Multiplex_YPos + 15
+}
+.static
+} else {
 	; Update the first "Multiplex_MaxSpr" sprites
 	ldy Multiplex_MaxSpr
 	dey
@@ -423,6 +519,7 @@ move
 	lda #185
 	sta Multiplex_YPos + 10
 	sta Multiplex_YPos + 11
+}
 
 .exit
 

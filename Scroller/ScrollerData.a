@@ -24,8 +24,8 @@ BackgroundFixedColours
 
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .offset, .size {
-!bin "../SEUCK/GAME1__I.P00",.offset,.size
-;!bin "../SEUCK/GAME2__I.P00",.offset,.size
+;!bin "../SEUCK/GAME1__I.P00",.offset,.size
+!bin "../SEUCK/GAME2__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME3__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME4__I.P00",.offset,.size
 ;!bin "../SEUCK/demo4.bin",.offset,.size
@@ -251,10 +251,6 @@ SFXTable
 *=$c000
 CharData
 !bin "../FreeDirRant/level4.chr",,$100
-
-!macro SpriteLine .v {
-	!by .v>>16, (.v>>8)&255, .v&255
-}
 
 *=$fe00
 SpriteData
@@ -486,7 +482,7 @@ SpriteScoreChars
 +reserve ~MapTabH , 256
 
 
-; A marker for the end of memory so we can check it doesn't intefere with VIC2 data in bank3
+; A marker for the end of memory so we can check it doesn't interfere with VIC2 data in bank3
 EndOfTableMemory = StartOfTableMemory
 
 !if EndOfTableMemory >= $c000 {

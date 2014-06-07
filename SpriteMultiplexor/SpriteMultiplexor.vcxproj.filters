@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{a90f6a52-96b5-4f52-b4b8-77e70ff1cc80}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{cc039837-673e-4617-b769-18202bb8043f}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{dd0a183e-0a2b-4336-9af2-c93e1a5df5d9}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="SpriteMultiplexor.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="SpriteMultiplexorVars.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TestMultiplexor.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\BASICEntry900.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
