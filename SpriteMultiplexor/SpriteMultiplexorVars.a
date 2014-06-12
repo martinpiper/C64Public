@@ -73,6 +73,10 @@
 ;	Multiplex_CollisionIndexes	- Potentially up to (Multiplex_items-8)*8 items long
 ;	Multiplex_CollisionHistory - 8 Bytes
 
+;Use this statement to reverse the order that sprites are used, 7 to 0 instead of 0 to 7
+;Multiplex_ReverseOrder = 1
+
+
 ; Define various zeropage working variables
 Multiplex_areg				= Multiplex_VarBase+$00
 Multiplex_xreg				= Multiplex_VarBase+$01

@@ -29,6 +29,8 @@
 ; Added Multiplex_MaintainPriority to enable stricter sprite priority ordering depending on the sprite Y position.
 ; This is to be compatible with multiplexors found in games like Commando where sprite ordering is important to maintain a sense of perspective.
 ; Only if the multiplexor detects a horrible sprite formation will ordering be abused and in which case the other tightly packed method will be used.
+; 12 June 2014 - Martin Piper
+; Added Multiplex_ReverseOrder to reverse the order that sprites are used, 7 to 0 instead of 0 to 7
 
 ; TODO
 ;*It should be possible to have other tables (don't use a bitfield, it's slower to extract) to contain multicolour enable and X/Y expansion flags and sprite background priority.
@@ -37,9 +39,6 @@
 ; The code after ".over	sta VIC2SpriteXMSB" would need updating to also include any extra bitfield flags for x/y expansion, multicolour and background priority.
 
 ;*MACROMultiplex_SpriteChunk might be more optimal if the MSB and potentially other flags are not calculated all at the same time.
-
-;*Reverse the sprites used so instead of sprite 0 to 7 use 7 to 0 in that order.
-; Most places that store to the VIC and where things like .spriteIndex are used it will need to be reversed with a macro. Be careful with "!if .spriteIndex = 0" it doesn't need the macro.
 
 ; Documentation
 ; This routine works on the principal of reusing sprite slots as soon as possible after the bottom of the sprite is drawn. A couple of lines is used below the sprite bottom for safety.
@@ -74,7 +73,14 @@ Multiplex_rasterHeight = 3
 Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority
 }
 
+
+
 !macro MACROMultiplex_SpriteStrip ~.Multiplex_LBLISFP9 , .spriteIndex {
+!ifdef Multiplex_ReverseOrder {
+.spriteIndexReal = 7 - .spriteIndex;
+} else {
+.spriteIndexReal = .spriteIndex;
+}
 ;--------------------------------------
 ; MPi: Calculate with this current raster position and the bottom of the last sprite Y pos
 ; Is it better to start a new raster IRQ at the new position or shall we update the sprite now?
@@ -82,20 +88,17 @@ Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPr
 	cpx #0
 	beq .noReset
 
-	; Urgh, nasty.
 	; Find out the difference between the last and this current sprite position
 	ldy Multiplex_indextable,x
 	lda Multiplex_YPos,y
-	ldy Multiplex_indextable-1,x
-	sbc Multiplex_YPos,y
-	ldy Multiplex_indextable,x
-	cmp #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)
+	sbc Multiplex_LastGoodSpriteYPosUsed
+	cmp #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
 	bcc .noReset
 
 	; If there is a gap larger than than this then reset the priority used to ensure consistent sprite sorting
-	lda Multiplex_YPos,y
+	lda Multiplex_LastGoodSpriteYPosUsed
+	adc #VIC2SpriteSizeY
 	; Suitable safety margin
-	sbc #Multiplex_TopRasterHeight
 	cmp VIC2Raster
 	bcc .otherCheck
 
@@ -111,12 +114,12 @@ Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPr
 .otherCheck
 !ifdef Multiplex_MaintainPriority {
 	; Do the raster check only if the sprite has been updated at least once this frame
-	lda #(1<<.spriteIndex)
+	lda #(1<<.spriteIndexReal)
 	bit VIC2SpriteEnable
 	beq .blit0
 }
 
-	lda VIC2Sprite0Y + (.spriteIndex * 2)
+	lda VIC2Sprite0Y + (.spriteIndexReal * 2)
 	; Carry happens to be always clear at this point due to the code logic
 	adc #Multiplex_spriteHeightTweak
 	sbc VIC2Raster
@@ -202,32 +205,37 @@ Multiplex_intNextSpr0Reset = *
 }
 !ifdef Multiplex_LogCollisions {
 	; Store what sprite is using what index for the collision to use
-	sty Multiplex_CollisionHistory + .spriteIndex
+	sty Multiplex_CollisionHistory + .spriteIndexReal
 }
 
-	sta VIC2Sprite0Y + (.spriteIndex * 2)
+	sta VIC2Sprite0Y + (.spriteIndexReal * 2)
+
+!ifdef Multiplex_MaintainPriority {
+	sta Multiplex_LastGoodSpriteYPosUsed
+}
+
 	lda Multiplex_XPosLo,y
-	sta VIC2Sprite0X + (.spriteIndex * 2)
+	sta VIC2Sprite0X + (.spriteIndexReal * 2)
 
 	lda Multiplex_SpriteFrame,y
 	.Multiplex_LBLISFP9 = *
-	sta Multiplex_spritepointer + .spriteIndex
+	sta Multiplex_spritepointer + .spriteIndexReal
 
 	lda Multiplex_Colour,y
-	sta VIC2Sprite0Colour + .spriteIndex
+	sta VIC2Sprite0Colour + .spriteIndexReal
 
 !ifdef Multiplex_MaintainPriority {
-	lda #(1<<.spriteIndex)
+	lda #(1<<.spriteIndexReal)
 	ora VIC2SpriteEnable
 	sta VIC2SpriteEnable
 }
 
 	lda Multiplex_XPosHi,y
 	beq .no0
-	lda #(1 << .spriteIndex)
+	lda #(1 << .spriteIndexReal)
 	ora VIC2SpriteXMSB
 	bne .yes0
-.no0	lda #$ff - (1 << .spriteIndex)
+.no0	lda #$ff - (1 << .spriteIndexReal)
 	and VIC2SpriteXMSB
 .yes0	sta VIC2SpriteXMSB
 
@@ -246,22 +254,27 @@ Multiplex_intNextSpr0Reset = *
 }
 
 !macro MACROMultiplex_SpriteChunk ~.Multiplex_LBLISFP1 , .spriteIndex {
+!ifdef Multiplex_ReverseOrder {
+.spriteIndexReal = 7 - .spriteIndex;
+} else {
+.spriteIndexReal = .spriteIndex;
+}
 	ldy Multiplex_indextable + .spriteIndex
 	ldx Multiplex_YPos,y
 !ifdef Multiplex_LogCollisions {
 	; Store what sprite is using what index for the collision to use
-	sty Multiplex_CollisionHistory + .spriteIndex
+	sty Multiplex_CollisionHistory + .spriteIndexReal
 }
-	stx VIC2Sprite0Y + (.spriteIndex * 2)
+	stx VIC2Sprite0Y + (.spriteIndexReal * 2)
 	ldx Multiplex_XPosLo,y
-	stx VIC2Sprite0X + (.spriteIndex * 2)
+	stx VIC2Sprite0X + (.spriteIndexReal * 2)
 	ldx Multiplex_SpriteFrame,y
 
 	.Multiplex_LBLISFP1 = *
-	stx Multiplex_spritepointer + .spriteIndex
+	stx Multiplex_spritepointer + .spriteIndexReal
 
 	ldx Multiplex_Colour,y
-	stx VIC2Sprite0Colour + .spriteIndex
+	stx VIC2Sprite0Colour + .spriteIndexReal
 	ldx Multiplex_XPosHi,y
 }
 
@@ -280,6 +293,9 @@ Multiplex_intNextSpr0Reset = *
 
 ;--------------------------------------
 !zn {
+!ifdef Multiplex_MaintainPriority {
+Multiplex_LastGoodSpriteYPosUsed !by 0
+}
 ; The main top interrupt that draws the first line of sprites and then figures out what next to plot
 Multiplex_maininter
 	sta Multiplex_areg
@@ -345,6 +361,11 @@ Multiplex_maininterEx
 	ldx #0
 	stx Multiplex_counter
 	stx VIC2SpriteEnable
+
+	ldy Multiplex_indextable
+	lda Multiplex_YPos,y
+	sta Multiplex_LastGoodSpriteYPosUsed
+
 } else {
 
 	lda #$08
@@ -360,35 +381,67 @@ Multiplex_maininterEx
 .dospr7
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP1 , 7
 	beq .dospr6
+!ifdef Multiplex_ReverseOrder {
+	lda #$01
+} else {
 	lda #$80
+}
 .dospr6
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP2 , 6
 	beq .dospr5
+!ifdef Multiplex_ReverseOrder {
+	ora #$02
+} else {
 	ora #$40
+}
 .dospr5
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP3 , 5
 	beq .dospr4
+!ifdef Multiplex_ReverseOrder {
+	ora #$04
+} else {
 	ora #$20
+}
 .dospr4
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP4 , 4
 	beq .dospr3
+!ifdef Multiplex_ReverseOrder {
+	ora #$08
+} else {
 	ora #$10
+}
 .dospr3
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP5 , 3
 	beq .dospr2
+!ifdef Multiplex_ReverseOrder {
+	ora #$10
+} else {
 	ora #$08
+}
 .dospr2
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP6 , 2
 	beq .dospr1
+!ifdef Multiplex_ReverseOrder {
+	ora #$20
+} else {
 	ora #$04
+}
 .dospr1
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP7 , 1
 	beq .dospr0
+!ifdef Multiplex_ReverseOrder {
+	ora #$40
+} else {
 	ora #$02
+}
 .dospr0
 	+MACROMultiplex_SpriteChunk ~Multiplex_ISFP8 , 0
 	beq .over
+!ifdef Multiplex_ReverseOrder {
+	ora #$80
+} else {
 	ora #$01
+}
 .over	sta VIC2SpriteXMSB
 };< !Multiplex_MaintainPriority
 
@@ -448,7 +501,11 @@ Multiplex_intNextSpr7
 	!by >.dospr7
 }
 
+!ifdef Multiplex_ReverseOrder {
+.activatetab	!by $00,$80,$c0,$e0,$f0,$f8,$fc,$fe,$ff
+} else {
 .activatetab	!by $00,$01,$03,$07,$0f,$1f,$3f,$7f,$ff
+}
 
 !ifdef Multiplex_LogCollisions {
 

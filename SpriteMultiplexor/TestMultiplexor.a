@@ -20,7 +20,9 @@ Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
 Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
 Multiplex_DiscardSpritesYPos=255
 
-;Multiplex_MaintainPriority	= 1
+Multiplex_MaintainPriority = 1
+
+Multiplex_ReverseOrder = 1
 
 !ifdef Multiplex_LogCollisions {
 	!ifdef Multiplex_MaintainPriority {
@@ -418,7 +420,7 @@ countDown3	!by 0
 !macro MSetSprite .sprite , .xpos , .ypos {
 	lda #(.xpos & 0xff)
 	sta Multiplex_XPosLo + .sprite
-	!if .ypos >= 256 {
+	!if .xpos >= 256 {
 		sty Multiplex_XPosHi + .sprite
 	} else {
 		stx Multiplex_XPosHi + .sprite
@@ -451,10 +453,10 @@ move
 	+MSetSprite 10 , 60 , 182
 	+MSetSprite 11 , 65 , 183
 
-	+MSetSprite 12 , 200 , 230
-	+MSetSprite 13 , 205 , 231
-	+MSetSprite 14 , 110 , 232
-	+MSetSprite 15 , 115 , 233
+	+MSetSprite 12 , 255 , 230
+	+MSetSprite 13 , 260 , 231
+	+MSetSprite 14 , 310 , 232
+	+MSetSprite 15 , 315 , 233
 
 !if 1 {
 	lda counterx1

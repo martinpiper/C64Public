@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{fcf8afab-2479-4e09-91c3-8db055474868}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5da794ea-bf0c-4ef7-b55d-0e16c8f4ae4e}</UniqueIdentifier>
+      <Extensions>a</Extensions>
+    </Filter>
+    <Filter Include="Header Files\ExtLib">
+      <UniqueIdentifier>{56a880fe-ee5f-4568-8817-b84f73c7495f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{90d1a701-513b-4195-b3df-3b77d3e1e45a}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="AnimationEngine.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="LevelControl.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="OneTime.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="PlayerControl.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScoreControl.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollEntry.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Scroller.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerCommon.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerData.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Scrollers.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerSingle.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerSingleH.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerStrips.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollMain.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="SetupIRQs.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TitleScreen.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\BASICEntry900.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\MusicEditor\MusicPlayer.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SFX\SFX.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files\ExtLib</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerVars.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ArmalyteBalls.bin">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BuildIt.bat">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="R.MUS8000.PRG">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
