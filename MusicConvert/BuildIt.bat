@@ -7,4 +7,5 @@ if not exist MusicConvert.prg goto error
 goto end
 :error
 echo MusicConvert.prg not created!
+exit -1
 :end

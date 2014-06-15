@@ -8,4 +8,5 @@ if not exist BerzerkRedux.prg goto error
 goto end
 :error
 echo BerzerkRedux.prg not created!
+exit -1
 :end

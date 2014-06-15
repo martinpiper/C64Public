@@ -139,7 +139,7 @@ InitPlayers
 	sbc .playerProperties+PlayerOffset_Speed
 	sta .playerInformation+PlayerGameOffset_TargetVelY
 .o4
-	; Background collision detection. If the colision type is to stop the player then:
+	; Background collision detection. If the collision type is to stop the player then:
 	; Do up, down, left and right collision checks with the player speed unwanted character types and if they are found then check to see if the movement in that direction
 	; from the joystick, if yes, cancel the movement from the joystick in that direction.
 	; If the colision type is to die when touching such a character then simply don't stop the player and detect the character under the player and kill the player if

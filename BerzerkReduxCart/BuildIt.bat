@@ -9,4 +9,5 @@ if not exist BerzerkReduxCart.prg goto error
 goto end
 :error
 echo BerzerkReduxCart.prg not created!
+exit -1
 :end

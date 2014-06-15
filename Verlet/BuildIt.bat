@@ -16,6 +16,8 @@ if not exist Verlet.crt goto error2
 goto end
 :error2
 echo Verlet.crt not created!
+exit -1
 :error
 echo Verlet.prg not created!
+exit -1
 :end

@@ -7,4 +7,5 @@ if not exist MusicEditor.prg goto error
 goto end
 :error
 echo MusicEditor.prg not created!
+exit -1
 :end

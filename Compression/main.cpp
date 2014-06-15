@@ -22,6 +22,16 @@
 //-c64b ScrollerUT1024.prg c:\temp\tc.prg $400
 //-c UnitTest1.dat c:\temp\ut1.cdat
 
+
+// TODP: Add an option to compress and run BASIC code.
+// Related^^ TODO: Update $2d and $2e properly so that other applications that expect them will work.
+//-c64b SEUCK.prg SEUCKComp.prg 2064
+//>Actually what can be done is to add to the loaded input data some code at some out of the way address (like $f000 or $c000)
+// Then that will warmboot/restore BASIC and the correct expected values in $2d $2e etc.
+// Then this code can call the BASIC code without needing any decompress code changes in the binary blobs below. Also it'll mean the booting code is also compressed.
+
+// TODO: Document how to generate the sC64DecompNoEffect and sC64DecompBorderEffect (From C64\Decompression?) and the constants like 0x8e9 that poke into the code.
+
 static u8 sC64DecompNoEffect[] = {
 	0x0B, 0x08, 0x01, 0x00, 0x9E, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xA9, 0x20, 0x85, 
 	0x01, 0xA2, 0x33, 0xBD, 0x2F, 0x08, 0x95, 0x4F, 0xCA, 0xD0, 0xF8, 0xA2, 0xCB, 0xBD, 0x62, 0x08, 

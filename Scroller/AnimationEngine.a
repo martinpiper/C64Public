@@ -1036,14 +1036,86 @@ AnimationUpdateFrameMovement
 	jsr PlayerRespawn
 	jmp .noFrameChangeNoDelayUpdate
 
+!ifdef EnemyAITest {
+; Contains safe "random" directions that don't contain opposing inputs
+SafeRandomDirectionTab
+!by %0001 , %1001 , %1000 , %1010 , %0010 , %0110 , %0100 , %0100
+!source "..\BerzerkRedux\Rand.a"
+!macro CheckEnemeyDirectionCollision .movementBitsIn , .charOffset {
+	lda AnimationMovementMove,x
+	and #.movementBitsIn
+	cmp #.movementBitsIn
+	bne .enemyNotHitChars
+	ldy #.charOffset
+	lda (tempWork0),y
+	; Detect collision against player 1 and 2 illegal characters
+	cmp Player1Properties+PlayerOffset_CharacterCollision
+	bcs .enemyHitChars
+	cmp Player2Properties+PlayerOffset_CharacterCollision
+	bcc .enemyNotHitChars
+.enemyHitChars
+	; Zero out the movement
+	lda AnimationMovementMove,x
+	and #!.movementBitsIn
+	sta AnimationMovementMove,x
+.enemyNotHitChars
+}
+.doRunningMan
+	lda AnimationMovementFrameCount,x
+	bne .notNeedNewDirectionAI
+	lda #10		; Pick a new direction to move every 10 frames
+	sta AnimationMovementFrameCount,x
+	jsr Rand
+	and #7
+	tay
+	lda SafeRandomDirectionTab,y
+	sta AnimationMovementMove,x
+
+.notNeedNewDirectionAI
+	; Check the AnimationMovementMove direction and check for collisions with the background, zero out any silly directions
+	jsr AnimationToScreenOffset
+	sty tempWork0
+	clc
+	adc ScreenVisibleHi
+	sta tempWork1
+
+	; Test the four directions first
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Right , 40+2
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Left , 40
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Up , 1
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Down , 80+1
+
+	; Now diagonals
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Right | EnemyAnimationBit_Up , 2
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Left | EnemyAnimationBit_Up , 0
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Right | EnemyAnimationBit_Down , 80+2
+	+CheckEnemeyDirectionCollision EnemyAnimationBit_Left | EnemyAnimationBit_Down , 80
+
+
+
+	; Finally update the movement into the animation direction
+	lda AnimationMovementMove,x
+	cmp AnimationDirectionIn,x
+	beq .noFrameReset
+	; Need to reset the frame counter since there was a change in direction
+	sta AnimationDirectionIn,x
+	lda #0
+	sta AnimationSpriteFrameCountDelay,x
+.noFrameReset
+	jmp .notNeedNewMove
+}
+
+.processAnimationFramesS2 jmp .processAnimationFrames
+
 .processEnemyMovement
 	; Early out
 	lda AnimationMovementMove,x
 	cmp #$ff
-	beq .processAnimationFramesS
+	beq .processAnimationFramesS2
 	and #$f
 	sta AnimationDirectionIn,x
 
+	; This AnimationMovementFrameCount will be 0 for the first frame displayed
 	lda AnimationMovementFrameCount,x
 	bne .notNeedNewMove
 
@@ -1059,11 +1131,24 @@ AnimationUpdateFrameMovement
 	; Exit if the command byte is $ff
 	cmp #$ff
 	bne .notProcessAnimationFrames
-	; End of the animation movement so input a blank movement.
+	; End of the animation movement happens here...
+!ifdef EnemyAITest {
+	; If the enemy movement for type 24 has ended then fall back to using AI.
+	; This allows SEUCK movements to be used to get the enemy on the screen and then it will switch to AI movement.
+	; If the enemny is placed within SEUCK without any movement then it will immediately switch to AI, as expected.
+	lda AnimationType ,x
+	cmp #24	; The "running man"
+	bne .notdoRunningMan
+	jmp .doRunningMan
+.notdoRunningMan
+}
+	; So input a blank movement.
 	; This causes directional fire to then fire upwards, which is what SEUCK does, so we do too.
 	; Personally I think we should use the movement from the last valid input since the animation frame is also held at that frame. It looks better.
+!ifdef OverrideDefaultAnimationDirection {} else {
 	lda #0
 	sta AnimationDirectionIn,x
+}
 	jmp .processAnimationFrames
 .notProcessAnimationFrames
 	lsr

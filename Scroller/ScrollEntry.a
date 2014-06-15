@@ -117,6 +117,20 @@ Scroller_FullScreen = 1
 IRQOpenBorders = 1
 }
 
+;Enable this to allow the enemy AI test code to be enabled.
+; This will replace the all enemy object type 24 with an enemy that will run around. (.doRunningMan in AnimationEngine.a)
+; Enable the ENEMYTST.P00 is ScrollerData.a to include a suitable game file.
+; This example file contains a first screen (for 60 seconds) with a "box" shape where three AI units will try to escape.
+; They will be constrained by this box until it is removed by the next screen.
+EnemyAITest = 1
+
+
+;Enable this to use the last directional input when the animation ends.
+; Original SEUCK actually defaults to direction 0 which makes enemies fire upwards.
+; Enabling this will override the default SEUCK behaviour
+;OverrideDefaultAnimationDirection = 1
+
+
 ; This code is post-build linked with a decompression stage so we don't use any BASIC sys start code here.
 ; Instead the start for the code is $400 which is quickly overwritten by other data once the
 ; real game code starts.

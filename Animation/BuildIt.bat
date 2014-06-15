@@ -8,4 +8,5 @@ if not exist Animation.prg goto error
 goto end
 :error
 echo Animation.prg not created!
+exit -1
 :end

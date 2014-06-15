@@ -7,4 +7,5 @@ if not exist MusicPlayerDemo.prg goto error
 goto end
 :error
 echo MusicPlayerDemo.prg not created!
+exit -1
 :end

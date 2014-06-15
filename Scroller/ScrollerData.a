@@ -25,12 +25,17 @@ BackgroundFixedColours
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .offset, .size {
 ;!bin "../SEUCK/GAME1__I.P00",.offset,.size
-!bin "../SEUCK/GAME2__I.P00",.offset,.size
+;!bin "../SEUCK/GAME2__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME3__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME4__I.P00",.offset,.size
 ;!bin "../SEUCK/demo4.bin",.offset,.size
 ;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
 ;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
+
+;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
+;These are then overridden when the EnemyAITest define is enabled
+!bin "../SEUCK/ENEMYTST.P00",.offset,.size
+
 ; Horizontal SEUCK files
 ;!bin "../SEUCK/LOTD___I.P00",.offset,.size
 ;!bin "../SEUCK/SIDEWAYS.P00",.offset,.size
@@ -433,6 +438,10 @@ SpriteScoreChars
 +reserve ~Animation_DirectionalBits , Multiplex_items
 ; Uses the same directional bit pattern as the attack wave movement
 ; Direction bits 0 right, 1 left, 2 down, 3 up
+EnemyAnimationBit_Right = %0001
+EnemyAnimationBit_Left	= %0010
+EnemyAnimationBit_Down	= %0100
+EnemyAnimationBit_Up	= %1000
 +reserve ~AnimationDirectionIn , Multiplex_items
 +reserve ~AnimationDirectionLastValidIn , Multiplex_items
 

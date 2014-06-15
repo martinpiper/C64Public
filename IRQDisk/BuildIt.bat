@@ -7,4 +7,5 @@ if not exist TestIRQDisk.prg goto error
 goto end
 :error
 echo TestIRQDisk.prg not created!
+exit -1
 :end

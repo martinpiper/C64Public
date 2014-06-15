@@ -7,4 +7,5 @@ if not exist Scroller.prg goto error
 goto end
 :error
 echo Scroller.prg not created!
+exit -1
 :end

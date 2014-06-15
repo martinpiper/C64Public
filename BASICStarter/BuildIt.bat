@@ -8,4 +8,5 @@ if not exist BASICStarter.prg goto error
 goto end
 :error
 echo BASICStarter.prg not created!
+exit -1
 :end

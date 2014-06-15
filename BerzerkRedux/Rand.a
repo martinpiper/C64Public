@@ -1,4 +1,4 @@
-!zn
+!zn {
 ; A/Y = Seed, 16 bits
 Seed
 	sta .seeds
@@ -21,7 +21,7 @@ Seed
 	eor .seeds+3
 	sta .seeds+3
 	rts
-.seeds !by 0,0,0,0
+.seeds !by %11010110,%00110110,%10100011,%10101010
 
 Rand
 	; Rotate over 32 bits
@@ -44,3 +44,4 @@ Rand
 	sbc .seeds+2
 	eor .seeds+3
 	rts
+}

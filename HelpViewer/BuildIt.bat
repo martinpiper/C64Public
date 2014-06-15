@@ -8,4 +8,5 @@ if not exist HelpViewer.prg goto error
 goto end
 :error
 echo HelpViewer.prg not created!
+exit -1
 :end
