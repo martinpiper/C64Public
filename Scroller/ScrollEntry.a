@@ -4,6 +4,7 @@
 !sal
 !sl "Scroller.map"
 !svl "Scroller.lbl"
+!pdb "Scroller.pdb"
 !cpu 6510
 !ct pet
 
@@ -117,13 +118,19 @@ Scroller_FullScreen = 1
 IRQOpenBorders = 1
 }
 
-;Enable this to allow the enemy AI test code to be enabled.
+;Enable this to allow the enemy AI test code to be enabled with background collision.
 ; This will replace the all enemy object type 24 with an enemy that will run around. (.doRunningMan in AnimationEngine.a)
-; Enable the ENEMYTST.P00 is ScrollerData.a to include a suitable game file.
+; Enable the ENEMYTST.P00 in ScrollerData.a to include a suitable game file.
 ; This example file contains a first screen (for 60 seconds) with a "box" shape where three AI units will try to escape.
 ; They will be constrained by this box until it is removed by the next screen.
-EnemyAITest = 1
+;EnemyAITest = 1
 
+;Enable this to allow enable one enemy that will use directional fire instead of random fire.
+; This will replace the all enemy object type 23 with an enemy that will run around. (.doAimedFire in AnimationEngine.a)
+; Enable the NMYFRTST.P00 in ScrollerData.a to include a suitable game file.
+; This example file is a first screen (for 60 seconds) with an enemy that circles the player.
+; The enemy will shoot in the general direction of the player even though it is set to random in SEUCK.
+;EnemyAimTest = 1
 
 ;Enable this to use the last directional input when the animation ends.
 ; Original SEUCK actually defaults to direction 0 which makes enemies fire upwards.

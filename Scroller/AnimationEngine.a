@@ -463,6 +463,10 @@ AnimationUpdateEnemyFire
 	sta .smxh+1
 	lda AnimationYPos,x
 	sta .smy+1
+!ifdef EnemyAimTest {
+	lda AnimationType,x
+	sta .smAnimType+1
+}
 ;	lda AnimationDirectionLastValidIn,x
 	lda AnimationDirectionIn,x	; It looks like the enemy is not meant to remember the fire direction during animation hold frames when there is no movement
 	and #$f
@@ -493,6 +497,14 @@ AnimationUpdateEnemyFire
 	inc AnimationBulletCount
 	; Found one spare!
 	; Update the velocity
+
+!ifdef EnemyAimTest {
+.smAnimType	lda #0	; Self modified and cached by code above
+	cmp #23	; The correct enemy object ID
+	bne .notdoAimedFire
+	jmp .doAimedFire
+.notdoAimedFire
+}
 
 	lda .enemyFireDirectionType
 	cmp #9
@@ -595,6 +607,84 @@ AnimationUpdateEnemyFire
 	jmp .sp1
 .ret
 	rts
+
+!ifdef EnemyAimTest {
+.doAimedFire
+	; MPi: TODO: Only Player1Information is used, expand so it alternates between Player1Information and Player2Information depending on the active players
+	; Usingthe enemy position for the player to bullet difference calculation
+	lda .smxh+1
+	lsr
+	lda .smxl+1
+	ror
+	lsr
+	sta .velCache
+
+	; Diff X
+	lda Player1Information + PlayerGameOffset_LastSafePosXHi
+	lsr
+	lda Player1Information + PlayerGameOffset_LastSafePosXLo
+	ror
+	lsr
+
+	sec
+	sbc .velCache
+	sta .velCache
+	bpl .storeIt1
+	eor #$FF	; Negate
+	sec
+	adc #0
+.storeIt1
+	sta .enemyFireSpeedAbs
+
+	; Diff Y
+	lda .smy+1
+	lsr
+	lsr
+	sta .velCache+1
+	lda Player1Information + PlayerGameOffset_LastSafePosY
+	lsr
+	lsr
+	sec
+	sbc .velCache+1
+	sta .velCache+1
+	bpl .storeIt2
+	eor #$FF	; Negate
+	sec
+	adc #0
+.storeIt2
+	ora .enemyFireSpeedAbs
+	sta .enemyFireSpeedAbs
+
+	; .velCache contains x and y deltas (both div 4)
+	; Shift down their values while .enemyFireSpeedAbs is faster than .enemyFireSpeed
+.shiftIt
+	lda .enemyFireSpeedAbs
+	beq .useIt
+	cmp .enemyFireSpeed
+	bcc .useIt
+	beq .useIt
+
+	; ASR X and Y deltas until they fit the range we want
+	lda .velCache
+	asl
+	ror .velCache
+
+	lda .velCache+1
+	asl
+	ror .velCache+1
+
+	lsr .enemyFireSpeedAbs
+	jmp .shiftIt
+
+.useIt
+	lda .velCache
+	sta AnimationBulletSpeedX,x
+	lda .velCache+1
+	sta AnimationBulletSpeedY,x
+
+
+	jmp .speedSetSoCalcDirection
+}
 
 .setBulletPosition
 	; Update the bullet position with that from the enemy position
@@ -808,6 +898,7 @@ AnimationUpdateEnemyFire
 .enemyFireSpeedNeg !by 0
 .enemyFireDirectionType !by 0
 .enemyLastValidMove !by 0
+.enemyFireSpeedAbs !by 0
 
 !zn
 !ifdef Scroller_LOTD {
@@ -1133,7 +1224,7 @@ SafeRandomDirectionTab
 	bne .notProcessAnimationFrames
 	; End of the animation movement happens here...
 !ifdef EnemyAITest {
-	; If the enemy movement for type 24 has ended then fall back to using AI.
+	; If the enemy movement for object 24 has ended then fall back to using AI.
 	; This allows SEUCK movements to be used to get the enemy on the screen and then it will switch to AI movement.
 	; If the enemny is placed within SEUCK without any movement then it will immediately switch to AI, as expected.
 	lda AnimationType ,x

@@ -34,7 +34,11 @@ BackgroundFixedColours
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
 ;These are then overridden when the EnemyAITest define is enabled
-!bin "../SEUCK/ENEMYTST.P00",.offset,.size
+;!bin "../SEUCK/ENEMYTST.P00",.offset,.size
+
+;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with one enemy that will use directional fire instead of random fire.
+;These are then overridden when the EnemyAimTest define is enabled
+!bin "../SEUCK/NMYFRTST.P00",.offset,.size
 
 ; Horizontal SEUCK files
 ;!bin "../SEUCK/LOTD___I.P00",.offset,.size
