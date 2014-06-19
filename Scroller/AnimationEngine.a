@@ -1936,6 +1936,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	sta tempWork0
 	lda #>ScorePlayer1
 	sta tempWork1
+!ifdef Scroller_LinkedPlayers { } else {
 	lda .playerTypeOrBulletTypeThatKilled
 	cmp #AnimationType_Player1
 	beq .itIsOK
@@ -1946,15 +1947,18 @@ smSpellEffectRunningPlayerType	lda #$ff
 	sta tempWork0
 	lda #>ScorePlayer2
 	sta tempWork1
+}
 .itIsOK
 	lda AnimationPoints,x
 	jsr ScoreAdd
 	beq .noLifeIncrease
+!ifdef Scroller_LinkedPlayers { } else {
 	lda .playerTypeOrBulletTypeThatKilled
 	cmp #AnimationType_Player2
 	beq .itIsPlayer2
 	cmp #AnimationType_Player2Bullet
 	beq .itIsPlayer2
+}
 	; Must be player 1
 	; MPi: TODO: Macro this with the similar player code below
 	lda Player1Properties+PlayerOffset_ExtraLife
@@ -1968,6 +1972,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	jsr SFXInit
 }
 	jmp .noLifeIncrease
+!ifdef Scroller_LinkedPlayers { } else {
 .itIsPlayer2
 	lda Player2Properties+PlayerOffset_ExtraLife
 	beq .noLifeIncrease
@@ -1978,6 +1983,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	lda #3+4
 	jsr SFXInit
+}
 }
 	; Fallthrough to .noLifeIncrease
 .noLifeIncrease

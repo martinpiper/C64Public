@@ -73,12 +73,40 @@ PlayerInvulnerableTime = 200
 InitPlayers
 	+MACROPlayerInit Player1Information , Player1Properties
 	+MACROPlayerInit Player2Information , Player2Properties
-
 	rts
 
 
+!ifdef Scroller_LinkedPlayers {
+DoPlayerPositionLinkCode
+	txa
+	pha
+	tya
+	pha
 
-!macro MACROPlayerControl .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+	ldy Player2Information+PlayerGameOffset_AnimationIndex
+
+	lda AnimationXPosLo,x
+	clc
+	adc #Scroller_LinkedPlayersOffsetX
+	sta AnimationXPosLo,y
+	lda AnimationXPosHi,x
+	adc #0
+	sta AnimationXPosHi,y
+	lda AnimationYPos,x
+	clc
+	adc #Scroller_LinkedPlayersOffsetY
+	sta AnimationYPos,y
+
+	pla
+	tay
+	pla
+	tax
+
+	rts
+}
+
+!macro MACROPlayerControl .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath , .doLinkCode {
 	; Check if the player is alive :)
 	ldx .playerInformation+PlayerGameOffset_AnimationIndex
 	cpx #$ff
@@ -421,6 +449,9 @@ InitPlayers
 	sta AnimationXPosHi,x
 .notRightP
 
+!if .doLinkCode = 1 {
+	jsr DoPlayerPositionLinkCode
+}
 
 	; Cheat mode: Enable the following line to have auto rapid fire
 ;	jmp .cheatFire
@@ -550,9 +581,13 @@ InitPlayers
 
 !zn
 .player1Control
-	+MACROPlayerControl Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death
+	+MACROPlayerControl Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death , 0
 .player2Control
-	+MACROPlayerControl Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death
+!ifdef Scroller_LinkedPlayers {
+	+MACROPlayerControl Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , 1
+} else {
+	+MACROPlayerControl Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , 0
+}
 
 HandleUserInput
 	jsr .player1Control
@@ -585,12 +620,19 @@ HandleUserInput
 ; Carry set = Player did not die
 PlayerDeath
 	; Take into account the player animation index
+!ifdef Scroller_LinkedPlayers {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+	+MACROPlayerDeath Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death
+	ldx Player2Information+PlayerGameOffset_AnimationIndex
+	+MACROPlayerDeath Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death
+} else {
 	cpx Player2Information+PlayerGameOffset_AnimationIndex
 	beq .isPlayer2
 	+MACROPlayerDeath Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death
 	rts
 .isPlayer2
 	+MACROPlayerDeath Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death
+}
 	rts
 
 
@@ -615,10 +657,12 @@ PlayerDeath
 	lda #50
 	sta ScrollerExitMainLineCounter
 	sec
-	rts
+	jmp .endRespawn
+
 .noExitGame
 	sec
-	rts
+	jmp .endRespawn
+
 .moreLives
 	ldy #.animationType_Player
 	jsr AnimationMutateToType
@@ -663,7 +707,7 @@ PlayerDeath
 	bcs .positionIsNotSafe
 
 	clc
-	rts
+	jmp .endRespawn
 
 .positionIsNotSafe
 	lda .playerInformation+PlayerGameOffset_LastSafePosXLo
@@ -688,7 +732,7 @@ PlayerDeath
 	bcs .positionIsNotSafe2
 
 	clc
-	rts
+	jmp .endRespawn
 
 .positionIsNotSafe2
 !if .playerInformation = Player1Information {
@@ -704,7 +748,9 @@ PlayerDeath
 	sta AnimationYPos,x
 
 	clc
-	rts
+
+.endRespawn
+
 }
 
 !zn
@@ -712,6 +758,26 @@ PlayerDeath
 ; Return: Carry set if there are no more lives
 ; Carry clear if the player can respawn
 PlayerRespawn
+!ifdef Scroller_LinkedPlayers {
+	cpx Player1Information+PlayerGameOffset_AnimationIndex
+	beq .isPlayer1
+	rts
+
+.isPlayer1
+	lda #1
+	sta ScorePlayer1LivesUpdated
+
+	lda Player1Information + PlayerGameOffset_Lives
+	sta Player2Information + PlayerGameOffset_Lives
+
+	jsr DoLinkedPlayer1Spawn
+	jsr DoLinkedPlayer2Spawn
+
+	php
+	jsr DoPlayerPositionLinkCode
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+	plp
+} else {
 	; Take into account the player animation index
 	cpx Player1Information+PlayerGameOffset_AnimationIndex
 	beq .isPlayer1
@@ -725,8 +791,20 @@ PlayerRespawn
 	lda #1
 	sta ScorePlayer2LivesUpdated
 	+MACROPlayerRespawn Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , ~Player2TestSpawnPosition
+}
 	rts
 
+!ifdef Scroller_LinkedPlayers {
+	; Caution: Player1TestSpawnPosition and Player2TestSpawnPosition can be called from two places, so these DoLinkedPlayer1Spawn and DoLinkedPlayer1Spawn routines must remain separated by rts
+DoLinkedPlayer1Spawn
+	ldx Player2Information+PlayerGameOffset_AnimationIndex
+	+MACROPlayerRespawn Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , ~Player2TestSpawnPosition
+	rts
+DoLinkedPlayer2Spawn
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+	+MACROPlayerRespawn Player1Information , Player1Properties , AnimationType_Player1 , AnimationType_Player1Bullet , AnimationType_Player1Death , ~Player1TestSpawnPosition
+	rts
+}
 
 
 

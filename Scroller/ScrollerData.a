@@ -24,7 +24,7 @@ BackgroundFixedColours
 
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .offset, .size {
-;!bin "../SEUCK/GAME1__I.P00",.offset,.size
+!bin "../SEUCK/GAME1__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME2__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME3__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME4__I.P00",.offset,.size
@@ -38,7 +38,7 @@ BackgroundFixedColours
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with one enemy that will use directional fire instead of random fire.
 ;These are then overridden when the EnemyAimTest define is enabled
-!bin "../SEUCK/NMYFRTST.P00",.offset,.size
+;!bin "../SEUCK/NMYFRTST.P00",.offset,.size
 
 ; Horizontal SEUCK files
 ;!bin "../SEUCK/LOTD___I.P00",.offset,.size

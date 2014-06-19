@@ -76,6 +76,14 @@ Scroller_PlaySoundEffectsDuringGame = 1
 ; parts of the enemy causing the explosion. The linked first boss "wings" shouldn't be causing a kill.
 Scroller_LinkedEnemyTest = 1
 
+; Define this to link player 1 and 2 sprites together so that one joystick can control both players.
+; The code will offset the "player 2" sprite using Scroller_LinkedPlayersOffsetX and Scroller_LinkedPlayersOffsetY
+;Scroller_LinkedPlayers = 1
+Scroller_LinkedPlayersOffsetX = 24
+Scroller_LinkedPlayersOffsetY = 0
+
+
+
 ; Turns on the linked enemy test in LoTD if it isn't already enabled
 ; If Scroller_LOTD is enabled then turn on the linked enemy and horizontal flag by default
 !ifdef Scroller_LOTD {
@@ -126,7 +134,7 @@ IRQOpenBorders = 1
 ;EnemyAITest = 1
 
 ;Enable this to allow enable one enemy that will use directional fire instead of random fire.
-; This will replace the all enemy object type 23 with an enemy that will run around. (.doAimedFire in AnimationEngine.a)
+; This will replace the all enemy object type 23 with an enemy that will shoot at the player. (.doAimedFire in AnimationEngine.a)
 ; Enable the NMYFRTST.P00 in ScrollerData.a to include a suitable game file.
 ; This example file is a first screen (for 60 seconds) with an enemy that circles the player.
 ; The enemy will shoot in the general direction of the player even though it is set to random in SEUCK.
