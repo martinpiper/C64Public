@@ -228,11 +228,17 @@ ScoreSpriteRender2
 
 !zn
 ScorePlayer1Render
+!ifdef Scroller_SingleScoreLives {
+ScorePlayer2Render
+}
 	lda ScorePlayer1Updated
 	bne .doIt
 	rts
 .doIt
 ScorePlayer1RenderForce
+!ifdef Scroller_SingleScoreLives {
+ScorePlayer2RenderForce
+}
 	lda #0
 	sta ScorePlayer1Updated
 
@@ -334,11 +340,17 @@ ScorePlayer1RenderForce
 
 !zn
 ScorePlayer1RenderLives
+!ifdef Scroller_SingleScoreLives {
+ScorePlayer2RenderLives
+}
 	lda ScorePlayer1LivesUpdated
 	bne .doIt
 	rts
 .doIt
 ScorePlayer1RenderLivesForce
+!ifdef Scroller_SingleScoreLives {
+ScorePlayer2RenderLivesForce
+}
 	lda #0
 	sta ScorePlayer1LivesUpdated
 
@@ -482,6 +494,7 @@ ScorePlayer1RenderLivesForce
 
 
 !zn
+!ifdef Scroller_SingleScoreLives { } else {
 ScorePlayer2RenderLives
 	lda ScorePlayer2LivesUpdated
 	bne .doIt
@@ -628,10 +641,11 @@ ScorePlayer2RenderLivesForce
 	jsr ScoreSpriteRenderSingle
 
 	rts
-
+}
 
 
 !zn
+!ifdef Scroller_SingleScoreLives { } else {
 ScorePlayer2Render
 	lda ScorePlayer2Updated
 	bne .doIt
@@ -735,7 +749,7 @@ ScorePlayer2RenderForce
 	sta tempWork5
 	jsr ScoreSpriteRender
 	rts
-
+}
 
 ; Input: A = points
 ; tempWork0/tempWork1 lo/hi of the score to use

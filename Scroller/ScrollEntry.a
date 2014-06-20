@@ -77,12 +77,31 @@ Scroller_PlaySoundEffectsDuringGame = 1
 Scroller_LinkedEnemyTest = 1
 
 ; Define this to link player 1 and 2 sprites together so that one joystick can control both players.
-; The code will offset the "player 2" sprite using Scroller_LinkedPlayersOffsetX and Scroller_LinkedPlayersOffsetY
+; The code will permanently offset the "player 2" sprite using Scroller_LinkedPlayersOffsetX and Scroller_LinkedPlayersOffsetY
+; When one player animation explodes dies the other player animation explodes at the same time.
 ;Scroller_LinkedPlayers = 1
 Scroller_LinkedPlayersOffsetX = 24
 Scroller_LinkedPlayersOffsetY = 0
 
+!ifdef Scroller_LinkedPlayers {
+Scroller_SingleScoreLives = 1	; This must be always enabled if Scroller_LinkedPlayers is enabled
+}
 
+; Define this to enable both players but they are controlled by one stick.
+; Both players have independent collision.
+; Consider enabling Scroller_SingleScoreLives at the same time. It isn't mandatory though. :)
+;Scroller_TwinMode = 1
+
+; Define this so there is one score and lives displayed even if two players are active.
+; In other words the life count and score is shared. When both players have died then the game ends.
+; Most often used with Scroller_LinkedPlayers or Scroller_TwinMode.
+;Scroller_SingleScoreLives = 1
+
+!ifdef Scroller_TwinMode {
+!ifdef Scroller_LinkedPlayers {
+!error Cannot enable Scroller_TwinMode and Scroller_LinkedPlayers at the same time
+}
+}
 
 ; Turns on the linked enemy test in LoTD if it isn't already enabled
 ; If Scroller_LOTD is enabled then turn on the linked enemy and horizontal flag by default

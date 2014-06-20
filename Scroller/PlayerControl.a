@@ -639,13 +639,24 @@ PlayerDeath
 
 !macro MACROPlayerRespawn .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath , ~.playerTestSpawnPosition {
 	; Cheat mode: Comment out the following line to disable player lives loss.
+!ifdef Scroller_SingleScoreLives {
+	dec Player1Information+PlayerGameOffset_Lives
+} else {
 	dec .playerInformation+PlayerGameOffset_Lives
+}
 	beq .moreLives
 	bpl .moreLives
 	lda #$ff
 	sta AnimationType,x
 	sta .playerInformation+PlayerGameOffset_AnimationIndex
 
+!ifdef Scroller_SingleScoreLives {
+	; Either player alive and the game doesn't exit
+	lda Player1Information+PlayerGameOffset_AnimationIndex
+	bpl .noExitGame
+	lda Player2Information+PlayerGameOffset_AnimationIndex
+	bpl .noExitGame
+} else {
 	; Check the other player being dead at this point and then only set ScrollerExitMainLineCounter if needed
 !if .playerInformation = Player1Information {
 	lda Player2Information+PlayerGameOffset_Lives
@@ -653,7 +664,8 @@ PlayerDeath
 	lda Player1Information+PlayerGameOffset_Lives
 }
 	bpl .noExitGame
-	; This is a small time delay when players dieto let the game run, tweak as required.
+}
+	; This is a small time delay when players die to let the game run, tweak as required.
 	lda #50
 	sta ScrollerExitMainLineCounter
 	sec
@@ -768,10 +780,11 @@ PlayerRespawn
 	sta ScorePlayer1LivesUpdated
 
 	lda Player1Information + PlayerGameOffset_Lives
-	sta Player2Information + PlayerGameOffset_Lives
-
-	jsr DoLinkedPlayer1Spawn
+	pha
 	jsr DoLinkedPlayer2Spawn
+	pla
+	sta Player1Information + PlayerGameOffset_Lives
+	jsr DoLinkedPlayer1Spawn
 
 	php
 	jsr DoPlayerPositionLinkCode
@@ -789,7 +802,11 @@ PlayerRespawn
 	rts
 .isPlayer2
 	lda #1
+!ifdef Scroller_SingleScoreLives {
+	sta ScorePlayer1LivesUpdated
+} else {
 	sta ScorePlayer2LivesUpdated
+}
 	+MACROPlayerRespawn Player2Information , Player2Properties , AnimationType_Player2 , AnimationType_Player2Bullet , AnimationType_Player2Death , ~Player2TestSpawnPosition
 }
 	rts

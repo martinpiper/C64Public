@@ -157,6 +157,12 @@ InitialiseGame
 	sta SpellPlayer1Counter
 	sta SpellPlayer2Counter
 }
+!ifdef Scroller_TwinMode {
+	jsr InitPlayer1
+	jsr InitPlayer2
+	lda #$ff
+	sta PlayerNumberToSpawnNext
+} else {
 	; A good place to initialse the player sprites but we need to detect from the title
 	; screen who started the game, player 1 or player 2.
 	lda TitleScreenJoystickStarted
@@ -190,6 +196,7 @@ InitialiseGame
 	lda #0
 	sta PlayerNumberToSpawnNext
 .over
+}
 
 	lda #$ff
 	sta VIC2SpriteMulticolour
@@ -263,7 +270,11 @@ InitPlayer2
 	jsr Player2TestSpawnPosition
 
 	lda Player2Properties+PlayerOffset_Lives
+!ifdef Scroller_SingleScoreLives {
+	sta Player1Information+PlayerGameOffset_Lives
+} else {
 	sta Player2Information+PlayerGameOffset_Lives
+}
 	lda TitleScreenJoystickStarted
 	sta Player2Information+PlayerGameOffset_JoyStickPort
 	jsr ScorePlayer2RenderForce
@@ -820,16 +831,20 @@ ScrollerDemoMainline
 	jmp .notS3
 .notS1
 !ifdef Scroller_LinkedPlayers { } else {
+!ifdef Scroller_SingleScoreLives { } else {
 	cmp #2
 	bne .notS2
 	jsr ScorePlayer2Render
 }
+}
 	jmp .notS3
 .notS2
 !ifdef Scroller_LinkedPlayers { } else {
+!ifdef Scroller_SingleScoreLives { } else {
 	cmp #3
 	bne .notS3
 	jsr ScorePlayer2RenderLives
+}
 }
 .notS3
 }

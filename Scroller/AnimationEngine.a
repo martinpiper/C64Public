@@ -1936,7 +1936,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	sta tempWork0
 	lda #>ScorePlayer1
 	sta tempWork1
-!ifdef Scroller_LinkedPlayers { } else {
+!ifdef Scroller_SingleScoreLives { } else {
 	lda .playerTypeOrBulletTypeThatKilled
 	cmp #AnimationType_Player1
 	beq .itIsOK
@@ -1952,7 +1952,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	lda AnimationPoints,x
 	jsr ScoreAdd
 	beq .noLifeIncrease
-!ifdef Scroller_LinkedPlayers { } else {
+!ifdef Scroller_SingleScoreLives { } else {
 	lda .playerTypeOrBulletTypeThatKilled
 	cmp #AnimationType_Player2
 	beq .itIsPlayer2
@@ -1972,7 +1972,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	jsr SFXInit
 }
 	jmp .noLifeIncrease
-!ifdef Scroller_LinkedPlayers { } else {
+!ifdef Scroller_SingleScoreLives { } else {
 .itIsPlayer2
 	lda Player2Properties+PlayerOffset_ExtraLife
 	beq .noLifeIncrease
