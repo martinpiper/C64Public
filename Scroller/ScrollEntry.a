@@ -90,18 +90,30 @@ Scroller_SingleScoreLives = 1	; This must be always enabled if Scroller_LinkedPl
 ; Define this to enable both players but they are controlled by one stick.
 ; Both players have independent collision.
 ; Consider enabling Scroller_SingleScoreLives at the same time. It isn't mandatory though. :)
-;Scroller_TwinMode = 1
+Scroller_TwinMode = 1
 
 ; Define this so there is one score and lives displayed even if two players are active.
 ; In other words the life count and score is shared. When both players have died then the game ends.
 ; Most often used with Scroller_LinkedPlayers or Scroller_TwinMode.
-;Scroller_SingleScoreLives = 1
+Scroller_SingleScoreLives = 1
 
 !ifdef Scroller_TwinMode {
 !ifdef Scroller_LinkedPlayers {
 !error Cannot enable Scroller_TwinMode and Scroller_LinkedPlayers at the same time
 }
 }
+
+; Enable this to allow player collision to escape situations where it might get stuck by collision character geometry.
+; This uses more slightly processor time though.
+;CollisionAllowEscape = 1
+
+; This adds the pixel offset to the collision calculation for each sprite
+; To disable these set them to 0
+CollisionHotSpotTweakY = 8
+CollisionHotSpotTweakX = 4
+
+; Enable this to try searching the other player's safe position if the respawn position would result in death for the player.
+;TryOtherPlayerSafePositionForRespawn = 1
 
 ; Turns on the linked enemy test in LoTD if it isn't already enabled
 ; If Scroller_LOTD is enabled then turn on the linked enemy and horizontal flag by default

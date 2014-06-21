@@ -1589,28 +1589,37 @@ AnimationConvertXYToDirection
 ; Output Y,A screen offset lo/hi
 !zn
 AnimationSpriteXDiv2ToChar
-; First 12/2 pixels
-!fill 12,0
+; First 24/2 pixels
+!fill 12 - (CollisionHotSpotTweakX / 2),0
 ; Now the x/2 positions
 !for .table1,160 {!by ((.table1-1) / 4) }
 ; Now the rest clamped
-!fill 84,39
+!fill 84 + (CollisionHotSpotTweakX / 2),39
 
 AnimationSpriteYToCharOffsetLo
-; First 50 pixels
-!fill 50,0
+; First 53 pixels due to border coming in. Even if scrollRegUsedY is not used still use 53.
+!fill 53 - CollisionHotSpotTweakY,0
 ; Now the y positions
 !for .table1,200 {!by <(((.table1-1) / 8) * 40) }
 ; Now the rest clamped
-!fill 6,<(24 * 40)
+!fill 2 + CollisionHotSpotTweakY,<(24 * 40)
 
 AnimationSpriteYToCharOffsetHi
+!ifdef scrollRegUsedY {
+; First 53 pixels due to border coming in
+!fill 53 - CollisionHotSpotTweakY,0
+; Now the y positions
+!for .table1,200 {!by >(((.table1-1) / 8) * 40) }
+; Now the rest clamped
+!fill 2 + CollisionHotSpotTweakY,<(24 * 40)
+} else {
 ; First 50 pixels
 !fill 50,0
 ; Now the y positions
 !for .table1,200 {!by >(((.table1-1) / 8) * 40) }
 ; Now the rest clamped
 !fill 6,>(24 * 40)
+}
 
 AnimationToScreenOffset
 	; MPi: TODO: Pass in the hi in A and use sta .smHi+1 there it is the adc #0 below to save some cycles when exiting this routine
@@ -1621,15 +1630,30 @@ AnimationToScreenOffset
 	lda AnimationXPosLo,x
 	ror
 
-	; MPi: TODO: There is scope for subtracting frameScrollPos from the position to help stop
-	; the player sprite bouncing off chars as the screen scrolls or being able to force a way
-	; through collision chars.
+	; Subtracting scrollRegUsedX (div 2) from the position to help improve collision with characters
+!ifdef scrollRegUsedX {
+	sta .smx1+1
+	lda scrollRegUsedX
+	lsr	; MPi: TODO: Hmm, choose some other more optimal method
+	clc
+.smx1 adc #0
+}
 
 	tay
 	lda AnimationSpriteXDiv2ToChar,y
 	sta .tempWorksm1+1
 	; Convert Y to char index
+
+	; Subtracting scrollRegUsedY from the position to help improve collision with characters
+!ifdef scrollRegUsedY {
+	lda AnimationYPos,x
+	sec
+	sbc scrollRegUsedY
+	tay
+} else {
 	ldy AnimationYPos,x
+}
+
 	lda AnimationSpriteYToCharOffsetLo,y
 	clc
 	adc .tempWorksm1+1

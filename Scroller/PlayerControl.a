@@ -194,12 +194,17 @@ DoPlayerPositionLinkCode
 
 .doCharStopCollsion
 	; First, if the player is standing right on a stopping character then temporarily ignore collision detection to help the player escape
-	; MPi: TODO: Tweak this to stop all movements being valid and do a wider search instead?
+	; MPi: TODO: Tweak this to stop all movements being valid and do a wider search (for a shortest escape direction) instead?
 	; MPi: TODO: Bug: If the player is standing on the top left of a character with stopping chars up and left then proceeds to move diagonally up-left they will move through the zero pixel diagonal to the non-stopping character.
+!ifdef CollisionAllowEscape {
 	ldy #40+1
 	lda (tempWork0),y
 	cmp .playerProperties+PlayerOffset_CharacterCollision
 	bcs .ignoreCollision
+}
+
+	; MPi: TODO: When using Scroller_LinkedPlayers the collision movement test should probably be expanded so that the input movement is also hindered by the player 2 sprite, not just the player 1 sprite.
+	; Relatively easy to do, just include player 2 position in the movement cancellation below... (Call AnimationToScreenOffset with player 2 of course)
 
 	; Now check up, down, left, right
 	ldy #1
@@ -340,13 +345,23 @@ DoPlayerPositionLinkCode
 	cmp #AnimationType_Player1
 }
 	bne .playerIsNotAlive
-	lda AnimationYPos,x
+
+
 !if .playerInformation = Player1Information {
-	cmp Player2Properties+PlayerOffset_DownStop
+	lda Player2Properties+PlayerOffset_DownStop
 } else {
-	cmp Player1Properties+PlayerOffset_DownStop
+	lda Player1Properties+PlayerOffset_DownStop
 }
-	bcc .playerIsNotAlive
+	sec
+	; Subtract 8 while detecting the other player's Y position during the push scroll.
+	; This gives the other player enough wiggle room at the bottom of the screen to get out of sticky situations.
+	; This is a workaround seen in the original SEUCK.
+	sbc #8
+	cmp AnimationYPos,x
+	bcc .blockScroll
+	jmp .playerIsNotAlive
+
+.blockScroll
 	; Block the scroll from happening
 	lda #0
 	sta LevelWantPushScroll
@@ -638,7 +653,7 @@ PlayerDeath
 
 
 !macro MACROPlayerRespawn .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath , ~.playerTestSpawnPosition {
-	; Cheat mode: Comment out the following line to disable player lives loss.
+	; Cheat mode: Comment out the following dec lines to disable player lives loss.
 !ifdef Scroller_SingleScoreLives {
 	dec Player1Information+PlayerGameOffset_Lives
 } else {
@@ -729,6 +744,7 @@ PlayerDeath
 	lda .playerInformation+PlayerGameOffset_LastSafePosY
 	sta AnimationYPos,x
 
+!ifdef TryOtherPlayerSafePositionForRespawn {
 	; Test the respawn position again. If the character would cause death or block for the
 	; player then we use a previously saved safe position for the other player instead and hope it is fine.
 	jsr AnimationToScreenOffset
@@ -758,6 +774,7 @@ PlayerDeath
 	sta AnimationXPosHi,x
 	lda .playerInformationOther+PlayerGameOffset_LastSafePosY
 	sta AnimationYPos,x
+}
 
 	clc
 

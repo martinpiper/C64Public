@@ -136,6 +136,20 @@ topScreenScrollPos		!by 0
 topScreenBank			!by 0
 
 !ifdef Scroller_MultiDirection {
+scrollRegUsedX !by 0
+scrollRegUsedY !by 0
+} else {
+
+!ifdef Scroller_IsHorizontal {
+scrollRegUsedX !by 0
+} else {
+scrollRegUsedY !by 0
+}
+
+}
+
+
+!ifdef Scroller_MultiDirection {
 IRQUsedScreenScrollY !by 0
 } else {
 IRQUsedScreenScrollPos !by 0
@@ -321,6 +335,19 @@ IrqTopOfScreen
 	lda #%11
 	sta CIA2PortASerialBusVICBank
 }
+
+	; Calculate the any real scroll bits used for this screen frame from VIC
+!ifdef scrollRegUsedX {
+	lda VIC2ScreenControlH
+	and #7
+	sta scrollRegUsedX
+}
+!ifdef scrollRegUsedY {
+	lda VIC2ScreenControlV
+	and #7
+	sta scrollRegUsedY
+}
+
 
 !ifdef Scroller_DebugIRQBorder {
 	dec VIC2BorderColour
