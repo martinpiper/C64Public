@@ -576,26 +576,23 @@ BottomBorder2
 	sta VIC2SpriteMulticolour
 
 	; Here there is more raster time.
-	lda #%11000000
+	lda # ( ((ScorePlayer1XPos+0)/256) << 0 ) + ( ((ScorePlayer1XPos+24)/256) << 1 ) + ( ((ScorePlayer1XPos+48)/256) << 2 ) + ( ((ScorePlayer1XPos+72)/256) << 3 ) + ( ((ScorePlayer2XPos+0)/256) << 4 ) + ( ((ScorePlayer2XPos+24)/256) << 5 ) + ( ((ScorePlayer2XPos+48)/256) << 6 ) + ( ((ScorePlayer2XPos+72)/256) << 7 )
 	sta VIC2SpriteXMSB
-	lda #44
-	clc
+	lda #<(ScorePlayer1XPos+0)
 	sta VIC2Sprite0X
-	adc #24
+	lda #<(ScorePlayer1XPos+24)
 	sta VIC2Sprite1X
-	adc #24
+	lda #<(ScorePlayer1XPos+48)
 	sta VIC2Sprite2X
-	adc #24
+	lda #<(ScorePlayer1XPos+72)
 	sta VIC2Sprite3X
-	lda #204+24
-	clc
+	lda #<(ScorePlayer2XPos+0)
 	sta VIC2Sprite4X
-	adc #24
+	lda #<(ScorePlayer2XPos+24)
 	sta VIC2Sprite5X
-	adc #24
+	lda #<(ScorePlayer2XPos+48)
 	sta VIC2Sprite6X
-	clc
-	adc #24
+	lda #<(ScorePlayer2XPos+72)
 	sta VIC2Sprite7X
 
 	; Sprite score pointers. $fdc0-ffbf

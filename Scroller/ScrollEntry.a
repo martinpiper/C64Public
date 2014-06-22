@@ -18,9 +18,9 @@ Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
 Multiplex_DiscardSpritesYPos=scorePanelPos1-1
 Multiplex_items	= 32
 ; Enable this to maintain sprite priority ordering based on Y position.
-;Multiplex_MaintainPriority	= 1
+Multiplex_MaintainPriority	= 1
 ; Enable this to reverse sprite ordering
-;Multiplex_ReverseOrder = 1
+Multiplex_ReverseOrder = 1
 
 !source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
 ; Allows the mainline to start updating sprites earlier after the last multiplexor IRQ.
@@ -72,8 +72,6 @@ Scroller_PlaySoundEffectsDuringGame = 1
 ;TitleScreen_AnimatingSprites = 1
 
 ; Define this separately to Scroller_LOTD if you just want the linked enemy test enabled
-; MPi: TODO: Double check with GAME1__I.P00 that the linked enemy test work only by the killable
-; parts of the enemy causing the explosion. The linked first boss "wings" shouldn't be causing a kill.
 Scroller_LinkedEnemyTest = 1
 
 ; Define this to link player 1 and 2 sprites together so that one joystick can control both players.
@@ -151,9 +149,10 @@ Scroller_SpriteXAdjust = 1
 }
 ;Enable full screen or use the lower screen split
 Scroller_FullScreen = 1
+
+!ifdef Scroller_FullScreen {
 ; Enable the following line to allow the bottom and top borders to be opened and have sprites.
 ; This is only used when Scroller_FullScreen is enabled
-!ifdef Scroller_FullScreen {
 IRQOpenBorders = 1
 }
 
@@ -175,6 +174,12 @@ IRQOpenBorders = 1
 ; Original SEUCK actually defaults to direction 0 which makes enemies fire upwards.
 ; Enabling this will override the default SEUCK behaviour
 ;OverrideDefaultAnimationDirection = 1
+
+
+; Set these two values to the x position for the player's score panels
+ScorePlayer1XPos = 44
+ScorePlayer2XPos = 228
+
 
 
 ; This code is post-build linked with a decompression stage so we don't use any BASIC sys start code here.

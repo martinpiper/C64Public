@@ -1,6 +1,6 @@
 ; Memory map while the game is running:
 ; $0400-$07ff - Score panel screen
-; $0800-$0fff - Screens in bank 0 to fool VIC into not displaying sprites in the opened borders
+; $0800-$0fff - Screens in bank 0 to fool VIC into not displaying sprites in the opened borders, mirrors $c800 and $cb00 from bank 3.
 ; $1000-$bfff - Code and data
 ; $c000-$c7ff - Character data
 ; $c800-$cbff - Screen 0
@@ -87,6 +87,24 @@ InitBank0Data
 	bpl .spr1
 	rts
 
+!zn
+ClearGameScreens
+	; Clear the screens
+	ldx #0
+	txa
+.clm1
+	sta $c800,x
+	sta $c900,x
+	sta $ca00,x
+	sta $cb00,x
+	sta $cc00,x
+	sta $cd00,x
+	sta $ce00,x
+	sta $cf00,x
+	dex
+	bne .clm1
+	rts
+
 !ifdef Scroller_MultiDirection { } else {
 ; The next type of player to try to spawn. If it is -1 then don't bother checking.
 PlayerNumberToSpawnNext !by 0
@@ -141,6 +159,7 @@ InitialiseGame
 }
 }
 	jsr InitBank0Data
+	jsr ClearGameScreens
 	jsr ScrollerInitTables
 !ifdef Scroller_MultiDirection { } else {
 	jsr AnimationInit
@@ -148,7 +167,6 @@ InitialiseGame
 	jsr Multiplex_Sort
 	jsr InitPlayers
 	jsr InitScore
-
 	lda #$ff
 	sta PlayerNumberToSpawnNext
 !ifdef Scroller_LOTD {
