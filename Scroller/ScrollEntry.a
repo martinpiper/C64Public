@@ -18,9 +18,9 @@ Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
 Multiplex_DiscardSpritesYPos=scorePanelPos1-1
 Multiplex_items	= 32
 ; Enable this to maintain sprite priority ordering based on Y position.
-Multiplex_MaintainPriority	= 1
+;Multiplex_MaintainPriority	= 1
 ; Enable this to reverse sprite ordering
-Multiplex_ReverseOrder = 1
+;Multiplex_ReverseOrder = 1
 
 !source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
 ; Allows the mainline to start updating sprites earlier after the last multiplexor IRQ.
@@ -45,6 +45,7 @@ Multiplex_BunchingCheck = 1
 ;Scroller_DebugMainlineBorder = 1
 ;Scroller_DebugColourScrollTimings = 1
 ;Scroller_DebugScreenScrollTimings = 1
+;Scroller_DebugParalaxScrollTimings = 1
 
 ; Define this to demonstrate a multi-directional scroller.
 ; Undefine this to enable SEUCK data file compatibility.
@@ -62,7 +63,9 @@ Multiplex_LeanAndMean = 1
 ; Define this to use horizontal scrolling SEUCK instead
 ;Scroller_IsHorizontal = 1
 
-; Define this to cause the extended code for Legion of the Damned to be used
+; Define this to cause the extended code for Legion of the Damned to be used.
+; Press 'S' female wind spell effect
+; Press 'K' male fire spell effect
 ;Scroller_LOTD = 1
 
 ; Undefine this to only play music instead of sound effects during the game
@@ -88,12 +91,12 @@ Scroller_SingleScoreLives = 1	; This must be always enabled if Scroller_LinkedPl
 ; Define this to enable both players but they are controlled by one stick.
 ; Both players have independent collision.
 ; Consider enabling Scroller_SingleScoreLives at the same time. It isn't mandatory though. :)
-Scroller_TwinMode = 1
+;Scroller_TwinMode = 1
 
 ; Define this so there is one score and lives displayed even if two players are active.
 ; In other words the life count and score is shared. When both players have died then the game ends.
 ; Most often used with Scroller_LinkedPlayers or Scroller_TwinMode.
-Scroller_SingleScoreLives = 1
+;Scroller_SingleScoreLives = 1
 
 !ifdef Scroller_TwinMode {
 !ifdef Scroller_LinkedPlayers {
@@ -111,7 +114,7 @@ CollisionHotSpotTweakY = 8
 CollisionHotSpotTweakX = 4
 
 ; Enable this to try searching the other player's safe position if the respawn position would result in death for the player.
-;TryOtherPlayerSafePositionForRespawn = 1
+TryOtherPlayerSafePositionForRespawn = 1
 
 ; Turns on the linked enemy test in LoTD if it isn't already enabled
 ; If Scroller_LOTD is enabled then turn on the linked enemy and horizontal flag by default
@@ -126,6 +129,30 @@ Scroller_IsHorizontal = 1
 
 ; Define this to completely disable any music being included
 ;Scroller_NoMusic = 1
+
+
+; Enable this to add paralax scrolling update code to the SEUCK Redux engine
+; Two layer paralax scrolling of up to two 5x5 character blocks with optional proper masking or logical OR combination.
+; Each column of paralax chars are sequential. i.e. The blocks numbers must increment as they go down the block.
+Paralax_Enable = 1
+!if Paralax_Enable {
+; Enable this to use a proper bitwise mask when updating the two different paralax levels.
+Paralax_MaskEnable = 1
+; The start character for the displayed paralax scrolling in the game
+Paralax_CharStart = 0
+; The paralax area in characters.
+Paralax_Width = 5
+Paralax_Height = 5
+; The start offsets for the two paralax levels
+; Foreground level
+Paralax_CharLevel1 = 32
+; Background level
+Paralax_CharLevel2 = 64
+}
+
+
+; MPi: TODO: Add new map, blocks and chars to the multi-directional scrolling demo.
+
 
 
 ; MPi: TODO: Double check the sprite X and Y placement in normal SEUCK and horizontal SEUCK.
@@ -147,6 +174,8 @@ Scroller_SpriteXAdjust = 1
 
 
 }
+
+; MPi: TODO: Shift the screen split down one character.
 ;Enable full screen or use the lower screen split
 Scroller_FullScreen = 1
 

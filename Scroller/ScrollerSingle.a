@@ -37,6 +37,81 @@ ScrollerInitTables
 	rts
 }
 
+!ifdef Paralax_Enable {
+!zn {
+.paralaxPos1 !by 0
+.paralaxPos2 !by 0
+.paralaxPos2s !by 0	; Shifted
+paralaxMoveThisFrame !by 0
+	; This routine can be called in several different places.
+	; Either before the colour scroll, before off screen character screen updates or just normally without char/colour updates.
+	; A = Pixels to scroll this frame
+	; Return: Nothing preserved or returned
+ParalaxUpdate
+	lda paralaxMoveThisFrame
+	bne .do
+	rts
+.do
+	sta .sm1+1
+	sta .sm2+1
+
+	; Mark it as done
+	lda #0
+	sta paralaxMoveThisFrame
+
+!ifdef Scroller_DebugParalaxScrollTimings {
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+}
+
+	lda .paralaxPos1
+	clc
+.sm1	adc #0
+	cmp #(Paralax_Height*8)
+	bcc .o1
+	sbc #(Paralax_Height*8)
+.o1
+	sta .paralaxPos1
+
+	; Half speed, double the precision
+	lda .paralaxPos2
+	clc
+.sm2	adc #0
+	cmp #(Paralax_Height*8*2)
+	bcc .o2
+	sbc #(Paralax_Height*8*2)
+.o2
+	sta .paralaxPos2
+	lsr
+	sta .paralaxPos2s
+
+	; Now the fun begins
+	ldx .paralaxPos1
+	ldy .paralaxPos2s
+	!for .ypos,Paralax_Height {
+	!for .line,8 {
+	!for .xpos,Paralax_Width {
+	; Static level
+	lda Paralax_Level2CharData + ((((.xpos-1)*Paralax_Height*2) + (.ypos-1))*8) + .line-1 , x
+	; Middle level
+!ifdef Paralax_MaskEnable {
+	and Paralax_Level1CharDataMask + ((((.xpos-1)*Paralax_Height*2) + (.ypos-1))*8) + .line-1 , y
+}
+	ora Paralax_Level1CharData + ((((.xpos-1)*Paralax_Height*2) + (.ypos-1))*8) + .line-1 , y
+	sta CharData + ((Paralax_CharStart+((.xpos-1)*Paralax_Height) + (.ypos-1))*8) + .line-1
+	}
+	}
+	}
+
+
+!ifdef Scroller_DebugParalaxScrollTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+}
+}
+
 !zn {
 ; To be called as one of the first functions in the frame. Can be called even if the screen is being displayed.
 ScrollerCalculate
@@ -50,6 +125,9 @@ ScrollerCalculate
 	lda #2
 .notMoreThan2
 	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxMoveThisFrame
+}
 	cmp #0
 	beq .noCharsWanted
 
@@ -93,6 +171,9 @@ JNotWantingScroll
 	jmp NotWantingScroll
 
 .scrollScreen
+!ifdef Paralax_Enable {
+	jsr ParalaxUpdate
+}
 
 	lda frameTotalScrScroll
 	beq JNotWantingScroll
@@ -135,6 +216,7 @@ JNotWantingScroll
 	; If the screen y pixel wraps for the end of the movement then inc frameScrollMoveColours
 
 NotWantingScroll
+
 !ifdef Scroller_DebugScreenScrollTimings {
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
@@ -165,6 +247,10 @@ ScrollerOffScreen
 	lda #$cb
 .m2
 	jsr Multiplex_SetSpritePointer
+
+!ifdef Paralax_Enable {
+	jsr ParalaxUpdate
+}
 
 	jmp ScrollSingleColour_40
 

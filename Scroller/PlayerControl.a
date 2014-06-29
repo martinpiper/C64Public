@@ -653,7 +653,7 @@ PlayerDeath
 
 
 !macro MACROPlayerRespawn .playerInformation , .playerProperties , .animationType_Player , .animationType_PlayerBullet , .animationType_PlayerDeath , ~.playerTestSpawnPosition {
-	; Cheat mode: Comment out the following dec lines to disable player lives loss.
+	; Cheat mode: Comment out the following two dec lines to disable player lives loss.
 !ifdef Scroller_SingleScoreLives {
 	dec Player1Information+PlayerGameOffset_Lives
 } else {

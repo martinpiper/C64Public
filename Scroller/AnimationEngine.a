@@ -1525,8 +1525,6 @@ AnimationUpdateMultiplexor
 	lda AnimationYPos,x
 	sta Multiplex_YPos,x
 
-	; No need for colour since it is set by the animation system directly when the animation is
-	; allocated.
 	dex
 	bpl .l1
 	rts

@@ -1,4 +1,4 @@
-Welcome to the genric scrolling game engine source code.
+Welcome to the generic scrolling game engine source code.
 
 Download source from the github link. 
 https://github.com/martinpiper/C64Public 

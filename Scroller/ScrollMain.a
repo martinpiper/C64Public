@@ -927,6 +927,9 @@ ScrollerDemoMainline
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
 }
+!ifdef Paralax_Enable {
+	jsr ParalaxUpdate
+}
 !ifdef Scroller_MultiDirection { } else {
 	lda ScrollerExitMainLineCounter
 	beq .doLoop

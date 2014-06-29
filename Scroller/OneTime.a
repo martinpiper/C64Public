@@ -248,9 +248,37 @@ ScrollerDemoInitOneTimeData
 	inx
 	bne .fc1
 
+!ifdef Paralax_MaskEnable {
+	ldx #(Paralax_Height*Paralax_Width)*8
+.ml1
+	ldy Paralax_Level1CharDataMask-1,x
+	lda ParalaxMaskTab,y
+	sta Paralax_Level1CharDataMask-1,x
+
+	ldy Paralax_Level1CharDataMask-1 + (Paralax_Height*Paralax_Width)*8,x
+	lda ParalaxMaskTab,y
+	sta Paralax_Level1CharDataMask-1 + (Paralax_Height*Paralax_Width)*8,x
+
+	dex
+	bne .ml1
+}
+
 	; Enable IO again
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
 }
 
 	rts
+
+!ifdef Paralax_MaskEnable {
+ParalaxMaskTab
+!for tline	, 256 {
+!zn {
+	!if ((tline-1)>>0) & 3 { .t1 =   1+  2 } else { .t1 = 0 }
+	!if ((tline-1)>>2) & 3 { .t2 =   4+  8 } else { .t2 = 0 }
+	!if ((tline-1)>>4) & 3 { .t3 =  16+ 32 } else { .t3 = 0 }
+	!if ((tline-1)>>6) & 3 { .t4 =  64+128 } else { .t4 = 0 }
+	!by <(NOT(.t1 + .t2 + .t3 + .t4))
+}
+}
+}

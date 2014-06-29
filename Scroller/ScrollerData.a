@@ -25,12 +25,17 @@ BackgroundFixedColours
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .offset, .size {
 ;!bin "../SEUCK/GAME1__I.P00",.offset,.size
+; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME3__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME4__I.P00",.offset,.size
 ;!bin "../SEUCK/demo4.bin",.offset,.size
+; A debug file to help test pixel accurate collision detection
 ;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
+; A debug file to demonstrate that the SEUCK directional animation flags do
 ;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
+; A debug file to demonstrate paralax scrolling with two levels. Use with Paralax_Enable enabled
+!bin "../SEUCK/PARLXTST.P00",.offset,.size
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
 ;These are then overridden when the EnemyAITest define is enabled
@@ -41,10 +46,12 @@ BackgroundFixedColours
 ;!bin "../SEUCK/NMYFRTST.P00",.offset,.size
 
 ; "Double or Nothing" - Use this with Scroller_TwinMode and Scroller_SingleScoreLives enabled
-; Remember to disbale TryOtherPlayerSafePositionForRespawn since we don't want to try the other player's position
-!bin "../SEUCK/DOUBLEDT.P00",.offset,.size
+; Remember to disable TryOtherPlayerSafePositionForRespawn since we don't want to try the other player's position
+;!bin "../SEUCK/DOUBLEDT.P00",.offset,.size
 
 ; Horizontal SEUCK files
+; Enable Scroller_IsHorizontal when using these
+; Enable Scroller_LOTD for game file LOTD___I to add all the extra super weapon spells and tweaks
 ;!bin "../SEUCK/LOTD___I.P00",.offset,.size
 ;!bin "../SEUCK/SIDEWAYS.P00",.offset,.size
 ;!bin "../SEUCK/BAPHOMET.P00",.offset,.size
@@ -57,6 +64,31 @@ BackgroundFixedColours
 ; This macro includes the LotD extra data
 !macro SEUCKFileData2 .offset, .size {
 !bin "../SEUCK/LTDSPLLS.P00",.offset,.size
+}
+
+
+!ifdef Paralax_Enable {
+!align 255,0
+;This includes duplicate columns of paralax chars, it makes the speed code much faster since it doesn't have to do a wraparound check
+Paralax_Level1CharData
+!for .xpos,Paralax_Width {
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
+}
+; This mask data is processed by ScrollerDemoInitOneTimeData to create a logical mask
+!ifdef Paralax_MaskEnable {
+Paralax_Level1CharDataMask
+!for .xpos,Paralax_Width {
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
+}
+}
+
+Paralax_Level2CharData
+!for .xpos,Paralax_Width {
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
+}
 }
 
 !align 255,0
