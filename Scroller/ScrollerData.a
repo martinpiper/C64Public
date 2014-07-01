@@ -66,28 +66,31 @@ BackgroundFixedColours
 !bin "../SEUCK/LTDSPLLS.P00",.offset,.size
 }
 
-
+; This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
 !ifdef Paralax_Enable {
+!macro SEUCKFileDataParalaxBlock .offset, .size {
+!bin "../SEUCK/PRLXBLCK.P00",.offset,.size
+}
 !align 255,0
 ;This includes duplicate columns of paralax chars, it makes the speed code much faster since it doesn't have to do a wraparound check
 Paralax_Level1CharData
 !for .xpos,Paralax_Width {
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
 }
 ; This mask data is processed by ScrollerDemoInitOneTimeData to create a logical mask
 !ifdef Paralax_MaskEnable {
 Paralax_Level1CharDataMask
 !for .xpos,Paralax_Width {
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
 }
 }
 
 Paralax_Level2CharData
 !for .xpos,Paralax_Width {
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileData Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
 }
 }
 

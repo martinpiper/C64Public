@@ -43,15 +43,17 @@ ScrollerInitTables
 .paralaxPos2 !by 0
 .paralaxPos2s !by 0	; Shifted
 paralaxMoveThisFrame !by 0
-	; This routine can be called in several different places.
+	; This routine can be called in several different places during the game.
 	; Either before the colour scroll, before off screen character screen updates or just normally without char/colour updates.
-	; A = Pixels to scroll this frame
+	; Entry: Nothing
 	; Return: Nothing preserved or returned
 ParalaxUpdate
 	lda paralaxMoveThisFrame
 	bne .do
 	rts
 .do
+; Make sure A is 0 or the required move this frame
+ParalaxUpdateForce
 	sta .sm1+1
 	sta .sm2+1
 

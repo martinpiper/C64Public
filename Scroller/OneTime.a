@@ -262,6 +262,12 @@ ScrollerDemoInitOneTimeData
 	dex
 	bne .ml1
 }
+	; Force one update at the beginning
+!ifdef Paralax_Enable {
+	lda #0
+	jsr ParalaxUpdateForce
+}
+
 
 	; Enable IO again
 	lda #ProcessorPortAllRAMWithIO
