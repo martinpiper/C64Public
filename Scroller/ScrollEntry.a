@@ -132,7 +132,7 @@ Scroller_IsHorizontal = 1
 
 
 ; Enable this to add paralax scrolling update code to the SEUCK Redux engine
-Paralax_Enable = 1
+;Paralax_Enable = 1
 ; Two layer paralax scrolling of up to two 5x5 character blocks with optional proper masking or logical OR combination.
 ; Each column of paralax chars are sequential. i.e. The blocks numbers must increment as they go down the block.
 ; Enable PARLXTST.P00 (saved from ParalaxTest.vsf) in the ScrollerData.a file
@@ -141,7 +141,7 @@ Paralax_Enable = 1
 ;   This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
 ;	This means the two level paralax char data doesn't need to be in the main SEUCK file (the rendered characters that show the paralax effect still need to be reserved of course).
 ;   All characters from Paralax_CharStart to Paralax_CharStart+(Paralax_Width*Paralax_Height)-1 will be used for rendering the effect. Don't try to put your characters there because they will get overwritten.
-!if Paralax_Enable {
+!ifdef Paralax_Enable {
 ; Enable this to use a proper bitwise mask when updating the two different paralax levels.
 Paralax_MaskEnable = 1
 ; The start character in the main SEUCK file for the displayed paralax scrolling in the game
