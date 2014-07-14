@@ -154,6 +154,22 @@ InitialiseGame
 	sta frameScrollY
 } else {
 	sta frameScrollPos
+	sta frameTotalScrScroll
+	sta frameScrollMoveColours
+	sta frameTargetVelX
+	sta frameTargetVelY
+!ifdef Paralax_Enable {
+	sta paralaxMoveThisFrame
+}
+	sta scrollerRealMovementYPixels
+	sta TotalScrollPosition
+	sta TotalScrollPosition+1
+
+!ifdef Scroller_LOTD {
+	sta SpellPlayer1Counter
+	sta SpellPlayer2Counter
+}
+
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	jsr SFXSIDInit
 }
@@ -881,6 +897,56 @@ ScrollerDemoMainline
 	jsr UpdateSprites
 } else {
 	jsr AnimationUpdateMultiplexor
+}
+
+!if 0 {
+	; Debugging code to force certain sprites for border timing
+	lda #14
+	sta Multiplex_Colour+1
+	sta Multiplex_Colour+2
+	sta Multiplex_Colour+3
+	sta Multiplex_Colour+4
+	sta Multiplex_Colour+5
+	sta Multiplex_Colour+6
+	sta Multiplex_Colour+7
+	sta Multiplex_Colour+8
+	lda #66
+	sta Multiplex_SpriteFrame+1
+	sta Multiplex_SpriteFrame+2
+	sta Multiplex_SpriteFrame+3
+	sta Multiplex_SpriteFrame+4
+	sta Multiplex_SpriteFrame+5
+	sta Multiplex_SpriteFrame+6
+	sta Multiplex_SpriteFrame+7
+	sta Multiplex_SpriteFrame+8
+	lda #30
+	sta Multiplex_XPosLo+1
+	lda #40
+	sta Multiplex_XPosLo+2
+	lda #50
+	sta Multiplex_XPosLo+3
+	lda #60
+	sta Multiplex_XPosLo+4
+	lda #70
+	sta Multiplex_XPosLo+5
+	lda #80
+	sta Multiplex_XPosLo+6
+	lda #90
+	sta Multiplex_XPosLo+7
+	lda #100
+	sta Multiplex_XPosLo+8
+
+	; This is the first visible sprite line for the top of the screen. Which is VIC2SpriteYBorderTop + 4
+	lda #54
+;	lda #50
+	sta Multiplex_YPos+1
+;	sta Multiplex_YPos+2
+;	sta Multiplex_YPos+3
+;	sta Multiplex_YPos+4
+;	sta Multiplex_YPos+5
+;	sta Multiplex_YPos+6
+;	sta Multiplex_YPos+7
+;	sta Multiplex_YPos+8
 }
 
 !ifdef Scroller_DebugMainlineBorder {

@@ -17,6 +17,8 @@ LevelPositionAdjustment = 5
 
 ; Lo/hi of the current level properties
 LevelPointer !by 0,0
+oldScrollMapHY !by 0
+oldScrollMapHY2 !by 0
 
 !zn
 LevelStaticTicks = 50
@@ -32,15 +34,15 @@ LevelInit
 	lda #>(LevelProperties + (levelStart * 7))
 	sta tempWork1
 	sta LevelPointer+1
-
+	lda #0
+	sta oldScrollMapHY
+	sta oldScrollMapHY2
 	jsr LevelSetupNextLevel
 	rts
 
 ; Call this every frame
 !zn
 .notStillS jmp .notStill
-.oldScrollMapHY !by 0
-.oldScrollMapHY2 !by 0
 LevelFrameLogic
 	; Reset any scroll and let this level logic figure out what to do each frame
 	lda #0
@@ -69,13 +71,13 @@ LevelFrameLogic
 	lda scrollMapHPos
 	sec
 	sbc #LevelPositionAdjustment
-	sta .oldScrollMapHY
+	sta oldScrollMapHY
 	lda scrollMapHPos2
 	bcs .noWrap2
 	sec
 	sbc #1
 .noWrap2
-	sta .oldScrollMapHY2
+	sta oldScrollMapHY2
 
 	ldy #6
 	lda (tempWork0),y
@@ -127,10 +129,10 @@ LevelFrameLogic
 .doDislocationTest
 	; Did the map pointer just change from what we have previously?
 	lda scrollMapHPos
-	cmp .oldScrollMapHY
+	cmp oldScrollMapHY
 	bne .changed
 	lda scrollMapHPos2
-	cmp .oldScrollMapHY2
+	cmp oldScrollMapHY2
 	bne .changed
 	jmp .noChange
 .changed

@@ -24,18 +24,21 @@ BackgroundFixedColours
 
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .offset, .size {
-!bin "../SEUCK/GAME1__I.P00",.offset,.size
+;!bin "../SEUCK/GAME1__I.P00",.offset,.size
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME3__I.P00",.offset,.size
 ;!bin "../SEUCK/GAME4__I.P00",.offset,.size
 ;!bin "../SEUCK/demo4.bin",.offset,.size
+!bin "../SEUCK/VIOSGAME.P00",.offset,.size
 ; A debug file to help test pixel accurate collision detection
 ;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
 ; A debug file to demonstrate that the SEUCK directional animation flags do
 ;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
 ; A debug file to demonstrate paralax scrolling with two levels. Use with Paralax_Enable enabled
 ;!bin "../SEUCK/PARLXTST.P00",.offset,.size
+; A debug file to aid in debugging border sprite timing issues. Push the screen and different numbers of sprites appear under the border.
+;!bin "../SEUCK/BRDRSPRT.P00",.offset,.size
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
 ;These are then overridden when the EnemyAITest define is enabled

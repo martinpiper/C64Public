@@ -53,15 +53,6 @@ ScrollerCalculate
 	cmp #0
 	beq .noCharsWanted
 
-	; Update the 16 bit map position with how much we scroll this frame
-	lda TotalScrollPosition
-	clc
-	adc scrollerRealMovementYPixels
-	sta TotalScrollPosition
-	bcc .calcS1
-	inc TotalScrollPosition+1
-.calcS1
-
 	; Apply the scroll
 	lda frameScrollPos
 	clc

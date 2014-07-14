@@ -133,15 +133,6 @@ ScrollerCalculate
 	cmp #0
 	beq .noCharsWanted
 
-	; Update the 16 bit map position with how much we scroll this frame
-	lda TotalScrollPosition
-	clc
-	adc scrollerRealMovementYPixels
-	sta TotalScrollPosition
-	bcc .calcS1
-	inc TotalScrollPosition+1
-.calcS1
-
 	; Apply the scroll
 	lda frameScrollPos
 	clc
@@ -518,8 +509,8 @@ UpdateMapBlockPointers
 ; Draws the initial map from the coords setup, don't forget it is upside down in memory
 DrawMap
 	jsr UpdateMapBlockPointers
-	; MPi: Kown bug, if it isn't Scroller_FullScreen then the score panel colour information is lost. This is because we really need the lower half of the game screen
-	; for SEUCK games. The score panel split is SEUCK mode is just there to demo the split, nothing else.
+	; MPi: Known bug, if it isn't Scroller_FullScreen then the score panel colour information is lost. This is because we really need the lower half of the game screen
+	; for SEUCK games. The score panel split in SEUCK mode is just there to demo the split, nothing else.
 	ldy #4
 .l1
 	ldx #0

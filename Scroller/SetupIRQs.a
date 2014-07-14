@@ -70,10 +70,33 @@ SetupIRQsForTitleScreen
 ScrollerNMI1
 !ifdef Scroller_DebugNMIBorder {
 	dec VIC2BorderColour
+	dec VIC2ScreenColour
 }
 	sta NMI_areg
 ;	stx NMI_xreg
 	sty NMI_yreg
+
+!if 0 {
+	; Try counting sprites and working out a suitable stability value
+	ldy #0
+!macro TestSprPos .addr {
+	lda .addr
+	cmp #VIC2SpriteYBorderTop + 5
+	bcs .to1
+	cmp #VIC2SpriteYBorderTop + 5 - 21
+	bcc .to1
+	iny
+.to1
+}
+	+TestSprPos VIC2Sprite0Y
+	+TestSprPos VIC2Sprite1Y
+	+TestSprPos VIC2Sprite2Y
+	+TestSprPos VIC2Sprite3Y
+	+TestSprPos VIC2Sprite4Y
+	+TestSprPos VIC2Sprite5Y
+	+TestSprPos VIC2Sprite6Y
+	+TestSprPos VIC2Sprite7Y
+}
 
 	; Check to see if this NMI happened due to the timer happening.
 	; If not then we assume restore was pressed so we flag it for the game mainline to quit.
@@ -113,6 +136,7 @@ ScrollerNMI1
 	ldy NMI_yreg
 
 !ifdef Scroller_DebugNMIBorder {
+	inc VIC2ScreenColour
 	inc VIC2BorderColour
 }
 	rti
@@ -206,17 +230,21 @@ IrqTopOfScreen
 }
 	cmp #6
 	bne .otherValues
+; (52 pixels * 64 cycles) - $21 for timing adjustment for the NMI
+.timerCount6 = (52*64)-$21
 	; Reset timer B count
-	lda #$df	; (52 pixels * 64 cycles) - $21 for timing adjustment for the NMI
+.sm61	lda #<.timerCount6
 	sta CIA2TimerALo
-	lda #$c
+.sm62	lda #>.timerCount6
 	sta CIA2TimerAHi
 	jmp .turnOnTimer
 .otherValues
+; (52 pixels * 64 cycles) + $a for timing adjustment for the NMI
+.timerCount = (52*64)+$a
 	; Reset timer B count
-	lda #$0a	; (52 pixels * 64 cycles) + $a for timing adjustment for the NMI
+.sm1	lda #<.timerCount
 	sta CIA2TimerALo
-	lda #$d
+.sm2	lda #>.timerCount
 	sta CIA2TimerAHi
 .turnOnTimer
 }
@@ -226,6 +254,55 @@ IrqTopOfScreen
 	; Reset interrupt control for NMI so that if restore is pressed it only misses one frame.
 	lda #$81
 	sta CIA2InterruptControl
+}
+!if 0 {
+	; Uses the joystick to manipulate the timer and frameScrollPos values
+	lda #%1000
+	bit CIA1KeyboardColumnJoystickA
+	bne .o1
+	inc .sm1+1
+	bne .o1
+	inc .sm2+1
+.o1
+	lda #%0100
+	bit CIA1KeyboardColumnJoystickA
+	bne .o2
+	dec .sm1+1
+	lda .sm1+1
+	cmp #$ff
+	bne .o2
+	dec .sm2+1
+.o2
+	lda #%1000
+	bit CIA1KeyboardColumnJoystickA
+	bne .o3
+	inc .sm61+1
+	bne .o3
+	inc .sm62+1
+.o3
+	lda #%0100
+	bit CIA1KeyboardColumnJoystickA
+	bne .o4
+	dec .sm61+1
+	lda .sm61+1
+	cmp #$ff
+	bne .o4
+	dec .sm62+1
+.o4
+	lda #%0010
+	bit CIA1KeyboardColumnJoystickA
+	bne .o5
+	inc frameScrollPos
+	lda frameScrollPos
+	and #7
+	sta frameScrollPos
+.o5
+	lda #%0001
+	bit CIA1KeyboardColumnJoystickA
+	bne .o6
+	lda #0
+	sta frameScrollPos
+.o6
 }
 
 	; Then disable all the sprites

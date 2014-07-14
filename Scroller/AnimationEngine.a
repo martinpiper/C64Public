@@ -123,6 +123,14 @@ AnimationTriggerEnemies
 	beq .mightBe
 	; Attack wave hi is definitely different to the scroll position so we exit
 .exitTrigger
+	; Update the 16 bit map position with how much we scroll this frame
+	lda TotalScrollPosition
+	clc
+	adc scrollerRealMovementYPixels
+	sta TotalScrollPosition
+	bcc .calcS1
+	inc TotalScrollPosition+1
+.calcS1
 	; Store what we have so far
 	lda tempWork0
 	sta AnimationAttackWaveAddr
@@ -179,6 +187,9 @@ AnimationTriggerEnemies
 	rol
 	sta AnimationXPosHi,x
 !ifdef Scroller_SpriteXAdjust {
+	lda LevelIsPushScrolled
+	bne .notLeft2
+
 	lda AnimationXPosLo,x
 	sec
 	sbc #1
@@ -192,11 +203,19 @@ AnimationTriggerEnemies
 	lda (tempWork0),y
 	; Baphomet has no adjustment for the sprite Y position
 !ifdef Scroller_NoSpriteYAdjust {} else {
-	; Small adjustment to make it exactly match with SEUCK
-	sec
-	sbc #1
-	bcs .noWrap	; Paranoia check :)
-	lda #0
+
+	; MPi: Note: There is a bug in SEUCK where a level switch from a static screen to a push scroll (that doesn't move) causes sprites to shift down one frame.
+	; MPi: Note: There is another bug in SEUCK where if a player repeatedly push scrolls and stops the sprites can be seen to slide over the background.
+	; Those two bugs are not implemented in this code, because they're horrible visual glitches.
+
+	ldy LevelIsPushScrolled
+	bne .noWrap
+
+	; Small adjustment to make it exactly match with SEUCK when scrolling or static screens
+	clc
+	adc scrollerRealMovementYPixels
+	bcc .noWrap	; Paranoia check :)
+	lda #$ff
 .noWrap
 }
 	sta AnimationYPos,x
@@ -1093,7 +1112,7 @@ AnimationUpdateFrameMovement
 	lda AnimationXPosHi,x
 	beq .sl1
 	lda AnimationXPosLo,x
-	cmp #<VIC2SpriteXBorderRight
+	cmp #<(VIC2SpriteXBorderRight+1)
 	bcc .sl1
 } else {
 	lda AnimationYPos,x
@@ -1315,7 +1334,7 @@ SafeRandomDirectionTab
 	lda AnimationXPosHi,x
 	beq .notRightCheck
 	lda AnimationXPosLo,x
-	cmp #<VIC2SpriteXBorderRight
+	cmp #<(VIC2SpriteXBorderRight+1) ; Fix for VIOSGAME.P00. Apparently it spawns 2 enemies at this position.
 	bcs .enemyOffScreen
 .notRightCheck
 
@@ -1372,7 +1391,7 @@ SafeRandomDirectionTab
 	lda AnimationXPosHi,x
 	beq .notXMSB
 	lda AnimationXPosLo,x
-	cmp #<VIC2SpriteXBorderRight
+	cmp #<(VIC2SpriteXBorderRight+1)
 	bcs .BDead
 .notXMSB
 	; Process the Y movement
@@ -1420,7 +1439,7 @@ SafeRandomDirectionTab
 	lda AnimationXPosHi,x
 	beq .nfosc1
 	lda AnimationXPosLo,x
-	cmp #<VIC2SpriteXBorderRight
+	cmp #<(VIC2SpriteXBorderRight+1)
 	bcs .killAnimation
 .nfosc1
 
@@ -1494,7 +1513,7 @@ SafeRandomDirectionTab
 	lda AnimationXPosHi,x
 	beq .spellRet
 	lda AnimationXPosLo,x
-	cmp #<VIC2SpriteXBorderRight
+	cmp #<(VIC2SpriteXBorderRight+1)
 	bcc .spellRet
 	; It went off the end of the screen so kill it
 	lda #$ff

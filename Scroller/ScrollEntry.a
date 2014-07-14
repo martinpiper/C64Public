@@ -181,7 +181,9 @@ Scroller_SpriteXAdjust = 1
 
 }
 
-; MPi: TODO: Shift the screen split down one character.
+; MPi: TODO: Add configuration to shift the screen split down one or two characters giving different size bottom areas.
+; Things to tweak: scorePanelPos1 , (19*40) and (20*40) will need to be optionally enabled, MACROScrollerBottomAdjust , MACROScrollerDrawVStrip, MACROScrollerDrawVStripColour, ScrollerDrawStripBottomBank,
+; ScrollerDrawStripBottomColour, DrawMap
 ;Enable full screen or use the lower screen split
 Scroller_FullScreen = 1
 
