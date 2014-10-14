@@ -1,3 +1,4 @@
+MarkMultiplexorBeginCode = *
 ; Change list
 ; Original code from http://codebase64.org/doku.php?id=base:flexible_32_sprite_multiplexer
 ; 25th October 2007 - Martin Piper
@@ -279,14 +280,14 @@ Multiplex_intNextSpr0Reset = *
 }
 
 !macro MACROMultiplex_SortBlock .index , .backPos , ~.forward {
-.over1	ldy Multiplex_indextable+.index+1
-.back1	ldx Multiplex_indextable+.index
+.over1	ldy MultiplexSort_indextable+.index+1
+.back1	ldx MultiplexSort_indextable+.index
 .forward = .back1
-	lda Multiplex_YPos,y
-	cmp Multiplex_YPos,x
+	lda MultiplexSort_YPos,y
+	cmp MultiplexSort_YPos,x
 	bcs .over2
-	stx Multiplex_indextable+.index+1
-	sty Multiplex_indextable+.index
+	stx MultiplexSort_indextable+.index+1
+	sty MultiplexSort_indextable+.index
 	bcc .backPos
 .over2
 }
@@ -656,10 +657,10 @@ Multiplex_StartTopInterrupt
 !zn {
 Multiplex_InitSort	
 	ldx Multiplex_MaxSpr
-	stx Multiplex_MaxSprSorted
+	stx MultiplexSort_MaxSprSorted
 	dex
 .1	txa
-	sta Multiplex_indextable,x
+	sta MultiplexSort_indextable,x
 	dex
 	bpl .1
 
@@ -690,7 +691,7 @@ Multiplex_InitSort
 !zn {
 Multiplex_Sort	
 	lda Multiplex_MaxSpr
-	sta Multiplex_MaxSprSorted
+	sta MultiplexSort_MaxSprSorted
 	cmp #$02
 	bcc .exit
 	sbc #$02
@@ -711,26 +712,26 @@ Multiplex_Sort
 !ifdef Multiplex_EnableEarlyOut {
 	ldx #0
 .l1
-	ldy Multiplex_indextable,x
-	lda Multiplex_YPos,y
+	ldy MultiplexSort_indextable,x
+	lda MultiplexSort_YPos,y
 	cmp #Multiplex_DiscardSpritesYPos					; Don't display any sprites once this is reached
 	bcs .l2
 	inx
 	cpx Multiplex_MaxSpr
 	bcc .l1
 .l2
-	stx Multiplex_MaxSprSorted
+	stx MultiplexSort_MaxSprSorted
 }
 
 .exit	rts
 
-.over0	ldy Multiplex_indextable+1
-.back0	ldx Multiplex_indextable
-	lda Multiplex_YPos,y
-	cmp Multiplex_YPos,x
+.over0	ldy MultiplexSort_indextable+1
+.back0	ldx MultiplexSort_indextable
+	lda MultiplexSort_YPos,y
+	cmp MultiplexSort_YPos,x
 	bcs .over1
-	stx Multiplex_indextable+1
-	sty Multiplex_indextable
+	stx MultiplexSort_indextable+1
+	sty MultiplexSort_indextable
 
 sortstart
 .over1
@@ -860,3 +861,4 @@ Multiplex_SpriteFrame
 Multiplex_Sortlo	!fill Multiplex_items-1
 Multiplex_Sorthi	!fill Multiplex_items-1
 }
+MarkMultiplexorEndCode = *

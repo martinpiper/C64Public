@@ -35,6 +35,10 @@ AnimationInit
 .l1
 	lda #$ff
 	sta AnimationType,x
+	sta AnimationMovementMove,x
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort,x
+}
 	lda #0
 	sta AnimationXPosHi,x
 	dex
@@ -52,6 +56,9 @@ AnimationKillEverythingExceptPlayers
 	bcc .dontZap
 	lda #$ff
 	sta AnimationType,x
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort,x
+}
 .dontZap
 	dex
 	bpl .l1
@@ -377,6 +384,13 @@ AnimationMutateToType
 	sta AnimationSpriteFrameCountDelayInit,x
 	; Store the colour
 	iny
+
+	; MPi: TODO: Initialise AnimationSpriteFrame,x with 0.  Then in AnimationUpdateMultiplexor check to make sure AnimationSpriteFrame is never 0. If it is then break on inc d020 so it can be debugged
+	; Find out the animation type, see if it is consistently one particular type. Double check the animation allocation call for that animation type.
+	; When AnimationSpriteFrame,x equal to 0 (and the type matches) in AnimationUpdateFrameMovement at the beginning of the animation slot it can break before processing such an animation so it can be stepped through.
+;	lda #0
+;	sta AnimationSpriteFrame,x
+
 	lda (tempWork3),y
 	sta AnimationSpriteColour,x
 	; Extract the directional information
@@ -1001,8 +1015,17 @@ AnimationUpdateFrameMovement
 	lda AnimationDirectionIn,x
 	and #$f	; Paranoia
 	bne .notDirHold
-	jmp .noFrameChangeNoDelayUpdate
+
+	lda AnimationMovementMove,x
+	cmp #$ff
+	beq .noFrameChangeNoDelayUpdate
+
+	jmp .forceFrame
 .notDirHold
+	lda AnimationSpriteFrameCount,x
+	eor #1
+	sta AnimationSpriteFrameCount,x
+.forceFrame
 	lda AnimationDirectionIn,x
 	; Convert the direction input to a frame index
 	and #$f	; Paranoia
@@ -1024,9 +1047,6 @@ AnimationUpdateFrameMovement
 	clc
 	adc #$40	; Offset for where our sprites are actually stored in bank 3
 	sta AnimationSpriteFrame,x
-	lda AnimationSpriteFrameCount,x
-	eor #1
-	sta AnimationSpriteFrameCount,x
 	jmp .noFrameChange
 .justSequential
 	ldy #1
@@ -1209,6 +1229,8 @@ SafeRandomDirectionTab
 	beq .noFrameReset
 	; Need to reset the frame counter since there was a change in direction
 	sta AnimationDirectionIn,x
+	lda Animation_DirectionalBits,x
+	beq .noFrameReset
 	lda #0
 	sta AnimationSpriteFrameCountDelay,x
 .noFrameReset
@@ -1222,8 +1244,6 @@ SafeRandomDirectionTab
 	lda AnimationMovementMove,x
 	cmp #$ff
 	beq .processAnimationFramesS2
-	and #$f
-	sta AnimationDirectionIn,x
 
 	; This AnimationMovementFrameCount will be 0 for the first frame displayed
 	lda AnimationMovementFrameCount,x
@@ -1261,6 +1281,18 @@ SafeRandomDirectionTab
 }
 	jmp .processAnimationFrames
 .notProcessAnimationFrames
+	pha
+	and #$f
+	cmp AnimationDirectionIn,x
+	beq .noFrameReset2
+	; Need to reset the frame counter since there was a change in direction
+	sta AnimationDirectionIn,x
+	lda Animation_DirectionalBits,x
+	beq .noFrameReset2
+	lda #0
+	sta AnimationSpriteFrameCountDelay,x
+.noFrameReset2
+	pla
 	lsr
 	lsr
 	lsr
@@ -1521,8 +1553,9 @@ SafeRandomDirectionTab
 	jmp .processAnimationFrames
 }
 
+!ifdef Multiplex_SplitSort {
 !zn
-AnimationUpdateMultiplexor
+AnimationUpdateMultiplexorPre
 	ldx #Multiplex_items-1
 .l1
 	lda AnimationType,x
@@ -1531,7 +1564,44 @@ AnimationUpdateMultiplexor
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
-	tya
+	lda AnimationYPos,x
+	sta AnimationYPosToSort,x
+
+	dex
+	bpl .l1
+	rts
+	; This discards the sprite by moving it beyond the y position where the multiplexor rejects
+	; sprites.
+.blank
+	lda #$ff
+	sta AnimationYPosToSort,x
+	dex
+	bpl .l1
+	rts
+}
+
+!zn
+AnimationUpdateMultiplexor
+	ldx #Multiplex_items-1
+.l1
+!ifdef Multiplex_SplitSort {
+	lda AnimationYPosToSort,x
+	cmp #$ff
+	beq .blank
+} else {
+	lda AnimationType,x
+	bmi .blank
+	; Is the sprite totally blank? If yes then skip it
+	ldy AnimationSpriteFrame,x
+	lda SpriteEmptyLookupTab,y
+	beq .blank
+}
+	lda AnimationSpriteFrame,x
+;	bne .ol1
+;bph
+;	Debug break here to check for animation initialisation problems.
+;	inc $d020
+;.ol1
 	sta Multiplex_SpriteFrame,x
 
 	lda AnimationSpriteColour,x
@@ -1550,7 +1620,6 @@ AnimationUpdateMultiplexor
 	; This discards the sprite by moving it beyond the y position where the multiplexor rejects
 	; sprites.
 .blank
-	lda #$ff
 	sta Multiplex_YPos,x
 	dex
 	bpl .l1
@@ -1614,12 +1683,21 @@ AnimationSpriteXDiv2ToChar
 !fill 84 + (CollisionHotSpotTweakX / 2),39
 
 AnimationSpriteYToCharOffsetLo
-; First 53 pixels due to border coming in. Even if scrollRegUsedY is not used still use 53.
+!ifdef scrollRegUsedY {
+; First 53 pixels due to border coming in
 !fill 53 - CollisionHotSpotTweakY,0
 ; Now the y positions
 !for .table1,200 {!by <(((.table1-1) / 8) * 40) }
 ; Now the rest clamped
 !fill 2 + CollisionHotSpotTweakY,<(24 * 40)
+} else {
+; First 50 pixels
+!fill 50,0
+; Now the y positions
+!for .table1,200 {!by <(((.table1-1) / 8) * 40) }
+; Now the rest clamped
+!fill 6,<(24 * 40)
+}
 
 AnimationSpriteYToCharOffsetHi
 !ifdef scrollRegUsedY {
@@ -1628,7 +1706,7 @@ AnimationSpriteYToCharOffsetHi
 ; Now the y positions
 !for .table1,200 {!by >(((.table1-1) / 8) * 40) }
 ; Now the rest clamped
-!fill 2 + CollisionHotSpotTweakY,<(24 * 40)
+!fill 2 + CollisionHotSpotTweakY,>(24 * 40)
 } else {
 ; First 50 pixels
 !fill 50,0
@@ -2087,11 +2165,24 @@ smSpellEffectRunningPlayerType	lda #$ff
 	; Calculate index
 	tya
 	tax
+
+!ifdef Scroller_SkipEmptySpriteExplodingEnemies {
+	; Is the sprite totally blank? If yes then don't make it explode
+	ldy AnimationSpriteFrame,x
+	lda SpriteEmptyLookupTab,y
+	bne .notBlank
+	lda #$ff
+	sta AnimationType,y
+	jmp .skipIt2
+.notBlank
+}
+
 	lda AnimationExplosionType,x
 	clc
 	adc #AnimationType_Enemy1Death
 	tay
 	jsr AnimationMutateToType
+.skipIt2
 	; Restore
 	pla
 	tax

@@ -24,7 +24,14 @@
 	lda #VIC2Colour_LightGrey
 	sta VIC2ExtraBackgroundColour2
 
+	; Visual update
+	inc .stuff
+	; Trigger any watches
+	inc $c000
+
 .l1 jmp .l1
+
+.stuff !by 0
 
 }
 

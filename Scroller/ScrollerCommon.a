@@ -1,14 +1,20 @@
+MarkCommonCode = *
 ; A place for common stuff.
 
 ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
 ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
 
 !ifdef Scroller_MultiDirection {
-BlockTabL !for .table1,128 {!by <(BlockData + (.table1-1) * 16) }
-BlockTabH !for .table1,128 {!by >(BlockData + ((.table1-1) * 16)) }
+BlockTabL !for .table1,256 {!by <(BlockData + (.table1-1) * 16) }
+BlockTabH !for .table1,256 {!by >(BlockData + ((.table1-1) * 16)) }
 } else {
 BlockTabL !for .table1,128 {!by <(BlockData + (.table1-1) * 25) }
 BlockTabH !for .table1,128 {!by >(BlockData + ((.table1-1) * 25)) }
+}
+
+!ifdef BlockColoursForEveryCharacter {
+BlockColTabL !for .table1,256 {!by <(BlockColours + (.table1-1) * 16) }
+BlockColTabH !for .table1,256 {!by >(BlockColours + ((.table1-1) * 16)) }
 }
 
 
@@ -35,3 +41,20 @@ ScrollerOpenBorderCopyBank1
 	bpl .more
 	rts
 }
+
+!zn
+ScrollerUpdateTopIRQ
+	; Update screen scrolling from what the frame data says
+!ifdef Scroller_MultiDirection {
+	lda frameScrollX
+	sta topScreenScrollX
+	lda frameScrollY
+	sta topScreenScrollY
+} else {
+	lda frameScrollPos
+;	lda #6	; Debug: Force the bad line code to be used no matter what the scroll should be
+;	lda #2	; Debug: Force a non-bad line to be used no matter what the scroll should be
+;	lda #4	; Debug: Force a non-bad line in the bottom open border area to be used no matter what the scroll should be
+	sta topScreenScrollPos
+}
+	rts

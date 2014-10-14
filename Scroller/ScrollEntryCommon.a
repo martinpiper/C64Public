@@ -1,0 +1,45 @@
+; This code is post-build linked with a decompression stage so we don't use any BASIC sys start code here.
+; Instead the start for the code is $400 which is quickly overwritten by other data once the
+; real game code starts.
+*=$400
+	; Setup a nice stable blank screen and known machine state
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	; Setup NMI because the initialise points to code that gets overwritten
+	lda #<ScrollerNMI1
+	sta KERNALNMIServiceRoutineLo
+	lda #>ScrollerNMI1
+	sta KERNALNMIServiceRoutineHi
+	lda #0
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+	; One time initialisation like moving memory around to the correct places and pre-calculation.
+	jsr ScrollerDemoInitOneTimeData
+	jmp ScrollEntry
+	; This initialise code is here because we only use it once. Later the code is written
+	; by the title screen display code.
+!source "../stdlib/Initialise.a"
+!source "OneTime.a"
+	; The start of the real code. Memory from $400 to $fff is written by the title screen display code
+*=$1000
+!zn
+ScrollEntry
+	; The following can be called more than once if needed for a proper game type cycle
+.l1
+!ifdef Scroller_MultiDirection { } else {
+	jsr DisplayTitleScreen
+}
+	jsr InitialiseGame
+	jsr SetupIRQs
+	jsr ScrollerDemoWaitTopIRQWithReSync
+	jsr ScrollerDemoMainline
+	jmp .l1
+
+!source "SetupIRQs.a"
+!source "ScrollMain.a"
+; The multiplexor uses the MultiplexExt_LastIRQ label defined in "SetupIRQs.a"
+!align 255, 0
+!source "../SpriteMultiplexor/SpriteMultiplexor.a"
+

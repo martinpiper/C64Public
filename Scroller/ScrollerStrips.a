@@ -4,11 +4,7 @@
 ;*****************************************************************************
 ;*****************************************************************************
 
-!macro MACROScrollerDrawHStrip .screen, .mapLX, .mapHX, .mapLY, .mapHY {
-!ifdef Scroller_DebugScreenScrollTimings {
-	lda #VIC2Colour_Blue
-	sta VIC2BorderColour
-}
+!macro MACROScrollerDrawHStrip .screen, .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
 	; Initialse map
 	ldy .mapHY
 	lda MapTabL,y
@@ -33,9 +29,9 @@
 	asl
 	asl
 	adc .mapLX
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 .l1
 	jsr .GetBlockChar
@@ -66,9 +62,9 @@
 	lda .mapLY
 	asl
 	asl
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 .l2
 	jsr .GetBlockChar
@@ -97,9 +93,9 @@
 	lda .mapLY
 	asl
 	asl
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 
 	jsr .GetBlockChar
@@ -124,11 +120,7 @@
 }
 
 
-!macro MACROScrollerDrawHStripColour .colours, .mapLX, .mapHX, .mapLY, .mapHY {
-!ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Blue
-	sta VIC2BorderColour
-}
+!macro MACROScrollerDrawHStripOneColour .colours, .mapLX, .mapHX, .mapLY, .mapHY {
 	; Set screen lohi
 	; Initialse other variables
 	ldy .mapHY
@@ -212,17 +204,33 @@
 
 !zn {
 ScrollerDrawStripTopBank0
-	+MACROScrollerDrawHStrip $c800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerDrawHStrip $c800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
 }
 
 !zn {
 ScrollerDrawStripTopBank1
-	+MACROScrollerDrawHStrip $cc00, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerDrawHStrip $cc00, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
 }
 
 !zn {
 ScrollerDrawStripTopColour
-	+MACROScrollerDrawHStripColour $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawHStrip $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawHStripOneColour $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
 }
 
 !ifdef Scroller_FullScreen {
@@ -252,11 +260,15 @@ ScrollerDrawStripTopColour
 .lscrollMapLY !by 0
 .lscrollMapHY !by 0
 ScrollerDrawStripBottomBank0
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
 	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
 !ifdef Scroller_FullScreen {
-	+MACROScrollerDrawHStrip $cbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStrip $cbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 } else {
-	+MACROScrollerDrawHStrip $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStrip $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 }
 }
 
@@ -264,23 +276,35 @@ ScrollerDrawStripBottomBank0
 .lscrollMapLY !by 0
 .lscrollMapHY !by 0
 ScrollerDrawStripBottomBank1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
 	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
 !ifdef Scroller_FullScreen {
-	+MACROScrollerDrawHStrip $cfc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStrip $cfc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 } else {
-	+MACROScrollerDrawHStrip $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
-}
+	+MACROScrollerDrawHStrip $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 }
 
-!zn {
-.lscrollMapLY !by 0
-.lscrollMapHY !by 0
 ScrollerDrawStripBottomColour
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
 	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
+!ifdef BlockColoursForEveryCharacter {
 !ifdef Scroller_FullScreen {
-	+MACROScrollerDrawHStripColour $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStrip $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
 } else {
-	+MACROScrollerDrawHStripColour $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStrip $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
+}
+} else {
+!ifdef Scroller_FullScreen {
+	+MACROScrollerDrawHStripOneColour $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+} else {
+	+MACROScrollerDrawHStripOneColour $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+}
 }
 }
 
@@ -306,11 +330,7 @@ ScrollerDrawStripBottomColour
 .over6
 }
 
-!macro MACROScrollerDrawVStrip .mapLX, .mapHX, .mapLY, .mapHY {
-!ifdef Scroller_DebugScreenScrollTimings {
-	lda #VIC2Colour_Blue
-	sta VIC2BorderColour
-}
+!macro MACROScrollerDrawVStrip .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
 	; Initialse map
 	ldy .mapHY
 	lda MapTabL,y
@@ -335,9 +355,9 @@ ScrollerDrawStripBottomColour
 	asl
 	asl
 	adc .mapLX
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 .l1
 	jsr .GetBlockChar
@@ -369,9 +389,9 @@ ScrollerDrawStripBottomColour
 	jsr .GetBlockFromMap
 	lda .mapLX
 	clc
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 .l2
 	jsr .GetBlockChar
@@ -405,9 +425,9 @@ ScrollerDrawStripBottomColour
 	jsr .GetBlockFromMap
 	lda .mapLX
 	clc
-	adc BlockTabL,y
+	adc .theBlockTabL,y
 	sta .sm2+1
-	lda BlockTabH,y
+	lda .theBlockTabH,y
 	sta .sm2+2
 
 	jsr .GetBlockChar
@@ -428,11 +448,7 @@ ScrollerDrawStripBottomColour
 }
 
 
-!macro MACROScrollerDrawVStripColour .mapLX, .mapHX, .mapLY, .mapHY {
-!ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Blue
-	sta VIC2BorderColour
-}
+!macro MACROScrollerDrawVStripOneColour .mapLX, .mapHX, .mapLY, .mapHY {
 	; Set screen lohi
 	; Initialse other variables
 	ldy .mapHY
@@ -522,7 +538,12 @@ ScrollerDrawStripLeftBank0
 	sta tempWork0
 	lda #$c8
 	sta tempWork1
-	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+ScrollerDrawStripLeftCommon
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
 }
 
 !zn {
@@ -531,7 +552,7 @@ ScrollerDrawStripLeftBank1
 	sta tempWork0
 	lda #$cc
 	sta tempWork1
-	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+	jmp ScrollerDrawStripLeftCommon
 }
 
 !zn {
@@ -540,7 +561,17 @@ ScrollerDrawStripLeftColour
 	sta tempWork0
 	lda #$d8
 	sta tempWork1
-	+MACROScrollerDrawVStripColour scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawVStripOneColour scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
 }
 
 !macro MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX {
@@ -559,34 +590,42 @@ ScrollerDrawStripLeftColour
 .lscrollMapLX !by 0
 .lscrollMapHX !by 0
 ScrollerDrawStripRightBank0
-	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
 	lda #$27
 	sta tempWork0
 	lda #$c8
 	sta tempWork1
-	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+ScrollerDrawStripRightCommon
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
 }
-
-!zn {
-.lscrollMapLX !by 0
-.lscrollMapHX !by 0
-ScrollerDrawStripRightBank1
 	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
+	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
+
+ScrollerDrawStripRightBank1
 	lda #$27
 	sta tempWork0
 	lda #$cc
 	sta tempWork1
-	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+	jmp ScrollerDrawStripRightCommon
 }
 
 !zn {
 .lscrollMapLX !by 0
 .lscrollMapHX !by 0
 ScrollerDrawStripRightColour
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
 	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
 	lda #$27
 	sta tempWork0
 	lda #$d8
 	sta tempWork1
-	+MACROScrollerDrawVStripColour .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawVStripOneColour .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+}
 }

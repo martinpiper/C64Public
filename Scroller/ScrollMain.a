@@ -1,10 +1,11 @@
+MarkMainCode = *
 ; Memory map while the game is running:
 ; $0400-$07ff - Score panel screen
 ; $0800-$0fff - Screens in bank 0 to fool VIC into not displaying sprites in the opened borders, mirrors $c800 and $cb00 from bank 3.
 ; $1000-$bfff - Code and data
 ; $c000-$c7ff - Character data
 ; $c800-$cbff - Screen 0
-; $cb00-$cfff - Screen 1
+; $cc00-$cfff - Screen 1
 ; $d000-$ffbf - Sprites - 191
 !zn
 InitBank0Data
@@ -53,32 +54,15 @@ InitBank0Data
 
 	; Blank sprites frames in the unused area of the score panel screen
 	lda #20
-	sta SPRITEFRAME
-	sta SPRITEFRAME+1
-	sta SPRITEFRAME+2
-	sta SPRITEFRAME+3
-	sta SPRITEFRAME+4
-	sta SPRITEFRAME+5
-	sta SPRITEFRAME+6
-	sta SPRITEFRAME+7
-	sta SPRITEFRAME+$400
-	sta SPRITEFRAME+$400+1
-	sta SPRITEFRAME+$400+2
-	sta SPRITEFRAME+$400+3
-	sta SPRITEFRAME+$400+4
-	sta SPRITEFRAME+$400+5
-	sta SPRITEFRAME+$400+6
-	sta SPRITEFRAME+$400+7
-	sta SPRITEFRAME+$800
-	sta SPRITEFRAME+$800+1
-	sta SPRITEFRAME+$800+2
-	sta SPRITEFRAME+$800+3
-	sta SPRITEFRAME+$800+4
-	sta SPRITEFRAME+$800+5
-	sta SPRITEFRAME+$800+6
-	sta SPRITEFRAME+$800+7
+	ldx #7
+.spr2
+	sta SPRITEFRAME,x
+	sta SPRITEFRAME+$400,x
+	sta SPRITEFRAME+$800,x
+	dex
+	bpl .spr2
 
-	; Blank the sprite data in this bank
+	; Blank sprite num 20 data in this bank
 	ldx #63
 	lda #0
 .spr1
@@ -114,9 +98,15 @@ PlayerNumberToSpawnNext !by 0
 InitialiseGame
 	; Just to make sure we disable interrupts
 	sei
-!ifdef Scroller_MultiDirection { } else {
+!ifdef Scroller_MultiDirection {
+	; Copies the intial sprite positions from the multiplexor to the simple animation table storage
+	jsr UpdateMultiplexorToAnimation
+} else {
 	jsr TitleScreenWaitForOffScreenFromRaster
 }
+
+; For testing purposes don't wait for raster IRQs that don't happen :)
+InitialiseGameWithoutWait
 
 !ifdef Scroller_LOTD {
 	jsr SpellColourReset
@@ -177,6 +167,12 @@ InitialiseGame
 	jsr InitBank0Data
 	jsr ClearGameScreens
 	jsr ScrollerInitTables
+
+!ifdef Scroller_SetSpriteBackgroundPriority {
+	lda #Scroller_SetSpriteBackgroundPriority
+	sta VIC2SpritePriority
+}
+
 !ifdef Scroller_MultiDirection { } else {
 	jsr AnimationInit
 	jsr AnimationClearMultiplexor
@@ -197,6 +193,12 @@ InitialiseGame
 	lda #$ff
 	sta PlayerNumberToSpawnNext
 } else {
+!ifdef WackyWaste {
+	lda #0
+	sta Player1Properties+PlayerOffset_Enabled
+	lda #1
+	sta Player2Properties+PlayerOffset_Enabled
+}
 	; A good place to initialse the player sprites but we need to detect from the title
 	; screen who started the game, player 1 or player 2.
 	lda TitleScreenJoystickStarted
@@ -883,83 +885,130 @@ ScrollerDemoMainline
 .notS3
 }
 
+
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+!ifdef Scroller_MultiDirection {
+	jsr UpdateSprites
+}
+
+!if 0 {
+	; Debugging code to force certain sprites for border timing
+	lda #14
+	sta AnimationColour+1
+	sta AnimationColour+2
+	sta AnimationColour+3
+	sta AnimationColour+4
+	sta AnimationColour+5
+	sta AnimationColour+6
+	sta AnimationColour+7
+	sta AnimationColour+8
+	lda #66
+	sta AnimationSpriteFrame+1
+	sta AnimationSpriteFrame+2
+	sta AnimationSpriteFrame+3
+	sta AnimationSpriteFrame+4
+	sta AnimationSpriteFrame+5
+	sta AnimationSpriteFrame+6
+	sta AnimationSpriteFrame+7
+	sta AnimationSpriteFrame+8
+	lda #30
+	sta AnimationXPosLo+1
+	lda #40
+	sta AnimationXPosLo+2
+	lda #50
+	sta AnimationXPosLo+3
+	lda #60
+	sta AnimationXPosLo+4
+	lda #70
+	sta AnimationXPosLo+5
+	lda #80
+	sta AnimationXPosLo+6
+	lda #90
+	sta AnimationXPosLo+7
+	lda #100
+	sta AnimationXPosLo+8
+
+	; This is the first visible sprite line for the top of the screen. Which is VIC2SpriteYBorderTop + 4
+	lda #54
+;	lda #50
+	sta AnimationYPos+1
+;	sta AnimationYPos+2
+;	sta AnimationYPos+3
+;	sta AnimationYPos+4
+;	sta AnimationYPos+5
+;	sta AnimationYPos+6
+;	sta AnimationYPos+7
+;	sta AnimationYPos+8
+}
+
+!if 0 {
+	lda #$ff
+	ldx #Multiplex_items-1
+	ldx #16
+.cl1
+;	lda AnimationYPos,x
+;	and #127
+	sta AnimationYPos,x
+	dex
+	bpl .cl1
+}
+
+
+	; MPi: TODO: Make Multiplex_Sort optionally work on a temporary Multiplex_indextable and read YPos values from a different source.
+	; This means it can sort sprites while the multiplexor is still displaying stuff. This means the sort can utilise spare time at the end of the frame before "jsr ScrollerDemoWaitMultiplex".
+	; In this case the temporary YPos values can come from AnimationYPos then get copied over after "jsr ScrollerDemoWaitMultiplex".
+	; Then always enable the animation engine and then always use "jsr AnimationUpdateMultiplexor" and then "jsr UpdateSprites" can also happen here before the ScrollerDemoWaitMultiplex.
+	; In this case jsr UpdateSprites can work on the animation positions and apply scrolling values.
+	; This is much more efficient use of the frame time.
+
+!ifdef Multiplex_SplitSort {
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_Brown
+	sta VIC2BorderColour
+}
+	jsr AnimationUpdateMultiplexorPre
+
+	; Sort them from the temporary buffers ready for the top IRQ
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	jsr Multiplex_Sort
+}
+
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
 }
 	; Wait for the multiplex to finish its thing
 	jsr ScrollerDemoWaitMultiplex
+
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
-!ifdef Scroller_MultiDirection {
-	jsr UpdateSprites
-} else {
 	jsr AnimationUpdateMultiplexor
-}
 
-!if 0 {
-	; Debugging code to force certain sprites for border timing
-	lda #14
-	sta Multiplex_Colour+1
-	sta Multiplex_Colour+2
-	sta Multiplex_Colour+3
-	sta Multiplex_Colour+4
-	sta Multiplex_Colour+5
-	sta Multiplex_Colour+6
-	sta Multiplex_Colour+7
-	sta Multiplex_Colour+8
-	lda #66
-	sta Multiplex_SpriteFrame+1
-	sta Multiplex_SpriteFrame+2
-	sta Multiplex_SpriteFrame+3
-	sta Multiplex_SpriteFrame+4
-	sta Multiplex_SpriteFrame+5
-	sta Multiplex_SpriteFrame+6
-	sta Multiplex_SpriteFrame+7
-	sta Multiplex_SpriteFrame+8
-	lda #30
-	sta Multiplex_XPosLo+1
-	lda #40
-	sta Multiplex_XPosLo+2
-	lda #50
-	sta Multiplex_XPosLo+3
-	lda #60
-	sta Multiplex_XPosLo+4
-	lda #70
-	sta Multiplex_XPosLo+5
-	lda #80
-	sta Multiplex_XPosLo+6
-	lda #90
-	sta Multiplex_XPosLo+7
-	lda #100
-	sta Multiplex_XPosLo+8
-
-	; This is the first visible sprite line for the top of the screen. Which is VIC2SpriteYBorderTop + 4
-	lda #54
-;	lda #50
-	sta Multiplex_YPos+1
-;	sta Multiplex_YPos+2
-;	sta Multiplex_YPos+3
-;	sta Multiplex_YPos+4
-;	sta Multiplex_YPos+5
-;	sta Multiplex_YPos+6
-;	sta Multiplex_YPos+7
-;	sta Multiplex_YPos+8
-}
-
-!ifdef Scroller_DebugMainlineBorder {
-	lda #VIC2Colour_Black
-	sta VIC2BorderColour
-}
-
-	; Sort them ready for the top IRQ
+!ifdef Multiplex_SplitSort { } else {
+	; Sort them from the updated multiplexor values ready for the top IRQ
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Cyan
 	sta VIC2BorderColour
 }
 	jsr Multiplex_Sort
+}
+
+!ifdef Multiplex_SplitSort {
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_LightRed
+	sta VIC2BorderColour
+}
+	jsr CopyMultiplexTables
+}
+
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Black
@@ -967,17 +1016,7 @@ ScrollerDemoMainline
 }
 	jsr ScrollerDemoWaitScorePanel
 
-	; Update screen scrolling from what the frame data says
-!ifdef Scroller_MultiDirection {
-	lda frameScrollX
-	sta topScreenScrollX
-	lda frameScrollY
-	sta topScreenScrollY
-} else {
-	lda frameScrollPos
-	sta topScreenScrollPos
-}
-
+	jsr ScrollerUpdateTopIRQ
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Purple
 	sta VIC2BorderColour
@@ -1006,6 +1045,10 @@ ScrollerDemoMainline
 .doLoop
 }
 	jmp ScrollerDemoMainline
+
+!ifdef Multiplex_SplitSort {
+MultiplexSort_MaxSprSorted !by 0
+}
 
 !ifdef Scroller_MultiDirection { } else {
 .frameScoreUpdate !by 0
@@ -1104,6 +1147,8 @@ ScrollerDemoWaitTopIRQWithReSync
 	sta panelIRQDone
 	; Fall through
 ScrollerDemoWaitTopIRQ
+	lda #0
+	sta panelIRQDone
 	; Wait for the top IRQ (at raster 0) to be done
 .l1
 	lda topIRQDone
@@ -1114,6 +1159,8 @@ ScrollerDemoWaitTopIRQ
 
 !zn
 ScrollerDemoWaitMultiplex
+	lda #0
+	sta topIRQDone
 	; Wait for the last mutiplex IRQ routine to be called
 .l1
 	lda bottomMultiplexIRQDone
@@ -1124,6 +1171,8 @@ ScrollerDemoWaitMultiplex
 
 !zn
 ScrollerDemoWaitScorePanel
+	lda #0
+	sta bottomMultiplexIRQDone
 	;Wait for the panel IRQ to be done
 .l1
 	lda panelIRQDone
@@ -1141,17 +1190,17 @@ UpdateSprites
 	dex
 .sp1
 !ifdef Scroller_MultiDirection {
-	lda Multiplex_XPosLo,x
+	lda AnimationXPosLo,x
 	clc
 	adc scrollerRealMovementXPixels
-	sta Multiplex_XPosLo,x
+	sta AnimationXPosLo,x
 }
 
-	lda Multiplex_YPos,x
+	lda AnimationYPos,x
 	clc
 	adc scrollerRealMovementYPixels
 
-	sta Multiplex_YPos,x
+	sta AnimationYPos,x
 	dex
 	bpl .sp1
 
@@ -1173,11 +1222,22 @@ UpdateSprites
 .sp2
 	cpx Multiplex_MaxSpr
 	bcs .sp3
-	sta Multiplex_YPos,x
+	sta AnimationYPos,x
 	inx
 	jmp .sp2
 .sp3
 }
+
+!if 1 {
+	; This code cycles sprite frames to test any screen or border split with the full range of sprite frames
+	ldx Multiplex_MaxSpr
+	dex
+.sp4
+	inc AnimationSpriteFrame,x
+	dex
+	bpl .sp4
+}
+
 	rts
 
 !ifdef Scroller_MultiDirection {
@@ -1199,3 +1259,20 @@ UpdateSprites
 }
 
 !source "ScrollerCommon.a"
+
+!ifdef Multiplex_SplitSort {
+CopyMultiplexTables
+	; Copy over the index table that was sorted during the multiplexor IRQ
+	ldx #Multiplex_items-1
+.mpc1
+	lda MultiplexSort_indextable,x
+	sta Multiplex_indextable,x
+	dex
+	bpl .mpc1
+	; Also copy over the max sprites this frame
+	lda MultiplexSort_MaxSprSorted
+	sta Multiplex_MaxSprSorted
+	rts
+}
+
+MarkEndCode = *

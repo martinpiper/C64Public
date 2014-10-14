@@ -13,9 +13,9 @@ frameScrollY			!by 0	; Pixels
 frameScrollOldX			!by 0	; Pixels
 frameScrollOldY			!by 0	; Pixels
 
-scrollMapHX	!by $00		; Block pos in map
+scrollMapHX	!by $14		; Block pos in map
 scrollMapLX	!by $00		; Char pos in block (0-3)
-scrollMapHY	!by $00		; Block pos in map
+scrollMapHY	!by $14		; Block pos in map
 scrollMapLY	!by $00		; Char pos in block (0-3)
 
 !zn {
@@ -246,7 +246,7 @@ ScrollerCalculate
 .ip4
 	sta frameScrollY
 
-	; Now update the inernal block counters
+	; Now update the internal block counters
 	lda frameWantScrX
 	bmi .doPosX
 	bne .doNegX
@@ -481,8 +481,12 @@ MapTabL
 MapTabH
 !fill 256
 
-!zn
-DrawBlock
+
+
+
+
+
+!macro MACRODrawBlock .scrHighAddr , .theBlockTabL , .theBlockTabH {
 	sta mainAStore
 	stx mainXStore
 	sty mainYStore
@@ -499,13 +503,13 @@ DrawBlock
 	adc tempWork0
 	sta tempWork0
 	lda ScreenTabH,y
-	adc #$c8
+	adc #.scrHighAddr
 	sta tempWork1
 
 	ldx mainAStore
-	lda BlockTabL,x
+	lda .theBlockTabL,x
 	sta tempWork2
-	lda BlockTabH,x
+	lda .theBlockTabH,x
 	sta tempWork3
 	ldy #0
 
@@ -585,10 +589,9 @@ DrawBlock
 	ldx mainXStore
 	ldy mainYStore
 	rts
+}
 
-!ifdef Scroller_FullScreen {
-!zn
-DrawBlockLine
+!macro MACRODrawBlockLine .scrHighAddr , .theBlockTabL , .theBlockTabH {
 	sta mainAStore
 	stx mainXStore
 	sty mainYStore
@@ -605,13 +608,13 @@ DrawBlockLine
 	adc tempWork0
 	sta tempWork0
 	lda ScreenTabH,y
-	adc #$c8
+	adc #.scrHighAddr
 	sta tempWork1
 
 	ldx mainAStore
-	lda BlockTabL,x
+	lda .theBlockTabL,x
 	sta tempWork2
-	lda BlockTabH,x
+	lda .theBlockTabH,x
 	sta tempWork3
 	ldy #0
 
@@ -633,8 +636,24 @@ DrawBlockLine
 	rts
 }
 
+
+
+!zn
+DrawBlock
+	+MACRODrawBlock $c8 , BlockTabL , BlockTabH
+
+
+!ifdef Scroller_FullScreen {
+!zn
+DrawBlockLine
+	+MACRODrawBlockLine $c8 , BlockTabL , BlockTabH
+}
+
 !zn
 DrawBlockColour
+!ifdef BlockColoursForEveryCharacter {
+	+MACRODrawBlock >COLOURRAM , BlockColTabL , BlockColTabH
+} else {
 	sta mainAStore
 	stx mainXStore
 	sty mainYStore
@@ -710,10 +729,14 @@ DrawBlockColour
 	ldx mainXStore
 	ldy mainYStore
 	rts
+}
 
 !ifdef Scroller_FullScreen {
 !zn
 DrawBlockColourLine
+!ifdef BlockColoursForEveryCharacter {
+	+MACRODrawBlock >COLOURRAM , BlockColTabL , BlockColTabH
+} else {
 	sta mainAStore
 	stx mainXStore
 	sty mainYStore
@@ -750,6 +773,7 @@ DrawBlockColourLine
 	ldx mainXStore
 	ldy mainYStore
 	rts
+}
 }
 
 !zn
@@ -819,3 +843,59 @@ DrawMap
 
 !source "Scrollers.a"
 !source "ScrollerStrips.a"
+
+
+
+
+
+!zn
+AnimationUpdateMultiplexorPre
+	rts
+
+!zn
+AnimationUpdateMultiplexor
+	ldx #Multiplex_items-1
+.l1
+	lda AnimationYPos,x
+	sta Multiplex_YPos,x
+	cmp #$ff
+	beq .blank
+
+	lda AnimationSpriteFrame,x
+	sta Multiplex_SpriteFrame,x
+
+	lda AnimationSpriteColour,x
+	sta Multiplex_Colour,x
+
+	lda AnimationXPosLo,x
+	sta Multiplex_XPosLo,x
+	lda AnimationXPosHi,x
+	sta Multiplex_XPosHi,x
+
+.blank
+	dex
+	bpl .l1
+	rts
+
+
+
+!zn
+UpdateMultiplexorToAnimation
+	ldx #Multiplex_items-1
+.l1
+	lda Multiplex_SpriteFrame,x
+	sta AnimationSpriteFrame,x
+
+	lda Multiplex_Colour,x
+	sta AnimationSpriteColour,x
+
+	lda Multiplex_XPosLo,x
+	sta AnimationXPosLo,x
+	lda Multiplex_XPosHi,x
+	sta AnimationXPosHi,x
+	lda Multiplex_YPos,x
+	sta AnimationYPos,x
+
+	dex
+	bpl .l1
+	rts

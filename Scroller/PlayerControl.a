@@ -537,6 +537,11 @@ DoPlayerPositionLinkCode
 	; Now decide what direction to use
 	lda AnimationDirectionIn,y
 	bne .other
+	; If it isn't directional hold then use the default direction.
+	lda Animation_DirectionalBits,x
+	and #%00100000
+	beq .justFireUp
+	; It is directional hold so use the last good direction instead
 	lda AnimationDirectionLastValidIn,y
 	bne .other
 .justFireUp

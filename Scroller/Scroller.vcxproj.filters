@@ -16,6 +16,9 @@
       <UniqueIdentifier>{90d1a701-513b-4195-b3df-3b77d3e1e45a}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
+    <Filter Include="Resource Files\features">
+      <UniqueIdentifier>{0b782059-e1ff-408a-8033-8fdfcbcb8da0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="AnimationEngine.a">
@@ -102,6 +105,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="features\animation.feature">
+      <Filter>Resource Files\features</Filter>
+    </None>
+    <None Include="ScrollEntryCommon.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ScrollerDataMacro.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include=".gitignore">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

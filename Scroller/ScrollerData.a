@@ -1,19 +1,39 @@
+MarkBeginData = *
+
 !ifdef Scroller_MultiDirection {
+
+!align 255,0
+AnimationXPosLo !fill Multiplex_items
+AnimationXPosHi !fill Multiplex_items
+AnimationYPos !fill Multiplex_items
+!ifdef Multiplex_SplitSort {
+AnimationYPosToSort = AnimationYPos
+}
+AnimationSpriteColour !fill Multiplex_items
+AnimationSpriteFrame !fill Multiplex_items
+
+
 !align 255,0
 BlockColours
-!bin "../FreeDirRant/level4.blk",$80
+;!bin "../FreeDirRant/level4.blk",$80
+; This needs BlockColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
+!bin "../FreeDirRant/attribs.raw"
 
 !align 255,0
 BlockData
-!bin "../FreeDirRant/level4.blk",,$80
+;!bin "../FreeDirRant/level4.blk",,$80
+!bin "../FreeDirRant/tiles.raw"
 
 !align 255,0
 ; First two bytes = width,height
 MapData
-!bin "../FreeDirRant/level4.map"
+;!bin "../FreeDirRant/level4.map"
+!by 137,51
+!bin "../FreeDirRant/map.raw"
 
 BackgroundFixedColours
-!by $9, $f ,$c
+;!by $9, $f ,$c
+!by 14, 12 ,9
 
 } else {
 ; Include some demonstration SEUCK data instead
@@ -22,58 +42,8 @@ BackgroundFixedColours
 ; is meant to be $900, hence each !bin command uses offsets starting with "$1a + 2 - $900", the
 ; last offset is therefore a memory address for the particular part of SEUCK memory.
 
-; Changing the "GAME3" to "GAME1" will include the other game example file.
-!macro SEUCKFileData .offset, .size {
-;!bin "../SEUCK/GAME1__I.P00",.offset,.size
-; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
-;!bin "../SEUCK/GAME2__I.P00",.offset,.size
-;!bin "../SEUCK/GAME3__I.P00",.offset,.size
-;!bin "../SEUCK/GAME4__I.P00",.offset,.size
-;!bin "../SEUCK/demo4.bin",.offset,.size
-!bin "../SEUCK/VIOSGAME.P00",.offset,.size
-; A debug file to help test pixel accurate collision detection
-;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
-; A debug file to demonstrate that the SEUCK directional animation flags do
-;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
-; A debug file to demonstrate paralax scrolling with two levels. Use with Paralax_Enable enabled
-;!bin "../SEUCK/PARLXTST.P00",.offset,.size
-; A debug file to aid in debugging border sprite timing issues. Push the screen and different numbers of sprites appear under the border.
-;!bin "../SEUCK/BRDRSPRT.P00",.offset,.size
 
-;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
-;These are then overridden when the EnemyAITest define is enabled
-;!bin "../SEUCK/ENEMYTST.P00",.offset,.size
-
-;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with one enemy that will use directional fire instead of random fire.
-;These are then overridden when the EnemyAimTest define is enabled
-;!bin "../SEUCK/NMYFRTST.P00",.offset,.size
-
-; "Double or Nothing" - Use this with Scroller_TwinMode and Scroller_SingleScoreLives enabled
-; Remember to disable TryOtherPlayerSafePositionForRespawn since we don't want to try the other player's position
-;!bin "../SEUCK/DOUBLEDT.P00",.offset,.size
-
-; Horizontal SEUCK files
-; Enable Scroller_IsHorizontal when using these
-; Enable Scroller_LOTD for game file LOTD___I to add all the extra super weapon spells and tweaks
-;!bin "../SEUCK/LOTD___I.P00",.offset,.size
-;!bin "../SEUCK/SIDEWAYS.P00",.offset,.size
-;!bin "../SEUCK/BAPHOMET.P00",.offset,.size
-;!bin "../SEUCK/AEONDATA.P00",.offset,.size
-;!bin "../SEUCK/PLMBAMSE___I.P00",.offset,.size
-;!bin "../SEUCK/NYAAAAHI.P00",.offset,.size
-;!bin "../SEUCK/PURGE101.P00",.offset,.size
-}
-
-; This macro includes the LotD extra data
-!macro SEUCKFileData2 .offset, .size {
-!bin "../SEUCK/LTDSPLLS.P00",.offset,.size
-}
-
-; This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
 !ifdef Paralax_Enable {
-!macro SEUCKFileDataParalaxBlock .offset, .size {
-!bin "../SEUCK/PRLXBLCK.P00",.offset,.size
-}
 !align 255,0
 ;This includes duplicate columns of paralax chars, it makes the speed code much faster since it doesn't have to do a wraparound check
 Paralax_Level1CharData
@@ -157,6 +127,10 @@ MusicPlayerPlay = $8003
 
 !ifdef Scroller_MultiDirection { } else {
 
+; SEUCK addresses
+; break 429f for game frame updates
+
+; Enemy attack wave data
 ; Seems to actually be $340c-$3fcf
 ; Appears to be two stacks growing from the start and the end of memory.
 ; $3fcc/3fcd = lo/hi of the end of the start memory i.e. This pointer grows upwards through memory
@@ -197,6 +171,7 @@ MusicPlayerPlay = $8003
 ; lo nybble	- Direction bits 0 right, 1 left, 2 down, 3 up
 ; hi nybble	- For number of frames.
 ; Until $ff is encountered
+
 AttackWaves
 +SEUCKFileData $bc0,$1a + 2 - $900 + $340c
 
@@ -294,14 +269,15 @@ SFXTable
 
 }
 
-
+MarkEndData = *
 
 
 !ifdef Scroller_MultiDirection {
 ; VIC Graphics data
 *=$c000
 CharData
-!bin "../FreeDirRant/level4.chr",,$100
+;!bin "../FreeDirRant/level4.chr",,$100
+!bin "../FreeDirRant/chars.raw"
 
 *=$fe00
 SpriteData
@@ -474,11 +450,15 @@ SpriteScoreChars
 +reserve ~AnimationXPosLo , Multiplex_items
 +reserve ~AnimationXPosHi , Multiplex_items
 +reserve ~AnimationYPos , Multiplex_items
+!ifdef Multiplex_SplitSort {
++reserve ~AnimationYPosToSort , Multiplex_items
+}
 +reserve ~AnimationSpriteColour , Multiplex_items
 +reserve ~AnimationSpriteFrame , Multiplex_items
 +reserve ~AnimationSpriteFrameCount , Multiplex_items
 +reserve ~AnimationSpriteFrameCountDelay , Multiplex_items
 +reserve ~AnimationSpriteFrameCountDelayInit , Multiplex_items
++reserve ~AnimationSpriteIsNew , Multiplex_items
 
 ; For directional animations
 +reserve ~Animation_DirectionalBits , Multiplex_items

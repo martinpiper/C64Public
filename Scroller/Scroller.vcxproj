@@ -65,7 +65,11 @@
     <CustomBuild Include="R.MUS8000.PRG" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
+    <None Include="features\animation.feature" />
     <None Include="README.md" />
+    <None Include="ScrollEntryCommon.a" />
+    <None Include="ScrollerDataMacro.a" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

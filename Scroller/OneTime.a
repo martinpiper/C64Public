@@ -241,6 +241,8 @@ ScrollerDemoInitOneTimeData
 
 	; Clear out the score sprite data
 	ldx #0
+	stx SpriteEmptyLookupTab
+	stx SpriteEmptyLookupTab2
 	txa
 .fc1
 	sta DrawnScoreSprites,x

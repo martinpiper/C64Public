@@ -120,10 +120,18 @@ DisplayTitleScreen
 	sta Multiplex_XPosHi,x
 	lda #$28	; Some sprite frame for now
 	sta Multiplex_SpriteFrame,x
+	lda Multiplex_YPos,x
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort,x
+}
 	dex
 	bpl .fl1
 
 	jsr Multiplex_Sort
+!ifdef Multiplex_SplitSort {
+	jsr CopyMultiplexTables
+}
+
 	jsr SetupIRQsForTitleScreen
 	; Now the loop which displays the title screen
 .l3
@@ -289,6 +297,9 @@ TitleScreenAnimationHook
 .alreadyOn1
 	lda TitleScreen_SinTab,x
 	sta Multiplex_YPos,y
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort,y
+}
 	txa
 	pha
 	lsr
@@ -354,6 +365,9 @@ TitleScreenAnimationHook
 .alreadyOn2
 	lda TitleScreen_SinTab,x
 	sta Multiplex_YPos+16,y
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort+16,y
+}
 	txa
 	pha
 	lsr
@@ -398,6 +412,9 @@ TitleScreenAnimationHook
 	lda #0
 ;	lda #50	; Display the sprite on the screen
 	sta Multiplex_YPos
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort
+}
 	; Move it
 	lda Multiplex_XPosLo
 	clc
