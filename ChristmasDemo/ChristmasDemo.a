@@ -1,0 +1,760 @@
+; Christmas Demo
+; Originally released 1991
+; Converted from the original 6510+ assembler code from the file "masterplex.s" from the UnknownContents.d64 disk image.
+; To run the original code:
+; poke 43,1:poke 44,4:poke1024,0:new
+; load "masterplex.ba",8
+; run
+; This code loads the files "music[1-7].m"
+; Then loads "bouncetab.s" at $4000 which contains four 256 !bye tables for movement.
+; Then loads "masterplex.o" which is the assembled code.
+; Then loads "schr.d" for the charset at $0800
+; Then loads "screen.d" for the screen at $3800
+; It then starts the code at $4400
+
+!source "../stdlib/stdlib.a"
+!to "ChristmasDemo.prg", cbm
+!sl "ChristmasDemo.map"
+!svl "ChristmasDemo.lbl"
+!pdb "ChristmasDemo.pdb"
+!cpu 6510
+!ct pet
+
+; Include this extra machine setup code that was missing from the original code.
+*=$400
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	jmp $4400
+
+
+!source "../stdlib/Initialise.a"
+
+; The original entry point
+*=$4400
+	jmp start2
+topbar !by 0,6,14,0,6,14,3,1,7,15,12,11
+botbar !by 11,12,15,7,1,7,10,4,2,6,0,0,0
+sometab !by 0,0,0,0,0,0,0,0
+coltab !by 11,12,15,1,1,15,12,11
+xtab !by 84,108,132,156,180,204,228,252
+ytab !by 0,0,0,0,0,0,0,0
+ytabmove !by 0,1,3,5,7,10,12,12,12,12,10,7,5,3,1,0,0,0,0,0,0,0,0,0,0,0,0
+	!by 0,1,3,5,7,8,9,10,10,9,9,8,7,5,3,1,0,0
+sprtab !by 255,255,255,255,255,255,255,255
+tst !by 0,0,0,0,0,0,0,0
+
+startit
+start2 lda #255
+	ldx #0
+	stx 53265
+	ldy #54
+	sty 1
+	sta 53248+21
+	sta 53248+28
+	jsr startz
+	lda #9
+	sta 53282
+	lda #15
+	sta 53283
+	lda #%11100010
+	sta 53272
+	lda #%11110000
+	sta 53248+27
+start3 lda #0
+	sta $d020
+	sta $d021
+	sta $d3
+	sta $d4
+	lda #255
+	sta $d5
+	lda #192
+	sta cnt1
+	lda #9
+	ldx #0
+fgt1 sta $d800,x
+	sta $d900,x
+	sta $da00,x
+	sta $dae8,x
+	dex
+	bne fgt1
+	jsr mergescreen
+	ldx #77
+	lda #0
+vf1 sta startit,x
+	dex
+	bne vf1
+	lda #0
+	jsr $a000
+	lda #54
+	sta 1
+	lda #11
+	sta $d021
+	jsr setirq
+start
+l1 lda #30
+	cmp $d012
+	bne l1
+	lda 53265
+	bmi l1
+	lda #0
+;	sta $d020
+	ldx #14
+	ldy #7
+l2 lda xtab,y
+	sta 53248,x
+	lda ytab,y
+	clc
+	adc #60
+	sta 53249,x
+	lda coltab+1                
+	sta 53248+39,y              
+	lda sprtab,y                
+	sta 15352,y
+	inc $d3
+	dex
+	dex
+	dey
+	bpl l2
+	lda sometab
+	sta 53248+21
+	lda coltab
+	sta 53248+37
+	lda coltab+2
+	sta 53248+38
+	ldx #14
+	ldy #7
+;	inc $d020
+l3 lda #74
+	cmp $d012
+	bne l3
+l4 lda ytab,y
+	clc
+	adc #81
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l4
+	lda sometab+1
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l6 lda #74+21
+	cmp $d012
+	bne l6
+l7 lda ytab,y
+	clc
+	adc #81+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l7
+	lda sometab+2
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l9 lda #74+21+21+1
+	cmp $d012
+	bne l9
+l10 lda ytab,y
+	clc
+	adc #81+21+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l10
+	lda sometab+3
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l12 lda #74+21+21+21+1
+	cmp $d012
+	bne l12
+l13 lda ytab,y
+	clc
+	adc #81+21+21+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l13
+	lda sometab+4
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l15 lda #74+21+21+21+21
+	cmp $d012
+	bne l15
+l16 lda ytab,y
+	clc
+	adc #81+21+21+21+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l16
+	lda sometab+5
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l18 lda #74+21+21+21+21+21+1
+	cmp $d012
+	bne l18
+l19 lda ytab,y
+	clc
+	adc #81+21+21+21+21+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l19
+	lda sometab+6
+	sta 53248+21
+	ldx #14
+	ldy #7
+;	inc $d020
+l21 lda #74+21+21+21+21+21+21
+	cmp $d012
+	bne l21
+l22 lda ytab,y
+	clc
+	adc #81+21+21+21+21+21+21
+	sta 53249,x
+	dex
+	dex
+	dey
+	bpl l22
+	lda sometab+7
+	sta 53248+21
+	jsr scrytab
+	jsr bn1
+	jsr scyc
+	jsr sc
+	lda #247
+z99 cmp $d012
+	bne z99
+;	!inc $d020
+	jsr faller3
+	jmp start
+
+scrytab ldx #0
+sy1 lda ytab+1,x
+	sta ytab,x
+	inx
+	cpx #7
+	bne sy1
+	lda $d5
+	beq sy4
+	dec $d5
+	jmp sy3
+sy4 inc $d4
+	ldx $d4
+	cpx #18
+	bcc sy2
+	ldx #0
+	stx $d4
+sy2 lda ytabmove,x
+	sta ytab+7
+sy3 rts
+
+bn1 lda cnt2
+	beq bn2
+	dec cnt2
+	rts
+
+bn2 ldx cnt1
+;	!stx 1024
+	bpl revbit
+	cpx #192
+	bne revbit3
+	jsr revbits
+	lda #50
+	sta cnt2
+revbit3 lda $4000,x
+	sta xtab
+	lda $4100,x
+	sta xtab+1
+	lda $4200,x
+	sta xtab+2
+	lda $4300,x
+	sta xtab+3
+	txa
+	sec
+	sbc #$80
+	tax
+	lda $4000,x
+	sta xtab+7
+	lda $4100,x
+	sta xtab+6
+	lda $4200,x
+	sta xtab+5
+	lda $4300,x
+	sta xtab+4
+	jmp incflag
+	lda $4200,x
+	sta 53258
+	lda $4300,x
+	sta 53256
+	jmp incflag
+
+revbit bne revbit2
+	lda cnt3
+	eor #1
+	sta cnt3
+	cmp #1
+	beq revbit2
+	jsr newchrs
+
+revbit2 lda $4000,x
+	sta xtab
+	lda $4100,x
+	sta xtab+1
+	lda $4200,x
+	sta xtab+2
+	lda $4300,x
+	sta xtab+3
+	txa
+	clc
+	adc #$80
+	tax
+	lda $4000,x
+	sta xtab+7
+	lda $4100,x
+	sta xtab+6
+	lda $4200,x
+	sta xtab+5
+	lda $4300,x
+	sta xtab+4
+
+incflag lda cnt1
+	clc
+	adc speed
+	sta cnt1
+	cmp #64
+	bne enderbn
+	lda #192
+	sta cnt1
+enderbn rts
+
+cnt1 !by 0
+speed !by 2
+speedt !by 2,2,2,4,4,2,2,2,2,2
+
+revbits ldx #7
+bn3 lda sometab,x
+	sta tst,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	rol tst,x
+	ror sometab,x
+	dex
+	bpl bn3
+	ldx cnt1
+	rts
+
+cnt2 !by 0
+cnt6b !by 100
+
+newchrs ldy cnt5
+	lda messtab,y
+	asl
+	asl
+	asl
+	tay
+	txa
+	pha
+	ldx #0
+
+nc1 lda $0d00,y
+	sta sometab,x
+	inx
+	iny
+	cpx #8
+	bne nc1
+	pla
+	tax
+	inc cnt5
+	lda cnt5
+	cmp #endstop-messtab
+	bne es1
+	lda #0
+	sta cnt5
+
+es1
+rts
+
+cnt3 !by 0
+cnt4 !by 0
+cnt5 !by 0
+cnt6 !by 0
+cnt7 !by 0
+
+messtab
+	!raw "zzzzhello every one  how are you to day z z z z "
+	!raw "oh yeah z merry christmas "
+	!raw "merry christmas"
+endstop
+
+colscyc
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+	!by 7,15,12,11,0,6,14,3,1,3,14,6
+	!by 5,3,13,1,13,3,5,2,10,1,10,2,2,9,5,13,5,9
+	!by 6,2,4,10,15,7,1,7,15,10,4,2,6
+	!by 9,2,8,10,15,7,1,7,15,10,8,2,9
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+	!by 7,15,12,11,0,6,14,3,1,3,14,6
+	!by 5,3,13,1,13,3,5,2,10,1,10,2,2,9,5,13,5,9
+	!by 6,2,4,10,15,7,1,7,15,10,4,2,6
+	!by 9,2,8,10,15,7,1,7,15,10,8,2,9
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+	!by 7,15,12,11,0,6,14,3,1,3,14,6
+	!by 5,3,13,1,13,3,5,2,10,1,10,2,2,9,5,13,5,9
+	!by 6,2,4,10,15,7,1,7,15,10,4,2,6
+	!by 9,2,8,10,15,7,1,7,15,10,8,2,9
+	!by 11,12,15,7,1,7,15,12,11,0,6,2,4,5,3,7,1
+endscyc
+
+scyc dec cnt6b
+	beq scyc2
+	rts
+
+scyc2 ldy cnt6
+	lda colscyc,y
+	sta coltab
+	lda #6
+	sta cnt6b
+	lda colscyc+1,y
+	sta coltab+1
+	lda colscyc+2,y
+	sta coltab+2
+	inc cnt6
+	lda cnt6
+	cmp #endscyc-colscyc-17
+	bne scycu
+	lda #0
+	sta cnt6
+scycu rts
+
+	jsr setirq
+	rts
+
+count !by 40
+setirq
+	sei
+	lda #$7f
+	sta $dc0d
+	lda $dc0d
+	lda #$1b
+	sta $d011
+	lda #50
+	sta $d012
+	lda #<irq2
+	sta $314
+	lda #>irq2
+	sta $315
+	lda #1
+	sta $d019
+	sta $d01a
+	lda #216
+	sta 53270
+	cli
+	rts
+
+irq2 lda #11
+	inc $0400
+	inc $0401
+	nop
+	nop
+	nop
+	sta $d020
+	lda #%11100010
+	sta 53272
+zd1 lda #250
+	sta $d012
+	dec $d019
+	lda #<irq
+	sta 788
+	lda #>irq
+	sta 789
+	jmp $ea81
+
+irq lda #0
+	inc $0402
+	inc $0403
+	nop
+	nop
+	sta $d020
+	dec $d019
+	lda #50
+	sta $d012
+	lda #<irq2
+	sta 788
+	lda #>irq2
+	sta 789
+	dec $d019
+	jmp $ea31
+cnt7m !by 0
+sc rts
+
+startz lda #28
+	sta 53272
+	ldx #39
+s3 lda text,x
+	clc
+	adc #128
+	sta $0400,x
+	dex
+	bpl s3
+	jsr bitprint
+	rts
+	sei
+s2 lda #253
+s1 cmp $d012
+	bne s1
+faller3 dec cnt
+	bne music
+	lda #2
+	sta cnt
+;	inc $d020
+;	inc $d020
+	jsr faller
+	jsr musicselc
+;	inc $d020
+music jsr $a006
+;	inc $d020
+;	dec $d020
+s4 rts
+
+cnt !by 1
+
+text !by 0,20,12,26,3,27,14,21,3,22,6,28,11,29,1,8,4,7,1,6,9,13,22,5,2,24,10
+	!by 6,9,2,13,10,9,7,1,6,14,10,6,3
+sny !by 00,00,01,01,00,00,01,01,80,80,80,81,128,128,128,129,30
+;	!16 on the cnty
+	!by 40,40,40,41,41
+sna !by 02,01,01,00,32,31,33,32,76,77,78,77,13,11,12,11,50
+;	!16 on the cnty
+	!by 40,41,42,41,40
+sns !by 01,01,01,01,02,02,02,02,01,01,01,01,01,02,02,02,1
+;	!16 on the cnty
+	!by 01,01,01,01,01
+fly !by 0
+fla !by 0
+fls !by 1
+
+faller ldx #192
+	lda #0
+	sta $0c00
+lz1 sta $0c00,x
+	dex
+	bne lz1
+	ldy #21
+lz2 ldx sna,y
+	lda $0940,x
+	ldx sny,y
+	ora $0c00,x
+	sta $0c00,x
+	txa
+	pha
+	tya
+	tax
+	inc sna,x
+	lda sna,x
+	cmp #80
+	bcc lz3
+	lda #0
+	sta sna,x
+lz3 pla
+	tax
+	lda sny,y
+	clc
+	adc sns,y
+	sta sny,y
+	cmp #192
+	bcc lz4
+	lda sny,y
+	sec
+	sbc #192
+	sta sny,y
+lz4 dey
+	bpl lz2
+	rts
+
+;	! high and low screen addresses !
+hiscr !by 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
+loscr !by 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+	!by $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+
+bitprint ldy #0
+	sty cnt2z
+b1 lda loscr,y
+	sta b2+1
+	sta b3+1
+	lda hiscr,y
+	sta b2+2
+	sta b3+2
+	ldy #79
+	ldx #39
+b2 lda $0400,x
+	clc
+	adc #1
+	cmp #128+24
+	bcc b3
+	lda #128
+b3 sta $0400,y
+	dey
+	dex
+	bpl b2
+	inc cnt2z
+	ldy cnt2z
+	cpy #24
+	bne b1
+	rts
+
+cnt2z !by 0
+
+mergescreen ldx #0
+z1 lda $3800,x
+	cmp #32
+	bne z2
+	lda $0400,x
+	sta $3800,x
+	lda #1
+	sta $d800,x
+z2 lda $3900,x
+	cmp #32
+	bne z3
+	lda $0500,x
+	sta $3900,x
+	lda #1
+	sta $d900,x
+z3 lda $3a00,x
+	cmp #32
+	bne z4
+	lda $0600,x
+	sta $3a00,x
+	lda #1
+	sta $da00,x
+z4 lda $3b00,x
+	cmp #32
+	bne z5
+	lda $0700,x
+	sta $3b00,x
+	lda #1
+	sta $db00,x
+z5 inx
+	bne z1
+	rts
+
+musicselc lda 197
+	cmp #64
+	beq ms11
+ms1 cmp #56
+	bne ms2
+	ldx #0
+	jmp playitnew
+ms2 cmp #59
+	bne ms3
+	ldx #1
+	jmp playitnew
+ms3 cmp #8
+	bne ms4
+	ldx #2
+	jmp playitnew
+ms4 cmp #11
+	bne ms5
+	ldx #3
+	jmp playitnew
+ms5 cmp #16
+	bne ms6
+	ldx #4
+	jmp playitnew
+ms6 cmp #19
+	bne ms7
+	ldx #5
+	jmp playitnew
+ms7 cmp #24
+	bne ms8
+	ldx #6
+	jmp playitnew
+ms8 cmp #27
+	bne ms9
+	ldx #7
+	jmp playitnew
+ms9 cmp #32
+	bne ms10
+	ldx #8
+	jmp playitnew
+ms10 cmp #35
+	bne ms11
+	ldx #9
+	jmp playitnew
+ms11 rts
+
+mhtb !by $90,$80,$b0,$b0,$70,$18,$a0,$60,$70,$70
+mstb !by 0,0,1,0,0,0,0,0,1,2
+
+playitnew lda mhtb,x
+	sta music+2
+	sta musicz+2
+	lda mstb,x
+	ldy #0
+	ldx #0
+musicz jsr $a000
+	jmp s4
+
+; Music files
+
+*=$7000
+!bin "MUSIC1.M.PRG",,2
+*=$8000
+!bin "MUSIC2.M.PRG",,2
+*=$9000
+!bin "MUSIC3.M.PRG",,2
+*=$a000
+!bin "MUSIC4.M.PRG",,2
+*=$b000
+!bin "MUSIC5.M.PRG",,2
+*=$6000
+!bin "MUSIC6.M.PRG",,2
+*=$1800
+!bin "MUSIC7.M.PRG",,2
+
+; All the data
+
+*=2040
+!by 255,255,255,255,255,255,255,255
+
+*=$800
+!bin "schr.d.prg",,2
+
+*=$3800
+!bin "screen.d.prg",,2
+
+*=$4000
+!bin "bouncetab.s.prg",,2
