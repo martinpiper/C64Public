@@ -688,6 +688,7 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	lda #0
 	sta .isSluring,x
 }
+
 .fxTimerUpdate2
 	dex
 	bpl .fxTimerUpdate
@@ -1561,6 +1562,7 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	; override the hard restart.
 	ldy .voft,x
 	lda #0
+	sta SIDVoice1Control,y
 	sta .tablePosWave,x
 	sta .fxNextNotePlay2,x
 	sta SIDVoice1AttackDecay,y
@@ -1616,6 +1618,16 @@ TrackPosHi !by >Track0,>Track1,>Track2
 
 	lda EnvelopesMiscBitMask,y
 	sta .miscBitMask,x
+
+	; Reset table generators
+	lda #0
+!ifdef TableCodeActivateNote {
+	sta .tablePosNote,x
+}
+!ifdef TableCodeActivatePulse {
+	sta .tablePosPulse,x
+}
+	sta .tablePosWave,x
 
 	lda EnvelopesTableBitMask,y
 	beq .skipTableInit
@@ -1734,7 +1746,7 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	beq .tablePulseJump
 	cmp #%00010000
 	bcs .tablePulseOtherCommand
-	; No and needed since the hardware just ignores the upper bits
+	; No "and" instruction needed since the hardware just ignores the upper bits
 	sta .pwhi,x
 	lda TableValuePulse-1,y
 	sta .pwlo,x

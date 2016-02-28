@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName>Decompression</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{4B7FD9CC-EBE8-453E-AE21-8E2977F87300}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression2.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression2.a </NMakeReBuildCommandLine>
+    <NMakeOutput>Decompression.exe</NMakeOutput>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="Decompression.a" />
+    <CustomBuild Include="DecompressionP2.a" />
+    <CustomBuild Include="DecompressionVars.a" />
+    <CustomBuild Include="TestDecompression.a" />
+    <CustomBuild Include="TestDecompression2.a" />
+    <CustomBuild Include="..\stdlib\BASICEntry80d.a" />
+    <CustomBuild Include="..\stdlib\stdlib.a" />
+    <CustomBuild Include="Scroller.bin" />
+    <CustomBuild Include="Scroller.cmp" />
+    <CustomBuild Include="TestScreen.bin" />
+    <CustomBuild Include="TestScreen.cmp" />
+    <CustomBuild Include="..\CleanProject.bat" />
+    <CustomBuild Include="..\CleanProjectFully.bat" />
+    <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat" />
+    <CustomBuild Include="..\DoBackup.bat" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -39,8 +39,10 @@ AnimationInit
 !ifdef Multiplex_SplitSort {
 	sta AnimationYPosToSort,x
 }
+	sta AnimationYPos,x
 	lda #0
 	sta AnimationXPosHi,x
+	sta AnimationXPosLo,x
 	dex
 	bpl .l1
 	sta AnimationBulletCount
@@ -537,6 +539,72 @@ AnimationUpdateEnemyFire
 	bne .notdoAimedFire
 	jmp .doAimedFire
 .notdoAimedFire
+
+; Enable when using "EXPARMY1.P00"
+!if 0 {
+.notaim1
+    cmp #24        ;Enemy object ID to use AIM
+    bne .notaim2
+    jmp .doAimedFire
+.notaim2
+    cmp #25        ;Enemy to use AIM
+    bne .notaim3
+    jmp .doAimedFire
+.notaim3
+    cmp #26        ;Enemy to use AIM
+    bne .notaim4
+    jmp .doAimedFire
+.notaim4
+    cmp #30        ;etc ...
+    bne .notaim5
+    jmp .doAimedFire
+.notaim5
+    cmp #31
+    bne .notaim6
+    jmp .doAimedFire
+.notaim6
+    cmp #33
+    bne .notaim7
+    jmp .doAimedFire
+.notaim7
+    cmp #36
+    bne .notaim8
+    jmp .doAimedFire
+.notaim8
+    cmp #37
+    bne .notaim9
+    jmp .doAimedFire
+.notaim9
+    cmp #41
+    bne .notaim10
+    jmp .doAimedFire
+.notaim10
+    cmp #43
+    bne .notaim11
+    jmp .doAimedFire
+.notaim11
+    cmp #46
+    bne .notaim12
+    jmp .doAimedFire
+.notaim12
+    cmp #47
+    bne .notaim13
+    jmp .doAimedFire
+.notaim13
+    cmp #50
+    bne .notaim14
+    jmp .doAimedFire
+.notaim14
+    cmp #51
+    bne .notaim15
+    jmp .doAimedFire
+.notaim15
+    cmp #57
+    bne .notaim16
+    jmp .doAimedFire
+.notaim16
+}
+
 }
 
 	lda .enemyFireDirectionType
@@ -551,7 +619,7 @@ AnimationUpdateEnemyFire
 	lda #0
 	sta AnimationBulletSpeedX,x 
 	sta AnimationBulletSpeedY,x 
-	; Directional fire
+	; Directional fire - Type $c
 	lda #1
 	bit .enemyLastValidMove
 	beq .notRight
@@ -625,6 +693,7 @@ AnimationUpdateEnemyFire
 	stx tempWork7
 	ldx .velCache
 	ldy .velCache+1
+	lda .enemyLastValidMove
 	jsr AnimationConvertXYToDirection
 	ldx tempWork7
 	sta AnimationDirectionIn,x
@@ -644,7 +713,7 @@ AnimationUpdateEnemyFire
 !ifdef EnemyAimTest {
 .doAimedFire
 	; MPi: TODO: Only Player1Information is used, expand so it alternates between Player1Information and Player2Information depending on the active players
-	; Usingthe enemy position for the player to bullet difference calculation
+	; Using the enemy position for the player to bullet difference calculation
 	lda .smxh+1
 	lsr
 	lda .smxl+1
@@ -711,9 +780,21 @@ AnimationUpdateEnemyFire
 
 .useIt
 	lda .velCache
+	bne .gotDirection
+	lda .velCache+1
+	bne .gotDirection
+
+	; No eventual direction so go back to random fire
+	jmp .fireRandomly
+
+.gotDirection
+
+	lda .velCache
 	sta AnimationBulletSpeedX,x
 	lda .velCache+1
 	sta AnimationBulletSpeedY,x
+;	lda #0
+;	sta .enemyLastValidMove
 
 
 	jmp .speedSetSoCalcDirection
@@ -1016,11 +1097,9 @@ AnimationUpdateFrameMovement
 	and #$f	; Paranoia
 	bne .notDirHold
 
-	lda AnimationMovementMove,x
-	cmp #$ff
-	beq .noFrameChangeNoDelayUpdate
+	; When it's directional hold and the input has no direction then don't update the frame
+	jmp .noFrameChangeNoDelayUpdate
 
-	jmp .forceFrame
 .notDirHold
 	lda AnimationSpriteFrameCount,x
 	eor #1
@@ -1628,43 +1707,43 @@ AnimationUpdateMultiplexor
 
 
 !zn
-AnimationClearMultiplexor
-	ldx #Multiplex_items-1
-	lda #$ff
-.l1
-	sta Multiplex_YPos,x
-
-	dex
-	bpl .l1
-	rts
-
-
-
-!zn
+; Calculate the AnimationIn movement based on x and y velocity
+; A = Default input value if there is no speed
+; X , Y = Velocity
 AnimationConvertXYToDirection
-	; Zero the direction
-	lda #0
 	; Test and set x component from the velocity
 	cpx #0
 	beq .isX0
 	cpx #$7f
 	bcc .isXPos
-	ora #2
-	bne .isX0
+	ora #EnemyAnimationBit_Left
+	and #EnemyAnimationBit_Left|EnemyAnimationBit_Up|EnemyAnimationBit_Down
+	jmp .o1
 .isXPos
-	ora #1
+	ora #EnemyAnimationBit_Right
+	and #EnemyAnimationBit_Right|EnemyAnimationBit_Up|EnemyAnimationBit_Down
+	jmp .o1
 .isX0
+	; If no X movement then keep the Y movement
+	and #EnemyAnimationBit_Down | EnemyAnimationBit_Up
+.o1
 
 	; Test and set y component from the velocity
 	cpy #0
 	beq .isY0
 	cpy #$7f
 	bcc .isYPos
-	ora #8
-	bne .isY0
+	ora #EnemyAnimationBit_Up
+	and #EnemyAnimationBit_Left|EnemyAnimationBit_Right|EnemyAnimationBit_Up
+	jmp .o2
 .isYPos
-	ora #4
+	ora #EnemyAnimationBit_Down
+	and #EnemyAnimationBit_Left|EnemyAnimationBit_Right|EnemyAnimationBit_Down
+	jmp .o2
 .isY0
+	; If no Y movement then keep the X movement
+	and #EnemyAnimationBit_Left | EnemyAnimationBit_Right
+.o2
 	rts
 
 
@@ -1823,10 +1902,10 @@ smSpellEffectRunningPlayerType	lda #$ff
 .cl1
 	ldx Multiplex_CollisionIndexesLastFrame,y
 	bpl .c1
-	jmp .ecc2
+.lecc2	jmp .ecc2
 .c1
 	lda AnimationType,x
-	bmi .ecc2
+	bmi .lecc2
 	stx .sprPair
 	tax
 	lda .isEnemyOrBulletType,x
@@ -1860,6 +1939,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	; No need to double check for invalid types because we already have above
 	ldx .sprPair
 	lda AnimationType,x
+	bmi .noHit
 
 	cmp #AnimationType_Enemy1
 	bcc .notPPWithEnemy
@@ -1873,10 +1953,12 @@ smSpellEffectRunningPlayerType	lda #$ff
 	beq .noHit
 	ldy .sprPair+1
 	lda AnimationType,y
+	bmi .noHit
 .registerHitWithEnemy
 	jsr .areSpritesClose
 	bcs .noHit
 	lda AnimationType,y
+	bmi .noHit
 	jsr .hitSomethingTyped
 	jmp .noHit
 
@@ -1890,6 +1972,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	; Test if an enemy bullet is hitting something player related
 	ldy .sprPair+1
 	lda AnimationType,y
+	bmi .noHit
 	cmp #AnimationType_Player1
 	beq .registerHitWithEnemy2
 	cmp #AnimationType_Player2

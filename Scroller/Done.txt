@@ -1,0 +1,14 @@
+; MPi: TODO: The main displayed area needs to mirror the first line of the score panel to improve the split.
+;		Can then move the multi-colour panel split change to inside the bitmap+ECM area and not have the FLD flickering bug
+
+
+; Stablised the score panel split for most cases. Sprites still cause some timing problems sometimes.
+
+
+.hitSomethingTyped was sometimes getting a recently, within the same frame, removed AnimationType of $ff from an enemy bullet that hit the player with a player bullet nearby.
+	This caused the recently removed enemy bullet to transform into a player dying animation.
+	Now animation type is checked in the collision routine.
+
+
+
+* Directional and directional hold animations are a lot better now.

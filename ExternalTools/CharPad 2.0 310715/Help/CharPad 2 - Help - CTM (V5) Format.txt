@@ -1,0 +1,188 @@
+
+--------------------- 
+CTM (v5) File Format.
+--------------------- 
+
+The CTM (v5) file format is used by the application 'CharPad' to record project data.
+
+CharPad is a cross-dev graphics tool for designing character mode graphics for the Commodore 64
+computer.
+
+
+version 5 of this format was introduced in June 2015 along with the first release of CharPad 2.0.
+ 
+nb. CTM = (C)hars, (T)iles, (M)ap.
+ 
+
+
+CTM files begins with a 20 byte header...
+
+
+file_id       [00-02]   3 bytes : File identification string ("CTM" in ASCII).
+version       [03]      1 byte  : File version number (5).
+
+colours       [04-07]   4 bytes : Project colours (only the low nybbles are of interest).
+                                  [04] = Background/transparent colour.
+                                  [05] = Character multi-colour 1.  
+                                  [06] = Character multi-colour 2. 
+                                  [07] = Character colour. (used for the 'Global' colouring method).  
+                                   
+colour_method [08]      1 byte  : Character colouring method (values 0-2 are valid).
+                                  (0 = Global, 1 = Per Tile, 2 = Per Character).
+
+flags         [09]      1 byte  : Various project flags:-  
+
+                                  bit 0 : Tile System (1 = Enabled).
+                                  bit 1 : Expanded Data (1 = Yes).
+                                  bit 2 : Multi-colour Mode (1 = Enabled). 
+                                
+                                  Remaining bits (3-7) are unused.
+
+num_chars-1   [10,11]   2 bytes : Number of characters -1 (low byte, high byte).
+num_tiles-1   [12,13]   2 bytes : Number of tiles -1 (low byte, high byte).
+tile_wid      [14]      1 byte  : Tile width (currently values of 1-8 are valid).
+tile_hei      [15]      1 byte  : Tile height (currently values of 1-8 are valid).
+map_wid       [16,17]   2 bytes : Map width (low byte, high byte).
+map_hei       [18,19]   2 bytes : Map height (low byte, high byte). 
+
+
+ 
+
+Then come the data blocks...
+
+
+char_data       The character set. (size = num_chars * 8 bytes).
+
+                Each byte in this block represents the pixels of one row (of 8) for each character 
+                definition, the sequence should be interpreted as groups of eight bytes where the 
+                first byte in a group represents the topmost row of pixels in a character with the 
+                following seven bytes representing each further row. 
+
+
+
+char_attribs    The character attributes. (size = num_chars bytes).
+
+                Each byte should be interpreted as an "MMMMCCCC" bit pattern where 'M' is one of four 
+                material bits and 'C' is one of four colour bits. 
+
+                The colour attribute nybbles are only useful when colour_method = 2 (Per character)
+                and they should all read zero if any other character colouring method is used.   
+                                     
+
+
+tile_data       The tile data. (size = num_tiles * tile_wid * tile_hei * 2 bytes).
+
+                Each pair of bytes in this block represents a (16 bit) char code using the little-endian
+                (low byte, high byte) format.
+
+                The sequence should be interpreted as running left-to-right for each tile row starting 
+                with the topmost and moving down (Z-pattern: LRTB). 
+
+                nb. The character code values in this block should not exceed num_chars-1.
+
+                nb. This block only exists if the 'Expanded Data' flag is clear. (see header).
+
+                nb. In the case that the 'Expanded Data' flag is set, the tile_data block will be absent
+                as it's contents would just be an ascending series starting at 0.
+                
+
+
+tile_colours    The tile colours. (size = num_tiles bytes).
+
+                one byte per tile, the lower nybbles indicate "char colour" (0-15) for the whole tile 
+                and the upper nybbles are unused.
+
+                This block only exists if colour_method = 1 (Per tile).
+
+
+
+map_data        The map data. (size =  map_wid * map_hei * 2 bytes).
+
+                Each pair of bytes in this block represents a (16 bit) tile code using the little-endian
+                (low byte, high byte) format.
+
+                The sequence should be interpreted as running left-to-right for each map row starting 
+                with the topmost and moving down (Z-pattern: LRTB). 
+
+                nb. The tile code values in this block should not exceed num_tiles-1. 
+
+
+
+Further notes:-          
+
+
+
+The 'Tile System' flag...
+
+  If this flag is clear then the project does not use tiles and the file should not contain any tile 
+  data. 
+
+  The header entries num_tiles, tile_wid and tile_hei should be ignored and the map data will refer 
+  to characters, not to tiles.
+
+  Character colouring method (colour_method) 'per tile' is not valid for a project that does not use 
+  tiles and should never be found set for a project that has the tile system disabled.
+
+  The 'Expanded Data' flag should also be ignored if a project does not use tiles. 
+
+
+
+The 'Expanded Data' flag...
+  
+  An expanded project is one where the total number of characters exactly matches the total number of 
+  cells in the tile set and where the tile set data is an unbroken integer sequence beginning at zero.
+
+  Such a data block is easily recreated algorithmically and is therefore omitted from the file.
+
+  CharPad 1.8 introduced a technique to allow the tile set to (seemingly) be edited at the pixel level 
+  and a part of this technique was to assign a unique character image to each tile cell.
+ 
+
+
+
+Changes:-
+ 
+
+  CharPad 2 no longer supports "tile cell" attributes and instead uses character attributes only 
+  therefore the CELL_ATTRIBS block available in the previous version of the format is no longer needed.
+
+
+  CharPad 2.0 supports more than 256 tiles hence the map data is now 16 bit values.
+
+
+  CharPad 2.0 no longer supports the 1x1 tile size and implements disabling of the tile system instead.
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

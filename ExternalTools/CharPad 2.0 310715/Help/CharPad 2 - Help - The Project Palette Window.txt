@@ -1,0 +1,83 @@
+
+CharPad 2 - Help
+
+The "Project Palette" window.
+
+
+
+The project palette window allows you to adjust various project options as well as define 
+the project's colour scheme and current pen selection.
+
+
+
+Radiobutton Group : Pens:-
+
+-Transparent : Normally used as a background (screen) colour, choose from all 16 colours.
+-Char colour : The native colour value used to render a character (or tile). See notes.
+-Multi-colour 1 : Only available if multi-colour mode is enabled, choose from all 16 colours.
+-Multi-colour 2 : Only available if multi-colour mode is enabled, choose from all 16 colours.
+
+
+
+Radiobutton Group : Character multi-colour mode:-
+
+-Enabled : Any character using a char colour >7 will appear in multi-colour (4 colour) format.
+-Disabled : Characters can only use high-resolution (2 colour) format. 
+
+
+
+Radiobutton Group : Colouring method:-
+
+-Global : All characters are rendered using the same char colour value.
+-Per Tile : All characters used by a particular tile use the char colour assigned to that tile.
+-Per Character : Each character may be assigned it's own char colour value.
+
+
+
+Radiobutton Group : Tile system:-
+
+-Enabled : The project can make use of a tile set, the map data refers to tiles.
+-Disabled : The project cannot use a tile set, the map data refers to characters.
+
+
+
+Notes:-
+
+The first option in this window provides a choice between enabling or disabling character 
+multi-colour mode, if enabled, the character set may use up to four colours in any character
+that uses a char colour greater than 7 (yellow) in the colour palette with the restrictions 
+that the character's horizontal resolution is halved and the actual char colour can only be 
+one of the first 8 colours.
+
+If multi-colour mode is disabled, characters can only use two colours, the transparent colour 
+and the char colour which can be any of the possible 16.  
+
+The second option in this window provides a choice between three different colouring methods, 
+the chosen method dictates how a character's native colour is applied.
+
+nb. on the Commodore 64, colour is not a property of characters, it is a property of the screen 
+matrix cells in colour RAM and so a character's colour (and multi-colour status) will depend on
+the value assigned to the screen position (in colour RAM) it is displayed in. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

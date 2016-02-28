@@ -1,0 +1,15 @@
+Add extra parameters to remap input C64 colours to other colours before conversion
+-c64remap 9 11 : Would remap colour 9 to 11
+-c64remap 9 11 -c64remap 15 12 : Would remap colour 9 to 11 then 15 to 12
+
+
+
+
+Process C:\Work\C64\EdelinTales\Graphics\Knight\Walk_SE_01.bmp into sprites
+..\EdelinTales\Graphics\Knight\Walk_SE_01.bmp 0 11 12
+-s ..\EdelinTales\Graphics\Knight\Walk_SE_01.bmp 0 11 12 sprs.bin sprs.idx sprs.col
+
+*Because sprites can choose hires/multicolour then the colour output could do with a hi-bit colour flag to signify multicolour mode
+
+
+

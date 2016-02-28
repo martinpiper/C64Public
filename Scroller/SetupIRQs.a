@@ -7,8 +7,8 @@ scorePanelPos2 = $fa	; The place for the second part to the open border code if 
 scorePanelPos1 = $f8	; The place to start the bottom of the screen IRQ.
 }
 } else {
-scorePanelPos1 = 205	; The place to start the split, 9 lines above scorePanel2Pos. Turns off the screen, sprites, resets scroll coordinates, graphics colours and mode etc
-scorePanelPos2 = 212	; The line above where we want to display the real panel. Just enough time to set V pos and enable the screen
+scorePanelPos1 = 205	; The place to start the split. Turns off the screen, sprites, resets scroll coordinates, graphics colours and mode etc
+scorePanelPos2 = scorePanelPos1+10	; The line above where we want to display the real panel. Just enough time to set V pos and enable the screen
 }
 
 
@@ -409,10 +409,8 @@ IrqTopOfScreen
 	; No need to ora in 0 for the charset
 	sta VIC2MemorySetup
 
-!ifdef Scroller_MultiDirection { } else {
 	lda #$ff
 	sta VIC2SpriteMulticolour
-}
 
 !ifdef IRQOpenBorders {
 	lda #%11
@@ -477,11 +475,11 @@ MultiplexExt_LastIRQ
 	; Depending on the y scroll position we use slightly different bottom of the screen IRQs.
 	; This helps to stablise the bottom split.
 !ifdef Scroller_MultiDirection {
-	ldy IRQUsedScreenScrollY
+	lda IRQUsedScreenScrollY
 } else {
-	ldy IRQUsedScreenScrollPos
+	lda IRQUsedScreenScrollPos
 }
-	cpy #4
+	cmp #4
 	bne .useMoreTime
 	lda #<BottomBorderLessTime
 	sta KERNALIRQServiceRoutineLo
@@ -490,10 +488,24 @@ MultiplexExt_LastIRQ
 .useMoreTime
 }
 } else {
+!ifdef Scroller_MultiDirection {
+	lda IRQUsedScreenScrollY
+} else {
+	lda IRQUsedScreenScrollPos
+}
+;	cmp #4
+	bne .stable
+	lda #<ScorePanel1Quick
+	sta KERNALIRQServiceRoutineLo
+	lda #>ScorePanel1Quick
+	sta KERNALIRQServiceRoutineHi
+	jmp .stable2
+.stable
 	lda #<ScorePanel1
 	sta KERNALIRQServiceRoutineLo
 	lda #>ScorePanel1
 	sta KERNALIRQServiceRoutineHi
+.stable2
 }
 
 	inc bottomMultiplexIRQDone
@@ -805,6 +817,38 @@ BottomBorder3
 ; Remove all possibility that the timings will change due to previous code
 !align 255,0
 !zn
+; Come in here if the raster will be a bad line
+ScorePanel1Quick
+!ifdef Scroller_DebugIRQBorder {
+	inc VIC2BorderColour
+}
+	sta irqAStore
+	stx irqXStore
+
+	ldx #$13
+;	ldx #$a	; Timing to use if the sprite blank out is before the VIC2ScreenControlV update
+.dl1
+	dex
+	bne .dl1
+	lda #%01111111
+	sta VIC2ScreenControlV
+
+!ifdef zScroller_MultiDirection {
+	lda #0
+	sta VIC2SpriteEnable
+	sta VIC2Sprite0X
+	sta VIC2Sprite1X
+	sta VIC2Sprite2X
+	sta VIC2Sprite3X
+	sta VIC2Sprite4X
+	sta VIC2Sprite5X
+	sta VIC2Sprite6X
+	sta VIC2Sprite7X
+	sta VIC2SpriteXMSB
+}
+
+	jmp .quickEntry
+
 ScorePanel1
 !ifdef Scroller_DebugIRQBorder {
 	inc VIC2BorderColour
@@ -812,49 +856,57 @@ ScorePanel1
 	sta irqAStore
 	stx irqXStore
 
-	; Setting bitmap and ECM modes will cause VIC2 to display black as it gets confused but the internal counters will continue to count correctly.
-	; Create our own char new line at this position
-;	lda #%01100111
-	lda VIC2ScreenControlV
-	and #%00000111
-	; ECM + bitmap + 25 rows (screen off)
-	ora #%01101000
+Multiplex_DiscardSpritesYPos=scorePanelPos1-1
 
-!if 1 {
-!if 1 {
-	ldx #scorePanelPos1+2
+!ifdef zScroller_MultiDirection {
+	lda #0
+	sta VIC2SpriteEnable
+	sta VIC2Sprite0X
+	sta VIC2Sprite1X
+	sta VIC2Sprite2X
+	sta VIC2Sprite3X
+	sta VIC2Sprite4X
+	sta VIC2Sprite5X
+	sta VIC2Sprite6X
+	sta VIC2Sprite7X
+	sta VIC2SpriteXMSB
+}
+
+	; Stabalise the screen now but still have the chars disabled by having bitmap and ECM on
+	; ECM + bitmap + screen on + 25 rows
+	; Setting bitmap and ECM modes will cause VIC2 to display black as it gets confused but the internal counters will continue to count correctly.
+	lda #%01111111
+
+	ldx #scorePanelPos1+1
 .nextLine
 	cpx VIC2Raster
 	bcs .nextLine
-Multiplex_DiscardSpritesYPos=scorePanelPos1+1
-} else {
-	ldx #8
-.d1
-	dex
-	bne .d1
-Multiplex_DiscardSpritesYPos=scorePanelPos1-1
-}
-} else {
-Multiplex_DiscardSpritesYPos=scorePanelPos1-1
-}
+
 	; Disable the screen
 	sta VIC2ScreenControlV
+
+.quickEntry
 
 	; Switch to displaying our text screen in bank 0 to demo this
 	; Bank 0 set first since the screen sprite pointers in screen $400, $800 and $c00 are all pointing to blank sprites. (set by InitBank0Data)
 	lda #%11
 	sta CIA2PortASerialBusVICBank
 	; Then the screen data
-	lda #20
+	lda #%00010010
 	sta VIC2MemorySetup
 
-	; Graphics screen colours
 	lda #0
 	sta VIC2ScreenColour
-	lda #3
 	sta VIC2ExtraBackgroundColour1
-	lda #4
 	sta VIC2ExtraBackgroundColour2
+	sta VIC2ExtraBackgroundColour3
+
+	; Delay a bit to push the border and scroll reset onto the next line
+	; This also hides any sprites that are partially under the side borders from poking through
+	ldx #$8
+.dl2
+	dex
+	bne .dl2
 
 	; Reset the screen X scroll and width
 	lda #%00011000
@@ -888,16 +940,12 @@ ScorePanel2
 	sta irqAStore
 	stx irqXStore
 
-	; Stabalise the screen now but still have the chars disabled by having bitmap and ECM on
-	; ECM + bitmap + screen on + 25 rows
-	lda #%01111111
-	sta VIC2ScreenControlV
-
 	; Turn on the screen by removing ECM + bitmap
-	lda #%00011111
-
+	lda VIC2ScreenControlV
+	and #%00011111
+!if 0 {
 !if 1 {
-	ldx #scorePanelPos2+2
+	ldx #scorePanelPos2+1
 .nextLine
 	cpx VIC2Raster
 	bcs .nextLine
@@ -907,9 +955,25 @@ ScorePanel2
 	dex
 	bne .d1
 }
-
+}
 	; Turn on the screen2
 	sta VIC2ScreenControlV
+
+!ifdef Scroller_UseDemoScorePanel {
+	lda ScorePanelBGCol0
+	sta VIC2ScreenColour
+	lda ScorePanelBGCol1
+	sta VIC2ExtraBackgroundColour1
+	lda ScorePanelBGCol2
+	sta VIC2ExtraBackgroundColour2
+} else {
+	lda #0
+	sta VIC2ScreenColour
+	lda #11
+	sta VIC2ExtraBackgroundColour1
+	lda #12
+	sta VIC2ExtraBackgroundColour2
+}
 
 !ifdef Scroller_MultiDirection { } else {
 	lda VIC2SpriteSpriteCollision

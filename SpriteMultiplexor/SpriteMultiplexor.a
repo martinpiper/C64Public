@@ -41,6 +41,9 @@ MarkMultiplexorBeginCode = *
 
 ;*MACROMultiplex_SpriteChunk might be more optimal if the MSB and potentially other flags are not calculated all at the same time.
 
+;* For very busy sprite displays have a mode where sprites are automatically alternated between frames to display as many of them as possible.
+; Potentially useful for shooters and explosion effects. Flag certain sprites as being allowed to do this or not.
+
 ; Documentation
 ; This routine works on the principal of reusing sprite slots as soon as possible after the bottom of the sprite is drawn. A couple of lines is used below the sprite bottom for safety.
 ; This is contrary to the other method of setting a raster to appear N-lines above where the next sprite needs to be drawn.
@@ -835,11 +838,11 @@ Multiplex_XPosLo
 	!by $48,$60,$78,$90,$a8,$c0,$d8,$f0
 
 Multiplex_XPosHi
-	!by $00,$00,$00,$00,$00,$00,$00,$00
-	!by $00,$00,$00,$00,$00,$00,$00,$00
-	!by $00,$00,$00,$00,$00,$00,$00,$00
-	!by $00,$00,$00,$00,$00,$00,$00,$00
-	!by $00,$00,$00,$00,$00,$00,$00,$00
+	!by $01,$01,$00,$00,$00,$00,$00,$00
+	!by $01,$01,$00,$00,$00,$00,$00,$00
+	!by $01,$00,$00,$00,$00,$00,$00,$00
+	!by $01,$00,$00,$00,$00,$00,$00,$00
+	!by $01,$00,$00,$00,$00,$00,$00,$00
 	!by $00,$00,$00,$00,$00,$00,$00,$00
 
 Multiplex_Colour

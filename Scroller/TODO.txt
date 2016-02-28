@@ -1,0 +1,52 @@
+; Optimise the block plot and screen scroll loops. Unroll more.
+
+
+; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
+
+
+; MPi: TODO: Add horizontally/vertically scrolling demo for platform game controller with standard gravity and velocity.
+
+
+; MPi: TODO: For smoothed enemy movement. When an enemy is spawned calculate its entire delta movement every frame with a smoothing target based algorithm. Like the old style camera movement algorithms from long time ago.
+;	It needs to be delta movement per frame so it can take into account any scrolling movement of course.
+;	delta = (targetPos - currentPos) * 0.9 (or some suitable close fraction that is easily calculated in binary using div/mul 2)
+
+
+; MPi: TODO: Double check directional and directional hold fire bullet animations from moving and stationary enemies that are either directional, directional hold or sequenced animations.
+; Check moving and bullet speed 0 stationary bullets.
+; Write tests. Satisfy the tests.
+; It seems as though a bullet speed of zero results in incorrect animation direction calculation due to:
+;	jsr AnimationConvertXYToDirection
+;	ldx tempWork7
+;	sta AnimationDirectionIn,x
+; Solution: If the input direction is set by the player, i.e. it isn't random, then use the direction instead of calculating it.
+
+
+
+; MPi: TODO: Push scroller, when the player death animation is playing it's possible to push scroll the screen with the joystick.
+; Maybe only when the players are linked?
+
+
+
+; MPi: TODO: If the sort is already after the multiplexor end (and the sprite collisioon is off) then just do the full copy and sort without buffering.
+
+
+
+; MPi: TODO: Double check the sprite X and Y placement in normal SEUCK and horizontal SEUCK.
+; See Scroller_SpriteXAdjust and Scroller_NoSpriteYAdjust
+; Check final placement of enemies with scrolling levels that scroll to static screens and also
+; just the static screens. Check push scroll as well.
+; In the horizontal SEUCK games there is a chance the sprites are appearing one pixel offset from
+; where they should be.
+; I have a theory the problem is with the original SEUCK code where the sprites can lag one frame
+; position behind a scroll. This does mean that there is no easy fix since while scrolling people
+; might have placed their sprites to compensate for this one frame lag. In this case just make
+; sure the sprite position is correct when the screen is static or stops scrolling (like that 
+; scroll after a push scroll).
+
+
+
+; MPi: TODO: Add configuration to shift the screen split down one or two characters giving different size bottom areas.
+; Things to tweak: scorePanelPos1 , (19*40) and (20*40) will need to be optionally enabled, MACROScrollerBottomAdjust , MACROScrollerDrawVStrip, MACROScrollerDrawVStripColour, ScrollerDrawStripBottomBank,
+; ScrollerDrawStripBottomColour, DrawMap
+; InitBank0Data and ClearGameScreens where it copies the screen liens at 20*40

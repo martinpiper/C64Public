@@ -1,66 +1,75 @@
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
-!macro SEUCKFileData .offset, .size {
-;!bin "../SEUCK/GAME1__I.P00",.offset,.size
+!macro SEUCKFileData .size, .offset {
+!bin "../SEUCK/GAME1__I.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
-;!bin "../SEUCK/GAME2__I.P00",.offset,.size
-;!bin "../SEUCK/GAME3__I.P00",.offset,.size
-;!bin "../SEUCK/GAME4__I.P00",.offset,.size
-;!bin "../SEUCK/demo4.bin",.offset,.size
-;!bin "../SEUCK/VIOSGAME.P00",.offset,.size
+;!bin "../SEUCK/GAME2__I.P00",.size,.offset
+;!bin "../SEUCK/GAME3__I.P00",.size,.offset
+;!bin "../SEUCK/GAME4__I.P00",.size,.offset
+;!bin "../SEUCK/demo4.bin",.size,.offset
+;!bin "../SEUCK/VIOSGAME.P00",.size,.offset
 ; A debug file to help test pixel accurate collision detection
-;!bin "../SEUCK/TSTCLLSN.P00",.offset,.size
+;!bin "../SEUCK/TSTCLLSN.P00",.size,.offset
 ; A debug file to demonstrate what the SEUCK directional animation flags do
-;!bin "../SEUCK/DIRCTRNL.P00",.offset,.size
+;!bin "../SEUCK/DIRCTRNL.P00",.size,.offset
+
+; From DirectionalDebug.vsf this doesn't have the normal P00 header so subtract $1a
+;!bin "../SEUCK/directiondebug.i",.size,.offset-$1a
+; From DirectionalDebug2.vsf this doesn't have the normal P00 header so subtract $1a
+;!bin "../SEUCK/directiondeb2 .i",.size,.offset-$1a
+
 ; A debug file to demonstrate paralax scrolling with two levels. Use with Paralax_Enable enabled
-;!bin "../SEUCK/PARLXTST.P00",.offset,.size
+;!bin "../SEUCK/PARLXTST.P00",.size,.offset
 ; A debug file to aid in debugging border sprite timing issues. Push the screen and different numbers of sprites appear under the border.
-;!bin "../SEUCK/BRDRSPRT.P00",.offset,.size
+;!bin "../SEUCK/BRDRSPRT.P00",.size,.offset
 ; A debug file to aid in debugging animation types.
-;!bin "../SEUCK/ANIMTSTS.P00",.offset,.size
+;!bin "../SEUCK/ANIMTSTS.P00",.size,.offset
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with two directional "running man" objects.
 ;These are then overridden when the EnemyAITest define is enabled
-;!bin "../SEUCK/ENEMYTST.P00",.offset,.size
+;!bin "../SEUCK/ENEMYTST.P00",.size,.offset
 
 ;Originally GAME3__I.P00, this has been modified to replace the first wave of enemies with one enemy that will use directional fire instead of random fire.
 ;These are then overridden when the EnemyAimTest define is enabled
-;!bin "../SEUCK/NMYFRTST.P00",.offset,.size
+;!bin "../SEUCK/NMYFRTST.P00",.size,.offset
 
 ; "Double or Nothing" - Use this with Scroller_TwinMode and Scroller_SingleScoreLives enabled
 ; Remember to disable TryOtherPlayerSafePositionForRespawn since we don't want to try the other player's position
-;!bin "../SEUCK/DOUBLEDT.P00",.offset,.size
+;!bin "../SEUCK/DOUBLEDT.P00",.size,.offset
+
+;!bin "../SEUCK/EXPARMY1.P00",.size,.offset
 
 ; Horizontal SEUCK files
 ; Enable Scroller_IsHorizontal when using these
 ; Enable Scroller_LOTD for game file LOTD___I to add all the extra super weapon spells and tweaks
-;!bin "../SEUCK/LOTD___I.P00",.offset,.size
-;!bin "../SEUCK/SIDEWAYS.P00",.offset,.size
-;!bin "../SEUCK/BAPHOMET.P00",.offset,.size
-;!bin "../SEUCK/AEONDATA.P00",.offset,.size
-;!bin "../SEUCK/PLMBAMSE___I.P00",.offset,.size
-;!bin "../SEUCK/NYAAAAHI.P00",.offset,.size
-;!bin "../SEUCK/PURGE101.P00",.offset,.size
+;!bin "../SEUCK/LOTD___I.P00",.size,.offset
+;!bin "../SEUCK/SIDEWAYS.P00",.size,.offset
+;!bin "../SEUCK/BAPHOMET.P00",.size,.offset
+;!bin "../SEUCK/AEONDATA.P00",.size,.offset
+;!bin "../SEUCK/PLMBAMSE___I.P00",.size,.offset
+;!bin "../SEUCK/NYAAAAHI.P00",.size,.offset
+;!bin "../SEUCK/PURGE101.P00",.size,.offset
 
 ;Needs Multiplex_MaintainPriority Multiplex_ReverseOrder Scroller_IsHorizontal Scroller_LinkedPlayers Scroller_LinkedPlayersOffsetX = 0 Scroller_LinkedPlayersOffsetY = -21 Scroller_SetSpriteBackgroundPriority
-;!bin "../SEUCK/STREETS_I.P00",.offset,.size
+;!bin "../SEUCK/STREETS_I.P00",.size,.offset
 
 ;Needs Multiplex_MaintainPriority Multiplex_ReverseOrder Scroller_IsHorizontal Scroller_SetSpriteBackgroundPriority Scroller_SingleScoreLives WackyWaste
 ;Disable TryOtherPlayerSafePositionForRespawn
-!bin "../SEUCK/WACKYV3I.P00",.offset,.size
+;!bin "../SEUCK/WACKYV3I.P00",.size,.offset
+
 }
 
 
 
 ; This macro includes the LotD extra data
-!macro SEUCKFileData2 .offset, .size {
-!bin "../SEUCK/LTDSPLLS.P00",.offset,.size
+!macro SEUCKFileData2 .size, .offset {
+!bin "../SEUCK/LTDSPLLS.P00",.size,.offset
 }
 
 
 
 ; This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
 !ifdef Paralax_Enable {
-!macro SEUCKFileDataParalaxBlock .offset, .size {
-!bin "../SEUCK/PRLXBLCK.P00",.offset,.size
+!macro SEUCKFileDataParalaxBlock .size, .offset {
+!bin "../SEUCK/PRLXBLCK.P00",.size,.offset
 }
 }

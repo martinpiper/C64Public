@@ -1042,6 +1042,8 @@ ScrollSingleColour_1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldy scrollMapLPos
 	ldx .offsetTab,y
 .l1
@@ -1126,6 +1128,8 @@ ScrollSingleColour_1
 	bne .noColourUpdate
 	jsr ScrollerDrawStripLeftColour
 .noColourUpdate
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	dec scrollMapLPos
 	bpl .noBlockWrap
 	lda #4
@@ -1134,7 +1138,6 @@ ScrollSingleColour_1
 	bne .noBlockWrap
 	inc scrollMapHPos2
 .noBlockWrap
-
 
 	jmp NotWantingColourScroll
 
@@ -1156,6 +1159,8 @@ ScrollerDrawStripLeftBank1
 	+MACROScrollerDrawVStrip scrollMapLPos , scrollMapHPos , scrollMapHPos2
 }
 
+!ifdef Scroller_NeedFullColourScroll {
+
 !zn {
 ScrollerDrawStripLeftColour
 	lda #0
@@ -1163,4 +1168,6 @@ ScrollerDrawStripLeftColour
 	lda #$d8
 	sta tempWork1
 	+MACROScrollerDrawVStripColour scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
+
 }

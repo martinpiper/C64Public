@@ -75,9 +75,6 @@
     <CustomBuild Include="..\stdlib\Initialise.a">
       <Filter>Header Files\ExtLib</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\MusicEditor\MusicPlayer.a">
-      <Filter>Header Files\ExtLib</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\SFX\SFX.a">
       <Filter>Header Files\ExtLib</Filter>
     </CustomBuild>
@@ -119,5 +116,13 @@
     <None Include=".gitignore">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="SFXWithMusic.a">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="..\..\ACME\docs\AllPOs.txt" />
   </ItemGroup>
 </Project>

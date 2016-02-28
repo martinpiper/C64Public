@@ -256,6 +256,7 @@ DoPlayerPositionLinkCode
 
 .ignoreCollision
 	; Convert our movement speed to a directional and store it for player 1
+	lda #0
 	ldx .playerInformation+PlayerGameOffset_TargetVelX
 	ldy .playerInformation+PlayerGameOffset_TargetVelY
 	jsr AnimationConvertXYToDirection
@@ -504,7 +505,9 @@ DoPlayerPositionLinkCode
 
 	ldy #.animationType_PlayerBullet
 	jsr AnimationFindFreeSlot
-	bcs .noFireBullet
+	bcc .doFire
+	jmp .noFireBullet
+.doFire
 
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 !if .playerInformation = Player1Information {
@@ -587,6 +590,9 @@ DoPlayerPositionLinkCode
 	lda .playerInformation+PlayerGameOffset_FireSpeedNeg
 	sta AnimationBulletSpeedY,x 
 .notUp
+!ifdef ExamplePlayerBulletTwoWay {
+	jmp .examplePlayerBulletTwoWayCode
+}
 	rts
 
 .playerLastValidMove !by 0
@@ -597,6 +603,38 @@ DoPlayerPositionLinkCode
 
 .noFireBulletJustRet
 	rts
+
+
+!ifdef ExamplePlayerBulletTwoWay {
+.examplePlayerBulletTwoWayCode
+	tya
+	pha
+
+	ldy #.animationType_PlayerBullet
+	jsr AnimationFindFreeSlot
+	bcs .noFireBullet
+
+	lda .playerProperties+PlayerOffset_BulletDuration
+	sta AnimationBulletDuration,x
+
+	pla
+	tay
+
+	lda AnimationXPosLo,y
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,y
+	sta AnimationXPosHi,x
+	lda AnimationYPos,y
+	sta AnimationYPos,x
+
+	lda #4
+	sta AnimationBulletSpeedX,x 
+	; Direction 0 is used here as an example
+	lda #0
+	sta AnimationDirectionIn,x
+	lda #0
+	sta AnimationBulletSpeedY,x 
+}
 }
 
 !zn

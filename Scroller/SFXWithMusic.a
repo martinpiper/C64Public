@@ -1,0 +1,60 @@
+; Sound effects player with music entry points.
+
+!zn
+SFXSIDInit
+	; Init the music player when the game level starts
+	lda #0
+	jsr MusicPlayerInit
+	rts
+
+!zn
+; Input: A = SFX Type
+.SFXCurrentVoice !by 1
+.xTemp !by 0
+.yTemp !by 0
+; A lokup table that converts SEUCK SFX number to the music player envelope number
+; There are 24 SEUCK sound effects
+.SEUCKToMusicSFX
+	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
+	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
+	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
+; A lookup table to allow each sound effect to have a different note
+.SEUCKToMusicSFXNote
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+
+SFXInit
+	stx .xTemp
+	sty .yTemp
+
+	; Lookup the sound effect to play.
+	tax
+	ldy .SEUCKToMusicSFX,x
+	; And the note
+	lda .SEUCKToMusicSFXNote,x
+
+	; Calculate the next sound channel to use into x
+	inc .SFXCurrentVoice
+	ldx .SFXCurrentVoice
+	; For example comparing with 2 gives two voices for sound effects, one for music
+	cpx #3
+	bne .o1
+	ldx #1
+	stx .SFXCurrentVoice
+.o1
+
+	; A = Note
+	; X = Channel
+	; Y = Envelope
+	jsr MusicPlayerPlaySFX
+
+	ldx .xTemp
+	ldy .yTemp
+	rts
+
+!zn
+SFXPlay
+	jsr MusicPlayerPlay
+	rts
+

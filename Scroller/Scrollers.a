@@ -1174,6 +1174,8 @@ ScrollColour_1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #38
 .l1
 	lda COLOURRAM+00+(0*40),x
@@ -1239,6 +1241,8 @@ ScrollColour_1
 	dex
 	bpl .l2
 	jsr ScrollerDrawStripLeftColour
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1248,6 +1252,9 @@ ScrollColour_m1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #1
 .l1
 	lda COLOURRAM+00+(0*40),x
@@ -1315,6 +1322,9 @@ ScrollColour_m1
 	cpx #40
 	bne .l2
 	jsr ScrollerDrawStripRightColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 ; Some space to put temporary colour data during the split scrolls
@@ -1327,6 +1337,9 @@ ScrollColour_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #39
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1392,6 +1405,9 @@ ScrollColour_40
 	dex
 	bpl .l2
 	jsr ScrollerDrawStripTopColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1401,6 +1417,9 @@ ScrollColour_m40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #39
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1464,6 +1483,9 @@ ScrollColour_m40
 	dex
 	bpl .l2
 	jsr ScrollerDrawStripBottomColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1474,6 +1496,9 @@ ScrollColour_39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #1
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1544,6 +1569,9 @@ ScrollColour_39
 
 	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripRightColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1553,6 +1581,9 @@ ScrollColour_m39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #38
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1617,6 +1648,9 @@ ScrollColour_m39
 	bpl .l2
 	jsr ScrollerDrawStripBottomColour
 	jsr ScrollerDrawStripLeftColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1626,6 +1660,9 @@ ScrollColour_41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #38
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1692,6 +1729,9 @@ ScrollColour_41
 	bpl .l2
 	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripLeftColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll
 
 
@@ -1701,6 +1741,9 @@ ScrollColour_m41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+!ifdef Scroller_NeedFullColourScroll {
+
 	ldx #1
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1767,4 +1810,7 @@ ScrollColour_m41
 	bne .l2
 	jsr ScrollerDrawStripBottomColour
 	jsr ScrollerDrawStripRightColour
+
+} ;< !ifdef Scroller_NeedFullColourScroll
+
 	jmp NotWantingColourScroll

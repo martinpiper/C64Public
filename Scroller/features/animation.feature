@@ -1,5 +1,8 @@
 Feature: Animation tests
 
+	Execute this with: java -jar ..\..\BDD6502\target\BDD6502-1.0.2-SNAPSHOT-jar-with-dependencies.jar
+	Or with CPU trace: java -Dbdd6502.trace=true -jar ..\..\BDD6502\target\BDD6502-1.0.2-SNAPSHOT-jar-with-dependencies.jar
+
 	Performs animation routine tests using known data
 Data from ANIMTSTS.P00
 Enemy at $340c
@@ -89,104 +92,269 @@ Scenario: Enemy animation allocation test
 	And I load prg "test.prg"
 	And I load labels "test.lbl"
 	# The first instruction at $400 is LDA #
-	Then I expect to see $400 contain $a9
+	Then I expect to see $400 equal $a9
 	When I execute the procedure at ScrollerDemoInitOneTimeData for no more than 50000 instructions
 	When I execute the procedure at InitialiseGameWithoutWait for no more than 20000 instructions
-	When I execute the procedure at AnimationInit for no more than 500 instructions
-	Then I expect to see AnimationType contain $ff
-	When I execute the procedure at AllocateEnemyTest for no more than 50 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-
-
-
-Scenario: Enemy animation animation looping
 	When I execute the procedure at AnimationInit for no more than 300 instructions
-	Then I expect to see AnimationType contain $ff
+	Then I expect to see AnimationType equal $ff
+	When I execute the procedure at AllocateEnemyTest for no more than 50 instructions
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+
+
+
+Scenario: Enemy animation looping frames
+	When I execute the procedure at AnimationInit for no more than 300 instructions
+	Then I expect to see AnimationType equal $ff
 
 	When I execute the procedure at AnimationTriggerEnemies for no more than 200 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
+	Then I expect to see AnimationType equal AnimationType_Enemy1
 
 	# This first frame is slightly more expensive because some extra initialisation happens
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 250 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $42	
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $42	
 
 	# Slightly less expensive for the subsequent frames
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $43
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $43
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $44
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $44
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $45
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $45
 
 	# Direction change happens here, slightly more time
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 250 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $46
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $46
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $47
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $47
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $48
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $48
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $49
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $49
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4a
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4a
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4b
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4b
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4c
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4c
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4d
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4d
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4e
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4e
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $4f
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $4f
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $50
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $50
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $51
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $51
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $52
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $52
 
 	# Animation loop, slightly more time
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 230 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $53
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $53
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $42
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $42
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 220 instructions
-	Then I expect to see AnimationType contain AnimationType_Enemy1
-	Then I expect to see AnimationSpriteFrame contain $43
+	Then I expect to see AnimationType equal AnimationType_Enemy1
+	Then I expect to see AnimationSpriteFrame equal $43
 
+
+
+
+
+Scenario: Enemy directional fire animation with speed zero bullets
+	When I execute the procedure at AnimationInit for no more than 300 instructions
+	Then I expect to see AnimationType equal $ff
+
+	When I execute the procedure at LevelInit for no more than 300 instructions
+
+	# Skip forward six levels
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+	And I write memory at LevelStaticCountSeconds with 0
+	And I execute the procedure at LevelFrameLogic for no more than 9000 instructions
+
+	
+	When I execute the procedure at AnimationTriggerEnemies for no more than 200 instructions
+	Then I expect to see AnimationType equal AnimationType_Enemy1 + 1
+	And I expect to see AnimationDirectionIn equal 0
+
+	And I hex dump memory between AnimationFireRateCount and AnimationFireRateCount + Multiplex_items
+	Then I expect to see AnimationFireRateCount equal 50
+
+	# This first frame is slightly more expensive because some extra initialisation happens
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 250 instructions
+	Then I expect to see AnimationType equal 23
+	And I expect to see AnimationSpriteFrame equal 70
+	And I expect to see AnimationFireRateCount equal 49
+	And I expect to see AnimationDirectionIn equal 0
+
+
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+
+	# Frame 10
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	# Movement update
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 240 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+
+	# Frame 20
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	# Movement update
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 240 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+
+	# Frame 30
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	# Movement update
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 240 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+
+	# Frame 40
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	# Movement update
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 240 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 150 instructions
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 200 instructions
+
+	# Frame 50
+	And I hex dump memory between AnimationFireRateCount and AnimationFireRateCount + Multiplex_items
+	# Bullet fired
+	When I execute the procedure at AnimationUpdateEnemyFire for no more than 400 instructions
+	And I hex dump memory between AnimationType and AnimationType + Multiplex_items
+	And I hex dump memory between AnimationDirectionIn and AnimationDirectionIn + Multiplex_items
+	Then I expect to see AnimationType + 1 equal AnimationType_Enemy1Bullet + 1
+	And I expect to see AnimationDirectionIn + 1 equal 8
+
+	When I execute the procedure at AnimationUpdateFrameMovement for no more than 320 instructions
+	Then I expect to see AnimationType + 1 equal AnimationType_Enemy1Bullet + 1
+	And I expect to see AnimationDirectionIn equal 0
+	And I expect to see AnimationDirectionIn + 1 equal 8

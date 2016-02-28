@@ -38,6 +38,35 @@
 	sta .lastPulse
 }
 
+!ifdef IRQDisk_DebugTimings {
+	sei
+.dl1
+	lda #0
+	sta .VIA1Port
+	jsr .dl2
+
+	lda #.VIA1Port_DataOut
+	sta .VIA1Port
+	jsr .dl2
+
+	lda #.VIA1Port_ClockOut
+	sta .VIA1Port
+	jsr .dl2
+
+	lda #.VIA1Port_DataOut | .VIA1Port_ClockOut
+	sta .VIA1Port
+	jsr .dl2
+
+	jmp .dl1
+.dl2
+	ldx #2
+.dl3
+	dex
+	bne .dl3
+	rts
+
+}
+
 .driveWaitForAnyInputL:
 	; Enable IRQs while waiting for commands. This is because the drive motor is controlled by
 	; the drive IRQs and the motor won't stop spinnning otherwise.

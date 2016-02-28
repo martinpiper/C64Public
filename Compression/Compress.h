@@ -50,6 +50,8 @@ public:
 	u32 mTotalBitsOut;
 	bool mEnableChoicesOutput;
 
+	u32 mEarlyOut;
+
 private:
 	// Bit buffering
 	void BitBufferWriteBits(void);
@@ -136,5 +138,10 @@ private:
 
 	std::list<Node *> mNodes;
 };
+
+extern int gXPCompressionTweak1;
+extern int gXPCompressionTweak2;
+extern int gXPCompressionTweak3;
+extern int gXPCompressionTweak4;
 
 #endif

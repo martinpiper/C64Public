@@ -1,0 +1,36 @@
+Command lines:
+
+TestScreen.bmp 4 12 9
+Used 113 chars
+
+
+
+TODO:
+
+Add the option to set the input C64Palette
+
+
+
+Add multicolour and hires bitmap screen conversion options.
+Multicolour
+Bit pair = %00: Pixel has Background Color.
+Bit pair = %01: Pixel color is determined by bits #4-#7 of the corresponding screen byte in Screen RAM.
+Bit pair = %10: Pixel color is determined by bits #0-#3 of the corresponding screen byte in Screen RAM.
+Bit pair = %11: Pixel color is determined by the corresponding color byte in Color RAM.
+Make it possible to convert large screens of data, either wide or high. Think about data orientation output in character strips.
+
+
+
+Add the ability to convert large maps into chars/blocks with/without colour blocks of the same colour and with blocks with colours etc.
+Variable size map blocks.
+
+
+
+// MPi: TODO: There is the potential to do a duplicate fontData check for each newly
+// added chunk of data and reference that instead of a new duplicate chunk.
+
+
+
+// MPi: TODO: Maybe find the most commonly used colour for this char and use that instead.
+
+

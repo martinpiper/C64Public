@@ -14,15 +14,6 @@ InitBank0Data
 	lda #0
 	jsr MusicPlayerInit
 }
-	ldx #0
-.cs1
-	; Fill the score panel screen line with the equivalent of <space>
-	ldx #39
-	lda #32
-.colf1
-	sta SCREENRAM+19*40,x
-	dex
-	bpl .colf1
 
 !ifdef Scroller_MultiDirection {
 	lda frameScrollX
@@ -34,23 +25,50 @@ InitBank0Data
 	sta topScreenScrollPos
 }
 
-	; Draw some debug text in the score panel
-	ldy #6
-	ldx #9
-	stx SCREENRAM+3+20*40
-	sty COLOURRAM+3+20*40
-	inx
-	iny
-	stx SCREENRAM+4+21*40
-	sty COLOURRAM+4+21*40
-	inx
-	iny
-	stx SCREENRAM+5+22*40
-	sty COLOURRAM+5+22*40
-	inx
-	iny
-	stx SCREENRAM+6+23*40
-	sty COLOURRAM+6+23*40
+	ldx #0
+.cch2
+!ifdef Scroller_UseDemoScorePanel {
+!for .t1 , 8 {
+	lda ScorePanelChars+((.t1-1)*$100),x
+	sta $800+((.t1-1)*$100),x
+}
+} else {
+	lda #0
+	sta $800,x
+}
+	dex
+	bne .cch2
+
+!ifdef Scroller_FullScreen {} else {
+	ldx #39
+.colf1
+	lda #0						; In case the split happens early, draw blank chars (should never happen to be honest)
+	sta SCREENRAM+19*40,x
+!ifdef Scroller_UseDemoScorePanel {
+!for .t1,5 {
+	lda ScorePanelCharData+((.t1 - 1)*40),x
+	sta SCREENRAM+((20 + .t1 - 1)*40),x
+	tay
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM+((20 + .t1 - 1)*40),x
+}
+} else {
+	txa
+	ora #$20
+	sta SCREENRAM+(20*40),x
+	sta COLOURRAM+(20*40),x
+	sta SCREENRAM+(21*40),x
+	sta COLOURRAM+(21*40),x
+	sta SCREENRAM+(22*40),x
+	sta COLOURRAM+(22*40),x
+	sta SCREENRAM+(23*40),x
+	sta COLOURRAM+(23*40),x
+	sta SCREENRAM+(24*40),x
+	sta COLOURRAM+(24*40),x
+}
+	dex
+	bpl .colf1
+} ;< !ifdef Scroller_FullScreen
 
 	; Blank sprites frames in the unused area of the score panel screen
 	lda #20
@@ -87,6 +105,19 @@ ClearGameScreens
 	sta $cf00,x
 	dex
 	bne .clm1
+
+!ifdef Scroller_FullScreen { } else {
+	ldx #39
+.colf1
+	lda SCREENRAM+20*40,x
+	sta $0800+20*40,x
+	sta $0c00+20*40,x
+	sta $c800+20*40,x
+	sta $cc00+20*40,x
+	dex
+	bpl .colf1
+}
+
 	rts
 
 !ifdef Scroller_MultiDirection { } else {
@@ -164,6 +195,19 @@ InitialiseGameWithoutWait
 	jsr SFXSIDInit
 }
 }
+
+!ifdef Scroller_ClearColour {
+	lda #Scroller_ClearColour
+	ldx #0
+.l1
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .l1
+}
+
 	jsr InitBank0Data
 	jsr ClearGameScreens
 	jsr ScrollerInitTables
@@ -173,7 +217,16 @@ InitialiseGameWithoutWait
 	sta VIC2SpritePriority
 }
 
-!ifdef Scroller_MultiDirection { } else {
+!ifdef Scroller_MultiDirection {
+!ifdef UseAnimation_Init {
+	jsr AnimationInit
+	jsr AnimationClearMultiplexor
+	jsr Multiplex_Sort
+}
+!ifdef UseAnimation_Init2 {
+	jsr AnimationInit2
+}
+} else {
 	jsr AnimationInit
 	jsr AnimationClearMultiplexor
 	jsr Multiplex_Sort
@@ -259,6 +312,18 @@ InitialiseGameWithoutWait
 	jsr Multiplex_SetSpritePointer
 
 	rts
+
+!zn
+AnimationClearMultiplexor
+	ldx #Multiplex_items-1
+	lda #$ff
+.l1
+	sta Multiplex_YPos,x
+
+	dex
+	bpl .l1
+	rts
+
 
 !ifdef Scroller_MultiDirection { } else {
 ; MPi: TODO: Macro these two
@@ -834,6 +899,7 @@ ScrollerDemoMainline
 	sta VIC2BorderColour
 }
 
+!ifdef DisableSound {} else {
 !ifdef Scroller_MultiDirection {
 	jsr MusicPlayerPlay
 } else {
@@ -843,7 +909,7 @@ ScrollerDemoMainline
 	jsr MusicPlayerPlay
 }
 }
-
+} ;<< !ifdef DisableSound {} else {
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Cyan
@@ -885,6 +951,15 @@ ScrollerDemoMainline
 .notS3
 }
 
+!ifdef UseEnemyProcessActivation {
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_LightRed
+	sta VIC2BorderColour
+}
+!ifdef Scroller_MultiDirection {
+	jsr EnemyProcessActivation
+}
+}
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Green
@@ -957,7 +1032,7 @@ ScrollerDemoMainline
 }
 
 
-	; MPi: TODO: Make Multiplex_Sort optionally work on a temporary Multiplex_indextable and read YPos values from a different source.
+	; MPi: Multiplex_SplitSort: Make Multiplex_Sort optionally work on a temporary Multiplex_indextable and read YPos values from a different source.
 	; This means it can sort sprites while the multiplexor is still displaying stuff. This means the sort can utilise spare time at the end of the frame before "jsr ScrollerDemoWaitMultiplex".
 	; In this case the temporary YPos values can come from AnimationYPos then get copied over after "jsr ScrollerDemoWaitMultiplex".
 	; Then always enable the animation engine and then always use "jsr AnimationUpdateMultiplexor" and then "jsr UpdateSprites" can also happen here before the ScrollerDemoWaitMultiplex.
@@ -1068,6 +1143,8 @@ frameTargetVelX		!by 0
 frameTargetVelY		!by 0
 
 !ifdef Scroller_MultiDirection {
+!ifdef RedirectHandleUserInput { } else {
+
 !zn
 HandleUserInput
 	jsr HandleJoystick
@@ -1136,6 +1213,7 @@ HandleJoystick
 .c4
 	sta frameTargetVelY
 	rts
+} ;<!ifdef RedirectHandleUserInput { } else {
 }
 
 
@@ -1151,6 +1229,10 @@ ScrollerDemoWaitTopIRQ
 	sta panelIRQDone
 	; Wait for the top IRQ (at raster 0) to be done
 .l1
+!ifdef EnableScrollerDemoWaitTopIRQHook {
+	lda topIRQDone
+	jsr ScrollerDemoWaitTopIRQHook
+}
 	lda topIRQDone
 	beq .l1
 	lda #0
@@ -1163,6 +1245,10 @@ ScrollerDemoWaitMultiplex
 	sta topIRQDone
 	; Wait for the last mutiplex IRQ routine to be called
 .l1
+!ifdef EnableScrollerDemoWaitMultiplexHook {
+	lda bottomMultiplexIRQDone
+	jsr ScrollerDemoWaitMultiplexHook
+}
 	lda bottomMultiplexIRQDone
 	beq .l1
 	lda #0
@@ -1175,13 +1261,17 @@ ScrollerDemoWaitScorePanel
 	sta bottomMultiplexIRQDone
 	;Wait for the panel IRQ to be done
 .l1
+!ifdef EnableScrollerDemoWaitScorePanelHook {
+	lda panelIRQDone
+	jsr ScrollerDemoWaitScorePanelHook
+}
 	lda panelIRQDone
 	beq .l1
 	lda #0
 	sta panelIRQDone
 	rts
 
-
+!ifdef Scroller_DisableUpdateSprites {} else {
 !zn
 UpdateSprites
 	; Update sprites here from the frame data. i.e. Copy them from the frame data to the interrupt data
@@ -1239,6 +1329,7 @@ UpdateSprites
 }
 
 	rts
+} ;< !ifdef Scroller_DisableUpdateSprites {} else {
 
 !ifdef Scroller_MultiDirection {
 !source "Scroller.a"
@@ -1254,7 +1345,11 @@ UpdateSprites
 !source "ScoreControl.a"
 !source "TitleScreen.a"
 !ifdef Scroller_PlaySoundEffectsDuringGame {
+!ifdef Scroller_PlaySoundMusicAndSoundEffectsDuringGame {
+!source "SFXWithMusic.a"
+} else {
 !source "../SFX/SFX.a"
+}
 }
 }
 

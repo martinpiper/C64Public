@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{64e575b4-d946-47d9-b682-c4c499696a02}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{c91e2d5d-c567-4d44-9b63-d2fc2b9e29fa}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{4b926a79-8a77-4482-b412-1a7ee555fd50}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="BuildIt.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDisk.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskDriveCode.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TestIRQDisk.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TestIRQDisk2.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\BASICEntry900.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskC128.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskC16.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskC64.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskVars.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQDiskVIC20.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="stdlib1541.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProject.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFully.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\DoBackup.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

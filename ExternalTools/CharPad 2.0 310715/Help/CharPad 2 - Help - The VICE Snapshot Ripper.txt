@@ -1,0 +1,101 @@
+
+CharPad 2 - Help
+
+The VICE Snapshot Ripper.
+
+
+
+The VICE snapshot ripper allows you to search for useable project data inside a VICE C64 emulator 
+snapshot (.vsf) file.
+
+Please note that accurate data ripping is a somewhat expert skill and novices attempting to rip data 
+may find a game's character set and little else.   
+
+
+
+Menu Items:-
+
+-File 
+
+  -Open VICE Snapshot : Brings up a file dialog where you can choose the snapshot (.vsf) file to load. 
+
+  -Save RAM Dump : Brings up a file dialog where you can choose where to save a (raw binary) 64K RAM dump. 
+
+  -Exit : Closes the tool.
+
+-Options
+
+  -Reset Configuration : Sets all controls to their default positions.  
+
+  -Recall Previous Configuration : Sets all controls to the positions recorded by a previous use.
+
+
+
+Address Specifiers:-
+
+-Character Set : Use the scroll-bar to search for a character set.
+
+                 Nb. a character set used by the C64 must sit on a 2K boundary, hence there
+                 are only 32 possible locations in 64K. 
+
+-Character Attributes : Use the scroll-bar (and offset control) to search for character attribute data.
+
+                        Nb. character attribute data may exist literally anywhere in the 64K and may
+                        not even be in a format useable by CharPad. 
+
+                        Nb. character attribute searching is only available to projects using the 
+                        per-char colouring method. 
+
+-Tile Set : Use the scroll-bar (and offset control) to search for a tile set.
+
+            Nb. tile set data may exist literally anywhere in the 64K and may not even be in a format
+            useable by CharPad.
+
+-Map : Use the scroll-bar (and offset control) to search for map data.
+
+            Nb. map data may exist literally anywhere in the 64K and may not even be in a format
+            useable by CharPad.
+
+
+
+Map Dimension Controls:-
+
+-Map Width : You can type a specific map width or scroll through all possibilities. 
+
+-Map Height : You can type a specific map height or scroll through all possibilities. 
+
+
+
+Tile Data Format : Choose from 8 (Z-Pattern) formats, left-right, top-bottom (LRTB) is the most common.
+
+Map Data Format : Choose from 8 (Z-Pattern) formats, left-right, top-bottom (LRTB) is the most common.
+
+
+
+Map Data Cipher : XOR - Choose a (byte) value with which to defeat an XOR (exclusive OR) cipher used on the map data.
+
+Map Data Cipher : ROR - Choose a quantity with which to defeat a binary rotation cipher used on the map data (0-7).
+
+
+
+Notes:-
+
+-When the snapshot ripper is closed...
+  
+  ...The 64K memory is not cleared so you may return to it without having to reload the same snapshot file.
+  ...The current configuration of the controls is automatically saved for recall. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

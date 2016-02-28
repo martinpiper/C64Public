@@ -1,0 +1,247 @@
+
+CharPad 2 - Help
+
+The main window.
+
+
+
+This window provides the main workspace and contains all other child windows.
+
+It provides a selection of menus and a toolbar for one-click selection of commonly used menu options.
+
+
+
+Menus:-
+
+File, View, Edit, Tools, Help.
+
+
+
+The "File" Menu...
+
+- New Project - Start over with a blank default project.
+
+- Open Project - Select a project file (.ctm extension) to load. (nb. all CTM file formats are supported). 
+
+- Save Project As - Save your project (CTM5 format) with a name of your choice.
+
+- Import/Export - Brings up a sub-menu with further choices...
+
+   - Raw Binary File - Brings up a sub-menu with further choices... 
+
+      - Import Character Set - Select a file containing character set data and it will be loaded.
+      
+      - Export Character Set - Save your project's character set data, raw and unformatted. (see note 1).   
+      
+      - Export Character Set Attributes - Save your project's character set attribute bytes, raw and unformatted. (see note 2).
+      
+      - Import Tile Set - Select a file containing tile set data and it will be loaded (see note 3).
+      
+      - Export Tile Set - Save your project's tile set data, raw and unformatted. (see note 4.)     
+      
+      - Export Tile Set Attributes - Save your project's tile set attribute bytes, raw and unformatted. (see note 5).  
+      
+      - Import Map - Select a file containing map data and it will be loaded (see note 6).
+      
+      - Export Map - Save your project's map data, raw and unformatted. (see note 7.)  
+
+   - Bitmap Image - Brings up a sub-menu with further choices...     
+
+      - Import Map - Select a visible image file (bmp,png etc) and an attempt will be made to convert it into a 1x1 character map.
+      
+      - Export Character Set - Save your project's character set as a visible image (png format).
+      
+      - Export Tile Set - Save your project's tile set as a visible image (png format).
+      
+      - Export Map - Save your project's map as a visible image (png format). 
+
+   - Emulator Snapshot - Brings up a sub-menu with further choices... 
+
+      - Import VICE Snapshot - Select a VICE (C64) emulator snapshot and you can sift through it for useable project data.
+
+   - Text File - Brings up a sub-menu with further choices...
+
+      - Export Project Data as Text (asm listing) - Output all your project data in human readable (assemble-able format). 
+
+   - Seuck File - Brings up a sub-menu with further choices...
+
+      - Import Background Data File - Load project data made using the "Shoot'em Up Construction Kit".
+      
+      - Export Background Data File - Save your project data in a format that can be loaded into the "Shoot'em Up Construction Kit".
+
+- Exit - Quit the program.
+
+
+
+
+
+The "View" Menu...
+
+- Project Palette - Toggles the display of the Project Palette Window.
+
+- Character Editor - Toggles the display of the Character Editor Window.
+
+- Tile Editor - Toggles the display of the Tile Editor Window (nb. not available to tile-less projects).
+
+- Character Set - Toggles the display of the Character Set Window.
+
+- Tile Set - Toggles the display of the Tile Set Window (nb. not available to tile-less projects). 
+
+- Map - Toggles the display of the Map Window.
+
+
+
+
+
+The "Edit" Menu...
+
+- Undo - Click to un-do your last action. 
+
+- Redo - Click to re-do an action if you clicked "Undo" and changed your mind. 
+
+- Select All - Click to select all characters, all tiles or all map cells depending on which child window has focus. 
+
+- Clear - Click to clear the currently selected character, characters, tile, tiles or map region.
+
+- Cut - Click to cut the currently selected character, characters, tile, tiles or map region. 
+
+- Copy - Click to copy the currently selected character, characters, tile, tiles or map region. 
+
+- Paste - Click to paste a previously copied (or cut) character, characters, tile, tiles or map region. 
+
+- Scroll Up - Click to (rotation) scroll up a character, characters, a tile, tiles or the map.
+
+- Scroll Down - Click to (rotation) scroll down a character, characters, a tile, tiles or the map.
+
+- Scroll Left - Click to (rotation) scroll left a character, characters, a tile, tiles or the map.
+
+- Scroll Right - Click to (rotation) scroll right a character, characters, a tile, tiles or the map.
+
+- Flip Left-to-Right - Click to horizontally flip a character, characters, a tile, tiles or the map.
+
+- Flip Top-to-Bottom - Click to vertically flip a character, characters, a tile, tiles or the map.
+
+- Reflect Left-to-Right - Click to horizontally reflect a character, characters, a tile or tiles. 
+
+- Reflect Top-to-Bottom - Click to vertically reflect a character, characters, a tile or tiles. 
+
+- Negative - Click to perform a binary inversion of all pixels in a character, characters, a tile or tiles. 
+
+- Reverse Order - Click to reverse the order of the currently selected character range.
+
+- Multi-colour Pixel Swap - Brings up a sub-menu with further choices... 
+
+   - Char colour < > Multi-colour 1    - Replaces all "Character colour" pixels with "Multi-colour 1" pixels
+                                         and vice-versa in a character, characters, a tile or tiles.   
+
+   - Char colour < > Multi-colour 2    - Replaces all "Character colour" pixels with "Multi-colour 2" pixels
+                                         and vice-versa in a character, characters, a tile or tiles.   
+
+   - Char colour < > Transparent       - Replaces all "Character colour" pixels with "Transparent" pixels
+                                         and vice-versa in a character, characters, a tile or tiles.   
+
+   - Multi-colour 1 < > Multi-colour 2 - Replaces all "Multi-colour 1" pixels with "Multi-colour 2" pixels
+                                         and vice-versa in a character, characters, a tile or tiles.   
+
+   - Multi-colour 1 < > Transparent    - Replaces all "Multi-colour 1" pixels with "Transparent" pixels
+                                         and vice-versa in a character, characters, a tile or tiles.  
+
+   - Multi-colour 2 < > Transparent    - Replaces all "Multi-colour 2" pixels with "Transparent" pixels
+                                         and vice-versa in a character, characters, a tile or tiles. 
+
+
+
+
+The "Tools" Menu...
+
+- Compress Data - Brings up a dialog box of options for optimizing your project's data. 
+
+- Decompress Data - Re-formats the character set so that it contains a unique character image for each tile cell.  
+
+
+
+
+
+The "Help" Menu...
+
+- About - Click to view program information, credits, a website link and a plea for desperately needed donations.  
+
+
+
+
+
+The Toolbar...
+
+The toolbar appears just below the menus and provides one-click access to the following often-used menu items...
+
+Cut, Copy, Paste, Undo, Redo. 
+Scroll Up, Scroll Down, Scroll Left, Scroll Right.
+Flip Left-to-Right, Flip Top-to-Bottom.
+Reflect Left-to-Right, Reflect Top-to-Bottom.
+Compress Data, Decompress Data.
+
+
+
+
+
+Notes:-
+
+1. When exporting character set data, the output file will contain eight bytes for each character in your set.
+   Each byte represents the pixels of one row of a character starting with the top one of the first character. 
+
+2. When exporting character set attributes, the output file will contain one byte for each character in your set.
+   Each byte stores the combined colour and material values for a character.
+   The upper nybble stores the material (0-15), the lower nybble stores the colour(0-15).
+   Nb. The colour nybbles will only be useful if your project uses the "Per Character" colouring method.
+
+3. When importing tile set data from a raw binary file there is no means to determine the intended tile dimensions 
+   or quantity, therefore the data from the selected file is simply loaded over the project's existing tile data.
+   If you happen to know the tile dimensions, set them in the project before importing.
+
+   The tile data in the file will be applied over the project's tile data starting with the top-left cell of tile 0
+   and will run left-to-right, top-to-bottom for each tile. 
+
+4. When exporting tile set data, the file will contain one byte for each character cell in each tile.
+   The tile data in the file will start with the top-left cell of tile 0 and will run left-to-right, top-to-bottom
+   for each tile.
+
+5. When exporting tile set attributes, the file will contain one byte for each tile in the set.
+   The lower nybble of each byte will contain a colour code (0-15) for each tile.
+   Nb. This data will only be useful if your project uses the "Per Tile" colouring method.
+
+6. When importing map data from a raw binary file there is no means to determine the intended map dimensions, therefore
+   the data from the selected file is simply loaded over the project's existing map data.
+   If you happen to know the map dimensions, set them in the project before importing.
+
+7. When exporting map data, the file will contain one byte for each cell of the map.
+   The map data in the file will start with the top-left cell of the map and will run left-to-right, top-to-bottom.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

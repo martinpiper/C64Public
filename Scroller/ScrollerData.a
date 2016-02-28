@@ -1,13 +1,39 @@
 MarkBeginData = *
 
+!ifdef Scroller_UseDemoScorePanel {
+; The first few characters for the score panel, increase as needed
+ScorePanelNumChars = 32
+ScorePanelChars
+!bin "ScorePanel.ctm" , (ScorePanelNumChars * 8) , $14
+
+ScorePanelColourLookup
+!bin "ScorePanel.ctm" , ScorePanelNumChars , $814
+
+; For some reason ctm files store char byte then another byte...
+ScorePanelCharData
+!bin "ScorePanel.ctm" , 40*5 ,  $914 , 2
+
+ScorePanelBGCol0
+!bin "ScorePanel.ctm" , 1 , 4
+ScorePanelBGCol1
+!bin "ScorePanel.ctm" , 1 , 5
+ScorePanelBGCol2
+!bin "ScorePanel.ctm" , 1 , 6
+}
+
 !ifdef Scroller_MultiDirection {
 
 !align 255,0
+
+MaxSpriteNumber = 191
+SpriteEmptyLookupTab		!fill 256 , 0
+SpriteEmptyLookupTab2		!fill 256 , 0
+
 AnimationXPosLo !fill Multiplex_items
 AnimationXPosHi !fill Multiplex_items
 AnimationYPos !fill Multiplex_items
 !ifdef Multiplex_SplitSort {
-AnimationYPosToSort = AnimationYPos
+AnimationYPosToSort !fill Multiplex_items
 }
 AnimationSpriteColour !fill Multiplex_items
 AnimationSpriteFrame !fill Multiplex_items
@@ -90,37 +116,27 @@ SpriteFixedColours
 }
 
 ; Adding different music player support is as simple as:
-; 1) Comment out the the UseE114Music label below which stops "MusicPlayer.a" and "R.MUS8000.PRG" being included.
-; 2) Include whatever music file you want instead of the placeholder "your custom music file.prg". Remember by default the music player starts at $8000
-; 3) Define labels for MusicPlayerInit and MusicPlayerPlay that point to the other music routine's entry points.
-!ifdef Scroller_LOTD { } else {
-UseE114Music = 1
-}
+; 1) Include whatever music file you want instead of the placeholder "your custom music file.prg". Remember by default the music player starts at $8000
+; 2) Define labels for MusicPlayerInit and MusicPlayerPlay that point to the other music routine's entry points.
+; 3) Define MusicPlayerPlaySFX if you're playing sound effects with the music player when Scroller_PlaySoundMusicAndSoundEffectsDuringGame is used.
 
 ; There is some spare space here for code and data growth
 
 !ifdef Scroller_NoMusic {} else {
-!ifdef UseE114Music {
 ; Include demonstration music from the Element 114 music editor
 *=$8000
-maxBlocks = $40
-; Pull in newest music player code. By default it assumes the music is MusicPlayerCodeToDataOffset bytes after the start
-!source "../MusicEditor/MusicPlayer.a"
 
-; Strip out the relocated music player from the binary file and just include the music data.
-*=MusicPlayerDataStart
-!bin "R.MUS8000.PRG",,MusicPlayerCodeToDataOffset+2
-} else {
-; Demonstrate how to include some other music player instead
 ; Music players do not have to start at $8000 but it helps use this part of memory before the
 ; graphics at $c000-$ffff
-*=$8000
+
 ; Replace this !bin to include whatever music player you want
-!bin "LotDTitle.prg",,$2	; Remember to skip any lo/hi file information by using $2
+; This file was exported with "Include sound effect code" option selected.
+!bin "MusicAndSFX.prg",,$2	; Remember to skip any lo/hi file information by using $2
+
 ; Define these to point the entry points of the included music routine.
 MusicPlayerInit = $8000
 MusicPlayerPlay = $8003
-}
+MusicPlayerPlaySFX = $8009
 }
 !align 255,0
 

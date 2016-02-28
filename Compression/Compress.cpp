@@ -10,17 +10,17 @@
 #include "Compress.h"
 
 // Tweak values
-const int gXPCompressionTweak1 = 5;
-const int gXPCompressionTweak2 = 5;
-const int gXPCompressionTweak3 = 5;
-const int gXPCompressionTweak4 = 9;
+int gXPCompressionTweak1 = 5;
+int gXPCompressionTweak2 = 5;
+int gXPCompressionTweak3 = 5;
+int gXPCompressionTweak4 = 9;
 
 #define HISTORY_MATCH
 
 #define FORCE_BYTE(x)						((unsigned char) (x))
 #define FORCE_UNSIGNED(c)					c ## U
 
-Compression::Compression() : mEnableChoicesOutput(false)
+Compression::Compression() : mEnableChoicesOutput(false) , mEarlyOut(-1)
 {
 	mIgnoreChoicePos.clear();
 }
@@ -543,8 +543,15 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 
 	mLastMatchPos = FORCE_UNSIGNED(-1);
 
+	int estimatedBitsOut = 0;
+
 	while (curPos < inLen)
 	{
+		if (estimatedBitsOut > mEarlyOut)
+		{
+			return -1;
+		}
+
 		int quickBits = -1;
 		u32 proposedQuickMatchLen = 0;
 
@@ -605,8 +612,13 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 					}
 					// Store any literals we have not already output
 					EncodeLiteralRun(litRun,currentLitNum);
+					estimatedBitsOut += currentLitNum * 9;
+
 					// Store the match
 					EncodeMatch(matchLen,matchOffset);
+					bool history;
+					estimatedBitsOut += CodedMatchLength(matchLen,matchOffset,history);
+
 					curPos += matchLen;
 					litRun = in + curPos;
 					currentLitNum = 0;
@@ -742,6 +754,10 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 	st = mNodes.begin();
 	while (st != mNodes.end())
 	{
+		if (mTotalBitsOut > mEarlyOut)
+		{
+			return -1;
+		}
 		(*st++)->Write(*this);
 	}
 

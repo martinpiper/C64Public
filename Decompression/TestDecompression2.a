@@ -77,7 +77,7 @@ EndOfMemory = $10000
 	lda RNXPCompressionDecompress_Part1Start-1,x
 	; Forces two byte addressing because Decompression_Part1Addr-1 = $ff which will use sta zp,x unless we force +2 mode
 	sta+2 Decompression_Part1Addr-1,x
-	; The the tape buffer code
+	; Then the tape buffer code
 	lda RNXPCompressionDecompress_Part2Start-1,x
 	; No need to force +2 mode here, it is correctly implied
 	sta Decompression_Part2Addr-1,x

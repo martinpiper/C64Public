@@ -315,20 +315,72 @@ int main(int argc,char **argv)
 		}
 		else
 		{
+#if 0
 			comp.Compress(input,inputSize,output,&outSize,10,1);
 			outBitSize = comp.mTotalBitsOut;
+			comp.mEarlyOut = outBitSize;
+
+			int besta = gXPCompressionTweak1,bestb = gXPCompressionTweak2,bestc = gXPCompressionTweak3,bestd = gXPCompressionTweak4;
+
+			int a,b,c,d;
+			for (a=1 ; a < 10 ; a++)
+			{
+				for (b=1 ; b < 10 ; b++)
+				{
+					for (c=1 ; c < 10 ; c++)
+					{
+						for (d=1 ; d < 10 ; d++)
+						{
+							gXPCompressionTweak1 = a;
+							gXPCompressionTweak2 = b;
+							gXPCompressionTweak3 = c;
+							gXPCompressionTweak4 = d;
+
+							Compression comp2;
+							comp2.mEarlyOut = comp.mEarlyOut;
+							int ret = comp2.Compress(input,inputSize,output,&outSize,10,1);
+							printf("Working %d : %d %d %d %d                \r",outBitSize - comp2.mTotalBitsOut , a , b ,c , d);
+							if (ret == -1)
+							{
+								continue;
+							}
+
+							if (comp2.mTotalBitsOut < outBitSize)
+							{
+								printf("New best %d : %d %d %d %d                \n",outBitSize - comp2.mTotalBitsOut , a , b ,c , d);
+								outBitSize = comp2.mTotalBitsOut;
+								comp.mEarlyOut = outBitSize;
+								besta = gXPCompressionTweak1;
+								bestb = gXPCompressionTweak2;
+								bestc = gXPCompressionTweak3;
+								bestd = gXPCompressionTweak4;
+							}
+						}
+					}
+				}
+			}
+			gXPCompressionTweak1 = besta;
+			gXPCompressionTweak2 = bestb;
+			gXPCompressionTweak3 = bestc;
+			gXPCompressionTweak4 = bestd;
+#endif
+
+			Compression comp3;
+
+			comp3.Compress(input,inputSize,output,&outSize,10,1);
+			outBitSize = comp3.mTotalBitsOut;
 
 			// This tries to optimise the compression choices even more by optionally trying each
 			// dictionary and literal choice one at a time to get the best output length.
 			// It saves 149 bytes with C:\work\C64\CityGame\OriginalData.prg but takes ages.
 #if 0
 			size_t choiceIndex;
-			for (choiceIndex = 0 ; choiceIndex < comp.mChoicesPos.size() ; /*Deliberate no incr*/)
+			for (choiceIndex = 0 ; choiceIndex < comp3.mChoicesPos.size() ; /*Deliberate no incr*/)
 			{
-				printf("Considering pos %d/%d with len %d exceptions %d\r",choiceIndex,comp.mChoicesPos.size(),outSize,comp.mIgnoreChoicePos.size());
+				printf("Considering pos %d/%d with len %d exceptions %d\r",choiceIndex,comp3.mChoicesPos.size(),outSize,comp3.mIgnoreChoicePos.size());
 				Compression comp2;
-				comp2.mIgnoreChoicePos = comp.mIgnoreChoicePos;
-				comp2.mIgnoreChoicePos.insert(comp.mChoicesPos[choiceIndex]);
+				comp2.mIgnoreChoicePos = comp3.mIgnoreChoicePos;
+				comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
 				u32 outSize2;
 				u32 outBitSize2;
 				comp2.Compress(input,inputSize,output,&outSize2,10,1);
@@ -336,9 +388,9 @@ int main(int argc,char **argv)
 	//			printf("   Got size %d\n",outSize2);
 				if (outBitSize2 < outBitSize)
 				{
-					printf("\nFound %d bits at pos %d/%d\n",outBitSize - outBitSize2,choiceIndex,comp.mChoicesPos.size());
-					comp.mIgnoreChoicePos = comp2.mIgnoreChoicePos;
-					comp.mChoicesPos = comp2.mChoicesPos;
+					printf("\nFound %d bits at pos %d/%d\n",outBitSize - outBitSize2,choiceIndex,comp3.mChoicesPos.size());
+					comp3.mIgnoreChoicePos = comp2.mIgnoreChoicePos;
+					comp3.mChoicesPos = comp2.mChoicesPos;
 					outBitSize = outBitSize2;
 					outSize = outSize2;
 					// loop and check again
@@ -348,8 +400,9 @@ int main(int argc,char **argv)
 			}
 
 			// Final compress with the choices
-			comp.mEnableChoicesOutput = true;
-			comp.Compress(input,inputSize,output,&outSize,10,1);
+			comp3.mEarlyOut = -1;
+			comp3.mEnableChoicesOutput = true;
+			comp3.Compress(input,inputSize,output,&outSize,10,1);
 #endif
 		}
 

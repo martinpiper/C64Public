@@ -1,0 +1,39 @@
+http://csdb.dk/release/?id=81773
+bin.rar - http://csdb.dk/release/download.php?id=103272
+
+Forum thread: http://csdb.dk/forums/?roomid=11&topicid=114681
+
+
+Current LZMPi results:
+
+						Time to decompress
+	File	bytes		cycles *1	seconds
+	1.bin	3184		1558777		1.586057184
+	2.bin	2410		1044272     1.062547823
+	3.bin	1931		813537      0.827774725
+	4.bin	3571		1482657     1.508605006
+	5.bin	20362		8471668     8.61993081
+	6.bin	8719		4323352     4.399015059
+	7.bin	9256		4044852     4.115641026
+	8.bin	3048		1278691     1.301069394
+	9.bin	5563		2307100     2.347476597
+
+	
+*1 Timed with VICE stopwatch command.
+	Using the -c64 option with run and start address $400 (RunTest.bat saves these as *.prg files)
+	Reset the stopwatch at $112 before the decompression starts
+	Break at $400 before the start address is called
+
+	Load file
+	VICE Monitor
+		> 808 a9 00 8d 11 d0
+		break 112
+		break 400
+		g 808
+		sw reset
+		x
+		sw
+	Note the number of cycles
+	
+	19656 cycles per frame at 50 frames per second = 982800 cycles per second
+	

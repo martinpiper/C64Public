@@ -1,6 +1,5 @@
 !zn
 ScrollerDemoInitOneTimeData
-!ifdef Scroller_MultiDirection { } else {
 	; We are going to be reading from under the IO space so we enable RAM there instead of IO
 	lda #ProcessorPortAllRAM
 	sta ZPProcessorPort
@@ -239,6 +238,7 @@ ScrollerDemoInitOneTimeData
 	jmp .fc3
 .nfc3
 
+!ifdef Scroller_MultiDirection { } else {
 	; Clear out the score sprite data
 	ldx #0
 	stx SpriteEmptyLookupTab
@@ -271,10 +271,11 @@ ScrollerDemoInitOneTimeData
 }
 
 
+}
+
 	; Enable IO again
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
-}
 
 	rts
 

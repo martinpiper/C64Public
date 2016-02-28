@@ -1122,6 +1122,7 @@ ScrollSingleColour_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_NeedFullColourScroll {
 	ldy scrollMapLPos
 	ldx .times40Plus39Tab,y
 	ldy #39
@@ -1168,6 +1169,8 @@ ScrollSingleColour_40
 	bne .noColourUpdate
 	jsr ScrollerDrawStripTopColour
 .noColourUpdate
+} ;<!ifdef Scroller_NeedFullColourScroll
+
 	dec scrollMapLPos
 	bpl .noBlockWrap
 	lda #4
@@ -1189,7 +1192,11 @@ ScrollerDrawStripTopBank1
 	+MACROScrollerDrawHStrip $cc00, scrollMapLPos , scrollMapHPos , scrollMapHPos2
 }
 
+!ifdef Scroller_NeedFullColourScroll {
+
 !zn {
 ScrollerDrawStripTopColour
 	+MACROScrollerDrawHStripColour $d800, scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
+
 }

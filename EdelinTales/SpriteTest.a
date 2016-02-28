@@ -1,0 +1,273 @@
+!source "../stdlib/stdlib.a"
+!to "SpriteTest.prg", cbm
+!sal
+!sl "SpriteTest.map"
+!svl "SpriteTest.lbl"
+!pdb "SpriteTest.pdb"
+!cpu 6510
+!ct pet
+
+; Define what the multiplexor can use
+Multiplex_VarBase	= $02
+Multiplex_spritepointer	= SPRITEFRAME
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+Multiplex_DiscardSpritesYPos=255
+
+;Multiplex_MaintainPriority = 1
+
+Multiplex_ReverseOrder = 1
+
+Multiplex_items	= 48
+
+!source "..\SpriteMultiplexor\SpriteMultiplexorVars.a"
+
+; Uncomment this to enable debug borders to be drawn
+Multiplexor_DebugBorder = 1
+
+; Uncomment this to allow the sprite sort to use a bit more time but save using an extra exit interrupt
+Multiplex_EnableEarlyOut = 1
+
+; Uncomment this to test the bunching check code
+Multiplex_BunchingCheck = 1
+
+DebugMainlineBorder = 1
+
+; Zero page variables
+foo	= Multiplex_endVars+$00
+
+*=$0800
+;--------------------------------------
+!zn {
+Start	
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	lda #0
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+
+	lda #<Multiplex_maininter
+	sta KERNALIRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta KERNALIRQServiceRoutineHi
+
+	lda #<NMIRet
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIRet
+	sta KERNALNMIServiceRoutineHi
+
+	lda #Multiplex_items
+	sta Multiplex_MaxSpr
+
+	jsr Multiplex_InitSort
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #%00011011
+	sta VIC2ScreenControlV
+	lda #VIC2SpriteYBorderTop - VIC2SpriteSizeY - 8
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	jsr init
+	
+	cli
+
+.2
+
+.notYet	lda BottomIRQDone
+	beq .notYet
+	lda #0
+	sta BottomIRQDone
+!ifdef DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+
+	; Mainline here
+	jsr move
+
+!ifdef DebugMainlineBorder {
+	dec VIC2BorderColour
+}
+
+	jmp .2
+}
+
+!zn {
+NMIRet
+	rti
+}
+
+!align 255, 0
+;--------------------------------------
+; This function is defined before including "SpriteTest.a" which then causes the last IRQ to call this
+!zn {
+BottomIRQDone !by 0
+MultiplexExt_LastIRQ
+	lda #255
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+
+
+	; Start the main interrupt back at the top of the screen again
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+
+	; Start the top multiplex raster at this position
+	lda #VIC2SpriteYBorderTop - VIC2SpriteSizeY - 8
+	sta VIC2Raster
+
+	inc BottomIRQDone
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jmp Multiplex_AckExitInterrupt
+}
+
+!macro MSetSprite .sprite , .xpos , .ypos , .col {
+	lda #(.xpos & 0xff)
+	sta Multiplex_XPosLo + .sprite
+	!if .xpos >= 256 {
+		sty Multiplex_XPosHi + .sprite
+	} else {
+		stx Multiplex_XPosHi + .sprite
+	}
+	lda #.ypos
+	sta Multiplex_YPos + .sprite
+	lda #.col
+	sta Multiplex_Colour + .sprite
+}
+
+!macro MSetFrame .oft , .frame , .frameSpeed , .speed {
+	dec .frameSpeed
+	bne .over
+	lda #.speed
+	sta .frameSpeed
+
+	lda .frame
+	clc
+	adc #6
+	cmp #24
+	bne .l1
+	lda #0
+.l1
+	sta .frame
+	tax
+	ldy #0
+.l2
+	lda SpriteIndices,x
+	sta Multiplex_SpriteFrame + .oft,y
+	inx
+	iny
+	cpy #6
+	bne .l2
+.over
+}
+
+; Create a 3x2 sprite block at an index, xpos, ypos and colour
+!macro MSetCharacter .idx , .x , .y , .col {
+	+MSetSprite .idx	, .x , .y	, .col
+	+MSetSprite .idx+1  , .x+24 , .y	, .col
+	+MSetSprite .idx+2  , .x , .y+21	, .col
+	+MSetSprite .idx+3  , .x+24 , .y+21	, .col
+	+MSetSprite .idx+4  , .x , .y+42	, .col
+	+MSetSprite .idx+5  , .x+24 , .y+42	, .col
+}
+
+!zn {
+init
+	ldy #Multiplex_items-1
+.l1
+	lda #255
+	sta Multiplex_YPos,y
+	lda #VIC2Colour_White
+	sta Multiplex_Colour,y
+	dey
+	bpl .l1
+
+	ldx #0
+	ldy #1
+	+MSetCharacter 0	, 100	, 50	, VIC2Colour_White
+	+MSetCharacter 6	, 50	, 60	, VIC2Colour_Green
+	+MSetCharacter 12	, 150	, 90	, VIC2Colour_Brown
+	+MSetCharacter 18	, 200	, 140	, VIC2Colour_Yellow
+	+MSetCharacter 24	, 100	, 170	, VIC2Colour_Blue
+	+MSetCharacter 30	, 230	, 190	, VIC2Colour_Red
+
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Grey
+	sta VIC2ExtraSpriteColour2
+
+	jsr Multiplex_Sort
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+
+	rts
+}
+
+!zn {
+frame1 !by 0
+frame1Speed !by 1
+frame2 !by 0
+frame2Speed !by 1
+frame3 !by 0
+frame3Speed !by 1
+frame4 !by 0
+frame4Speed !by 1
+frame5 !by 0
+frame5Speed !by 1
+frame6 !by 0
+frame6Speed !by 1
+move
+	+MSetFrame 0 , frame1 , frame1Speed , 6
+	+MSetFrame 6 , frame2 , frame2Speed , 5
+	+MSetFrame 12 , frame3 , frame3Speed , 4
+	+MSetFrame 18 , frame4 , frame4Speed , 3
+	+MSetFrame 24 , frame5 , frame5Speed , 8
+	+MSetFrame 30 , frame6 , frame6Speed , 7
+
+.over1
+	jsr Multiplex_Sort
+
+	rts
+}
+
+!source "..\SpriteMultiplexor\SpriteMultiplexor.a"
+
+!source "..\stdlib\Initialise.a"
+
+; How the sprite animation frames map to actual sprite numbers
+SpriteIndices
+!bin "bin\Knight\Walk_E_01.idx"
+!bin "bin\Knight\Walk_E_02.idx"
+!bin "bin\Knight\Walk_E_03.idx"
+!bin "bin\Knight\Walk_E_04.idx"
+
+
+*= $2000
+!bin "bin\Knight\Walk_E_01.spr"
+!bin "bin\Knight\Walk_E_02.spr"
+!bin "bin\Knight\Walk_E_03.spr"
+!bin "bin\Knight\Walk_E_04.spr"
+

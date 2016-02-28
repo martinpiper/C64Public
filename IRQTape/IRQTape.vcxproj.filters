@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1f9574ea-156e-4c69-a612-d78d1c182978}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6e1a812e-6a91-4597-95cf-8915b9e24c05}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{21290a51-76ae-4b8f-9399-7de3b4f1649d}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="IRQTape1.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ScrollerMusicLoader.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TapeLoaderCIA.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TapeLoaderCIACommon.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TapeLoaderCIAIRQ.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TapeLoaderCIANovaish.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TapeLoaderCIASmall.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TurboTapeVars.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TurboTapeWrite.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\PETSCII.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="LotDComp.prg">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="LotDLoadMusic.prg">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="R.MUS8000.PRG">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TestMultiplexor.prg">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

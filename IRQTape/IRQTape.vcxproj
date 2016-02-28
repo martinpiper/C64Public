@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName>IRQTape</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{54486F69-7689-4E1C-AAED-EC3BFE18556D}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\IRQTape___Win32_Release\</OutDir>
+    <IntDir>.\IRQTape___Win32_Release\</IntDir>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc IRQTape1.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc IRQTape1.a </NMakeReBuildCommandLine>
+    <NMakeOutput>IRQTape.exe</NMakeOutput>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="IRQTape1.a" />
+    <CustomBuild Include="ScrollerMusicLoader.a" />
+    <CustomBuild Include="TapeLoaderCIA.a" />
+    <CustomBuild Include="TapeLoaderCIACommon.a" />
+    <CustomBuild Include="TapeLoaderCIAIRQ.a" />
+    <CustomBuild Include="TapeLoaderCIANovaish.a" />
+    <CustomBuild Include="TapeLoaderCIASmall.a" />
+    <CustomBuild Include="TurboTapeVars.a" />
+    <CustomBuild Include="TurboTapeWrite.a" />
+    <CustomBuild Include="..\stdlib\PETSCII.a" />
+    <CustomBuild Include="..\stdlib\stdlib.a" />
+    <CustomBuild Include="LotDComp.prg" />
+    <CustomBuild Include="LotDLoadMusic.prg" />
+    <CustomBuild Include="R.MUS8000.PRG" />
+    <CustomBuild Include="TestMultiplexor.prg" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
