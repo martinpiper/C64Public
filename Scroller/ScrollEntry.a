@@ -27,7 +27,6 @@ Multiplex_items	= 32
 ;Multiplex_SplitSort = 1
 !source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
 !ifdef Multiplex_SplitSort {
-MultiplexSort_indextable = Multiplex_endVars
 MultiplexSort_YPos = AnimationYPosToSort
 }
 
@@ -239,6 +238,9 @@ Scroller_SpriteXAdjust = 1
 ; Set these two values to the x position for the player's score panels
 ScorePlayer1XPos = 44
 ScorePlayer2XPos = 228
+
+
+ClearGameScreensChar = 0
 
 ; Enable this to stop empty sprite frames from producing explosion animations. Instead they just get removed.
 Scroller_SkipEmptySpriteExplodingEnemies = 1

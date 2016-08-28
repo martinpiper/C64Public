@@ -36,6 +36,9 @@ MusicPlayerPlaySFX
 
 !raw "MS22"
 
+.noteDurationCounter !by 0,0,0	; Read by the music player demo to determine when the note is going to start next
+.gate !by 0,0,0					; Read by the music player demo to determine when a note is in the attack phase
+
 !ifdef TableCodeActivateNote {
 ; The note table processing functions that are triggered once per command
 .startNoteTableCommands
@@ -256,7 +259,6 @@ HighestBlockCommand
 .bitstart
 
 .trcn !by 0,0,0			; Read by the track editor to show the current track position.
-.noteDurationCounter !by 0,0,0	; Read by the music player demo.
 
 !ifdef SmallVibratoCommandsActive {
 .smallVibratoUpDown !by 0,0,0
@@ -288,8 +290,6 @@ HighestBlockCommand
 .core !by 0,0,0
 .pwhi !by 0,0,0
 .pwlo !by 0,0,0
-
-.gate !by 0,0,0
 
 .miscBitMask !by 0,0,0
 

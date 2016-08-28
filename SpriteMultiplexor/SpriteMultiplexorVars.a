@@ -95,13 +95,21 @@ Multiplex_BottomTriggered	= Multiplex_VarBase+$0a
 Multiplex_indextable		= Multiplex_VarBase+$0b			; Multiplex_items long
 
 ; This variable is the next available variable for the user
-Multiplex_endVars			= Multiplex_indextable + Multiplex_items
+Multiplex_endIndexInternal	= Multiplex_indextable + Multiplex_items
 
 ; Define Multiplex_SplitSort to enable the sort to use temporary tables for its working variables.
 ; This allows the sort to be executed during the multiplexor IRQs. After the last IRQ and before the top IRQ the contents of the variables should be copied over.
 !ifdef Multiplex_SplitSort {
+
+MultiplexSort_indextable = Multiplex_endIndexInternal
+Multiplex_endVars = MultiplexSort_indextable + Multiplex_items
+
 } else {
+
+Multiplex_endVars = Multiplex_endIndexInternal
+
 MultiplexSort_indextable = Multiplex_indextable
 MultiplexSort_YPos = Multiplex_YPos
 MultiplexSort_MaxSprSorted = Multiplex_MaxSprSorted
+
 }

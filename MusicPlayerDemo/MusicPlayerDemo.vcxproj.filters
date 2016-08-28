@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3e7f1168-741a-4f97-ae8c-b1b1e4825160}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5aeed05b-7a47-475a-a526-c0ce9eb029a3}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{3dbc5cc6-2e26-4fdc-9bfb-984ea8179114}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="BuildIt.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="MusicPlayerDemo.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProject.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFully.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\DoBackup.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

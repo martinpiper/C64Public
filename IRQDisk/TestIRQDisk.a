@@ -1,5 +1,18 @@
 ;IRQDisk test code
 
+; Run BuildIt.bat
+; Run the test.d64 as the first file is the assembled TestIRQDisk.a
+; Observe the black screen and white border
+; Press fire - Note the drive LED pulses and the black raster bar in the middle of the screen border.
+; Press fire - Note the file "SCREEN1" loads
+; After loading, note red border white raster bar
+; Press fire - Note the file "SCREEN2" loads
+; After loading, note cyan border red raster bar
+; Press fire - Screen goes white, file is saved to "TESTSAVE"
+; After saving, note purple border and cyan raster
+; Press fire - Note "formula too complex" error, indicating a RTS back to BASIC(ish)
+
+
 !source "../stdlib/stdlib.a"
 !to "TestIRQDisk.prg", cbm
 !sal
@@ -15,7 +28,7 @@ IRQDisk_LEDFlash = 15
 ;IRQDisk_UseATN = 1
 
 ; Enable this to cause timing debug code to run instead. It helps show timings for 2 bit transfer.
-IRQDisk_DebugTimings = 1
+;IRQDisk_DebugTimings = 1
 
 !if 0 {
 !source "../stdlib/BASICEntry900.a"
@@ -35,6 +48,7 @@ IRQDisk_DebugTimings = 1
 	lda #ProcessorPortDefault
 	jsr InitialiseMachine
 	+InitKERNALIO_AXY
+	+SetDefaultScreen_A
 	lda #1
 	sta VIC2BorderColour
 	+WaitForFire_A
@@ -55,7 +69,6 @@ IRQDisk_DebugTimings = 1
 
 	lda #8
 	jsr IRQDisk_SetPulseSpeed
-
 
 	; Debugging drive bytes, useful for testing patterns to/from the CIA/VIA
 !if 0 {
@@ -103,10 +116,25 @@ IRQDisk_DebugTimings = 1
 
 	jsr InitIRQ
 
+	+WaitForFire_A
+
 	lda #.nameTestEnd-.nameTest
 	ldx #<.nameTest
 	ldy #>.nameTest
 	jsr IRQDisk_Load
+
+	inc VIC2BorderColour
+
+	+WaitForFire_A
+
+	lda #.nameTest2End-.nameTest2
+	ldx #<.nameTest2
+	ldy #>.nameTest2
+	jsr IRQDisk_Load
+
+	inc VIC2BorderColour
+
+	+WaitForFire_A
 
 !if 1 {
 	; Now try saving the just loaded data to another file of the same length.
@@ -121,11 +149,17 @@ IRQDisk_DebugTimings = 1
 	jsr IRQDisk_WriteData
 }
 
+	inc VIC2BorderColour
+
+	+WaitForFire_A
+	
 	rts
 
 	; Note, the ct raw is used here
-.nameTest !raw "TESTFILE"
+.nameTest !raw "SCREEN1"
 .nameTestEnd = *
+.nameTest2 !raw "SCREEN2"
+.nameTest2End = *
 
 .nameTestSave !raw "TESTSAVE"
 .nameTestSaveEnd = *

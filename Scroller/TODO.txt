@@ -1,6 +1,11 @@
 ; Optimise the block plot and screen scroll loops. Unroll more.
 
 
+; For map types where each character is mapped to a specific colour (block colour data is *not* duplicated)
+; then the side colour update can be a fast unrolled section of code that does a lookup based on the screen data that will be switched to.
+; This means the colour block plot doesn't need to do so much work.
+
+
 ; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
 
 

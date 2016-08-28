@@ -245,6 +245,7 @@ ScrollerOffScreen
 	jsr ParalaxUpdate
 }
 
+	inc ScrollerScreenCharMovedY
 	jmp ScrollSingleColour_40
 
 NotWantingColourScroll

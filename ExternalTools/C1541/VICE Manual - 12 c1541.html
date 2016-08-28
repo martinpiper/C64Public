@@ -1,0 +1,302 @@
+
+<!-- saved from url=(0044)http://vice-emu.sourceforge.net/vice_12.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<!-- This HTML file has been created by texi2html 1.52
+     from ../../doc/vice.texi on 30 October 2012 -->
+
+<title>VICE Manual - 12  c1541</title>
+</head>
+<body>
+Go to the <a href="http://vice-emu.sourceforge.net/vice_1.html">first</a>, <a href="http://vice-emu.sourceforge.net/vice_11.html">previous</a>, <a href="http://vice-emu.sourceforge.net/vice_13.html">next</a>, <a href="http://vice-emu.sourceforge.net/vice_20.html">last</a> section, <a href="http://vice-emu.sourceforge.net/vice_toc.html">table of contents</a>.
+<p></p><hr><p>
+
+
+</p><h1><a name="SEC254" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC254">12  c1541</a></h1>
+
+<p>
+VICE is provided with a complete stand-alone disk image maintenance
+utility, called <code>c1541</code>.
+
+</p>
+<p>
+You can either invoke it from the command
+line or from within one of the VICE emulators, using the "Run c1541"
+command which will open a new <code>xterm</code> window with a running
+<code>c1541</code> in it.
+
+</p>
+<p>
+The syntax is:
+
+</p>
+
+<pre>c1541 [IMAGE1 [IMAGE2]] [COMMAND1 COMMAND2 ... COMMANDN]
+</pre>
+
+<p>
+<code>IMAGE1</code> and <code>IMAGE2</code> are disk image names that can be
+attached before <code>c1541</code> starts.  <code>c1541</code> can handle up to
+two disk images at the same time by using two virtual built-in drives,
+numbered <code>8</code> and <code>9</code>; <code>IMAGE1</code> (if present) is always
+attached to drive <code>8</code>, while <code>IMAGE2</code> is attached to drive
+<code>9</code>.
+
+</p>
+<p>
+<code>COMMAND</code>s specified on the command-line all begin with the minus
+sign (<code>-</code>); if present, <code>c1541</code> executes them in the same
+order as they are on the command line and returns a zero error code if
+they were successful.  If any of the <code>COMMAND</code>s fails, <code>c1541</code>
+stops and returns a nonzero error code.
+
+</p>
+<p>
+If no <code>COMMAND</code>s are specified at all, <code>c1541</code> enters
+interactive mode, where you can type commands manually.  Commands in
+interactive mode are the same as commands in batch mode, but do not
+require a leading <code>-</code>.  As with the monitor, file name completion
+and command line editing with history are provided via GNU
+<code>readline</code>.  Use the command <samp>`quit'</samp> or press <kbd>C-d</kbd> to
+exit.
+
+</p>
+
+
+
+<h2><a name="SEC255" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC255">12.1  Specifying files in c1541</a></h2>
+
+<p>
+When accessing CBM DOS files (i.e. files that reside on disk images),
+c1541 uses a special syntax that lets you access files on both drive 8
+and 9.  If you prepend the file name with <code>@8:</code> or <code>@9:</code>, you
+will specified that file is to be found or created on drive 8 and 9,
+respectively.
+
+</p>
+<p>
+For instance,
+
+</p>
+
+<pre>@8:somefile
+</pre>
+
+<p>
+will name file named <code>somefile</code> on unit 8, while
+
+</p>
+
+<pre>@9:somefile
+</pre>
+
+<p>
+will name file named <code>somefile</code> on unit 9.
+
+</p>
+
+
+<h2><a name="SEC256" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC256">12.2  Using quotes and backslashes</a></h2>
+
+<p>
+You can use quotes (<code>"</code>) in a command to embed spaces into file
+names.  For instance,
+
+</p>
+
+<pre>read some file
+</pre>
+
+<p>
+will read file <code>some</code> from the disk image and write it into the
+file system as <code>file</code>, while
+
+</p>
+
+<pre>read "some file"
+</pre>
+
+<p>
+will copy <code>some file</code> into the file system, with the name
+<code>some file</code>.
+
+</p>
+<p>
+The backslash character (<code>\</code>) has a special meaning too: it lets
+you literally insert the following character no matter what it is.  For
+example,
+
+</p>
+
+<pre>read some\ file
+</pre>
+
+<p>
+will copy file <code>some file</code> into the file system, while
+
+</p>
+
+<pre>read some\ file this\"file
+</pre>
+
+<p>
+will copy <code>some file</code> into the file system with name
+<code>this"file</code> (with an embedded quote).
+
+</p>
+
+
+
+<h2><a name="SEC257" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC257">12.3  c1541 commands and options</a></h2>
+
+<p>
+This is a list of the <code>c1541</code> commands.  They are shown in their
+interactive form, without the leading <code>-</code>.
+Square brackets [] indicate an optional part, and "&lt;COMMAND&gt;" translates
+to a disk command according to CBM DOS, like "i0" for example.
+
+</p>
+<dl compact="">
+
+<dt><code>@ [&lt;command&gt;]</code>
+</dt><dd>
+Execute specified CBM DOS command and print the current status of the
+drive.  If no <code>command</code> is specified, just print the status.
+
+</dd><dt><code>? [&lt;command&gt;]</code>
+</dt><dd>
+Explain specified command.  If no command is specified, list available
+ones.
+
+</dd><dt><code>attach &lt;diskimage&gt; [&lt;unit&gt;]</code>
+</dt><dd>
+Attach <code>diskimage</code> to <code>unit</code> (default unit is 8).
+
+</dd><dt><code>block &lt;track&gt; &lt;sector&gt; &lt;disp&gt; [&lt;drive&gt;]</code>
+</dt><dd>
+Show specified disk block in hex form.
+
+</dd><dt><code>copy &lt;source1&gt; [&lt;source2&gt; ... &lt;sourceN&gt;] &lt;destination&gt;</code>
+</dt><dd>
+Copy <code>source1</code> ... <code>sourceN</code> into destination.  If N &gt; 1,
+<code>destination</code> must be a simple drive specifier (<code>@n:</code>).
+
+</dd><dt><code>delete &lt;file1&gt; [&lt;file2&gt; ... &lt;fileN&gt;]</code>
+</dt><dd>
+Delete the specified files.
+
+</dd><dt><code>exit</code>
+</dt><dd>
+Exit (same as <code>quit</code>).
+
+</dd><dt><code>extract</code>
+</dt><dd>
+Extract all the files to the file system.
+
+</dd><dt><code>format &lt;diskname,id&gt; [&lt;type&gt; &lt;imagename&gt;] [&lt;unit&gt;]</code>
+</dt><dd>
+If <code>unit</code> is specified, format the disk in unit <code>unit</code>.  If
+<code>type</code> and <code>imagename</code> are specified, create a new image named
+<code>imagename</code>, attach it to unit 8 and format it.  <code>type</code> is a
+disk image type, and must be either <code>x64</code>, <code>d64</code> (both VC1541/2031),
+<code>g64</code> (VC1541/2031 but in GCR coding), <code>d71</code> (VC1571), <code>d81</code>
+(VC1581), <code>d80</code> (CBM8050) or <code>d82</code> (CBM8250/1001).
+Otherwise, format the disk in the current unit, if any.
+
+</dd><dt><code>gcrformat &lt;diskname,id&gt; &lt;imagename&gt;</code>
+</dt><dd>
+Create and format a G64 disk image named <code>imagename</code>.
+
+</dd><dt><code>help [&lt;command&gt;]</code>
+</dt><dd>
+Explain specified command.  If no command is specified, list available
+ones.
+
+</dd><dt><code>info [&lt;unit&gt;]</code>
+</dt><dd>
+Display information about unit <code>unit</code> (if unspecified, use the current
+one).
+
+</dd><dt><code>list [&lt;pattern&gt;]</code>
+</dt><dd>
+List files matching <code>pattern</code> (default is all files).
+
+</dd><dt><code>quit</code>
+</dt><dd>
+Exit (same as <code>exit</code>).
+
+</dd><dt><code>read &lt;source&gt; [&lt;destination&gt;]</code>
+</dt><dd>
+Read <code>source</code> from the disk image and copy it into <code>destination</code> in
+the file system.  If <code>destination</code> is not specified, copy it into a
+file with the same name as <code>source</code>.",
+
+</dd><dt><code>rename &lt;oldname&gt; &lt;newname&gt;</code>
+</dt><dd>
+Rename <code>oldname</code> into <code>newname</code>.  The files must be on the
+same drive.
+
+</dd><dt><code>tape &lt;t64name&gt; [&lt;file1&gt; ... &lt;fileN&gt;]</code>
+</dt><dd>
+Extract files from a T64 image.
+
+</dd><dt><code>unit &lt;number&gt;</code>
+</dt><dd>
+Make unit <code>number</code> the current unit.
+
+</dd><dt><code>unlynx &lt;lynxname&gt; [&lt;unit&gt;]</code>
+</dt><dd>
+Extract the specified Lynx image file into the specified unit (default
+is the current unit).
+
+</dd><dt><code>validate [&lt;unit&gt;]</code>
+</dt><dd>
+Validate the disk in unit <code>unit</code>.  If <code>unit</code> is not specified,
+validate the disk in the current unit.
+
+</dd><dt><code>write &lt;source&gt; [&lt;destination&gt;]</code>
+</dt><dd>
+Write <code>source</code> from the file system into <code>destination</code> on a
+disk image.
+
+</dd><dt><code>zcreate &lt;x64name&gt; &lt;zipname&gt; [&lt;label,id&gt;]</code>
+</dt><dd>
+Create an X64 disk image out of a set of four Zipcoded files named
+<code>1!zipname</code>, <code>2!zipname</code>, <code>3!zipname</code> and
+<code>4!zipname</code>.
+
+</dd></dl>
+
+
+
+<h2><a name="SEC258" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC258">12.4  Executing shell commands</a></h2>
+
+<p>
+If you want to execute a shell command from withing <code>c1541</code>, just
+prepend it with an exclamation mark (<code>!</code>).  For example,
+
+</p>
+
+<pre>!ls -la
+</pre>
+
+<p>
+will execute the command <code>ls -la</code>, which will show you all the
+files in the current directory.
+
+</p>
+
+
+<h2><a name="SEC259" href="http://vice-emu.sourceforge.net/vice_toc.html#TOC259">12.5  c1541 examples</a></h2>
+
+<dl compact="">
+
+<dt><code>c1541 -attach test.d64 -write test.prg testfile</code>
+</dt><dd>
+Write <code>test.prg</code> to <code>test.d64</code> as <code>testfile</code>.
+</dd></dl>
+
+<p></p><hr><p>
+Go to the <a href="http://vice-emu.sourceforge.net/vice_1.html">first</a>, <a href="http://vice-emu.sourceforge.net/vice_11.html">previous</a>, <a href="http://vice-emu.sourceforge.net/vice_13.html">next</a>, <a href="http://vice-emu.sourceforge.net/vice_20.html">last</a> section, <a href="http://vice-emu.sourceforge.net/vice_toc.html">table of contents</a>.
+
+
+</p></body></html>

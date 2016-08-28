@@ -156,6 +156,7 @@ ScrollerOffScreen
 .m2
 	jsr Multiplex_SetSpritePointer
 
+	inc ScrollerScreenCharMovedX
 	jmp ScrollSingleColour_1
 
 NotWantingColourScroll

@@ -132,7 +132,7 @@ This gives 985248 / 384 = 2565 bits per second.
 
 If the configuration value "EnableBlockChecksum = 1" is not enabled then all tape data is loaded without checksum
 blocks. This means all TapeTool "otfb" parameters must be changed to be "otf". Generally though checksum blocks should be
-enabled since they greatly improve loading reliablity.
+enabled since they greatly improve loading reliability.
 
 
 Including a label called JMPStartAddress will initialise the machine to a BASIC friendly state then jumps to the address.
@@ -181,5 +181,5 @@ You should see something like:
 
 The first block of data at offset $6a2c is the first tape header and tape buffer area bytes.
 The second block of data at offset $7a45 is the duplicate tape header and tape buffer containing the same bytes as before but with a slightly different header.
-The tape header contains the load address $400 and ending address $407, tghe file name and blank tape header bytes.
+The tape header contains the load address $400 and ending address $407, the file name and blank tape header bytes.
 The third block of data at offset $9f61 is another header followed by the byte 0 to 7 which are loaded to the start of screen memory at $400

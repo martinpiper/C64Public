@@ -517,6 +517,12 @@ SIDVoice3ADSROutput				= $d41c		; Read only
 
 ; CIA1
 
+JoystickBits_Up		= 1
+JoystickBits_Down	= 2
+JoystickBits_Left	= 4
+JoystickBits_Right	= 8
+JoystickBits_Fire	= 16
+
 ; Port A read:
 ; Bit 0: 0 = Port 2 joystick up pressed.
 ; Bit 1: 0 = Port 2 joystick down pressed.

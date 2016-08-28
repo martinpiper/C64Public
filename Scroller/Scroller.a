@@ -396,11 +396,12 @@ NotWantingScroll
 
 !zn {
 ; Must be called after ScrollerScreen. Must not be called while the scrolling screen is being displayed.
+.lNotWantingColourScroll jmp NotWantingColourScroll
 ScrollerOffScreen
 	; Now update the colour memory if required by the scroll
 	lda frameScrollMoveColours
 	cmp #2	; Signifies we just did a character scroll
-	bcc NotWantingColourScroll
+	bcc .lNotWantingColourScroll
 
 	; Do this first since the colour scroll can take some time
 	lda topScreenBank
@@ -422,6 +423,59 @@ ScrollerOffScreen
 	stx frameTotalScrScroll
 	stx frameScrollMoveColours
 
+	cmp #1
+	bne .colTestNext1z
+	inc ScrollerScreenCharMovedX
+	jmp .colTestNext8z
+.colTestNext1z
+
+	cmp #-1
+	bne .colTestNext2z
+	dec ScrollerScreenCharMovedX
+	jmp .colTestNext8z
+.colTestNext2z
+
+	cmp #40
+	bne .colTestNext3z
+	inc ScrollerScreenCharMovedY
+	jmp .colTestNext8z
+.colTestNext3z
+
+	cmp #-40
+	bne .colTestNext4z
+	dec ScrollerScreenCharMovedY
+	jmp .colTestNext8z
+.colTestNext4z
+
+	cmp #39
+	bne .colTestNext5z
+	dec ScrollerScreenCharMovedX
+	inc ScrollerScreenCharMovedY
+	jmp .colTestNext8z
+.colTestNext5z
+
+	cmp #-39
+	bne .colTestNext6z
+	inc ScrollerScreenCharMovedX
+	dec ScrollerScreenCharMovedY
+	jmp .colTestNext8z
+.colTestNext6z
+
+	cmp #41
+	bne .colTestNext7z
+	inc ScrollerScreenCharMovedX
+	inc ScrollerScreenCharMovedY
+	jmp .colTestNext8z
+.colTestNext7z
+
+	cmp #-41
+	bne .colTestNext8z
+	dec ScrollerScreenCharMovedX
+	dec ScrollerScreenCharMovedY
+.colTestNext8z
+
+
+!ifdef Scroller_NeedFullColourScroll {
 	cmp #1
 	bne .colTestNext1
 	jmp ScrollColour_1
@@ -462,10 +516,94 @@ ScrollerOffScreen
 	jmp ScrollColour_m41
 .colTestNext8
 
+} else { ;<< else !ifdef Scroller_NeedFullColourScroll
+
+	cmp #1
+	bne .scrTestNext1
+	ldy topScreenBank
+	beq .wantScr1To0_1
+	jmp ScrollBank0To1_1b
+.wantScr1To0_1
+	jmp ScrollBank1To0_1b
+.scrTestNext1
+
+	cmp #-1
+	bne .scrTestNext2
+	ldy topScreenBank
+	beq .wantScr1To0_m1
+	jmp ScrollBank0To1_m1b
+.wantScr1To0_m1
+	jmp ScrollBank1To0_m1b
+.scrTestNext2
+
+	cmp #40
+	bne .scrTestNext3
+	ldy topScreenBank
+	beq .wantScr1To0_40
+	jmp ScrollBank0To1_40b
+.wantScr1To0_40
+	jmp ScrollBank1To0_40b
+.scrTestNext3
+
+	cmp #-40
+	bne .scrTestNext4
+	ldy topScreenBank
+	beq .wantScr1To0_m40
+	jmp ScrollBank0To1_m40b
+.wantScr1To0_m40
+	jmp ScrollBank1To0_m40b
+.scrTestNext4
+
+	cmp #39
+	bne .scrTestNext5
+	ldy topScreenBank
+	beq .wantScr1To0_39
+	jmp ScrollBank0To1_39b
+.wantScr1To0_39
+	jmp ScrollBank1To0_39b
+.scrTestNext5
+
+	cmp #-39
+	bne .scrTestNext6
+	ldy topScreenBank
+	beq .wantScr1To0_m39
+	jmp ScrollBank0To1_m39b
+.wantScr1To0_m39
+	jmp ScrollBank1To0_m39b
+.scrTestNext6
+
+	cmp #41
+	bne .scrTestNext7
+	ldy topScreenBank
+	beq .wantScr1To0_41
+	jmp ScrollBank0To1_41b
+.wantScr1To0_41
+	jmp ScrollBank1To0_41b
+.scrTestNext7
+
+	cmp #-41
+	bne .scrTestNext8
+	ldy topScreenBank
+	beq .wantScr1To0_m41
+	jmp ScrollBank0To1_m41b
+.wantScr1To0_m41
+	jmp ScrollBank1To0_m41b
+.scrTestNext8
+
+
+};<< end !ifdef Scroller_NeedFullColourScroll
+
+
 NotWantingColourScroll
 !ifdef Scroller_DebugColourScrollTimings {
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
+}
+!ifdef Scroller_DebugScreenScrollTimings {
+!ifdef Scroller_NeedFullColourScroll { } else {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 }
 	lda frameScrollMoveColours
 	beq .s1
@@ -851,8 +989,11 @@ DrawMap
 	sta topScreenBank
 	rts
 
-
+!ifdef Scroller_NeedFullColourScroll {
 !source "Scrollers.a"
+} else {
+!source "ScrollersNoColour.a"
+}
 !source "ScrollerStrips.a"
 
 

@@ -77,6 +77,14 @@ l1
 	sta COLOURRAM+$2e8,x
 	inx
 	bne l1
+
+	+SetText musicTitle1 , SCREENRAM + 12 + (11*40)
+	+SetText musicTitle2 , SCREENRAM + 12 + (13*40)
+	+SetText musicTitle3 , SCREENRAM + 12 + (15*40)
+	+SetText musicTitle4 , SCREENRAM + 12 + (17*40)
+	+SetText musicTitle5 , SCREENRAM + 12 + (19*40)
+
+	ldx #0
 l2
 	lda SCREENRAM,x
 	cmp #$b
@@ -105,12 +113,6 @@ pp4
 	inx
 	bne l2
 
-	+SetText musicTitle1 , SCREENRAM + 12 + (11*40)
-	+SetText musicTitle2 , SCREENRAM + 12 + (13*40)
-	+SetText musicTitle3 , SCREENRAM + 12 + (15*40)
-	+SetText musicTitle4 , SCREENRAM + 12 + (17*40)
-	+SetText musicTitle5 , SCREENRAM + 12 + (19*40)
-
 	jsr UnsetPlayerColours
 
 	jsr SetPlayer1
@@ -135,6 +137,19 @@ pp4
 	rts
 
 UnsetPlayerColours
+	; Clear all played note counts to stop the bars from displaying when stop key is pressed at the end of a note
+	lda #7
+	ldx #2
+.cll1
+	sta $3000+OffsetTonoteDurationCounter,x
+	sta $4000+OffsetTonoteDurationCounter,x
+	sta $5000+OffsetTonoteDurationCounter,x
+	sta $6100+OffsetTonoteDurationCounter,x
+	sta $7800+OffsetTonoteDurationCounter,x
+	dex
+	bpl .cll1
+
+
 	ldx #$14
 	lda #0
 .l1
@@ -142,24 +157,54 @@ UnsetPlayerColours
 	dex
 	bpl .l1
 
-	lda #VIC2Colour_LightRed
 	ldx #39
 .uc0
+	lda SCREENRAM + (11*40),x
+	cmp #$b
+	bcc .ppa1
+	lda #VIC2Colour_LightRed
 	sta COLOURRAM + (11*40),x
+.ppa1
+	lda SCREENRAM + (13*40),x
+	cmp #$b
+	bcc .ppa2
+	lda #VIC2Colour_LightRed
 	sta COLOURRAM + (13*40),x
+.ppa2
+	lda SCREENRAM + (15*40),x
+	cmp #$b
+	bcc .ppa3
+	lda #VIC2Colour_LightRed
 	sta COLOURRAM + (15*40),x
+.ppa3
+	lda SCREENRAM + (17*40),x
+	cmp #$b
+	bcc .ppa4
+	lda #VIC2Colour_LightRed
 	sta COLOURRAM + (17*40),x
+.ppa4
+	lda SCREENRAM + (19*40),x
+	cmp #$b
+	bcc .ppa5
+	lda #VIC2Colour_LightRed
 	sta COLOURRAM + (19*40),x
+.ppa5
 	dex
 	bpl .uc0
+
 	rts
 
 !macro SetPlayer .pos {
 	jsr UnsetPlayerColours
-	lda #VIC2Colour_Brown
+
 	ldx #39
 .uc1
+	lda SCREENRAM + (.pos*40),x
+	cmp #$b
+	bcc .ppaz
+	lda #VIC2Colour_Brown
 	sta COLOURRAM + (.pos*40),x
+.ppaz
 	dex
 	bpl .uc1
 	rts
@@ -179,17 +224,6 @@ SetPlayer5
 
 
 !source "../stdlib/Initialise.a"
-
-!align 255, 0
-deltab
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
-!by 1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8,1,8,8,8,8,8,8,8
 
 !align 255, 0
 coltab
@@ -236,42 +270,6 @@ coltabAnimate
 	pha
 	tya
 	pha
-
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-}
-
-!macro IRQPrologueXScroll {
-	pha
-	txa
-	pha
-	tya
-	pha
-
-smXScr	lda #7
-	sta VIC2ScreenControlH
-
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 }
 
 !macro IRQEpilogue .raster , .nextIRQ {
@@ -426,98 +424,104 @@ FullScreenRender
 .colTabAnimateBarEnd	!by 16	,57	,24	,(coltabBot-coltab)+10
 .colTabAnimateAllEqual !by 0
 
+!macro DelayFor .cycles {
+	!if (.cycles >= 3) {
+	!if (.cycles & 1) = 1 {
+	lda $01
+	.realCycles = .cycles - 3
+	} else {
+	.realCycles = .cycles
+	}
+	} else {
+	.realCycles = .cycles
+	}
+	!for .i , (.realCycles/2) {
+	nop
+	}
+}
+
+!macro DoLine1To2 .sourceColour , .destination1 , .destination2 , .delay {
+	lda .sourceColour
+	sta .destination1
+	sta .destination2
+	+DelayFor .delay
+}
+!macro DoLine2To2 .sourceColour1 , .destination1 , .sourceColour2 , .destination2 , .delay {
+	lda .sourceColour1
+	ldx .sourceColour2
+	sta .destination1
+	stx .destination2
+	+DelayFor .delay
+}
+
+
 !align 255, 0
 irq1
 	+IRQPrologue
 
-	ldx #0
-i1
-	lda coltab,x
-	ldy deltab,x
-	sta VIC2BorderColour
-	sta VIC2ScreenColour
-i2
-	dey
-	bne i2
-	inx
-	cpx #16
-	bne i1
+	+DelayFor 33
+
+	!for .i , (16 - 0) {
+		!if ((.i+7) & 7) = 0 {
+			+DoLine1To2 coltab + 0 + .i - 1 , VIC2BorderColour , VIC2ScreenColour , 8
+		} else {
+			+DoLine1To2 coltab + 0 + .i - 1, VIC2BorderColour , VIC2ScreenColour , 51
+		}
+	}
+
+	lda coltab
+	sta VIC2ExtraBackgroundColour1
 
 	+IRQEpilogue 78 , irq2
 
-irq3
-	+IRQPrologue
-
-	ldx #16
-i3
-	lda coltab,x
-	ldy deltab,x
-	sta VIC2BorderColour
-	sta VIC2ScreenColour
-i4
-	dey
-	bne i4
-	inx
-	cpx #24
-	bne i3
-
-	+IRQEpilogue 138 , irq4
-
+; Animated bars behind the E114 logo
 irq2
 	+IRQPrologue
 
-	nop
-	nop
+	+DelayFor 33
 
-	ldx #24
-i5
-	lda coltab,x
-	ldy deltab+4,x
-	sta VIC2BorderColour
-	sta VIC2ScreenColour
-i6
-	dey
-	bne i6
-	inx
-	cpx #57
-	bne i5
+	!for .i , (57 - 24) {
+		!if ((.i+3) & 7) = 0 {
+			+DoLine1To2 coltab + 24 + .i - 1 , VIC2BorderColour , VIC2ScreenColour , 8
+		} else {
+			+DoLine1To2 coltab + 24 + .i - 1 , VIC2BorderColour , VIC2ScreenColour , 51
+		}
+	}
 
 	+IRQEpilogue 122 , irq3
 
-irq4
+; Bottom blue logo fade out
+irq3
 	+IRQPrologue
 
-	ldx #56
-i7
-	lda coltab+8,x
-	ldy #7
-	sta VIC2ExtraBackgroundColour1
-	lda coltaz,x
-	sta VIC2ExtraBackgroundColour2
-i8
-	dey
-	bne i8
-	inx
-	cpx #$80
-	bne i7
+	+DelayFor 53
 
-	+IRQEpilogue 242 , irq5
+	!for .i , (24 - 16) {
+		!if ((.i+0) & 7) = 0 {
+			+DoLine1To2 coltab + 16 + .i - 1 , VIC2BorderColour , VIC2ScreenColour , 8
+		} else {
+			+DoLine1To2 coltab + 16 + .i - 1, VIC2BorderColour , VIC2ScreenColour , 51
+		}
+	}
 
+	+IRQEpilogue 138 , irq4
+
+; Scrolling message bars
 irq5
-	+IRQPrologueXScroll
+	+IRQPrologue
 
-	ldx #0
-i10
-	lda coltabBot,x
-	ldy deltab,x
-	sta VIC2BorderColour
-	sta VIC2ScreenColour
-i11
-	dey
-	bne i11
-	inx
-	cpx #10
-	bne i10
+smXScr	lda #7
+	sta VIC2ScreenControlH
+
+	+DelayFor 27
+
+	!for .i , (10 - 0) {
+		!if ((.i+7) & 7) = 0 {
+			+DoLine1To2 coltabBot + 0 + .i - 1 , VIC2BorderColour , VIC2ScreenColour , 8
+		} else {
+			+DoLine1To2 coltabBot + 0 + .i - 1, VIC2BorderColour , VIC2ScreenColour , 51
+		}
+	}
 
 	lda #%11000
 	sta VIC2ScreenControlH
@@ -532,9 +536,15 @@ cnt1 !by 0
 ;MPi: TODO: Make the colour bars check the different music routine addresses for the status updates.
 
 mainline
+	; Enable these two lines to see what time outside of the IRQs we have left
+;	inc VIC2BorderColour
+;	jmp mainline
+
 	; Wait for the bottom of the screen before updating everything
 	lda #255
 .wl1
+	; Enable his line to see what time we have left
+;	inc VIC2BorderColour
 	cmp VIC2Raster
 	bne .wl1
 
@@ -565,6 +575,7 @@ smP3	jsr $3006
 	sta smP1+2
 	sta smP2+2
 	sta smP3+2
+	sta smP4+2
 	jmp .continueMainlineNoPlay
 .cnot1
 
@@ -897,49 +908,50 @@ bar3
 !by 5,3,13,1,1,13,3,5
 !by 5,3,13,1,1,13,3,5
 barcnt !by 7,7,7,7
-btog !by 0
-bcnt1 !by 3
+barDelayCount !by 3
 
 barcheck
+	dec barDelayCount
+	bne .testBars
+	lda #3
+	sta barDelayCount
+	ldx #3
+.updateBarCounters
+	lda barcnt,x
+	beq .skipBar
+	dec barcnt,x
+.skipBar
+	dex
+	bpl .updateBarCounters
+
+.testBars
 	ldx #2
 bc1
-smP2	lda $300c,x		; .doubleNoteDurationLo
-	beq bc3
-bc3zy
-	lda bcnt1
-	and #3
+smP2	lda $3000+OffsetTonoteDurationCounter,x		; .doubleNoteDurationLo
 	bne bc2
-	lda barcnt,x
-	beq bc2z
-	dec barcnt,x
-bc2z
-	cpx #2
+smP4	lda $3000+OffsetToGate,x
+	and #1
 	bne bc2
-	lda barcnt+1,x
-	beq bc2
-	dec barcnt+1,x
-	jmp bc2
-bc3
+
+	; If the target colour bar is already quite large then set the last bar instead. Since we have 4 bars to update we can use this to show when the music gets busy. :)
 	lda barcnt,x
-	cmp #6
+	cmp #4
 	bcs bc3m
 bc3y
 	lda #7
 	sta barcnt,x
 	jmp bc2
-bc3z
-	lda btog
-	eor #1
-	sta btog
-	cmp #1
-	beq bc3y
+
 bc3m
+	; Set forth bar
 	lda #7
 	sta barcnt+3
+
 bc2
 	dex
 	bpl bc1
-	inc bcnt1
+
+	; Now update the colours used for the bars
 	ldx #3
 bc4
 	lda barl,x
@@ -1139,6 +1151,8 @@ smSTP	lda scrollText
 	rts
 
 !if 0 {
+OffsetTonoteDurationCounter = $c
+
 musicTitle1 !scr "berzerk redux"
 !by 0
 
@@ -1180,7 +1194,9 @@ scrollTextEnd
 
 
 
-!if 1 {
+!if 0 {
+OffsetTonoteDurationCounter = $c
+
 musicTitle1 !scr "mfit remix"
 !by 0
 
@@ -1218,3 +1234,70 @@ scrollTextEnd
 *=$7800
 !bin "../MusicEditor/R7800MDL.P00",,$1c
 }
+
+
+!if 1 {
+OffsetTonoteDurationCounter = $d
+; This can change depending on the version of the music player source
+OffsetToGate = $10
+
+musicTitle1 !scr "grid zone"
+!by 0
+
+musicTitle2 !scr "dairy ice cream"
+!by 0
+
+musicTitle3 !scr "mcblagger"
+!by 0
+
+musicTitle4 !scr "border blast"
+!by 0
+
+musicTitle5 !scr "dinosaur disco"
+!by 0
+
+scrollText
+!scr "            use keys 1 to 5 to choose the music        "
+!scr "press run stop to stop the music        "
+!scr "all music composed by richard bayliss       "
+scrollTextEnd
+
+*=$3000
+!bin "R3000Grid.prg",,$2
+
+*=$4000
+!bin "R4000Diary.prg",,$2
+
+*=$5000
+!bin "R5000Snatch.prg",,$2
+
+*=$6100
+!bin "R6100Border.prg",,$2
+
+*=$7800
+!bin "R7800Disco.prg",,$2
+}
+
+!align 255, 0
+irq4
+	+IRQPrologue
+
+	+DelayFor 49
+
+	!for .i , ($81 - 56) {
+		!if ((.i+0) & 7) = 0 {
+			+DoLine2To2 coltab + 8 + 56 + .i  , VIC2ExtraBackgroundColour1 , coltaz + 56 + .i , VIC2ExtraBackgroundColour2 , 4
+;			+DoLine2To2 coltab + 8 + 56 + .i , VIC2BorderColour , coltaz + 56 + .i , VIC2ScreenColour , 4
+		} else {
+			+DoLine2To2 coltab + 8 + 56 + .i  , VIC2ExtraBackgroundColour1 , coltaz + 56 + .i , VIC2ExtraBackgroundColour2 , 47
+;			+DoLine2To2 coltab + 8 + 56 + .i , VIC2BorderColour , coltaz + 56 + .i , VIC2ScreenColour , 47
+		}
+	}
+
+	lda coltab + 8 + 57
+	sta VIC2ExtraBackgroundColour2
+	lda coltaz + 57
+	sta VIC2ExtraBackgroundColour1
+
+	+IRQEpilogue 242 , irq5
+

@@ -4,9 +4,9 @@
 
 
 !source "../stdlib/stdlib.a"
-!to "TestIRQDisk.prg", cbm
-!sl "TestIRQDisk.map"
-!svl "TestIRQDisk.lbl"
+!to "TestIRQDisk2.prg", cbm
+!sl "TestIRQDisk2.map"
+!svl "TestIRQDisk2.lbl"
 !cpu 6510
 !ct pet
 
@@ -393,19 +393,7 @@ InitIRQ
 
 ; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
 !zn {
-; Include the private code for each machine type
-!if IRQDisk_MachineTarget & IRQDisk_MachineTypeVIC20 {
-!source "IRQDiskVIC20.a"
-}
-!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC16 {
-!source "IRQDiskC16.a"
-}
-!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC64 {
 !source "IRQDiskC64.a"
-}
-!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC128 {
-!source "IRQDiskC128.a"
-}
 !source "IRQDisk.a"
 !source "stdlib1541.a"
 !source "IRQDiskDriveCode.a"
