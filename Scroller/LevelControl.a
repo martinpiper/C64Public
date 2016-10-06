@@ -76,9 +76,16 @@ LevelFrameLogic
 DoPlayerSwapTable !by 0 , 1 , 0 , 1 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 0 , 0 , 1 , 0 , 0 , 0 , 0
 					 ;1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24
 }
+LevelDoSkipNow
 .doNextLevel
-!ifdef WackyWaste {
+	lda LevelSwitchOverride
+	bmi .doNormalAdvance1
+	sta LevelNum
+	jmp .odoNormalAdvance1
+.doNormalAdvance1
 	inc LevelNum
+.odoNormalAdvance1
+!ifdef WackyWaste {
 	ldx LevelNum
 	lda DoPlayerSwapTable,x 
 	beq .overPlayerSwap2
@@ -135,10 +142,14 @@ DoPlayerSwapTable !by 0 , 1 , 0 , 1 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
 .noWrap2
 	sta oldScrollMapHY2
 
+	lda LevelSwitchOverride
+	bpl .fakeRedraw
+
 	ldy #6
 	lda (tempWork0),y
 	bne .notRedraw
 
+.fakeRedraw
 	; Must be redraw
 	jsr LevelProgress
 
@@ -166,7 +177,9 @@ DoPlayerSwapTable !by 0 , 1 , 0 , 1 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
 
 	; Must be loop
 	jsr AnimationKillEverythingExceptPlayers
-	lda #levelStart
+	lda #-1
+	sta LevelSwitchOverride
+	lda #0
 	sta LevelNum
 	lda #<LevelProperties
 	sta tempWork0
@@ -312,6 +325,8 @@ DoPlayerSwapTable !by 0 , 1 , 0 , 1 , 1 , 0 , 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
 .exitLevelLogic
 	lda #0
 	sta LevelWantPushScroll
+	lda #-1
+	sta LevelSwitchOverride
 	rts
 
 !zn
@@ -365,8 +380,45 @@ LevelSetupNextLevel
 	sta LevelStaticCountFrames
 	rts
 
+LevelSwitchOverride !by -1
+
 !zn
 LevelProgress
+	ldx LevelSwitchOverride
+	bmi .noOverride1
+
+	lda #<LevelProperties
+	sta tempWork0
+	lda #>LevelProperties
+	sta tempWork1
+.lc1
+	cpx #0
+	beq .lc2
+	dex
+	lda tempWork0
+	clc
+	adc #7
+	sta tempWork0
+	bcc .lc1
+	inc tempWork1
+	jmp .lc1
+.lc2
+	lda tempWork0
+	sta LevelPointer
+	lda tempWork1
+	sta LevelPointer+1
+
+	lda #0
+	sta oldScrollMapHY
+	sta oldScrollMapHY2
+	sta LevelStaticCountSeconds
+	sta frameScrollPos
+	lda #4
+	sta scrollMapLPos
+
+	jmp .noCarry
+
+.noOverride1
 	lda tempWork0
 	clc
 	adc #7
@@ -381,3 +433,14 @@ LevelProgress
 	lda tempWork1
 	sta LevelPointer+1
 	rts
+
+
+!zn
+LevelDoSwitch
+	sta LevelSwitchOverride
+
+	lda #0
+	sta frameTargetVelY
+
+	jsr LevelDoSkipNow
+	jmp SkipLevelFrameLogic	; Must skip the level control logic this frame due to the skip

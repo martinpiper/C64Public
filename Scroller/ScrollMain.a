@@ -871,9 +871,38 @@ ScrollerDemoMainline
 }
 	; Start of the real game frame in whatever remaining time is left which may occur during the next frame time.
 	jsr HandleUserInput
+
+!ifdef Scroller_LevelSkipDemoCode {
+	; Only consider running level skip code when screen bank 0 is displayed.
+	; LevelDoSwitch can only be called at this point in the mainline.
+	; This means if you want to trigger a level skip you will need to store a temporary flag value somewhere and then read the flag at this point.
+	; Otherwise you will see a colour flash as the screen is redrawn in the wrong bank.
+	lda topScreenBank
+	bne .skipLevelSkipDemo
+
+.smOnceOnly	lda #1			; Only trigger this code once when fire is pressed
+	beq .skipLevelSkipDemo
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardRowsJoystickB
+	bne .skipLevelSkipDemo
+
+	dec .smOnceOnly+1		; Trigger only once by clearing the flag
+
+	inc VIC2BorderColour	; Debug border change
+
+	; Now do the actual level skip
+	lda #Scroller_LevelSkipDemoCode	; The level number to jump to
+	jmp LevelDoSwitch
+
+.skipLevelSkipDemo
+}
+
 !ifdef Scroller_MultiDirection { } else {
 	jsr LevelFrameLogic
 }
+SkipLevelFrameLogic
+
 	jsr ScrollerCalculate
 	; Game object logic
 !ifdef Scroller_MultiDirection { } else {

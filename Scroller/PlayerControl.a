@@ -135,7 +135,7 @@ DoPlayerPositionLinkCode
 	sta .playerInformation+PlayerGameOffset_TargetVelX
 	sta .playerInformation+PlayerGameOffset_TargetVelY
 	; Update the velocity at which we want to travel
-	lda #%1000
+	lda #JoystickBits_Right
 .smj1	bit CIA1KeyboardColumnJoystickA
 	bne .o1
 	lda .playerInformation+PlayerGameOffset_TargetVelX
@@ -143,7 +143,7 @@ DoPlayerPositionLinkCode
 	adc .playerProperties+PlayerOffset_Speed
 	sta .playerInformation+PlayerGameOffset_TargetVelX
 .o1
-	lda #%0100
+	lda #JoystickBits_Left
 .smj2	bit CIA1KeyboardColumnJoystickA
 	bne .o2
 	lda .playerInformation+PlayerGameOffset_TargetVelX
@@ -151,7 +151,7 @@ DoPlayerPositionLinkCode
 	sbc .playerProperties+PlayerOffset_Speed
 	sta .playerInformation+PlayerGameOffset_TargetVelX
 .o2
-	lda #%0010
+	lda #JoystickBits_Down
 .smj3	bit CIA1KeyboardColumnJoystickA
 	bne .o3
 	lda .playerInformation+PlayerGameOffset_TargetVelY
@@ -159,7 +159,7 @@ DoPlayerPositionLinkCode
 	adc .playerProperties+PlayerOffset_Speed
 	sta .playerInformation+PlayerGameOffset_TargetVelY
 .o3
-	lda #%0001
+	lda #JoystickBits_Up
 .smj4	bit CIA1KeyboardColumnJoystickA
 	bne .o4
 	lda .playerInformation+PlayerGameOffset_TargetVelY
@@ -473,7 +473,7 @@ DoPlayerPositionLinkCode
 ;	jmp .cheatFire
 
 
-	lda #%10000
+	lda #JoystickBits_Fire
 .smj5	bit CIA1KeyboardColumnJoystickA
 	beq .fireBullet
 	; Reset debounce
