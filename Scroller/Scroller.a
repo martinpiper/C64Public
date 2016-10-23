@@ -13,10 +13,41 @@ frameScrollY			!by 0	; Pixels
 frameScrollOldX			!by 0	; Pixels
 frameScrollOldY			!by 0	; Pixels
 
+scrollerRealMovementXPixels !by 0
+scrollerRealMovementYPixels !by 0
+
 scrollMapHX	!by $00		; Block pos in map
 scrollMapLX	!by $00		; Char pos in block (0-3)
 scrollMapHY	!by $00		; Block pos in map
 scrollMapLY	!by $00		; Char pos in block (0-3)
+
+!zn {
+ScrollerInitVariables
+	lda #0
+	sta frameWantScrX
+	sta frameWantScrY
+	sta frameTotalScrScroll
+	sta frameScrollMoveColours
+	sta frameScrollPreCalcX
+	sta frameScrollPreCalcY
+	sta frameScrollPreCalcXVel
+	sta frameScrollPreCalcYVel
+	sta frameScrollX
+	sta frameScrollY
+	sta frameScrollOldX
+	sta frameScrollOldY
+	sta scrollerRealMovementXPixels
+	sta scrollerRealMovementYPixels
+
+	sta scrollMapHX
+	sta scrollMapLX
+	sta scrollMapHY
+	sta scrollMapLY
+
+	sta topScreenScrollX
+	sta topScreenScrollY
+	rts
+}
 
 !zn {
 ScrollerInitTables
@@ -42,9 +73,6 @@ ScrollerInitTables
 	bne .fma1
 	rts
 }
-
-scrollerRealMovementXPixels !by 0
-scrollerRealMovementYPixels !by 0
 
 !zn {
 ; To be called as one of the first functions in the frame. Can be called even if the screen is being displayed.

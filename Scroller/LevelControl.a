@@ -442,5 +442,7 @@ LevelDoSwitch
 	lda #0
 	sta frameTargetVelY
 
+	jsr AnimationKillEverythingExceptPlayers
+	jsr AnimationEnemyTriggerInit
 	jsr LevelDoSkipNow
 	jmp SkipLevelFrameLogic	; Must skip the level control logic this frame due to the skip

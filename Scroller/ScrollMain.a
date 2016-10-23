@@ -222,12 +222,12 @@ InitialiseGameWithoutWait
 }
 
 !ifdef Scroller_MultiDirection {
-!ifdef UseAnimation_Init {
+!ifdef UseAnimationInit {
 	jsr AnimationInit
 	jsr AnimationClearMultiplexor
 	jsr Multiplex_Sort
 }
-!ifdef UseAnimation_Init2 {
+!ifdef UseAnimationInit2 {
 	jsr AnimationInit2
 }
 } else {
@@ -305,11 +305,11 @@ InitialiseGameWithoutWait
 	jsr AnimationEnemyTriggerInit
 	jsr AnimationEnemyTriggerSkipMap
 
+}
 	; Reset the exit level counter/flag and the pause flag
 	lda #0
 	sta ScrollerExitMainLineCounter
 	sta MainlineIsPaused
-}
 
 	jsr DrawMap
 	lda #$cb
@@ -390,14 +390,12 @@ InitPlayer2
 	rts
 }
 
-; If this is alreadt at 0 then don't count down and don't exit.
-; If this is > 0 then count down and if the count reaches zero then exit the mainline loop.
-ScrollerExitMainLineCounter !by 0
 }
 
-!ifdef Scroller_MultiDirection { } else {
+; If this is already at 0 then don't count down and don't exit.
+; If this is > 0 then count down and if the count reaches zero then exit the mainline loop.
+ScrollerExitMainLineCounter !by 0
 MainlineIsPaused !by 0
-}
 
 ; The frame logic is:
 ; Wait for the top interrupt to happen.
@@ -412,11 +410,11 @@ MainlineIsPaused !by 0
 ; If needed: Do the character screen scroll. Or;
 ; If needed: Switch screen banks (for the top interrupt to display). Update colour scrolling screen.
 !zn
-!ifdef Scroller_MultiDirection { } else {
 .pauseKeyPressed !by 0
 .quitKeyPressed !by 0
 .scannedKeys !by 0
 .rsReleasetoggle !by 0
+!ifdef Scroller_MultiDirection { } else {
 .player1SpellKeyPressed !by 0
 .player2SpellKeyPressed !by 0
 }
@@ -433,15 +431,16 @@ ScrollerDemoMainline
 	sta VIC2BorderColour
 }
 
-!ifdef Scroller_MultiDirection { } else {
 	; Pause and quit key check
 	; MPi: TODO: Consider tidying this into a couple of functions
 .lk1
 	lda #0
 	sta .pauseKeyPressed
 	sta .quitKeyPressed
+!ifdef Scroller_MultiDirection { } else {
 	sta .player1SpellKeyPressed
 	sta .player2SpellKeyPressed
+}
 	sta CIA1KeyboardColumnJoystickA
 	lda CIA1KeyboardRowsJoystickB
 	cmp #$ff
@@ -514,10 +513,9 @@ ScrollerDemoMainline
 	; Check for the fire buttons unpausing
 	lda MainlineIsPaused
 	beq .overFire
-	lda #%10000
+	lda #JoystickBits_Fire
 	bit CIA1KeyboardColumnJoystickA
 	beq .fireUnpause
-	lda #%10000
 	bit CIA1KeyboardRowsJoystickB
 	beq .fireUnpause
 	jmp .overFire
@@ -561,6 +559,7 @@ ScrollerDemoMainline
 	jmp ScrollerDemoMainline
 .notPaused
 
+!ifdef Scroller_MultiDirection { } else {
 	; Process any second player pressing their fire button
 	lda PlayerNumberToSpawnNext
 	bmi .noOthers
@@ -568,12 +567,12 @@ ScrollerDemoMainline
 	lda TitleScreenJoystickStarted
 	beq .testStick1
 	; Test stick 0
-	lda #%10000
+	lda #JoystickBits_Fire
 	bit CIA1KeyboardColumnJoystickA
 	beq .doSpawnCommon
 	jmp .noOthers
 .testStick1
-	lda #%10000
+	lda #JoystickBits_Fire
 	bit CIA1KeyboardRowsJoystickB
 	bne .noOthers
 .doSpawnCommon
@@ -596,9 +595,11 @@ ScrollerDemoMainline
 	; Mark the next attempt to fail earlier to avoid wasting time
 	lda #$ff
 	sta PlayerNumberToSpawnNext
-
 .noOthers
-} ; < else from !ifdef Scroller_MultiDirection
+} ;<<!ifdef Scroller_MultiDirection
+
+
+
 
 !ifdef Scroller_LOTD {
 	; MPi: TODO: Move this code to somewhere more sensible like the player control
@@ -1165,7 +1166,7 @@ SkipLevelFrameLogic
 !ifdef Paralax_Enable {
 	jsr ParalaxUpdate
 }
-!ifdef Scroller_MultiDirection { } else {
+
 	lda ScrollerExitMainLineCounter
 	beq .doLoop
 	dec ScrollerExitMainLineCounter
@@ -1173,7 +1174,7 @@ SkipLevelFrameLogic
 	; Must exit the loop now
 	rts
 .doLoop
-}
+
 	jmp ScrollerDemoMainline
 
 !ifdef Multiplex_SplitSort {
@@ -1182,13 +1183,14 @@ MultiplexSort_MaxSprSorted !by 0
 
 !ifdef Scroller_MultiDirection { } else {
 .frameScoreUpdate !by 0
+}
+
 UnpauseAndSetVolume
 	lda #15
 	sta SIDVolumeFilter
 	lda #0
 	sta MainlineIsPaused
 	rts
-}
 
 !ifdef Scroller_LOTD {
 SpellPlayer1Counter !by 0
