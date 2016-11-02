@@ -240,6 +240,14 @@ Scroller_SpriteXAdjust = 1
 ;WackyWaste = 1
 
 
+; Define this to enable enemy bullet to player bullet collision detection
+;EnemyBulletToPlayerBulletTest = 1
+; If defined with EnemyBulletToPlayerBulletTest above these values will check for specific enemy bullet object types
+EnemyBulletToPlayerBulletTest_Type1 = 7
+EnemyBulletToPlayerBulletTest_Type2 = 8
+EnemyBulletToPlayerBulletTest_Type3 = 10
+
+
 ; Set these two values to the x position for the player's score panels
 ScorePlayer1XPos = 44
 ScorePlayer2XPos = 228

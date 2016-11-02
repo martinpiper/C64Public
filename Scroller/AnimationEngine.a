@@ -1909,7 +1909,7 @@ smSpellEffectRunningPlayerType	lda #$ff
 	stx .sprPair
 	tax
 	lda .isEnemyOrBulletType,x
-	beq .ecc2
+	beq .lecc2
 .isEnemyOrBulletSoTest
 
 	; Search a maximum of eight index entries weighted to before this entry but also appearing after the entry if there are less than eight before it.
@@ -1973,6 +1973,12 @@ smSpellEffectRunningPlayerType	lda #$ff
 	ldy .sprPair+1
 	lda AnimationType,y
 	bmi .noHit
+!ifdef EnemyBulletToPlayerBulletTest {
+	cmp #AnimationType_Player1Bullet
+	beq .registerEnemyBulletHitPlayerBullet
+	cmp #AnimationType_Player2Bullet
+	beq .registerEnemyBulletHitPlayerBullet
+}
 	cmp #AnimationType_Player1
 	beq .registerHitWithEnemy2
 	cmp #AnimationType_Player2
@@ -1995,12 +2001,41 @@ smSpellEffectRunningPlayerType	lda #$ff
 .tempReg !by 0,0
 .sprPair !by 0,0
 
-
-
 .registerHitWithEnemy2
 	jsr .areSpritesClose
 	bcs .noHit
 	jmp .enemyBulletHitPlayer
+
+!ifdef EnemyBulletToPlayerBulletTest {
+; X = enemy bullet animation index
+; Y = player bullet animation index
+.registerEnemyBulletHitPlayerBullet
+	lda AnimationType,x
+	; Check specific types of enemy bullet
+	; Add suitable type checks here...
+!ifdef EnemyBulletToPlayerBulletTest_Type1 {
+	cmp #EnemyBulletToPlayerBulletTest_Type1
+	beq .interested1
+}
+!ifdef EnemyBulletToPlayerBulletTest_Type2 {
+	cmp #EnemyBulletToPlayerBulletTest_Type2
+	beq .interested1
+}
+!ifdef EnemyBulletToPlayerBulletTest_Type3 {
+	cmp #EnemyBulletToPlayerBulletTest_Type3
+	beq .interested1
+}
+	jmp .noHit
+.interested1
+	jsr .areSpritesClose
+	bcs .noHit
+	lda #$ff
+	; Remove the enemy bullet
+	sta AnimationType,x
+	; Remove the player bullet
+;	sta AnimationType,y
+	jmp .noHit
+}
 
 .areSpritesClose
 	lda AnimationYPos,x
