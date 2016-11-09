@@ -2029,11 +2029,34 @@ smSpellEffectRunningPlayerType	lda #$ff
 .interested1
 	jsr .areSpritesClose
 	bcs .noHit
+
+	; Find out the type of the player bullet and store it for later use
+	lda AnimationType,y
+	sta .playerTypeOrBulletTypeThatKilled
+	jsr SetupScoreAdd
+
 	lda #$ff
-	; Remove the enemy bullet
-	sta AnimationType,x
 	; Remove the player bullet
-;	sta AnimationType,y
+	sta AnimationType,y
+
+	; Remove the enemy bullet
+;	sta AnimationType,x
+
+	; Or mutate the enemy bullet into an enemy death type
+	ldy #AnimationType_Enemy1Death+2
+	jsr AnimationMutateToType
+
+	; Add 500 points (50x10) to the player that shot the bullet
+	lda #50
+	jsr DoScoreAndLives
+
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	; The effect number to play
+	lda #5
+	jsr SFXInit
+}
+
+
 	jmp .noHit
 }
 
@@ -2167,63 +2190,10 @@ smSpellEffectRunningPlayerType	lda #$ff
 .notSpell
 }
 
-	; Implement score
-	; Add the score to the correct player that killed the enemy.
-	lda #<ScorePlayer1
-	sta tempWork0
-	lda #>ScorePlayer1
-	sta tempWork1
-!ifdef Scroller_SingleScoreLives { } else {
-	lda .playerTypeOrBulletTypeThatKilled
-	cmp #AnimationType_Player1
-	beq .itIsOK
-	cmp #AnimationType_Player1Bullet
-	beq .itIsOK
-	; Must be player 2 that did the dirty deed
-	lda #<ScorePlayer2
-	sta tempWork0
-	lda #>ScorePlayer2
-	sta tempWork1
-}
-.itIsOK
+	jsr SetupScoreAdd
 	lda AnimationPoints,x
-	jsr ScoreAdd
-	beq .noLifeIncrease
-!ifdef Scroller_SingleScoreLives { } else {
-	lda .playerTypeOrBulletTypeThatKilled
-	cmp #AnimationType_Player2
-	beq .itIsPlayer2
-	cmp #AnimationType_Player2Bullet
-	beq .itIsPlayer2
-}
-	; Must be player 1
-	; MPi: TODO: Macro this with the similar player code below
-	lda Player1Properties+PlayerOffset_ExtraLife
-	beq .noLifeIncrease
-	lda Player1Information+PlayerGameOffset_Lives
-	bmi .noLifeIncrease
-	inc Player1Information+PlayerGameOffset_Lives
-	inc ScorePlayer1LivesUpdated
-!ifdef Scroller_PlaySoundEffectsDuringGame {
-	lda #3
-	jsr SFXInit
-}
-	jmp .noLifeIncrease
-!ifdef Scroller_SingleScoreLives { } else {
-.itIsPlayer2
-	lda Player2Properties+PlayerOffset_ExtraLife
-	beq .noLifeIncrease
-	lda Player2Information+PlayerGameOffset_Lives
-	bmi .noLifeIncrease
-	inc Player2Information+PlayerGameOffset_Lives
-	inc ScorePlayer2LivesUpdated
-!ifdef Scroller_PlaySoundEffectsDuringGame {
-	lda #3+4
-	jsr SFXInit
-}
-}
-	; Fallthrough to .noLifeIncrease
-.noLifeIncrease
+	jsr DoScoreAndLives
+
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	lda AnimationExplosionSFX,x
 	beq .noSFX1
@@ -2314,6 +2284,70 @@ smSpellEffectRunningPlayerType	lda #$ff
 	rts
 .charThatHit !by 0
 
+; .playerTypeOrBulletTypeThatKilled must be initalised with the type of the player/bullet that did the hit
+SetupScoreAdd
+	; Implement score
+	; Add the score to the correct player that killed the enemy.
+	lda #<ScorePlayer1
+	sta tempWork0
+	lda #>ScorePlayer1
+	sta tempWork1
+!ifdef Scroller_SingleScoreLives { } else {
+	lda .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player1
+	beq .itIsOK
+	cmp #AnimationType_Player1Bullet
+	beq .itIsOK
+	; Must be player 2 that did the dirty deed
+	lda #<ScorePlayer2
+	sta tempWork0
+	lda #>ScorePlayer2
+	sta tempWork1
+}
+.itIsOK
+	rts
+
+; A = Score to add
+; .playerTypeOrBulletTypeThatKilled must be initalised with the type of the player/bullet that did the hit
+DoScoreAndLives
+	jsr ScoreAdd
+	beq .noLifeIncrease
+!ifdef Scroller_SingleScoreLives { } else {
+	lda .playerTypeOrBulletTypeThatKilled
+	cmp #AnimationType_Player2
+	beq .itIsPlayer2
+	cmp #AnimationType_Player2Bullet
+	beq .itIsPlayer2
+}
+	; Must be player 1
+	; MPi: TODO: Macro this with the similar player code below
+	lda Player1Properties+PlayerOffset_ExtraLife
+	beq .noLifeIncrease
+	lda Player1Information+PlayerGameOffset_Lives
+	bmi .noLifeIncrease
+	inc Player1Information+PlayerGameOffset_Lives
+	inc ScorePlayer1LivesUpdated
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #3
+	jsr SFXInit
+}
+	jmp .noLifeIncrease
+!ifdef Scroller_SingleScoreLives { } else {
+.itIsPlayer2
+	lda Player2Properties+PlayerOffset_ExtraLife
+	beq .noLifeIncrease
+	lda Player2Information+PlayerGameOffset_Lives
+	bmi .noLifeIncrease
+	inc Player2Information+PlayerGameOffset_Lives
+	inc ScorePlayer2LivesUpdated
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	lda #3+4
+	jsr SFXInit
+}
+}
+	; Fallthrough to .noLifeIncrease
+.noLifeIncrease
+	rts
 !zn
 AnimationBackupLastCollisionFrame
 	txa
