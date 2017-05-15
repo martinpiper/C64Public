@@ -1,0 +1,494 @@
+; Exit:
+; EQ = Entered sub-game
+; NE = No sub-game entry yet
+.llo1 jmp .o1
+CheckForSubGameEntry
+	; MPi: TODO: Here would be a good place to start testing for accessing a computer terminal
+
+	; Only consider entering the sub-game if the screen is not scrolling
+	; This is because the off-screen bank is used for the sub-game
+	lda #0
+;	ora scrollerRealMovementXPixels
+;	ora scrollerRealMovementYPixels
+;	ora frameWantScrX
+;	ora frameWantScrY
+	ora frameTotalScrScroll
+	ora frameScrollMoveColours
+	bne .llo1
+
+	; Figure out if we are pushing the joystick in the direction of a computer terminal
+	lda #JoystickBits_Up
+	bit JoystickA_Processed
+	bne .notUp
+
+	lda EnemyPositionsXLo
+	clc
+	adc #VIC2SpriteSizeX/2
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+
+	lda EnemyPositionsYLo
+	sec
+	sbc #MapTile_ComputerTerminalDistance
+	sta tempWork2
+	lda EnemyPositionsYHi
+	sbc #0
+	sta tempWork3
+
+	jsr GetMapTileFromPosition
+
+	cmp #MapTile_ComputerTerminalFacingDown
+	beq .lgotTerminal
+	jsr SubGame_ResetEnterTimer
+.notUp
+
+	lda #JoystickBits_Down
+	bit JoystickA_Processed
+	bne .notDown
+
+	lda EnemyPositionsXLo
+	clc
+	adc #VIC2SpriteSizeX/2
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+
+
+	lda EnemyPositionsYLo
+	clc
+	adc #VIC2SpriteSizeY+MapTile_ComputerTerminalDistance
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+
+	jsr GetMapTileFromPosition
+
+	cmp #MapTile_ComputerTerminalFacingUp
+	beq .lgotTerminal
+	jsr SubGame_ResetEnterTimer
+.notDown
+
+	jsr SubGame_ResetEnterTimer
+
+	jmp .o1
+
+.lgotTerminal
+	lda hackSubGameCounter
+	beq .o1
+
+	dec hackSubGameCounter
+	bne .o1
+	jmp .enter
+
+.o1
+	; NE set, so do nothing
+	lda #1
+	rts
+
+.enter
+	lda #0
+	sta frameTargetVelY
+	sta frameTargetVelX
+
+	jsr SubGameEnter
+
+	lda #0
+	; EQ set, so enter sub-game
+	rts
+
+
+GetMapTileFromPosition
+	jsr DivideBy32
+	jsr DivideBy32_2
+	ldy tempWork0
+	sty SubGame_ExitStateX
+	ldx tempWork2
+	stx SubGame_ExitStateY
+	lda MapTabL,x
+	sta tempWork0
+	lda MapTabH,x
+	sta tempWork1
+	lda (tempWork0),y
+	rts
+
+!zn
+BackupSprites
+!ifdef Animation_MemSize {
+!if Animation_MemSize >= 511 { !error "Too big!" }
+}
+
+	ldx #0
+.l1
+	lda Animation_StartMem,x
+	sta BackupAnimationMem,x
+	dex
+	bne .l1
+
+	ldx #Animation_MemSize-256
+.l2
+	lda Animation_StartMem+256-1,x
+	sta BackupAnimationMem+256-1,x
+	dex
+	bne .l2
+
+	jsr AnimationClear
+
+	rts
+
+!zn
+RestoreSprites
+	ldx #0
+.l1
+	lda BackupAnimationMem,x
+	sta Animation_StartMem,x
+	dex
+	bne .l1
+
+	ldx #Animation_MemSize-256
+.l2
+	lda BackupAnimationMem+256-1,x
+	sta Animation_StartMem+256-1,x
+	dex
+	bne .l2
+	rts
+
+!zn
+ClearGameColourTo
+	ldx #0
+.clr2
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	inx
+	bne .clr2
+
+	ldx #31
+.clr3
+	sta COLOURRAM+$300,x
+	dex
+	bpl .clr3
+	rts
+
+
+!zn
+ClearGameScreen
+	ldy topScreenBank
+	ldx BankToScreenAddr,y
+	stx .sm1+2
+	inx
+	stx .sm2+2
+	inx
+	stx .sm3+2
+	inx
+	stx .sm4+2
+
+	ldx #0
+	lda #ClearGameScreensChar
+.l2
+.sm1	sta $ff00,x
+.sm2	sta $ff00,x
+.sm3	sta $ff00,x
+	inx
+	bne .l2
+
+	ldx #31
+.l3
+.sm4	sta $ff00,x
+	dex
+	bpl .l3
+	rts
+
+SubGameAllocateExplosionSprite
+	jsr AnimationFindFreeSlot
+	bcs .noFree
+
+	jsr Rand
+	cmp #$80
+	bcs .ex1
+	ldy #9
+	jsr AnimationInitWithType
+	jmp .ex2
+.ex1
+	ldy #4
+	jsr AnimationInitWithType
+.ex2
+	jsr Rand
+	and #15
+	sta AnimationSpriteColour,x
+	clc
+
+.noFree
+	rts
+
+!zn
+SubGameAddWinSprites
+	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+	sta tempWork8
+.l1
+	jsr SubGameAllocateExplosionSprite
+	bcs .noFree
+.t = (SubGame_ScreenLeft*8)+VIC2SpriteXBorderLeft
+	lda #<.t
+	sta AnimationXPosLo,x
+	lda #>.t
+	sta AnimationXPosHi,x
+
+	jsr Rand
+	and #7
+	clc
+	adc #2
+	sta AnimationSimpleMoveX,x
+	lda #0
+	sta AnimationSimpleMoveY,x
+
+	lda tempWork8
+	sta AnimationYPos,x
+
+	lda tempWork8
+	clc
+	adc #4
+	sta tempWork8
+	cmp #(SubGame_ScreenBottom*8)+VIC2SpriteYBorderTop
+	bcc .l1
+
+.noFree
+	rts
+
+!zn
+SubGameAddLoseSprites
+	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+	sta tempWork8
+.l1
+	jsr SubGameAllocateExplosionSprite
+	bcs .noFree
+.t = (SubGame_ScreenRight*8)+VIC2SpriteXBorderLeft
+	lda #<.t
+	sta AnimationXPosLo,x
+	lda #>.t
+	sta AnimationXPosHi,x
+
+	jsr Rand
+	and #7
+	eor #-1
+	sec
+	sbc #2
+	sta AnimationSimpleMoveX,x
+	lda #0
+	sta AnimationSimpleMoveY,x
+
+	lda tempWork8
+	sta AnimationYPos,x
+
+	lda tempWork8
+	clc
+	adc #4
+	sta tempWork8
+	cmp #(SubGame_ScreenBottom*8)+VIC2SpriteYBorderTop
+	bcc .l1
+
+.noFree
+	rts
+
+SubGameSinTab
+!for .i , 256 {
+	!by 64 + (64 * sin( (float(.i) / 128) * 3.14159265 ))
+}
+
+!zn
+SubGameInventoryPopulate
+	lda #0
+	sta tempWork8
+	sta SubGameMaxDisplayed
+	sta SubGamePickPos
+
+	; The door
+	jsr AnimationFindFreeSlot
+	ldy #8
+	jsr AnimationInitWithType
+	lda #128
+	sta AnimationYPos,x
+
+.l1
+	ldy tempWork8
+	lda PlayerInventory,y
+	bmi .noItem
+
+	; The pickups, without expirations
+	jsr AnimationFindFreeSlot
+	ldy #13
+	jsr AnimationInitWithType
+	lda #128
+	sta AnimationYPos,x
+
+	ldy tempWork8
+	lda PlayerInventory,y
+	sta AnimationSpriteColour,x
+
+	inc SubGameMaxDisplayed
+
+.noItem
+	inc tempWork8
+	lda tempWork8
+	cmp #PlayerInventory_Max
+	bne .l1
+
+	lda #1
+	sta SubGameGotFireFlag
+
+	rts
+
+!zn
+.dirLatch			!by 0
+SubGamePickPos		!by 0
+SubGameGotFireFlag	!by 1	; Likely to be true since fire is held down when entering the sub-game
+SubGameMaxDisplayed	!by 0
+
+.bouncePos			!by 0
+
+.lquickExit jmp .quickExit
+SubGameHandleInventory
+	lda SubGameMaxDisplayed
+	beq .lquickExit
+
+	lda #JoystickBits_Left
+	bit JoystickA_Processed
+	beq .gotLeft
+	lda #JoystickBits_Right
+	bit JoystickA_Processed
+	beq .gotRight
+	lda #0
+	sta .dirLatch
+	jmp .sgu1
+
+.gotLeft
+	+SubGame_DirLatch .dirLatch , .sgu1
+	dec SubGamePickPos
+	bpl .sgu1
+	lda #0
+	sta SubGamePickPos
+	jmp .sgu1
+
+.gotRight
+	+SubGame_DirLatch .dirLatch , .sgu1
+	inc SubGamePickPos
+	lda SubGamePickPos
+	cmp SubGameMaxDisplayed
+	bcc .sgu1
+	lda SubGameMaxDisplayed
+	sta SubGamePickPos
+	jmp .sgu1
+
+.sgu1	; Multiple paths return via here
+
+
+	lda SubGamePickPos
+	sta tempWork8
+	ldx #0
+.l1
+
+	lda tempWork8
+	asl
+	asl
+	asl
+	asl
+	clc
+	adc #192
+	tay
+	lda SubGameSinTab,y
+	clc
+	adc #58
+	sta AnimationYPos,x
+
+	tya
+	clc
+	adc #64
+	tay
+
+	lda SubGameSinTab,y
+	clc
+	adc #100
+	sta AnimationXPosLo,x
+	lda #0
+	adc #0
+	sta AnimationXPosHi,x
+
+	dec tempWork8
+
+.next
+	cpx SubGameMaxDisplayed
+	beq .endList
+	inx
+	jmp .l1
+.endList
+
+	; Highlight the selected item by bouncing it
+	lda .bouncePos
+	clc
+	adc #8
+	sta .bouncePos
+	tay
+	lda SubGameSinTab,y
+	sec
+	sbc #64
+	cmp #$80
+	ror
+	cmp #$80
+	ror
+	cmp #$80
+	ror
+	cmp #$80
+	ror
+	clc
+	ldx SubGamePickPos
+	adc AnimationYPos,x
+	sta AnimationYPos,x
+
+
+	; Check for something being chosen
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .gotFire
+	lda #0
+	sta SubGameGotFireFlag
+.debounceFailed
+	sec
+	rts
+
+.gotFire
+	lda SubGameGotFireFlag
+	bne .debounceFailed
+
+.quickExit
+	jsr AnimationClear
+
+	; -1 SubGamePickPos means the door was chosen, else the inventory item was chosen
+	dec SubGamePickPos
+	bmi .itsADoor
+
+	; Convert to an item colour
+	ldx SubGamePickPos
+	lda AnimationSpriteColour+1,x
+	sta SubGamePickPos
+
+	; Look for and remove one of the used item type from the inventory since it's been selected for use
+	ldx #PlayerInventory_Max-1
+.l2
+	cmp PlayerInventory,x
+	bne .notThisEntry
+
+	lda #$ff
+	sta PlayerInventory,x
+
+	jmp .itsADoor
+.notThisEntry
+	dex
+	bpl .l2
+
+.itsADoor
+
+	clc
+	rts

@@ -1,0 +1,134 @@
+Teleport_EnterTimer			!by 0
+Teleport_EnterTimerLatch	!by 0
+
+!zn
+; Exit:
+; EQ = Entered teleport
+; NE = No teleport entry yet
+CheckTeleportAction
+	lda Teleport_EnterTimerLatch
+	bne .exitNoReset
+
+	lda #0
+	ora scrollerRealMovementXPixels
+	ora scrollerRealMovementYPixels
+	ora frameWantScrX
+	ora frameWantScrY
+	ora frameTotalScrScroll
+	ora frameScrollMoveColours
+	beq .check
+.exit
+	jsr Teleport_ResetEnterTimer
+.exitNoReset
+	lda #1
+	rts
+
+.check
+	lda EnemyPositionsXLo
+	and #31
+	cmp #9
+	bcs .exit
+	lda EnemyPositionsYLo
+	and #31
+	cmp #12
+	bcs .exit
+
+	lda EnemyPositionsXLo
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sta tempWork1
+
+	lda EnemyPositionsYLo
+	sta tempWork2
+	lda EnemyPositionsYHi
+	sta tempWork3
+
+	jsr GetMapTileFromPosition
+
+	cmp #MapTile_Teleport
+	bne .exit
+
+	inc Teleport_EnterTimer
+	lda Teleport_EnterTimer
+	cmp #10
+	bne .exitNoReset
+
+	; Entering the teleport
+	inc Teleport_EnterTimerLatch
+
+	ldx #0
+.mt1
+	lda TeleportPairs,x
+	bmi .mt3
+	cmp SubGame_ExitStateX
+	bne .mt2
+
+	lda TeleportPairs+1,x
+	bmi .mt3
+	cmp SubGame_ExitStateY
+	bne .mt2
+
+	lda TeleportPairs+2,x
+	bmi .exitLevel
+	sta EnemyPositionsX
+	lda TeleportPairs+3,x
+	sta EnemyPositionsY
+	jmp .mt3
+
+.mt2
+	inx
+	inx
+	inx
+	inx
+	jmp .mt1
+.exitLevel
+	; TODO - Exit level code goes here
+	lda #8
+	sta EnemyPositionsX
+	lda #3
+	sta EnemyPositionsY
+.mt3
+
+	jsr EnemyProcessActivationInit
+	jsr PlayerBullets_Init
+	jsr AnimationClearDynamics
+	jsr AnimationMapEnemyInit
+	jsr AnimationProcessAllActivations
+	jsr DrawMap
+	jsr Teleport_CopyScreen
+	jsr ScrollerFlipBank
+
+.entered
+	lda #0
+	rts
+
+
+!zn
+Teleport_ResetEnterTimer
+	lda #0
+	sta Teleport_EnterTimer
+	sta Teleport_EnterTimerLatch
+	rts
+
+
+!zn
+Teleport_CopyScreen
+	ldx #0
+.clr2
+	lda $c800,x
+	sta $cc00,x
+	lda $c800+$100,x
+	sta $cc00+$100,x
+	lda $c800+$200,x
+	sta $cc00+$200,x
+	inx
+	bne .clr2
+
+	ldx #31
+.clr3
+	lda $c800+$300,x
+	sta $cc00+$300,x
+	dex
+	bpl .clr3
+
+	rts

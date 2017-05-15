@@ -1,0 +1,823 @@
+* If the maze is surrounded by a boundary then it would be easier to store the index into the array rather than the x/y position.
+
+
+* It might be better to create a stack of points to process while expanding for the routes instead of doing a sweep of the whole level every time.
+    It's more memory, but less iterations.
+> It's much better, many less iterations.
+> Tests updated to show the fewer iterations.
+
+
+* Java implementation of a singly linked list of used nodes and free nodes.
+    Added IndexList feature and class
+
+
+Check for expected solve.maxIndexSize in JUnit and BDD
+
+
+* Instead of singly linked list use a simple linear array with a start and end value.
+    Wrap around will need to be supported of course.
+** Created FIFO instead
+
+
+* 6502 implementation of FIFO then Solve
+Added MazeGlue6502.FIFO and MazeGlue6502.Maze
+MazeGlue6502.FIFO starts to assemble FIFO.a and call it
+* 6502 FIFO tests work
+
+
+
+*Is this code actually needed?
+		// Try to grow the current square
+		Node node = grid.getNode(index);
+		if (!node.isBlocked || (node.blockedBeyond != -1 && currentFrame > node.blockedBeyond))
+		{
+A node pulled from the index list should always be not blocked and should always not be blocked at any time...
+Simplified to use currentSolveID instead.
+
+
+
+
+* Implement Citadel2\asm\MazeSolve.a by replicating functionality from Citadel2\src\main\java\Solver\Solve.java
+	* Implement the_unit_plots_a_route
+	* Solve works on an index, the index for the 6502 version can be addresses of Nodes
+	* Hence it is able to use an array of Nodes
+	* Process the Maze into an array of Node objects like Grid.Grid()
+	* Each Node mirrors Citadel2\src\main\java\Solver\Node.java so it is 7 bytes long (at the moment)
+	* indexEarlyOut can actually be an address for the early out node
+	* setStartPosition can actually be an address for the start Node
+	* Using memory addresses means there is no size limit to the maze due to 8 bit index registers (useful!)
+
+MazeSolve_step implemented - It seems to pass the first real side-by-side validation with the java code.
+	It is updating the calculated grid correctly until the solve completes.
+	solve.traceBack implemented
+	Initial unit tests pass!! :tada:
+
+
+
+* I think the large maze tests are failing because either the "iteration" counter or the other counter runs out of 8 bits for the number
+	* True. Used tag @tooLarge to filter them out.
+
+	
+	
+* Add a bat file builders, VC project for multi-directional scroll build
+	Citadel2Entry.a and BuildIt.bat
+	
+
+
+* MazeSolve_traceBack is going to have to be split into multiple calls to make the current trace back not take a huge chunk of time.
+	Like how MazeSolve_step does
+	Implement in java first, then in 6502, with unit tests of course
+	Keep on calling the function until it returns carry clear
+	* MazeSolve_setTraceBackResultBuffer
+	* MazeSolve_startTraceBack
+	* MazeSolve_traceBackStep
+
+
+
+* Add score panel graphics. Chars starts at $800
+	Document the off limits chars due to screen, empty sprite, sprite pointers etc.
+	Score panel char data is located at $800
+		These chars cannot be used:
+			Chars $7f (127) and $ff (255) are sprite defs for screens.
+			Chars $64 (100) to $69 (105) cannot be used, common score panel screen chars (line 20)
+			Chars $e4 (228) to $e9 (233) cannot be used, common score panel screen chars (line 20)
+	 Character line 20 of the score panel must be black or multicolour black. The other two multi-colour values can be used.
+	 First two top pixel lines of any chars on line 20 should also be transparent.
+	 Last line displays only 4 pixels from the top of the char due to the bottom border. Which means 3 full lines for the score panel.
+	 First character should be all transparent colour (8 zero bytes)
+	 See ScorePanel.ctm edited with http://www.subchristsoftware.com/charpad.htm
+	See:
+		ScorePanelNumChars
+		ScorePanelChars
+		ScorePanelColourLookup
+		ScorePanelCharData
+
+
+
+* Game chars, blocks and maps
+	Import Level1.ctm
+	Can import background and multicolour colours from the file like the score panel
+	No block colour chars, it's single colour
+
+
+
+	* Think about coordinate system for the enemies and how to activate them/deactivate
+	The on-screen animation slots can store the pointer to the larger enemy DB
+		AnimationEnemyDBIndex if 0 then slot is not updated with enemy DB positions
+			Else it points to the enemy DB index for position updates (max 255 enemies per level, should be enough)
+	If during the frame there is time left the large enemy DB can be scanned and the off-screen enemies can be moved in larger steps.
+	Arithmetic in 16 bits?
+	Then can have one common routine for movement.
+
+>> What fixed point numeric accuracy for the enemy DB?
+ 	If we use 2-4 bits then we can have nice sub-pixel movement and accelaration.
+ 	Assuming a max 40 tile wide map, which is four screen wide due to 4x4 tiles = 1280 pixels
+ 	4 bit accuracy easily fits within this range
+
+	Plan:
+		Override UpdateSprites to:
+			Calculate 16 bit map positions
+			For active sprite slots:
+				Calculate new screen positions into AnimationXPosLo/Hi and AnimationYPos using the 16 bit positions
+				When sprites go off the edge of the screen bounding box set AnimationYPos to $ff
+			Add code to handle enemy DB described above
+
+		4x4 char blocks = 32 x 32 pixels blocks.
+		If the maximum scroll speed is around 2 pixels/frame and there are 256 enemies...
+		This gives a total of around 16 (numEnemySlotsToOnScreenCheck) enemies that can be tested from the enemy DB every frame when there is movement.
+		This can decide when to activate and deactivate enemies from the animation engine.
+		It can then choose to use fine animation or less often animation for off screen enemies.
+		Write some feature files for this.
+		* Routine EnemyProcessActivation does this check
+			It checks for offScreenTimeout for on-screen enemies, those with positive EnemyToAnimationIndex entries
+
+
+	Dev notes:
+	Citadel2Entry.a - UpdateSprites
+		Now correctly calculates the 16 bit map positions into Animation_MapPosXLo/Animation_MapPosXHi/Animation_MapPosYLo/Animation_MapPosYHi
+		Also updates from AnimationActiveSlot indicating the enemy DB positions to use into on screen Animation postions
+
+
+	  When the screen is setup for scrolling then the VIC2 uses settings like:
+	  > d011 10
+	  > d016 0
+
+	  In effect this only displays the bottom most line of pixels from the top character row, and the right most line of pixels from the first character column.
+
+	  The top left sprite position in the enemy DB must be aligned with the characters as they're displayed on screen.
+
+	  To setup a sprite on the top and left most border
+
+	  f 400 43e ff
+	  > d000 1f (VIC2SpriteXBorderLeft38)
+	  > d001 36 (VIC2SpriteYBorderTop24)
+	  > d015 1
+	  > 7f8 10
+
+	  Given a character of 8x8 pixels this means the sprite must be adjusted up and left by 7 pixels to match the charcters.
+
+	  > d000 18 (VIC2SpriteXBorderLeft38-7)
+	  > d001 2f (VIC2SpriteYBorderTop24-7)
+
+	  This logically means that using the below will result in correct sprite placement:
+		Animation_MapPosXLo/Hi = -(VIC2SpriteXBorderLeft38-7)
+		Animation_MapPosYLo/Hi = -(VIC2SpriteYBorderTop24-7)
+
+
+
+* Animation routines are also going to need simple screen space updates for explosions and bullets etc.
+	Because we don't want these types of animations having to use the enemy DB coordinate system if possible.
+	So Citadel2Entry.a - UpdateSprites - .empty (after the AnimationActiveSlot check)
+		This can update the screen scrolled sprites if their Ypos != 255
+	> See .simpleUpdateSpriteCheck for example code
+	The simple animated sprite off-screen check also works for animations that move under their own velocity to off-screen
+
+
+* Think about the coordinates used while offscreen. Maybe a tile based coordinate system would be faster to check for?
+	Especially while scrolling around the map.
+	It might also be faster for tile based movement of enemies off screen.
+	> Decided. use full coordinates for now. 16 bit check is quick.
+
+
+* Think, might be better to have coarse movement update a map tile coordinate and then when the enemy becomes active init fine position and move that instead.
+* Then fine movement can update the coarse movement when it's finished the movement segment.
+* This will make it easier to process off-screen to on-screen movement and make sure it's aligned to the center of the map tile.
+	> Map tile positions in EnemyPositionsX and EnemyPositionsY
+
+
+
+
+* Add some code that will use hand generated routes and move the example enemies around the map using those.
+	* EnemyMoveFineUpdate and EnemyMoveCoarseUpdate have been created. They work without blocked tiles checking.
+	These routes would basically be the same data that the real route solver outputs.
+	Need to make sure they update the map properly and don't move onto occupied tiles, of course.
+		To setup temporary blocks in the map the other bits can be used for #Node_isBlocked.
+		Then removed by anding out the bits leaving the original value still there.
+	They can block the target tile they're going to, while moving between tiles.
+
+
+
+* Process the map to produce a lookup screen suitable for the MazeSolver to use. Use an aligned memory area so it can be viewed.
+	This can then be used to map out current positions, where enemies want to move etc.
+	So the dynamic route for blocked routes can work.
+	UpdateMapToMaze done and MazeSolve_init called
+
+
+* Then after the processed map is working add in the maze solve
+	WantMazeSolveState added
+	The first test of solving a static route works!
+	The enemy has been told to follow this first route! :)
+
+
+
+* Add proper steps
+	At the moment the solve steps are being called once per frame.
+	This needs to utilise the spare time, by calling potentially more often, while waiting for the end of the multiplexor and the score panel.
+	Add separate debug border colour changes to show this spare time utilisation.
+	>Added:
+		ScrollerDemoWaitTopIRQHook
+		ScrollerDemoWaitScorePanelHook
+		ScrollerDemoWaitMultiplexHook
+	DarkGrey = No work done
+	Red = Maze solve init MazeSolve_setStartPosition MazeSolve_setIndexEarlyOut
+	Green = MazeSolve_step MazeSolve_setTraceBackResultBuffer MazeSolve_startTraceBack
+	Blue = MazeSolve_traceBackStep
+	> Now this is done the robot with the path to solve starts moving very quickly after initialisation instead of after a second or two.
+	Since the work utilises all the spare raster time.
+
+
+
+* Add proper AI
+	Implement EnemyThink function
+	> For the robot ecosystem to be interesting the diffeent robots need goals and tasks.
+	The player needs to feel like they're in a working complex, like alaboratory or factory.
+	So the robots can go visiting certain targets and react to the player per their programming.
+	Different types of robots do different things.
+	> See InterestingPlaces as well
+	> EnemyThink now chooses where to go from a list of points and then gets the route plotted by the RunMazeSolveCalcs code
+
+
+; Add aversion to the place where the enemy exploded
+
+
+* For TraceBackResultBuffer use
+	This needs to be dynamically allocated for requesting robots and allocate routing memory
+	RunMazeSolveCalcs needs to find the size and wait for free routing memory
+	When the enemy finishes the movement its buffer needs to be freed
+
+
+* Added a placeholder player enemy object at the first enemy DB entry. It gets updated by HandleUserInput instead of EnemyThink.
+	Look for ".skipPlayer" to find the special cases in the code.
+
+
+
+* HandleUserInput should probably tweak the "enemy" fine pos to along the push scroll properly for the sprite to map block position.
+
+
+
+
+* MazeSolve bug? - Nope, wrong enemy start position outside of the map. :D
+	Somehow the route gets calculated outside of the maze, once only?
+	w store af0d
+	When MazeSolve_currentSolveID = f
+	w store 3b91 for f
+	Enemy seems to start from 3,11 which is a wall?
+	WantMazeSolveForEnemyDBIndex = c
+	Which is correct, I typed in the wrong enemy start pos of 3,11 instead of 4,10. Oops
+
+
+
+* GetMazeNodesIndex needs to use a lookup table of pre-multiplied values instead of shifting
+
+
+
+* Added quick collision detection for the player and the map
+
+
+
+* AfterScrollers draw is flickering because the draw happens during the top half of the screen during an offscreen scroll.
+* Since there is no colour scroll then theoretically it would be possible to split the screen character scroll into 2 frames
+	Think about splitting the offscreen since there is no colour scroll.
+	This would be in the base scrollers code.
+
+
+
+
+* Characters for player bullets
+	Given topScreenBank (0/1) is the current screen bank
+	BeforeScrollers
+		Erases the bullets in the current screen bank
+	AfterScrollers
+		Draws the bullets in the current screen bank.
+		Also moves bullets with whatever is in ScrollerScreenCharMovedX and ScrollerScreenCharMovedY
+
+
+
+* If the bullet character used is the bullet index into the player bullet array then it is easy to remove bullets when the enemies detect char collisions.
+	The player bullet can be moved to far off the bottom of the screen, just not negative. Then it'll get automatically recycled during the next frame.
+
+
+
+* Faster player sprite to screen character lookup needed
+	See PlayerSpriteYPosToScreenCharPos PlayerSpriteXPosToScreenCharPos
+
+
+
+* Now it's time to think about player bullet collision detection with robots.
+	See .itHitEnemy and .skipEnemyBulletTest
+
+
+* Make enemies static (no route finding) and modify EnemySpriteXPosToScreenCharPos until it detects collisions properly, especially in the horizontal.
+	Vertical feels OK
+
+
+* Enemies free their route memory when destroyed. Enemies destroyed while requesting a route also have their route calculation aborted.
+
+
+
+* If there is no route then abort the solve and let other enemies calculate a route instead.
+	Test this by blocking one of the target points and checking the enemies still move. At the moment I think the enemies stop when their target is blocked.
+	Will need to be detected after the MazeSolve_traceBackStep?
+	TraceBackResultBuffer is checked for just a simple null termination, which aborts. ; If no route then just revert to idle again
+
+
+
+
+*	Enemies should set blocked Node state before anything starts moving, or routing.
+
+
+
+*	The target node needs to ignore the extra blocked states
+	It cannot backup and then restore the the blocking enemy might have removed the block.
+	This is to improve routing to contested map blocks.
+
+
+
+*	With the current enemy configuration even if the bottom blocking ones could get a route they don't seem to.
+	Maybe because the requests for routes from other enemies are always taking priority?
+	Figure out a way to offset their requests each iteration.
+	> eor .enemyOffsetTweak2
+	This allows the various enemies in the currently executing block to "ransomise" the order in which they are processed.
+	This means other enemies can request routes and unblock others.
+
+
+
+*	EnemyProcessActivation can get huge. Consider not doing it if scrolling is due for the frame?
+	* Profile it, might be EnemyThink?
+	* Or consider halving it by reducing the number of processed enemies per frame
+	Reduced numEnemySlotsToOnScreenCheck and numMaxEnemySlotsToOnScreenCheck
+
+
+*	Alternate the bullet test for each sprite based on its enemy DB index
+	This saves some raster time since bullet collisions test at least 2 adjacent characters
+
+
+
+*	Added numEnemySlotsToOnScreenCheck, numMaxEnemySlotsToOnScreenCheck and numMaxEnemySlotsToOnScreenCheckShiftRight to allow the enemy on/off screen checks to be performance tweaked.
+
+
+
+
+*	During a solve query several route options using MazeSolve_setBlockCheckType to take into account enemies and player.
+	Start with Node_isBlocked_Player | Node_isBlocked_Enemy
+	Then Node_isBlocked_Player
+	Then Node_isBlocked_Enemy
+	Then finally 0 (implicit Node_isBlocked_Wall)
+	If the solve fails and it's not (0) then loop back to the start again with the other type
+
+
+
+*	During .simpleUpdateSpriteCheck:
+	AnimationSimpleMoveX/AnimationSimpleMoveY are going to have to be accumulated with scrollerRealMovementXPixels/scrollerRealMovementYPixels
+	The code around .smXHiAdd can instead do the accumulate and use different code depending on the neg/pos values in the X. In the Y it doesn't have to do this.
+
+
+*	.enemyFire added to do some really simple enemy firing code
+	To further test the code that handles the screen coordinate sprite movement and animation
+	AnimationData_6 is an enemy bullet animation
+		Needs animation flag to optionally collide with background chars (AnimationFlags_CharCollide)
+		Also to start an explosion animation when they hit
+
+
+* Implement enemy bullet and enemy collision detection with a small bounding box for the player
+	AnimationFlags_PlayerCollideS/L for (S) = bullet and (L) = enemy
+	.noPlayerSCollide - For the bullets
+	Find out which routine is registering the hit when in what situation
+		Use static pre-allocated bullets. (Use DebugEnemyBullet define)
+	* Player to enemy bullet
+		.testEnemyBulletToPlayerCollide
+	* Player to enemy
+		.testEnemyToPlayerCollide
+		.enemyHitByPlayer
+
+
+
+*	Player maze blocking should take into account fractional blocks.
+	It can do this by adding on a tiny amount to the player's position and flagging that as blocked too.
+	This is to stop enemies from ramming the player halfway between blocks.
+	Look for Node_isBlocked_Player
+	"; Now set the real player postions for map node blocking"
+
+
+* Added glide and fire mode.
+	When fire is not pressed then the player movement is taken from the joystick direction.
+	When fire is pressed then the movement is taken from the last used direction.
+	This means the player can move and fire in different directions.
+
+
+
+
+* Revive the pause and quit code flow
+
+
+
+* InitialiseGame that calls AnimationInit2 should initialise all the game's internal state
+
+
+
+* Calculate a sensible scrollMapHX, scrollMapHY from EnemyPositionsX, EnemyPositionsY
+; Then adjust Animation_MapPosXLo, Animation_MapPosXHi, Animation_MapPosYLo, Animation_MapPosYHi
+This is because when the player DB scan and on-screen check runs it needs to make sure the player sprite is allocated into animation slot 0
+
+
+
+* Sub-game implementation
+	With the player static and next to a computer terminal, holding fire and pushing towards the terminal access the sub-game
+	; MPi: TODO: Here would be a good place to start testing for accessing a computer terminal
+	The currently unused screen bank can be used for the sub-game, keeping the current game map view bank intact.
+	* DisplayingSubGame
+	* .hackSubGameCounter
+	* The sub-game screen code now switches cleanly to a blank screen, ready for the sub-game
+	* Circuit generation and solving
+	* Reject phase of the sub-game with shuffle
+	* Check for the sub-game success condition when the player input is active.
+			A success energy bar that increases vertically from the bottom of the terminals to the top of the terminals.
+			When it reaches the top then the sub-game is won
+	* Add an energy bar timer that decreases horizontally when the player input is active
+			If it reaches empty then obviouslythe sub-game fails
+
+* Sub-game: No via in the first or last columns, improve the checks
+
+
+
+* Add a meaningful sub-game entry test. Hold fire, when stationary and push towards a computer terminal.
+	; Started adding around comment: ; Figure out if we are pushing the joystick in the direction of a computer terminal
+	; Added up and down tests
+* Flag success back to the main game.
+	SubGame_ExitState = SubGameExit_Success
+* Flag failure back to the main game
+	SubGame_ExitState = SubGameExit_Failure
+
+
+* Store the last accessed terminal X/Y pos from the sub-game for use in the game code
+	SubGame_ExitStateX
+	SubGame_ExitStateY
+* On sub-game success toggle a door to a room where robots cannot escape from
+	MapTerminalToDoor has the information needed
+	.subGameStateSuccess will check MapTerminalToDoor with SubGame_ExitStateX/Y and modify the map and the maze node blocked state
+
+
+
+* Prefer to handle routes for active on-screen enemies first. Then off-screen only after all on-screen ones are handled.
+	Add some debug border colour changes to indicate when on-screen or off-screen enemies are being processed.
+		Will need to turn off all the other border colours temporarily
+	In EnemyThink this will prioritise only on-screen enemies with an on-screen (active) check
+		lda EnemyToAnimationIndex-1,y
+		bmi .busyRouteCalcAlready
+	Need to think of a good way of noticing when all on-screen enemies are active and allowing off-screen enemies to be processed
+	Having a count that is reset during a full cycle of EnemyProcessActivation seems to be one way
+		Something like counting all on-screen enemies that don't have a route, then if it is zero for a whole pass then allow off-screen routing
+	> See EnemiesOnScreenWithoutRouteLastCycle and EnemiesOnScreenWithoutRoute
+
+
+
+
+* Proper map, with rooms and doors, some filled with enemies
+
+
+
+* Implement teleport check
+	Only when the scroll is stationary and the player in the middle of the block
+		To location
+		End level
+	Locate comments:
+		Init player position in the enemy DB
+		Setup the camera so the player is on screen
+	Isolate the common code
+	Add sprite animation clear, map re-draw etc
+	DrawMap will need to be called
+	Reset the block sub positions and fine scroll values
+	Then copy the screen to the other bank as well
+
+
+
+* Make the teleporter block check a little larger to the right and down.
+
+
+
+* Open doors need a block using the cross hatch pattern to show where the door was.
+
+
+
+* Radar
+	Going to need a nice fast lookup table to convert enemy positions to pixels
+	Perhaps build up the next radar frame based on the previous enemy DB scan
+	X pos to bitmask row for an optimised or
+	Y pos to a character row index
+
+
+
+
+* Interesting places could do with some kind of zone based system so that enemies pick way points based on lists that they can realistically get to?
+	Patrolling routes lists when the enemy is bored, not active, cannot see the player etc
+	Patrolling routes can be lists of interesting places indexies terminated with -1
+	* If an enemy has a zone assigned to it
+	The zone can be used to index into a list of interesting places lists
+	A zone lookup map can help the enemy pick the correct zone list if it finds itself outside of a known zone
+	** Done - MapCreateZones
+	** At startup each interesting place can lookup into the ZoneMap and calculate its zone
+		Done - MapPlacesToZone
+	* The interesting places can be one whole list, so when the enemy looks up the next interesting place it can match the zone number
+		Interleved interesting places is probably nearly as efficient as having multiple separate zone lists and is less complex code
+
+
+
+* A door, when it is toggled, can link the zones by looking either side of it.
+	The door map tile zone map lookup can take either of the zones adjacent to it.
+	This is so an emey can always find a zone map lookup for a navigable tile.
+
+
+
+* Reject the interesting point and look for another if it is the same as the last routed position for the enemy slot.
+
+
+
+* If the interesting point is the same as the current position then look for another one.
+
+
+
+* Placeholder sound effects mappings while the tune plays.
+
+
+
+* When doors are opened or closed then create a map of adjacent zones that can be searched for when looking for interesting zones.
+	Use these in: Find a place that matches the zone the enemy is in
+	Done - MapTerminalToDoor_Index_Zone1 and MapTerminalToDoor_Index_Zone2
+	Done - CalculateConnectedZones - Produce a list of linked ones from a source zone number, add a cache so it doesn't always re-calculate
+	CalculateConnectedZones - Works, however the general patrolling wapoint scanning code has been disabled for now.
+	Instead use the connected zones when searching for the player.
+
+
+
+* Have a counter of aggressive actions by the player
+	jsr EnemyAddPlayerAggression
+	Enemy_PlayerAggression
+
+
+* Each enemy has a threshold limit for "attack" and how they notice the aggressive actions counter.
+	When the counter is over the threshold then the enemy changes behaviour to be "attack"
+	Attack will seek out the player if they are in a compatible zone (CalculateConnectedZones from the player's current zone outwards) and route to be close to the player.
+		"Close to the player" means tiles with immediate line of sight to be between 2-3 tiles away from the player.
+
+
+
+; TODO: Check for negative zone and refuse to route
+
+; TODO: Must avoid endless loops here
+
+
+
+* Optimise the player (enemy slot 0) to animation slot code, such that the player animation in animation slot 0 is always allocated, never freed.
+	This will simplify the on-screen collision detection code
+	The first allocation will be forced and never freed by the enemy off-screen test .offScreenDB
+	Calls to AnimationClear and AnimationClearDynamics will need to be modified to force the player afterwards again
+	RedirectHandleUserInput can be disabled to test this by scrolling around the map
+
+
+
+
+* Enemies to hunt the player, route to positions around the player that are blank tiles that have line of sight to the player
+	Added left/right variance with .playerPosVariation
+
+
+
+
+* Throw an error in DynamicMemory.a
+	TODO: There is scope for refusing to free and throwing an error if the memory address doesn't look like a valid memory block.
+	Use a define and a macro to control if that check happens and what it does. Colour cycling would be a good idea.
+	* The block sweep can also check
+	Added DynamicMemory_HeapCorruptHook
+	** It found an error where memory was sometimes being freed twice when a blocked enemy was being shot just has it was re-calculating a route
+
+
+
+* Drop energy/weapon/computer powerups that are basically just like the explosions. They get removed when they scroll off screen.
+	These collected powerups are left in the inventory for the sub-game.
+	PickupDropChance modifies how often pickups drop
+	PlayerInventory_Add stores in PlayerInventory
+
+
+
+* Enemy speed, needs to be variable.
+
+
+
+* Split the sub-game render into separate stages so that the main frame update does not slow down the music and sound effects
+
+
+
+* A proper backup and restore of any animation data ready for the multiplexor to display sub-game animations.
+
+
+
+* When the sub-game is won or lost have a sprite animation showing explosions on the right or the left terminals.
+
+
+
+* Then when at a computer terminal the collected powerups are displayed in a list.
+	The player chooses which powerup they want to install first, or chooses to activate any attached door for that terminal.
+	A rejected powerup or door activation will cause an in game visible player explosion and energy loss.
+	The list of options to display can be a large multiplexed collection of sprites in a pattern.
+
+
+
+
+* The value SubGamePickPos if -1 means it's a door, or the value indicates the type of pickup chosen
+	Add a check after sub-game success
+
+
+
+* Animation frame speed, use it to slow down the explosion etc
+
+
+
+* To free up extra memory consider freeing up in MazeSolve.a:
+		Node_travelCost
+		Node_blockedAtFrame
+		Node_blockedBeyond
+	An override define can switch to the lower memory usage code
+
+
+
+* Finalise memory layout, keeping in mind that $8000-$a000 might be used for cartridge data banking in
+
+
+
+* Placeholder title screen added
+
+
+
+* MapCreateZones could be optimised by alternately doing a forward and backward sweep
+
+
+
+
+* MaxInterestingPlaces will need to be read from memory and suitable padding added
+	Call it NumInterestingPlaces
+
+
+
+* Decide on a suitable MaxEnemies, must be aligned with numMaxEnemySlotsToOnScreenCheck constraints
+	Add suitable padding to the enemy structures
+	Now MaxEnemies = numMaxEnemySlotsToOnScreenCheck = 64
+
+
+
+* Done - Separate the static level LevelDataStart from the main code build. Always use decompressed data.
+	Done - Assemble it separately first.
+	Then import the output map symbol file in the main code build.
+	; MPi: TODO: Extract these automatically from DataLevel1.map
+
+
+
+* Assembler check for the animation backup memory does not overwrite the char data at the bottom of the screen
+
+
+
+
+* Title screen transition to displays a simple "loading" message (row 8 or 9 can be used).
+	Use white text, blank out the rest of the text with black chars.
+
+
+
+
+* Need to delay the screen turn-off after DisplayTitleScreen returns.
+	Added ScrollerPreGameCalcuation_Enable
+
+
+
+
+* AnimationInit2 Should clear the AnimationActiveSlot and call EnemyProcessActivation so that it activates the whole enemy DB
+
+
+
+
+* Player energy and death
+	* Player hit by enemy bullet
+	* Player hurt by failing sub-game
+	Can use this to trigger a mainline exit when the player dies:
+		lda #50
+		sta ScrollerExitMainLineCounter
+
+
+
+* Add the start of the (cart) loader code to properly test the compressed data can work from $8000 wrt the rest of the game logic flow.
+
+
+
+
+* Enemy health stored in the enemy DB, flash white when hit, decrease health. Last hit doesn't flash white, just explodes.
+	Added EnemyHealth
+	C:\Work\C64\Scroller\Scroller.a
+	lda AnimationSpriteColour,x
+	sta Multiplex_Colour,x
+	This could do a -ve check and use a white default. This would preserve and restore the colour easily in the next few frames
+
+
+
+
+* Decide on the movement controls, if the player snaps to a map square or not
+	Enabled MapBlockAlignedMovement
+	* When trying to move through a door or around a corner but the player isn't perfectly aligned then have a small amount that the player will automatically slide around the obstruction.
+
+
+
+* Reduce scrolling code by using only four way rather than eight way scrollers
+
+
+
+* If an ememy is fired upon while routing, decide using its bravery, if it will stop the route movement, free the route, and then do something else like attack the player.
+	This could be triggered by causing an early branch to .blockedToolong
+	This would come from .checkBlockedMove reporting a block, even when there isn't one, thus aborting the route
+	If EnemyBlockedCount is set to MaxEnemyBlockedCount for the enemy then the first thing .checkBlockedMove does is:
+		lda EnemyBlockedCount-1,x
+		cmp #MaxEnemyBlockedCount
+		bcs .isBlockedQuick
+
+
+
+
+* Enemy speed 1 and 2 pixels per frame are implemented. However 1.5 pixels per frame isn't.
+	Use the (animation slot index AND frame toggle) to choose between a 1 or 2 pixel move per frame
+	Look for: jsr EnemyMoveFineUpdate
+	Added AnimationDoFineUpdates
+
+
+
+* Add cart boot loader
+
+
+
+* Level loading from cart banked in (or loaded from disk/tape) compressed data
+	* Done TODO: A quick test for level data decompression. Add proper compression of the data later on...
+	* Done TODO: Add size checks for the compressed level data
+	Done Currently only Level1CompData exists. This should be cart banked in to $8000, copied to RAM underneath, then decompressed to LevelDataStart
+	Display file size: for %I in (C:\temp\t.d64) do @echo %~zI
+
+	
+	
+* Joystick test automation. Provide a new location to read for each joystick, instead of HW registers, that are validated for invalid joystick input.
+	Will need a routine to call per frame to do the checks. One for each joystick.
+	Call it from one of the IRQs depending on defines
+
+
+
+
+* Generic animated map blocks routine.
+	Block 2 is a generator and 7-10 are the opening frames
+	It needs to cope with partial off-screen blocks
+	Also make sure the current displayed bank is used
+	Update after BeforeScrollers and before AfterScrollers
+	Done: Finish UpdateMapBlockOnScreen
+	RedirectHandleUserInput is disabled while debugging, makes it easier
+	Done: ; Not clipped optimised plot
+	Done: .clipPlot
+	; TODO: Now setup the block BlockTabL/BlockTabH
+	; Perhaps have a list of up to XX blocks that will be animated
+	; Allow items to be added to the list during the frame
+	; Count how many times they're drawn and time them out after 3 (ish) drawing attempts
+	Done - MapAnimations.a
+		; Test allocations
+		lda #0
+		ldx #6
+		ldy #3
+		jsr MapAnimations_Allocate
+
+
+
+
+
+* Scan the area around the player, split across multiple frames if needed, to locate MapTile_Generator up to 2 squares away and then call this for the location:
+		lda #0
+		ldx #x
+		ldy #y
+		jsr MapAnimations_Allocate
+	Only do this for one map square each frame to split the CPU time and also create a nice staggered opening effect.
+	* Added PlayerSweep.a and created PlayerSweep_MapGenerators
+	* Enemy generators. Can animate open when the player is close by and has been more aggressive can a certain threshold.
+		* Map generator squares can generate enemies.
+
+
+
+* Maintain a list of newly opened generators, or already open generators near the player, and have them periodically generate an enemy.
+	This can be maintained by the same nearby player scanning logic for the closed generator and animation spawn scan.
+	* Added PlayerSweep_MapOpenGenerators that generates random(ish) enemies for open generators when the player is near
+
+
+
+
+* Think about using the decompression library with the following data that gets regularly initialised to $400-$fff memory area:
+	TitleScreenChars
+	TitleScreenCharData
+	TitleScreenBallSprites
+	Instead, raw uncompressed data was moved into cart bank 7 for faster copying
+	* TitleScreenChars, TitleScreenCharData and TitleScreenBallSprites are currently in the data area
+		However the data could be compressed and banked in as it is just updating $400-$800
+		The title screen message char convert can use the same memory
+	EnableScorePanelDataHook added
+
+
+
+
+* If the player is at the side of the map the scrolling goes a little bit strange because the down scroll request is larger than the side scroll velocity request.
+	There should be no downward velocity calculated for the edge of the map.

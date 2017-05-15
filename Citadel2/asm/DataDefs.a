@@ -1,0 +1,46 @@
+; Common values that are shared between the game code and the level data
+
+LevelDataStart = $a000
+
+MusicPlayerInit = $b000
+MusicPlayerPlay = $b003
+MusicPlayerPlaySFX = $b009
+
+numMaxEnemySlotsToOnScreenCheck = 64			; Must be power of 2
+MaxEnemies = numMaxEnemySlotsToOnScreenCheck
+MazeWidth = 40
+MazeHeight = 25
+
+!source "../stdlib/stdlib.a"
+!source "asm/AnimationDefs.a"
+
+MapTerminalToDoor_Size		= 8
+MapTerminalToDoor_EndList	= -1	; Must be negative for simplified check
+MapTerminalToDoor_Index_Zone1	= 6
+MapTerminalToDoor_Index_Zone2	= 7
+
+MapTile_Generator					= 2
+MapTile_Floor						= 3
+MapTile_Teleport					= 4
+
+MapTile_VerticalOpenDoor			= 5
+MapTile_HorizontalOpenDoor			= 6
+MapTile_GeneratorOpen				= 7
+
+MapTile_ComputerTerminalFacingDown	= 20
+MapTile_ComputerTerminalFacingUp	= 21
+MapTile_ComputerTerminalDistance	= 10
+
+MapTile_VerticalDoor				= 22
+MapTile_HorizontalDoor				= 23
+
+MaxInterestingPlaces = 48
+
+; Score panel graphics
+ScorePanel_RadarChar = 20
+
+ScorePanelNumChars = 32
+
+; Enable this to allow full colour scrolling
+; TODO: This is a bit buggy at the moment, the sub-game switch needs to be handled correctly
+;CharColoursForEveryCharacter = 1

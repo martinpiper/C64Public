@@ -1,0 +1,1040 @@
+!zn
+.previousSlotsChecked !by 0
+
+ ; tempWork0 ,  tempWork1 used for animation def temporary work
+;OnScreenCheckLeft_MapPosX	= tempWork2
+;OnScreenCheckRight_MapPosX	= tempWork3
+;OnScreenCheckTop_MapPosY	= tempWork4
+;OnScreenCheckBottom_MapPosY	= tempWork5
+
+MaxEnemyBlockedCount = 50
+
+MapTileToFineXLo !for .num , 40 { !by <(((.num-1)*32)+4) }
+MapTileToFineXHi !for .num , 40 { !by >(((.num-1)*32)+4) }
+
+MapTileToFineYLo !for .num , 25 { !by <(((.num-1)*32)+6) }
+MapTileToFineYHi !for .num , 25 { !by >(((.num-1)*32)+6) }
+
+EnemyProcessActivationInit
+	lda #0
+	sta .enemyOffsetTweak
+	sta .enemyOffsetTweak2
+	sta .previousSlotsChecked
+	rts
+
+EnemyMapClear
+	ldx #MaxEnemies
+.cledb1
+	lda #$ff
+	sta EnemyToAnimationIndex-1,x
+	lda #0
+	sta EnemyOffScreenCount-1,x
+	sta EnemyPositionsXLo-1,x
+	sta EnemyPositionsXHi-1,x
+	sta EnemyPositionsYLo-1,x
+	sta EnemyPositionsYHi-1,x
+	sta EnemyMoveStepsLo-1,x
+	sta EnemyMoveStepsHi-1,x
+	sta EnemyBlockedCount-1,x
+	sta EnemyMoveStepsHi-1,x
+	sta EnemyMoveStepsOriginalLo-1,x
+	sta EnemyMoveStepsOriginalHi-1,x
+	sta EnemyMoveGotMovement-1,x
+	sta EnemyMoveStepsCount-1,x
+	dex
+	bne .cledb1
+	rts
+
+
+Enemy_PlayerAggression	!by 0
+.enemyOffsetTweak		!by 0
+.enemyOffsetTweak2		!by 0
+
+; Entry
+; A = Aggression to add
+; Exit
+; ST/A = Trashed
+EnemyAddPlayerAggression
+	clc
+	adc Enemy_PlayerAggression
+	bcc .ret
+	lda #255
+.ret
+	sta Enemy_PlayerAggression
+	rts
+
+
+EnemyProcessActivation
+	lda DisplayingSubGame
+	beq .os1
+	rts
+.os1
+
+	inc DynamicMemory_BlockSweepCount
+	inc .enemyOffsetTweak
+	lda .enemyOffsetTweak
+!for .t , numMaxEnemySlotsToOnScreenCheckShiftRight {
+	lsr
+}
+	and #numEnemySlotsToOnScreenCheck-1
+	sta .enemyOffsetTweak2
+
+	; Update bounding box coordinates
+	; Two map blocks around the edge will decide on/off screen behaviour
+	lda scrollMapHX
+	sec
+	sbc #2
+	sta .smOnScreenCheckLeft_MapPosX+1
+	lda scrollMapHX
+	clc
+	adc #10+2
+	sta .smOnScreenCheckRight_MapPosX+1
+
+	lda scrollMapHY
+	sec
+	sbc #2
+	sta .smOnScreenCheckTop_MapPosY+1
+	lda scrollMapHY
+	clc
+	adc #5+2
+	sta .smOnScreenCheckBottom_MapPosY+1
+
+	jmp .olincEnemy
+.lincEnemy jmp .incEnemy
+.olincEnemy
+
+
+	; Check the slots
+	lda .previousSlotsChecked
+	and #numMaxEnemySlotsToOnScreenCheck-1
+	cmp .previousSlotsChecked
+	beq .notLoopedYet
+	pha
+
+	; Debug colour change
+;	inc VIC2BorderColour
+	; Gradually decrease player aggression
+	lda Enemy_PlayerAggression
+	beq .od1
+	dec Enemy_PlayerAggression
+.od1
+
+	; Update the on screen counters and radar
+	ldy EnemiesOnScreenWithoutRoute
+	sty EnemiesOnScreenWithoutRouteLastCycle
+	ldy #0
+	sty EnemiesOnScreenWithoutRoute
+	jsr RadarUpdate
+
+	pla
+.notLoopedYet
+	tay
+	clc
+	adc #numEnemySlotsToOnScreenCheck
+	sta .smEndTarget+1
+.l1
+	tya
+	eor .enemyOffsetTweak2
+	tay
+	; Skip index 0, obviously
+	cpy #0
+	beq .lincEnemy
+
+
+	; No valid enemy here, so skip it
+	lda EnemyType-1,y
+	bmi .lincEnemy
+
+	; Skip index 1, because it's the local player
+	cpy #1
+	beq .skipPlayer2
+
+	jsr RadarEnemyUpdate
+
+	jsr EnemyThink
+
+.skipPlayer2
+	; X coord checks
+	lda EnemyPositionsX-1,y
+.smOnScreenCheckLeft_MapPosX	cmp #0
+	bmi .loffScreenDB
+
+	lda EnemyPositionsX-1,y
+.smOnScreenCheckRight_MapPosX	cmp #0
+	bpl .loffScreenDB
+
+	; Y coord checks
+	lda EnemyPositionsY-1,y
+.smOnScreenCheckTop_MapPosY	cmp #0
+	bmi .loffScreenDB
+
+	lda EnemyPositionsY-1,y
+.smOnScreenCheckBottom_MapPosY	cmp #0
+	bpl .loffScreenDB
+
+	jmp .o1
+.loffScreenDB jmp .offScreenDB
+
+.o1
+
+	; It's on screen so reset the counter
+	lda #0
+	sta EnemyOffScreenCount-1,y
+
+	; On screen and enemy allocated, so skip it
+	ldx EnemyToAnimationIndex-1,y
+	bpl .lincEnemy
+
+;	inc VIC2ScreenColour
+
+	; Skip index 1, because it's the local player
+	cpy #1
+	beq .skipPlayer
+
+	; Calculate the fine position from the coarse position
+	ldx EnemyPositionsX-1,y
+	lda MapTileToFineXLo,x
+	sta EnemyPositionsXLo-1,y
+	lda MapTileToFineXHi,x
+	sta EnemyPositionsXHi-1,y
+
+	ldx EnemyPositionsY-1,y
+	lda MapTileToFineYLo,x
+	sta EnemyPositionsYLo-1,y
+	lda MapTileToFineYHi,x
+	sta EnemyPositionsYHi-1,y
+
+.skipPlayer
+
+	lda #32
+	sta EnemyMoveStepsCount-1,y
+	lda #0
+	sta EnemyMoveGotMovement-1,y
+
+	; Find an animation slot, create it there
+	jsr AnimationFindFreeSlot
+	; If it fails to find a free animation slot then assume the screen is very cluttered and act like it's offscreen to allow others to process
+	bcs .offScreenDB
+
+	; Link the entry for the enemy DB to the animation array, and vice-versa
+	tya
+	sta AnimationActiveSlot,x
+	txa
+	sta EnemyToAnimationIndex-1,y
+
+	tya
+	pha
+
+	lda EnemyType-1,y
+	tay
+
+	jsr AnimationInitWithType
+
+	pla
+	tay
+
+	; Continue with the enemy animation initialisation here
+
+	jmp .incEnemy
+
+.offScreenDB
+	cpy #1	; Is it the player?
+	beq .isPlayerNoRemove
+	ldx EnemyToAnimationIndex-1,y
+	bmi .incEnemyAlreadyOff
+	lda EnemyOffScreenCount-1,y
+	clc
+	adc #1
+	sta EnemyOffScreenCount-1,y
+	cmp #offScreenTimeout
+	bcc .incEnemy
+
+;	inc VIC2ScreenColour
+
+	; Free the slots
+	lda #$ff
+	sta EnemyToAnimationIndex-1,y
+	sta AnimationYPos,x
+	lda #0
+	sta AnimationActiveSlot,x
+
+	; Fall through
+	jmp .incEnemy
+
+.isPlayerNoRemove
+	lda #$fe
+	sta AnimationYPos,x
+	jmp .incEnemy
+
+.incEnemyAlreadyOff
+	jsr EnemyMoveCoarseUpdate
+
+.incEnemy
+	tya
+	eor .enemyOffsetTweak2
+	tay
+	iny
+.smEndTarget cpy #0
+	bne .ll1
+
+.skipRestEnemyChecks
+	sty .previousSlotsChecked
+	rts
+
+.ll1 jmp .l1
+
+
+
+
+!zn
+EnemyMoveFineUpdate
+	tya
+	tax
+	lda EnemyMoveStepsHi-1,x
+	bne .l1
+	rts
+.l1
+	lda EnemyMoveGotMovement-1,x
+	beq .getMove
+
+	; Have a movement
+	dec EnemyMoveStepsCount-1,x
+	bmi .o3
+	bne .o2
+
+	; Movement all done, so consume the move and request a new one
+	lda #0
+	sta EnemyMoveGotMovement-1,x
+
+.getMove
+	jsr EnemyMoveCoarseUpdate2
+	; If the coarse update has killed all other movements then exit
+	lda EnemyMoveStepsHi-1,x
+	beq .e1
+
+.o3
+	; Reset the movement counter
+	lda #32
+	sta EnemyMoveStepsCount-1,x
+
+.o2
+	lda EnemyMoveGotMovement-1,x
+	beq .e1
+
+.l2
+	cmp #'U'
+	bne .l3
+	dec EnemyPositionsYLo-1,x
+	lda EnemyPositionsYLo-1,x
+	cmp #$ff
+	bne .e1
+	dec EnemyPositionsYHi-1,x
+	jmp .e1
+
+.l3
+	cmp #'L'
+	bne .l4
+	dec EnemyPositionsXLo-1,x
+	lda EnemyPositionsXLo-1,x
+	cmp #$ff
+	bne .e1
+	dec EnemyPositionsXHi-1,x
+	jmp .e1
+
+.l4
+	cmp #'D'
+	bne .l5
+	inc EnemyPositionsYLo-1,x
+	bne .e1
+	inc EnemyPositionsYHi-1,x
+	jmp .e1
+
+.l5
+	cmp #'R'
+	bne .l6
+	inc EnemyPositionsXLo-1,x
+	bne .e1
+	inc EnemyPositionsXHi-1,x
+	jmp .e1
+
+.l6
+.e1
+	rts
+
+
+
+!zn
+.origX !by 0
+.origY !by 0
+.targetX !by 0
+.targetY !by 0
+EnemyMoveCoarseUpdate
+	; This is called by the infrequent update, so set the addition value to larger steps
+	lda #(numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck)
+	sta .sm2+1
+	tya
+	tax
+	; If there is any currently running movement then process it
+	lda EnemyMoveStepsHi-1,x
+	bne EnemyMoveCoarseUpdate2
+	rts
+
+EnemyMoveCoarseUpdate2
+	; This is called by the fine update, so set the addition value to smaller steps
+	lda #1
+	sta .sm2+1
+
+	lda EnemyPositionsX-1,x
+	sta .origX
+	lda EnemyPositionsY-1,x
+	sta .origY
+
+	lda EnemyMoveStepsHi-1,x
+	sta .sm1+2
+	lda EnemyMoveStepsLo-1,x
+	sta .sm1+1
+.sm1	lda $1234
+	bne .l2
+
+; Frees any allocated route information
+.blockedToolong
+;	inc VIC2BorderColour
+	lda #0
+	; No more movements
+	sta EnemyMoveStepsHi-1,x
+	sta EnemyMoveGotMovement-1,x
+	sta EnemyBlockedCount-1,x
+
+	txa
+	pha
+	tya
+	pha
+
+	ldy EnemyMoveStepsOriginalLo-1,x
+	lda EnemyMoveStepsOriginalHi-1,x
+	beq .e2
+	tax
+	tya
+	jsr DynamicMemory_FreeBytes
+
+.e2
+	pla
+	tay
+	pla
+	tax
+
+	; Really set the memory is freed
+	lda #0
+	sta EnemyMoveStepsOriginalHi-1,x
+
+.e1
+	rts
+
+.l2
+	sta EnemyMoveGotMovement-1,x
+
+	cmp #'U'
+	bne .l3
+	dec EnemyPositionsY-1,x
+	jmp .checkBlockedMove
+
+.l3
+	cmp #'L'
+	bne .l4
+	dec EnemyPositionsX-1,x
+	jmp .checkBlockedMove
+
+.l4
+	cmp #'D'
+	bne .l5
+	inc EnemyPositionsY-1,x
+	jmp .checkBlockedMove
+
+.l5
+	cmp #'R'
+	bne .l6
+	inc EnemyPositionsX-1,x
+	jmp .checkBlockedMove
+
+.l6
+	rts
+
+
+.checkBlockedMove
+	lda EnemyBlockedCount-1,x
+	cmp #MaxEnemyBlockedCount
+	bcs .isBlockedQuick
+
+	lda EnemyPositionsX-1,x
+	sta .targetX
+	lda EnemyPositionsY-1,x
+	sta .targetY
+
+	txa
+	pha
+	tya
+	pha
+
+	ldx .targetX
+	ldy .targetY
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	bne .isBlocked
+	ora #Node_isBlocked_Enemy
+	sta (tempWork0),y
+
+	ldx .origX
+	ldy .origY
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	and #!Node_isBlocked_Enemy
+	sta (tempWork0),y
+
+	pla
+	tay
+	pla
+	tax
+
+	inc EnemyMoveStepsLo-1,x
+	bne .o1
+	inc EnemyMoveStepsHi-1,x
+.o1
+	rts
+
+.isBlocked
+	pla
+	tay
+	pla
+	tax
+
+.isBlockedQuick
+	lda #0
+	sta EnemyMoveGotMovement-1,x
+
+	lda .origX
+	sta EnemyPositionsX-1,x
+	lda .origY
+	sta EnemyPositionsY-1,x
+
+	txa
+	pha
+	tya
+	pha
+
+	ldx .origX
+	ldy .origY
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	ora #Node_isBlocked_Enemy
+	sta (tempWork0),y
+
+	pla
+	tay
+	pla
+	tax
+
+	lda EnemyBlockedCount-1,x
+	clc
+.sm2	adc #32
+	sta EnemyBlockedCount-1,x
+	cmp #MaxEnemyBlockedCount
+	bcs .lblockedToolong
+
+	rts
+
+.lblockedToolong
+	jmp .blockedToolong
+
+
+
+!zn
+EnemiesOnScreenWithoutRoute				!by 0
+EnemiesOnScreenWithoutRouteLastCycle	!by 1
+
+; Y Index into EnemyDB
+; Exit
+; A/X corrupted
+; Processes a robot think function. This does not happen every frame.
+EnemyThink
+;	rts
+
+	; Already moving?
+	lda EnemyMoveStepsHi-1,y
+	bne .busyRouteCalcAlready
+
+	lda EnemyRequestedRoute-1,y
+	bne .decRequestedCounter
+
+	lda EnemyToAnimationIndex-1,y
+	bmi .n1
+
+	inc EnemiesOnScreenWithoutRoute
+	jmp .n1
+
+.decRequestedCounter
+	tya
+	tax
+	dec EnemyRequestedRoute-1,x
+
+.n1
+	; Already calculating a route?
+	lda WantMazeSolveState
+	bne .busyRouteCalcAlready
+
+	lda EnemiesOnScreenWithoutRouteLastCycle
+;	sta VIC2BorderColour
+	beq .skipPriorityCheck2
+
+	lda EnemyToAnimationIndex-1,y
+	bmi .busyRouteCalcAlready
+
+.skipPriorityCheck
+
+	jmp .noRouteSoThink
+
+.busyRouteCalcAlready
+	rts
+
+.skipPriorityCheck2
+;	inc VIC2BorderColour
+	jmp .skipPriorityCheck
+
+.nextInterestingPlaceIndex !by 0
+
+.ljustPatrol jmp .justPatrol
+.lrefuseRoute jmp .refuseRoute
+.noRouteSoThink
+;	inc VIC2BorderColour
+	sty .sm1+1
+
+	lda #2
+	sta .endlessLoopCheck
+
+	; Store these somewhere temporary for the later check
+	lda EnemyPreviousSolveRequestX-1,y
+	sta .smp1+1
+	lda EnemyPreviousSolveRequestY-1,y
+	sta .smp2+1
+
+
+	; Get the current zone for the enemy
+	ldx EnemyPositionsY-1,y
+	stx .smp2a+1
+	lda ZoneMapTabL,x
+	sta tempWork0
+	lda ZoneMapTabH,x
+	sta tempWork1
+	lda EnemyPositionsX-1,y
+	sta .smp1a+1
+	tay
+	lda (tempWork0),y
+	bmi .lrefuseRoute
+	sta .tempZone
+
+	; Check for where to route to based on agression and altertness
+	ldy .sm1+1
+	lda Enemy_PlayerAggression
+	cmp EnemyAlertness-1,y
+	bcc .ljustPatrol
+
+	; Get the player's zone
+	ldx EnemyPositionsY
+	stx .tempPlayerPosY
+	lda ZoneMapTabL,x
+	sta tempWork2
+	lda ZoneMapTabH,x
+	sta tempWork3
+	inc .playerPosVariation
+	lda .playerPosVariation
+	and #3
+	cmp #0
+	beq .pp1
+	cmp #2
+	beq .pp1
+	; Try left, then right, then middle for some variation
+	ldy EnemyPositionsX
+	dey
+	lda (tempWork2),y
+	bpl .goodZone
+	iny
+	iny
+	lda (tempWork2),y
+	bpl .goodZone
+	dey
+	lda (tempWork2),y
+	bmi .justPatrol
+	jmp .goodZone
+
+.pp1
+	; Try right, then left, then middle for some variation
+	ldy EnemyPositionsX
+	iny
+	lda (tempWork2),y
+	bpl .goodZone
+	dey
+	dey
+	lda (tempWork2),y
+	bpl .goodZone
+	iny
+	lda (tempWork2),y
+	bmi .justPatrol
+	jmp .goodZone
+
+.goodZone
+	sty .tempPlayerPosX
+	; Check the enemy can actually route to the player
+	cmp .tempZone
+	beq .playerCanBeRouted
+	jsr CalculateConnectedZones
+
+	lda .tempZone
+	!for .i , ZoneMapLinked_Max {
+		cmp ZoneMapLinked-1+.i
+		beq .playerCanBeRouted
+	}
+	jmp .justPatrol
+.tempPlayerPosX !by 0
+.tempPlayerPosY !by 0
+.playerPosVariation !by 0
+.playerCanBeRouted
+	ldy .sm1+1
+	lda .tempPlayerPosX
+	cmp EnemyPreviousSolveRequestX-1,y
+	bne .dpr1
+	lda .tempPlayerPosY
+	cmp EnemyPreviousSolveRequestY-1,y
+	bne .dpr1
+.refuseRoute
+	ldy .sm1+1
+	; Same map square as before, so ignore this enemy route for a while and try the other enemies
+	lda #10
+	sta EnemyRequestedRoute-1,y
+	rts
+.dpr1
+	lda .tempPlayerPosX
+	sta WantMazeSolveTargetXPos
+	sta EnemyPreviousSolveRequestX-1,y
+	lda .tempPlayerPosY
+	sta WantMazeSolveTargetYPos
+	sta EnemyPreviousSolveRequestY-1,y
+
+	jmp .doRouting
+
+.justPatrol
+	lda .tempZone
+	; TODO: Check for negative zone and refuse to route
+
+	; Find a place that matches the zone the enemy is in
+	ldx .nextInterestingPlaceIndex
+.fi1
+	inx
+	cpx NumInterestingPlaces
+	bne .noResetInteresting
+	ldx #0
+	dec .endlessLoopCheck
+	bmi .refuseRoute
+.noResetInteresting
+	; TODO: Must avoid endless loops here
+;	lda .tempZone
+	cmp InterestingPlacesZone,x
+	beq .isOKZone
+;	lda ZoneMapWorking
+;	cmp InterestingPlacesZone,x
+;	beq .isOKZone
+;	lda ZoneMapWorking+1
+;	cmp InterestingPlacesZone,x
+;	beq .isOKZone
+;	lda ZoneMapWorking+2
+;	cmp InterestingPlacesZone,x
+;	beq .isOKZone
+;	lda ZoneMapWorking+3
+;	cmp InterestingPlacesZone,x
+;	beq .isOKZone
+	jmp .fi1
+.tempZone			!by 0
+.endlessLoopCheck	!by 0
+.isOKZone
+
+	; Reject the interesting point and look for another if it is the same as the last routed position for the enemy slot
+	ldy InterestingPlacesX,x
+.smp1	cpy #0
+	bne .okPos1
+
+	ldy InterestingPlacesY,x
+.smp2	cpy #0
+	beq .fi1
+
+.okPos1
+	; If the interesting point is the same as the current position then look for another one.
+	ldy InterestingPlacesX,x
+.smp1a	cpy #0
+	bne .okPos2
+
+	ldy InterestingPlacesY,x
+.smp2a	cpy #0
+	beq .fi1
+
+.okPos2
+	stx .nextInterestingPlaceIndex
+
+	; Same zone so request the route to the place
+.sm1	ldy #0
+
+	lda InterestingPlacesX,x
+	sta WantMazeSolveTargetXPos
+	sta EnemyPreviousSolveRequestX-1,y
+	lda InterestingPlacesY,x
+	sta WantMazeSolveTargetYPos
+	sta EnemyPreviousSolveRequestY-1,y
+
+.doRouting
+	sty WantMazeSolveForEnemyDBIndex
+
+	; This value means enemies that request a route are considered to be on-screen and active while EnemyRequestedRoute is > 0.
+	; This allows the off-screen maze solve code to have priority if all on-screen enemies are considered active.
+	; Too large and off-screen enemies will have more priority, too low and on-screen enemies that are not moving won't be counted.
+	lda #10
+	sta EnemyRequestedRoute-1,y
+
+	lda #0
+	sta EnemyMoveStepsCount-1,y
+	sta EnemyMoveGotMovement-1,y
+	sta EnemyBlockedCount-1,y
+
+	lda #0
+	sta WantMazeSolveBlockIndex
+
+	lda #WantMazeSolve_doInit
+	sta WantMazeSolveState
+
+	rts
+
+
+!zn
+WantMazeSolveForEnemyDBIndex !by 0
+WantMazeSolveTargetXPos !by 0
+WantMazeSolveTargetYPos !by 0
+
+WantMazeSolveBytes !by 0
+
+WantMazeSolveBlockIndex !by 0
+WantMazeSolveBlockTab !by Node_isBlocked_Player | Node_isBlocked_Enemy , Node_isBlocked_Player , Node_isBlocked_Enemy , 0
+
+WantMazeSolveState !by WantMazeSolve_Idle
+WantMazeSolve_Idle			= 0	; Must always be zero
+WantMazeSolve_doInit		= 1
+WantMazeSolve_step			= 2
+WantMazeSolve_traceBackStep	= 3
+WantMazeSolve_traceBackMemory = 4
+
+.endPosition !by 0 , 0
+
+ScrollerDemoWaitTopIRQHook
+ScrollerDemoWaitMultiplexHook
+ScrollerDemoWaitScorePanelHook
+RunMazeSolveCalcs
+	; Decide to avoid work if the timing is tight
+	beq .doSomeWork
+.exit
+	rts
+
+.doSomeWork
+	lda DisplayingSubGame
+	bne .exit
+
+	; If there is going to be any scrolling work then preemptively avoid calculations this frame
+;	lda #0
+;	ora frameTotalScrScroll
+;	ora frameScrollMoveColours
+;	bne .exit
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_DarkGrey
+	sta VIC2BorderColour
+}
+
+	lda WantMazeSolveState
+	cmp #WantMazeSolve_Idle
+	bne .ooNotIdle
+
+	; This schedules a regular block sweep at set intervals
+	lda DynamicMemory_BlockSweepCount
+	cmp #50
+	bcc .ooNotIdle
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+}
+	jsr DynamicMemory_BlockSweep
+	lda #0
+	sta DynamicMemory_BlockSweepCount
+	jmp .ooExit
+
+.ooNotIdle
+	lda WantMazeSolveState
+	cmp #WantMazeSolve_doInit
+	bne .oo0
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	ldx WantMazeSolveBlockIndex
+	lda WantMazeSolveBlockTab,x
+	jsr MazeSolve_setBlockCheckType
+
+	ldy WantMazeSolveForEnemyDBIndex
+	ldx EnemyPositionsX-1,y
+	lda EnemyPositionsY-1,y
+	tay
+	jsr GetMazeNodesIndex
+	jsr MazeSolve_setStartPosition
+
+	ldx WantMazeSolveTargetXPos
+	ldy WantMazeSolveTargetYPos
+	jsr GetMazeNodesIndex
+	sta .endPosition
+	stx .endPosition+1
+	jsr MazeSolve_setIndexEarlyOut
+
+	inc WantMazeSolveState
+	jmp .ooExit
+
+.oo0
+	lda WantMazeSolveState
+	cmp #WantMazeSolve_step
+	bne .oo1
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+
+	jsr MazeSolve_step
+	bcs .oo1
+
+	lda #<TraceBackResultBuffer
+	ldx #>TraceBackResultBuffer
+	jsr MazeSolve_setTraceBackResultBuffer
+
+	lda .endPosition
+	ldx .endPosition+1
+	jsr MazeSolve_startTraceBack
+
+	inc WantMazeSolveState
+	jmp .ooExit
+
+.oo1
+	lda WantMazeSolveState
+	cmp #WantMazeSolve_traceBackStep
+	bne .oo2
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+
+	jsr MazeSolve_traceBackStep
+	bcs .oo2
+
+	sty WantMazeSolveBytes
+
+	lda TraceBackResultBuffer
+	bne .someMoves
+
+;	inc VIC2BorderColour
+
+	; If there was no block type used this time then really give up and go idle again
+	ldx WantMazeSolveBlockIndex
+	lda WantMazeSolveBlockTab,x
+	beq .justDoIdle
+
+;	inc VIC2BorderColour
+
+	inc WantMazeSolveBlockIndex
+	lda #WantMazeSolve_doInit
+	sta WantMazeSolveState
+	jmp .ooExit
+	
+
+
+.justDoIdle
+	; If no route then just revert to idle again
+	lda #WantMazeSolve_Idle
+	sta WantMazeSolveState
+	jmp .ooExit
+
+.someMoves
+	inc WantMazeSolveState
+	jmp .ooExit
+
+.oo2
+	lda WantMazeSolveState
+	cmp #WantMazeSolve_traceBackMemory
+	bne .oo3
+
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+
+	lda WantMazeSolveBytes
+	jsr DynamicMemory_AllocateBytes
+	bcs .ooNoMemory
+
+	ldy WantMazeSolveBytes
+	dey
+.cpl1
+	lda TraceBackResultBuffer,y
+	sta (DynamicMemory_ZP_lo),y
+	dey
+	bpl .cpl1
+
+	; This sets the result of the solve for the required enemy
+	ldy WantMazeSolveForEnemyDBIndex
+	lda DynamicMemory_ZP_lo
+	sta EnemyMoveStepsLo-1,y
+	sta EnemyMoveStepsOriginalLo-1,y
+	lda DynamicMemory_ZP_hi
+	sta EnemyMoveStepsHi-1,y
+	sta EnemyMoveStepsOriginalHi-1,y
+
+	lda #0
+	sta EnemyMoveGotMovement-1,y
+	sta EnemyBlockedCount-1,y
+
+	lda #WantMazeSolve_Idle
+	sta WantMazeSolveState
+	jmp .ooExit
+
+.ooNoMemory
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Purple
+	sta VIC2BorderColour
+}
+	jsr DynamicMemory_BlockSweep
+	lda #0
+	sta DynamicMemory_BlockSweepCount
+	jmp .ooExit
+
+.oo3
+.ooExit
+!ifdef MazeSolve_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	rts
+
+DynamicMemory_BlockSweepCount !by 0

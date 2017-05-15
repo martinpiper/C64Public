@@ -1,0 +1,184 @@
+!macro PlayerSweep_Common .lsweepCount , .lMaxSweepSteps , .lSweepPosX , .lSweepPosY {
+	ldy .lsweepCount
+	iny
+	cpy #.lMaxSweepSteps
+	bne .o1
+	ldy #0
+.o1
+	sty .lsweepCount
+
+
+	lda EnemyPositionsY
+	clc
+	adc .lSweepPosY,y
+	cmp #MazeHeight
+	bcc .onScreen1
+	rts
+.onScreen1
+	tax
+
+	lda EnemyPositionsX
+	clc
+	adc .lSweepPosX,y
+	cmp #MazeWidth
+	bcc .onScreen2
+	rts
+.onScreen2
+	tay
+
+	lda MapTabL,x
+	sta tempWork0
+	lda MapTabH,x
+	sta tempWork1
+
+	lda (tempWork0),y
+}
+
+!zn {
+.sweepCount !by 0
+; This progressively sweeps around the player and looks for closed generators, these are then animated opened using the map tile animation system
+; ..0..
+; .123.
+; 45678
+; .9ab.
+; ..c..
+.sweepPosX	!by          0
+			!by     -1,  0,  1
+			!by -2, -1,  0,  1,  2
+			!by     -1,  0,  1
+			!by          0
+.maxSweepSteps = *-.sweepPosX
+
+.sweepPosY	!by         -2
+			!by     -1, -1, -1
+			!by  0,  0,  0,  0,  0
+			!by      1,  1,  1
+			!by          2
+
+
+
+PlayerSweep_MapClosedGenerators
+
+	+PlayerSweep_Common .sweepCount , .maxSweepSteps , .sweepPosX , .sweepPosY
+
+	cmp #MapTile_Generator
+	beq .isGenerator
+	rts
+
+.isGenerator
+	sty tempWork0
+	stx tempWork1
+
+	lda #0
+	ldx tempWork0
+	ldy tempWork1
+	jsr MapAnimations_Allocate
+
+	lda #2
+	jsr EnemyAddPlayerAggression
+
+	lda #6
+	jsr SFXInit
+
+	rts
+
+}
+
+
+
+!zn {
+.sweepCount !by 0
+; This progressively sweeps around the player and looks for open generators and then tries to spawn an enemy
+.sweepPosX	!by             -1,  0,  1
+			!by         -2, -1,  0,  1,  2
+			!by     -3, -2, -1,  0,  1,  2,  3
+			!by -4, -3, -2, -1,  0,  1,  2,  3,  4
+			!by     -3, -2, -1,  0,  1,  2,  3
+			!by         -2, -1,  0,  1,  2
+			!by             -1,  0,  1
+.maxSweepSteps = *-.sweepPosX
+
+.sweepPosY	!by             -3, -3, -3
+			!by         -2, -2, -2, -2, -2
+			!by     -1, -1, -1, -1, -1, -1, -1
+			!by  0,  0,  0,  0,  0,  0,  0,  0,  0
+			!by      1,  1,  1,  1,  1,  1,  1
+			!by          2,  2,  2,  2,  2
+			!by              3,  3,  3
+
+
+
+PlayerSweep_MapOpenGenerators
+
+	+PlayerSweep_Common .sweepCount , .maxSweepSteps , .sweepPosX , .sweepPosY
+
+	cmp #MapTile_GeneratorOpen
+	beq .isGenerator
+	rts
+
+.isGenerator
+	sty tempWork0
+	stx tempWork1
+
+	ldx tempWork0
+	ldy tempWork1
+
+	; Is the map square blocked already?
+	jsr GetMazeNodesIndex
+	sta tempWork2
+	stx tempWork3
+	ldy #Node_isBlocked
+	lda (tempWork2),y
+	beq .noBlocked
+	rts
+.noBlocked
+	; Find a free slot in the enemy DB
+	ldx #1	; Skip the player
+.l1
+	lda EnemyType,x
+	bmi .found
+	inx
+	cpx #numMaxEnemySlotsToOnScreenCheck
+	bne .l1
+	rts
+
+.found
+	; Mark the map tile as blocked until the enemy spawns using the on screen check
+	lda (tempWork2),y
+	ora #Node_isBlocked_Enemy
+	sta (tempWork2),y
+
+	; Allocate an enemy in the enemy DB at the open generator square
+	jsr Rand
+	and #3
+	sta EnemyType,x
+	lda #$ff
+	sta EnemyToAnimationIndex,x
+
+	lda tempWork0
+	sta EnemyPositionsX,x
+	lda tempWork1
+	sta EnemyPositionsY,x
+
+	jsr Rand
+	and #7
+	sta EnemyAlertness,x
+	jsr Rand
+	and #3
+	sta EnemySpeed,x
+	jsr Rand
+	and #3
+	sta EnemyHealth,x
+
+	lda #0
+	sta EnemyBlockedCount,x
+	sta EnemyMoveStepsLo,x
+	sta EnemyMoveStepsHi,x
+	sta EnemyMoveGotMovement,x
+	sta EnemyMoveStepsCount,x
+	sta EnemyPreviousSolveRequestX,x
+	sta EnemyPreviousSolveRequestY,x
+
+	rts
+
+}

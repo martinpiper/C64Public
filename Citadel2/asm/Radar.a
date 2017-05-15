@@ -1,0 +1,70 @@
+!zn
+RadarYOffset
+!for y , MazeHeight {
+!zn {
+.y2 = ((y-1) * 24) / MazeHeight
+	!by ((.y2/8) * 3 * 8) + (.y2 & 7)
+}
+}
+
+RadarXChar0
+!for x , MazeWidth {
+!zn {
+.x2 = ((x-1) * 24) / MazeWidth
+	!by ((1<<23) >> (.x2+16)) & 0xff
+}
+}
+
+RadarXChar1
+!for x , MazeWidth {
+!zn {
+.x2 = ((x-1) * 24) / MazeWidth
+	!by ((1<<23) >> (.x2+8)) & 0xff
+}
+}
+
+RadarXChar2
+!for x , MazeWidth {
+!zn {
+.x2 = ((x-1) * 24) / MazeWidth
+	!by ((1<<23) >> .x2) & 0xff
+}
+}
+
+RadarTempSpace !fill 3*3*8 , 0
+
+RadarUpdate
+	ldx #(3*3*8)-1
+.cl1
+	lda RadarTempSpace,x
+	sta $800+(ScorePanel_RadarChar*8),x
+	lda #0
+	sta RadarTempSpace,x
+	dex
+	bpl .cl1
+	rts
+
+RadarEnemyUpdate
+	; Update the radar
+	ldx EnemyPositionsX-1,y
+	lda RadarXChar0,x
+	sta tempWork0
+	lda RadarXChar1,x
+	sta tempWork1
+	lda RadarXChar2,x
+	sta tempWork2
+
+	ldx EnemyPositionsY-1,y
+	lda RadarYOffset,x
+	tax
+
+	lda RadarTempSpace,x
+	ora tempWork0
+	sta RadarTempSpace,x
+	lda RadarTempSpace+8,x
+	ora tempWork1
+	sta RadarTempSpace+8,x
+	lda RadarTempSpace+16,x
+	ora tempWork2
+	sta RadarTempSpace+16,x
+	rts

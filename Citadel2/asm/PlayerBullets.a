@@ -1,0 +1,209 @@
+!zn
+kNumPlayerBullets = 8
+
+PlayerBulletsX		!fill kNumPlayerBullets , -1
+; Negative Y indicates no bullet active
+PlayerBulletsY		!fill kNumPlayerBullets , -1
+PlayerBulletsCol	!by 1  , 2  , 3  , 4  , 8  , 9  , 10 , 11
+PlayerBulletsChar	!by 0  , 0  , 0  , 0  , 8  , 8  , 8  , 8
+
+PlayerBulletsXVel	!fill kNumPlayerBullets , 0
+PlayerBulletsYVel	!fill kNumPlayerBullets , 0
+
+; The colour and char to put back
+PlayerBulletsBkCol	!fill kNumPlayerBullets , 0
+PlayerBulletsBkChar	!fill kNumPlayerBullets , 0
+
+; These are updated from the y pos when the bullets are drawn
+PlayerBulletsScrL	!fill kNumPlayerBullets , 0
+; Negative value indicates the bullet slot is empty, not drawn
+PlayerBulletsScrH	!fill kNumPlayerBullets , -1
+
+
+CurrentBulletBank !by $c8
+
+
+!zn
+PlayerBullets_Init
+	ldx #kNumPlayerBullets-1
+.l1
+	lda #-1
+	sta PlayerBulletsX,x
+	sta PlayerBulletsY,x
+	sta PlayerBulletsScrL,x
+	sta PlayerBulletsScrH,x
+
+	dex
+	bpl .l1
+	rts
+
+!zn
+; Finds a free player bullet slot and X contains the index with carry clear. If no index is free then carry is set.
+; Exit
+; A		Updated
+; X		Updated
+; Y		Preserved
+; CS	No slot
+; CC	Slot found, index in X
+AllocatePlayerBullet
+	ldx #kNumPlayerBullets-1
+.l1
+	lda PlayerBulletsY,x
+	bmi .o1
+
+	dex
+	bpl .l1
+	sec
+	rts
+	
+.o1
+	; Free slot!
+	lda #0
+	sta PlayerBulletsXVel,x
+	sta PlayerBulletsYVel,x
+	lda #-1
+	sta PlayerBulletsScrH,x
+	clc
+	rts
+
+
+!zn
+BeforeScrollers
+	lda DisplayingSubGame
+	beq .os1
+	rts
+.os1
+	ldx topScreenBank
+	lda BankToScreenAddr,x
+	sta tempWork0
+	ldx #kNumPlayerBullets-1
+.l1
+
+	lda PlayerBulletsScrH,x
+	bmi .o1
+	sta tempWork1
+	lda PlayerBulletsScrL,x
+	sta tempWork2
+
+	ldy PlayerBulletsX,x
+
+	lda tempWork1
+	clc
+	adc tempWork0
+	sta tempWork3
+	lda PlayerBulletsBkChar,x
+	sta (tempWork2),y
+
+	lda tempWork1
+	adc #>COLOURRAM
+	sta tempWork3
+	lda PlayerBulletsBkCol,x
+	sta (tempWork2),y
+
+.o1
+	dex
+	bpl .l1
+	rts
+
+!zn
+AfterScrollers
+	lda DisplayingSubGame
+	beq .os1
+	rts
+.os1
+	ldx topScreenBank
+	lda BankToScreenAddr,x
+	sta tempWork0
+	sta CurrentBulletBank
+
+	jsr MapAnimations_Render
+
+
+	; Draw player bullets
+	ldx #kNumPlayerBullets-1
+.l1
+	lda PlayerBulletsY,x
+	bmi .o1
+	clc
+	adc ScrollerScreenCharMovedY
+	clc
+	adc PlayerBulletsYVel,x
+	cmp #20
+	bcs .offScreen
+	sta PlayerBulletsY,x
+
+	lda PlayerBulletsX,x
+	clc
+	adc ScrollerScreenCharMovedX
+	clc
+	adc PlayerBulletsXVel,x
+	cmp #40
+	bcs .offScreen
+	sta PlayerBulletsX,x
+
+	ldy PlayerBulletsY,x
+	lda ScreenTabH,y
+	sta PlayerBulletsScrH,x
+	sta tempWork1
+	lda ScreenTabL,y
+	sta PlayerBulletsScrL,x
+	sta tempWork2
+
+	ldy PlayerBulletsX,x
+
+	lda tempWork1
+	clc
+	adc tempWork0
+	sta tempWork3
+	lda (tempWork2),y
+	cmp #MapWallChars
+	bcs .offScreen
+	sta PlayerBulletsBkChar,x
+
+	lda tempWork1
+	adc #>COLOURRAM
+	sta tempWork3
+	lda (tempWork2),y
+	sta PlayerBulletsBkCol,x
+
+.o1
+	dex
+	bpl .l1
+
+	ldx #kNumPlayerBullets-1
+.l2
+	lda PlayerBulletsY,x
+	bmi .o2
+
+	lda PlayerBulletsScrH,x
+	sta tempWork1
+	lda PlayerBulletsScrL,x
+	sta tempWork2
+
+	ldy PlayerBulletsX,x
+
+	lda tempWork1
+	clc
+	adc tempWork0
+	sta tempWork3
+	txa
+	ora PlayerBulletsChar,x
+	sta (tempWork2),y
+
+	lda tempWork1
+	adc #>COLOURRAM
+	sta tempWork3
+	lda PlayerBulletsCol,x
+	sta (tempWork2),y
+
+.o2
+	dex
+	bpl .l2
+
+	rts
+
+.offScreen
+	lda #-1
+	sta PlayerBulletsY,x
+	sta PlayerBulletsScrH,x
+	jmp .o1

@@ -1,0 +1,44 @@
+!to "DataScorePanel.prg", cbm
+!sl "DataScorePanel.map"
+
+!source "asm/DataDefs.a"
+
+* = $8000
+
+ScorePanelChars
+!bin "ScorePanel.ctm" , (ScorePanelNumChars * 8) , $14
+
+ScorePanelColourLookup
+!bin "ScorePanel.ctm" , ScorePanelNumChars , $814
+
+ScorePanelCharData
+!bin "ScorePanel.ctm" , 40*5 ,  $914 , 2
+
+!macro SEUCKFileData .size, .offset {
+	!bin "../SEUCK/GAME3__I.P00",.size,.offset
+}
+
+TitleScreenChars
+!scr "citadel 2 placeholder title screen data "
+!scr "                                        "
+!scr "           press fire to start          "
+!scr "                                        "
+!scr "                                        "
+!scr " under contruction                      "
+!scr "                                        "
+!scr "                  single demo level     "
+!scr "                                        "
+!scr "                                        "
+!scr "                                        "
+!scr "                                        "
+!scr "   bottom of the screen                 "
+;+SEUCKFileData $208,$1a + 2 - $900 + $3204
+
+TitleScreenCharData
++SEUCKFileData $200,$1a + 2 - $900 + $f400
+
+TitleScreenBallSprites
+!bin "ArmalyteBalls.bin",$200,0
+
+; The end of the data files in memory
+MarkEndData = *

@@ -1,0 +1,88 @@
+!to "SolveRunner.prg", cbm
+!sal
+!sl "SolveRunner.map"
+!svl "SolveRunner.lbl"
+!pdb "SolveRunner.pdb"
+!cpu 6510
+!initmem %10101010
+
+!source "../stdlib/stdlib.a"
+
+*=$400
+Maze !tx "#########################################       #          @#   #             ### ##### ######### # # # # ########### ### #     #     #   #   #   #     #     ### ##### # ### # ### ####### # ### ####### #   #   #2#   #   #     # #     #   ### # # #####3##### # # # ### ####### # ###   # #   #3321   # # # #   #       # ### ### # ###3####### # ### ### ##### ##### #   #             #   #   # #   #   ##### ### ############### ### # ### ### ### #   #                   # #     #   ### ### ##### # # # ######### ####### # ###   #   #   #   # #       #       # # ##### ### # ####### # ##### ####### # ##### # #   #       #   # #   #     # #   ### # # ### ##### # ### # ### ### # ### ###   # # # #   # # #   #   #   # #     ### ### # # ### # # # # ### ### # ##### ###     #       #    X#   #     #       ##########################################"
+MazeEnd = *
+
+*=$800
+SolveRunnerEntry
+	sei
+	ldx #$ff
+	txs
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda #0
+	sta VIC2BorderColour
+
+	lda #23
+	sta VIC2MemorySetup
+
+	ldx #0
+	jsr MazeSolve_init
+
+.main
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+
+.startPosition = MazeNodes + (Node__size * ((MazeWidth*1) + 1))
+;.endPosition = MazeNodes + (Node__size * ((MazeWidth*37) + 19))
+;.endPosition = MazeNodes + (Node__size * ((MazeWidth*1) + 4))
+.endPosition = MazeNodes + (Node__size * ((MazeWidth*10) + 3))
+
+	lda #<.startPosition
+	ldx #>.startPosition
+	jsr MazeSolve_setStartPosition
+
+	inc VIC2BorderColour
+
+	lda #<.endPosition
+	ldx #>.endPosition
+	jsr MazeSolve_setIndexEarlyOut
+
+	inc VIC2BorderColour
+
+.l1
+	jsr MazeSolve_step
+	lda VIC2BorderColour
+	eor #7
+	sta VIC2BorderColour
+	bcs .l1
+
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+
+	lda #<TraceBackResultBuffer
+	ldx #>TraceBackResultBuffer
+	jsr MazeSolve_setTraceBackResultBuffer
+
+	inc VIC2BorderColour
+
+	lda #<.endPosition
+	ldx #>.endPosition
+	jsr MazeSolve_startTraceBack
+
+.l2
+	jsr MazeSolve_traceBackStep
+	lda VIC2BorderColour
+	eor #4
+	sta VIC2BorderColour
+	bcs .l2
+
+	inc VIC2BorderColour
+
+	jmp .main
+
+
+;TraceBackResultBuffer !fill 256,0
+TraceBackResultBuffer = $400 + (22*40)
+MazeWidth = 40
+MazeHeight = 21
+!source "asm/MazeSolve.a"

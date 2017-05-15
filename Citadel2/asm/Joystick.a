@@ -1,0 +1,83 @@
+; Contains common joystick routines designed to aid in test automation
+!zn
+
+JoystickA_Raw			!by $ff
+JoystickA_Processed		!by $ff
+JoystickB_Raw			!by $ff
+JoystickB_Processed		!by $ff
+
+!macro Joystick_CommonRead .raw , .processed {
+	sta .raw
+	sta .processed
+
+	; If two opposing directions are input then ignore both
+	and #JoystickBits_Up | JoystickBits_Down
+	bne .notIllegalVertical
+	lda .processed
+	ora #JoystickBits_Up | JoystickBits_Down
+	sta .processed
+;	inc VIC2BorderColour
+.notIllegalVertical
+	lda .processed
+	and #JoystickBits_Left | JoystickBits_Right
+	bne .notIllegalHorizontal
+	lda .processed
+	ora #JoystickBits_Left | JoystickBits_Right
+	sta .processed
+;	inc VIC2BorderColour
+.notIllegalHorizontal
+}
+
+!ifdef Joystick_DebugAutomate {
+.joystickFakeCount !by 0
+.joystickFake !by 0
+.joystickFakeCount2 !by 0
+}
+
+Joystick_Read
+!ifdef Joystick_DebugAutomate {
+	; Fake some user input to exercise the game
+	inc .joystickFakeCount
+	bne .l1
+	inc .joystickFakeCount2
+	lda .joystickFakeCount2
+	and #15
+	cmp #15
+	bne .l1
+	; After a long time fake a game reset
+	inc NMINotTimerGenerated
+.l1
+	ldy .joystickFakeCount
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	eor #$ff
+	ora #%11110000
+	cpy #160
+	bcc .noFire
+	and #!JoystickBits_Fire
+.noFire
+	sta .joystickFake
+}
+
+!ifdef JoystickA_Enable {
+
+!ifdef Joystick_DebugAutomate {
+	lda .joystickFake
+} else {
+	lda CIA1KeyboardColumnJoystickA
+}
+	+Joystick_CommonRead JoystickA_Raw , JoystickA_Processed
+}
+!ifdef JoystickB_Enable {
+!ifdef Joystick_DebugAutomate {
+	lda .joystickFake
+} else {
+	lda CIA1KeyboardRowsJoystickB
+}
+	+Joystick_CommonRead JoystickB_Raw , JoystickB_Processed
+}
+	rts

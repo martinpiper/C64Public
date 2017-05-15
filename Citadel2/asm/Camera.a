@@ -1,0 +1,304 @@
+!zn
+UpdateScreenScrollCamera
+
+!if 1 {
+	; Clear any player maze blocked flag
+	ldx .oldMapBlockX
+	ldy .oldMapBlockY
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	sta (tempWork0),y
+
+	ldx .oldMapBlockX
+	inx
+	ldy .oldMapBlockY
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	sta (tempWork0),y
+
+	ldx .oldMapBlockX
+	ldy .oldMapBlockY
+	iny
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	sta (tempWork0),y
+
+	ldx .oldMapBlockX
+	inx
+	ldy .oldMapBlockY
+	iny
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	sta (tempWork0),y
+}
+
+!if 1 {
+	lda EnemyPositionsXLo
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sta tempWork1
+
+	; Adjust for the middle of the block, for map scroll velocity calculation
+	lda tempWork0
+	clc
+	adc #20
+	sta tempWork0
+	bcc .o6
+	inc tempWork1
+.o6
+
+	jsr DivideBy32
+	lda tempWork0
+	sta EnemyPositionsX
+
+
+	lda EnemyPositionsYLo
+	sta tempWork0
+	lda EnemyPositionsYHi
+	sta tempWork1
+
+	; Adjust for the middle of the block
+	lda tempWork0
+	sec
+	sbc #2
+	sta tempWork0
+	bcs .o7
+	dec tempWork1
+.o7
+
+	jsr DivideBy32
+	lda tempWork0
+	sta EnemyPositionsY
+
+	lda scrollMapHX
+	clc
+	adc #5
+	sec
+	sbc EnemyPositionsX
+;	cmp #$80
+;	ror
+	sta frameTargetVelX
+
+	lda scrollMapHY
+	clc
+	adc #2
+	sec
+	sbc EnemyPositionsY
+;	cmp #$80
+;	ror
+	asl
+	sta frameTargetVelY
+}
+
+!if 1 {
+	; Make sure we do not calculate scroll velocities that would result in a out of boundary movement request
+	lda scrollMapHY
+	cmp #MazeHeight-6
+	bcc .oc1
+	lda scrollMapLY
+	cmp #3
+	bcc .oc1
+	lda frameTargetVelY
+	beq .oc1
+	bpl .oc1
+	lda #0
+	sta frameTargetVelY
+.oc1
+
+	lda scrollMapHY
+	bne .oc2
+	lda scrollMapLY
+	bne .oc2
+	lda frameTargetVelY
+	beq .oc2
+	bmi .oc2
+	lda #0
+	sta frameTargetVelY
+.oc2
+
+	lda scrollMapHX
+	bne .oc3
+	lda scrollMapLX
+	bne .oc3
+	lda frameTargetVelX
+	beq .oc3
+	bmi .oc3
+	lda #0
+	sta frameTargetVelX
+.oc3
+
+	lda scrollMapHX
+	cmp #MazeWidth-11
+	bcc .oc4
+	lda scrollMapLX
+	cmp #3
+	bcc .oc4
+	lda frameTargetVelX
+	beq .oc4
+	bpl .oc4
+	lda #0
+	sta frameTargetVelX
+.oc4
+}
+
+
+!if 1 {
+	; Now set the real player postions for map push scrolling
+	lda EnemyPositionsXLo
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sta tempWork1
+
+	; Adjust for the middle of the block
+	lda tempWork0
+	clc
+	adc #8
+	sta tempWork0
+	bcc .or6
+	inc tempWork1
+.or6
+
+	jsr DivideBy32
+	lda tempWork0
+	sta EnemyPositionsX
+
+
+	lda EnemyPositionsYLo
+	sta tempWork0
+	lda EnemyPositionsYHi
+	sta tempWork1
+
+	; Adjust for the middle of the block
+	lda tempWork0
+	clc
+	adc #10
+	sta tempWork0
+	bcc .or7
+	inc tempWork1
+.or7
+
+	jsr DivideBy32
+	lda tempWork0
+	sta EnemyPositionsY
+}
+
+
+!if 1 {
+	; Now set the real player postions for map node blocking
+	lda EnemyPositionsXLo
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sta tempWork1
+	jsr DivideBy32
+	lda tempWork0
+	sta tempWork4
+	sta .oldMapBlockX
+
+
+	lda EnemyPositionsYLo
+	sta tempWork0
+	lda EnemyPositionsYHi
+	sta tempWork1
+	jsr DivideBy32
+	lda tempWork0
+	sta tempWork5
+	sta .oldMapBlockY
+
+	; Adjust for other potential player positions for map node blocking
+	lda EnemyPositionsXLo
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sta tempWork1
+
+	lda tempWork0
+	clc
+	adc #20
+	sta tempWork0
+	bcc .os1
+	inc tempWork1
+.os1
+
+	jsr DivideBy32
+	lda tempWork0
+	sta tempWork6
+
+	lda EnemyPositionsYLo
+	sta tempWork0
+	lda EnemyPositionsYHi
+	sta tempWork1
+
+	lda tempWork0
+	clc
+	adc #20
+	sta tempWork0
+	bcc .os2
+	inc tempWork1
+.os2
+
+	jsr DivideBy32
+	lda tempWork0
+	sta tempWork7
+
+
+	; Set player maze blocked flag
+	ldx tempWork4
+	ldy tempWork5
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	ora #Node_isBlocked_Player
+	sta (tempWork0),y
+
+	ldx tempWork6
+	ldy tempWork7
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	ora #Node_isBlocked_Player
+	sta (tempWork0),y
+
+	ldx tempWork4
+	ldy tempWork7
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	ora #Node_isBlocked_Player
+	sta (tempWork0),y
+
+	ldx tempWork6
+	ldy tempWork5
+	jsr GetMazeNodesIndex
+	sta tempWork0
+	stx tempWork1
+	ldy #Node_isBlocked
+	lda (tempWork0),y
+	ora #Node_isBlocked_Player
+	sta (tempWork0),y
+}
+
+	rts
+.oldMapBlockX !by 0
+.oldMapBlockY !by 0
+

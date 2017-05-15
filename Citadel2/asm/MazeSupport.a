@@ -1,0 +1,25 @@
+!zn
+; For MazeNodes index calc
+; X/Y map coords
+; Exit
+; Y Preserved
+; A/X lo/hi address of maze node
+GetMazeNodesIndex
+	
+	lda .MapOffsetsYLo,y
+	clc
+	adc .MapOffsetsXLo,x
+	sta .sm3+1
+
+	lda .MapOffsetsYHi,y
+	adc .MapOffsetsXHi,x
+	tax
+
+.sm3	lda #0
+	rts
+
+.MapOffsetsYLo !for .num , MazeHeight { !by <( MazeNodes + ( (.num-1) * MazeWidth * Node__size)) }
+.MapOffsetsYHi !for .num , MazeHeight { !by >( MazeNodes + ( (.num-1) * MazeWidth * Node__size)) }
+
+.MapOffsetsXLo !for .num , MazeWidth { !by <( (.num-1) * Node__size) }
+.MapOffsetsXHi !for .num , MazeWidth { !by >( (.num-1) * Node__size) }

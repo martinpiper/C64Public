@@ -1,0 +1,21 @@
+AnimationSpriteOffset = 64
+
+AnimationFlags_None				= 0
+AnimationFlags_Cycle			= (1<<0)
+AnimationFlags_DeleteAtEnd		= (1<<1)
+AnimationFlags_InheritColour	= (1<<2)
+AnimationFlags_CharCollide		= (1<<3)
+AnimationFlags_PlayerCollideS	= (1<<4)
+AnimationFlags_PlayerCollideL	= (1<<5)
+AnimationFlags_Pickup			= (1<<6)
+
+AnimationDefOffset_Flags		= 0
+AnimationDefOffset_Colour		= 1
+AnimationDefOffset_NumFrames	= 2
+AnimationDefOffset_Speed		= 3
+AnimationDefOffset_Frames		= 4	; Last in the list
+
+; This structure is followed by the sprite frame data
+!macro MakeAnimation .flags , .colour , .numFrames , .speed {
+!by .flags , .colour , .numFrames , .speed
+}

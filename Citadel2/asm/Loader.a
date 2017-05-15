@@ -1,0 +1,79 @@
+!zn
+; Entry:
+; A = Level number to load, zero based
+; Exit:
+; A/X/Y = Trashed
+LoadLevel
+!if 1 {
+	; Bank in the correct cart bank, copy the data, decompress it
+	sei
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
+	; This will need a file system builder tool for the cart banks
+	lda #8
+	sta MemoryMappedIOArea1
+
+	lda #$80
+	sta .sm1+2
+	sta .sm2+2
+
+	; $800 should be more than enough for the compressed level data from $a000 to $b000
+	; MPi: TODO: Add size checks for the compressed level data
+	ldx #$8
+	ldy #0
+.l1
+.sm1	lda $8000,y
+.sm2	sta $8000,y
+	dey
+	bne .l1
+	inc .sm1+2
+	inc .sm2+2
+	dex
+	bne .l1
+
+	; Stop the cartridge from selecting the bank by selecting an invalid bank
+	lda #$7f
+	sta MemoryMappedIOArea1
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	; Will need extra decompression of character data and/or sprites if needed
+
+	ldx #<LevelDataStart
+	ldy #>LevelDataStart
+	jsr RNXPCompressionDecompress_InitStore
+	; Decompress from where the cartridge will be
+	ldx #0
+	ldy #$80
+	jsr RNXPCompressionDecompress
+
+;	inc VIC2BorderColour
+}
+	rts
+
+!zn
+BeforeScorePanelDataHook
+	sei
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
+	; This will need a file system builder tool for the cart banks
+	lda #7
+	sta MemoryMappedIOArea1
+	rts
+
+!zn
+AfterScorePanelDataHook
+	lda #$7f
+	sta MemoryMappedIOArea1
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	rts

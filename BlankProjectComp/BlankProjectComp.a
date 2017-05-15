@@ -15,7 +15,29 @@
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 
+
 !if 1 {
+	ldx #0
+.l1
+	lda #100
+.l2
+	cmp $d012
+	bne .l2
+	inx
+	txa
+	and #7
+	sta $d016
+
+	lda #150
+.l3
+	cmp $d012
+	bne .l3
+	lda #0
+	sta $d016
+	jmp .l1
+}
+
+!if 0 {
 	lda #(VIC2ScreenControlHDefault | %10000)
 	sta VIC2ScreenControlH
 

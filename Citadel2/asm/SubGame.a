@@ -1,0 +1,1289 @@
+DisplayingSubGame	!by 0
+hackSubGameCounter	!by 10
+
+SubGameChar_EnergyBar		= 182
+SubGameChar_Pointer			= 183
+SubGameChar_Term1			= 184
+SubGameChar_Term2			= 185
+SubGameChar_VertToRight		= 186
+SubGameChar_Via				= 187
+SubGameChar_Up				= 188
+SubGameChar_Down			= 189
+SubGameChar_Change			= 190
+SubGameChar_Right			= 191
+
+; Chances of each of the circuit elements appearing (out of 256 obviously)
+SubGameChance_Right			= 128
+SubGameChance_Change		= 32
+SubGameChance_Up			= 128
+SubGameChance_Down			= 128
+SubGameChance_ViaColour		= 128
+
+; Various layout constants
+SubGame_ScreenTop			= 3
+SubGame_ScreenBottom		= 15
+SubGame_ScreenLeft			= 9
+SubGame_ScreenRight			= 29
+SubGame_BlockWidth			= 3
+SubGame_BlockHeight			= 2
+SubGame_NumBlockX			= (SubGame_ScreenRight - (SubGame_ScreenLeft+2)) / SubGame_BlockWidth
+SubGame_NumBlockY			= (SubGame_ScreenBottom - SubGame_ScreenTop) / SubGame_BlockHeight
+SubGame_PointerYPos			= SubGame_ScreenBottom+2
+SubGame_HorizontalBarYPos	= SubGame_PointerYPos+1
+SubGame_HorizontalBarSize	= 30
+SubGame_HorizontalBarXStart	= (VIC2ScreenCharsWidth-SubGame_HorizontalBarSize)/2
+SubGame_HorizontalBarXEnd	= SubGame_HorizontalBarXStart + SubGame_HorizontalBarSize
+SubGame_HorizontalBarTickTime = 50
+
+SubGameVerticalBarTop		= SubGame_ScreenBottom - 8
+SubGameVerticalBarBottom	= SubGame_ScreenBottom
+SubGameVerticalBarSize		= SubGameVerticalBarBottom - SubGameVerticalBarTop
+SubGameVerticalBarXPos		= SubGame_ScreenRight + 5
+
+!source "..\BerzerkRedux\Rand.a"
+
+SubGameExit_Null			= 0	; Must be zero
+SubGameExit_Success			= 1
+SubGameExit_Failure			= 2
+SubGame_ExitState			!by SubGameExit_Null
+SubGame_ExitStateX			!by 0
+SubGame_ExitStateY			!by 0
+
+!if 0 {
+tWaitForFire_A
+	inc VIC2BorderColour
+	+WaitForFire_A
+	inc VIC2BorderColour
+	rts
+!macro WaitDebug {
+	jsr tWaitForFire_A
+}
+} else {
+!macro WaitDebug {
+}
+}
+
+!zn
+SubGameEnter
+	; Enter the sub-game
+	lda #1
+	sta DisplayingSubGame
+
+	jsr BackupSprites
+
+	jsr ScrollerFlipBank
+
+	ldy topScreenBank
+	ldx BankToScreenAddr,y
+	stx .smtheBank+1
+
+	lda #1
+	sta .doCharClear
+	sta .doColourClear
+	sta .doPuzzleDraw
+	sta .doInventory
+
+	lda #0
+	sta .endPuzzleDo
+
+	jsr SubGameInventoryPopulate
+
+	rts
+
+SubGameDrawPuzzleScreen
+	jsr SubGameCreatePuzzle
+
+	; Draw a line for the horizontal energy bar
+	ldx #SubGame_HorizontalBarYPos
+	jsr .getScreen
+	ldy #SubGame_HorizontalBarXStart
+	lda #SubGameChar_EnergyBar
+.cll4
+	sta (tempWork0),y
+	iny
+	cpy #SubGame_HorizontalBarXEnd
+	bne .cll4
+
+	ldy #SubGame_HorizontalBarXStart
+	lda #VIC2Multicolour_Red
+.cll3
+	sta (tempWork2),y
+	iny
+	cpy #(SubGame_HorizontalBarXStart)+5
+	bne .cll3o1
+	lda #VIC2Multicolour_Yellow
+.cll3o1
+	cpy #(SubGame_HorizontalBarXStart)+15
+	bne .cll3o2
+	lda #VIC2Multicolour_Green
+.cll3o2
+	cpy #SubGame_HorizontalBarXEnd
+	bne .cll3
+
+
+	; Draw a line for the vertical energy bar
+	ldx #SubGameVerticalBarBottom
+	ldy #SubGameVerticalBarXPos
+.cll5
+	jsr .getScreen
+	lda #SubGameChar_EnergyBar
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+	dex
+	cpx #SubGameVerticalBarTop
+	bne .cll5
+
+
+
+	; Draw a line of black pointers
+	ldx #SubGame_PointerYPos
+	jsr .getScreen
+	ldy #VIC2ScreenCharsWidth-1
+.cll1
+	lda #SubGameChar_Pointer
+	sta (tempWork0),y
+	lda #VIC2Colour_Black
+	sta (tempWork2),y
+	dey
+	bpl .cll1
+
+	; Initialise the various variables
+	lda #SubGame_ScreenLeft+2
+	sta .counterSolveXPos0
+
+	; This many full interations solving the circuit before the animation happens that shuffles the board
+	; This gives enough time for SubGame_CopyResultToGet to copy the resultant end state
+	lda #2
+	sta .fullIterationsBeforeReject
+	lda #32		; TODO - This can be made more difficult by raising the number of shuffles
+;	lda #0		; Debug: Turns off shuffling
+	sta .numShuffles
+	lda #0
+	sta .shufflePos
+	sta .fullIterationDone
+
+	; Setup the horizontal bar values
+	lda #SubGame_HorizontalBarTickTime	; Can be variable, to make the sub-game harder or easier
+	sta .horizontalBarTickTime
+	sta .horizontalBarTick
+	lda #SubGame_HorizontalBarXEnd
+	sta .horizontalBarTickPos
+
+	lda #SubGameExit_Null
+	sta SubGame_ExitState
+
+	; Setup the vertical bar values
+	lda #0
+	sta .verticalBarValue
+
+	rts
+
+
+.counterSolveXPos0			!by 0
+.counterSolveXPos40			!by 0
+.counterSolveXPos80			!by 0
+.counterSolveXPos0L			!by 0
+.counterSolveXPos40L		!by 0
+.counterSolveXPos80L		!by 0
+.numShuffles				!by 8
+.shufflePos					!by 0
+.fullIterationDone			!by 0
+.fullIterationsBeforeReject !by 2
+.horizontalBarTickTime		!by 20
+.horizontalBarTick			!by 20
+.horizontalBarTickPos		!by SubGame_HorizontalBarXEnd
+.verticalBarValue			!by 0
+.doCharClear				!by 1
+.doColourClear				!by 1
+.doPuzzleDraw				!by 1
+.endPuzzleDo				!by 0
+.doInventory				!by 1
+
+SubGameUpdate
+	lda .doCharClear
+	beq .done1
+
+	dec .doCharClear
+	jsr ClearGameScreen
+	rts
+
+.done1
+
+	lda .doInventory
+	beq .inventoryDone
+	jsr SubGameHandleInventory
+	bcs .notDoneInventoryYet
+	lda #0
+	sta .doInventory
+.notDoneInventoryYet
+	rts
+.inventoryDone
+	lda .endPuzzleDo
+	beq .doing
+
+	inc .endPuzzleDo
+	lda .endPuzzleDo
+
+	; Tiemout at the end of the sub-game
+	cmp #50
+	bcc .justRet
+
+	; After the above pause then finally exit
+	lda #0
+	sta DisplayingSubGame
+	jmp .restoreGameState
+
+.justRet
+	rts
+.doing
+
+	lda .doColourClear
+	beq .done2
+
+	dec .doColourClear
+	; Now colour RAM
+	lda #VIC2Colour_Black
+	jsr ClearGameColourTo
+	rts
+
+.done2
+	lda .doPuzzleDraw
+	beq .done3
+
+	dec .doPuzzleDraw
+	jsr SubGameDrawPuzzleScreen
+	rts
+
+.done3
+
+	; If the end state has not been calculated yet then skip all user input
+	lda .fullIterationsBeforeReject
+	bne .noUserInput
+
+	; Update the user shuffle positions check
+	; Do the shuffles if there any any needed
+	lda .numShuffles
+	beq .doUserInput
+
+	; More than X shuffles left and we use the fast shuffle method, which doesn't check for the result
+	cmp #4
+	bcs .doFastSlide
+
+	; Only do the rejection slide when the full pass has been done
+	lda .fullIterationDone
+	beq .noUserInput
+
+	lda #0
+	sta .fullIterationDone
+
+	jsr SubGame_CheckResult
+	beq .stillConnectedSoStillSlide
+.doFastSlide
+	dec .numShuffles
+.stillConnectedSoStillSlide
+
+	jsr Rand
+	and #15	; This should really be the (min power of 2 larger than SubGame_NumBlockX)-1
+.checkPos
+	cmp #SubGame_NumBlockX
+	bcc .posOK
+	sbc #SubGame_NumBlockX
+	jmp .checkPos
+.posOK
+	sta .shufflePos
+	jsr .doSlideDown
+	jmp .noUserInput
+
+.doUserInput
+	jsr SubGame_HandleUserUpdates
+	jsr SubGame_DrawPointer
+	jsr SubGameChar_UpdateHorizontalBar
+	jsr SubGameChar_UpdateVerticalBar
+
+	lda .verticalBarValue
+	cmp #SubGameVerticalBarSize
+	beq .noUserInput
+	bcc .noUserInput
+
+	; Success, so exit the sub-game
+	inc .endPuzzleDo
+	; Flag success back to the main game.
+	lda #SubGameExit_Success
+	sta SubGame_ExitState
+
+	jsr SubGameAddWinSprites
+
+	rts
+
+.noUserInput
+
+	jsr SubGame_SolveXStripPreCalc
+	; Solve the same strip a few times to speed up the resolution of the sub-game paths, especially for the vertical traces
+	jsr SubGame_SolveXStrip
+;	jsr SubGame_SolveXStrip
+	jsr SubGame_SolveXStripUpdatePosition
+
+	jsr SubGame_SolveXStripPreCalc
+	; Solve the same strip a few times to speed up the resolution of the sub-game paths, especially for the vertical traces
+	jsr SubGame_SolveXStrip
+;	jsr SubGame_SolveXStrip
+	jsr SubGame_SolveXStripUpdatePosition
+
+	rts
+
+SubGameChar_UpdateVerticalBar
+	; Check for correct solve outcome and update the vertical energy bar
+	lda .fullIterationDone
+	beq .noSolveYet
+	lda #0
+	sta .fullIterationDone
+
+	jsr SubGame_CheckResult
+	beq .isConnected
+	lda #0
+	sta .verticalBarValue
+	jmp .doPlot
+.isConnected
+	inc .verticalBarValue
+.doPlot
+	lda .verticalBarValue
+	sta tempWork4
+	ldx #SubGameVerticalBarBottom
+.pvc1
+	jsr .getScreen
+	ldy #SubGameVerticalBarXPos
+	lda tempWork4
+	beq .pvc5
+	bmi .pvc5
+	cpx #SubGameVerticalBarBottom-2
+	bcs .pvc3
+	cpx #SubGameVerticalBarBottom-4
+	bcs .pvc4
+	lda #VIC2Multicolour_Green
+	jmp .pvc6
+.pvc3
+	lda #VIC2Multicolour_Red
+	jmp .pvc6
+.pvc4
+	lda #VIC2Multicolour_Yellow
+	jmp .pvc6
+.pvc5
+	lda #VIC2Multicolour_Black
+	jmp .pvc6
+.pvc6
+	sta (tempWork2),y
+	dec tempWork4
+	dex
+	cpx #SubGameVerticalBarTop
+	bne .pvc1
+.noSolveYet
+	rts
+
+SubGame_DrawPointer
+	ldx #SubGame_PointerYPos
+	jsr .getScreen
+
+	ldy #VIC2ScreenCharsWidth-1
+.cll2
+	lda #VIC2Colour_Black
+	sta (tempWork2),y
+	dey
+	bpl .cll2
+
+	ldx .shufflePos
+	lda .shufflePosToXPos,x
+	tay
+	lda #VIC2Multicolour_White
+!for .a , SubGame_BlockWidth-1 {
+	sta (tempWork2),y
+	iny
+}
+	sta (tempWork2),y
+
+	rts
+
+SubGameChar_UpdateHorizontalBar
+	; Freeze the horizontal energy bar update if the end game condition has been met
+	lda .verticalBarValue
+	cmp #SubGameVerticalBarSize
+	bcc .doEnergyBarUpdate
+	rts
+.doEnergyBarUpdate
+	; Update the horizontal bar
+	dec .horizontalBarTick
+	bne .lo1
+	lda .horizontalBarTickTime
+	sta .horizontalBarTick
+	dec .horizontalBarTickPos	; Debug: Disable this to stop the time-out
+
+	ldx #SubGame_HorizontalBarYPos
+	jsr .getScreen
+	ldy .horizontalBarTickPos
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+	cpy #SubGame_HorizontalBarXStart-1
+	bne .lo1
+	; Trigger the end of the sub-game
+	inc .endPuzzleDo
+	; Flag failure back to the main game
+	lda #SubGameExit_Failure
+	sta SubGame_ExitState
+
+	jsr SubGameAddLoseSprites
+
+.lo1
+	rts
+
+.dirLatch !by 0
+.lgotLeft jmp .gotLeft
+.lgotRight jmp .gotRight
+.lgotUp jmp .gotUp
+.lgotDown jmp .gotDown
+SubGame_HandleUserUpdates
+	lda #JoystickBits_Left
+	bit JoystickA_Processed
+	beq .lgotLeft
+	lda #JoystickBits_Right
+	bit JoystickA_Processed
+	beq .lgotRight
+	lda #JoystickBits_Up
+	bit JoystickA_Processed
+	beq .lgotUp
+	lda #JoystickBits_Down
+	bit JoystickA_Processed
+	beq .lgotDown
+	lda #0
+	sta .dirLatch
+	rts
+
+!macro SubGame_DirLatch .dirLatch , .sgu1 {
+	cmp .dirLatch
+	beq .sgu1
+	sta .dirLatch
+}
+
+.gotLeft
+	+SubGame_DirLatch .dirLatch , .sgu1
+	dec .shufflePos
+	bpl .sgu1
+	lda #SubGame_NumBlockX-1
+	sta .shufflePos
+.sgu1	; Multiple paths return via here
+	rts
+
+.gotRight
+	+SubGame_DirLatch .dirLatch , .sgu1
+	inc .shufflePos
+	lda .shufflePos
+	cmp #SubGame_NumBlockX
+	bcc .sgu1
+	lda #0
+	sta .shufflePos
+	rts
+
+.gotUp
+	+SubGame_DirLatch .dirLatch , .sgu1
+	jsr .doSlideUp
+
+	rts
+
+.gotDown
+	+SubGame_DirLatch .dirLatch , .sgu1
+	jsr .doSlideDown
+	rts
+
+.tempChars !fill SubGame_BlockWidth , 0
+.tempCols !fill SubGame_BlockWidth , 0
+
+
+.doSlideUp
+	ldx #SubGame_ScreenTop - SubGame_BlockHeight
+	jsr .getScreen
+	jsr .addScreen
+
+	ldx .shufflePos
+	lda .shufflePosToXPos,x
+	sta .smystart+1
+
+	ldy .smystart+1
+!for .a , SubGame_BlockWidth {
+	lda (tempWork0),y
+	sta .tempChars+.a-1
+	lda (tempWork2),y
+	sta .tempCols+.a-1
+	iny
+}
+
+
+	ldx #(SubGame_ScreenBottom + SubGame_BlockHeight) - SubGame_ScreenTop
+.shufl1
+.smystart	ldy #0
+!for .a , SubGame_BlockWidth {
+	lda (tempWork4),y
+	sta (tempWork0),y
+	lda (tempWork6),y
+	sta (tempWork2),y
+	iny
+}
+	dex
+	bmi .shufl2
+	jsr .addScreenLine
+	jmp .shufl1
+.shufl2
+
+	ldy .smystart+1
+!for .a , SubGame_BlockWidth {
+	lda .tempChars+.a-1
+	sta (tempWork0),y
+	lda .tempCols+.a-1
+	sta (tempWork2),y
+	iny
+}
+	rts
+
+
+.doSlideDown
+	ldx #SubGame_ScreenBottom
+	jsr .getScreen
+	jsr .delScreen
+
+	ldx .shufflePos
+	lda .shufflePosToXPos,x
+	sta .smystart2+1
+
+	ldy .smystart2+1
+!for .a , SubGame_BlockWidth {
+	lda (tempWork0),y
+	sta .tempChars+.a-1
+	lda (tempWork2),y
+	sta .tempCols+.a-1
+	iny
+}
+
+
+	ldx #(SubGame_ScreenBottom + SubGame_BlockHeight) - SubGame_ScreenTop
+.shufl12
+.smystart2	ldy #0
+!for .a , SubGame_BlockWidth {
+	lda (tempWork4),y
+	sta (tempWork0),y
+	lda (tempWork6),y
+	sta (tempWork2),y
+	iny
+}
+	dex
+	bmi .shufl22
+	jsr .delScreenLine
+	jmp .shufl12
+.shufl22
+
+	ldy .smystart2+1
+!for .a , SubGame_BlockWidth {
+	lda .tempChars+.a-1
+	sta (tempWork0),y
+	lda .tempCols+.a-1
+	sta (tempWork2),y
+	iny
+}
+	rts
+
+
+
+.addScreen
+	lda tempWork1
+	sta tempWork5
+	lda tempWork3
+	sta tempWork7
+
+	lda tempWork0
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta tempWork4
+	sta tempWork6
+	bcc .noi1
+	inc tempWork5
+	inc tempWork7
+.noi1
+	rts
+
+.addScreenLine
+	lda tempWork0
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta tempWork0
+	sta tempWork2
+	bcc .noi2
+	inc tempWork1
+	inc tempWork3
+.noi2
+
+	lda tempWork4
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta tempWork4
+	sta tempWork6
+	bcc .noi3
+	inc tempWork5
+	inc tempWork7
+.noi3
+	rts
+
+
+.delScreen
+	lda tempWork1
+	sta tempWork5
+	lda tempWork3
+	sta tempWork7
+
+	lda tempWork0
+	sec
+	sbc #VIC2ScreenCharsWidth
+	sta tempWork4
+	sta tempWork6
+	bcs .noi12
+	dec tempWork5
+	dec tempWork7
+.noi12
+	rts
+
+.delScreenLine
+	lda tempWork0
+	sec
+	sbc #VIC2ScreenCharsWidth
+	sta tempWork0
+	sta tempWork2
+	bcs .noi22
+	dec tempWork1
+	dec tempWork3
+.noi22
+
+	lda tempWork4
+	sec
+	sbc #VIC2ScreenCharsWidth
+	sta tempWork4
+	sta tempWork6
+	bcs .noi32
+	dec tempWork5
+	dec tempWork7
+.noi32
+	rts
+
+
+.shufflePosToXPos
+!for .a , SubGame_NumBlockX { !by ((.a-1)*SubGame_BlockWidth) + SubGame_ScreenLeft + 2 }
+
+SubGame_SolveXStripPreCalc
+	; Pre-calc some values for use later
+	lda .counterSolveXPos0
+	clc
+	adc #40
+	sta .counterSolveXPos40
+	adc #40
+	sta .counterSolveXPos80
+
+	lda .counterSolveXPos0
+	sec
+	sbc #1
+	sta .counterSolveXPos0L
+	clc
+	adc #40
+	sta .counterSolveXPos40L
+	adc #40
+	sta .counterSolveXPos80L
+	rts
+
+SubGame_SolveXStripUpdatePosition
+	; Progress one strip to the right each frame
+	ldx .counterSolveXPos0
+	inx
+	cpx #SubGame_ScreenRight+1
+	bne .sbuo1
+
+	inc .fullIterationDone
+	lda .fullIterationsBeforeReject
+	beq .sbuo2
+	jsr SubGame_CheckPassIsBlank
+	beq .noResultFound
+	dec .fullIterationsBeforeReject
+	bne .sbuo2
+	jsr SubGame_CopyResultToGet
+.sbuo2
+	ldx #SubGame_ScreenLeft+2
+.sbuo1
+	stx .counterSolveXPos0
+	rts
+
+	; No valid result was found, so start adding circuit lines until we get something
+.noResultFound
+	; Get a different Y pos each time
+.smPos1		lda #SubGame_ScreenTop
+	clc
+	adc #SubGame_BlockHeight
+	cmp #SubGame_ScreenBottom
+	bne .okPos
+	lda #SubGame_ScreenTop
+.okPos
+	sta .smPos1+1
+	tax
+	dex
+	jsr .getScreen
+
+	lda #SubGame_ScreenLeft+2
+	sta tempWork4
+	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth
+	sta tempWork5
+	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth+VIC2ScreenCharsWidth
+	sta tempWork6
+.bl1
+	; If up or down sections exist at this position then connect to them
+	ldy tempWork4
+	lda (tempWork0),y
+	cmp #SubGameChar_Up
+	beq .isVert
+	cmp #SubGameChar_Down
+	beq .isVert
+
+	ldy tempWork6
+	lda (tempWork0),y
+	cmp #SubGameChar_Up
+	beq .isVert
+	cmp #SubGameChar_Down
+	beq .isVert
+	jmp .justRight
+
+.isVert
+	lda #SubGameChar_VertToRight
+	jmp .doPlot2
+.justRight
+	lda #SubGameChar_Right
+.doPlot2
+	ldy tempWork5
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	inc tempWork4
+	inc tempWork5
+	inc tempWork6
+	lda tempWork4
+	cmp #SubGame_ScreenRight
+	bne .bl1
+	jmp .sbuo2
+
+SubGame_CopyResultToGet
+	ldx #SubGame_ScreenTop
+.sbc1
+	jsr .getScreen
+	ldy #SubGame_ScreenRight
+	lda (tempWork2),y
+	iny
+	iny
+	sta (tempWork2),y
+	iny
+	sta (tempWork2),y
+	lda #VIC2Multicolour_Black
+	dey
+	dey
+	sta (tempWork2),y
+	dey
+	sta (tempWork2),y
+
+	txa
+	clc
+	adc #SubGame_BlockHeight
+	tax
+	cpx #SubGame_ScreenBottom
+	bne .sbc1
+
+	rts
+
+
+; Exit
+; EQ = Colours match
+; NE = Colours don't match
+SubGame_CheckResult
+	ldx #SubGame_ScreenTop
+.sbc2
+	jsr .getScreen
+	ldy #SubGame_ScreenRight
+	lda (tempWork2),y
+	and #15
+	sta .smc2+1
+	iny
+	iny
+	lda (tempWork2),y
+	and #15
+.smc2	cmp #0
+	bne .exitCheck
+
+	txa
+	clc
+	adc #SubGame_BlockHeight
+	tax
+	cpx #SubGame_ScreenBottom
+	bne .sbc2
+
+.exitCheck
+	rts
+
+
+; Exit
+; EQ = Is all blank
+; NE = Is not all blank
+SubGame_CheckPassIsBlank
+	ldx #SubGame_ScreenTop
+.sbc3
+	jsr .getScreen
+	ldy #SubGame_ScreenRight
+	lda (tempWork2),y
+	and #15
+	cmp #VIC2Multicolour_Black
+	bne .exitCheck2
+
+	txa
+	clc
+	adc #SubGame_BlockHeight
+	tax
+	cpx #SubGame_ScreenBottom
+	bne .sbc3
+
+.exitCheck2
+	rts
+
+
+; This solves one vertical strip at the X position
+SubGame_SolveXStrip
+	ldx #SubGame_ScreenTop-1	; Offset by -1 so that counterSolveXPos* works with -1,0,+1 lines
+.sbs1
+	jsr .getScreen
+
+	; Char test
+	ldy .counterSolveXPos40
+	lda (tempWork0),y
+	cmp #SubGameChar_Right
+	beq .sbso1d
+	cmp #SubGameChar_VertToRight
+	bne .sbso1
+
+.sbso1d
+	; Copy colour from left, up or down, depending on what first one is not black
+	ldy .counterSolveXPos40L
+	lda (tempWork2),y
+	and #7
+	beq .sbso1o1
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+	jmp .sbso1
+.sbso1o1
+	ldy .counterSolveXPos0
+	lda (tempWork0),y
+	cmp #SubGameChar_Down	; Only consider from upwards if the character is pointing down
+	bne .sbso1o2
+	lda (tempWork2),y
+	and #7
+	beq .sbso1o2
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+	jmp .sbso1
+.sbso1o2
+	ldy .counterSolveXPos80
+	lda (tempWork0),y
+	cmp #SubGameChar_Up		; Only consider from downwards if the character is pointing up
+	bne .sbso1o3
+	lda (tempWork2),y
+	and #7
+	beq .sbso1o3
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+	jmp .sbso1
+.sbso1o3
+	; Default, blanked out
+	lda #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+.sbso1
+
+	; Char test
+	ldy .counterSolveXPos40
+	lda (tempWork0),y
+	cmp #SubGameChar_Up
+	bne .sbso2
+
+	; Copy colour from below
+	ldy .counterSolveXPos80
+	lda (tempWork2),y
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+.sbso2
+
+	; Char test
+	ldy .counterSolveXPos40
+	lda (tempWork0),y
+	cmp #SubGameChar_Down
+	bne .sbso3
+
+	; Copy colour from above
+	ldy .counterSolveXPos0
+	lda (tempWork2),y
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+.sbso3
+
+
+	; Char test
+	ldy .counterSolveXPos40
+	lda (tempWork0),y
+	cmp #SubGameChar_Change
+	bne .sbso4
+
+	; Alter colour from left by using the remapping defined in .transformedColourTo
+	ldy .counterSolveXPos40L
+	lda (tempWork2),y
+	and #7
+	tay
+	lda .transformedColourTo,y
+	ora #VIC2Multicolour_Black
+
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+.sbso4
+
+	; Char test
+	ldy .counterSolveXPos40
+	lda (tempWork0),y
+	cmp #SubGameChar_Term1
+	bne .sbso5
+
+	; Copy colour from left
+	ldy .counterSolveXPos40L
+	lda (tempWork2),y
+	ora #VIC2Multicolour_Black
+	ldy .counterSolveXPos40
+	sta (tempWork2),y
+	iny
+	sta (tempWork2),y
+.sbso5
+
+	inx
+	cpx #SubGame_ScreenBottom
+	bne .lsbs1
+
+	; Blank out the colour for the top and the bottom strips, just to be sure
+	ldy .counterSolveXPos80
+	lda #VIC2Colour_Black
+	sta (tempWork2),y
+	ldx #SubGame_ScreenTop-SubGame_BlockHeight-1
+	jsr .getScreen
+	ldy .counterSolveXPos0
+	lda #VIC2Colour_Black
+	sta (tempWork2),y
+
+	rts
+.lsbs1 jmp .sbs1
+
+;						 VIC2Colour_Black	VIC2Colour_White	VIC2Colour_Red		VIC2Colour_Cyan		VIC2Colour_Purple	VIC2Colour_Green
+.transformedColourTo !by VIC2Colour_Black ,	VIC2Colour_Black ,	VIC2Colour_Green ,	VIC2Colour_Black ,	VIC2Colour_Black ,	VIC2Colour_Red
+
+SubGame_ResetEnterTimer
+	lda #10
+	sta hackSubGameCounter
+	rts
+
+; Restores the main game state after the sub-game
+.restoreGameState
+	jsr SubGame_ResetEnterTimer
+
+	; Restore the main game state
+	jsr ScrollerFlipBank
+
+	lda #Scroller_ClearColour
+	jsr ClearGameColourTo
+
+
+	jsr RestoreSprites
+	rts
+
+
+; X = Screen Y pos
+.getScreen
+	lda ScreenTabL,x
+	sta tempWork0
+	sta tempWork2
+
+	lda ScreenTabH,x
+	clc
+.smtheBank	adc #$c0
+	sta tempWork1
+	lda ColourTabH,x
+	sta tempWork3
+	rts
+
+
+.seeds !by 0 , 0
+SubGameCreatePuzzle
+	inc .seeds
+	bne .oc1
+	inc .seeds+1
+.oc1
+	lda .seeds
+	ldy .seeds+1
+	jsr Seed
+
+	lda #VIC2Multicolour_Green
+	sta .smc1+1
+
+	; Draw the terminals
+	lda #SubGame_ScreenTop
+	sta tempWork4
+.tl1
+	ldx tempWork4
+	jsr .getScreen
+
+	; Left terminal
+	ldy #SubGame_ScreenLeft
+	lda #SubGameChar_Term1
+	sta (tempWork0),y
+	iny
+	lda #SubGameChar_Term2
+	sta (tempWork0),y
+
+	ldy #SubGame_ScreenLeft
+.smc1	lda #VIC2Multicolour_Green
+	sta (tempWork2),y
+	iny
+	sta (tempWork2),y
+
+	; Alternate the terminal colours between red and green
+	lda .smc1+1
+	cmp #VIC2Multicolour_Green
+	beq .cl1
+	lda #VIC2Multicolour_Green
+	jmp .cl2
+.cl1
+	lda #VIC2Multicolour_Red
+.cl2
+	sta .smc1+1
+
+	; Right terminal
+	ldy #SubGame_ScreenRight
+	lda #SubGameChar_Term1
+	sta (tempWork0),y
+	iny
+	lda #SubGameChar_Term2
+	sta (tempWork0),y
+	iny
+	lda #SubGameChar_Term1
+	sta (tempWork0),y
+	iny
+	lda #SubGameChar_Term2
+	sta (tempWork0),y
+
+	ldy #SubGame_ScreenRight
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+	iny
+	sta (tempWork2),y
+	iny
+	lda #VIC2Colour_Black
+	sta (tempWork2),y
+	iny
+	sta (tempWork2),y
+
+
+	lda tempWork4
+	clc
+	adc #SubGame_BlockHeight
+	sta tempWork4
+
+	cmp #SubGame_ScreenBottom
+	bne .tl1
+
+	; Now iterate on producing the puzzle
+	; X
+	lda #SubGame_ScreenLeft+2
+	sta tempWork5
+.ts1
+	; Y
+	lda #SubGame_ScreenTop
+	sta tempWork4
+.ts2
+	; Decide what to draw here
+	; Choose to draw to the right or not
+	jsr Rand
+	cmp #SubGameChance_Right
+	bcs .ts3
+
+	ldx tempWork4
+	jsr .getScreen
+
+	ldy tempWork5
+	lda #SubGameChar_Right
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+	iny
+
+	jsr Rand
+	cmp #SubGameChance_Change
+	bcs .ts4
+	lda #SubGameChar_Change
+	jmp .ts5
+.ts4
+	lda #SubGameChar_Right
+.ts5
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+	iny
+	lda #SubGameChar_Right
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	jmp .ts6
+
+.ts3
+
+	; Choose to draw up, or not
+	jsr Rand
+	cmp #SubGameChance_Up
+	bcs .ts7
+
+	ldx tempWork4
+	jsr .getScreen
+
+	ldy tempWork5
+	lda #SubGameChar_VertToRight
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	ldx tempWork4
+	dex
+	jsr .getScreen
+	ldy tempWork5
+	lda #SubGameChar_Up
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	ldx tempWork4
+	dex
+	dex
+	jsr .getScreen
+	ldy tempWork5
+	lda #SubGameChar_VertToRight
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+.ts7
+
+	; Choose to draw down, or not
+	jsr Rand
+	cmp #SubGameChance_Down
+	bcs .ts6
+
+	ldx tempWork4
+	jsr .getScreen
+
+	ldy tempWork5
+	lda #SubGameChar_VertToRight
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	ldx tempWork4
+	inx
+	jsr .getScreen
+	ldy tempWork5
+	lda #SubGameChar_Down
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+	ldx tempWork4
+	inx
+	inx
+	jsr .getScreen
+	ldy tempWork5
+	lda #SubGameChar_VertToRight
+	sta (tempWork0),y
+	lda #VIC2Multicolour_Black
+	sta (tempWork2),y
+
+.ts6
+	lda tempWork4
+	clc
+	adc #SubGame_BlockHeight
+	sta tempWork4
+	cmp #SubGame_ScreenBottom
+	bne .lts2
+
+	; Move right
+	lda tempWork5
+	clc
+	adc #SubGame_BlockWidth
+	sta tempWork5
+	cmp #SubGame_ScreenRight
+	bne .lts1
+
+
+	; Now process the output to add vias to stop blank lines from appearing
+	; Look for any SubGameChar_Right characters that have a ClearGameScreensChar to their left
+	ldx #SubGame_ScreenTop
+.tsv1
+	jsr .getScreen
+	; No via in the first column, obvious, so don't waste time checking this at all
+	ldy #SubGame_ScreenLeft+2+SubGame_BlockWidth
+.tsv2
+	lda (tempWork0),y
+	cmp #SubGameChar_Right
+	bne .tsv3
+
+	dey
+	lda (tempWork0),y
+	iny
+	cmp #ClearGameScreensChar
+	bne .tsv3
+
+	lda #SubGameChar_Via
+	sta (tempWork0),y
+
+	jsr Rand
+	cmp #SubGameChance_ViaColour
+	bcs .tsv5
+	lda #VIC2Multicolour_Red
+	jmp .tsv4
+.tsv5
+	lda #VIC2Multicolour_Green
+	jmp .tsv4
+.tsv4
+	sta (tempWork2),y
+
+.tsv3
+	tya
+	clc
+	adc #SubGame_BlockWidth
+	tay
+	; No via in the last column, otherwise the sub-game gets too easy
+	cpy #SubGame_ScreenRight-SubGame_BlockWidth
+	bne .tsv2
+	txa
+	clc
+	adc #SubGame_BlockHeight
+	tax
+	cpx #SubGame_ScreenBottom
+	bne .tsv1
+
+	rts
+
+.lts1 jmp .ts1
+.lts2 jmp .ts2
+

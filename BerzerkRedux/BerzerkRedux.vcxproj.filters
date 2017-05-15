@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3562668c-1b64-4350-884d-345e2d6f57c8}</UniqueIdentifier>
+      <Extensions>a</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{a15eb4c4-f1be-4877-97f6-ef67d81378ab}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{687709de-29ab-45b9-a65e-10cdde6784d0}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="BerzerkRedux.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BerzerkReduxVars.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ClearMisc.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Data.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="EnterInitialsScreen.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="GameLogic.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="GameOver.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="IRQs.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="MazeRoom.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Rand.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Score.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TitleScreen.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\IRQDisk\IRQDisk.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\IRQDisk\IRQDiskC64.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\IRQDisk\IRQDiskDriveCode.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\IRQDisk\IRQDiskVars.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SFX\SFX.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\IRQDisk\stdlib1541.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BerzerkLogo.prg">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BerzerkMusic.prg">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Chars.ctm">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Sprites.spr">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Sprites.spr.inf">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BuildIt.bat" />
+    <CustomBuild Include="..\CleanProject.bat" />
+    <CustomBuild Include="..\CleanProjectFully.bat" />
+    <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat" />
+    <CustomBuild Include="..\DoBackup.bat" />
+    <CustomBuild Include="HowToBuildRelease.txt" />
+  </ItemGroup>
+</Project>

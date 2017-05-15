@@ -1,0 +1,787 @@
+!ifdef RedirectHandleUserInput {
+!zn
+.joystickDirectionToXVel !by  0 ,  0 ,  0 ,  0 ,  1 ,  1 ,  1 ,  1 , -1 , -1 , -1 , -1 ,  0 ,  0 ,  0 ,  0
+.joystickDirectionToYVel !by  0 ,  1 , -1 ,  1 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0
+
+.joystickValidDirection !by   0 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 , -1 , -1 , -1 , -1 ,  0 ,  1 ,  1 ,  0
+
+.toggle !by 0
+!ifdef DebugEnemyBullet {
+.playerSpeed !by 1
+} else {
+.playerSpeed !by 2
+}
+.fireCounter !by 0
+.fireCounterDelay !by 10
+.lockedDirection !by %1111
+.lSubGameUpdate jmp SubGameUpdate
+.lnoSubGameState jmp .noSubGameState
+.lsubGameStateSuccess jmp .subGameStateSuccess
+.exitingGame
+	lda #%1111
+	sta .lockedDirection
+	jsr UpdateScreenScrollCamera
+
+	rts
+HandleUserInput
+	jsr Joystick_Read
+
+	lda ScrollerExitMainLineCounter
+	bne .exitingGame
+
+	lda DisplayingSubGame
+	bne .lSubGameUpdate
+
+	; Once the sub-game finishes then pull out the state
+	lda SubGame_ExitState
+	cmp #SubGameExit_Null
+	beq .lnoSubGameState
+	lda SubGame_ExitState
+	; Reset it first
+	ldx #SubGameExit_Null
+	stx SubGame_ExitState
+
+	cmp #SubGameExit_Success
+	beq .lsubGameStateSuccess
+
+	cmp #SubGameExit_Failure
+	beq .lsubGameStateFailure
+
+	jmp .noSubGameState
+
+.lsubGameStateFailure
+	lda #2
+	jsr AnimationHitPlayerLogic
+
+.noSubGameState
+	jsr UpdateScreenScrollCamera
+
+;	inc VIC2BorderColour
+	; Don't run this sweep every frame, so use this counter instead
+	lda DynamicMemory_BlockSweepCount
+	and #1
+	cmp #0
+	bne .noSweep1
+	jsr PlayerSweep_MapClosedGenerators
+.noSweep1
+	lda DynamicMemory_BlockSweepCount
+	and #3
+	cmp #1
+	bne .noSweep2
+	jsr PlayerSweep_MapOpenGenerators
+.noSweep2
+;	dec VIC2BorderColour
+
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .gotFire
+
+	ldy .lockedDirection
+
+	lda JoystickA_Processed
+	sta .lockedDirection
+
+!ifdef MapBlockAlignedMovement {
+	lda EnemyPositionsYLo
+	and #31
+	cmp #6
+	beq .canDoHorizontal
+
+	; Stop horizontal movement from being registered
+	lda .lockedDirection
+	ora #JoystickBits_Left | JoystickBits_Right
+	sta .lockedDirection
+
+	and #JoystickBits_Up | JoystickBits_Down
+	cmp #JoystickBits_Up | JoystickBits_Down
+	bne .canDoHorizontal
+
+	; Restore last movement if there isn't anything pressed
+	tya
+	sta .lockedDirection
+
+.canDoHorizontal
+
+	lda EnemyPositionsXLo
+	and #31
+	cmp #4
+	beq .canDoVertical
+
+	; Stop vertical movement from being registered
+	lda .lockedDirection
+	ora #JoystickBits_Up | JoystickBits_Down
+	sta .lockedDirection
+
+	and #JoystickBits_Left | JoystickBits_Right
+	cmp #JoystickBits_Left | JoystickBits_Right
+	bne .canDoVertical
+
+	; Restore last movement if there isn't anything pressed
+	tya
+	sta .lockedDirection
+
+.canDoVertical
+
+!if 0 {
+	; Remove any diagonals by restoring the old movement if detected
+	lda #JoystickBits_Left | JoystickBits_Up
+	bit .lockedDirection
+	bne .ok1
+	tya
+	sta .lockedDirection
+	jmp .gotFire
+.ok1
+	lda #JoystickBits_Left | JoystickBits_Down
+	bit .lockedDirection
+	bne .ok2
+	tya
+	sta .lockedDirection
+	jmp .gotFire
+.ok2
+	lda #JoystickBits_Right | JoystickBits_Up
+	bit .lockedDirection
+	bne .ok3
+	tya
+	sta .lockedDirection
+	jmp .gotFire
+.ok3
+	lda #JoystickBits_Right | JoystickBits_Down
+	bit .lockedDirection
+	bne .ok4
+	tya
+	sta .lockedDirection
+	jmp .gotFire
+.ok4
+}
+} ;<< !ifdef MapBlockAlignedMovement {
+
+.gotFire
+
+	; Update the velocity at which we want to travel
+	lda #JoystickBits_Right
+	bit .lockedDirection
+	bne .o1
+
+	; Check the bounding chars in the direction of travel
+	lda EnemyPositionsXLo
+	clc
+!ifdef MapBlockAlignedMovement {
+	adc #28
+} else {
+	adc #24
+}
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	lda EnemyPositionsYLo
+	sta tempWork2
+	lda EnemyPositionsYHi
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o1
+	
+	lda EnemyPositionsYLo
+	clc
+	adc #10
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o1
+
+	lda EnemyPositionsYLo
+	clc
+	adc #20
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o1
+
+
+	lda EnemyPositionsXLo
+	clc
+	adc .playerSpeed
+	sta EnemyPositionsXLo
+	bcc .oo1
+	inc EnemyPositionsXHi
+.oo1
+!ifdef MapBlockAlignedMovement {
+	jmp .nowTestFire
+}
+
+.o1
+	lda #JoystickBits_Left
+	bit .lockedDirection
+	bne .o2
+
+
+	; Check the bounding chars in the direction of travel
+	lda EnemyPositionsXLo
+	sec
+!ifdef MapBlockAlignedMovement {
+	sbc #6
+} else {
+	sbc #4
+}
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sbc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	lda EnemyPositionsYLo
+	sta tempWork2
+	lda EnemyPositionsYHi
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o2
+	
+	lda EnemyPositionsYLo
+	clc
+	adc #10
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o2
+
+	lda EnemyPositionsYLo
+	clc
+	adc #20
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o2
+
+
+	lda EnemyPositionsXLo
+	sec
+	sbc .playerSpeed
+	sta EnemyPositionsXLo
+	bcs .oo2
+	dec EnemyPositionsXHi
+.oo2
+!ifdef MapBlockAlignedMovement {
+	jmp .nowTestFire
+}
+
+.o2
+	lda #JoystickBits_Down
+	bit .lockedDirection
+	bne .o3
+
+
+	; Check the bounding chars in the direction of travel
+	lda EnemyPositionsXLo
+	sec
+	sbc #2
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sbc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	lda EnemyPositionsYLo
+	clc
+!ifdef MapBlockAlignedMovement {
+	adc #26
+} else {
+	adc #22
+}
+	sta tempWork2
+	lda EnemyPositionsYHi
+	adc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o3
+	
+	lda EnemyPositionsXLo
+	clc
+	adc #10
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	jsr .testPosition
+	bne .o3
+
+	lda EnemyPositionsXLo
+	clc
+	adc #22
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	jsr .testPosition
+	bne .o3
+
+
+	lda EnemyPositionsYLo
+	clc
+	adc .playerSpeed
+	sta EnemyPositionsYLo
+	bcc .oo3
+	inc EnemyPositionsYHi
+.oo3
+!ifdef MapBlockAlignedMovement {
+	jmp .nowTestFire
+}
+
+.o3
+	lda #JoystickBits_Up
+	bit .lockedDirection
+	bne .o4
+
+
+	; Check the bounding chars in the direction of travel
+	lda EnemyPositionsXLo
+	sec
+	sbc #2
+	sta tempWork0
+	lda EnemyPositionsXHi
+	sbc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	lda EnemyPositionsYLo
+	sec
+!ifdef MapBlockAlignedMovement {
+	sbc #8
+} else {
+	sbc #2
+}
+	sta tempWork2
+	lda EnemyPositionsYHi
+	sbc #0
+	sta tempWork3
+	jsr DivideBy32_2
+
+	jsr .testPosition
+	bne .o4
+	
+	lda EnemyPositionsXLo
+	clc
+	adc #10
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	jsr .testPosition
+	bne .o4
+
+	lda EnemyPositionsXLo
+	clc
+	adc #22
+	sta tempWork0
+	lda EnemyPositionsXHi
+	adc #0
+	sta tempWork1
+	jsr DivideBy32
+
+	jsr .testPosition
+	bne .o4
+
+
+	lda EnemyPositionsYLo
+	sec
+	sbc .playerSpeed
+	sta EnemyPositionsYLo
+	bcs .oo4
+	dec EnemyPositionsYHi
+.oo4
+!ifdef MapBlockAlignedMovement {
+	jmp .nowTestFire
+}
+
+.o4
+.nowTestFire
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .no5
+.lo5	jmp .o5
+.no5
+
+	lda #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	and .lockedDirection
+	cmp #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	bne .notStationary
+	jsr CheckForSubGameEntry
+	beq .o5
+.notStationary
+
+	lda JoystickA_Processed
+	and #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	cmp #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	bne .notStationary2
+
+	jsr CheckTeleportAction
+	beq .o5
+
+.notStationary2
+
+	lda JoystickA_Processed
+	and #15
+	tay
+	lda .joystickValidDirection,y
+	beq .o5
+	sty .smjd+1
+
+	ldy EnemyToAnimationIndex
+	bmi .o5
+
+	; Rate limit the firing speed
+	dec .fireCounter
+	bpl .oo5
+	lda .fireCounterDelay
+	sta .fireCounter
+
+	lda #2
+	jsr EnemyAddPlayerAggression
+
+	jsr AllocatePlayerBullet
+	bcs .o5
+
+	lda #1
+	jsr SFXInit
+
+	; Fire bullets!
+	stx tempWork2
+
+	lda AnimationYPos,y
+	sec
+	sbc topScreenScrollY
+	tax
+	lda PlayerSpriteYPosToScreenCharPos,x
+	bmi .o5
+	ldx tempWork2
+	sta PlayerBulletsY,x
+
+	lda topScreenScrollX
+	lsr
+	sta tempWork0
+
+	lda AnimationXPosHi,y
+	lsr
+	lda AnimationXPosLo,y
+	ror
+	sec
+	sbc tempWork0
+	tax
+	lda PlayerSpriteXPosToScreenCharPos,x
+	bmi .o5
+	ldx tempWork2
+	sta PlayerBulletsX,x
+
+.smjd	ldy #0
+	lda .joystickDirectionToXVel,y
+	sta PlayerBulletsXVel,x
+	lda .joystickDirectionToYVel,y
+	sta PlayerBulletsYVel,x
+
+	jmp .oo5
+
+.o5
+	dec .fireCounter
+	bpl .oo5
+	; Immediate fire next valid direction
+	lda #0
+	sta .fireCounter
+.oo5
+
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .fireHeldDown
+.resetSubGameTimer
+	jsr SubGame_ResetEnterTimer
+	jsr Teleport_ResetEnterTimer
+.fireHeldDown
+
+
+	; Clamp the velocity
+	lda frameTargetVelX
+	cmp #-4
+	bpl .c1
+	lda #-4
+.c1
+	cmp #5
+	bmi .c2
+	lda #4
+.c2
+	sta frameTargetVelX
+
+	lda frameTargetVelY
+	cmp #-4
+	bpl .c3
+	lda #-4
+.c3
+	cmp #5
+	bmi .c4
+	lda #4
+.c4
+	sta frameTargetVelY
+	rts
+
+
+.testPosition
+	ldx tempWork0
+	ldy tempWork2
+	jsr GetMazeNodesIndex
+	sta tempWork4
+	stx tempWork5
+
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	and #Node_isBlocked_Wall
+	rts
+
+
+PlayerSpriteYPosToScreenCharPos
+!fill VIC2SpriteYBorderTop-10 , -1
+!for .num , 20 { !fill 8 , (.num-1) }
+!fill 256 - (* - PlayerSpriteYPosToScreenCharPos) , -1
+
+PlayerSpriteXPosToScreenCharPos
+!fill (VIC2SpriteXBorderLeft-10)/2 , -1
+!for .num , 40 { !fill 4 , (.num-1) }
+!fill 256 - (* - PlayerSpriteXPosToScreenCharPos) , -1
+
+; Will check MapTerminalToDoor with SubGame_ExitStateX/Y and modify the map and the maze node blocked state
+.ldtEnd jmp .dtEnd
+.ldt2 jmp .dt2
+.subGameStateSuccess
+	lda SubGamePickPos
+	bmi .doDoor
+	; TODO: Different weapon types or health upgrade etc
+
+	; For now this increases the weapon fire rate
+	dec .fireCounterDelay
+
+	rts
+.doDoor
+	; Force the zone cache to be invalidated when doors open or close
+	lda #-1
+	sta ZoneMapStartCached
+
+	lda #<MapTerminalToDoor
+	sta tempWork0
+	lda #>MapTerminalToDoor
+	sta tempWork1
+.dt1
+	; Check each entry
+
+	; Terminal X
+	ldy #0
+	lda (tempWork0),y
+	bmi .ldtEnd
+	cmp SubGame_ExitStateX
+	bne .ldt2
+
+	; Terminal Y
+	iny
+	lda (tempWork0),y
+	cmp SubGame_ExitStateY
+	bne .ldt2
+
+	; Found a terminal, so check the linked door
+
+	; Door X , Y
+	iny
+	lda (tempWork0),y
+	sta tempWork2
+	iny
+	lda (tempWork0),y
+	sta tempWork3
+
+	; Tile index
+	iny
+	lda (tempWork0),y
+	sta tempWork4
+
+	; Tile index other
+	iny
+	lda (tempWork0),y
+	sta tempWork7
+
+	; Now get the map tile position
+	ldx tempWork3
+	lda MapTabL,x
+	sta tempWork5
+	lda MapTabH,x
+	sta tempWork6
+
+	ldy tempWork2
+	lda tempWork4
+	cmp (tempWork5),y
+	beq .toBlank
+	; To target tile type
+	sta (tempWork5),y
+
+	; Block out the zone tile
+	ldx tempWork3
+	lda ZoneMapTabL,x
+	sta tempWork5
+	lda ZoneMapTabH,x
+	sta tempWork6
+	lda #-1
+	sta (tempWork5),y
+
+	; Unmap the zones, since the door is closed
+	ldy #MapTerminalToDoor_Index_Zone1
+;	lda #-1
+	sta (tempWork0),y
+	iny
+	sta (tempWork0),y
+
+	; Block the maze tile
+	jsr .dtGetMazeTile
+	ldy #Node_isBlocked
+	lda (tempWork5),y
+	ora #Node_isBlocked_Wall
+	sta (tempWork5),y
+
+	jmp .dt2
+
+.toBlank
+	lda tempWork7
+	sta (tempWork5),y
+
+	; A door, when it is toggled, can link the zones by looking either side of it.
+	; The door map tile zone map lookup can take either of the zones adjacent to it.
+	; Zone map lookup
+	ldx tempWork3
+	lda ZoneMapTabL-1,x
+	sta tempWork5
+	lda ZoneMapTabH-1,x
+	sta tempWork6
+
+	; Zone map to the top
+	lda (tempWork5),y
+	bpl .od1
+
+	; Zone map to the left
+	tya
+	clc
+	adc #39
+	tay
+	lda (tempWork5),y
+	bpl .od1
+
+	; Zone map to the right
+	iny
+	iny
+	lda (tempWork5),y
+	bpl .od1
+
+	; Zone map to the bottom
+	tya
+	clc
+	adc #39
+	tay
+	lda (tempWork5),y
+;	bpl .od1
+.od1
+	; Store the zone over the now open door character
+	pha
+	lda tempWork2
+	clc
+	adc #40
+	tay
+	pla
+	sta (tempWork5),y
+	ldy #MapTerminalToDoor_Index_Zone1
+	sta (tempWork0),y
+
+	; Now reverse the zone check to get the zone on the other side of the door
+	; Zone map to the bottom
+	lda tempWork2
+	clc
+	adc #80
+	tay
+	lda (tempWork5),y
+	bpl .od2
+
+	; Zone map to the right
+	tya
+	sec
+	sbc #39
+	tay
+	lda (tempWork5),y
+	bpl .od2
+
+	; Zone map to the left
+	dey
+	dey
+	lda (tempWork5),y
+	bpl .od2
+
+	; Zone map to the top
+	tya
+	sec
+	sbc #39
+	tay
+	lda (tempWork5),y
+;	bpl .od2
+.od2
+	ldy #MapTerminalToDoor_Index_Zone2
+	sta (tempWork0),y
+
+
+	; Unblock the maze cell for the door
+	jsr .dtGetMazeTile
+	ldy #Node_isBlocked
+	lda (tempWork5),y
+	and #!Node_isBlocked_Wall
+	sta (tempWork5),y
+
+.dt2
+	; Check the others
+	lda tempWork0
+	clc
+	adc #MapTerminalToDoor_Size
+	sta tempWork0
+	bcc .ldt1
+	inc tempWork1
+	jmp .ldt1
+
+.ldt1 jmp .dt1
+.dtEnd
+	jmp .noSubGameState
+
+.dtGetMazeTile
+	ldx tempWork2
+	ldy tempWork3
+	jsr GetMazeNodesIndex
+	sta tempWork5
+	stx tempWork6
+	rts
+
+} ;<!ifdef RedirectHandleUserInput {

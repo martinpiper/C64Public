@@ -41,6 +41,7 @@
 .historyBufferOffsetL = .historyBufferLenH + $10
 .historyBufferOffsetH = .historyBufferOffsetL + $10
 ;CompressionEndOFHistoryBufferTables = .historyBufferOffsetH + $10
+CompressionHistoryBufferTablesSize = 4 * $10
 
 !ifdef Decompression_OptimiseNoStoreStub { } else {
 RNXPCompressionDecompress_InitStore

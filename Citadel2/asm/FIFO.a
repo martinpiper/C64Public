@@ -1,0 +1,73 @@
+!zn
+; A Trashed
+FIFOInit
+	lda #0
+	sta FIFOStartIndex
+	sta FIFOEndIndex
+	rts
+
+; Exit
+; A Size
+FIFOSize
+	lda FIFOEndIndex
+	cmp FIFOStartIndex
+	bcc .l1
+	; sec ; Always set
+	sbc FIFOStartIndex
+	rts
+.l1
+	lda #FIFOEntries
+	sec
+	sbc FIFOStartIndex
+	clc
+	adc FIFOEndIndex
+	rts
+
+; Exit
+; A Trashed
+; ST EQ = Empty
+FIFOIsEmpty
+	lda FIFOStartIndex
+	cmp FIFOEndIndex
+	rts
+
+; A/X Value lo/hi to add
+; Exit
+; A/Y Trashed
+FIFOAdd
+	ldy FIFOEndIndex
+	sta FIFOSlotsLo,y
+	txa
+	sta FIFOSlotsHi,y
+	iny
+	cpy #FIFOEntries
+	beq .l2
+	sty FIFOEndIndex
+	rts
+.l2
+	ldy #0
+	sty FIFOEndIndex
+	rts
+
+; Exit
+; A/X Value lo/hi removed
+; Y Trashed
+FIFORemove
+	ldy FIFOStartIndex
+	lda FIFOSlotsLo,y
+	ldx FIFOSlotsHi,y
+	iny
+	cpy #FIFOEntries
+	beq .l3
+	sty FIFOStartIndex
+	rts
+.l3
+	ldy #0
+	sty FIFOStartIndex
+	rts
+
+
+FIFOStartIndex !by 0
+FIFOEndIndex !by 0
+FIFOSlotsLo !fill FIFOEntries
+FIFOSlotsHi !fill FIFOEntries

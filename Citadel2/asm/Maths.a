@@ -1,0 +1,37 @@
+!zn
+DivideBy8
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	rts
+
+!zn
+DivideBy32
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	lsr tempWork1
+	ror tempWork0
+	rts
+
+!zn
+DivideBy32_2
+	lsr tempWork3
+	ror tempWork2
+	lsr tempWork3
+	ror tempWork2
+	lsr tempWork3
+	ror tempWork2
+	lsr tempWork3
+	ror tempWork2
+	lsr tempWork3
+	ror tempWork2
+	rts

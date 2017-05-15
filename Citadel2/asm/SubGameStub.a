@@ -1,0 +1,58 @@
+!to "SubGameStub.prg", cbm
+!sal
+!sl "SubGameStub.map"
+!svl "SubGameStub.lbl"
+!pdb "SubGameStub.pdb"
+!cpu 6510
+!ct pet
+!initmem %10101010
+
+Multiplex_items = 1
+
+!source "../stdlib/stdlib.a"
+
+* = $800
+SubGameRunnerEntry
+	sei
+	ldx #$ff
+	txs
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda #0
+	sta VIC2BorderColour
+
+	lda #VIC2MemorySetupDefault
+	sta VIC2MemorySetup
+
+	jsr SubGameEnter
+.l1
+	+MACROWaitForTheLastScan_A
+	jsr SubGameUpdate
+	jmp .l1
+
+
+topScreenBank		!by 0
+BankToScreenAddr	!by >SCREENRAM , >SCREENRAM
+
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+ColourTabH !for .table1,25 {!by (>COLOURRAM) + >(((.table1-1) * 40)) }
+
+ClearGameScreensChar	= 32
+Scroller_ClearColour	= 0
+
+ScrollerFlipBank
+BackupSprites
+RestoreSprites
+ClearGameColourTo
+ClearGameScreen
+SubGameAddLoseSprites
+SubGameAddWinSprites
+SubGameHandleInventory
+SubGameInventoryPopulate
+	clc
+	rts
+
+!source "ScrollerVars.a"
+!source "asm/SubGame.a"
+!source "asm/Joystick.a"

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-remotemonitor $(ProjectDir)\Citadel2.prg</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SolveRunner|Win32'">
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-remotemonitor $(ProjectDir)\SolveRunner.prg</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Citadel2|Win32'">
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-remotemonitor -truedrive -cartcrt $(ProjectDir)\Citadel2Cart.crt</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='All|Win32'">
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-remotemonitor $(ProjectDir)\Citadel2.prg</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>

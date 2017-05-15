@@ -1,0 +1,170 @@
+;Citadel2Cart boot code
+;-truedrive -cartcrt Citadel2Cart.crt
+
+!source "../stdlib/stdlib.a"
+!to "Citadel2Cart.prg", cbm
+!sl "Citadel2Cart.map"
+!sal
+!svl "Citadel2Cart.lbl"
+!cpu 6510
+!ct pet
+
+; This is bank 0 in the cart
+; It contains the boot code.
+; The code at Boot copies the code at RealCodeStart to its real place in $c000.
+; It then uses the other cart banks to copy the compressed Citadel2 code.
+
+; If bank 0 ever gets over 8K or the compressed game code gets over $b800 (47104) bytes then this approach is screwed. :)
+
+*=$8000
+!word Boot
+!word Boot
+	!byte $c3 ;c
+	!byte $c2 ;b
+	!byte $cd ;m
+	!byte $38 ;8
+	!byte $30 ;0
+
+Boot
+	sei
+	jsr $fda3 ;prepare irq
+	jsr $fd50 ;init memory
+	jsr $fd15 ;init i/o
+;	jsr $ff5b ;init video
+
+	lda #0
+	sta ZPCurrentFileDeviceNumber
+
+	; Init drive code
+!if 1 {
+	; If a drive exists then fake init the disk drive device number
+	lda #8
+	jsr LISTEN
+	lda #$6f	; $f (command channel) OR $60
+	jsr SECOND
+	jsr READST
+	and #%10000011	; Ignore EOI
+	bne .noDrive
+	lda #8
+	sta ZPCurrentFileDeviceNumber
+.noDrive
+	jsr UNLSN
+}
+
+	; Need to use indirect addressing to do the copy since we cannot use self modifying code
+	lda #<CodeMoveStart
+	sta $fb
+	lda #>CodeMoveStart
+	sta $fc
+	lda #(>(CodeMoveEnd-CodeMoveStart))+1
+	sta $fd
+	lda #<RealCodeStart
+	sta $fe
+	lda #>RealCodeStart
+	sta $ff
+	ldy #0
+.l1
+	lda ($fb),y
+	sta ($fe),y
+	dey
+	bne .l1
+	inc $fc
+	inc $ff
+	dec $fd
+	bne .l1
+	jmp RealCodeStart
+
+!zone
+CodeMoveStart
+!pseudopc $c000 {
+RealCodeStart
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	+ClearScreenAt_AX SCREENRAM , ' '
+	+MACROWaitForTheLastScanPlus1_A
+	+SetDefaultScreenLowerCase_A
+
+	; Check the cart banks switch properly, otherwise there is a hardware problem
+	lda $8000
+	ldx $8001
+	; Switch to the next bank and compare for data differences
+	ldy #1
+	sty MemoryMappedIOArea1
+	cmp $8000
+	bne .diff
+	cpx $8001
+	bne .diff
+
+	+DisplayColourTextMiddle_AX .HWFail , .HWFailEnd , SCREENRAM + (12*40) , VIC2Colour_White
+
+	; Endless loop
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+
+.diff
+	; Display message in zero page...
+	ldx #0
+	lda #VIC2Colour_Black
+.cl1
+	sta COLOURRAM ,x
+	sta COLOURRAM + $100 ,x
+	sta COLOURRAM + $200 ,x
+	sta COLOURRAM + $2e8 ,x
+	dex
+	bne .cl1
+
+	+DisplayColourTextMiddle_AX .loading , .loadingEnd , $0000 + (17*40) , VIC2Colour_White
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #4
+	sta VIC2MemorySetup
+
+	; Copy the other 8KB cart banks to BASIC memory
+	lda #0
+	tax
+	ldy #1
+	sty MemoryMappedIOArea1
+.l2
+.sm1	lda $8000,x
+.sm2	sta $0800,x
+	dex
+	bne .l2
+	inc .sm1+2
+	inc .sm2+2
+
+	lda .sm2+2
+	cmp #$c0
+	beq .RunGame
+
+	lda .sm1+2
+	cmp #$a0
+	bne .l2
+
+	lda #$80
+	sta .sm1+2
+	; Next bank
+	iny
+	sty MemoryMappedIOArea1
+	jmp .l2
+
+.RunGame
+	; Stop the cartridge from selecting the bank by selecting an invalid bank
+	lda #$7f
+	sta MemoryMappedIOArea1
+
+	; Start the compressed game code
+	jmp 2061
+
+
+.loading !scr "<<loading>>"
+.loadingEnd
+
+.HWFail !scr "Hardware failure, banks not switching!"
+.HWFailEnd
+
+!source "../stdlib/Initialise.a"
+
+}
+CodeMoveEnd

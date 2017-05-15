@@ -1,0 +1,49 @@
+; Inventory management
+
+PlayerInventory_Max = 12
+PlayerInventory !fill PlayerInventory_Max , -1
+
+; A = Item number to add
+; Exit
+; A = Trashed
+; X/Y = Preserved
+; CS = Failed to add, no more space
+; CC = Added the item
+
+!zn {
+PlayerInventory_Init
+	ldx #PlayerInventory_Max-1
+	lda #-1
+.l1
+	sta PlayerInventory,x
+	dex
+	bpl .l1
+	rts
+}
+
+!zn {
+PlayerInventory_Add
+	sta .sm1+1
+	txa
+	pha
+
+	ldx #0
+.l1
+	lda PlayerInventory,x
+	bmi .freeSlot
+	inx
+	cpx #PlayerInventory_Max
+	bne .l1
+	sec
+	jmp .exit
+
+.freeSlot
+.sm1	lda #0
+	sta PlayerInventory,x
+	clc
+
+.exit
+	pla
+	tax
+	rts
+}

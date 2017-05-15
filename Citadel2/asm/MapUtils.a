@@ -1,0 +1,598 @@
+!zn
+UpdateMapToMaze
+	lda #<(MapData+2)
+	sta .sm1+1
+	lda #>(MapData+2)
+	sta .sm1+2
+	lda #<Maze
+	sta tempWork0
+	lda #>Maze
+	sta tempWork1
+	ldy #0
+.l1
+	ldx #'#'
+.sm1	lda $1234
+	cmp #SolidMapBlockIndex
+	bcs .l2
+	ldx #' '
+.l2
+	txa
+	sta (tempWork0),y
+
+	inc .sm1+1
+	bne .l3
+	inc .sm1+2
+.l3
+
+	inc tempWork0
+	bne .l4
+	inc tempWork1
+.l4
+
+	lda tempWork0
+	cmp #<MazeEnd
+	bne .l1
+	lda tempWork1
+	cmp #>MazeEnd
+	bne .l1
+
+	rts
+
+
+
+!zn
+!macro ZoneGrowCheck .pos , .currentZone {
+	ldy #.pos
+	lda (tempWork0),y
+	cmp #' '
+	bne .o1
+	ldx #1
+	lda .currentZone
+	sta (tempWork0),y
+.o1
+}
+.currentZone !by 0
+; To be called afer UpdateMapToMaze
+MapCreateZones
+	lda #0
+	sta .currentZone
+
+.l0
+	; The top and bottom rows are ignored due to the -40 and +40 Y index checks below
+	lda #<Maze
+	sta tempWork0
+	lda #>Maze
+	sta tempWork1
+
+	ldy #MazeWidth
+.fl1
+	; Look for the first ' '
+	lda (tempWork0),y
+	cmp #' '
+	beq .gotSpace
+
+	cmp #'#'
+	bne .notGotWall
+
+	; Store a negative value, useful for flagging no zone quickly with a "bmi" check
+	lda #-1
+	sta (tempWork0),y
+
+.notGotWall
+	inc tempWork0
+	bne .fl4
+	inc tempWork1
+.fl4
+
+	lda tempWork0
+	cmp #<(MazeEnd-(MazeWidth*2))
+	bne .fl1
+	lda tempWork1
+	cmp #>(MazeEnd-(MazeWidth*2))
+	bne .fl1
+
+	; No more spaces, so exit
+	rts
+
+.gotSpace
+	; Can start the growing checks from the current position since the zone number has been stored here
+	lda .currentZone
+	sta (tempWork0),y
+	ldx #1
+	jmp .gotZone
+
+	; Now the grow loop
+.gl1
+	; X = Updated a zone tile flag
+	ldx #0
+	lda #<Maze
+	sta tempWork0
+	lda #>Maze
+	sta tempWork1
+
+.l1
+	; If it is a cell with the current zone
+	ldy #MazeWidth
+	lda (tempWork0),y
+	cmp .currentZone
+	bne .next
+
+.gotZone
+	; Check for adjacent spaces
+
+	jsr .growZoneCheck
+
+.next
+	inc tempWork0
+	bne .l4
+	inc tempWork1
+.l4
+
+	lda tempWork0
+	cmp #<(MazeEnd-(MazeWidth*2))
+	bne .l1
+	lda tempWork1
+	cmp #>(MazeEnd-(MazeWidth*2))
+	bne .l1
+
+	; Backward sweep
+
+	lda #<(MazeEnd-(MazeWidth*2))
+	sta tempWork0
+	lda #>(MazeEnd-(MazeWidth*2))
+	sta tempWork1
+
+.l2
+	; If it is a cell with the current zone
+	ldy #MazeWidth
+	lda (tempWork0),y
+	cmp .currentZone
+	bne .next2
+
+	; Check for adjacent spaces
+
+	jsr .growZoneCheck
+
+.next2
+	dec tempWork0
+	lda tempWork0
+	cmp #$ff
+	bne .l42
+	dec tempWork1
+.l42
+
+	lda tempWork0
+	cmp #<(Maze)
+	bne .l2
+	lda tempWork1
+	cmp #>(Maze)
+	bne .l2
+
+	; Something was updated, so loop again
+	cpx #0
+	bne .gl1
+
+	inc .currentZone
+	jmp .l0
+
+.growZoneCheck
+	+ZoneGrowCheck MazeWidth-1		, .currentZone
+	+ZoneGrowCheck MazeWidth+1		, .currentZone
+	+ZoneGrowCheck MazeWidth-40		, .currentZone
+	+ZoneGrowCheck MazeWidth+40		, .currentZone
+	rts
+
+
+!zn
+MapPlacesToZone
+	ldx #0
+.l1
+	ldy InterestingPlacesY,x
+	lda ZoneMapTabL,y
+	sta tempWork0
+	lda ZoneMapTabH,y
+	sta tempWork1
+
+	ldy InterestingPlacesX,x
+	lda (tempWork0),y
+	sta InterestingPlacesZone,x
+
+	inx
+	cpx NumInterestingPlaces
+	bne .l1
+	rts
+
+ZoneMapTabL
+!for .y , MazeHeight {
+	!by <(ZoneMap+((.y-1) * MazeWidth))
+}
+ZoneMapTabH
+!for .y , MazeHeight {
+	!by >(ZoneMap+((.y-1) * MazeWidth))
+}
+
+
+; Zone cache space
+ZoneMapLinked_Max = 4
+ZoneMapStartCached	!by -1
+ZoneMapWorking		!by -1
+ZoneMapLinked		!fill ZoneMapLinked_Max , -1
+!zn
+; Entry
+; A = Zone number
+; Exit
+; A = Preserved
+; X/Y = Trashed
+; tempWork7/tempWork8 = Trashed
+CalculateConnectedZones
+	cmp ZoneMapStartCached
+	bne .l1
+	rts
+.l1
+	sta ZoneMapStartCached
+	sta ZoneMapWorking
+
+	ldx #ZoneMapLinked_Max-1
+	lda #-1
+.l2
+	sta ZoneMapLinked,x
+	dex
+	bpl .l2
+
+	; First iteration, it uses the passed in zone
+	ldx #-1
+.l7
+	lda #<MapTerminalToDoor
+	sta tempWork7
+	lda #>MapTerminalToDoor
+	sta tempWork8
+.l3
+	ldy #0
+	lda (tempWork7),y
+	bmi .l4	; The end of the list was encountered
+
+	ldy #MapTerminalToDoor_Index_Zone1
+	lda (tempWork7),y
+	bmi .l6	; The door isn't open
+	cmp ZoneMapWorking
+	bne .l8
+
+	iny
+	lda (tempWork7),y
+	cmp ZoneMapStartCached
+	beq .l8
+	jsr .insertUnique
+	bcs .end
+	jmp .l6
+
+.l8
+	ldy #MapTerminalToDoor_Index_Zone2
+	lda (tempWork7),y
+	cmp ZoneMapWorking
+	bne .l6
+
+	dey
+	lda (tempWork7),y
+	cmp ZoneMapStartCached
+	beq .l6
+	jsr .insertUnique
+	bcs .end
+
+.l6
+	; Advance
+	lda tempWork7
+	clc
+	adc #MapTerminalToDoor_Size
+	sta tempWork7
+	bcc .l5
+	inc tempWork8
+.l5
+	jmp .l3
+
+.l4
+	; Now progress through any previously added zones and double check them
+	inx
+	cpx #ZoneMapLinked_Max
+	beq .end
+	lda ZoneMapLinked,x
+	bmi .end
+	sta ZoneMapWorking
+	jmp .l7
+
+.end
+	lda ZoneMapStartCached
+	rts
+
+.insertUnique
+!zn {
+	sta mainAStore
+	stx mainXStore
+
+	ldx #0
+.l1
+	cmp ZoneMapLinked,x
+	beq .exit
+	lda ZoneMapLinked,x
+	bmi .store
+	lda mainAStore
+
+	; Already used slot
+	inx
+	cpx #ZoneMapLinked_Max
+	bne .l1
+	sec
+	jmp .exit
+
+.store
+	lda mainAStore
+	sta ZoneMapLinked,x
+
+.exit
+	clc
+	lda mainAStore
+	ldx mainXStore
+
+	rts
+}
+
+
+
+!zn
+;Entry:
+; tempWork0 = Screen bank hi address
+; A = Map block index
+; X = Map Y
+; Y = Map X
+; Exit:
+; A/X/Y = Trashed
+
+.isClipped !by 0
+.offScreen
+	rts
+
+UpdateMapBlockOnScreen
+
+	; First update the map block in the map
+	sta .sm1+1
+
+	stx tempWork7
+	sty tempWork8
+
+	; Update block into map
+	lda MapTabL,x
+	sta tempWork1
+	lda MapTabH,x
+	sta tempWork2
+.sm1	lda #0
+	sta (tempWork1),y
+
+	; Don't render if chars are being scrolled
+	lda frameTotalScrScroll
+	bne .offScreen
+
+	lda #0
+	sta .isClipped
+
+	; Test if the block is on the screen, or clipped, or off screen
+	; If it isn't on the screen then early exit
+	; Uses: scrollMapHX scrollMapLX scrollMapHY scrollMapLY
+
+	lda tempWork7
+	cmp scrollMapHY
+	beq .lclipPlotTop1
+	bcc .offScreen
+	jmp .notClipPlotTop1
+.lclipPlotTop1
+	lda scrollMapLY
+	beq .yOK
+	inc .isClipped
+	jmp .yOK
+.notClipPlotTop1
+
+
+	lda scrollMapHY
+	clc
+!ifdef Scroller_FullScreen {
+	; TODO: Block size 4x4 is not exactly divisible by 25, so this needs tweaking if we go full screen
+	adc #6
+} else {
+	adc #5
+}
+	cmp tempWork7
+	beq .lclipPlotBottom
+	bcc .offScreen
+	jmp .yOK
+.lclipPlotBottom
+	inc .isClipped
+
+.yOK
+	lda tempWork8
+	cmp scrollMapHX
+	beq .lclipPlotLeft1
+	bcc .offScreen
+	jmp .notClipPlotLeft1
+.lclipPlot jmp .clipPlot
+.lclipPlotLeft1
+	lda scrollMapLX
+	beq .xOK
+	inc .isClipped
+	jmp .xOK
+.notClipPlotLeft1
+
+
+	lda scrollMapHX
+	clc
+	adc #10
+	cmp tempWork8
+	beq .lclipPlotRight
+	bcc .offScreen
+	jmp .xOK
+.lclipPlotRight
+	inc .isClipped
+	jmp .xOK
+
+.xOK
+	; It's on screen at this point
+
+	; Now setup the block BlockTabL/BlockTabH
+	ldy .sm1+1
+	lda BlockTabL,y
+	sta tempWork1
+	lda BlockTabH,y
+	sta tempWork2
+
+	; Calculate the block pos on the screen
+	lda tempWork7
+	sec
+	sbc scrollMapHY
+	clc
+	rol
+	rol
+	sec
+	sbc scrollMapLY
+	tay
+
+	lda tempWork8
+	sec
+	sbc scrollMapHX
+	clc
+	rol
+	rol
+	sec
+	sbc scrollMapLX
+	sta tempWork5	; X pos
+
+	ldx #0
+
+	lda .isClipped
+	bne .lclipPlot
+	; Not clipped optimised plot
+;	inc VIC2ScreenColour
+
+	; So find the screen address
+	lda ScreenTabL,y
+	sta tempWork3
+	lda ScreenTabH,y
+	clc
+	adc tempWork0
+	sta tempWork4
+
+	ldy tempWork5
+
+!macro OptFullBlockPlot {
+	lda (tempWork1,x)
+	sta (tempWork3),y
+}
+!macro OptFullBlockAdd {
+	inc tempWork1
+	iny
+}
+!macro OptFullBlockAddLine {
+	inc tempWork1
+	tya
+	clc
+	adc #37
+	tay
+}
+
+	; Now draw the whole block
+.line0
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAddLine
+
+.line1
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAddLine
+
+.line2
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAddLine
+
+.line3
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+	+OptFullBlockAdd
+	+OptFullBlockPlot
+
+.offScreen2
+	rts
+
+.clipPlot
+	sty tempWork6
+
+;	inc VIC2BorderColour
+	lda #16
+	sta tempWork7
+
+	lda tempWork1
+	sta tempWork8
+
+.clp1
+
+!ifdef Scroller_FullScreen {
+	cpy #25
+} else {
+	cpy #20
+}
+	bcs .notPosY
+
+	lda ScreenTabL,y
+	sta tempWork3
+	lda ScreenTabH,y
+	clc
+	adc tempWork0
+	sta tempWork4
+
+	; Check X pos
+	ldy tempWork5
+
+!macro ClipPlot {
+	cpy #VIC2ScreenCharsWidth
+	bcs .notX1
+	+OptFullBlockPlot
+.notX1
+}
+	+ClipPlot
+	+OptFullBlockAdd
+	+ClipPlot
+	+OptFullBlockAdd
+	+ClipPlot
+	+OptFullBlockAdd
+	+ClipPlot
+
+.notPosY
+	inc tempWork6
+	ldy tempWork6
+
+	lda tempWork8
+	clc
+	adc #4
+	sta tempWork8
+	sta tempWork1
+	; Block data is aligned, so this and works
+	and #(4*4)-1
+	bne .clp1
+
+.donePlot
+	rts

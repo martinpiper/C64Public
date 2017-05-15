@@ -1,0 +1,266 @@
+#Code flow:
+ScrollEntryCommon.a - ScrollEntry
+Calls:
+	ScrollMain.a - InitialiseGame
+		UpdateMultiplexorToAnimation
+	ScrollerDemoMainline
+		DarkGrey	TopOfScreen
+		White		HandleUserInput
+						Updates reqested scroll speeds into frameTargetVelX and frameTargetVelY
+					Scroller.a - ScrollerCalculate
+						Stores into scrollerRealMovementXPixels and scrollerRealMovementYPixels
+		Blue		MusicPlayerPlay
+		LightRed	EnemyProcessActivation
+						EnemyThink
+		Green		UpdateSprites
+						This updates sprites with scrollerRealMovementXPixels and scrollerRealMovementYPixels
+					if Multiplex_SplitSort {
+		Brown			Scroller.a - AnimationUpdateMultiplexorPre
+		Cyan			Multiplex_Sort
+					}
+					ScrollerDemoWaitMultiplex
+		Red			Scroller.a - AnimationUpdateMultiplexor
+					if !Multiplex_SplitSort {
+		Cyan			Multiplex_Sort
+					}
+					if Multiplex_SplitSort {
+		LightRed		CopyMultiplexTables
+					}
+					ScrollerDemoWaitScorePanel
+					ScrollerUpdateTopIRQ
+		DarkGrey	BeforeScrollers
+		Purple		ScrollerScreen
+		LightGreen	ScrollerOffScreen
+		LightGrey	AfterScrollers (topScreenBank is the displayed screen)
+
+	if MazeSolve_DebugBorder {
+		DarkGrey	Idle
+		White		Scheduled DynamicMemory_BlockSweep
+		Red			WantMazeSolve_doInit
+		Green		WantMazeSolve_step
+		Blue		WantMazeSolve_traceBackStep
+		Yellow		WantMazeSolve_traceBackMemory
+						WantMazeSolveBytes and resultant route calculation copy
+		Purple		Out of memory DynamicMemory_BlockSweep
+	}
+
+	If Scroller_DebugColourScrollTimings {
+		Red			ScrollColour_1 top half of screen
+		Cyan		ScrollColour_1 bottom half of screen
+		Blue		Block colour draw
+	}
+	if Scroller_DebugScreenScrollTimings {
+		Red			ScrollBank0To1_1
+		Blue		Block draw
+	}
+
+
+During the sub-game
+		White		HandleUserInput
+						CheckForSubGameEntry
+							SubGameCreatePuzzle
+						SubGameUpdate
+							SubGame_CheckResult
+							SubGame_HandleUserUpdates
+							SubGame_DrawPointer
+							SubGameChar_UpdateHorizontalBar
+							SubGameChar_UpdateVerticalBar
+							SubGame_SolveXStripPreCalc
+							SubGame_SolveXStrip
+							SubGame_SolveXStripUpdatePosition
+						SubGame_ResetEnterTimer
+
+TODO items:
+
+* ; TODO: A bit buggy at the moment, the sub-game switch needs to be handled correctly
+
+
+
+* During the sub-game display the pickup being activated.
+
+
+
+* During sub-game reward longer successful paths with more points. Display how long the bonus will be while the routing is going on. It can count up as the routing progresses.
+
+
+
+* ; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
+	; This will need a file system builder tool for the cart banks
+
+
+
+* Think about how to destroy an open generator. Killing an enemy over an open generator could switch it to a destroyed generator.
+	Make it a random chance? I don't really want to have to store generator health for the whole map.
+	Have several open generator tiles with progressive damage that animates for each random chance enemy destruction, the last one doesn't generate anymore.
+
+
+
+
+* Use the map animated tile code to open/close the terminal controlled doors. Thus removing the current requirement for the doors to be always off-screen.
+
+
+
+
+* Different door type that animates open when an Node_isBlocked_Player/Enemy is next to it. And animates closed when there is no block.
+
+
+
+
+* Static enemies (movement -1) that just fire at the player
+	Coarse and fine movement needs to check
+
+
+
+
+* Enemies to use teleporters.
+	Check for same zone as the player at the destination teleport when hunting.
+	If yes, then route to the teleport and use it.
+
+
+
+* Enemy hit player, make player move away from the collision a bit
+
+
+
+
+* The enemy fire directon check can use the map or the screen chars to check if the intended fire direction to the player is clear, and then fire.
+	Better than just random firing.
+
+
+
+
+* TODO: Different weapon types or health upgrade etc
+
+
+
+
+* Robot black and pink
+
+
+
+* Each enemy has a threshold limit for "run away" and how they notice the aggressive actions counter.
+	When the counter is over the threshold then the enemy changes behaviour to be "run away"
+		"Run away" means tiles that are further away from the player, without line of sight, trickier to code.
+
+
+
+* Pick better interesting points, don't try to sort them with regard to zones. Go for better distribution.
+
+
+
+* Structure macro for doors
+	Also other structures in Data.a
+
+
+* TeleportPairs structure
+
+
+
+
+* If the on-screen enemy detects any solid char blocks underneath it, after the player bullet check, then explode it.
+	This is because it indicates there is a closed door underneath it.
+
+
+
+* If the off-screen enemy detects a blocked map tile then look for a map tile near it that isn't blocked and warp to that.
+	Free any allocated route as well.
+
+
+
+* Add memory read write failure checks in feature files for citadel
+
+
+
+* Score update routine
+
+
+
+* Enemy map update routine to utilise spare cycles during the frame
+
+
+
+* Better map with some landmarks like computer terminals and recharge points
+	Add their coordinates into the intesting places array and separate into types of places for easier AI lookup
+	Add distinct AI, some robots will shuttle between computer terminals.
+	Some will patrol.
+	When damaged they will try to get to a repair/recharge station.
+
+
+* Think about enemy AI metrics to use:
+	Hunt for player probability
+		Inquisitiveness. Modifies "Hunt for player probability" when the enemy hears gunfire.
+	Door check probability
+	Computer check probability
+	Recharge probability. Modified by a "damage to recharge modifier" value as damage is taken.
+		Damage to recharge modifier
+	
+
+
+* If I set DynamicMemorySize to be really low then I see multiple DynamicMemory_BlockSweep and DynamicMemory_AllocateBytes in the same frame.
+	This shouldn't happen. If the dynamic memory failed and there hasn't been any free and the DynamicMemory_BlockSweep fails to merge blocks then don't try DynamicMemory_AllocateBytes again until a block is potentially free again.
+	DynamicMemory_BlockSweep should early out if it doesn't think there are any blocks to free. i.e. No frees done since the last full sweep.
+	DynamicMemory_AllocateBytes should early out with failure for the same sized block if there have been no frees or successful sweep merges since the last attempt.
+
+
+
+
+* DynamicMemory_BlockSweep is taking way too many rasters
+	It needs to be shortened to work incrementally. After each block pos it will store the position and exit and carry on from there.
+	A successful allocate or free will reset the sweep block pos to the start.
+	If there have been no successful allocates and no frees then it can carry on from the last block merged. Else it starts from the start again.
+	The DynamicMemory_BlockSweepCount can then be lowered
+* DynamicMemory_AllocateBytes is also taking quite a large amount of time
+
+
+
+
+* Adding some placeholder animation types. See AnimationData_0
+	The code needs to process this properly
+	AnimationFindFreeSlot needs to setup colours and frames etc
+	Also see AnimationSpriteFrameCount etc
+	* Needs animation speed
+	* loop/self delete etc
+
+
+
+* Perhpas EnemyPositionsYHi, EnemyPositionsYLo, EnemyPositionsXLo , EnemyPositionsXHi , EnemyMoveStepsCount can be moved to the on-screen animation section
+	It would save a lot of memory space
+
+
+
+* Add code to grow out #Node_aversion when enemies are destroyed.
+	*TODO* #Node_aversion can be gradually reduced over time with maze node scans.
+	There can be displays, recharge stations, tool machines etc.
+	Some robots will run away, some will seek out the player if the security alert is high enough.
+	The player needs to access key card data from various terminals or specific types of robot.
+	Certain doors will only open for certain key cards.
+	Instead can try to take over certain robots and use them to open doors, or as battering rams or gun platforms.
+
+
+
+* Add a bat file builder for a C64 screen displaying route test that repeatedly picks locations in a maze and routes between them
+
+	
+* Sprites
+
+
+	
+* Add some feature file tests for multi-directional scroll animation engine
+	Fix Animation.feature so it will compile and test the bare minimum
+
+* Add feature file tests for EnemyProcessActivation
+
+* Perhaps use FIFO to quickly get the next free animation index to use. (Citadel2Entry.a - AnimationFindFreeSlot)
+
+
+
+* Robot's room - Place where robots rest, recharge and hide. There are recharge points.
+
+
+* Player upgrades
+** Faster speed
+** Bigger/more weapons
+** Circuit hacking addition
+
+
+* TODO - Exit level code goes here

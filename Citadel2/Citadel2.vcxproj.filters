@@ -1,0 +1,242 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Scroller">
+      <UniqueIdentifier>{1d8bcfdf-9be1-494d-a769-71266ab6f076}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SpriteMultiplexor">
+      <UniqueIdentifier>{a4d3d963-d0fe-4f82-a458-2d32aeaaed60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Citadel2">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="features">
+      <UniqueIdentifier>{0e0ded9d-92ee-4bad-8a34-2c4cee01ccfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="stdlib">
+      <UniqueIdentifier>{6015ff8b-27bf-47c2-8fa7-29db59543af0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Citadel2\asm">
+      <UniqueIdentifier>{a0bf251c-88a3-4f0e-83d0-ef03ee9c2e3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BerzerkRedux">
+      <UniqueIdentifier>{1f787dc5-7fac-4c3e-9b71-a954a3cf1778}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Decompression">
+      <UniqueIdentifier>{921343ac-fd03-4a2a-9ae7-d5ecc4c2c033}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="..\Scroller\LevelControl.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\OneTime.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScoreControl.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollEntry.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollEntryCommon.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\Scroller.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerCommon.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerData.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerDataMacro.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\Scrollers.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerSingle.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerSingleH.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerStrips.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerVars.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollMain.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\SetupIRQs.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\SFXWithMusic.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>SpriteMultiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>SpriteMultiplexor</Filter>
+    </None>
+    <None Include="BuildIt.bat" />
+    <None Include="features\Animation.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\FIFO.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\MazeSolving.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\MazeSolving2.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\MazeSolving3.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\simple.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="..\stdlib\Initialise.a">
+      <Filter>stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\PETSCII.a">
+      <Filter>stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\stdlib.a">
+      <Filter>stdlib</Filter>
+    </None>
+    <None Include="BuildIt2.bat" />
+    <None Include="..\Scroller\AnimationEngine.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="features\BoundaryActivation.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\Memory.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="Citadel2Entry.a">
+      <Filter>Citadel2</Filter>
+    </None>
+    <None Include="SolveRunner.a">
+      <Filter>Citadel2</Filter>
+    </None>
+    <None Include="asm\Animations.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Data.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\DynamicMemory.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Enemy.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\FIFO.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\MazeSolve.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\MazeSupport.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\UserInput.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\PlayerBullets.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollersNoColour.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="asm\SubGame.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Maths.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Camera.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="..\BerzerkRedux\Rand.a">
+      <Filter>BerzerkRedux</Filter>
+    </None>
+    <None Include="asm\SubGameStub.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\SubGameInput.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Teleport.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\MapUtils.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Radar.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\Inventory.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\TitleScreen.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="..\Decompression\Decompression.a">
+      <Filter>Decompression</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionP2.a">
+      <Filter>Decompression</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionVars.a">
+      <Filter>Decompression</Filter>
+    </None>
+    <None Include="asm\AnimationDefs.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\DataLevel1.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\DataDefs.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="BuildIt3.bat" />
+    <None Include="asm\Loader.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="Citadel2Cart.a">
+      <Filter>Citadel2</Filter>
+    </None>
+    <None Include="asm\Joystick.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\MapAnimations.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\PlayerSweep.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+    <None Include="asm\DataScorePanel.a">
+      <Filter>Citadel2\asm</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,685 @@
+!zn
+!ct pet {
+; See Solver.Solve for implementation details
+!ifdef MazeSolve_ZP_base {} else {
+MazeSolve_ZP_base	= $2
+}
+MazeSolve_ZP_lo					= MazeSolve_ZP_base + 0
+MazeSolve_ZP_hi					= MazeSolve_ZP_base + 1
+MazeSolve_ZP2_lo				= MazeSolve_ZP_base + 2
+MazeSolve_ZP2_hi				= MazeSolve_ZP_base + 3
+
+MazeSolve_ZP__size	= 4
+
+MazeSolve_anyWorkDone			!by 0
+MazeSolve_currentFrame			!by 0
+MazeSolve_indexEarlyOut_lo		!by 0
+MazeSolve_indexEarlyOut_hi		!by 0
+MazeSolve_earlyOutHit			!by 0
+MazeSolve_nextSmallestFrame		!by 0
+MazeSolve_lastSolveCost			!by 0
+; FIFO<Integer> nextIndex
+MazeSolve_incrementCounter		!by 0
+MazeSolve_maxIndexSize			!by 0
+MazeSolve_currentSolveID		!by 0
+
+; Like Solver.Grid.Grid() this will process the Maze map block array and initialise MazeNodes
+; X = 1 means blockAtFrame
+; Exit
+; A/Y Trashed
+MazeSolve_init
+	lda #<Maze
+	sta .sm1MazePos+1
+	lda #>Maze
+	sta .sm1MazePos+2
+
+	lda #<MazeNodes
+	sta MazeSolve_ZP_lo
+	lda #>MazeNodes
+	sta MazeSolve_ZP_hi
+
+.l1
+	; Clear the current Node to default values
+	lda #0
+	ldy #Node_isBlocked
+	sta (MazeSolve_ZP_lo),y
+	ldy #Node_aversion
+	sta (MazeSolve_ZP_lo),y
+	ldy #Node_reachedVia
+	sta (MazeSolve_ZP_lo),y
+	ldy #Node_currentSolveID
+	sta (MazeSolve_ZP_lo),y
+
+!ifdef MazeSolve_LeanAndMean { } else {
+	lda #1
+	ldy #Node_travelCost
+	sta (MazeSolve_ZP_lo),y
+}
+
+	lda #-1
+!ifdef MazeSolve_LeanAndMean { } else {
+	ldy #Node_blockedAtFrame
+	sta (MazeSolve_ZP_lo),y
+	ldy #Node_blockedBeyond
+	sta (MazeSolve_ZP_lo),y
+}
+	ldy #Node_visitedAt
+	sta (MazeSolve_ZP_lo),y
+
+
+
+.sm1MazePos lda Maze
+	cmp #'@'
+	beq .nextBlock
+	cmp #'X'
+	beq .nextBlock
+	cmp #'*'
+	beq .isBlocked
+	cmp #'#'
+	beq .isBlocked
+	cmp #'0'
+	beq .isDigit
+	bcs .mightBeDigit
+	jmp .nextBlock
+
+.mightBeDigit
+	cmp #'9'
+	beq .isDigit
+	bcc .isDigit
+
+	jmp .nextBlock
+
+.isDigit
+!ifdef MazeSolve_LeanAndMean { } else {
+	ldy #Node_travelCost
+	cpx #0
+	beq .isTravelCost
+	ldy #Node_blockedAtFrame
+.isTravelCost
+	sec
+	sbc #'0'
+	sta (MazeSolve_ZP_lo),y
+}
+	jmp .nextBlock
+
+.isBlocked
+	ldy #Node_isBlocked
+	lda #Node_isBlocked_Wall
+	sta (MazeSolve_ZP_lo),y
+	jmp .nextBlock
+
+.nextBlock
+	; Progress to the next Node
+	lda MazeSolve_ZP_lo
+	clc
+	adc #Node__size
+	sta MazeSolve_ZP_lo
+	bcc .l2
+	inc MazeSolve_ZP_hi
+.l2
+	; Increment the source map pos
+	inc .sm1MazePos+1
+	bne .l3
+	inc .sm1MazePos+2
+.l3
+	lda #<MazeEnd
+	cmp .sm1MazePos+1
+	bne .l1l
+	lda #>MazeEnd
+	cmp .sm1MazePos+2
+	bne .l1l
+
+	rts
+
+.l1l jmp .l1
+
+; A/X Value lo/hi to add
+; Exit
+; A/Y Trashed
+; void setStartPosition(int index)
+MazeSolve_setStartPosition
+	sta MazeSolve_ZP_lo
+	stx MazeSolve_ZP_hi
+
+	inc MazeSolve_currentSolveID
+	lda #-1
+	sta MazeSolve_nextSmallestFrame
+	sta MazeSolve_lastSolveCost
+	sta MazeSolve_incrementCounter
+	sta MazeSolve_maxIndexSize
+
+	lda #0
+	sta MazeSolve_anyWorkDone
+	sta MazeSolve_currentFrame
+	sta MazeSolve_earlyOutHit
+
+	ldy #Node_visitedAt
+	sta (MazeSolve_ZP_lo),y
+	ldy #Node_reachedVia
+	sta (MazeSolve_ZP_lo),y
+
+	ldy #Node_currentSolveID
+	lda MazeSolve_currentSolveID
+	sta (MazeSolve_ZP_lo),y
+
+	; Solve.nextIndex
+	jsr FIFOInit
+
+	lda MazeSolve_ZP_lo
+	ldx MazeSolve_ZP_hi
+	jsr FIFOAdd
+
+	lda #1
+	sta MazeSolve_incrementCounter
+
+	rts
+
+; A/X Value lo/hi of Node index
+; Exit
+; Solve.indexEarlyOut
+MazeSolve_setIndexEarlyOut
+	sta MazeSolve_indexEarlyOut_lo
+	stx MazeSolve_indexEarlyOut_hi
+	rts
+
+; Call this until carry is clear.
+; Exit
+; A/X/Y Trashed
+; C = 1 indicates more work needs to be done.
+; C = 0 means the route has been solved
+; boolean step()
+MazeSolve_step
+	jsr FIFOSize
+	cmp MazeSolve_maxIndexSize
+	bmi .o1
+	sta MazeSolve_maxIndexSize
+.o1
+
+	jsr FIFOIsEmpty
+	bne .o2
+	clc
+	rts
+.o2
+
+	jsr FIFORemove
+	sta MazeSolve_ZP_lo
+	stx MazeSolve_ZP_hi
+
+	; Try to grow the current square
+	; if (node.visitedAt == currentFrame)
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP_lo),y
+	cmp MazeSolve_currentFrame	; (node.visitedAt == currentFrame)
+	beq .consider ; Consider it for growth
+
+.notConsider
+	lda MazeSolve_earlyOutHit
+	beq .noRet
+	clc
+	rts
+
+.noRet
+	; if (index != -1)
+	lda MazeSolve_ZP_lo
+	cmp #-1
+	beq .noAddBack
+	ldx MazeSolve_ZP_hi
+	cpx #-1
+	beq .noAddBack
+
+	jsr FIFOAdd
+
+	lda MazeSolve_nextSmallestFrame
+	cmp #-1
+	beq .resetFrameNow
+
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP_lo),y
+	cmp MazeSolve_nextSmallestFrame
+	bcc .resetFrameNow2
+	jmp .noAddBack
+
+.resetFrameNow
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP_lo),y
+.resetFrameNow2
+	sta MazeSolve_nextSmallestFrame
+
+.noAddBack
+
+	dec MazeSolve_incrementCounter
+	bne .retTrue2
+
+	lda MazeSolve_nextSmallestFrame
+	cmp #-1
+	beq .o7
+
+	sta MazeSolve_currentFrame
+
+	jmp .o8
+.o7
+
+	inc MazeSolve_currentFrame
+
+.o8
+	lda #-1
+	sta MazeSolve_nextSmallestFrame
+
+	jsr FIFOSize
+	sta MazeSolve_incrementCounter
+
+.retTrue2
+	sec
+	rts
+
+ ; Consider it for growth
+.consider
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP_lo),y
+	cmp MazeSolve_currentFrame
+	beq .consider2
+	jmp .notConsider
+.consider2
+	; growTo Left
+	lda MazeSolve_ZP_lo
+	sec
+	sbc #Node__size
+	sta MazeSolve_ZP2_lo
+	lda MazeSolve_ZP_hi
+	sbc #0
+	sta MazeSolve_ZP2_hi
+	lda #Node_Directions_Left
+	jsr MazeSolve_growTo
+
+	; growTo Right
+	lda MazeSolve_ZP_lo
+	clc
+	adc #Node__size
+	sta MazeSolve_ZP2_lo
+	lda MazeSolve_ZP_hi
+	adc #0
+	sta MazeSolve_ZP2_hi
+	lda #Node_Directions_Right
+	jsr MazeSolve_growTo
+
+	; growTo Up
+	lda MazeSolve_ZP_lo
+	sec
+	sbc #<(Node__size * MazeWidth)
+	sta MazeSolve_ZP2_lo
+	lda MazeSolve_ZP_hi
+	sbc #>(Node__size * MazeWidth)
+	sta MazeSolve_ZP2_hi
+	lda #Node_Directions_Up
+	jsr MazeSolve_growTo
+
+	; growTo Down
+	lda MazeSolve_ZP_lo
+	clc
+	adc #<(Node__size * MazeWidth)
+	sta MazeSolve_ZP2_lo
+	lda MazeSolve_ZP_hi
+	adc #>(Node__size * MazeWidth)
+	sta MazeSolve_ZP2_hi
+	lda #Node_Directions_Down
+	jsr MazeSolve_growTo
+
+	lda #-1
+	sta MazeSolve_ZP_lo
+	sta MazeSolve_ZP_hi
+	jmp .notConsider
+
+
+; A = A combination of Node_isBlocked_* types
+; The type Node_isBlocked_Wall is always added to the check
+; Exit
+; A Trashed
+MazeSolve_setBlockCheckType
+	ora #Node_isBlocked_Wall
+	sta .smBlockCheckType+1
+	rts
+
+.retFalse
+	clc
+	rts
+
+; MazeSolve_ZP_lo/MazeSolve_ZP_hi = parent Node
+; MazeSolve_ZP2_lo/MazeSolve_ZP2_hi = Node to grow to
+; A = direction travelled
+; Exit
+; A/X/Y Trashed
+; C = 1 indicates more work needs to be done.
+; C = 0 means the route has been solved
+; boolean growTo(Node parentNode, int newIndex, Node.Directions directionTravelled)
+MazeSolve_growTo
+	sta .sm1directionTravelled+1
+
+	; if (node.isBlocked || (node.blockedBeyond != -1 && currentFrame > node.blockedBeyond))
+	ldy #Node_isBlocked
+	lda (MazeSolve_ZP2_lo),y
+
+	; For the target strip out any other blocks apart from the wall block type
+	ldx MazeSolve_ZP2_lo
+	cpx MazeSolve_indexEarlyOut_lo
+	bne .notTarget
+	ldx MazeSolve_ZP2_hi
+	cpx MazeSolve_indexEarlyOut_hi
+	bne .notTarget
+	
+	; ... strip out any other blocks apart from the wall block type
+;	inc VIC2BorderColour
+	and #Node_isBlocked_Wall
+
+.notTarget
+
+.smBlockCheckType	and #Node_isBlocked_Wall
+	bne .retFalse
+
+	ldy #Node_currentSolveID
+	lda MazeSolve_currentSolveID
+	cmp (MazeSolve_ZP2_lo),y
+	beq .retFalse
+
+!ifdef MazeSolve_LeanAndMean { } else {
+	ldy #Node_blockedBeyond
+	lda (MazeSolve_ZP2_lo),y
+	cmp #-1
+	beq .canMoveTo
+	lda MazeSolve_currentFrame
+	cmp (MazeSolve_ZP2_lo),y	; currentFrame > node.blockedBeyond
+	beq .canMoveTo
+	bcs .retFalse
+.canMoveTo
+}
+
+.sm1directionTravelled lda #0
+	ldy #Node_reachedVia
+	sta (MazeSolve_ZP2_lo),y
+
+	ldy #Node_currentSolveID
+	lda MazeSolve_currentSolveID
+	sta (MazeSolve_ZP2_lo),y
+
+	; Calculate when to do the next movement
+	lda MazeSolve_currentFrame
+	clc
+!ifdef MazeSolve_LeanAndMean { } else {
+	ldy #Node_travelCost
+	adc (MazeSolve_ZP2_lo),y
+}
+	ldy #Node_aversion
+	adc (MazeSolve_ZP2_lo),y
+	ldy #Node_visitedAt
+	sta (MazeSolve_ZP2_lo),y
+
+!ifdef MazeSolve_LeanAndMean { } else {
+	ldy #Node_blockedAtFrame
+	lda (MazeSolve_ZP2_lo),y
+	cmp MazeSolve_currentFrame
+	bne .o3
+
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP2_lo),y
+	clc
+	ldy #Node_travelCost
+	adc (MazeSolve_ZP2_lo),y
+	ldy #Node_visitedAt
+	sta (MazeSolve_ZP2_lo),y
+
+.o3
+}
+	lda MazeSolve_ZP2_lo
+	cmp MazeSolve_indexEarlyOut_lo
+	bne .o4
+	lda MazeSolve_ZP2_hi
+	cmp MazeSolve_indexEarlyOut_hi
+	bne .o4
+
+	lda #1
+	sta MazeSolve_earlyOutHit
+
+.o4
+
+	lda #1
+	sta MazeSolve_anyWorkDone
+
+	lda MazeSolve_ZP2_lo
+	ldx MazeSolve_ZP2_hi
+	jsr FIFOAdd
+
+	lda MazeSolve_nextSmallestFrame
+	cmp #-1
+	beq .ResetFrameNow3
+
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP2_lo),y
+	cmp MazeSolve_nextSmallestFrame
+	bcc .ResetFrameNow4
+	jmp .o5
+
+.ResetFrameNow3
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP2_lo),y
+.ResetFrameNow4
+	sta MazeSolve_nextSmallestFrame
+
+.o5
+.retTrue
+	sec
+	rts
+
+
+; A/X Value lo/hi of result buffer
+; Exit
+; A/Y Trashed
+; String traceBack(int index)
+MazeSolve_setTraceBackResultBuffer
+	sta MazeSolve_ZP2_lo
+	stx MazeSolve_ZP2_hi
+	lda #0
+	tay
+	sta (MazeSolve_ZP2_lo),y
+	rts
+
+.workTraceBackBuffer !fill 256,0
+
+; A/X Value lo/hi of Node index
+; Exit
+; A/X/Y Trashed
+MazeSolve_startTraceBack
+	sta MazeSolve_ZP_lo
+	stx MazeSolve_ZP_hi
+
+	lda #<.workTraceBackBuffer
+	sta .smMazeSolve_traceBackBuffer+1
+	lda #>.workTraceBackBuffer
+	sta .smMazeSolve_traceBackBuffer+2
+
+	lda #-1
+	sta MazeSolve_lastSolveCost
+	rts
+
+; Exit
+; Y The length of the route in bytes including the null termination
+; A/X Trashed
+; C = 1 indicates more work needs to be done.
+; C = 0 means the route has been traced back
+; String traceBack(int index)
+MazeSolve_traceBackStep
+	; MPi: TODO: Can use Node_currentSolveID to help search for the nearest current solve to the end point
+	; This is a paranoia check for the end position
+	ldy #Node_currentSolveID
+	lda MazeSolve_currentSolveID
+	cmp (MazeSolve_ZP_lo),y
+	beq .thisSolveOK
+	jmp .o15
+.thisSolveOK
+
+	lda MazeSolve_lastSolveCost
+	cmp #-1
+	bne .solveCostSet
+	ldy #Node_visitedAt
+	lda (MazeSolve_ZP_lo),y
+	sta MazeSolve_lastSolveCost
+.solveCostSet
+
+	ldy #Node_reachedVia
+	lda (MazeSolve_ZP_lo),y
+	cmp #Node_Directions_Up
+	bne .o12
+
+	lda MazeSolve_ZP_lo
+	clc
+	adc #<(Node__size * MazeWidth)
+	sta MazeSolve_ZP_lo
+	lda MazeSolve_ZP_hi
+	adc #>(Node__size * MazeWidth)
+	sta MazeSolve_ZP_hi
+
+	lda #'U'
+	jmp .storeDirection
+
+.o12
+	cmp #Node_Directions_Down
+	bne .o13
+
+	lda MazeSolve_ZP_lo
+	sec
+	sbc #<(Node__size * MazeWidth)
+	sta MazeSolve_ZP_lo
+	lda MazeSolve_ZP_hi
+	sbc #>(Node__size * MazeWidth)
+	sta MazeSolve_ZP_hi
+
+	lda #'D'
+	jmp .storeDirection
+.o13
+
+	cmp #Node_Directions_Left
+	bne .o14
+
+	lda MazeSolve_ZP_lo
+	clc
+	adc #Node__size
+	sta MazeSolve_ZP_lo
+	lda MazeSolve_ZP_hi
+	adc #0
+	sta MazeSolve_ZP_hi
+
+	lda #'L'
+	jmp .storeDirection
+
+.o14
+	cmp #Node_Directions_Right
+	bne .o15
+
+	lda MazeSolve_ZP_lo
+	sec
+	sbc #Node__size
+	sta MazeSolve_ZP_lo
+	lda MazeSolve_ZP_hi
+	sbc #0
+	sta MazeSolve_ZP_hi
+
+	lda #'R'
+	jmp .storeDirection
+.o15
+
+	; Now reverse the output into the real output buffer
+	ldy #0
+	lda .smMazeSolve_traceBackBuffer+1
+	sta .smMazeSolve_traceBackBuffer3+1
+	lda .smMazeSolve_traceBackBuffer+2
+	sta .smMazeSolve_traceBackBuffer3+2
+
+.l5
+	lda .smMazeSolve_traceBackBuffer3+1
+	cmp #<.workTraceBackBuffer
+	bne .o17
+	lda .smMazeSolve_traceBackBuffer3+2
+	cmp #>.workTraceBackBuffer
+	bne .o17
+
+	; Null terminate whatever was there
+	lda #0
+	sta (MazeSolve_ZP2_lo),y
+	iny
+	clc
+	rts
+
+.o17
+	; Pre-decrement read since it was post-increment stored
+	dec .smMazeSolve_traceBackBuffer3+1
+	lda .smMazeSolve_traceBackBuffer3+1
+	cmp #$ff
+	bne .o16
+	dec .smMazeSolve_traceBackBuffer3+2
+.o16
+.smMazeSolve_traceBackBuffer3 lda $0000
+	sta (MazeSolve_ZP2_lo),y
+	iny
+	jmp .l5
+
+
+.storeDirection
+!ifdef MazeSolveReversedOff {} else {
+	and #$7f
+}
+.smMazeSolve_traceBackBuffer sta $0000
+	inc .smMazeSolve_traceBackBuffer+1
+	bne .o10
+	inc .smMazeSolve_traceBackBuffer+2
+.o10
+	sec
+	rts
+
+
+; From Solver.Node
+!ifdef MazeSolve_LeanAndMean {
+Node_isBlocked		= 0;
+Node_aversion		= 1;
+Node_visitedAt		= 2;
+Node_currentSolveID = 3;
+Node_reachedVia		= 4;
+
+Node__size			= 5;
+
+} else {
+
+Node_isBlocked		= 0;	///< Blocked or not, a solid wall for example
+Node_travelCost		= 1;	///< The cost to travel over this Node
+Node_blockedAtFrame	= 2;	///< At a particular time this tile will be blocked
+Node_blockedBeyond	= 3;	///< After a particular time this tile will be blocked. Indicates something has stopped there.
+Node_aversion		= 4;	///< Avoid this Node metric. Higher numbers increase the cost to travel this Node
+Node_visitedAt		= 5;	///< Set with the frame count while growing the route, the value is increased every iteration
+Node_currentSolveID = 6;	///< Every solve has a unique ID (up to max int). If the current solve encounters the same ID then it knows it has visited this Node before and skips it. This avoids the need to clear the solved Node array every time a solve is a started.
+Node_reachedVia		= 7;	///< Updated during growing the solution
+
+Node__size			= 8;
+}
+
+
+!if Node__size > 127 {
+!error "Node__size cannot be more than 127"
+}
+
+Node_isBlocked_Wall		= 1
+Node_isBlocked_Player	= 2
+Node_isBlocked_Enemy	= 4
+
+; Solver.Node.Directions
+Node_Directions_None	= 0;
+Node_Directions_Up		= 1;
+Node_Directions_Down	= 2;
+Node_Directions_Left	= 3;
+Node_Directions_Right	= 4;
+
+
+FIFOEntries = 64
+!source "asm/FIFO.a"
+
+!ifdef MazeNodesAlloced {} else {
+MazeNodes
+!fill (MazeWidth* MazeHeight * Node__size) , 0
+}
+} ;< !ct pet

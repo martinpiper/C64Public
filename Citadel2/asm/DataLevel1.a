@@ -1,0 +1,312 @@
+!to "DataLevel1.prg", cbm
+!sl "DataLevel1.map"
+
+!source "asm/DataDefs.a"
+
+
+* = LevelDataStart
+
+numMapUsedChars = 256
+numMapUsedTiles = 32
+
+!align 255,0
+BlockData
+!bin "Level1.ctm" , numMapUsedTiles*4*4 ,  $14 + (numMapUsedChars * 9) , 2
+
+!align 255,0
+BlockColours
+
+!ifdef CharColoursForEveryCharacter {
+CharColours
+!bin "Level1.ctm" , numMapUsedChars , $14 + (numMapUsedChars * 8)
+}
+
+
+;!align 255,0
+MapData
+!by MazeWidth,MazeHeight
+!bin "Level1.ctm" , (MazeWidth*MazeHeight) ,  $14 + (numMapUsedChars * 9) + (numMapUsedTiles*4*4 * 2) , 2
+
+BackgroundFixedColours
+!bin "Level1.ctm" , 3 , 4
+
+NumInterestingPlaces !by calcedNumPlaces
+; A list of interesting coordinates to route to
+InterestingPlacesX
+!by 2	, 4		, 4		, 4		, 2		, 3
+!by 2,	7,	21,	17,	30,	27,	3 ,	9 ,	23,	2,	29,	8,	4 , 22 , 7  , 10
+!by 8	, 12	, 10	, 11	, 6
+!by 8	, 1		, 15	, 16	, 19
+calcedNumPlaces = * - InterestingPlacesX
+; Padding
+!fill MaxInterestingPlaces - (* - InterestingPlacesX),0
+
+InterestingPlacesY
+!by 2	, 10	, 3		, 6		, 6		, 4
+!by 3,	4,	7,	14,	20,	9,	9 ,	13,	10,	20,	7,	13,	6 , 21 , 4  , 10
+!by 3	, 8		, 10	, 3	, 6
+!by 18	, 20	, 20	, 12	, 14
+; Padding
+!fill MaxInterestingPlaces - (* - InterestingPlacesY),0
+
+InterestingPlacesZone !fill MaxInterestingPlaces , 0xff
+
+
+
+; Holds the coordinates of terminals, their related doors and the door type
+; Structure:
+;	Terminal X	When MapTerminalToDoor_EndList then it is the end of the list
+;	Terminal Y
+;	Door X
+;	Door Y
+;	Tile index
+MapTerminalToDoor
+	; Note, this door opens two doors
+	!by 8 , 2 ,			9 , 11 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, -1 , -1
+
+	!by 31 , 23 ,		18 , 11 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, -1 , -1
+
+	!by 19 , 15 ,		5 , 6 ,		MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, -1 , -1
+	!by 19 , 15 ,		5 , 10 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, -1 , -1
+
+	!by 15 , 21 ,		3 , 18 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, -1 , -1
+	!by 15 , 21 ,		3 , 22 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, -1 , -1
+
+	; End of doors
+	!by -1
+
+; Some padding
+!fill MapTerminalToDoor_Size * 8 , 0
+
+TeleportPairs
+	!by 1 , 18 ,		25 , 11		; To location
+	!by 25 , 11 ,		1 , 18		; To location
+	!by 2 , 2 ,			-1 , -1		; End level
+	!by -1
+
+; Some padding
+!fill 4 * 8 , 0
+
+; The index into the Enemy structures is shifted by -1 because 0 is used as a clear index flag for AnimationActiveSlot
+; A negative flag cannot be used because we want potentially >128 enemies in the DB
+
+; Negative type indicates invalid enemy type, hence an unused slot
+; The first entry is the player animation. It gets updated by HandleUserInput instead of EnemyThink
+EnemyType
+	!by 5	; Player!
+	!by 0 , 1 , 2
+	!by 0, 0 , 1 , 2 , 3 , 0
+	!by 1, 0 , 1 , 2 , 3 , 0
+	!by 2, 0 , 1 , 2 , 3 , 0 , 1 , 2 , 3 , 0 , 1 , 2 , 3
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyType),-1	; Fill the rest with nothing
+
+; Positive index means the enemy has been allocated an on-screen animation slot
+; Negative means it is not allocated an on-screen slot
+EnemyToAnimationIndex
+	!fill MaxEnemies , $ff
+
+EnemyOffScreenCount
+	!fill MaxEnemies , 0
+
+EnemyRequestedRoute
+	!fill MaxEnemies , 0
+
+EnemyPositionsXLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsXHi
+	!fill MaxEnemies , 0
+
+EnemyPositionsYLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsYHi
+	!fill MaxEnemies , 0
+
+; Map tile positions
+EnemyPositionsX
+	!by 8
+	!by 2 , 3 , 4 
+	!by 2 , 3 , 4 , 3  , 4  , 5
+	!by 21 , 22 , 23 , 24 , 25 , 26
+	!by 27 , 28 , 29 , 30 , 31 , 32 , 27 , 28 , 29 , 30 , 31 , 32 , 29
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsX),-1	; Fill the rest with nothing
+
+EnemyPositionsY
+	!by 3
+	!by 3 , 3 , 3
+	!by 5 , 5 , 5 , 10 , 10 , 19
+	!by 4 , 4 , 4 , 4 , 4 , 4
+	!by 19, 19, 19, 19, 20, 21, 22, 22, 22, 22, 22, 22, 21
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsY),-1	; Fill the rest with nothing
+
+; The lower the number the more alert the enemy is for .playerAgression and will start chasing the player instead
+EnemyAlertness
+	!by -1
+	!by 2 , 3 , 4 
+	!by 2 , 3 , 0 , 3  , 4  , 5
+	!by 21 , 22 , 0 , 24 , 25 , 26
+	!by 27 , 28 , 29 , 30 , 31 , 0 , 27 , 28 , 29 , 30 , 31 , 32 , 29
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyAlertness),-1	; Fill the rest with nothing
+
+EnemySpeed
+	!by -1
+	!by 0 , 1 , 2
+	!by 0 , 1 , 2 , 3 , 0 , 1
+	!by 1 , 2 , 1 , 2 , 1 , 2
+	!by 1 , 2 , 3 , 2 , 1 , 3 , 1 , 3 , 1 , 1 , 2 , 1 , 3
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemySpeed),-1	; Fill the rest with nothing
+
+EnemyHealth
+	!by -1
+	!by 2 , 3 , 4
+	!by 0 , 1 , 2 , 3 , 4 , 0
+	!by 3 , 4 , 0 , 0 , 1 , 1
+	!by 1 , 1 , 1 , 0 , 1 , 1 , 1 , 0 , 1 , 0 , 0 , 1 , 0
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyHealth),-1	; Fill the rest with nothing
+
+
+EnemyBlockedCount
+	!fill MaxEnemies , 0
+
+
+EnemyMoveStepsLo
+	!fill MaxEnemies , 0
+
+; If this hi byte is 0 then there are no queued steps
+; If this is initialised then EnemyMoveStepsCount must be non-zero
+EnemyMoveStepsHi
+	!fill MaxEnemies , 0
+
+; The original values for EnemyMoveStepsLo/EnemyMoveStepsHi
+EnemyMoveStepsOriginalLo
+	!fill MaxEnemies , 0
+EnemyMoveStepsOriginalHi
+	!fill MaxEnemies , 0
+
+EnemyMoveGotMovement
+	!fill MaxEnemies , 0
+
+EnemyMoveStepsCount
+	!fill MaxEnemies , 0
+
+EnemyPreviousSolveRequestX
+	!fill MaxEnemies , 0
+EnemyPreviousSolveRequestY
+	!fill MaxEnemies , 0
+
+; Fixed number of animation slots
+AnimationTypeTableLo
+!by <AnimationData_0 , <AnimationData_1 , <AnimationData_2 , <AnimationData_3 , <AnimationData_4 , <AnimationData_5 , <AnimationData_6 , <AnimationData_7
+!by <AnimationData_8 , <AnimationData_9 , <AnimationData_10, <AnimationData_11, <AnimationData_12, <AnimationData_13, <AnimationData_14, <AnimationData_15
+AnimationTypeTableHi
+!by >AnimationData_0 , >AnimationData_1 , >AnimationData_2 , >AnimationData_3 , >AnimationData_4 , >AnimationData_5 , >AnimationData_6 , >AnimationData_7
+!by >AnimationData_8 , >AnimationData_9 , >AnimationData_10, >AnimationData_11, >AnimationData_12, >AnimationData_13, >AnimationData_14, >AnimationData_15
+
+MapAnimationTypeTableLo
+!by <MapAnimationData_0 , <MapAnimationData_1 , <MapAnimationData_2 , <MapAnimationData_3 , <MapAnimationData_4 , <MapAnimationData_5 , <MapAnimationData_6 , <MapAnimationData_7
+!by <MapAnimationData_8 , <MapAnimationData_9 , <MapAnimationData_10, <MapAnimationData_11, <MapAnimationData_12, <MapAnimationData_13, <MapAnimationData_14, <MapAnimationData_15
+MapAnimationTypeTableHi
+!by >MapAnimationData_0 , >MapAnimationData_1 , >MapAnimationData_2 , >MapAnimationData_3 , >MapAnimationData_4 , >MapAnimationData_5 , >MapAnimationData_6 , >MapAnimationData_7
+!by >MapAnimationData_8 , >MapAnimationData_9 , >MapAnimationData_10, >MapAnimationData_11, >MapAnimationData_12, >MapAnimationData_13, >MapAnimationData_14, >MapAnimationData_15
+
+
+; Data after this point can be dynamic in length and referenced by updates to previous tables
+
+AnimationData_0		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_Brown , 17 , 2
+!by 44 , 45 , 46 , 47 ,48 , 49 , 50 , 51 , 52 , 53 , 54 , 55 , 56 , 57 , 58 , 59 , 60
+
+AnimationData_1		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_LightBlue , 26 , 1
+!by 64 , 65 , 66 , 67 , 68 , 69 , 70 , 71 , 72 , 73 , 74 , 75 , 76 , 77
+!by 76 , 75 , 74 , 73 , 72 , 71 , 70 , 69 , 68 , 67 , 66 , 65 , 64
+
+AnimationData_2		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_Red , 2 , 2
+!by 61 , 62
+
+AnimationData_3		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_LightGrey , 12 , 2
+!by 32 , 33 , 34 , 35 , 36 , 37 , 38 , 39 , 40 , 41 , 42 , 43
+
+; Big explosion
+AnimationData_4		+MakeAnimation AnimationFlags_DeleteAtEnd | AnimationFlags_InheritColour , 0 , 13 , 2
+!by 7 , 8 , 9 , 10 , 11 , 12 , 13 , 6 , 5 , 4 , 3 , 2 , 1
+
+AnimationData_5		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_LightRed , 10 , 1
+!by 22 , 23 , 24 , 25 , 26 , 27 , 28 , 29 , 30 , 31
+
+AnimationData_6		+MakeAnimation AnimationFlags_Cycle | AnimationFlags_InheritColour | AnimationFlags_CharCollide | AnimationFlags_PlayerCollideS , 0 , 4 , 2
+!by 86 , 95 , 96 , 95
+
+AnimationData_7		+MakeAnimation AnimationFlags_DeleteAtEnd | AnimationFlags_PlayerCollideL | AnimationFlags_Pickup , VIC2Colour_LightBlue , 3*16 , 2
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+!by 97 , 98 , 99
+
+AnimationData_8		+MakeAnimation AnimationFlags_Cycle , VIC2Colour_LightBlue , 1 , 2
+!by 100
+
+; Small explosion
+AnimationData_9		+MakeAnimation AnimationFlags_DeleteAtEnd | AnimationFlags_InheritColour , 0 , 8 , 2
+!by 78 , 79 , 80 , 81 , 82 , 83 , 84 , 85
+
+; Used for bigger explosions where we want to use alternate frame flickering
+; Big explosion, blanked
+AnimationData_10		+MakeAnimation AnimationFlags_DeleteAtEnd | AnimationFlags_InheritColour , 0 , 25 , 1
+!by 7 , 186 , 8 , 186 , 9 , 186 , 10 , 186 , 11 , 186 , 12 , 186 , 13 , 186 , 6 , 186 , 5 , 186 , 4 , 186 , 3 , 186 , 2 , 186 , 1
+; Small explosion, blanked
+AnimationData_11		+MakeAnimation AnimationFlags_DeleteAtEnd | AnimationFlags_InheritColour , 0 , 16 , 1
+!by 186 , 78 , 186 , 79 , 186 , 80 , 186 , 81 , 186 , 82 , 186 , 83 , 186 , 84 , 186 , 85
+; Big explosion, end frame stays blank
+AnimationData_12		+MakeAnimation AnimationFlags_InheritColour , 0 , 14 , 2
+!by 7 , 8 , 9 , 10 , 11 , 12 , 13 , 6 , 5 , 4 , 3 , 2 , 1 , 186
+
+; Persistent pickup animation
+AnimationData_13		+MakeAnimation AnimationFlags_Cycle | AnimationFlags_PlayerCollideL | AnimationFlags_Pickup , VIC2Colour_LightBlue , 3 , 2
+!by 97 , 98 , 99
+
+AnimationData_14 = *
+AnimationData_15 = *
+
+
+; List of map tiles followed by a negative number to signify the end of the list
+; Open enemy generator frames for this map
+MapAnimationData_0
+	!by 8,	8,	8,	8,	9,	9,	9,	9,	10,	10,	10,	10,	7,	7,	7,	7, -1
+MapAnimationData_1	= *
+MapAnimationData_2	= *
+MapAnimationData_3	= *
+MapAnimationData_4	= *
+MapAnimationData_5	= *
+MapAnimationData_6	= *
+MapAnimationData_7	= *
+MapAnimationData_8	= *
+MapAnimationData_9	= *
+MapAnimationData_10	= *
+MapAnimationData_11	= *
+MapAnimationData_12	= *
+MapAnimationData_13	= *
+MapAnimationData_14	= *
+MapAnimationData_15	= *
+
+
+LevelDataEnd = *
+
+!if LevelDataEnd >= MusicPlayerInit { !error "LevelDataEnd must not impact MusicPlayerInit" }

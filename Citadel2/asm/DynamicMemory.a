@@ -1,0 +1,279 @@
+!zn
+!ct pet {
+; DynamicMemory_ZP_lo and DynamicMemory_ZP_hi must be consecutive ZP locations
+
+; DynamicMemoryData must be a block of memory. Doesn't have to be aligned. (!fill DynamicMemorySize , 0)
+; DynamicMemorySize must be defined. Must be exactly divisible by 256 (DynamicMemorySize = 512)
+; If DynamicMemory_HeapCorruptHook is set to a routine address then it is called with jmp DynamicMemory_HeapCorruptHook if the heap looks corrupt
+
+!if (DynamicMemory_ZP_lo+1) != DynamicMemory_ZP_hi {
+	!error "DynamicMemory_ZP_lo and DynamicMemory_ZP_hi must be consecutive"
+}
+
+kDynamicMemory_header_State	= 0	; Must be 0
+kDynamicMemory_header_Size	= 1
+
+kDynamicMemory_headerSize	= 2
+kDynamicMemory_maxBlockSize = 256 - kDynamicMemory_headerSize
+kDynamicMemory_free			= 1
+kDynamicMemory_allocated	= 2
+
+kDynamicMemory_smallestBlock = 8
+
+
+; Exit
+; A/X/Y Trashed
+DynamicMemory_Init
+	lda #<DynamicMemoryData
+	sta DynamicMemory_ZP_lo
+	ldx #>DynamicMemoryData
+	stx DynamicMemory_ZP_hi
+
+	clc
+	adc #<DynamicMemorySize
+	sta .smTopCheck1+1
+	txa
+	adc #>DynamicMemorySize
+	sta .smTopCheck2+1
+
+.cl1
+	ldy #kDynamicMemory_header_State
+	lda #kDynamicMemory_free
+	sta (DynamicMemory_ZP_lo),y
+	iny			; kDynamicMemory_header_Size
+	lda #kDynamicMemory_maxBlockSize
+	sta (DynamicMemory_ZP_lo),y
+
+	jsr DynamicMemory_IncrementBlock
+	lda #kDynamicMemory_headerSize
+	jsr DynamicMemory_IncrementBlock
+	jsr DynamicMemory_TopCheck
+	bcc .cl1
+
+	rts
+
+
+; Checks DynamicMemory_ZP_lo and DynamicMemory_ZP_hi with the top of memory
+; Exit
+; A Trashed
+; CC = Not reached
+; CS = Top reached or exceeded
+DynamicMemory_TopCheck
+	lda DynamicMemory_ZP_hi
+.smTopCheck2	cmp #0
+	bcc .ret
+	beq .loCheck
+	rts
+.loCheck
+	lda DynamicMemory_ZP_lo
+.smTopCheck1	cmp #0
+	bcc .ret
+	; CS
+.ret
+	rts
+
+; Adds A to DynamicMemory_ZP_lo and DynamicMemory_ZP_hi
+; A = Block size
+; Exit
+; A Trashed
+DynamicMemory_IncrementBlock
+	clc
+	adc DynamicMemory_ZP_lo
+	sta DynamicMemory_ZP_lo
+	bcc .l1
+	inc DynamicMemory_ZP_hi
+.l1
+	rts
+
+; A = Block size
+; Exit
+; A/X/Y Trashed
+; CC = Allocated
+; CS = Not allocated
+; DynamicMemory_ZP_lo/DynamicMemory_ZP_hi = Address of usable memory
+DynamicMemory_AllocateBytes
+	sta .smSizeCheck1+1
+	lda #<DynamicMemoryData
+	sta DynamicMemory_ZP_lo
+	ldx #>DynamicMemoryData
+	stx DynamicMemory_ZP_hi
+
+.al1
+	ldy #kDynamicMemory_header_State
+	lda (DynamicMemory_ZP_lo),y
+	cmp #kDynamicMemory_free
+	bne .nextBlock1
+
+	ldy #kDynamicMemory_header_Size
+	lda (DynamicMemory_ZP_lo),y
+	sec
+.smSizeCheck1 sbc #0	; cmp #xx
+	bcc .nextBlock2
+
+	; Large enough
+	sbc #2
+	bcc .doNotFragment
+	cmp #kDynamicMemory_smallestBlock
+	bcc .doNotFragment
+
+	; // Split the block
+	; Fill in the result for the next block
+	ldy .smSizeCheck1+1
+	iny			; + kDynamicMemory_headerSize
+	iny
+	iny			; kDynamicMemory_header_Size
+	sta (DynamicMemory_ZP_lo),y
+	dey			; kDynamicMemory_header_State
+	lda #kDynamicMemory_free
+	sta (DynamicMemory_ZP_lo),y
+
+	ldy #kDynamicMemory_header_Size		; buffer[i + 1] = arg1;
+	lda .smSizeCheck1+1
+	sta (DynamicMemory_ZP_lo),y
+
+.doNotFragment
+
+	ldy #kDynamicMemory_header_State
+	lda #kDynamicMemory_allocated
+	sta (DynamicMemory_ZP_lo),y
+
+	lda #kDynamicMemory_headerSize
+	jsr DynamicMemory_IncrementBlock
+
+	clc
+	rts
+
+.nextBlock1
+!ifdef DynamicMemory_HeapCorruptHook {
+	cmp #kDynamicMemory_allocated
+	beq .nextBlock2
+	jmp DynamicMemory_HeapCorruptHook
+}
+.nextBlock2
+	ldy #kDynamicMemory_header_Size
+	lda (DynamicMemory_ZP_lo),y
+	jsr DynamicMemory_IncrementBlock
+
+	lda #kDynamicMemory_headerSize
+	jsr DynamicMemory_IncrementBlock
+	jsr DynamicMemory_TopCheck
+	bcc .al1
+
+	; CS
+	rts
+
+
+; A/X = lo/hi address of memory to free that was previously returned by DynamicMemory_AllocateBytes
+; Exit
+; A/X/Y Trashed
+DynamicMemory_FreeBytes
+	sta DynamicMemory_ZP_lo
+	stx DynamicMemory_ZP_hi
+
+	lda DynamicMemory_ZP_lo
+	sec
+	sbc #kDynamicMemory_headerSize
+	sta DynamicMemory_ZP_lo
+	bcs .of1
+	dec DynamicMemory_ZP_hi
+.of1
+
+	; MPi: TODO: There is scope for refusing to free and throwing an error if the memory address doesn't look like a valid memory block.
+	; i.e. It is not set to kDynamicMemory_allocated, or the address is before or after the dynamic memory range, or the size is too large or too small
+
+	ldy #kDynamicMemory_header_State
+
+!ifdef DynamicMemory_HeapCorruptHook {
+!zn {
+	lda (DynamicMemory_ZP_lo),y
+	cmp #kDynamicMemory_allocated
+	beq .ok
+	jmp DynamicMemory_HeapCorruptHook
+.ok
+}
+}
+
+
+	lda #kDynamicMemory_free
+	sta (DynamicMemory_ZP_lo),y
+
+	rts
+
+
+; Exit
+; A/X/Y Trashed
+DynamicMemory_BlockSweep
+	lda #<DynamicMemoryData
+	sta DynamicMemory_ZP_lo
+	ldx #>DynamicMemoryData
+	stx DynamicMemory_ZP_hi
+.bs1
+	ldy #kDynamicMemory_header_State
+	lda (DynamicMemory_ZP_lo),y
+	cmp #kDynamicMemory_free
+	bne .skipBlock1
+
+	lda DynamicMemory_ZP_lo
+	sta .smBS1+1
+	lda DynamicMemory_ZP_hi
+	sta .smBS2+1
+
+	ldy #kDynamicMemory_header_Size
+	lda (DynamicMemory_ZP_lo),y
+	sta .smBSSize1+1
+	jsr DynamicMemory_IncrementBlock
+	lda #kDynamicMemory_headerSize
+	jsr DynamicMemory_IncrementBlock
+	jsr DynamicMemory_TopCheck
+	bcs .bsExit
+
+	; Check the next block free state
+	ldy #kDynamicMemory_header_State
+	lda (DynamicMemory_ZP_lo),y
+	cmp #kDynamicMemory_free
+	bne .skipBlock1
+
+	iny			; kDynamicMemory_header_Size
+	lda (DynamicMemory_ZP_lo),y
+	clc
+.smBSSize1	adc #0
+	bcs .skipBlock2
+	cmp #kDynamicMemory_maxBlockSize-kDynamicMemory_headerSize
+	beq .bsMergeAllowed1
+	bcs .skipBlock2
+
+.bsMergeAllowed1
+	clc
+	adc #kDynamicMemory_headerSize
+
+.smBS1	ldy #0
+	sty DynamicMemory_ZP_lo
+.smBS2	ldy #0
+	sty DynamicMemory_ZP_hi
+
+	ldy #kDynamicMemory_header_Size
+	sta (DynamicMemory_ZP_lo),y
+	jmp .skipBlock2
+
+.skipBlock1
+!ifdef DynamicMemory_HeapCorruptHook {
+!zn {
+	cmp #kDynamicMemory_allocated
+	beq .ok
+	jmp DynamicMemory_HeapCorruptHook
+.ok
+}
+}
+.skipBlock2
+	ldy #kDynamicMemory_header_Size
+	lda (DynamicMemory_ZP_lo),y
+	jsr DynamicMemory_IncrementBlock
+	lda #kDynamicMemory_headerSize
+	jsr DynamicMemory_IncrementBlock
+	jsr DynamicMemory_TopCheck
+	bcc .bs1
+
+.bsExit
+	rts
+
+} ;< !ct pet

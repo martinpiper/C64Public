@@ -1,0 +1,114 @@
+!zn
+
+MapAnimations_Max = 4
+MapAnimations_TileX !fill MapAnimations_Max , -1
+MapAnimations_TileY !fill MapAnimations_Max , -1
+MapAnimations_Lo	!fill MapAnimations_Max
+MapAnimations_Hi	!fill MapAnimations_Max
+
+!zn {
+MapAnimations_Init
+	ldx #MapAnimations_Max-1
+	lda #-1
+.l1
+	sta MapAnimations_TileX,x
+	dex
+	bpl .l1
+	rts
+
+	rts
+}
+
+!zn {
+; Allocates a new map animation if there is space
+; Entry:
+; A = Map animation type indexed into MapAnimationTypeTableLo/Hi
+; X = Map x
+; Y = Map y
+; Exit:
+; A/X/Y = Trashed
+; CS	No slot
+; CC	Slot found, index in X
+MapAnimations_Allocate
+	sta .sm1+1
+	stx .smx+1
+	sty .smy+1
+	ldx #MapAnimations_Max-1
+.l1
+	lda MapAnimations_TileX,x
+	bmi .freeSlot
+	dex
+	bpl .l1
+	sec
+	rts
+
+.freeSlot
+.sm1	ldy #0
+	lda MapAnimationTypeTableLo,y
+	sta MapAnimations_Lo,x
+	lda MapAnimationTypeTableHi,y
+	sta MapAnimations_Hi,x
+.smx	lda #0
+	sta MapAnimations_TileX,x
+.smy	lda #0
+	sta MapAnimations_TileY,x
+	clc
+	rts
+}
+
+!zn {
+.del !by 0
+; Entry:
+; tempWork0 = Screen bank hi address
+; Exit:
+; A/X/Y = Trashed
+MapAnimations_Render
+
+;	inc VIC2BorderColour
+
+	ldx #MapAnimations_Max-1
+.l1
+	lda MapAnimations_TileX,x
+	bmi .nextSlot
+
+	stx .smx+1
+
+	lda MapAnimations_Lo,x
+	sta tempWork1
+	lda MapAnimations_Hi,x
+	sta tempWork2
+	ldy #0
+	lda (tempWork1),y
+	bmi .endSequence
+	sta .sma+1
+
+	; Next frame, post increment
+	inc MapAnimations_Lo,x
+	bne .l2
+	inc MapAnimations_Hi,x
+.l2
+
+	ldy MapAnimations_TileX,x
+	lda MapAnimations_TileY,x
+	tax
+
+.sma lda #0
+;	inc VIC2BorderColour
+	jsr UpdateMapBlockOnScreen
+;	inc VIC2BorderColour
+
+.smx	ldx #0
+
+.nextSlot
+	dex
+	bpl .l1
+
+;	lda #0
+;	sta VIC2BorderColour
+
+	rts
+
+.endSequence
+	sta MapAnimations_TileX,x
+	jmp .smx
+}
