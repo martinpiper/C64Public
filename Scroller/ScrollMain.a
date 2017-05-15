@@ -25,6 +25,10 @@ InitBank0Data
 	sta topScreenScrollPos
 }
 
+!ifdef EnableScorePanelDataHook {
+	jsr BeforeScorePanelDataHook
+}
+
 	ldx #0
 .cch2
 !ifdef Scroller_UseDemoScorePanel {
@@ -87,6 +91,11 @@ InitBank0Data
 	sta $0500,x
 	dex
 	bpl .spr1
+
+!ifdef EnableScorePanelDataHook {
+	jsr AfterScorePanelDataHook
+}
+
 	rts
 
 !zn
@@ -157,6 +166,12 @@ InitialiseGameWithoutWait
 	lda #Multiplex_items
 	sta Multiplex_MaxSpr
 	jsr Multiplex_InitSort
+
+!ifdef ScrollerPreGameCalcuation_Enable {
+	jsr ScrollerPreGameCalcuation
+}
+
+	+MACROWaitForTheLastScanPlus1_A
 
 	; Zero out the pixel scroll values
 	lda #0
@@ -1167,6 +1182,8 @@ SkipLevelFrameLogic
 	jsr ParalaxUpdate
 }
 
+	; When this is set, it will execute a count down timer and then exit.
+	; Very useful for triggering an end of game situation on player death.
 	lda ScrollerExitMainLineCounter
 	beq .doLoop
 	dec ScrollerExitMainLineCounter

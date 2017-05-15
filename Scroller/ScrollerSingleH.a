@@ -144,17 +144,7 @@ ScrollerOffScreen
 	sta frameScrollMoveColours
 	sta frameTotalScrScroll
 
-	; Do this first since the colour scroll can take some time
-	lda topScreenBank
-	eor #1
-	sta topScreenBank
-	beq .m1
-	lda #$cf
-	bne .m2
-.m1
-	lda #$cb
-.m2
-	jsr Multiplex_SetSpritePointer
+	jsr ScrollerFlipBank
 
 	inc ScrollerScreenCharMovedX
 	jmp ScrollSingleColour_1

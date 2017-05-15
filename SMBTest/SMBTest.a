@@ -1,0 +1,166 @@
+;SMBTest test code
+
+!source "../stdlib/stdlib.a"
+!to "SMBTest.prg", cbm
+;!sal
+!sl "SMBTest.map"
+!svl "SMBTest.lbl"
+!cpu 6510
+!ct pet
+
+*=$400
+!bin "TestLevel1.vsf" ,(40*25), $480
+
+*=SPRITEFRAME
+!by $20
+
+*=$800
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %........................
++SpriteLine %.#############..........
++SpriteLine %.#############..........
++SpriteLine %.##..#####..##..........
++SpriteLine %.##..#####..##..........
++SpriteLine %.#############..........
++SpriteLine %.###.......###..........
++SpriteLine %.#############..........
++SpriteLine %...##.....##............
++SpriteLine %..##.......##...........
+!byte 0
+
+*=$900
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	lda #VIC2Colour_Red
+	sta VIC2Sprite0Colour
+
+	lda #1
+	sta VIC2SpriteEnable
+	lda #0
+	sta VIC2SpriteMulticolour
+	sta VIC2SpriteDoubleWidth
+
+.l1
+bph
+	+MACROWaitForTheLastScan_A
+	inc VIC2BorderColour
+
+	jsr PlayerUpdate
+
+	dec VIC2BorderColour
+	jmp .l1
+
+!source "../stdlib/Initialise.a"
+
+FixedPoint = 6
+FixedPointMul = 1<<FixedPoint
+
+; Down in ZP
+FixedTempWork = $2
+
+!macro ValueToFixed .v {
+	!by (.v*FixedPointMul)&255 , ((.v*FixedPointMul)>>8)&255
+}
+
+!macro ValueToFixedByte .v {
+	!by (.v*FixedPointMul)&255
+}
+
+!macro ValueToFixedImmediateA .v {
+	lda #(.v*FixedPointMul)&255
+}
+
+; Only for positive numbers in A, no sign
+!macro AddAToFixed .a {
+	clc
+	adc .a
+	sta .a
+	lda .a+1
+	adc #0
+	sta .a+1
+}
+
+!macro AddAXToFixed .a {
+	clc
+	adc .a
+	sta .a
+	txa
+	adc .a+1
+	sta .a+1
+}
+
+!macro LoadAXFixed .a {
+	lda .a
+	ldx .a+1
+}
+
+!macro StoreAXFixed .a {
+	lda .a
+	ldx .a+1
+}
+
+AXFixedToInt
+	stx FixedTempWork
+!for .temp , FixedPoint {
+	lsr FixedTempWork
+	ror
+	}
+	ldx FixedTempWork
+	rts
+
+
+
+
+
+MBPosX +ValueToFixed VIC2SpriteXBorderLeft+(5*8)
+MBPosY +ValueToFixed VIC2SpriteYBorderTop+(10*8)
+
+MBVelX +ValueToFixed 1
+MBVelY +ValueToFixed -1
+
+PlayerUpdate
+	; Draw position
+	+LoadAXFixed MBPosX
+	jsr AXFixedToInt
+	sta VIC2Sprite0X
+	txa
+	and #1
+	sta VIC2SpriteXMSB
+
+	+LoadAXFixed MBPosY
+	jsr AXFixedToInt
+	sec
+	sbc #21
+	sta VIC2Sprite0Y
+
+	; Calculate next frame
+
+	; Fall under gravity, alters velocity
+	lda #1
+	+AddAToFixed MBVelY
+
+
+	; Move with velocity
+	+LoadAXFixed MBVelX
+	+AddAXToFixed MBPosX
+
+	+LoadAXFixed MBVelY
+	+AddAXToFixed MBPosY
+
+
+
+	rts

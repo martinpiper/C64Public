@@ -287,6 +287,9 @@ VIC2SpriteEnable				= $d015
 VIC2ScreenControlHDefault		= %11001000
 VIC2ScreenControlH				= $d016
 
+VIC2ScreenCharsWidth			= 40
+VIC2ScreenCharsHeight			= 25
+
 ; Each bit sets the double height enable for each sprite.
 VIC2SpriteDoubleHeight			= $d017
 
@@ -379,6 +382,16 @@ VIC2Colour_Grey			= 12
 VIC2Colour_LightGreen	= 13
 VIC2Colour_LightBlue	= 14
 VIC2Colour_LightGrey	= 15
+
+VIC2Multicolour_Black	= 8
+VIC2Multicolour_White	= 9
+VIC2Multicolour_Red		= 10
+VIC2Multicolour_Cyan	= 11
+VIC2Multicolour_Purple	= 12
+VIC2Multicolour_Green	= 13
+VIC2Multicolour_Blue	= 14
+VIC2Multicolour_Yellow	= 15
+
 
 ; Other constant values related to the VIC2
 ; Unexpanded sprite sizes
@@ -781,7 +794,7 @@ CyclesPerSecondPALC64 = 985248
 	ldx #.end-.start
 .dm1
 	lda .start-1,x
-	sta .scr + ((40-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.start))/2),x
 	dex
 	bne .dm1
 }
@@ -799,9 +812,9 @@ CyclesPerSecondPALC64 = 985248
 	ldx #.end-.start
 .dm1
 	lda .start-1,x
-	sta .scr + ((40-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.start))/2),x
 	lda #.col
-	sta COLOURRAM + (.scr & $3ff) + ((40-(.end-.start))/2),x
+	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.start))/2),x
 	dex
 	bne .dm1
 }
@@ -822,7 +835,7 @@ CyclesPerSecondPALC64 = 985248
 .dm1
 	lda .start-1,x
 	ora #128
-	sta .scr + ((40-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.start))/2),x
 	dex
 	bne .dm1
 }
@@ -832,9 +845,9 @@ CyclesPerSecondPALC64 = 985248
 .dm1
 	lda .start-1,x
 	ora #128
-	sta .scr + ((40-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.start))/2),x
 	lda #.col
-	sta COLOURRAM + (.scr & $3ff) + ((40-(.end-.start))/2),x
+	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.start))/2),x
 	dex
 	bne .dm1
 }
@@ -893,6 +906,18 @@ CyclesPerSecondPALC64 = 985248
 	sta VIC2ScreenControlH
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
+}
+
+; Turn off various bits in the VIC2 and SID chips
+; Screen, sprites and volume are disabled.
+; It is a good idea, but not mandatory, to use +MACROWaitForTheLastScan_A just before using this macro
+!macro BlankScreenBorderSpriteSound_A {
+	lda #0
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	sta VIC2ScreenControlV
+	sta VIC2SpriteEnable
+	sta SIDVolumeFilter
 }
 
 !macro InitKERNALIO_AXY {

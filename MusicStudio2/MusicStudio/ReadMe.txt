@@ -7,6 +7,8 @@ Music Studio 2.2 is a Windows-based SID music creator software. For an accurate 
 
 For proper initialization, run MusicStudio2\MusicStudio\MusicStudio.exe
 
+Video demonstration: https://www.youtube.com/watch?v=3ApqDIbYPec
+
 
 
 Loading and saving files:

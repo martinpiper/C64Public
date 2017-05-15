@@ -1,11 +1,16 @@
 ; Various scrolling routines optimised for their bank and direction
 
+ScrollBankSplit = $1000
+
 !zn
 ScrollBank0To1_1
 !ifdef Scroller_DebugScreenScrollTimings {
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 0 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(0*40),x
@@ -32,6 +37,7 @@ ScrollBank0To1_1
 	sta $cc00+01+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -40,6 +46,9 @@ ScrollBank0To1_1b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 0 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(11*40),x
@@ -78,6 +87,7 @@ ScrollBank0To1_1b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -90,6 +100,9 @@ ScrollBank1To0_1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 1 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(0*40),x
@@ -116,6 +129,7 @@ ScrollBank1To0_1
 	sta $c800+01+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -124,6 +138,9 @@ ScrollBank1To0_1b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 1 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(11*40),x
@@ -162,6 +179,7 @@ ScrollBank1To0_1b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -178,6 +196,9 @@ ScrollBank0To1_m1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 2 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -204,6 +225,7 @@ ScrollBank0To1_m1
 	sta $cc00-01+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -212,6 +234,9 @@ ScrollBank0To1_m1b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 2 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(11*40),x
@@ -250,6 +275,7 @@ ScrollBank0To1_m1b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -262,6 +288,9 @@ ScrollBank1To0_m1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 3 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -288,6 +317,7 @@ ScrollBank1To0_m1
 	sta $c800-01+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -296,6 +326,9 @@ ScrollBank1To0_m1b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 3 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(11*40),x
@@ -334,6 +367,7 @@ ScrollBank1To0_m1b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -350,6 +384,9 @@ ScrollBank0To1_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 4 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -376,6 +413,7 @@ ScrollBank0To1_40
 	sta $cc00+40+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -384,6 +422,9 @@ ScrollBank0To1_40b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 4 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(11*40),x
@@ -420,6 +461,7 @@ ScrollBank0To1_40b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -432,6 +474,9 @@ ScrollBank1To0_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 5 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -458,6 +503,7 @@ ScrollBank1To0_40
 	sta $c800+40+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -466,6 +512,9 @@ ScrollBank1To0_40b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 5 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(11*40),x
@@ -502,6 +551,7 @@ ScrollBank1To0_40b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -518,6 +568,9 @@ ScrollBank0To1_m40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 6 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(1*40),x
@@ -542,6 +595,7 @@ ScrollBank0To1_m40
 	sta $cc00-40+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 	
 !zn
@@ -550,6 +604,9 @@ ScrollBank0To1_m40b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 6 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(11*40),x
@@ -588,6 +645,7 @@ ScrollBank0To1_m40b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -600,6 +658,9 @@ ScrollBank1To0_m40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 7 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(1*40),x
@@ -624,6 +685,7 @@ ScrollBank1To0_m40
 	sta $c800-40+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -632,6 +694,9 @@ ScrollBank1To0_m40b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 7 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(11*40),x
@@ -670,6 +735,7 @@ ScrollBank1To0_m40b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -677,6 +743,7 @@ ScrollBank1To0_m40b
 	jmp NotWantingColourScroll
 
 
+!ifdef Scroller_MultiDirectionNoDiagonals { } else {
 
 
 ; With diagonal movement
@@ -686,6 +753,9 @@ ScrollBank0To1_41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 8 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(0*40),x
@@ -712,6 +782,7 @@ ScrollBank0To1_41
 	sta $cc00+41+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -720,6 +791,9 @@ ScrollBank0To1_41b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 8 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(11*40),x
@@ -756,6 +830,7 @@ ScrollBank0To1_41b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
@@ -769,6 +844,9 @@ ScrollBank1To0_41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 9 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(0*40),x
@@ -795,6 +873,7 @@ ScrollBank1To0_41
 	sta $c800+41+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -803,6 +882,9 @@ ScrollBank1To0_41b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 9 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(11*40),x
@@ -839,6 +921,7 @@ ScrollBank1To0_41b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
@@ -853,6 +936,9 @@ ScrollBank0To1_39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 10 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -879,6 +965,7 @@ ScrollBank0To1_39
 	sta $cc00+39+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -887,6 +974,9 @@ ScrollBank0To1_39b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 10 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(11*40),x
@@ -923,6 +1013,7 @@ ScrollBank0To1_39b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
@@ -936,6 +1027,9 @@ ScrollBank1To0_39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 11 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -962,6 +1056,7 @@ ScrollBank1To0_39
 	sta $c800+39+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -970,6 +1065,9 @@ ScrollBank1To0_39b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 11 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(11*40),x
@@ -1006,6 +1104,7 @@ ScrollBank1To0_39b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
@@ -1022,6 +1121,9 @@ ScrollBank0To1_m41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 12 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(1*40),x
@@ -1046,6 +1148,7 @@ ScrollBank0To1_m41
 	sta $cc00-41+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -1054,6 +1157,9 @@ ScrollBank0To1_m41b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 12 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(11*40),x
@@ -1092,6 +1198,7 @@ ScrollBank0To1_m41b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
@@ -1105,6 +1212,9 @@ ScrollBank1To0_m41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 13 , Scroller_ScrollBankEntry
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(1*40),x
@@ -1129,6 +1239,7 @@ ScrollBank1To0_m41
 	sta $c800-41+(10*40),x
 	dex
 	bne .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -1137,6 +1248,9 @@ ScrollBank1To0_m41b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 13 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(11*40),x
@@ -1175,6 +1289,7 @@ ScrollBank1To0_m41b
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
@@ -1189,6 +1304,9 @@ ScrollBank0To1_m39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 14 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(1*40),x
@@ -1213,6 +1331,7 @@ ScrollBank0To1_m39
 	sta $cc00-39+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -1221,6 +1340,9 @@ ScrollBank0To1_m39b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 14 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(11*40),x
@@ -1259,6 +1381,7 @@ ScrollBank0To1_m39b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
@@ -1272,6 +1395,9 @@ ScrollBank1To0_m39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 15 , Scroller_ScrollBankEntry
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(1*40),x
@@ -1296,6 +1422,7 @@ ScrollBank1To0_m39
 	sta $c800-39+(10*40),x
 	dex
 	bpl .l1
+}
 	jmp NotWantingScroll
 
 !zn
@@ -1304,6 +1431,9 @@ ScrollBank1To0_m39b
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_ScrollStartingBank {
+	+Scroller_ScrollExecCartBank Scroller_ScrollStartingBank + 15 , Scroller_ScrollBankEntry + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(11*40),x
@@ -1342,6 +1472,7 @@ ScrollBank1To0_m39b
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
@@ -1349,3 +1480,4 @@ ScrollBank1To0_m39b
 }
 	jmp NotWantingColourScroll
 
+};<< !ifdef Scroller_MultiDirectionNoDiagonals { } else {

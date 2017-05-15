@@ -27,7 +27,9 @@ ScorePanelBGCol2
 
 MaxSpriteNumber = 191
 SpriteEmptyLookupTab		!fill 256 , 0
+!ifdef SpriteEmptyLookupTab2Enable {
 SpriteEmptyLookupTab2		!fill 256 , 0
+}
 
 AnimationXPosLo !fill Multiplex_items
 AnimationXPosHi !fill Multiplex_items
@@ -43,23 +45,38 @@ AnimationSpriteFrame !fill Multiplex_items
 BlockColours
 ;!bin "../FreeDirRant/level4.blk",$80
 ; This needs BlockColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
-!bin "../FreeDirRant/attribs.raw"
+;!bin "../FreeDirRant/attribs.raw"
+
+; This needs CharColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
+!ifdef CharColoursForEveryCharacter {
+CharColours
+numMapUsedChars = 194
+!bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars , $14 + (numMapUsedChars * 8)
+}
 
 !align 255,0
 BlockData
 ;!bin "../FreeDirRant/level4.blk",,$80
-!bin "../FreeDirRant/tiles.raw"
+;!bin "../FreeDirRant/tiles.raw"
+numMapUsedTiles = 172
+!bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedTiles*4*4 , $14 + (numMapUsedChars * 8) + numMapUsedChars , 2
+
 
 !align 255,0
 ; First two bytes = width,height
 MapData
 ;!bin "../FreeDirRant/level4.map"
-!by 137,51
-!bin "../FreeDirRant/map.raw"
+;!by 137,51
+;!bin "../FreeDirRant/map.raw"
+!by 170
+!by 48
+!bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , 170*48 , $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) , 2
+
 
 BackgroundFixedColours
 ;!by $9, $f ,$c
-!by 14, 12 ,9
+;!by 14, 12 ,9
+!by 0 , $f , $9
 
 } else {
 ; Include some demonstration SEUCK data instead
@@ -293,7 +310,9 @@ MarkEndData = *
 *=$c000
 CharData
 ;!bin "../FreeDirRant/level4.chr",,$100
-!bin "../FreeDirRant/chars.raw"
+;!bin "../FreeDirRant/chars.raw"
+!bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars * 8 , $14
+
 
 *=$fe00
 SpriteData
@@ -427,7 +446,7 @@ TitleScreenBallSprites
 !align 255,0
 SpriteScoreChars
 +SEUCKFileData $a8,$1a + 2 - $900 + $f508
-; One unit of blank data follwing the player life graphic used by ScorePlayer1Render
+; One unit of blank data following the player life graphic used by ScorePlayer1Render
 !fill 8,0
 
 
@@ -452,7 +471,9 @@ SpriteScoreChars
 ; Gets initialised when the sprites are moved up into memory.
 +alignToBoundary
 +reserve ~SpriteEmptyLookupTab , 256
+!ifdef SpriteEmptyLookupTab2Enable {
 +reserve ~SpriteEmptyLookupTab2 , 256
+}
 +reserve ~Multiplex_YPos , Multiplex_items
 +reserve ~Multiplex_XPosLo , Multiplex_items
 +reserve ~Multiplex_XPosHi , Multiplex_items

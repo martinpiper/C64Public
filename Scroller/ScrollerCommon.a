@@ -3,6 +3,7 @@ MarkCommonCode = *
 
 ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
 ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+ColourTabH !for .table1,25 {!by (>COLOURRAM) + >(((.table1-1) * 40)) }
 
 !ifdef Scroller_MultiDirection {
 BlockTabL !for .table1,256 {!by <(BlockData + (.table1-1) * 16) }
@@ -16,7 +17,6 @@ BlockTabH !for .table1,128 {!by >(BlockData + ((.table1-1) * 25)) }
 BlockColTabL !for .table1,256 {!by <(BlockColours + (.table1-1) * 16) }
 BlockColTabH !for .table1,256 {!by >(BlockColours + ((.table1-1) * 16)) }
 }
-
 
 !ifdef IRQOpenBorders {
 ; Copy what is at the top of the bank 3 screen to the other pretend screens in bank 0 so the
@@ -57,4 +57,21 @@ ScrollerUpdateTopIRQ
 ;	lda #4	; Debug: Force a non-bad line in the bottom open border area to be used no matter what the scroll should be
 	sta topScreenScrollPos
 }
+	rts
+
+
+
+!zn
+ScrollerFlipBank
+	; Do this first since the colour scroll can take some time
+	lda topScreenBank
+	eor #1
+	sta topScreenBank
+	beq .m1
+	lda #$cf
+	bne .m2
+.m1
+	lda #$cb
+.m2
+	jsr Multiplex_SetSpritePointer
 	rts

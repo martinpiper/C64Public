@@ -12,12 +12,12 @@ SFXSIDInit
 .SFXCurrentVoice !by 1
 .xTemp !by 0
 .yTemp !by 0
-; A lokup table that converts SEUCK SFX number to the music player envelope number
+; A lookup table that converts SEUCK SFX number to the music player envelope number
 ; There are 24 SEUCK sound effects
 .SEUCKToMusicSFX
-	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
-	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
-	!by 2 , 3 , 4 , 5 , 5 , 4 , 3 , 2
+	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
+	!by 8 , 9 , 0 , 1 , 2 , 3 , 4 , 5
+	!by 6 , 7 , 0 , 1 , 2 , 3 , 4 , 5
 ; A lookup table to allow each sound effect to have a different note
 .SEUCKToMusicSFXNote
 	!by 48, 50, 32, 16, 32, 48, 52, 40
@@ -37,7 +37,7 @@ SFXInit
 	; Calculate the next sound channel to use into x
 	inc .SFXCurrentVoice
 	ldx .SFXCurrentVoice
-	; For example comparing with 2 gives two voices for sound effects, one for music
+	; For example comparing with 3 gives two voices for sound effects, one for music
 	cpx #3
 	bne .o1
 	ldx #1

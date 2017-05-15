@@ -220,6 +220,24 @@ ScrollerDrawStripTopBank1
 	+MACROScrollerDrawHStrip $cc00, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
 }
 
+!macro MACROScrollerDrawHStripChars .pos {
+	ldy topScreenBank
+	lda BankToScreenAddr,y
+!if .pos > 0 {
+	clc
+	adc #>.pos
+}
+	sta .sm1+2
+	ldy #39
+.l1
+.sm1 ldx $c800 + .pos,y
+	lda CharColours,x
+	sta COLOURRAM + .pos,y
+	dey
+	bpl .l1
+	rts
+}
+
 !zn {
 ScrollerDrawStripTopColour
 !ifdef Scroller_NeedFullColourScroll {
@@ -227,10 +245,14 @@ ScrollerDrawStripTopColour
 	lda #VIC2Colour_Blue
 	sta VIC2BorderColour
 }
+!ifdef CharColoursForEveryCharacter {
+	+MACROScrollerDrawHStripChars 0
+} else {
 !ifdef BlockColoursForEveryCharacter {
 	+MACROScrollerDrawHStrip $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
 } else {
 	+MACROScrollerDrawHStripOneColour $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
 }
 } else {
 	rts
@@ -300,6 +322,13 @@ ScrollerDrawStripBottomColour
 	sta VIC2BorderColour
 }
 	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
+!ifdef CharColoursForEveryCharacter {
+!ifdef Scroller_FullScreen {
+	+MACROScrollerDrawHStripChars $3c0
+} else {
+	+MACROScrollerDrawHStripChars $2F8
+}
+} else {
 !ifdef BlockColoursForEveryCharacter {
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawHStrip $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
@@ -311,6 +340,7 @@ ScrollerDrawStripBottomColour
 	+MACROScrollerDrawHStripOneColour $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
 } else {
 	+MACROScrollerDrawHStripOneColour $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+}
 }
 }
 } else {
@@ -566,6 +596,41 @@ ScrollerDrawStripLeftBank1
 	jmp ScrollerDrawStripLeftCommon
 }
 
+!ifdef CharColoursForEveryCharacter {
+!zn {
+CharColours_GeneralCharsColourise
+	sta .sm1+1
+	sta .sm2+1
+
+	ldy topScreenBank
+	lda BankToScreenAddr,y
+	sta .sm1+2
+	lda #>COLOURRAM
+	sta .sm2+2
+!ifdef Scroller_FullScreen {
+	ldy #24
+} else {
+	ldy #19
+}
+.l1
+.sm1	ldx $c800
+	lda CharColours,x
+.sm2	sta COLOURRAM
+	lda .sm1+1
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta .sm1+1
+	sta .sm2+1
+	bcc .l2
+	inc .sm1+2
+	inc .sm2+2
+.l2
+	dey
+	bpl .l1
+	rts
+}
+}
+
 !zn {
 ScrollerDrawStripLeftColour
 !ifdef Scroller_NeedFullColourScroll {
@@ -578,11 +643,15 @@ ScrollerDrawStripLeftColour
 	lda #VIC2Colour_Blue
 	sta VIC2BorderColour
 }
-
+!ifdef CharColoursForEveryCharacter {
+	lda #0
+	jmp CharColours_GeneralCharsColourise
+} else {
 !ifdef BlockColoursForEveryCharacter {
 	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
 } else {
 	+MACROScrollerDrawVStripOneColour scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
 }
 } else {
 	rts
@@ -634,6 +703,12 @@ ScrollerDrawStripRightColour
 	lda #VIC2Colour_Blue
 	sta VIC2BorderColour
 }
+
+!ifdef CharColoursForEveryCharacter {
+	lda #39
+	jmp CharColours_GeneralCharsColourise
+} else {
+
 	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
 	lda #$27
 	sta tempWork0
@@ -643,6 +718,7 @@ ScrollerDrawStripRightColour
 	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
 } else {
 	+MACROScrollerDrawVStripOneColour .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+}
 }
 } else {
 	rts

@@ -1,0 +1,59 @@
+* sed-4.2.1 for Windows *
+=========================
+
+What is it?
+-----------
+sed: stream editor
+
+Description
+-----------
+Sed (streams editor) isn't really a true text editor or text processor. Instead, it is used to filter text, i.e., it takes text input and performs some operation (or set of operations) on it and outputs the modified text. Sed is typically used for extracting part of a file using pattern matching or substituting multiple occurances of a string within a file. Version 1.4 is the fast, small sed originally distributed in the GNU toolkit and still distributed with Minix -- but it's still better for some uses (in particular, faster and less memory-intensive). More information can be found in the docs provided with the package, and in - IBM Developer Works Common Threads: Sed by Example: - Part 1<http://www-106.ibm.com/developerworks/linux/library/l-sed1.html> - Part 2<http://www-106.ibm.com/developerworks/linux/library/l-sed2.html> - Part 3<http://www-106.ibm.com/developerworks/linux/library/l-sed3.html> - Sed FAQ<http://sed.sourceforge.net/sedfaq.html> - Grymoire Sed Tutorial<http://www.grymoire.com/Unix/Sed.html> - Sed and Regular Expressions<http://main.rtfiber.com.tw/~changyj/sed> - Sourceforge project Sed<http://sed.sourceforge.net> - SedSed<http://sedsed.sourceforge.net> - Sed specification<http://www.opengroup.org/onlinepubs/009695399/utilities/sed.html> - Regular expressions specification<http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap09.html> - Sed Tutorial<http://www.panix.com/~elflord/unix/sed.html> - Sed Users Mailing List<http://groups.yahoo.com/group/sed-users>
+	 
+Homepage
+--------
+http://www.gnu.org/software/sed/sed.html
+Sources: http://ftp.gnu.org/gnu/sed/sed-4.2.1.tar.gz 
+	 
+System
+------
+- Win32, i.e. MS-Windows NT / 2000 / XP / 2003 / Vista / 2008 / 7 
+
+Notes
+-----
+- Bugs and questions on this MS-Windows port: gnuwin32@users.sourceforge.net
+
+Package Availability
+--------------------
+- in: http://gnuwin32.sourceforge.net
+
+Binaries
+--------
+- 
+
+Developer files
+---------------
+- 
+Installation
+------------
+The GnuWin port of Sed has an additional option -b (--binary) for input and output in MS-Windows binary mode<http://gnuwin32.sourceforge.net/compile.html#Text_files_and_binary_files>. The default is input and output in binary mode, so that all characters are copied verbatim; this is useful, for example, when editing files with Unicode characters or with embedded Ctl-Z symbols.
+
+
+Documentation
+-------------
+- 
+
+Sources
+-------
+- sed-4.2.1-src.zip
+
+Compilation
+-----------
+The package has been compiled with GNU auto-tools, GNU make, and Mingw
+(GCC for MS-Windows). Any differences from the original sources are given
+in sed-4.2.1-GnuWin.diffs in sed-4.2.1-src.zip. Libraries needed
+for compilation can be found at the lines starting with 'LIBS = ' in the
+Makefiles. Usually, these are standard libraries provided with Mingw, or
+libraries from the package itself; 'gw32c' refers to the libgw32c package,
+which provides MS-Windows substitutes or stubs for functions normally found in
+Unix. For more information, see: http://gnuwin32.sourceforge.net/compile.html
+and http://gnuwin32.sourceforge.net/packages/libgw32c.htm.

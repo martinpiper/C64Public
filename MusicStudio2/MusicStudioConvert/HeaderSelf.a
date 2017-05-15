@@ -25,7 +25,7 @@
 	sei
 	lda #kStartSong-1
 	jsr MusicPlayerInit
-
+	
 	lda #$7f
 	sta CIA1InterruptControl
 	lda #$ff

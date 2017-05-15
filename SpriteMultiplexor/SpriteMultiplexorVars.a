@@ -26,6 +26,10 @@
 
 ; Any sprite Y position >= to this value will stop the multiplexor from generating interrupts to draw any further sprites.
 ;Multiplex_DiscardSpritesYPos=255
+; Define this to make the check use a zero page byte memory location for Multiplex_DiscardSpritesYPosLocation so it can be dynamically updated.
+; Multiplex_DiscardSpritesYPosLocation will also be defined as a byte for internal working purposes.
+; The function Multiplex_SetDiscardPosition will also be created that sets the discard position from passed in via A.
+;Multiplex_DiscardSpritesYPosUseLocation = 1
 
 ; Use this statement below to allow the sprite sort to use a bit more time but save using an extra exit interrupt.
 ; It also helps to save time during the sprite display IRQs which increases the number of sprites that can be displayed.
@@ -97,16 +101,30 @@ Multiplex_indextable		= Multiplex_VarBase+$0b			; Multiplex_items long
 ; This variable is the next available variable for the user
 Multiplex_endIndexInternal	= Multiplex_indextable + Multiplex_items
 
+; Add on extra storage for Multiplex_DiscardSpritesYPosUseLocation if needed
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+
+Multiplex_DiscardSpritesYPosLocation = Multiplex_endIndexInternal
+Multiplex_DiscardSpritesYPosLocation2 = Multiplex_endIndexInternal + 1
+
+Multiplex_endIndexInternal2 = Multiplex_endIndexInternal + 2
+
+} else {
+
+Multiplex_endIndexInternal2 = Multiplex_endIndexInternal
+
+}
+
 ; Define Multiplex_SplitSort to enable the sort to use temporary tables for its working variables.
 ; This allows the sort to be executed during the multiplexor IRQs. After the last IRQ and before the top IRQ the contents of the variables should be copied over.
 !ifdef Multiplex_SplitSort {
 
-MultiplexSort_indextable = Multiplex_endIndexInternal
+MultiplexSort_indextable = Multiplex_endIndexInternal2
 Multiplex_endVars = MultiplexSort_indextable + Multiplex_items
 
 } else {
 
-Multiplex_endVars = Multiplex_endIndexInternal
+Multiplex_endVars = Multiplex_endIndexInternal2
 
 MultiplexSort_indextable = Multiplex_indextable
 MultiplexSort_YPos = Multiplex_YPos

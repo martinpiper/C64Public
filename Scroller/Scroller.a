@@ -105,6 +105,32 @@ ScrollerCalculate
 	sta frameScrollPreCalcXVel
 	sta frameScrollPreCalcYVel
 
+!ifdef Scroller_MultiDirectionNoDiagonals {
+	; If diagonals are disabled then pick the largest velocity and use that
+	lda frameTargetVelX
+	bpl .ipo1
+	eor #$FF
+	clc
+	adc #1
+.ipo1
+	sta .sm1+1
+	lda frameTargetVelY
+	bpl .ipo2
+	eor #$FF
+	clc
+	adc #1
+.ipo2
+.sm1	cmp #0
+	bcs .yLarger
+	lda #0
+	sta frameTargetVelY
+	jmp .ipo3
+.yLarger
+	lda #0
+	sta frameTargetVelX
+.ipo3
+}
+
 	; Do map range check before fine scrolling
 	lda scrollMapHX
 	ora scrollMapLX
@@ -377,6 +403,7 @@ JNotWantingScroll
 	jmp ScrollBank1To0_m40
 .scrTestNext4
 
+!ifdef Scroller_MultiDirectionNoDiagonals { } else {
 	cmp #39
 	bne .scrTestNext5
 	ldy topScreenBank
@@ -412,7 +439,7 @@ JNotWantingScroll
 .wantScr1To0_m41
 	jmp ScrollBank1To0_m41
 .scrTestNext8
-
+}
 
 NotWantingScroll
 !ifdef Scroller_DebugScreenScrollTimings {
@@ -431,17 +458,7 @@ ScrollerOffScreen
 	cmp #2	; Signifies we just did a character scroll
 	bcc .lNotWantingColourScroll
 
-	; Do this first since the colour scroll can take some time
-	lda topScreenBank
-	eor #1
-	sta topScreenBank
-	beq .m1
-	lda #$cf
-	bne .m2
-.m1
-	lda #$cb
-.m2
-	jsr Multiplex_SetSpritePointer
+	jsr ScrollerFlipBank
 
 	; Find the correct scroll routine to call
 	lda frameTotalScrScroll
@@ -524,6 +541,7 @@ ScrollerOffScreen
 	jmp ScrollColour_m40
 .colTestNext4
 
+!ifdef Scroller_MultiDirectionNoDiagonals { } else {
 	cmp #39
 	bne .colTestNext5
 	jmp ScrollColour_39
@@ -543,6 +561,7 @@ ScrollerOffScreen
 	bne .colTestNext8
 	jmp ScrollColour_m41
 .colTestNext8
+};<< !ifdef Scroller_MultiDirectionNoDiagonals { } else {
 
 } else { ;<< else !ifdef Scroller_NeedFullColourScroll
 
@@ -582,6 +601,7 @@ ScrollerOffScreen
 	jmp ScrollBank1To0_m40b
 .scrTestNext4
 
+!ifdef Scroller_MultiDirectionNoDiagonals { } else {
 	cmp #39
 	bne .scrTestNext5
 	ldy topScreenBank
@@ -617,6 +637,7 @@ ScrollerOffScreen
 .wantScr1To0_m41
 	jmp ScrollBank1To0_m41b
 .scrTestNext8
+};<< !ifdef Scroller_MultiDirectionNoDiagonals { } else {
 
 
 };<< end !ifdef Scroller_NeedFullColourScroll
@@ -759,6 +780,128 @@ MapTabH
 	rts
 }
 
+!macro MACROColouriseBlock .scrHighAddr {
+	sta mainAStore
+	stx mainXStore
+	sty mainYStore
+	tya
+	asl
+	asl
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	clc
+	txa
+	asl
+	asl
+	adc tempWork0
+	sta tempWork0
+	sta tempWork2
+	lda ScreenTabH,y
+	sta tempWork3
+	adc #.scrHighAddr
+	sta tempWork1
+	adc #(>COLOURRAM)-.scrHighAddr
+	sta tempWork3
+
+	clc
+	ldy #0
+
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	tya
+	adc #37
+	tay
+
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	tya
+	adc #37
+	tay
+
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	tya
+	adc #37
+	tay
+
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+
+	lda mainAStore
+	ldx mainXStore
+	ldy mainYStore
+	rts
+}
+
 !macro MACRODrawBlockLine .scrHighAddr , .theBlockTabL , .theBlockTabH {
 	sta mainAStore
 	stx mainXStore
@@ -804,7 +947,58 @@ MapTabH
 	rts
 }
 
+!macro MACROColouriseBlockLine .scrHighAddr {
+	sta mainAStore
+	stx mainXStore
+	sty mainYStore
+	tya
+	asl
+	asl
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	clc
+	txa
+	asl
+	asl
+	adc tempWork0
+	sta tempWork0
+	sta tempWork2
+	lda ScreenTabH,y
+	sta tempWork3
+	adc #.scrHighAddr
+	sta tempWork1
+	adc #(>COLOURRAM)-.scrHighAddr
+	sta tempWork3
 
+	clc
+	ldy #0
+
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+	iny
+	lda (tempWork0),y
+	tax
+	lda CharColours,x
+	sta (tempWork2),y
+
+	lda mainAStore
+	ldx mainXStore
+	ldy mainYStore
+	rts
+}
 
 !zn
 DrawBlock
@@ -820,6 +1014,9 @@ DrawBlockLine
 !zn
 DrawBlockColour
 !ifdef Scroller_NeedFullColourScroll {
+!ifdef CharColoursForEveryCharacter {
+	+MACROColouriseBlock $c8
+} else {
 !ifdef BlockColoursForEveryCharacter {
 	+MACRODrawBlock >COLOURRAM , BlockColTabL , BlockColTabH
 } else {
@@ -899,6 +1096,7 @@ DrawBlockColour
 	ldy mainYStore
 	rts
 }
+}
 } else {
 	rts
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -908,8 +1106,11 @@ DrawBlockColour
 !zn
 DrawBlockColourLine
 !ifdef Scroller_NeedFullColourScroll {
+!ifdef CharColoursForEveryCharacter {
+	+MACROColouriseBlockLine $c8
+} else {
 !ifdef BlockColoursForEveryCharacter {
-	+MACRODrawBlock >COLOURRAM , BlockColTabL , BlockColTabH
+	+MACRODrawBlockLine >COLOURRAM , BlockColTabL , BlockColTabH
 } else {
 	sta mainAStore
 	stx mainXStore
@@ -947,6 +1148,7 @@ DrawBlockColourLine
 	ldx mainXStore
 	ldy mainYStore
 	rts
+}
 }
 } else {
 	rts
@@ -1017,13 +1219,14 @@ DrawMap
 	sta topScreenBank
 	rts
 
+ScreenScrollerCodeStart = *
 !ifdef Scroller_NeedFullColourScroll {
 !source "Scrollers.a"
 } else {
 !source "ScrollersNoColour.a"
 }
+ScreenScrollerCodeEnd = *
 !source "ScrollerStrips.a"
-
 
 !zn
 AnimationInit
@@ -1094,6 +1297,14 @@ AnimationUpdateMultiplexor
 	sta Multiplex_SpriteFrame,x
 
 	lda AnimationSpriteColour,x
+!ifdef Scroller_SpriteNegativeColourEqualsFlashingColour {
+	bpl .isColour
+	eor #$ff
+	; And reset the next frame?
+	sta AnimationSpriteColour,x
+	lda #Scroller_SpriteNegativeColourEqualsFlashingColour
+.isColour
+}
 	sta Multiplex_Colour,x
 
 	lda AnimationXPosLo,x

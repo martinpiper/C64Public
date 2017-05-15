@@ -16,4 +16,15 @@
 
 
 ; When Scroller_NeedFullColourScroll is not defined then look at splitting the char scroll onto two frames, use the now vacant colour scroll time.
-; Canbe done quite easily since they're split anyway.
+; Can be done quite easily since they're split anyway.
+
+
+
+
+* Add code to handle the slightly less memory hungry full colour per char mode in "ExternalTools\CharPad 2.0 310715\Examples (CTM5)\Examples - Rips\Turrican 2 - 4x4\Turrican 2 L2-2.ctm"
+	Instead of a duplicate set of block data that contains colorus per block char cell, the colour mapping is on a per character basis, so constant for each character, not inside each block.
+	194 char's data at $14
+	colour mapping is at $624 at $14 + (numMapUsedChars * 8)
+	172 blocks at $14 + (numMapUsedChars * 8) + numMapUsedChars stride 2
+	170x48 map at $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) stride 2
+	* Added CharColoursForEveryCharacter = 1

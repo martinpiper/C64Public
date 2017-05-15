@@ -170,6 +170,7 @@ ScrollerDemoInitOneTimeData
 .ov7
 	rol SpriteEmptyLookupTab,x
 
+!ifdef SpriteEmptyLookupTab2Enable {
 	lda #0
 	sta SpriteEmptyLookupTab2,x
 	; Bottom left, only 5 lines instead of 8
@@ -222,7 +223,7 @@ ScrollerDemoInitOneTimeData
 	clc
 .ov10
 	rol SpriteEmptyLookupTab2,x
-
+}
 
 	; Update the counters for the next sprite
 	lda tempWork1
@@ -242,7 +243,9 @@ ScrollerDemoInitOneTimeData
 	; Clear out the score sprite data
 	ldx #0
 	stx SpriteEmptyLookupTab
+!ifdef SpriteEmptyLookupTab2Enable {
 	stx SpriteEmptyLookupTab2
+}
 	txa
 .fc1
 	sta DrawnScoreSprites,x

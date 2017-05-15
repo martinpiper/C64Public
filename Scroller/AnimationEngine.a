@@ -339,7 +339,7 @@ AnimationTriggerEnemies
 !zn
 ; Entry: Y = animation type
 ; Finds a free slot and X contains the index with carry clear. If no index is free then carry is set.
-; Initialises the animation entries with type frm Y if a slot could be found.
+; Initialises the animation entries with type from Y if a slot could be found.
 AnimationFindFreeSlot
 	ldx #0
 .l1

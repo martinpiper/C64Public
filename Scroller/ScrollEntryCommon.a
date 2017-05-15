@@ -1,3 +1,5 @@
+!source "ScrollerMacros.a"
+
 ; This code is post-build linked with a decompression stage so we don't use any BASIC sys start code here.
 ; Instead the start for the code is $400 which is quickly overwritten by other data once the
 ; real game code starts.
@@ -28,7 +30,7 @@
 ScrollEntry
 	; The following can be called more than once if needed for a proper game type cycle
 .l1
-!ifdef Scroller_MultiDirection { } else {
+!ifdef Scroller_DisplayTitleScreen {
 	jsr DisplayTitleScreen
 }
 	jsr InitialiseGame

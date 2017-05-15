@@ -1,0 +1,7 @@
+Character collision checks.
+Look for ground below if falling. Kill downwards velocity if standing. Clamp Y position to the character cell top.
+Look for ceiling impacts if moving upwards. Kill upwards velocity if hitting. Clamp Y position if needed.
+Look for side impacts in direction of movement. Kill sideways velocity if hitting. Clamp X position if needed.
+
+
+Joystick input

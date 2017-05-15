@@ -1631,18 +1631,30 @@ void MusicFile::ClearBlock(const int block)
 
 #define WriteEnvelopeProperty(prop)	\
 	needComma = false;	\
-	fprintf(fp,"Envelopes" #prop " !by ");	\
+	numUsed = 0;	\
+	fprintf(fp,"Envelopes" #prop);	\
 	for (i=0;i<kMaxEnvelopes;i++)	\
 	{	\
 		if (mEnvelopes[i].mIsUsed)	\
 		{	\
-			if (needComma)	\
+		numUsed++;	\
+		}	\
+	}	\
+	if (numUsed > 0)	\
+	{	\
+		fprintf(fp, " !by ");	\
+		for (i=0;i<kMaxEnvelopes;i++)	\
+		{	\
+			if (mEnvelopes[i].mIsUsed)	\
 			{	\
-				fprintf(fp,",");	\
+				if (needComma)	\
+				{	\
+					fprintf(fp,",");	\
+				}	\
+				fprintf(fp,"$%02x",mEnvelopes[i].m##prop);	\
+				envelopeSize++;	\
+				needComma = true;	\
 			}	\
-			fprintf(fp,"$%02x",mEnvelopes[i].m##prop);	\
-			envelopeSize++;	\
-			needComma = true;	\
 		}	\
 	}	\
 	fprintf(fp,"\n");
@@ -1965,6 +1977,7 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 
 	// Write out the envelope information in a different format to enable 256 envelopes
 	bool needComma;
+	int numUsed;
 	WriteEnvelopeProperty(AttackDecay);
 	WriteEnvelopeProperty(SustainRelease);
 	WriteEnvelopeProperty(TableWave);

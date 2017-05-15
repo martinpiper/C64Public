@@ -1,0 +1,29 @@
+!cpu 6510
+
+!source "CartOpts.a"
+
+*=Scroller_ScrollBankEntry
+!for .y , 11 {
+!for .x , 39 {
+	lda $cc00 + ((.y-1)*40) + (39-.x)
+	sta $c801 + ((.y-1)*40) + (39-.x)
+}
+}
+	rts
+
+*=Scroller_ScrollBankEntry + ScrollBankSplit
+!for .y , 9 {
+!for .x , 39 {
+	lda $cc00 + ((10+.y)*40) + (39-.x)
+	sta $c801 + ((10+.y)*40) + (39-.x)
+}
+}
+!ifdef Scroller_FullScreen {
+!for .y , 5 {
+!for .x , 39 {
+	lda $cc00 + ((19+.y)*40) + (39-.x)
+	sta $c801 + ((19+.y)*40) + (39-.x)
+}
+}
+}
+	rts

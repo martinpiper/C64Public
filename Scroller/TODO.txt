@@ -1,3 +1,34 @@
+* Consider using cartridge based speed code for unrolled screen scrolling code.
+	C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe +warp -cartcrt Citadel2.crt
+	Code and data would need to be re-arranged to account for $8000-$9fff being mapped at ROM sometimes
+		Cycles per char
+			Looping	4 + 4 + 2 + 3	= 13
+			Speed	4 + 4			= 8
+		Code size:
+			Looping:	ScreenScrollerCodeEnd - ScreenScrollerCodeStart = 2484 - 1c04 = 880
+			Speed:		40 * 20 * 8 * 2 * 6 = 12C00 (12C0 per bank per direction, so need 16 ROM banks for 8 way 2 banks)
+	ScrollerStrips has self modifying code so it's not a candidate
+	* Will need a common batch file for creating the relevant scroller binaries
+		* Can import values from the map
+	* and creating a crt image
+	http://codebase64.org/doku.php?id=base:crt_file_format#ocean_type_1
+	* bin\MakeCart.exe already supports larger carts with higher bank numbers
+	Added code to ScrollersNoColour.a to use +Scroller_ScrollExecCartBank
+	Adding scroller code into CartCode, this will then get added to a cart image
+		cd /d c:\Work\C64\Scroller\CartCode
+		..\..\acme.exe -o c:\temp\t0.bin ScrollerNoColour0To1_1.a
+		..\..\acme.exe -o c:\temp\t1.bin ScrollerNoColour1To0_1.a
+		..\..\bin\MakeCart.exe -n -b 9 -r c:\temp\t0.bin -c 0 0 $2000 -w -r -b 10 -r c:\temp\t1.bin -c 0 0 $2000 -w -b 11 -r c:\temp\t0.bin -c 0 0 $2000 -w -b 12 -r c:\temp\t0.bin -c 0 0 $2000 -w -o c:\temp\t.crt
+
+
+
+
+; Aimed fire improvement by taking into account any scroll speed, player movement and distance, then aim for that spot.
+
+
+; Enemy aimed fire to target both players when they are active. Alternate fire, or nearest enemy to player fire mode.
+
+
 ; Optimise the block plot and screen scroll loops. Unroll more.
 
 

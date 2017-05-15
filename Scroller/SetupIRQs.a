@@ -164,6 +164,8 @@ topScreenScrollY		!by 0
 topScreenScrollPos		!by 0
 }
 topScreenBank			!by 0
+BankToScreenAddr		!by $c8 , $cc
+BankToScreenAddrNext	!by $cc , $c8
 
 !ifdef Scroller_MultiDirection {
 scrollRegUsedX !by 0
@@ -529,7 +531,7 @@ BottomTitleScreen
 	cld									; Paranoia
 	inc panelIRQDone
 
-!ifdef Scroller_MultiDirection { } else {
+!ifdef TitleScreenAnimationHook_Enable {
 	jsr TitleScreenAnimationHook
 }
 	jsr Multiplex_Sort

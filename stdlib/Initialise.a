@@ -49,15 +49,7 @@ InitialiseMachine
 	sta KERNALNMIServiceRoutineHi
 
 	+MACROWaitForTheLastScan_A
-	; Turn off various bits in the VIC2 and SID chips
-	; Screen, sprites and volume are disabled.
-	lda #0
-	sta VIC2ScreenColour
-	sta VIC2BorderColour
-	sta VIC2ScreenControlV
-	sta VIC2SpriteEnable
-	sta SIDVolumeFilter
-
+	+BlankScreenBorderSpriteSound_A
 
 	; Set the user requested ROM state
 	sty ZPProcessorPort

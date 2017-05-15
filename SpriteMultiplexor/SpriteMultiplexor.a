@@ -32,6 +32,8 @@ MarkMultiplexorBeginCode = *
 ; Only if the multiplexor detects a horrible sprite formation will ordering be abused and in which case the other tightly packed method will be used.
 ; 12 June 2014 - Martin Piper
 ; Added Multiplex_ReverseOrder to reverse the order that sprites are used, 7 to 0 instead of 0 to 7
+; 30 May 2016 - Martin Piper
+; Added Multiplex_DiscardSpritesYPosUseLocation to allow the discard position to be dynamically updated with Multiplex_SetDiscardPosition
 
 ; TODO
 ;*It should be possible to have other tables (don't use a bitfield, it's slower to extract) to contain multicolour enable and X/Y expansion flags and sprite background priority.
@@ -136,7 +138,11 @@ Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPr
 	adc VIC2Raster
 
 !ifdef Multiplex_OverflowRasterCheck2 {
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+	cmp Multiplex_DiscardSpritesYPosLocation2
+} else {
 	cmp #Multiplex_DiscardSpritesYPos-Multiplex_rasterHeight-1					; Overflow interrupt check
+}
 	bcs .intExitInter0
 }
 
@@ -196,7 +202,11 @@ Multiplex_intNextSpr0Reset = *
 	; If early out is disabled then we have to do the check in the IRQ instead. With it enabled
 	; then the extra time in the mainline means time saved in this IRQ.
 !ifdef Multiplex_EnableEarlyOut { } else {
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+	cmp Multiplex_DiscardSpritesYPosLocation
+} else {
 	cmp #Multiplex_DiscardSpritesYPos	; 22					; Don't display any sprites once this is reached
+}
 	bcs .intExitInter0		; 24
 }
 
@@ -248,7 +258,11 @@ Multiplex_intNextSpr0Reset = *
 
 !ifdef Multiplex_OverflowRasterCheck1 {
 	lda VIC2Raster
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+	cmp Multiplex_DiscardSpritesYPosLocation2
+} else {
 	cmp #Multiplex_DiscardSpritesYPos-Multiplex_rasterHeight-1					; Overflow interrupt check
+}
 	bcs .intExitInter0
 }
 	cpx Multiplex_MaxSprSorted
@@ -717,7 +731,11 @@ Multiplex_Sort
 .l1
 	ldy MultiplexSort_indextable,x
 	lda MultiplexSort_YPos,y
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+	cmp Multiplex_DiscardSpritesYPosLocation
+} else {
 	cmp #Multiplex_DiscardSpritesYPos					; Don't display any sprites once this is reached
+}
 	bcs .l2
 	inx
 	cpx Multiplex_MaxSpr
@@ -813,6 +831,21 @@ Multiplex_SetSpritePointer
 	sta Multiplex_ISFP15+2
 	sta Multiplex_ISFP16+2
 	rts
+}
+
+!ifdef Multiplex_DiscardSpritesYPosUseLocation {
+!zn {
+; Entry:
+; A = Discard raster position position
+; Exit:
+; A = Trashed
+Multiplex_SetDiscardPosition
+	sta Multiplex_DiscardSpritesYPosLocation
+	sec
+	sbc #Multiplex_rasterHeight+1
+	sta Multiplex_DiscardSpritesYPosLocation2
+	rts
+}
 }
 
 !ifdef Multiplex_LeanAndMean {} else {

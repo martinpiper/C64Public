@@ -264,11 +264,20 @@ TitleScreen_SpriteAnimateCount !by 0
 .spriteOffset0 = 32+32+32
 .spriteOffset1 = 128
 .spriteOffset2 = 128+32
+
+; Spread evenly
 .spriteSpread = 17
 .spritePerStroke = 15
-;.spriteSpread = 9
+
+; Very tight packing
+;.spriteSpread = 8
 ;.spritePerStroke = 15
 .xposTweak = 24
+
+!if Multiplex_items < (.spritePerStroke * 2) {
+!error "Not enough Multiplex_items for title screen sprite animation .spritePerStroke"
+}
+
 .upDownTab !by 0,1,2,3,4,5,6,7,7,6,5,4,3,2,1,0
 TitleScreenAnimationHook
 !ifdef TitleScreen_AnimatingSprites {
