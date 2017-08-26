@@ -921,9 +921,9 @@ CyclesPerSecondPALC64 = 985248
 }
 
 !macro InitKERNALIO_AXY {
-	jsr $fda3	; Init I/O
-	jsr $fd15	; Restore the normal IRQ
-;	jsr $ff5b	; Initialize screen editor. Causes a blue screen to be displayed and inits IRQs. No code uses this, so it is commented out.
+	jsr IOINIT	; Init I/O
+	jsr RESTOR	; Restore the normal IRQ
+;	jsr CINT	; Initialize screen editor. Causes a blue screen to be displayed and inits IRQs. No code uses this, so it is commented out.
 }
 
 !macro InitKERNALStringDisplay_AXY {

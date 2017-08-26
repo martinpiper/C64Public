@@ -2,6 +2,7 @@ del *.pdb *.ncb *.lib *.obj *.pch *.sbr *.bsc *.idb *.ilk *.plg *.dll BuildLog.h
 del *.xdb *.nlb UpgradeLog*.xml UpgradeReport*.* *.pe *.ipch *.log /s
 del *.bnd /s
 del *.sdf /s
+del t.lbl t.map t.prg t.sid /s
 
 del Compression\Debug\LZMPi.exe
 del Compression\Release\LZMPi.exe

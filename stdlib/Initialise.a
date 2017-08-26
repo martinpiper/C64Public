@@ -35,17 +35,25 @@ InitialiseMachine
 
 	; Setup kernal and user mode IRQ vectors to point to a blank routine
 	lda #<.initIRQ
+!ifdef Initialise_NoIRQServiceRoutine {} else {
 	sta IRQServiceRoutineLo
+}
 	sta KERNALIRQServiceRoutineLo
 	lda #>.initIRQ
+!ifdef Initialise_NoIRQServiceRoutine {} else {
 	sta IRQServiceRoutineHi
+}
 	sta KERNALIRQServiceRoutineHi
 
 	lda #<.initNMI
+!ifdef Initialise_NoIRQServiceRoutine {} else {
 	sta NMIServiceRoutineLo
+}
 	sta KERNALNMIServiceRoutineLo
 	lda #>.initNMI
+!ifdef Initialise_NoIRQServiceRoutine {} else {
 	sta NMIServiceRoutineHi
+}
 	sta KERNALNMIServiceRoutineHi
 
 	+MACROWaitForTheLastScan_A
