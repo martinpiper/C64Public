@@ -21,6 +21,7 @@ DisplayTitleScreen
 	jsr TitleScreenWaitForOffScreenFromRaster
 	; Turn off the screen and sprites
 	lda #0
+	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
 	sta VIC2ScreenControlV
 	sta VIC2SpriteEnable
 	sta VIC2BorderColour
@@ -238,10 +239,16 @@ DisplayTitleScreen
 	jmp .l3
 
 .joystick0start
+	lda #1
+	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
+
 	lda #0
 	sta TitleScreenJoystickStarted
 	rts
 .joystick1start
+	lda #1
+	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
+
 	lda #1
 	sta TitleScreenJoystickStarted
 	rts

@@ -1,3 +1,8 @@
+* The screen scroll and especially colour scroll should be split into two sections, the top half is before the multiplexor sort after the screen split, the second half is after the multiplexor sort.
+
+
+
+
 * Consider using cartridge based speed code for unrolled screen scrolling code.
 	C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe +warp -cartcrt Citadel2.crt
 	Code and data would need to be re-arranged to account for $8000-$9fff being mapped at ROM sometimes

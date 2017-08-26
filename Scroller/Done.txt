@@ -28,3 +28,12 @@
 	172 blocks at $14 + (numMapUsedChars * 8) + numMapUsedChars stride 2
 	170x48 map at $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) stride 2
 	* Added CharColoursForEveryCharacter = 1
+
+
+
+
+* Avoid calling these functions during the title screen state
+	ScrollerDemoWaitMultiplexHook
+	ScrollerDemoWaitScorePanelHook
+	ScrollerDemoWaitTopIRQHook
+	* Added TitleScreen_Enable_ScrollerDemoWait_Hooks flag

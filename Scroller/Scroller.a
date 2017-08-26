@@ -38,7 +38,10 @@ ScrollerInitVariables
 	sta frameScrollOldY
 	sta scrollerRealMovementXPixels
 	sta scrollerRealMovementYPixels
-
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+	sta paralaxScrollYPixels
+}
 	sta scrollMapHX
 	sta scrollMapLX
 	sta scrollMapHY
@@ -93,8 +96,14 @@ ScrollerCalculate
 	sta frameScrollY
 	lda frameScrollPreCalcXVel
 	sta scrollerRealMovementXPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+}
 	lda frameScrollPreCalcYVel
 	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollYPixels
+}
 	rts
 
 .normalScroll
@@ -102,6 +111,10 @@ ScrollerCalculate
 	lda #0
 	sta scrollerRealMovementXPixels
 	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+	sta paralaxScrollYPixels
+}
 	sta frameScrollPreCalcXVel
 	sta frameScrollPreCalcYVel
 
@@ -184,6 +197,9 @@ ScrollerCalculate
 	ldy #0
 	lda frameTargetVelX
 	sta scrollerRealMovementXPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+}
 	sta frameScrollPreCalcXVel
 	lda frameScrollX
 	clc
@@ -206,6 +222,9 @@ ScrollerCalculate
 	lda frameTargetVelY
 	sta scrollerRealMovementYPixels
 	sta frameScrollPreCalcYVel
+!ifdef Paralax_Enable {
+	sta paralaxScrollYPixels
+}
 	lda frameScrollY
 	clc
 	adc frameTargetVelY
@@ -245,6 +264,9 @@ ScrollerCalculate
 	sec
 	sbc frameScrollOldX
 	sta scrollerRealMovementXPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+}
 	lda #8
 	sec
 	sbc frameScrollPreCalcX
@@ -263,6 +285,9 @@ ScrollerCalculate
 	sec
 	sbc frameScrollOldX
 	sta scrollerRealMovementXPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+}
 	ldx frameScrollPreCalcX
 	inx
 	stx frameScrollPreCalcXVel
@@ -277,6 +302,9 @@ ScrollerCalculate
 	sec
 	sbc frameScrollOldY
 	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollYPixels
+}
 	lda #8
 	sec
 	sbc frameScrollPreCalcY
@@ -295,6 +323,9 @@ ScrollerCalculate
 	sec
 	sbc frameScrollOldY
 	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollYPixels
+}
 	ldx frameScrollPreCalcY
 	inx
 	stx frameScrollPreCalcYVel

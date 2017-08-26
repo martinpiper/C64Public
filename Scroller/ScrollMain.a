@@ -950,14 +950,10 @@ SkipLevelFrameLogic
 }
 
 !ifdef DisableSound {} else {
-!ifdef Scroller_MultiDirection {
-	jsr MusicPlayerPlay
-} else {
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	jsr SFXPlay
 } else {
 	jsr MusicPlayerPlay
-}
 }
 } ;<< !ifdef DisableSound {} else {
 
@@ -1143,6 +1139,12 @@ SkipLevelFrameLogic
 
 	jsr ScrollerUpdateTopIRQ
 
+!ifdef Paralax_Enable {
+!ifdef Paralax_Enable_More {
+	jsr ParalaxUpdate
+}
+}
+
 !ifdef EnableBeforeScrollersHook {
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_DarkGrey
@@ -1290,6 +1292,7 @@ HandleJoystick
 } ;<!ifdef RedirectHandleUserInput { } else {
 }
 
+ScrollerDemo_OverrunCounter !by 0
 
 !zn
 ScrollerDemoWaitTopIRQWithReSync
@@ -1297,15 +1300,27 @@ ScrollerDemoWaitTopIRQWithReSync
 	sta topIRQDone
 	sta bottomMultiplexIRQDone
 	sta panelIRQDone
+	sta ScrollerDemo_OverrunCounter
 	; Fall through
 ScrollerDemoWaitTopIRQ
 	lda #0
 	sta panelIRQDone
+
+	inc ScrollerDemo_OverrunCounter
+	lda topIRQDone
+	bne .l1
+	sta ScrollerDemo_OverrunCounter
+
 	; Wait for the top IRQ (at raster 0) to be done
 .l1
 !ifdef EnableScrollerDemoWaitTopIRQHook {
+!ifdef Scroller_DisplayTitleScreen {
+	lda TitleScreen_Enable_ScrollerDemoWait_Hooks
+	beq .noHook3
+}
 	lda topIRQDone
 	jsr ScrollerDemoWaitTopIRQHook
+.noHook3
 }
 	lda topIRQDone
 	beq .l1
@@ -1317,11 +1332,22 @@ ScrollerDemoWaitTopIRQ
 ScrollerDemoWaitMultiplex
 	lda #0
 	sta topIRQDone
+
+	inc ScrollerDemo_OverrunCounter
+	lda bottomMultiplexIRQDone
+	bne .l1
+	sta ScrollerDemo_OverrunCounter
+
 	; Wait for the last mutiplex IRQ routine to be called
 .l1
 !ifdef EnableScrollerDemoWaitMultiplexHook {
+!ifdef Scroller_DisplayTitleScreen {
+	lda TitleScreen_Enable_ScrollerDemoWait_Hooks
+	beq .noHook1
+}
 	lda bottomMultiplexIRQDone
 	jsr ScrollerDemoWaitMultiplexHook
+.noHook1
 }
 	lda bottomMultiplexIRQDone
 	beq .l1
@@ -1333,11 +1359,22 @@ ScrollerDemoWaitMultiplex
 ScrollerDemoWaitScorePanel
 	lda #0
 	sta bottomMultiplexIRQDone
-	;Wait for the panel IRQ to be done
+
+	inc ScrollerDemo_OverrunCounter
+	lda panelIRQDone
+	bne .l1
+	sta ScrollerDemo_OverrunCounter
+
+	; Wait for the panel IRQ to be done
 .l1
 !ifdef EnableScrollerDemoWaitScorePanelHook {
+!ifdef Scroller_DisplayTitleScreen {
+	lda TitleScreen_Enable_ScrollerDemoWait_Hooks
+	beq .noHook2
+}
 	lda panelIRQDone
 	jsr ScrollerDemoWaitScorePanelHook
+.noHook2
 }
 	lda panelIRQDone
 	beq .l1

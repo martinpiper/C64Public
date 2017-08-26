@@ -4,9 +4,12 @@
 ; Instead the start for the code is $400 which is quickly overwritten by other data once the
 ; real game code starts.
 *=$400
+ScrollerInitSpecificCode_Start = *
 	; Setup a nice stable blank screen and known machine state
+!ifdef Scroller_NoInitialiseMachine {} else {
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+}
 	; Setup NMI because the initialise points to code that gets overwritten
 	lda #<ScrollerNMI1
 	sta KERNALNMIServiceRoutineLo
@@ -24,8 +27,11 @@
 	; by the title screen display code.
 !source "../stdlib/Initialise.a"
 !source "OneTime.a"
+ScrollerInitSpecificCode_End = *
+ScrollerInitSpecificCode_Size = * - ScrollerInitSpecificCode_Start
 	; The start of the real code. Memory from $400 to $fff is written by the title screen display code
 *=$1000
+ScrollerSpecificCode_Start = *
 !zn
 ScrollEntry
 	; The following can be called more than once if needed for a proper game type cycle
@@ -39,9 +45,15 @@ ScrollEntry
 	jsr ScrollerDemoMainline
 	jmp .l1
 
+!ifdef Scroller_DisplayTitleScreen {
+TitleScreen_Enable_ScrollerDemoWait_Hooks !by 1
+}
+
 !source "SetupIRQs.a"
 !source "ScrollMain.a"
 ; The multiplexor uses the MultiplexExt_LastIRQ label defined in "SetupIRQs.a"
 !align 255, 0
 !source "../SpriteMultiplexor/SpriteMultiplexor.a"
 
+ScrollerSpecificCode_End = *
+ScrollerSpecificCode_Size = * - ScrollerSpecificCode_Start

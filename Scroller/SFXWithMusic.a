@@ -16,13 +16,22 @@ SFXSIDInit
 ; There are 24 SEUCK sound effects
 .SEUCKToMusicSFX
 	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
-	!by 8 , 9 , 0 , 1 , 2 , 3 , 4 , 5
+	!by 8 , 9 , $a , $b , $c , 3 , 4 , 5
 	!by 6 , 7 , 0 , 1 , 2 , 3 , 4 , 5
 ; A lookup table to allow each sound effect to have a different note
 .SEUCKToMusicSFXNote
 	!by 48, 50, 32, 16, 32, 48, 52, 40
 	!by 48, 50, 32, 16, 32, 48, 52, 40
 	!by 48, 50, 32, 16, 32, 48, 52, 40
+.SEUCKToMusicPriority
+	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+	!by 0 , 0 , 50 , 75 , 15 , 0 , 0 , 0
+	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+
+.voiceUsed	!by 0 , 0 , 0
+.priority !by 0
+.note !by 0
+.voiceTry !by 2
 
 SFXInit
 	stx .xTemp
@@ -30,31 +39,75 @@ SFXInit
 
 	; Lookup the sound effect to play.
 	tax
+
+	lda .SEUCKToMusicPriority,x
+	sta .priority
+
 	ldy .SEUCKToMusicSFX,x
 	; And the note
 	lda .SEUCKToMusicSFXNote,x
+	sta .note
+
+	; Try up to this many times to find a channel
+SFX_Voices=*+1
+	lda #2
+	beq .exit
+
+	sta .voiceTry
 
 	; Calculate the next sound channel to use into x
+.check1
 	inc .SFXCurrentVoice
 	ldx .SFXCurrentVoice
 	; For example comparing with 3 gives two voices for sound effects, one for music
+
+SFX_VoiceUpperWrap=*+1
 	cpx #3
 	bne .o1
+
+SFX_VoiceLowerReset=*+1
 	ldx #1
 	stx .SFXCurrentVoice
-.o1
 
+.o1
+	lda .priority
+	cmp .voiceUsed,x
+	bcs .okPlay
+	dec .voiceTry
+	bne .check1
+
+	jmp .exit
+
+.okPlay
+	sta .voiceUsed,x
+
+	lda .note
 	; A = Note
 	; X = Channel
 	; Y = Envelope
 	jsr MusicPlayerPlaySFX
 
+.exit
 	ldx .xTemp
 	ldy .yTemp
 	rts
 
-!zn
 SFXPlay
+	ldx #2
+.l1
+	lda .voiceUsed,x
+	beq .l2
+	dec .voiceUsed,x
+.l2
+	dex
+	bpl .l1
+
 	jsr MusicPlayerPlay
 	rts
 
+SFXReset
+	lda #0
+	sta .voiceUsed
+	sta .voiceUsed+1
+	sta .voiceUsed+2
+	rts

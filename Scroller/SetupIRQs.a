@@ -19,6 +19,9 @@ IRQ_InGameMode !by 0
 !zn
 SetupIRQs
 	sei
+!ifdef IRQOpenBorders { } else {
+	jsr IRQKillAllSprites
+}
 	; Setup raster IRQ
 	lda #<IrqTopOfScreen
 	sta KERNALIRQServiceRoutineLo
@@ -645,6 +648,9 @@ Multiplex_DiscardSpritesYPos=scorePanelPos1-1
 } else {
 	lda #0
 	sta VIC2Raster
+!ifdef IRQOpenBorders { } else {
+	jsr IRQKillAllSprites
+}
 	lda #<IrqTopOfScreen
 	sta KERNALIRQServiceRoutineLo
 	lda #>IrqTopOfScreen
@@ -801,6 +807,9 @@ BottomBorder3
 
 	lda #0
 	sta VIC2Raster
+!ifdef IRQOpenBorders { } else {
+	jsr IRQKillAllSprites
+}
 	lda #<IrqTopOfScreen
 	sta KERNALIRQServiceRoutineLo
 	lda #>IrqTopOfScreen
@@ -988,6 +997,9 @@ ScorePanel2
 	sta VIC2SpriteEnable
 	; Start back at the top of the screen again
 	sta VIC2Raster
+!ifdef IRQOpenBorders { } else {
+	jsr IRQKillAllSprites
+}
 	lda #<IrqTopOfScreen
 	sta KERNALIRQServiceRoutineLo
 	lda #>IrqTopOfScreen
@@ -1002,4 +1014,19 @@ ScorePanel2
 }
 
 	rti
+
 }	; ifdef Scroller_DebugIRQBorder {
+
+!ifdef IRQOpenBorders { } else {
+IRQKillAllSprites
+	lda #$ff
+	sta VIC2Sprite0Y
+	sta VIC2Sprite1Y
+	sta VIC2Sprite2Y
+	sta VIC2Sprite3Y
+	sta VIC2Sprite4Y
+	sta VIC2Sprite5Y
+	sta VIC2Sprite6Y
+	sta VIC2Sprite7Y
+	rts
+}
