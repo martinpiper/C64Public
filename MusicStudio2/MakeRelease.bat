@@ -1,4 +1,6 @@
 @echo off
+del t.lbl t.map t.prg t.sid /s
+
 cd MusicStudio
 C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe MusicStudio.sln /m /p:Configuration=Release /p:Platform=Win32
 cd ..

@@ -14,6 +14,20 @@ Music player MusicPlayerPlaySFX with channel X=-1 will find the best oldest chan
 
 
 
+* Add priority code whereby each effect can have a per frame priority countdown to modify how other effects cannot interrupt it until that channel value decreases.
+	* Add check box to say the priority code should be used. This will reduce the input registers by one.
+	* If no priority set then default to 0
+	kCurrentVersion
+
+
+
+
+* Add the ability to set a note for the effect in the data, rather than one that is passed in.
+	* Add check box to say the defined note should be used. This will reduce the input registers by one.
+	kCurrentVersion
+
+
+
 
 Add a flag opcode/command.
 Used for syncing effects to music. Can set a specific memory location with a value, or use jsr for example.

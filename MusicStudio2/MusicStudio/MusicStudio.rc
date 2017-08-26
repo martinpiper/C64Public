@@ -248,13 +248,13 @@ CAPTION "About MusicStudio"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
-    LTEXT           "MusicStudio, Version 2.2.0.2",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2010-2016 Element 114 Software",IDC_STATIC,42,26,142,8
+    LTEXT           "MusicStudio, Version 2.2.0.3",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2010-2017 Element 114 Software",IDC_STATIC,42,26,142,8
     DEFPUSHBUTTON   "OK",IDOK,134,69,50,14,WS_GROUP
     LTEXT           "Portions of this software use source code from RESID-FP http://sidplay-residfp.sourceforge.net/",IDC_STATIC,7,41,177,25
 END
 
-IDD_MUSICSTUDIO_FORM DIALOGEX 0, 0, 663, 310
+IDD_MUSICSTUDIO_FORM DIALOGEX 0, 0, 661, 310
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
@@ -339,6 +339,7 @@ BEGIN
     EDITTEXT        IDC_EDIT60,200,19,18,12,ES_UPPERCASE | ES_AUTOHSCROLL
     PUSHBUTTON      "Save",IDC_BUTTON5,468,244,21,14
     PUSHBUTTON      "Load",IDC_BUTTON6,493,244,20,14
+    EDITTEXT        IDC_EDIT8,536,223,123,79,ES_MULTILINE | ES_READONLY | WS_VSCROLL | WS_HSCROLL | NOT WS_TABSTOP
 END
 
 
@@ -348,8 +349,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,2
- PRODUCTVERSION 2,2,0,2
+ FILEVERSION 2,2,0,3
+ PRODUCTVERSION 2,2,0,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -366,12 +367,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Element 114 Software"
             VALUE "FileDescription", "Music Studio music editor"
-            VALUE "FileVersion", "2.2.0.2"
+            VALUE "FileVersion", "2.2.0.3"
             VALUE "InternalName", "MusicStudio.exe"
-            VALUE "LegalCopyright", "(c) 2010-2016 Element 114 Software.  All rights reserved."
+            VALUE "LegalCopyright", "(c) 2010-2017 Element 114 Software.  All rights reserved."
             VALUE "OriginalFilename", "MusicStudio.exe"
             VALUE "ProductName", "Music Studio"
-            VALUE "ProductVersion", "2.2.0.2"
+            VALUE "ProductVersion", "2.2.0.3"
         END
     END
     BLOCK "VarFileInfo"
@@ -713,7 +714,7 @@ BEGIN
     CONTROL         "Include sound effect code",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,99,16,95,10
 END
 
-IDD_MUSICSTUDIO_FORM2 DIALOGEX 0, 0, 663, 310
+IDD_MUSICSTUDIO_FORM2 DIALOGEX 0, 0, 661, 310
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN

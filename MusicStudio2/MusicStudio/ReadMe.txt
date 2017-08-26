@@ -288,9 +288,9 @@ HTI:XX - Sets the hard restart frame time, must be greater than 0.
 
 - FLUENT NOTES: slur command
 
-SLE - This block command enables sluring (or ties) of the next notes, the note will note release until SLD is disabled. Envelope commands have no effect on the sound until the SLD command is used. Hard restart is also disabled for the voice by this command.
+SLE - This block command enables slurring (or ties) of the next notes, the note will note release until SLD is disabled. Envelope commands have no effect on the sound until the SLD command is used. Hard restart is also disabled for the voice by this command.
 
-SLR - Releases the slur (or ites) of the next note. Hard restart is also enabled for the voice by this command.
+SLR - Releases the slur (or ties) of the next note. Hard restart is also enabled for the voice by this command.
 
 
 
@@ -409,15 +409,15 @@ YY is always the frame delay.
 XX:
 0 = Don't change wave this time, previous waveform is used.
 FF = Jump to position. pos 0 = stop
-Any other value is used as the waveform using the SID format:
-bit7	Noise
-bit6	Pulse
-bit5	Sawtooth
-bit4	Triangle
-bit3	Test
-bit2	Ring modulation
-bit1	Sync
-bit0	Gate
+Any other value is used as the waveform using the SID format which can be ORed together:
+bit7	80	Noise
+bit6	40	Pulse
+bit5	20	Sawtooth
+bit4	10	Triangle
+bit3	08	Test
+bit2	04	Ring modulation
+bit1	02	Sync
+bit0	01	Gate
 
 Remember to set the gate bit to get any sounds.
 The gate used by SID will be set if the wave table and the gate time from the duration are both set.

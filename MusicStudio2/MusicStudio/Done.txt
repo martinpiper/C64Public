@@ -224,7 +224,22 @@ Add a BAT file that will produce a clean directory of the editor and demo files 
 
 
 2.2.0.2
+
 For Richard and Necro Polo
 Fixed a bug where an effect envelope with a note table will cause a music voice envelope without a note table to used the previous effect note table.
 
-Fixed a small output bug that would generate a lone "!by" for any EnvelopesAttackDecay etc table.
+
+2.2.0.3
+
+* Fixed a small output bug that would generate a lone "!by" for any EnvelopesAttackDecay etc table.
+
+
+* When choosing "play envelope" the song index should be forced to 0
+
+
+* Note Table command 1 had a bug where the ticks value was not being correctly set
+
+
+* Dynamic track/table/block quick help reference in the lower right hand corner.
+
+2.2.0.4

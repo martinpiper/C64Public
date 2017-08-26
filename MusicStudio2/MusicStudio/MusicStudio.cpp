@@ -207,7 +207,8 @@ BOOL CMusicStudioApp::InitInstance()
 #ifdef _DEBUG
 	// Causes the file to be opened when the application starts.
 	// Useful when debugging and when you don't want to keep on going to the menu.
-	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\moz_k299.mid") );
+//	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\moz_k299.mid") );
+	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
 #endif
 
 	return TRUE;

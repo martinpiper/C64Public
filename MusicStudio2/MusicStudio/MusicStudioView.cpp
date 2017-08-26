@@ -90,13 +90,14 @@ BEGIN_MESSAGE_MAP(CMusicStudioView, CFormView)
 	ON_BN_CLICKED(IDC_BUTTON5, &CMusicStudioView::OnBnClickedSaveEnvelope)
 	ON_BN_CLICKED(IDC_BUTTON6, &CMusicStudioView::OnBnClickedLoadEnvelope)
 	ON_COMMAND(ID_FILE_RIPSID, &CMusicStudioView::OnFileRipSID)
+	ON_EN_SETFOCUS(IDC_EDIT1, &CMusicStudioView::OnEnSetfocusEdit1)
 END_MESSAGE_MAP()
 
 // CMusicStudioView construction/destruction
 
 CMusicStudioView::CMusicStudioView()
 	: CFormView(CMusicStudioView::IDD) , mPlayerHandle(0) , mIgnoreAnyUpdates(0), mLastPlayWasSFX(false) ,
-	mCurrentTableEditIndex(0)
+	mCurrentTableEditIndex(0) , mHelpState(kNone)
 {
 	int i;
 	for (i=0;i<MusicStudio1::MusicFile::kMaxTables;i++)
@@ -169,6 +170,7 @@ void CMusicStudioView::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BEBLOCKTEXT4, mBlockEditTrackerTempoText3);
 	DDX_Control(pDX, IDC_EDIT59, mBlockEditTrackerTempoEdit2);
 	DDX_Control(pDX, IDC_EDIT60, mBlockEditTrackerTempoEdit3);
+	DDX_Control(pDX, IDC_EDIT8, mDynamicHelp);
 }
 
 BOOL CMusicStudioView::PreCreateWindow(CREATESTRUCT& cs)
@@ -507,6 +509,10 @@ void CMusicStudioView::CommonSaveC64File(const char *address,const bool includeS
 	CString requested;
 	mChosenSong.GetWindowText(requested);
 	requestedSong = _ttoi(requested);
+	if (includeSoundEffectCode && runningInEditor)
+	{
+		requestedSong = 0;
+	}
 	if (GetNumFromEdit(mOverrideStartTrack1) || GetNumFromEdit(mOverrideStartTrack2) || GetNumFromEdit(mOverrideStartTrack3))
 	{
 		requestedSong = -requestedSong - 1;
@@ -1364,6 +1370,7 @@ LRESULT CMusicStudioView::OnEditNumOnSetFocus(WPARAM wParam, LPARAM lParam)
 		if ( (index >= 0) && (index < MusicStudio1::MusicFile::kMaxTrackLength) )
 		{
 			SetNumToEdit(mCurrentTrackEditPos,index);
+			SetHelpState(kTrack);
 		}
 	}
 
@@ -1372,6 +1379,28 @@ LRESULT CMusicStudioView::OnEditNumOnSetFocus(WPARAM wParam, LPARAM lParam)
 		if ( (index >= 0) && (index < (MusicStudio1::MusicFile::kMaxTableEntries+1)) )
 		{
 			SetNumToEdit(mCurrentTableEditPosition,index);
+			switch(mCurrentTableEditIndex)
+			{
+				case 0:
+					SetHelpState(kWave);
+					break;
+
+				case 1:
+					SetHelpState(kNote);
+					break;
+
+				case 2:
+					SetHelpState(kPulse);
+					break;
+
+				case 3:
+					SetHelpState(kFilter);
+					break;
+
+				default:
+					break;
+
+			}
 		}
 	}
 	return 0;
@@ -2781,4 +2810,142 @@ void CMusicStudioView::OnFileRipSID()
 	GetDocument()->ClearCapturedSIDData();
 
 	RedrawView();
+}
+
+
+void CMusicStudioView::OnEnSetfocusEdit1()
+{
+	SetHelpState(kBlock);
+}
+
+
+void CMusicStudioView::SetHelpState(const HelpState state)
+{
+	if (state == mHelpState)
+	{
+		return;
+	}
+
+	mHelpState = state;
+	switch(mHelpState)
+	{
+		case kTrack:
+			mDynamicHelp.SetWindowText(
+				L"'00'-'3F'	- Play specified block.\r\n"
+				L"'40'-'7F'	- Repeats next block by 'xx-$40' times.\r\n"
+				L"'80'-'EF'	- Play all following blocks transposed up by 'xx-$80' semitones. If the number is >= $b0 then the note is transposed down rather than up.\r\n"
+				L"'FD'	- Stops track.\r\n"
+				L"'FE'	- Stops all tracks.\r\n"
+				L"'FF'	- Loops track to beginning of song.\r\n"
+			);
+			break;
+		case kBlock:
+			mDynamicHelp.SetWindowTextW(
+				L"VOL:XX	- This block command that allows you to set the volume. Setting a volume of 0 will stop the player. So valid number ranges are VOL:01 to VOL:0F\r\n"
+				L"GL:01,4	- Glides the last note played upwards (quit slowly) after counting four (half a minim).\r\n"
+				L"GL:02,2	- Glides the last note played upwards (a bit faster) after counting two (quarter minim). As can be seen the larger the number the faster the glide.\r\n"
+				L"GL:83,0	- Glides the note down very fast after no delay. This means glide down.\r\n"
+				L"ARP:XY - Controls arpeggio for the voice and is in the format XY where the first root note is unchanged, next the root note is transposed X semitones. Next the root note is transposed Y semitones. The note pattern then loops. Arpeggios will stay on during envelope changes until an \"ARP:00\" command is used to remove the arpeggio.\r\n"
+				L"ERP:XX - Uses the extended arpeggio code to play an arpeggio from the extended arpeggio table, check \"extended view\".\r\n"
+				L"ARS    - Stops any arpeggio.\r\n"
+				L"FLL:XX	- low pass filter: Controls the value sent to $d415 SIDFilterCutoffFreqLo. So FLL:10 will put $10 into $d415\r\n"
+				L"FLH:XX	- high pass filter: does the same as FLL but for $d416 SIDFilterCutoffFreqHi\r\n"
+				L"FLC:XX	- Does the same but for $d417 SIDFilterControl. So FLC:F7 will set filter resonance F with voices 0,1 and 2 active (bits 0/1/2 = 7).\r\n"
+				L"FLP:XX	- Does the same with $d418 SIDVolumeFilter. So FLP:10 will set bit 4 which is the low pass filter. The lower nybble maps to the volume control, don't set these values, keep it at 0 for now.\r\n"
+				L"FG:XX,YY - Filter glide controls the filter frequency in a sinus pattern. XX controls the step size. YY controls the speed of the sinus pattern. If YY is 01 then the change will be slow, 02 is faster, 03 is even faster and so on. If YY has $80 added then the initial sinus pattern is falling instead of rising. For example $81 will fall slowly, $82 will fall faster etc.\r\n"
+				L"HRE - Enables the hard restart for this voice.\r\n"
+				L"HRD - Disables the hard restart for this voice.\r\n"
+				L"HAD:XX - Sets the hard restart AttackDecay.\r\n"
+				L"HSR:XX - Sets the hard restart SustainRelease.\r\n"
+				L"HWV:XX - Sets the hard restart waveform.\r\n"
+				L"HTI:XX - Sets the hard restart frame time, must be greater than 0.\r\n"
+				L"SLE - This block command enables slurring (or ties) of the next notes, the note will note release until SLD is disabled. Envelope commands have no effect on the sound until the SLD command is used. Hard restart is also disabled for the voice by this command.\r\n"
+				L"SLR - Releases the slur (or ties) of the next note. Hard restart is also enabled for the voice by this command.\r\n"
+				L"VIB:XY,VV - Semitone small vibrato. This vibrato will continue for all notes on the channel until it is stopped with VBS.\r\n"
+				L"	X - Vibrato shift going up. 1 is the larger vibrato of 2 semitones. 5 is smaller at a fraction of a semitone.\r\n"
+				L"	Y - Vibrato shift going down. 1 is the larger vibrato of 2 semitones. 5 is smaller at a fraction of a semitone.\r\n"
+				L"	X or Y must not be 0 and will report an error.\r\n"
+				L"	VV - Vibrato frequency. Larger numbers produce faster vibratos.\r\n"
+				L"VBD:ZZ - ZZ delays the start of the small vibrato for ZZ frames.\r\n"
+				L"VBS - Stops the small vibrato\r\n"
+				L"FVB:XX,VV - Semitone fixed vibrato. This vibrato will continue for all notes on the channel until it is stopped with FVS.\r\n"
+				L"	X - Vibrato shift. 1 is the larger vibrato. 5 is smaller at a fraction of a semitone. There is no separate up and down size as there is for the small vibrato.\r\n"
+				L"	X must not be 0 and will report an error.\r\n"
+				L"	VV - Vibrato frequency. Larger numbers produce faster vibratos.\r\n"
+				L"	As an example FVB:3,3 is nearly the same sound as VIB:33,3. Both have the same speed vibrato, both have similar tone range and the small vibrato has a smoother sine wave for the tone.\r\n"
+				L"FVD:ZZ - ZZ delays the start of the fixed vibrato for ZZ frames.\r\n"
+				L"FVS - Stops the fixed vibrato\r\n"
+				L"TWV:XX - Set the wave table.\r\n"
+				L"TNT:XX - Set the note table.\r\n"
+				L"TPL:XX - Set the pulse table.\r\n"
+				L"TFL:XX - Set the filter table.\r\n"
+			);
+			break;
+		case kWave:
+			mDynamicHelp.SetWindowTextW(
+				L"XX\r\n"
+				L"YY\r\n"
+				L"YY is always the frame delay.\r\n"
+				L"XX:\r\n"
+				L"0 = Don't change wave this time, previous waveform is used.\r\n"
+				L"FF = Jump to position. pos 0 = stop\r\n"
+				L"Any other value is used as the waveform using the SID format which can be ORed together:\r\n"
+				L"bit7	80	Noise\r\n"
+				L"bit6	40	Pulse\r\n"
+				L"bit5	20	Sawtooth\r\n"
+				L"bit4	10	Triangle\r\n"
+				L"bit3	08	Test\r\n"
+				L"bit2	04	Ring modulation\r\n"
+				L"bit1	02	Sync\r\n"
+				L"bit0	01	Gate\r\n"
+				L"Remember to set the gate bit to get any sounds.\t\n"
+			);
+			break;
+		case kNote:
+			mDynamicHelp.SetWindowTextW(
+				L"XY\r\n"
+				L"ZZ\r\n"
+				L"Y = Except command 0 frame delay (0-15) (ticks zero based)\r\n"
+				L"X = Command\r\n"
+				L"Command:\r\n"
+				L"00 (both nybbles XY) = No note change. Do nothing. Delay time in ZZ\r\n"
+				L"1 = Set absolute note ZZ = note. Does this once at the start of the command. Effects can be active.\r\n"
+				L"8 = Timed note step add upper nybble Z+1 with time of lower nybble+1 (zero based).\r\n"
+				L"9 = Timed note step sub upper nybble Z-1 with time of lower nybble+1 (zero based).\r\n"
+				L"A = Relative note step ZZ = step signed 8 bit value each frame. For fast glides it is better to use this, the code is quicker and shorter.\r\n"
+				L"B = Set hi frequency to ZZ lo is zeroed. Skips other effects for the duration of this effect.\r\n"
+				L"FF = Jump to position and frame delay ignored. XX = pos 0 = stop\r\n"
+			);
+			break;
+		case kPulse:
+			mDynamicHelp.SetWindowTextW(
+				L"If a pulse waveform is active for a frame (bit 6) then the pulse table will execute for that frame:\r\n"
+				L"XY\r\n"
+				L"ZZ\r\n"
+				L"X = 0 Set pulse Y & ZZ = Pulse\r\n"
+				L"X = 1 Pulse add with unsigned ZZ for Y ticks (ticks zero based)\r\n"
+				L"X = 2 Pulse subtract with unsigned ZZ for Y ticks (ticks zero based)\r\n"
+				L"FF = Jump to position. pos 0 = stop\r\n"
+			);
+			break;
+		case kFilter:
+			mDynamicHelp.SetWindowTextW(
+				L"XX\r\n"
+				L"YY\r\n"
+				L"XX 00 = Set hi cutoff with YY\r\n"
+				L"XX 7F = Set lo cutoff with YY\r\n"
+				L"XX 01-7E = Alter filter cutoff by signed YY for XX frames\r\n"
+				L"XX 80-FE = Set band pass flags (SIDVolumeFilter = XX & 70 | volume) YY = Resonance and channel mask (SIDFilterControl)\r\n"
+				L"For example: Using 90 F7 will set the low pass filter (80+10=90) with filter resonance F and enabled on all voices (1+2+4=7)\r\n"
+				L"For example: Using A0 F4 will set the band pass filter (80+20=A0) with filter resonance F and enabled on voice 3 (4 = voice 3)\r\n"
+				L"For example: Using C0 E1 will set the band pass filter (80+40=C0) with filter resonance E and enabled on voice 1 (1 = voice 1)\r\n"
+				L"XX FF = Jump\r\n"
+				L"\r\n"
+				L"If Set band pass ($80-FE) is followed by 00 which can be followed by an optional 7F then these will be executed in the same frame.\r\n"
+				L"If hi cutoff (00) is followed by lo cutoff (7F) it will be executed in the same frame.\r\n"
+			);
+			break;
+		default:
+			break;
+	}
 }

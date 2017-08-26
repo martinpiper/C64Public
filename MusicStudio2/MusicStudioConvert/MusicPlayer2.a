@@ -51,6 +51,8 @@ NoteTableCommand01
 	lda #<.ltableNoteProcessOver
 	sta .noteTablePerFrameJumpLo,x
 
+	jmp .tableNoteProcessOver
+
 	; MPi: TODO: Other commands 2,3,4 needed here
 NoteTableCommand02
 NoteTableCommand03
@@ -402,7 +404,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 .editorTrackStart !by 0,0,0
 }
 
-.noteTablePerFrameJumpLo !by <.tableNoteProcessOver,<.tableNoteProcessOver,<.tableNoteProcessOver
+!ifdef TableCodeActivateNote {
+.noteTablePerFrameJumpLo !by <.ltableNoteProcessOver,<.ltableNoteProcessOver,<.ltableNoteProcessOver
+}
 
 .lonote
 	!by 12,28,45,62,81,102,123,145,169,195,221,250,24,56,90,125,163,204,246

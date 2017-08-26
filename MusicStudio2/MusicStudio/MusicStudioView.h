@@ -243,6 +243,21 @@ public:
 	afx_msg void OnBnClickedSaveEnvelope();
 	afx_msg void OnBnClickedLoadEnvelope();
 	afx_msg void OnFileRipSID();
+	CStatic mDynamicHelp;
+	afx_msg void OnEnSetfocusEdit1();
+
+	enum HelpState {
+		kNone,
+		kTrack,
+		kBlock,
+		kWave,
+		kPulse,
+		kNote,
+		kFilter
+	};
+	HelpState mHelpState;
+
+	void SetHelpState(const HelpState state);
 };
 
 #ifndef _DEBUG  // debug version in MusicStudioView.cpp
