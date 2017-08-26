@@ -29,8 +29,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
-    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression2.a</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression2.a </NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3.a </NMakeReBuildCommandLine>
     <NMakeOutput>Decompression.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -51,6 +51,9 @@
     <CustomBuild Include="..\CleanProjectFully.bat" />
     <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat" />
     <CustomBuild Include="..\DoBackup.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TestDecompression3.a" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

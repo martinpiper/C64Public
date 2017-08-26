@@ -40,8 +40,7 @@
 .historyBufferLenH = .historyBufferLenL + $10
 .historyBufferOffsetL = .historyBufferLenH + $10
 .historyBufferOffsetH = .historyBufferOffsetL + $10
-;CompressionEndOFHistoryBufferTables = .historyBufferOffsetH + $10
-CompressionHistoryBufferTablesSize = 4 * $10
+CompressionEndOFHistoryBufferTables = .historyBufferOffsetH + $10
 
 !ifdef Decompression_OptimiseNoStoreStub { } else {
 RNXPCompressionDecompress_InitStore
@@ -69,6 +68,24 @@ RNXPCompressionDecompress_InitStore
 	pla
 	rts
 
+!ifdef Decompression_UseZPVars {
+.lastWorkOffset !by 0,0
+!ifdef Decompression_OptimiseForOneEscapeBit {} else {
+.numEscapeBits !by 0
+}
+!ifdef Decompression_OptimiseNoChangingEscape {} else {
+.changingEscape !by 0
+}
+.potentialLiteral !by 0
+.historyIndex !by 0
+
+.workOffset !by 0,0
+.workLen !by 0
+.tempLoopVal !by 0
+
+!if .tempLoopVal > $ff { !error ".tempLoopVal is out of range" }
+
+} else {
 ; Only needs two bytes here for the length and offset related values
 .lastWorkOffset = $02
 !ifdef Decompression_OptimiseForOneEscapeBit {} else {
@@ -83,7 +100,7 @@ RNXPCompressionDecompress_InitStore
 .workOffset = $fb
 .workLen = $fd
 .tempLoopVal = $ff
-
+}
 
 RNXPCompressionDecompress
 !ifdef Decompression_OptimiseNoStoreStub { } else {
@@ -103,7 +120,11 @@ RNXPCompressionDecompress
 	sty .lastWorkOffset+1
 
 	sty .historyIndex
-	sty .smTheEscape+1
+!ifdef Decompression_UseZPVars {
+	sty+1 .smTheEscape+1
+} else {
+	sty+2 .smTheEscape+1
+}
 !ifdef Decompression_OptimiseNoChangingEscape {} else {
 	sty .changingEscape
 }
@@ -147,7 +168,11 @@ RNXPCompressionDecompress
 .ge1
 }
 	jsr .GetNextBitIntoCarry
-	rol .smTheEscape+1
+!ifdef Decompression_UseZPVars {
+	rol+1 .smTheEscape+1
+} else {
+	rol+2 .smTheEscape+1
+}
 !ifdef Decompression_OptimiseForOneEscapeBit {} else {
 	dey
 	bne .ge1

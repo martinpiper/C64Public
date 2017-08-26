@@ -1,0 +1,4 @@
+* Add another option for the decompressor that uses all low code $2-$1ff instead of $334 to $3ff
+	-c64m or -c64mb to enable "max" mode.
+	Now $200-$ffff can be used for decompression, but it kills the vectors and the rest of zeropage.
+	
