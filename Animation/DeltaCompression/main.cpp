@@ -1,18 +1,22 @@
+//..\Data\frm*05d.sch 0 1 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <algorithm>
 #include <assert.h>
+#include <map>
+#include <list>
 #include "RNPlatform/Inc/MessageHelper.h"
 #include "../../Common/ParamToNum.h"
 
 using namespace RNReplicaNet;
 
 // Enough for 2 x (screen, colour, char data)
-unsigned char sCurrentData[0x2000];
-unsigned char sNewData[0x2000];
-unsigned char sWorstCaseDelta[0x2000 + (0x21 * 2) + 2];
-unsigned char sTestDecomp[0x2000];
+unsigned char sCurrentData[0x10000];
+unsigned char sNewData[0x10000];
+unsigned char sWorstCaseDelta[0x10000 + (0x21 * 2) + 2];
+unsigned char sTestDecomp[0x10000];
+static bool sBitmapMode = false;
 
 enum
 {
@@ -30,8 +34,16 @@ typedef signed int s32;
 typedef signed short s16;
 typedef signed char s8;
 
+const int kKeyLength = 3;
+static int makeKey(const unsigned char *memory)
+{
+	return memory[0] | ((int)memory[1])<<8 | ((int)memory[2])<<8;
+}
+
 int DeltaCompress(unsigned char *output, const unsigned char *input, const unsigned char *delta, const int inputLength)
 {
+	std::multimap<int,int> inputToPos , deltaToPos;
+
 	u32 foundLeast[256];
 	memset(foundLeast,0,sizeof(foundLeast));
 
@@ -40,6 +52,12 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 	for (i=0;i<inputLength;i++)
 	{
 		foundLeast[delta[i]]++;
+	}
+
+	for (i=0;i<inputLength - kKeyLength;i++)
+	{
+		inputToPos.insert(std::pair<int,int>(makeKey(input+i),i));
+		deltaToPos.insert(std::pair<int,int>(makeKey(delta+i),i));
 	}
 
 	// Find the least used byte for opcodes 128 and above, this improves decompression speed on a 6502 because it can bmi
@@ -135,7 +153,7 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 				i++;
 				continue;
 			}
-#if 1
+
 			if ((delta[i] == leastIndex3) && (j == 1))
 			{
 				emittedLastSkipCodesPos = -1;
@@ -144,7 +162,7 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 				i++;
 				continue;
 			}
-#endif
+
 			emittedLastSkipCodesPos = -1;
 			output[outPos++] = leastIndex;
 			output[outPos++] = (u8)j;
@@ -156,12 +174,33 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 #if 1
 		// Search for the longest string to copy in the existing data,
 		// if it cannot all be found then output literals for the remainder of the data
-		int pos;
 		int bestPos = -1;
 		bestSize = -1;
-		// We can search the entire buffer since we are effectively moving data around in ourselves.
-		for (pos = 0; pos < (inputLength-10); pos++)
+
+		std::list<int> positions;
+		std::multimap<int,int>::iterator st = inputToPos.lower_bound(makeKey(delta + i));
+		std::multimap<int,int>::iterator en = inputToPos.upper_bound(makeKey(delta + i));
+		while (st != en)
 		{
+			int position = (*st++).second;
+
+			positions.push_back(position);
+		}
+		st = deltaToPos.lower_bound(makeKey(delta + i));
+		en = deltaToPos.upper_bound(makeKey(delta + i));
+		while (st != en)
+		{
+			int position = (*st++).second;
+			positions.push_back(position);
+		}
+
+		// We can search the entire buffer since we are effectively moving data around in ourselves.
+//		for (; pos < (inputLength-10); pos++)
+		std::list<int>::iterator st2 = positions.begin();
+		while (positions.end() != st2)
+		{
+			int pos = *st2++;
+
 			int size;
 			for (size = 5 ; (size < 255) && ((pos+size) < inputLength) && ((i+size) < inputLength) ; size++)
 			{
@@ -183,32 +222,38 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 				{
 					continue;
 				}
-
-				// Also avoid copying from any data in $3f8-$3ff for the screen banks
-				// This misses any multiple of sprite definitions which are being displayed after the screen memory
-				if ( !(pos & 0x800) && !((pos+size-1) & 0x800))
+				
+				if (sBitmapMode)
 				{
-					if ( ((pos & 0x3ff) >= 0x3f8) && ((pos & 0x3ff) <= 0x3ff) )
+					// MPi: TODO: Filter out bitmap screen data sprite pointers?
+				}
+				else
+				{
+					// Also avoid copying from any data in $3f8-$3ff for the screen banks
+					// This misses any multiple of sprite definitions which are being displayed after the screen memory
+					if ( !(pos & 0x800) && !((pos+size-1) & 0x800))
 					{
-						continue;
-					}
-					if ( (((pos+size) & 0x3ff) >= 0x3f8) && (((pos+size) & 0x3ff) <= 0x3ff) )
-					{
-						continue;
-					}
+						if ( ((pos & 0x3ff) >= 0x3f8) && ((pos & 0x3ff) <= 0x3ff) )
+						{
+							continue;
+						}
+						if ( (((pos+size) & 0x3ff) >= 0x3f8) && (((pos+size) & 0x3ff) <= 0x3ff) )
+						{
+							continue;
+						}
 
-					if ( ((i & 0x3ff) >= 0x3f8) && ((i & 0x3ff) <= 0x3ff) )
-					{
-						continue;
-					}
-					if ( (((i+size) & 0x3ff) >= 0x3f8) && (((i+size) & 0x3ff) <= 0x3ff) )
-					{
-						continue;
-					}
+						if ( ((i & 0x3ff) >= 0x3f8) && ((i & 0x3ff) <= 0x3ff) )
+						{
+							continue;
+						}
+						if ( (((i+size) & 0x3ff) >= 0x3f8) && (((i+size) & 0x3ff) <= 0x3ff) )
+						{
+							continue;
+						}
 
+					}
 				}
 
-				// MPi: TODO: Optimise these memcmp with a dictionary
 				if (pos < i)
 				{
 					// The comparison is what we would have decompressed already, so compare the same buffer
@@ -237,7 +282,6 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 					{
 						break;
 					}
-#if 1
 					if (input)
 					{
 						if (memcmp(delta + i, input + pos,size) == 0)
@@ -250,7 +294,6 @@ int DeltaCompress(unsigned char *output, const unsigned char *input, const unsig
 						}
 					}
 					else
-#endif
 					{
 						break;
 					}
@@ -348,10 +391,17 @@ void DeltaDecompress(unsigned char *out, const unsigned char *delta)
 
 int main(int argc, char **argv)
 {
-	if (argc < 9)
+	if (argc < 10)
 	{
-		printf("DeltaCompression : <Input file mask in name*05d.ext format> <byte offset for start> <start frame number> <end frame number> <number of banks> <first frame size> <other frame size> <output file name mask in name*05d.ext format>\n");
+		printf("DeltaCompression : <-bitmap> <Input file mask in name*05d.ext format> <byte offset for start> <start frame number> <frame step> <end frame number> <number of banks> <first frame size> <other frame size> <output file name mask in name*05d.ext format>\n");
 		return -1;
+	}
+
+	if (strcmp(argv[1] , "-bitmap") == 0)
+	{
+		sBitmapMode = true;
+		argc--;
+		argv++;
 	}
 
 	memset(sCurrentData,0,sizeof(sCurrentData));
@@ -361,18 +411,19 @@ int main(int argc, char **argv)
 	std::replace<std::string::iterator,char>(inputNameMask.begin(),inputNameMask.end(),'*','%');
 	int byteOffset = ParamToNum(argv[2]);
 	int startFrame = ParamToNum(argv[3]);
-	int endFrame = ParamToNum(argv[4]);
-	int numBanks = ParamToNum(argv[5]);
-	int firstFrameSize = ParamToNum(argv[6]);
-	int otherFrameSize = ParamToNum(argv[7]);
-	std::string outputNameMask = argv[8];
+	int frameStep = ParamToNum(argv[4]);
+	int endFrame = ParamToNum(argv[5]);
+	int numBanks = ParamToNum(argv[6]);
+	int firstFrameSize = ParamToNum(argv[7]);
+	int otherFrameSize = ParamToNum(argv[8]);
+	std::string outputNameMask = argv[9];
 	std::replace<std::string::iterator,char>(outputNameMask.begin(),outputNameMask.end(),'*','%');
 
 	// Prime all the banks with what the data should look like at the end of the animation sequence.
 	int bank = 0;
 	int i;
 	char buffer[1024];
-	for (i=startFrame;i<=endFrame;i++)
+	for (i=startFrame;i<=endFrame;i+=frameStep)
 	{
 		DynamicMessageHelper input;
 		sprintf(buffer, inputNameMask.c_str(), i);
@@ -397,7 +448,7 @@ int main(int argc, char **argv)
 	memcpy(sNewData,sCurrentData,sizeof(sCurrentData));
 
 	// Write what the buffer should look like for the animation player to load
-	sprintf(buffer, outputNameMask.c_str(), 0);
+	sprintf(buffer, outputNameMask.c_str(), -1);
 	FILE *fp = fopen(buffer,"wb");
 	if (!fp)
 	{
@@ -412,7 +463,7 @@ int main(int argc, char **argv)
 	bank = 0;
 	int totalBytesIn = 0;
 	int totalBytesOut = 0;
-	for (i=startFrame;i<=endFrame;i++)
+	for (i=startFrame;i<=endFrame;i+=frameStep)
 	{
 		DynamicMessageHelper input;
 		sprintf(buffer, inputNameMask.c_str(), i);
@@ -442,10 +493,20 @@ int main(int argc, char **argv)
 		fclose(fp);
 		totalBytesOut += ret;
 
-#if 1
+#if 0
 		DeltaDecompress(sCurrentData,sWorstCaseDelta);
 //		if (memcmp(sCurrentData,sNewData, (i==startFrame)?firstFrameSize:otherFrameSize/*(bank * 0x1000) + input.GetBufferSize()*/) != 0)
-		if (memcmp(sCurrentData,sNewData, otherFrameSize) != 0)
+		int j;
+		bool decompressionFailed = false;
+		for (j=0; j<otherFrameSize ; j++)
+		{
+			if (sCurrentData[j] != sNewData[j])
+			{
+				printf("$%04x : %02x %02x\n", j , sCurrentData[j] , sNewData[j]);
+				decompressionFailed = true;
+			}
+		}
+		if (decompressionFailed)
 		{
 			printf("FAILED: Decompress didn't work for some reason\n");
 			exit(-1);

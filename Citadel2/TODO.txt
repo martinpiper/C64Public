@@ -10,8 +10,6 @@ Calls:
 					Scroller.a - ScrollerCalculate
 						Stores into scrollerRealMovementXPixels and scrollerRealMovementYPixels
 		Blue		MusicPlayerPlay
-		LightRed	EnemyProcessActivation
-						EnemyThink
 		Green		UpdateSprites
 						This updates sprites with scrollerRealMovementXPixels and scrollerRealMovementYPixels
 					if Multiplex_SplitSort {
@@ -28,10 +26,12 @@ Calls:
 					}
 					ScrollerDemoWaitScorePanel
 					ScrollerUpdateTopIRQ
-		DarkGrey	BeforeScrollers
+		DarkGrey	BeforeScrollers - Remove old bullets
 		Purple		ScrollerScreen
 		LightGreen	ScrollerOffScreen
-		LightGrey	AfterScrollers (topScreenBank is the displayed screen)
+		LightGrey	AfterScrollers - Move and render bullets (topScreenBank is the displayed screen)
+		LightRed	EnemyProcessActivation
+						EnemyThink
 
 	if MazeSolve_DebugBorder {
 		DarkGrey	Idle
@@ -70,9 +70,219 @@ During the sub-game
 							SubGame_SolveXStripUpdatePosition
 						SubGame_ResetEnterTimer
 
+
+** Note **
+All references to CartFile1_ values must be in the GenericSpecificCode block, else weird bugs happen where old data offsets are used when assembling the code overlays.
+
+
 TODO items:
 
-* ; TODO: A bit buggy at the moment, the sub-game switch needs to be handled correctly
+* Between level bonus stage. Static screen and static player in the middle. Choose direction to fire.
+	Traps open around the player in sequence and enemies come out.
+	Beat the bonus stage to get an extra life and permanent powerup.
+
+
+
+* Optimise RadarEnemyPlayerUpdate
+	It can pre-calc everything due to .EnemyPositionsXOld only being updated every full radar update
+
+
+
+
+* For enemy movement, consider removing the old enemy map tile block only after some time period after the enemy starts moving out of the tile
+
+
+
+
+* Check for other Citadel2_RestoreCallRNXPCompressionDecompress
+		Remove decompression code Citadel2_RestoreCallRNXPCompressionDecompress and supportng routines?
+			Scroller_EarlyStartHook
+			
+
+
+
+* For the capture system, could roll out the functions (stay, follow, etc.) using upgrades you collect along the way.
+	So you get the player used to one function before you unleash the next...
+	* Add pickups for the various functions
+	* Add pickups for the maximum number of captured droids
+
+
+
+
+* I think they should only become targets for certain enemies under certain conditions.
+	Static droids - most droids will realise they can't walk through them and retreat. More aggressive (or higher ranking?) droids could ram or shoot them.
+	Follow droids
+	Seek & Destroy droids - as soon as they open fire on an enemy, that enemy (and others nearby) should realise its gone rogue and attack it.
+
+
+
+
+* It might be nice to have "reprogrammers" - droids that can, say, reprogram a droid you'd told to stay and return it to normal.
+		Reprogrammers take more energy to capture
+	* Higher level droids take more energy to capture
+	* when hovering the capture probe over a droid it will show the energy required to capture a droid
+	* these abilities and the number of maintained droids are from dropped upgrades
+		we can control when these upgrades drop
+		to allow for strategic balanced development/progression
+
+
+
+* Maybe make EnemyTemplate_Ram part of the EnemyFlags_* flags instead?
+
+
+
+
+* Really need unit tests covering enemy and animation logic for the various flags
+	* Expected movements through a vastly simplified level
+	* Also enemy/player door types and interactions
+	* Player to enemy collision detection logic - Captured flag especially
+	* Player bulet to enemy collision - Captured flag especially
+	* Behaviour with captured/stay/follow/seek&destroy modes
+	* Power up drop flags and flags in the animation engine from the enemy flags and templates
+
+
+
+
+* Done - slow grey colour pulse for captured, and fast grey pulse for the currently commanded captured
+- stop capture probe going off-screen
+- Done - allow player to cycle through droids with SPACE
+- Done - F1 - Toggle static/wander
+- Done - F3 - Set to follow
+- F5 - Set to seek/destroy
+- F7 - Assimilate
+
+Suggestions:
+
+- Add text to the upgrade screen so you know what icon you're selecting (open door, install upgrade, weapon type, etc.)
+- Try a smooth colour fade (not char fade or bit dissolve) when using lifts - looks much slicker
+- Can we have animating chars in the background? If so, how many chars can animate per level? Can we bank-in the animations from a different charset?
+
+in the real game initially only one slot could be available, pressing space obviously has no effect
+collecting and installing the right upgrade adds a slot
+meaning F1 could be "assimilate power"
+which destroys the captured droid as its power is depleted?
+
+
+- computer terminals is a save feature - so if you lose a life you reappear at the last terminal you saved to
+	Save doors state
+	No need to save enemies
+
+
+
+
+* MPi: TODO: Enemy fire rate check
+
+
+
+
+
+
+* Installable batteries, slowly recharge as the droid moves.
+	main energy bar and energy bars for each battery
+	we have vertical score panel space for three parallel energy bars
+	batteries hold less charge than your main energy
+	if the main energy is reduced below 2 then the battery depletes and boosts the main energy by that amount
+		instant energy transfer from battery to main energy
+		visually interesting to try to convey this with a limited character screen :s
+	Vertical ticks, two ticks per char, energy bar
+
+
+
+
+* Enemies should not shoot if they think their line of sight to the target is blocked.
+	Instead save up the shot counter to be right after the shot becomes clear
+
+
+
+
+* Since the "<<Loading>>" text still exists in zeropage could use that instead...
+	Or using $400 it does give the opportunity to have a fancier loading screen
+	Or animation etc...
+	Need to ponder
+
+	
+	
+* Fade in/out efect can cart bank in character data a line at a time across all characters
+	* Or perform some form of disolve effect
+	* This is possible now the cart bank scroller speed code work has been completed
+
+
+
+
+* Create a feature file that runs with automated joystick switched on for many game frames.
+	Make sure to test before all optimisations in Citadel2Optimisations.a
+	Log and compare the result per frame
+	Also produce an average per frame
+	Produce a report after optimisations turned on
+
+
+
+
+* Think about some weird areas for needed code, like in $3e8-$3f7, between the screens and the sprite pointers.
+
+
+
+* Need defines for the animation types (used by AnimationMutateToType etc) in DataDefs.a. No magic numbers here please.
+
+
+
+* Need defines for sound effects
+
+
+
+* One of the levels could have a second computer controlled player that shoots enemies whilst running through a different later accessible part of the level.
+
+
+
+
+* Enemies to use teleporters.
+	Check for same zone as the player at the destination teleport when hunting.
+	If yes, then route to the teleport and use it.
+
+
+
+
+* Each enemy has a threshold limit for "run away" and how they notice the aggressive actions counter.
+	When the counter is over the threshold then the enemy changes behaviour to be "run away"
+		"Run away" means tiles that are further away from the player, without line of sight, trickier to code.
+		There can be a cycling list of points around the player in a circle, like door scanning code, that are used to find a routable tile where the zone > 0 and not negative.
+
+
+
+
+
+* Need to setup an enemy routing test, check the cycles, then optimise.
+	* Need the BDD code to track cycles, not just instructions.
+
+
+
+
+* Optimisation targets while player moving and screen scrolling:
+		White		HandleUserInput
+		Green		UpdateSprites
+	If frameIsOrWasBusy is used by EnemyProcessActivation and AnimationCommonUpdate this seems to somewhat reduce the busy frame glitches
+	Reduce the collision detect code as well by going straight to .noCharCollide from .simpleUpdateSpriteCheck
+
+
+
+
+
+* Potential to move AnimationCommonUpdate inline and jmp to it from the simple sprite update instead
+	Removes jsr/rts 12 cycles per sprite
+
+
+
+
+* Add sprite twinkle animation for health gained
+
+
+
+
+* Perhaps use FIFO to quickly get the next free animation index to use. (Citadel2Entry.a - AnimationFindFreeSlot)
+	FIFO.a could expose macros for each routine and provide 8/16 bit FIFOs
+	The FIFO start/end index and array will have to be inbetween Animation_StartMem/Animation_EndMem
+	* asm/FIFO.a now defines macros to allow the code to be re-used
+	Not sure if the extra complexity to the animation code is worth it
 
 
 
@@ -82,39 +292,6 @@ TODO items:
 
 * During sub-game reward longer successful paths with more points. Display how long the bonus will be while the routing is going on. It can count up as the routing progresses.
 
-
-
-* ; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
-	; This will need a file system builder tool for the cart banks
-
-
-
-* Think about how to destroy an open generator. Killing an enemy over an open generator could switch it to a destroyed generator.
-	Make it a random chance? I don't really want to have to store generator health for the whole map.
-	Have several open generator tiles with progressive damage that animates for each random chance enemy destruction, the last one doesn't generate anymore.
-
-
-
-
-* Use the map animated tile code to open/close the terminal controlled doors. Thus removing the current requirement for the doors to be always off-screen.
-
-
-
-
-* Different door type that animates open when an Node_isBlocked_Player/Enemy is next to it. And animates closed when there is no block.
-
-
-
-
-* Static enemies (movement -1) that just fire at the player
-	Coarse and fine movement needs to check
-
-
-
-
-* Enemies to use teleporters.
-	Check for same zone as the player at the destination teleport when hunting.
-	If yes, then route to the teleport and use it.
 
 
 
@@ -129,18 +306,11 @@ TODO items:
 
 
 
-* TODO: Different weapon types or health upgrade etc
-
-
-
-
 * Robot black and pink
 
 
 
-* Each enemy has a threshold limit for "run away" and how they notice the aggressive actions counter.
-	When the counter is over the threshold then the enemy changes behaviour to be "run away"
-		"Run away" means tiles that are further away from the player, without line of sight, trickier to code.
+* Add more trees and flowers
 
 
 
@@ -157,21 +327,12 @@ TODO items:
 
 
 
-* If the on-screen enemy detects any solid char blocks underneath it, after the player bullet check, then explode it.
-	This is because it indicates there is a closed door underneath it.
-
-
-
 * If the off-screen enemy detects a blocked map tile then look for a map tile near it that isn't blocked and warp to that.
 	Free any allocated route as well.
 
 
 
 * Add memory read write failure checks in feature files for citadel
-
-
-
-* Score update routine
 
 
 
@@ -228,6 +389,7 @@ TODO items:
 
 
 
+
 * Add code to grow out #Node_aversion when enemies are destroyed.
 	*TODO* #Node_aversion can be gradually reduced over time with maze node scans.
 	There can be displays, recharge stations, tool machines etc.
@@ -249,8 +411,6 @@ TODO items:
 	Fix Animation.feature so it will compile and test the bare minimum
 
 * Add feature file tests for EnemyProcessActivation
-
-* Perhaps use FIFO to quickly get the next free animation index to use. (Citadel2Entry.a - AnimationFindFreeSlot)
 
 
 

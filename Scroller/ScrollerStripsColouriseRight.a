@@ -1,0 +1,42 @@
+!zn {
+ScrollerDrawStripRightColour
+!ifdef Scroller_NeedFullColourScroll {
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+
+!ifdef CharColoursForEveryCharacter {
+!ifdef Scroller_EnableBlockColourSpeedCode {
+
+!ifdef Scroller_FullScreen {
+	+MACROScrollerDrawStripColouriseUnrolled 39 , 25 , 40
+} else {
+	+MACROScrollerDrawStripColouriseUnrolled 39 , 20 , 40
+}
+
+} else {
+	lda #39
+	jmp CharColours_GeneralCharsColourise
+}
+} else {
+
+	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
+	lda #$27
+	sta tempWork0
+	lda #$d8
+	sta tempWork1
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawVStripOneColour .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY
+}
+}
+} else {
+	rts
+}
+!ifndef CharColoursForEveryCharacter {
+.lscrollMapLX !by 0
+.lscrollMapHX !by 0
+}
+}

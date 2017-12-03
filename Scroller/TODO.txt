@@ -1,29 +1,43 @@
+* Unroll the block plotting code for characters
+	* A bit like the code for Scroller_EnableBlockColourSpeedCode
+	* Also put this code in the cart banks if Scroller_EnableSpeedCode is enabled and remove from RAM
+	* Tricky because the block data can be under the cart ROM that is banked in...
+
+
+
+* For Screen splits, especially the score panel split:
+	Calculate what sprites will be active on the target line and the expected y scroll and produce optimised routines for each combination
+	* Lees important now since the split now forces all sprites to be enabled on the scan line giving a stable split.
+		Due to sprite DMA triggering delaying the CPU until the correct point.
+
+
+
+
+; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
+; MPi: TODO: Perhaps not the best idea since any games that wait for BeforeScrollers/AfterScrollers for their work will want to have as much time above for animation and sprite updates
+
+
+
+
+* Tidy use of !for with (.x-1) etc inside Scroll_*.a with !set/!do
+
+
+
+* Make the bat files generic so they can be used by other projects using this framework
+
+
+
+* Think about block data swizzling. Perhaps it's more optimal to have block data stored in different patterns?
+	Especially for the different register requirements during the horizontal/vertical strip screen plots
+	; Optimise the block plot and screen scroll loops. Unroll more.
+
+
+
+; MPi: TODO: If the sort is already after the multiplexor end (and the sprite collisioon is off) then just do the full copy and sort without buffering.
+
+
+
 * The screen scroll and especially colour scroll should be split into two sections, the top half is before the multiplexor sort after the screen split, the second half is after the multiplexor sort.
-
-
-
-
-* Consider using cartridge based speed code for unrolled screen scrolling code.
-	C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe +warp -cartcrt Citadel2.crt
-	Code and data would need to be re-arranged to account for $8000-$9fff being mapped at ROM sometimes
-		Cycles per char
-			Looping	4 + 4 + 2 + 3	= 13
-			Speed	4 + 4			= 8
-		Code size:
-			Looping:	ScreenScrollerCodeEnd - ScreenScrollerCodeStart = 2484 - 1c04 = 880
-			Speed:		40 * 20 * 8 * 2 * 6 = 12C00 (12C0 per bank per direction, so need 16 ROM banks for 8 way 2 banks)
-	ScrollerStrips has self modifying code so it's not a candidate
-	* Will need a common batch file for creating the relevant scroller binaries
-		* Can import values from the map
-	* and creating a crt image
-	http://codebase64.org/doku.php?id=base:crt_file_format#ocean_type_1
-	* bin\MakeCart.exe already supports larger carts with higher bank numbers
-	Added code to ScrollersNoColour.a to use +Scroller_ScrollExecCartBank
-	Adding scroller code into CartCode, this will then get added to a cart image
-		cd /d c:\Work\C64\Scroller\CartCode
-		..\..\acme.exe -o c:\temp\t0.bin ScrollerNoColour0To1_1.a
-		..\..\acme.exe -o c:\temp\t1.bin ScrollerNoColour1To0_1.a
-		..\..\bin\MakeCart.exe -n -b 9 -r c:\temp\t0.bin -c 0 0 $2000 -w -r -b 10 -r c:\temp\t1.bin -c 0 0 $2000 -w -b 11 -r c:\temp\t0.bin -c 0 0 $2000 -w -b 12 -r c:\temp\t0.bin -c 0 0 $2000 -w -o c:\temp\t.crt
 
 
 
@@ -33,16 +47,6 @@
 
 ; Enemy aimed fire to target both players when they are active. Alternate fire, or nearest enemy to player fire mode.
 
-
-; Optimise the block plot and screen scroll loops. Unroll more.
-
-
-; For map types where each character is mapped to a specific colour (block colour data is *not* duplicated)
-; then the side colour update can be a fast unrolled section of code that does a lookup based on the screen data that will be switched to.
-; This means the colour block plot doesn't need to do so much work.
-
-
-; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
 
 
 ; MPi: TODO: Add horizontally/vertically scrolling demo for platform game controller with standard gravity and velocity.
@@ -69,10 +73,6 @@
 
 
 
-; MPi: TODO: If the sort is already after the multiplexor end (and the sprite collisioon is off) then just do the full copy and sort without buffering.
-
-
-
 ; MPi: TODO: Double check the sprite X and Y placement in normal SEUCK and horizontal SEUCK.
 ; See Scroller_SpriteXAdjust and Scroller_NoSpriteYAdjust
 ; Check final placement of enemies with scrolling levels that scroll to static screens and also
@@ -90,4 +90,4 @@
 ; MPi: TODO: Add configuration to shift the screen split down one or two characters giving different size bottom areas.
 ; Things to tweak: scorePanelPos1 , (19*40) and (20*40) will need to be optionally enabled, MACROScrollerBottomAdjust , MACROScrollerDrawVStrip, MACROScrollerDrawVStripColour, ScrollerDrawStripBottomBank,
 ; ScrollerDrawStripBottomColour, DrawMap
-; InitBank0Data and ClearGameScreens where it copies the screen liens at 20*40
+; InitBank0Data and ClearGameScreens where it copies the screen lines at 20*40

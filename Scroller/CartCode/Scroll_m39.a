@@ -1,0 +1,26 @@
+*=Scroller_ScrollBankEntry
+!for .y , 9 {
+!for .x , 39 {
+	lda ScreenA + (.y*40) + (38-(.x-1))
+	sta ScreenB - 39 + (.y*40) + (38-(.x-1))
+}
+}
+	rts
+
+*=Scroller_ScrollBankEntry + ScrollBankSplit
+!for .y , 10 {
+!for .x , 39 {
+	lda ScreenA + ((10+(.y-1))*40) + (38-(.x-1))
+	sta ScreenB - 39 + ((10+(.y-1))*40) + (38-(.x-1))
+}
+}
+
+!ifdef Scroller_FullScreen {
+!for .y , 5 {
+!for .x , 39 {
+	lda ScreenA + ((20+(.y-1))*40) + (38-(.x-1))
+	sta ScreenB - 39 + ((20+(.y-1))*40) + (38-(.x-1))
+}
+}
+}
+	rts

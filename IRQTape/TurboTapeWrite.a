@@ -107,14 +107,12 @@ TurboTapeWritePilot
 
 ; Y = Number of pilot bytes to write. Usually 192.
 TurboTapeWritePilotVariable
-	; First we start the CIA timer at a constant rate so we can check for it and output at a constant rate.
+	; First we start the CIA timer at a constant rate, of TapeTurboSpeed, so we can check for it and output at a constant rate.
 	; This is regardless about what other code is run during the save process resulting is a very stable data signal.
+	; We count 2 or 4 pulses of the IRQ
 	lda #$7f
 	sta CIA1InterruptControl
-	lda #<TapeTurboSpeed
-	sta CIA1TimerALo
-	lda #>TapeTurboSpeed
-	sta CIA1TimerAHi
+	+MACROSetTurboTimer TapeTurboSpeed
 	lda #%10001
 	sta CIA1TimerAControl		; Start timer, this timer automatically restarts.
 	; Now check the timer getting triggered once first of all to avoid an overflow due to early timers being triggered

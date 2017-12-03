@@ -1,11 +1,18 @@
 Teleport_EnterTimer			!by 0
 Teleport_EnterTimerLatch	!by 0
+Teleport_TimeToSwitchMap	!by 0
 
 !zn
+.teleportMapSwitchDelay = 75
+.teleportMapFadeUpDelay = 77
+
 ; Exit:
 ; EQ = Entered teleport
 ; NE = No teleport entry yet
 CheckTeleportAction
+	lda Teleport_TimeToSwitchMap
+	bne .doMapSwitch
+
 	lda Teleport_EnterTimerLatch
 	bne .exitNoReset
 
@@ -56,6 +63,30 @@ CheckTeleportAction
 	; Entering the teleport
 	inc Teleport_EnterTimerLatch
 
+	lda #-1
+	jsr Fade_Init
+.doFadeDelay
+	inc Teleport_TimeToSwitchMap
+	lda #0
+	rts
+
+
+.doFadeUp
+	; Fade up!
+	lda #1
+	ldx #0
+	ldy #4
+	jsr Fade_Init
+	lda #0
+	sta Teleport_TimeToSwitchMap
+	rts
+
+.doMapSwitch
+	cmp #.teleportMapFadeUpDelay
+	beq .doFadeUp
+	cmp #.teleportMapSwitchDelay
+	bne .doFadeDelay
+
 	ldx #0
 .mt1
 	lda TeleportPairs,x
@@ -89,14 +120,20 @@ CheckTeleportAction
 	sta EnemyPositionsY
 .mt3
 
+	; Stop any fading
+	lda #0
+	jsr Fade_Init
+	lda #0
+	jsr ScrollerSetBank
 	jsr EnemyProcessActivationInit
 	jsr PlayerBullets_Init
 	jsr AnimationClearDynamics
 	jsr AnimationMapEnemyInit
 	jsr AnimationProcessAllActivations
 	jsr DrawMap
-	jsr Teleport_CopyScreen
-	jsr ScrollerFlipBank
+;	jsr Teleport_CopyScreen
+;	jsr ScrollerFlipBank
+	jmp .doFadeDelay
 
 .entered
 	lda #0
@@ -131,4 +168,13 @@ Teleport_CopyScreen
 	dex
 	bpl .clr3
 
+	rts
+
+
+!zn
+Teleport_CheckFadeAction
+	lda Teleport_TimeToSwitchMap
+	beq .noTeleport
+	jsr CheckTeleportAction
+.noTeleport
 	rts

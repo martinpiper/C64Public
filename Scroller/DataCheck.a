@@ -1,0 +1,18 @@
+; Checks to make sure accessed data is not under the car ROM bank area when cart code is enabled
+
+!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
+!ifdef CharColoursForEveryCharacter {
+!ifdef CharColours {
+!if CharColours >= $8000 {
+!if CharColours < ($8000 + $4000) {
+!error "CharColours cannot be in the cart ROM bank memory area"
+}
+}
+!if (CharColours+numMapUsedChars) >= $8000 {
+!if (CharColours+numMapUsedChars) < ($8000 + $4000) {
+!error "CharColours cannot be in the cart ROM bank memory area"
+}
+}
+}
+}
+}

@@ -4,7 +4,9 @@ kNumPlayerBullets = 8
 PlayerBulletsX		!fill kNumPlayerBullets , -1
 ; Negative Y indicates no bullet active
 PlayerBulletsY		!fill kNumPlayerBullets , -1
+PlayerBulletsTime	!fill kNumPlayerBullets , -1
 PlayerBulletsCol	!by 1  , 2  , 3  , 4  , 8  , 9  , 10 , 11
+; The bullet character can be a multiple of kNumPlayerBullets to give some variation
 PlayerBulletsChar	!by 0  , 0  , 0  , 0  , 8  , 8  , 8  , 8
 
 PlayerBulletsXVel	!fill kNumPlayerBullets , 0
@@ -20,6 +22,7 @@ PlayerBulletsScrL	!fill kNumPlayerBullets , 0
 PlayerBulletsScrH	!fill kNumPlayerBullets , -1
 
 
+
 CurrentBulletBank !by $c8
 
 
@@ -30,6 +33,7 @@ PlayerBullets_Init
 	lda #-1
 	sta PlayerBulletsX,x
 	sta PlayerBulletsY,x
+	sta PlayerBulletsTime,x
 	sta PlayerBulletsScrL,x
 	sta PlayerBulletsScrH,x
 
@@ -68,6 +72,7 @@ AllocatePlayerBullet
 
 
 !zn
+; Restore screen data before bullets movement
 BeforeScrollers
 	lda DisplayingSubGame
 	beq .os1
@@ -106,11 +111,15 @@ BeforeScrollers
 	rts
 
 !zn
+.loffScreen jmp .offScreen
+; Bullets movement and render bullets to screen
 AfterScrollers
 	lda DisplayingSubGame
 	beq .os1
 	rts
 .os1
+	jsr RadarEnemyPlayerUpdate
+
 	ldx topScreenBank
 	lda BankToScreenAddr,x
 	sta tempWork0
@@ -124,6 +133,10 @@ AfterScrollers
 .l1
 	lda PlayerBulletsY,x
 	bmi .o1
+
+	dec PlayerBulletsTime,x
+	bmi .loffScreen
+
 	clc
 	adc ScrollerScreenCharMovedY
 	clc
@@ -156,7 +169,7 @@ AfterScrollers
 	adc tempWork0
 	sta tempWork3
 	lda (tempWork2),y
-	cmp #MapWallChars
+	cmp #MapSolidChars
 	bcs .offScreen
 	sta PlayerBulletsBkChar,x
 
@@ -186,6 +199,8 @@ AfterScrollers
 	clc
 	adc tempWork0
 	sta tempWork3
+
+	; Now OR in the lookup
 	txa
 	ora PlayerBulletsChar,x
 	sta (tempWork2),y

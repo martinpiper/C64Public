@@ -12,21 +12,6 @@ SFXSIDInit
 .SFXCurrentVoice !by 1
 .xTemp !by 0
 .yTemp !by 0
-; A lookup table that converts SEUCK SFX number to the music player envelope number
-; There are 24 SEUCK sound effects
-.SEUCKToMusicSFX
-	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
-	!by 8 , 9 , $a , $b , $c , 3 , 4 , 5
-	!by 6 , 7 , 0 , 1 , 2 , 3 , 4 , 5
-; A lookup table to allow each sound effect to have a different note
-.SEUCKToMusicSFXNote
-	!by 48, 50, 32, 16, 32, 48, 52, 40
-	!by 48, 50, 32, 16, 32, 48, 52, 40
-	!by 48, 50, 32, 16, 32, 48, 52, 40
-.SEUCKToMusicPriority
-	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
-	!by 0 , 0 , 50 , 75 , 15 , 0 , 0 , 0
-	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
 
 .voiceUsed	!by 0 , 0 , 0
 .priority !by 0
@@ -40,12 +25,12 @@ SFXInit
 	; Lookup the sound effect to play.
 	tax
 
-	lda .SEUCKToMusicPriority,x
+	lda SEUCKToMusicPriority,x
 	sta .priority
 
-	ldy .SEUCKToMusicSFX,x
+	ldy SEUCKToMusicSFX,x
 	; And the note
-	lda .SEUCKToMusicSFXNote,x
+	lda SEUCKToMusicSFXNote,x
 	sta .note
 
 	; Try up to this many times to find a channel

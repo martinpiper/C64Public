@@ -1,0 +1,23 @@
+; Title screen specific code - Stub values
+; These should be defined but should not be referenced by any code that is in the title screen execution flow
+; Hence why InvalidAddress is used so a break point or watch point can be used to detect this
+
+SpriteEmptyLookupTab				= InvalidAddress
+HandleUserInput						= InvalidAddress
+EnemyProcessActivation				= InvalidAddress
+BeforeScrollers						= InvalidAddress
+AfterScrollers						= InvalidAddress
+ScrollerDemoWaitTopIRQHook			= InvalidAddress
+ScrollerDemoWaitMultiplexHook		= InvalidAddress
+ScrollerDemoWaitScorePanelHook		= InvalidAddress
+ScrollerPreGameCalcuation			= InvalidAddress
+AnimationInit2						= InvalidAddress
+UpdateSprites						= InvalidAddress
+AnimationSpriteFrame				= InvalidAddress
+AnimationSpriteColour				= InvalidAddress
+
+paralaxScrollXPixels				= InvalidAddress
+paralaxScrollYPixels				= InvalidAddress
+ParalaxUpdate						= InvalidAddress
+
+Maze								= InvalidAddress

@@ -41,149 +41,6 @@ UpdateMapToMaze
 
 
 !zn
-!macro ZoneGrowCheck .pos , .currentZone {
-	ldy #.pos
-	lda (tempWork0),y
-	cmp #' '
-	bne .o1
-	ldx #1
-	lda .currentZone
-	sta (tempWork0),y
-.o1
-}
-.currentZone !by 0
-; To be called afer UpdateMapToMaze
-MapCreateZones
-	lda #0
-	sta .currentZone
-
-.l0
-	; The top and bottom rows are ignored due to the -40 and +40 Y index checks below
-	lda #<Maze
-	sta tempWork0
-	lda #>Maze
-	sta tempWork1
-
-	ldy #MazeWidth
-.fl1
-	; Look for the first ' '
-	lda (tempWork0),y
-	cmp #' '
-	beq .gotSpace
-
-	cmp #'#'
-	bne .notGotWall
-
-	; Store a negative value, useful for flagging no zone quickly with a "bmi" check
-	lda #-1
-	sta (tempWork0),y
-
-.notGotWall
-	inc tempWork0
-	bne .fl4
-	inc tempWork1
-.fl4
-
-	lda tempWork0
-	cmp #<(MazeEnd-(MazeWidth*2))
-	bne .fl1
-	lda tempWork1
-	cmp #>(MazeEnd-(MazeWidth*2))
-	bne .fl1
-
-	; No more spaces, so exit
-	rts
-
-.gotSpace
-	; Can start the growing checks from the current position since the zone number has been stored here
-	lda .currentZone
-	sta (tempWork0),y
-	ldx #1
-	jmp .gotZone
-
-	; Now the grow loop
-.gl1
-	; X = Updated a zone tile flag
-	ldx #0
-	lda #<Maze
-	sta tempWork0
-	lda #>Maze
-	sta tempWork1
-
-.l1
-	; If it is a cell with the current zone
-	ldy #MazeWidth
-	lda (tempWork0),y
-	cmp .currentZone
-	bne .next
-
-.gotZone
-	; Check for adjacent spaces
-
-	jsr .growZoneCheck
-
-.next
-	inc tempWork0
-	bne .l4
-	inc tempWork1
-.l4
-
-	lda tempWork0
-	cmp #<(MazeEnd-(MazeWidth*2))
-	bne .l1
-	lda tempWork1
-	cmp #>(MazeEnd-(MazeWidth*2))
-	bne .l1
-
-	; Backward sweep
-
-	lda #<(MazeEnd-(MazeWidth*2))
-	sta tempWork0
-	lda #>(MazeEnd-(MazeWidth*2))
-	sta tempWork1
-
-.l2
-	; If it is a cell with the current zone
-	ldy #MazeWidth
-	lda (tempWork0),y
-	cmp .currentZone
-	bne .next2
-
-	; Check for adjacent spaces
-
-	jsr .growZoneCheck
-
-.next2
-	dec tempWork0
-	lda tempWork0
-	cmp #$ff
-	bne .l42
-	dec tempWork1
-.l42
-
-	lda tempWork0
-	cmp #<(Maze)
-	bne .l2
-	lda tempWork1
-	cmp #>(Maze)
-	bne .l2
-
-	; Something was updated, so loop again
-	cpx #0
-	bne .gl1
-
-	inc .currentZone
-	jmp .l0
-
-.growZoneCheck
-	+ZoneGrowCheck MazeWidth-1		, .currentZone
-	+ZoneGrowCheck MazeWidth+1		, .currentZone
-	+ZoneGrowCheck MazeWidth-40		, .currentZone
-	+ZoneGrowCheck MazeWidth+40		, .currentZone
-	rts
-
-
-!zn
 MapPlacesToZone
 	ldx #0
 .l1
@@ -350,13 +207,14 @@ CalculateConnectedZones
 .offScreen
 	rts
 
+UpdateMapBlockOnScreenInternal
+	sta .sm1+1
+	jmp .quickStore
+
 UpdateMapBlockOnScreen
 
 	; First update the map block in the map
 	sta .sm1+1
-
-	stx tempWork7
-	sty tempWork8
 
 	; Update block into map
 	lda MapTabL,x
@@ -364,11 +222,17 @@ UpdateMapBlockOnScreen
 	lda MapTabH,x
 	sta tempWork2
 .sm1	lda #0
+
+
 	sta (tempWork1),y
 
+.quickStore
 	; Don't render if chars are being scrolled
 	lda frameTotalScrScroll
 	bne .offScreen
+
+	stx tempWork7
+	sty tempWork8
 
 	lda #0
 	sta .isClipped
@@ -467,21 +331,33 @@ UpdateMapBlockOnScreen
 	lda .isClipped
 	bne .lclipPlot
 	; Not clipped optimised plot
-;	inc VIC2ScreenColour
+;	inc VIC2BorderColour
 
 	; So find the screen address
 	lda ScreenTabL,y
 	sta tempWork3
+	sta tempWork10
 	lda ScreenTabH,y
 	clc
 	adc tempWork0
 	sta tempWork4
+	lda ScreenTabH,y
+	ora #>COLOURRAM
+	sta tempWork11
 
 	ldy tempWork5
 
 !macro OptFullBlockPlot {
+!ifdef CharColoursForEveryCharacter {
+	ldx #0
+}
 	lda (tempWork1,x)
 	sta (tempWork3),y
+!ifdef CharColoursForEveryCharacter {
+	tax
+	lda CharColours,x
+	sta (tempWork10),y
+}
 }
 !macro OptFullBlockAdd {
 	inc tempWork1
@@ -559,10 +435,14 @@ UpdateMapBlockOnScreen
 
 	lda ScreenTabL,y
 	sta tempWork3
+	sta tempWork10
 	lda ScreenTabH,y
 	clc
 	adc tempWork0
 	sta tempWork4
+	lda ScreenTabH,y
+	ora #>COLOURRAM
+	sta tempWork11
 
 	; Check X pos
 	ldy tempWork5

@@ -15,15 +15,34 @@
 	sta .val2Hi
 }
 
+!macro SpritePosToCharacterLookup .rejectRoutine {
+	ldy AnimationYPos,x
+	lda (Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo),y
+	bmi .rejectRoutine
+	ora CurrentBulletBank
+	sta tempWork1
+	lda (Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo),y
+	sta tempWork0
+
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	tay
+	lda (Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo),y
+	bmi .rejectRoutine
+	tay
+}
+
 !zn
-Animation_MapPosXLo !by <-(VIC2SpriteXBorderLeft38-7)
-Animation_MapPosXHi !by >-(VIC2SpriteXBorderLeft38-7)
-Animation_MapPosYLo !by <-(VIC2SpriteYBorderTop24-7)
-Animation_MapPosYHi !by >-(VIC2SpriteYBorderTop24-7)
+;Animation_MapPosXLo !by <-(VIC2SpriteXBorderLeft38-7)
+;Animation_MapPosXHi !by >-(VIC2SpriteXBorderLeft38-7)
+;Animation_MapPosYLo !by <-(VIC2SpriteYBorderTop24-7)
+;Animation_MapPosYHi !by >-(VIC2SpriteYBorderTop24-7)
 
 scrollerRealMovementXPixelsNeg !by 0
 scrollerRealMovementYPixelsNeg !by 0
-.alternateFrames !by 0
+
 !ifdef DebugEnemyBullet {
 .doDebugEnemyBullets !by 1
 }
@@ -31,7 +50,124 @@ scrollerRealMovementYPixelsNeg !by 0
 .doDebugPickups !by 1
 }
 
+frameIsOrWasBusy !by 0
+
+EnemiesOnScreenCount	!by 0
+
 UpdateSprites
+!if 0 {
+	; Display the overrun counter in the border colour
+	lda ScrollerDemo_OverrunCounter
+	sta VIC2BorderColour
+}
+
+!if 0 {
+	; Display the enemies on screen counter in the border colour
+	lda EnemiesOnScreenCount
+	sta VIC2BorderColour
+}
+
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sta Animation_PlayerXPosDiv2
+
+!ifdef IsUnitTesting {} else {
+	; Update any glow values for EnemyFlags combinations
+	inc .glowCount
+	lda .glowCount
+	and #31
+	sta .glowCount
+	lsr
+	tay
+	lda .glowTabPickup,y
+	sta .glowValues + EnemyFlags_DropPickup
+
+	lda .glowCount
+	lsr
+	lsr
+	and #7
+	tay
+	lda .glowTabCaptured,y
+	sta .glowValues + EnemyFlags_IsCaptured
+
+	lda .glowTabCapturedPickup,y
+	sta .glowValues + (EnemyFlags_IsCaptured | EnemyFlags_DropPickup)
+
+	lda .glowCount
+	and #7
+	tay
+	lda .glowTabCaptured,y
+	sta .glowValuesFast + EnemyFlags_IsCaptured
+
+	lda .glowTabCapturedPickup,y
+	sta .glowValuesFast + (EnemyFlags_IsCaptured | EnemyFlags_DropPickup)
+
+	jsr Fade_Process
+	jsr Teleport_CheckFadeAction
+} ;< !ifdef IsUnitTesting {} else {
+
+	lda #0
+	sta EnemiesOnScreenCount
+
+	; Calculate a nice sensible busy frame indicator that can be reused
+	lda frameIsOrWasBusy
+	beq .ob1
+	dec frameIsOrWasBusy
+.ob1
+	lda #0
+	ora frameTotalScrScroll
+	ora frameScrollMoveColours
+	beq .ob2
+	lda #2
+	sta frameIsOrWasBusy
+.ob2
+!if 0 {
+	; MPi: TODO: Debug output the scroller movements per frame to known memory locations
+.sm1	ldx #0
+	lda scrollerRealMovementXPixels
+	sta $fd00,x
+	lda scrollerRealMovementYPixels
+	sta $fe00,x
+	inx
+	; Clear the next to make the store position easier to find
+	lda #' '
+	sta $fd00,x
+	sta $fe00,x
+	inc .sm1+1
+}
+
+
+	; Pre-calculate lookup tables
+	lda #<EnemySpriteYPosToScreenCharPosLo
+	sec
+	sbc topScreenScrollY
+	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo
+	lda #>EnemySpriteYPosToScreenCharPosLo
+	sbc #0
+	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosLohi
+
+	lda #<EnemySpriteYPosToScreenCharPosHi
+	sec
+	sbc topScreenScrollY
+	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo
+	lda #>EnemySpriteYPosToScreenCharPosHi
+	sbc #0
+	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosHihi
+
+	lda topScreenScrollX
+	lsr
+	sta .sm1p+1
+	lda #<EnemySpriteXPosToScreenCharPos
+	sec
+.sm1p	sbc #0
+	sta Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo
+	lda #>EnemySpriteXPosToScreenCharPos
+	sbc #0
+	sta Citadel2_ZP_EnemySpriteXPosToScreenCharPoshi
+
+	; Calculate the enemy bullet busy value this frame
 	lda EnemyBulletBusy
 	beq .nb1
 	dec EnemyBulletBusy
@@ -85,6 +221,8 @@ UpdateSprites
 	+Add8STo16S scrollerRealMovementXPixelsNeg , Animation_MapPosXLo , Animation_MapPosXHi
 	+Add8STo16S scrollerRealMovementYPixelsNeg , Animation_MapPosYLo , Animation_MapPosYHi
 
+	jsr DetectPlayer_AutoDoorChars
+
 	; Update sprites here from the frame data. i.e. Copy them from the frame data to the interrupt data
 	; MPi: TODO: Optimisation. Don't copy the sprite data have double buffered sprite data. One for calc, one for draw.
 	ldx Multiplex_MaxSpr
@@ -93,6 +231,7 @@ UpdateSprites
 	lda AnimationActiveSlot,x
 	beq .simpleUpdateSpriteCheck
 
+	inc EnemiesOnScreenCount
 	tay	; Index into the enemy map
 
 	jsr AnimationDoFineUpdates
@@ -131,21 +270,40 @@ UpdateSprites
 	cpy #1	; Is it the player slot?
 	beq .skipEnemyBulletTest
 
+	; Teleporting, no enemy firing
+	lda Teleport_TimeToSwitchMap
+	bne .enemyFireRet
+
+	; Useful place to update enemy firing
+	inc AnimationParam1,x
+	lda AnimationParam1,x
+	cmp #100	; MPi: TODO: Enemy fire rate check
+	bcs .lenemyFire_
+
+.enemyFireRet
+
 	; Alternate the bullet test for each sprite based on its enemy DB index
 	tya
 	and #1
 .smAlternateFrames	cmp #0
 	beq .skipEnemyBulletTest
-	jmp .enemyHitBulletTest
 
+	lda AnimationEnemyFlags,x
+	and #EnemyFlags_IsCaptured
+	bne .doSolidTest
+	jmp .enemyHitBulletTest
+.doSolidTest
+	jmp .enemyHitSolidTest
 
 .skipEnemyBulletTest
+
 	jsr AnimationCommonUpdate
 
 	dex
 	bpl .sp1
 
 	rts
+.lenemyFire_ jmp .enemyFire
 
 .offScreenDB
 
@@ -159,6 +317,8 @@ UpdateSprites
 
 	rts
 
+.lnoPlayerLCollide jmp .noPlayerLCollide
+
 .simpleUpdateSpriteCheck
 
 	lda AnimationYPos,x
@@ -169,6 +329,10 @@ UpdateSprites
 	and #AnimationFlags_PlayerCollideS
 	beq .noPlayerSCollide
 
+	; Stop collisions with the player when the game is exiting
+	lda ScrollerExitMainLineCounter
+	bne .noPlayerSCollide
+
 .testEnemyBulletToPlayerCollide
 	lda AnimationYPos
 	clc
@@ -176,7 +340,7 @@ UpdateSprites
 	sec
 	sbc AnimationYPos,x
 	cmp #16
-	bcs .noPlayerSCollide
+	bcs .lnoPlayerLCollide
 
 	lda AnimationXPosHi,x
 	lsr
@@ -184,21 +348,19 @@ UpdateSprites
 	ror
 	sta .smpp+1
 
-	lda AnimationXPosHi
-	lsr
-	lda AnimationXPosLo
-	ror
+	lda Animation_PlayerXPosDiv2
 	clc
 	adc #5
 	sta tempWork0
 	sec
 .smpp	sbc #0
 	cmp #10
-	bcs .noPlayerSCollide
+	bcs .lnoPlayerLCollide
 
-	lda AnimationFlags,x
-	and #AnimationFlags_Pickup
-	bne .isPickup
+	; Cannot use AnimationFlags_PlayerCollideS and EnemyFlags_Pickup at the same time
+;	lda AnimationEnemyFlags,x
+;	and #AnimationFlags_Pickup
+;	bne .isPickup
 
 	; When an enemy bullet hits the player this makes other enemies more alert, kind of like wasps :)
 	lda #20
@@ -233,10 +395,7 @@ UpdateSprites
 	ror
 	sta .smpp2+1
 
-	lda AnimationXPosHi
-	lsr
-	lda AnimationXPosLo
-	ror
+	lda Animation_PlayerXPosDiv2
 	clc
 	adc #9
 	sta tempWork0
@@ -258,7 +417,7 @@ UpdateSprites
 	jmp .nextAnimation
 
 .isPickup2
-	jmp .removePickup
+	jmp .removePickup2
 
 .noPlayerLCollide
 
@@ -267,51 +426,36 @@ UpdateSprites
 	and #AnimationFlags_CharCollide
 	beq .noCharCollide
 
-	; Checks for animated sprites hitting solid character blocks
-	lda AnimationYPos,x
-	sec
-	sbc topScreenScrollY
-	tay
-	lda EnemySpriteYPosToScreenCharPos,y
-	bmi .noCharCollide
-	tay
-	lda ScreenTabL,y
-	sta tempWork0
-	lda ScreenTabH,y
-	clc
-	adc CurrentBulletBank
-	sta tempWork1
+	; Debug skip code
+;	jmp .noCharCollide
 
-	lda topScreenScrollX
-	lsr
-	sta tempWork2
-	lda AnimationXPosHi,x
-	lsr
-	lda AnimationXPosLo,x
-	ror
-	sec
-	sbc tempWork2
-	tay
-	lda EnemySpriteXPosToScreenCharPos,y
-	bmi .noCharCollide
-	tay
+.spriteToScreenCharsCollideTest
+
+	; Checks for animated sprites hitting solid character blocks
+	+SpritePosToCharacterLookup .noCharCollide
+
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
 
-	cmp #MapWallChars
+	cmp #MapSolidChars
 	bcc .noCharCollide
 
 	lda AnimationFlags,x
 	and #AnimationFlags_Pickup
 	bne .isPickup2
 
+	; Stop simple movement when it hits a wall
+	lda #0
+	sta AnimationSimpleMoveX,x
+	sta AnimationSimpleMoveY,x
+
 .removeBullet
 	; Mutate to the explosion type
 	ldy #9
 	jsr AnimationMutateToType
 
-	lda #2
+	lda #5
 	jsr SFXInit
 
 .noCharCollide
@@ -340,11 +484,9 @@ UpdateSprites
 	clc
 	adc AnimationXPosLo,x
 	sta AnimationXPosLo,x
+	bcs .noxC
 
-	lda AnimationXPosHi,x
-	sbc #0
-	and #1
-	sta AnimationXPosHi,x
+	dec AnimationXPosHi,x
 	beq .on
 	jmp .offCheckX
 
@@ -352,13 +494,16 @@ UpdateSprites
 	clc
 	adc AnimationXPosLo,x
 	sta AnimationXPosLo,x
-	lda AnimationXPosHi,x
-	adc #0
-	and #1
-	sta AnimationXPosHi,x
+	bcc .noxC
+
+	inc AnimationXPosHi,x
+	jmp .offCheckX
+
+.noxC
+	ldy AnimationXPosHi,x
 	beq .on
+
 .offCheckX
-	lda AnimationXPosLo,x
 	cmp #<VIC2SpriteXBorderRight
 	bcs .loffScreenClearY
 
@@ -378,10 +523,11 @@ UpdateSprites
 .lskipEnemyBulletTest jmp .skipEnemyBulletTest
 
 .removePickup
-	; Store the colour, which is the type of the item picked up
-	lda AnimationSpriteColour,x
+	; Store the parameter, which is the type of the item picked up
+	lda AnimationParam1,x
 	jsr PlayerInventory_Add
 
+.removePickup2
 	lda #$ff
 	sta AnimationYPos,x
 	lda #0
@@ -392,69 +538,57 @@ UpdateSprites
 
 	jmp .nextAnimation
 
+.enemyHitSolidTest
 
-.enemyHitBulletTest
-	; Useful place to update enemy firing
-	inc AnimationParam1,x
-	lda AnimationParam1,x
-	cmp #100
-	bcs .lenemyFire
-
-.enemyFireRet
+	; Debug skip code
 ;	jmp .skipEnemyBulletTest
 
-	lda AnimationYPos,x
-	sec
-	sbc topScreenScrollY
-	tay
-	lda EnemySpriteYPosToScreenCharPos,y
-	bmi .lskipEnemyBulletTest
-	tay
-	lda ScreenTabL,y
-	sta tempWork0
-	lda ScreenTabH,y
-	clc
-	adc CurrentBulletBank
-	sta tempWork1
+	+SpritePosToCharacterLookup .lskipEnemyBulletTest
 
-	lda topScreenScrollX
-	lsr
-	sta tempWork2
-	lda AnimationXPosHi,x
-	lsr
-	lda AnimationXPosLo,x
-	ror
-	sec
-	sbc tempWork2
-	tay
-	lda EnemySpriteXPosToScreenCharPos,y
-	bmi .lskipEnemyBulletTest
-	tay
+	lda (tempWork0),y
+	; Detect with solid wall characters
+	cmp #MapSolidChars
+	bcs .lenemyHitBySolidBlocks
+	jmp .testEnemyToPlayerCollide
+
+.litHitEnemy jmp .itHitEnemy
+.lenemyHitBySolidBlocks jmp .enemyHitBySolidBlocks
+
+
+.enemyHitBulletTest
+
+	; Debug skip code
+;	jmp .skipEnemyBulletTest
+
+	+SpritePosToCharacterLookup .lskipEnemyBulletTest
 
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
+	; Detect with solid wall characters
+	cmp #MapSolidChars
+	bcs .lenemyHitBySolidBlocks
 	dey
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	iny
 	iny
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	iny
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	tya
 	sec
 	sbc #42
@@ -462,14 +596,14 @@ UpdateSprites
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	iny
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	tya
 	clc
 	adc #80
@@ -477,17 +611,21 @@ UpdateSprites
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 	dey
 	lda (tempWork0),y
 ;	adc #1
 ;	sta (tempWork0),y
-	cmp #16
-	bcc .itHitEnemy
+	cmp #MaxNumBulletChars
+	bcc .litHitEnemy
 
 
 .testEnemyToPlayerCollide
+	; Stop collisions with the player when the game is exiting
+	lda ScrollerExitMainLineCounter
+	bne .noPlayerSCollide2
+
 	lda AnimationYPos
 	clc
 	adc #20
@@ -502,10 +640,7 @@ UpdateSprites
 	ror
 	sta .smpp3+1
 
-	lda AnimationXPosHi
-	lsr
-	lda AnimationXPosLo
-	ror
+	lda Animation_PlayerXPosDiv2
 	clc
 	adc #11
 	sta tempWork0
@@ -540,15 +675,19 @@ UpdateSprites
 	tay
 	lda #100
 	sta PlayerBulletsY,y
-
+.enemyHitBySolidBlocks
 .enemyHitByPlayer
 	lda AnimationActiveSlot,x
 	tay
+	sty .smy1+1
 
 	; Enemy was hit, so make it stop and re-calculate its route by faking that it is blocked, if the player aggression is less than its alertness.
-	lda Enemy_PlayerAggression
-	cmp EnemyAlertness-1,y
-	bcs .ljustPatrol
+	lda EnemyType-1,y
+	tay
+	lda EnemyTemplate_Alertness,y
+.smy1	ldy #0
+	cmp Enemy_PlayerAggression
+	bcc .ljustPatrol
 	lda #MaxEnemyBlockedCount+32
 	sta EnemyBlockedCount-1,y
 .ljustPatrol
@@ -589,6 +728,7 @@ UpdateSprites
 	; Free any allocated enemy block
 	stx tempWork0
 	sty tempWork1
+	sty .sm1y+1
 
 	lda EnemyMoveStepsOriginalLo-1,y
 	ldx EnemyMoveStepsOriginalHi-1,y
@@ -623,21 +763,52 @@ UpdateSprites
 	ldx tempWork0
 	ldy tempWork1
 
+	lda AnimationEnemyFlags,x
+	sta .smOldFlags+1
+
 	ldy #4	; Explosion type
 	jsr AnimationMutateToType
 
-	lda #5
+	lda #2
 	jsr SFXInit
+
+	; Score placeholder
+	txa
+	pha
+
+	lda #<ScorePanel_Score_Addr
+	ldx #>ScorePanel_Score_Addr
+	jsr ScoreSetAddress
+	lda #<EnemyScore
+	ldx #>EnemyScore
+	jsr ScoreAdd
+
+	pla
+	tax
+
+.smOldFlags	lda #0
+	and #EnemyFlags_DropPickup
+	bne .isDropPickup
 
 	; Pickup chance test
 	jsr Rand
 	cmp #PickupDropChance
 	bcc .noDrop
+.isDropPickup
 	jsr SpawnPickup
 .noDrop
+	jsr Rand
+	cmp #GeneratorDamageChance
+	bcc .noDamageGenerator
+
+.sm1y ldy #0
+	jsr CheckGeneratorDamage
+.noDamageGenerator
+
 	jmp .skipEnemyBulletTest
 
-.lnoBulletSpawned jmp .noBulletSpawned
+EnemyScore
+	!by ScorePanel_Score_NumDigits-1, 4, 6, 4, 3, 1
 
 !zn {
 SpawnPickup
@@ -654,9 +825,6 @@ SpawnPickup
 	jsr AnimationFindFreeSlot
 	bcs .noFreeSlot
 
-	ldy #7
-	jsr AnimationInitWithType
-
 	lda tempWork2
 	sta AnimationXPosLo,x
 	lda tempWork3
@@ -664,13 +832,19 @@ SpawnPickup
 	lda tempWork4
 	sta AnimationYPos,x
 
-	; Random colour
+	; Random colour for the pickup type
 	jsr Rand
 	and #7
+	sta AnimationParam1,x
 	clc
 	adc #1
 	sta AnimationSpriteColour,x
 
+	; Pick the pickup animation to display from the colour
+	ldy AnimationParam1,x
+	lda Inventory_TypeToGameAnimation,y
+	tay
+	jsr AnimationInitWithType
 
 .noFreeSlot
 	ldx tempWork5
@@ -680,25 +854,44 @@ SpawnPickup
 
 EnemyBulletBusy !by 0
 
+.lnoBulletSpawned jmp .noBulletSpawned
 .lenemyFireRet jmp .enemyFireRet
 .enemyFire
 	lda #0
 	sta AnimationParam1,x
 
+	; Stop enemy firing at the player when the game is exiting
+	lda ScrollerExitMainLineCounter
+	bne .lenemyFireRet
+
+;	lda #0
+;	ora frameTotalScrScroll
+;	ora frameScrollMoveColours
+;	bne .lenemyFireRet
+
+	lda frameIsOrWasBusy
+	bne .lenemyFireRet
+
 	; Check if the game isn't too busy to accept new enemy bullets
 	lda EnemyBulletBusy
-	cmp #50
+	cmp #EnemyBulletBusy_Max
 	bcs .lenemyFireRet
 
-	txa
-	pha
+	; Check if it's captured
+	lda AnimationEnemyFlags,x
+	and #EnemyFlags_IsCaptured
+	bne .lenemyFireRet
+
+	stx .smxEF1+1
+	sty .smyEF1+1
+
 	lda AnimationXPosLo,x
 	sta tempWork2
 	lda AnimationXPosHi,x
 	sta tempWork3
 	lda AnimationYPos,x
 	sta tempWork4
-	lda AnimationSpriteColour,x
+	lda AnimationSpriteColourBackup,x
 	sta tempWork5
 
 	jsr AnimationFindFreeSlot
@@ -716,15 +909,86 @@ EnemyBulletBusy !by 0
 	lda tempWork5
 	sta AnimationSpriteColour,x
 
-	inc .randomCount
-	ldy .randomCount
-	lda .randomTab,y
-	and #7
-	jsr .doBulletSpeedCalc
-	lda .randomTab,y
-	bmi .noBulletSpawned
-	and #7
-	jsr .doBulletSpeedCalc
+	; Calculate the speed
+	jsr Rand
+	and #1
+	sta tempWork6
+
+	; Figure out the fire direction and speeds
+	lda tempWork4
+	sec
+	sbc AnimationYPos
+	bcc .not1
+	cmp #32
+	bcc .not1
+	dec AnimationSimpleMoveY,x
+	cmp #64
+	bcc .doneY
+	ldy tempWork6
+	bne .doneY
+	dec AnimationSimpleMoveY,x
+	jmp .doneY
+.not1
+	lda AnimationYPos
+	sec
+	sbc tempWork4
+	bcc .not2
+	cmp #32
+	bcc .not2
+	inc AnimationSimpleMoveY,x
+	cmp #64
+	bcc .doneY
+	ldy tempWork6
+	bne .doneY
+	inc AnimationSimpleMoveY,x
+	jmp .doneY
+.not2
+
+.doneY
+	; Div X coord by 2
+	; Enemy
+	lda tempWork3
+	lsr
+	ror tempWork2
+	; Player
+
+	lda tempWork2
+	sec
+	sbc Animation_PlayerXPosDiv2
+	bcc .not3
+	cmp #16
+	bcc .not3
+	dec AnimationSimpleMoveX,x
+	cmp #32
+	bcc .doneX
+	ldy tempWork6
+	bne .doneX
+	dec AnimationSimpleMoveX,x
+	jmp .doneX
+.not3
+	lda Animation_PlayerXPosDiv2
+	sec
+	sbc tempWork2
+	bcc .not4
+	cmp #16
+	bcc .not4
+	inc AnimationSimpleMoveX,x
+	cmp #32
+	bcc .doneX
+	ldy tempWork6
+	bne .doneX
+	inc AnimationSimpleMoveX,x
+	jmp .doneX
+.not4
+.doneX
+
+	lda AnimationSimpleMoveY,x
+	ora AnimationSimpleMoveX,x
+	bne .gotDirection
+	; If there is absolutely no direction then just fire upwards
+	dec AnimationSimpleMoveY,x
+	dec AnimationSimpleMoveY,x
+.gotDirection
 
 	lda #6
 	jsr SFXInit
@@ -732,15 +996,16 @@ EnemyBulletBusy !by 0
 	; Update the busy counter
 	lda EnemyBulletBusy
 	clc
-	adc #30
+	adc #EnemyBulletBusy_Add
 	sta EnemyBulletBusy
 
 .noBulletSpawned
-	pla
-	tax
+.smxEF1	ldx #1
+.smyEF1	ldy #1
 
 	jmp .enemyFireRet
 
+!if 0 {
 .doBulletSpeedCalc
 	cmp #0
 	bne .of1
@@ -786,49 +1051,71 @@ EnemyBulletBusy !by 0
 	dec AnimationSimpleMoveY,x
 .of8
 	rts
+}
 
 AnimationDoFineUpdates
-	txa
-	pha
-	lda EnemySpeed-1,y
+	stx .smx1+1
+;	sty .smy1+1
+	ldx EnemyType-1,y
+	lda EnemyTemplate_Speed,x
+	bmi .notSpeed2
+	sta .sma1+1
 	and #1
 	bne .notHalfSpeedToggle
-	txa
+	lda .smx1+1		; Update alternate enemies each frame depending on their animated sprite index
 	eor .smAlternateFrames+1
 	and #1
 	beq .noMove
 .notHalfSpeedToggle
 	jsr EnemyMoveFineUpdate
 .noMove
-	lda EnemySpeed-1,y
+.sma1	lda #0
 	and #2
 	beq .notSpeed2
 	jsr EnemyMoveFineUpdate
 .notSpeed2
-	pla
-	tax
+.smx1	ldx #0
+;.smy1	ldy #0
 	rts
 
-.randomCount !by 0
-.randomTab
-!by 2,76,151,113,22,128,247,203,214,91,130,211,134,40,251,42
-!by 137,31,19,58,148,146,115,156,108,224,206,169,47,45,117,15
-!by 181,64,197,185,163,171,34,42,172,16,75,20,32,229,236,171
-!by 187,221,174,68,180,233,20,124,62,226,238,138,172,38,167,164
-!by 150,215,6,51,200,177,171,4,221,160,199,67,203,222,38,9
-!by 140,36,133,47,0,166,123,44,103,211,231,157,157,138,56,226
-!by 62,32,142,90,205,152,171,58,15,28,206,62,133,171,96,122
-!by 196,214,89,100,126,204,40,124,121,45,4,65,243,35,192,84
-!by 128,93,150,144,110,146,74,130,247,34,195,57,130,173,68,26
-!by 233,65,236,251,16,214,11,207,226,44,129,76,132,219,55,209
-!by 46,167,35,181,140,49,183,100,177,240,4,51,1,212,47,241
-!by 163,213,58,229,201,250,185,162,61,174,7,103,242,173,168,84
-!by 111,143,206,21,178,210,161,140,211,187,48,227,203,127,13,73
-!by 105,227,156,169,33,165,160,31,7,165,125,148,224,11,228,219
-!by 233,74,130,203,221,148,113,84,204,187,9,240,175,31,178,89
-!by 66,117,94,55,173,173,60,158,250,179,89,137,191,251,154,68
+.glowCount !by 0
+.glowTabPickup !by VIC2Colour_Red , VIC2Colour_LightRed , VIC2Colour_LightGrey , VIC2Colour_White , VIC2Colour_LightBlue , VIC2Colour_Blue , VIC2Colour_Green , VIC2Colour_LightGreen , VIC2Colour_LightGrey
+	!by VIC2Colour_Yellow , VIC2Colour_Orange , VIC2Colour_Brown , VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey
+
+.glowTabCaptured !by VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey , VIC2Colour_White
+	!by VIC2Colour_LightGrey , VIC2Colour_Grey , VIC2Colour_DarkGrey , VIC2Colour_DarkGrey
+
+.glowTabCapturedPickup !by VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey , VIC2Colour_White
+	!by VIC2Colour_Yellow , VIC2Colour_LightRed , VIC2Colour_Red , VIC2Colour_Red
+
+
+.glowValues !fill (AnimationBitMask_EnemyFlags_Glow + 1) , 0
+.glowValuesFast !fill (AnimationBitMask_EnemyFlags_Glow + 1) , 0
 
 AnimationCommonUpdate
+	lda AnimationEnemyFlags,x
+	and #AnimationBitMask_EnemyFlags_Glow
+	beq .notGlowing
+
+	; Is it the active slot?
+	cpx CaptureProbe_CapturedListAnimations
+	beq .activeCaptured
+
+	tay
+	lda AnimationSpriteColour,x
+	and #128			; Preserve the flashing/hit flag
+	ora .glowValues,y	; Read pre-calculated glow values table with the glow type
+	sta AnimationSpriteColour,x
+	jmp .notGlowing
+
+.activeCaptured
+	tay
+	lda AnimationSpriteColour,x
+	and #128				; Preserve the flashing/hit flag
+	ora .glowValuesFast,y	; Read pre-calculated glow values table with the glow type
+	sta AnimationSpriteColour,x
+
+.notGlowing
 
 	dec AnimationSpeed,x
 	bmi .doTick
@@ -878,24 +1165,18 @@ AnimationCommonUpdate
 
 .delAnim jmp .offScreenClearY
 
-; Before and after these tables are -1 so we can modify the sprute lookup coordinates
-!fill 24 , -1
-EnemySpriteYPosToScreenCharPos
-!fill VIC2SpriteYBorderTop-16 , -1
-!fill 8 , 0
-!for .num , 18 { !fill 8 , .num-1 }
-!fill 8 , 17
-!fill 256 - (* - EnemySpriteYPosToScreenCharPos) , -1
-!fill 24 , -1
 
+
+; Since the Y coordinates are -1 base, these are +40 based to compensate
+!fill VIC2SpriteSizeX + 8, -1
 EnemySpriteXPosToScreenCharPos
 !fill (VIC2SpriteXBorderLeft-16)/2 , -1
-!fill 8/2 , 40 + 1
-!for .num , 37 { !fill 8/2 , 40 + .num-1 }
-!fill 8/2 , 40 + 37
-!fill 8/2 , 40 + 37
+!fill 8/2 , VIC2ScreenCharsWidth + 1
+!for .num , 37 { !fill 8/2 , VIC2ScreenCharsWidth + .num-1 }
+!fill 8/2 , VIC2ScreenCharsWidth + 37
+!fill 8/2 , VIC2ScreenCharsWidth + 37
 !fill 256 - (* - EnemySpriteXPosToScreenCharPos) , -1
-!fill 24 , -1
+!fill VIC2SpriteSizeX , -1
 
 !zn
 ScrollerPreGameCalcuation
@@ -906,19 +1187,37 @@ ScrollerPreGameCalcuation
 	jsr MapPlacesToZone
 	rts
 
+PlayerHealthMax = 6
 PlayerHealth !by 6
+
 
 !zn
 AnimationInit2
+	lda #0
+	sta Teleport_TimeToSwitchMap
 
+	lda AnimationStopMusic
+	beq .noStop
+	jsr MusicPlayerStop
+.noStop
 	lda #0
 	sta Enemy_PlayerAggression
-	lda #6
+	lda #PlayerHealthMax
 	sta PlayerHealth
 
+	; Fade up!
+	lda #1
+	ldx #0
+	ldy #4
+	jsr Fade_Init
+
+	jsr SubGame_Init
+	jsr UserInput_Init
 	jsr PlayerInventory_Init
 	jsr MapAnimations_Init
 	jsr PlayerBullets_Init
+	jsr PlayerSweep_Init
+	jsr AutoDoor_Init
 
 	jsr EnemyProcessActivationInit
 
@@ -940,6 +1239,12 @@ AnimationInit2
 	jsr AnimationEnemiesIntoMap
 	jsr AnimationProcessAllActivations
 
+	lda #<ScorePanel_Score_Addr
+	ldx #>ScorePanel_Score_Addr
+	jsr ScoreSetAddress
+	ldy #ScorePanel_Score_NumDigits
+	jsr ScoreInit
+
 	rts
 
 !zn
@@ -956,13 +1261,13 @@ AnimationProcessAllActivations
 !zn
 AnimationEnemiesIntoMap
 	; Init enemy blocked node state into the map, to stop enemies from moving into each other at the start
-	ldx #255
+	ldx #2; Skip the player slot at the start (1+1 for the -1,x adjustment)
 .l2
-	cpx #1
-	beq .o1	; Skip the player slot
-
 	lda EnemyType-1,x
 	bmi .o1
+	tay
+	lda EnemyTemplate_Health,y
+	sta EnemyHealth-1,x
 
 	lda EnemyPositionsX-1,x
 	sta tempWork0
@@ -986,7 +1291,8 @@ AnimationEnemiesIntoMap
 	tax
 
 .o1
-	dex
+	inx
+	cpx #MaxEnemies
 	bne .l2
 	rts
 
@@ -1035,14 +1341,18 @@ AnimationMapEnemyInit
 
 	jsr ScrollerInitVariables
 
+	lda #4
+	sta frameScrollX
+	sta frameScrollY
+
 	; Init the screen to map boundary rectangle
-	lda #<-(VIC2SpriteXBorderLeft38-7)
+	lda #<-(VIC2SpriteXBorderLeft38-7+4)
 	sta Animation_MapPosXLo
-	lda #>-(VIC2SpriteXBorderLeft38-7)
+	lda #>-(VIC2SpriteXBorderLeft38-7+4)
 	sta Animation_MapPosXHi
-	lda #<-(VIC2SpriteYBorderTop24-7)
+	lda #<-(VIC2SpriteYBorderTop24-7+4)
 	sta Animation_MapPosYLo
-	lda #>-(VIC2SpriteYBorderTop24-7)
+	lda #>-(VIC2SpriteYBorderTop24-7+4)
 	sta Animation_MapPosYHi
 	
 	; Init player position in the enemy DB
@@ -1078,9 +1388,15 @@ AnimationMapEnemyInit
 	bcs .o3
 	lda #0
 .o3
+!ifdef Scroller_FullScreen {
 	cmp #19
 	bcc .o3b
 	lda #19
+} else {
+	cmp #20
+	bcc .o3b
+	lda #20
+}
 .o3b
 	sta scrollMapHY
 
@@ -1112,6 +1428,9 @@ AnimationMapEnemyInit
 	dex
 	bne .l5
 .o5
+
+	jsr Camera_Init
+
 	rts
 
 
@@ -1121,6 +1440,7 @@ AnimationMapEnemyInit
 ; Exit
 ; A		Updated
 ; X		Updated
+; Y		Preserved
 ; CS	No slot
 ; CC	Slot found, index in X
 AnimationFindFreeSlot
@@ -1145,6 +1465,42 @@ AnimationFindFreeSlot
 	sec
 	rts
 
+
+!macro Animation_CommonInit_Addr {
+	sta AnimationSpriteFrameCount,x
+	sta AnimationEnemyFlags,x
+
+	lda AnimationTypeTableLo,y
+	sta tempWork0
+	sta AnimationAddrLo,x
+	lda AnimationTypeTableHi,y
+	sta tempWork1
+	sta AnimationAddrHi,x
+}
+
+!macro Animation_CommonInit_Flags {
+	ldy #AnimationDefOffset_Flags
+	lda (tempWork0),y
+	sta AnimationFlags,x
+}
+
+!macro Animation_CommonInit_SpeedFrames {
+	ldy #AnimationDefOffset_Speed
+	lda (tempWork0),y
+	sta AnimationSpeed,x
+	sta AnimationSpeedReset,x
+
+	ldy #AnimationDefOffset_Frames
+	lda (tempWork0),y
+	clc
+	adc #AnimationSpriteOffset
+	sta AnimationSpriteFrame,x
+
+	ldy #AnimationDefOffset_NumFrames
+	lda (tempWork0),y
+	sta AnimationNumFrames,x
+}
+
 !zn
 ; Initialises an animation index with a type
 ; Entry
@@ -1157,43 +1513,30 @@ AnimationFindFreeSlot
 ; tempWork0/tempWork1	Updated
 AnimationInitWithType
 	lda #0
-	sta AnimationSpriteFrameCount,x
 	sta AnimationSimpleMoveX,x
 	sta AnimationSimpleMoveY,x
+	+Animation_CommonInit_Addr
 
-	lda AnimationTypeTableLo,y
-	sta tempWork0
-	sta AnimationAddrLo,x
-	lda AnimationTypeTableHi,y
-	sta tempWork1
-	sta AnimationAddrHi,x
+	+Animation_CommonInit_Flags
+	and #AnimationFlags_InheritColour
+	bne .noColourUpdate
+
 	ldy #AnimationDefOffset_Colour
 	lda (tempWork0),y
 	sta AnimationSpriteColour,x
-	ldy #AnimationDefOffset_Frames
-	lda (tempWork0),y
-	clc
-	adc #AnimationSpriteOffset
-	sta AnimationSpriteFrame,x
+	sta AnimationSpriteColourBackup,x
 
-	ldy #AnimationDefOffset_NumFrames
-	lda (tempWork0),y
-	sta AnimationNumFrames,x
+.noColourUpdate
 
-	ldy #AnimationDefOffset_Flags
-	lda (tempWork0),y
-	sta AnimationFlags,x
+	+Animation_CommonInit_SpeedFrames
 
-	ldy #AnimationDefOffset_Speed
-	lda (tempWork0),y
-	sta AnimationSpeed,x
-	sta AnimationSpeedReset,x
 	rts
 
 
 
 !zn
 ; Mutates an existing animation index to a new type
+; Does not update movement speed or colour
 ; Entry
 ; X		Animation index
 ; Y		Animation type
@@ -1203,29 +1546,18 @@ AnimationInitWithType
 ; X		Preserved
 ; tempWork0/tempWork1	Updated
 AnimationMutateToType
-	lda AnimationTypeTableLo,y
-	sta AnimationAddrLo,x
-	sta tempWork0
-	lda AnimationTypeTableHi,y
-	sta AnimationAddrHi,x
-	sta tempWork1
+	lda #0
+	+Animation_CommonInit_Addr
 
-	; Setup animation flags
-	ldy #AnimationDefOffset_NumFrames
-	lda (tempWork0),y
-	sta AnimationNumFrames,x
+	+Animation_CommonInit_Flags
 
-	ldy #AnimationDefOffset_Flags
-	lda (tempWork0),y
-	sta AnimationFlags,x
+	+Animation_CommonInit_SpeedFrames
 
-	ldy #AnimationDefOffset_Speed
-	lda (tempWork0),y
-	sta AnimationSpeed,x
-	sta AnimationSpeedReset,x
 	rts
 
 !zn
+.justExit
+	rts
 ; Entry:
 ; A = Amount of energy to subtract from the player
 ; Exit
@@ -1235,7 +1567,18 @@ AnimationHitPlayerLogic
 !ifdef RedirectHandleUserInput {} else {
 	rts
 }
+	; Debug cheat
+;	rts
+
+
 	sta .sm1+1
+
+	; Turn off the player health check due to various game events
+	lda Teleport_TimeToSwitchMap
+	bne .justExit
+
+	lda ScrollerExitMainLineCounter
+	bne .justExit
 
 	txa
 	pha
@@ -1250,7 +1593,9 @@ AnimationHitPlayerLogic
 	ldy #12
 	ldx #0
 	jsr AnimationMutateToType
-	lda #5
+	lda #0
+	jsr SFXInit
+	lda #1
 	jsr SFXInit
 
 	jsr AnimationFindFreeSlot
@@ -1287,7 +1632,7 @@ AnimationHitPlayerLogic
 	sta AnimationSimpleMoveY,x
 .noSlot2
 
-	lda #75
+	lda #150
 	sta ScrollerExitMainLineCounter
 
 	lda #0
@@ -1295,12 +1640,12 @@ AnimationHitPlayerLogic
 	sta PlayerHealth
 
 	lda #0
-	ldx #6
+	ldx #PlayerHealthMax
 .l1
 	cpx PlayerHealth
 	beq .l2
 	dex
-	sta SCREENRAM + (22*VIC2ScreenCharsWidth)+13 , x
+	sta COLOURRAM + (ScorePanelEnergy_YPos * VIC2ScreenCharsWidth) + ScorePanelEnergy_XPos , x
 	jmp .l1
 	
 .l2
@@ -1308,3 +1653,74 @@ AnimationHitPlayerLogic
 	pla
 	tax
 	rts
+
+DetectPlayer_AutoDoorChars
+	lda ScrollerExitMainLineCounter
+	bne .retNoDoor
+	lda DisplayingSubGame
+	bne .retNoDoor
+
+	ldx EnemyToAnimationIndex
+	bmi .retNoDoor
+	+SpritePosToCharacterLookup .retNoDoor
+	lda (tempWork0),y
+	cmp #MapSolidChars
+	bcs .lethalDoor
+	cmp #AutoDoorChars_Min
+	bcc .retNoDoor
+	cmp #AutoDoorChars_Max
+	bcs .retNoDoor
+
+.lethalDoor
+	; Very lethal doors
+	lda #1
+	jsr AnimationHitPlayerLogic
+
+.retNoDoor
+	rts
+
+!zn {
+; Exit:
+; X = Preserved
+CheckGeneratorDamage
+	stx .smx+1
+
+	ldx EnemyPositionsY-1,y
+	stx .smEX+1
+	lda EnemyPositionsX-1,y
+	tay
+	sty .smEY+1
+
+	lda MapTabL,x
+	sta tempWork1
+	lda MapTabH,x
+	sta tempWork2
+
+	lda (tempWork1),y
+	cmp #MapTile_GeneratorOpen1
+	beq .doDamage
+	cmp #MapTile_GeneratorOpen2
+	beq .doDamage
+	cmp #MapTile_GeneratorOpen3
+	beq .doDamage
+	cmp #MapTile_GeneratorOpen4
+	beq .doDamage
+
+	jmp .smx
+
+.doDamage
+;	inc VIC2BorderColour
+
+	clc
+	adc #1
+	sta (tempWork1),y
+
+	ldx CurrentBulletBank
+	stx tempWork0
+.smEX ldx #0
+.smEY ldy #0
+	jsr UpdateMapBlockOnScreenInternal
+
+.smx ldx #0
+	rts
+}

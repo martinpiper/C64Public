@@ -1,4 +1,8 @@
 //TestScreen.bmp 4 9 12 chars.bin screen.bin colours.bin
+//-c64remap 7 15 -c64remap 3 11 -c64remap 9 11 -c64remap 15 12 ..\Animation\RawFrames5\frm00012.bmp 1 11 12 c:\temp\t.chr c:\temp\t.scr c:\temp\t.col
+//-bitmap -m 0 0 0 ..\AnimationBitmap\Animation1\frm-0.bmp c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
+//-bitmap -m TestScreen.bmp 4 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
+//-bitmap -m TestFull.bmp 0 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
@@ -164,6 +168,7 @@ int main(int argc,char **argv)
 	bool forceHires = false;
 	bool forceMulticolour = false;
 	int sAddIdx = 0;
+	bool sBitmapMode = false;
 
 	// Parse the command line options.
 	if (argc < 2)
@@ -218,6 +223,10 @@ int main(int argc,char **argv)
 					argv++;
 				}
 			}
+			else if (strcmp( argv[1] , "-bitmap" ) == 0 )
+			{
+				sBitmapMode = true;
+			}
 			argc--;
 			argv++;
 		}
@@ -226,7 +235,7 @@ int main(int argc,char **argv)
 
 	if (showHelp)
 	{
-		printf("Usage: CharPack [-h] [-r] [-m] [-f] [-s] <-c64remap a b> <-addidx a> <input 24bit BMP> [bg colour] [colour 1] [colour 2] [chars file] [screen file] [colours file]\n");
+		printf("Usage: CharPack [-h] [-r] [-m] [-f] [-s] <-bitmap> <-c64remap a b> <-addidx a> <input 24bit BMP> [bg colour] [colour 1] [colour 2] [chars file] [screen file] [colours file]\n");
 		printf("Usage for hires font conversion: CharPack -f <input 24bit BMP> [bg colour] [font data file]\n");
 		printf("Usage for sprite conversion: CharPack -s <input 24bit BMP> [bg colour] [colour 1] [colour 2] [sprite data file] [sprite index file] [sprite colours file]\n");
 		printf("Examples:\nTo show what colours are used: CharPack TestScreen3.bmp\n");
@@ -237,6 +246,7 @@ int main(int argc,char **argv)
 		printf("-m Force multicolour character conversion.\n");
 		printf("-c64remap a b : Remaps a C64 colours from a to b. -c64remap 9 11 -c64remap 15 12 : Would remap colour 9 to 11 then 15 to 12\n");
 		printf("-addidx a : Adds an optional index to the character map output\n");
+		printf("-bitmap : Switches to bitmap conversion mode. -r or -m must be used for force hires or multicolour mode. Only the bg colour is used, colour 1 and 2 are ignored as these are specified by the char screen and colour RAM.\n");
 		
 		exit(0);
 	}
@@ -412,10 +422,21 @@ int main(int argc,char **argv)
 	usedC64Palette[colourMC1] = true;
 	usedC64Palette[colourMC2] = true;
 
+	if (sBitmapMode)
+	{
+		// In bitmap mode all colours are potentially usable
+		for ( i = 0 ; i < 16 ; i++ )
+		{
+			usedC64Palette[i] = true;
+		}
+	}
+
 	// Process the RGB screen producing an optimised palette lookup screen
 	colourMap.clear();
 	std::vector<unsigned char> newScreen;
+	std::vector<int> oldScreen;
 	newScreen.reserve(wid*hei);
+	oldScreen.reserve(wid*hei);
 	for (y=0;y<hei;y++)
 	{
 		file.SetSize(bitmapOffset + (((hei-1)-y)*roundedScan));
@@ -425,6 +446,7 @@ int main(int argc,char **argv)
 		{
 			// Get three bytes RGB, convert it to a C64 palette entry and and store it.
 			file.GetVariable(&RGB,3);
+			oldScreen.push_back(RGB);
 			unsigned char C64Index = RGBToC64(RGB);
 			newScreen.push_back(C64Index);
 
@@ -718,6 +740,193 @@ int main(int argc,char **argv)
 	unsigned int blockW = 8;
 	unsigned int blockH = 8;
 
+	if (sBitmapMode)
+	{
+		// Check to see if we can save the data.
+		if (!charsFilename)
+		{
+			printf("Not writing any output as no filenames given.\n");
+			exit(0);
+		}
+
+		FILE *fpBitmap = fopen(charsFilename,"wb");
+		if (!fpBitmap)
+		{
+			printf("Could not open file '%s' for writing.\n",charsFilename);
+			exit(-1);
+		}
+
+		// Save the colours
+		FILE *fpColours = fopen(coloursFilename,"wb");
+		if (!fpColours)
+		{
+			printf("Could not open file '%s' for writing.\n",coloursFilename);
+			exit(-1);
+		}
+
+		// Save the screen
+		FILE *fpScreen = fopen(screenFilename,"wb");
+		if (!fpScreen)
+		{
+			printf("Could not open file '%s' for writing.\n",screenFilename);
+			exit(-1);
+		}
+
+		if (forceHires)
+		{
+			colourBG = 255;	// Force it to be ignored
+		}
+
+		// Now process each UDG in the optimised screen
+		for (y=0;y<hei;y+=blockH)
+		{
+			for (x=0;x<wid;x+=blockW)
+			{
+				unsigned char usedColours[16];
+				memset(usedColours , 0 , sizeof(usedColours));
+
+				unsigned int xi,yi;
+				for (yi=0;yi<blockH;yi++)
+				{
+					if (forceHires)
+					{
+						for (xi=0;xi<blockW;xi++)
+						{
+							unsigned char index = newScreen[((y+yi)*wid)+x+xi];
+							usedColours[index]++;
+						}
+					}
+					else if (forceMulticolour)
+					{
+						for (xi=0;xi<blockW;xi+=2)
+						{
+							unsigned char index = newScreen[((y+yi)*wid)+x+xi];
+							usedColours[index]++;
+						}
+					}
+				}
+
+				// Figure out the most used colours for this block
+				unsigned int i;
+				unsigned char maxCol01Index = 0;
+				unsigned char maxColVal = 0;
+				for (i = 0 ; i < sizeof(usedColours) ; i++)
+				{
+					if (i == colourBG)
+					{
+						continue;
+					}
+					if (usedColours[i] > maxColVal)
+					{
+						maxCol01Index = i;
+						maxColVal = usedColours[i];
+					}
+				}
+
+				unsigned char maxCol10Index = 0;
+				maxColVal = 0;
+				for (i = 0 ; i < sizeof(usedColours) ; i++)
+				{
+					if (i == colourBG || i == maxCol01Index)
+					{
+						continue;
+					}
+					if (usedColours[i] > maxColVal)
+					{
+						maxCol10Index = i;
+						maxColVal = usedColours[i];
+					}
+				}
+
+				unsigned char maxCol11Index = 0;
+				maxColVal = 0;
+				for (i = 0 ; i < sizeof(usedColours) ; i++)
+				{
+					if (i == colourBG || i == maxCol01Index || i == maxCol10Index)
+					{
+						continue;
+					}
+					if (usedColours[i] > maxColVal)
+					{
+						maxCol11Index = i;
+						maxColVal = usedColours[i];
+					}
+				}
+
+//				printf("%2d %2d %2d\n" , maxCol01Index , maxCol10Index , maxCol11Index);
+
+				// Consider highest use colours only
+				for ( i = 0 ; i < 16 ; i++ )
+				{
+					usedC64Palette[i] = false;
+				}
+				usedC64Palette[colourBG] = true;
+				usedC64Palette[maxCol01Index] = true;
+				usedC64Palette[maxCol10Index] = true;
+				usedC64Palette[maxCol11Index] = true;
+
+				// Now output the data
+				for (yi=0;yi<blockH;yi++)
+				{
+					unsigned char pixelData = 0;
+
+					if (forceHires)
+					{
+						for (xi=0;xi<blockW;xi++)
+						{
+							pixelData = pixelData << 1;
+
+							unsigned char index = RGBToC64(oldScreen[((y+yi)*wid)+x+xi]);
+							if (index == maxCol10Index)
+							{
+								pixelData = pixelData | 1;
+							}
+						}
+					}
+					else if (forceMulticolour)
+					{
+						for (xi=0;xi<blockW;xi+=2)
+						{
+							pixelData = pixelData << 2;
+
+							// MPi: TODO: Use oldScreen and RGBToC64() is the character conversion phase, not just bitmap
+							unsigned char index = RGBToC64(oldScreen[((y+yi)*wid)+x+xi]);
+							if (index == colourBG)
+							{
+								continue;
+							}
+							else if (index == maxCol01Index)
+							{
+								pixelData = pixelData | 1;
+							}
+							else if (index == maxCol10Index)
+							{
+								pixelData = pixelData | 2;
+							}
+							else if (index == maxCol11Index)
+							{
+								pixelData = pixelData | 3;
+							}
+						}
+					}
+
+					fwrite(&pixelData, sizeof(pixelData) , 1 , fpBitmap);
+				}
+
+				unsigned char charBlock = (maxCol01Index << 4) | maxCol10Index;
+				fwrite(&charBlock, sizeof(charBlock) , 1 , fpScreen);
+
+				fwrite(&maxCol11Index, sizeof(maxCol11Index) , 1 , fpColours);
+			}
+		}
+
+		fclose(fpBitmap);
+		fclose(fpScreen);
+		fclose(fpColours);
+
+		exit(0);
+	}
+
 	// If we are doing sprite conversion we can use the converted screen data
 	if (sDoSprites)
 	{
@@ -739,8 +948,13 @@ int main(int argc,char **argv)
 	charColour.reserve(xs*ys);
 	std::vector<unsigned char> charColourFlag;
 	charColourFlag.reserve(xs*ys);
+	std::vector<unsigned char> justBGFlag;
+	justBGFlag.reserve(xs*ys);
 	std::vector<unsigned char> charMulticolourFlag;
 	charMulticolourFlag.reserve(xs*ys);
+
+	// Try to keep colours between cells if possible, so this is stored outside the loops
+	unsigned char theColour = colourBG;
 
 	// Now process each UDG in the optimised screen
 	for (y=0;y<hei;y+=blockH)
@@ -760,21 +974,21 @@ int main(int argc,char **argv)
 			}
 			C64UDG theUDG;
 			memset(theUDG.mBytes,0,sUDGByteSize);
-			unsigned char theColour = 0;
 			bool theColourCoalesce = false;
 			bool isMulticolour = false;
 			bool added = false;
+			bool justBG = false;
 			// Is it one colour that uses one of the first eight or background colours?
 			// If so then create a character block and use that colour information.
 			if (usedColours.size() == 1)
 			{
 				if (*usedColours.begin() == colourBG)
 				{
-					// A transparent character
+					// A completely transparent character
 					memset(theUDG.mBytes,0,sUDGByteSize);
-					theColour = 0;
 					added = true;
 					theColourCoalesce = true;
+					justBG = true;
 				}
 				else if (sDoSprites || (*usedColours.begin() < 8))	// Sprite colours can be any colour, not just base colours signifying multicolour mode
 				{
@@ -846,10 +1060,13 @@ int main(int argc,char **argv)
 				{
 					isMulticolour = true;
 					theColourCoalesce = true;
-					// Choose a default colour to enable multicolour mode for this character.
+					// Enable multicolour mode
 					// If the char just uses background or multicolour 1 or 2 then this stays the same.
 					// However if the char uses one of the other colours then this is updated with that value.
-					theColour = 8;
+					if (!sDoSprites)
+					{
+						theColour |= 8;
+					}
 					// Else process the multicolour character.
 					for (yi=0;yi<blockH;yi++)
 					{
@@ -920,17 +1137,25 @@ int main(int argc,char **argv)
 			charColour.push_back(theColour);
 			charColourFlag.push_back(theColourCoalesce);
 			charMulticolourFlag.push_back(isMulticolour);
+			justBGFlag.push_back(justBG);
 		}
 	}
 
 	// Now optimise the colour map so that colours that can be coalesced are coalesced, this helps compression.
 	// Must preserve multicolour boundaries
+#if 1
 	bool colourOptimised = false;
 	do
 	{
 		colourOptimised = false;
 		for ( i = 0 ; i < (int)(xs*ys)-1 ; i++ )
 		{
+#if 1
+			if ( (justBGFlag[i] && !justBGFlag[i+1]) || (justBGFlag[i] && justBGFlag[i+1]) )
+			{
+				charColour[i] = charColour[i+1];
+			}
+#endif
 			if ( charColourFlag[i] && !charColourFlag[i+1] && ( charColour[i] & 0x08 ) == ( charColour[i+1] & 0x08 ) )
 			{
 				charColourFlag[i] = false;
@@ -940,6 +1165,12 @@ int main(int argc,char **argv)
 		}
 		for ( i = (xs*ys)-1 ; i > 0 ; i-- )
 		{
+#if 1
+			if ( !justBGFlag[i] && justBGFlag[i-1] || (justBGFlag[i] && justBGFlag[i-1]) )
+			{
+				charColour[i-1] = charColour[i];
+			}
+#endif
 			if ( charColourFlag[i] && !charColourFlag[i-1] && ( charColour[i] & 0x08 ) == ( charColour[i-1] & 0x08 ) )
 			{
 				charColourFlag[i] = false;
@@ -948,7 +1179,7 @@ int main(int argc,char **argv)
 			}
 		}
 	} while ( colourOptimised );
-
+#endif
 
 	// Now process each character in the screen.
 	std::map<C64UDG,unsigned char> chars;

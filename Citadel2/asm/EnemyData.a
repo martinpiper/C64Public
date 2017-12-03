@@ -1,0 +1,54 @@
+; Positive index means the enemy has been allocated an on-screen animation slot
+; Negative means it is not allocated an on-screen slot
+EnemyToAnimationIndex
+	!fill MaxEnemies , -1
+
+EnemyOffScreenCount
+	!fill MaxEnemies , 0
+
+EnemyRequestedRoute
+	!fill MaxEnemies , 0
+
+EnemyPositionsXLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsXHi
+	!fill MaxEnemies , 0
+
+EnemyPositionsYLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsYHi
+	!fill MaxEnemies , 0
+	
+EnemyBlockedCount
+	!fill MaxEnemies , 0
+
+
+EnemyMoveStepsLo
+	!fill MaxEnemies , 0
+
+; If this hi byte is 0 then there are no queued steps
+; If this is initialised then EnemyMoveStepsCount must be non-zero
+EnemyMoveStepsHi
+	!fill MaxEnemies , 0
+
+; The original values for EnemyMoveStepsLo/EnemyMoveStepsHi
+EnemyMoveStepsOriginalLo
+	!fill MaxEnemies , 0
+EnemyMoveStepsOriginalHi
+	!fill MaxEnemies , 0
+
+EnemyMoveGotMovement
+	!fill MaxEnemies , 0
+
+EnemyMoveStepsCount
+	!fill MaxEnemies , 0
+
+EnemyPreviousSolveRequestX
+	!fill MaxEnemies , 0
+EnemyPreviousSolveRequestY
+	!fill MaxEnemies , 0
+
+EnemyHealth
+	!fill MaxEnemies , 0

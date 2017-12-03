@@ -13,8 +13,8 @@ frameScrollY			!by 0	; Pixels
 frameScrollOldX			!by 0	; Pixels
 frameScrollOldY			!by 0	; Pixels
 
-scrollerRealMovementXPixels !by 0
-scrollerRealMovementYPixels !by 0
+;scrollerRealMovementXPixels !by 0
+;scrollerRealMovementYPixels !by 0
 
 scrollMapHX	!by $00		; Block pos in map
 scrollMapLX	!by $00		; Char pos in block (0-3)
@@ -78,8 +78,42 @@ ScrollerInitTables
 }
 
 !zn {
+!ifdef Scroller_DebugSplit {
+.debounce !by 0
+}
 ; To be called as one of the first functions in the frame. Can be called even if the screen is being displayed.
 ScrollerCalculate
+
+!ifdef Scroller_DebugSplit {
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .notFire
+
+	lda .debounce
+	bne .notFire2
+	lda #1
+	sta .debounce
+
+	lda frameScrollY
+	clc
+	adc #1
+	and #7
+	sta frameScrollY
+
+	jmp .notFire2
+
+.notFire
+	lda #0
+	sta .debounce
+
+.notFire2
+
+	lda frameScrollY
+	clc
+	adc #7
+	sta SCREENRAM + (23*40)
+}
+
 	lda frameScrollX
 	sta frameScrollOldX
 	lda frameScrollY
@@ -1247,7 +1281,7 @@ DrawMap
 	lda #0
 	; MPi: TODO: Maybe draw the map to the back buffer then swap it rather than assuming one
 	; static screen bank?
-	sta topScreenBank
+	jsr ScrollerSetBank
 	rts
 
 ScreenScrollerCodeStart = *
@@ -1257,7 +1291,54 @@ ScreenScrollerCodeStart = *
 !source "ScrollersNoColour.a"
 }
 ScreenScrollerCodeEnd = *
+!source "ScrollerStripsMacros.a"
 !source "ScrollerStrips.a"
+
+!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
+!ifndef CartFile1_Bank_ColouriseTop_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseTop_bin = 0
+CartFile1_Start_ColouriseTop_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseBottom_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseBottom_bin = 0
+CartFile1_Start_ColouriseBottom_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseLeft_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseLeft_bin = 0
+CartFile1_Start_ColouriseLeft_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseRight_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseRight_bin = 0
+CartFile1_Start_ColouriseRight_bin = $3fff
+}
+}
+
+
+!ifndef Scroller_EnableBlockColourSpeedCodeInCart {
+!source "ScrollerStripsColouriseTop.a"
+!source "ScrollerStripsColouriseBottom.a"
+!source "ScrollerStripsColouriseLeft.a"
+!source "ScrollerStripsColouriseRight.a"
+} else {
+
+ScrollerDrawStripTopColour
+	+Scroller_ScrollExecCartBank CartFile1_Bank_ColouriseTop_bin , CartFile1_Start_ColouriseTop_bin
+	rts
+ScrollerDrawStripBottomColour
+	+Scroller_ScrollExecCartBank CartFile1_Bank_ColouriseBottom_bin , CartFile1_Start_ColouriseBottom_bin
+	rts
+ScrollerDrawStripLeftColour
+	+Scroller_ScrollExecCartBank CartFile1_Bank_ColouriseLeft_bin , CartFile1_Start_ColouriseLeft_bin
+	rts
+ScrollerDrawStripRightColour
+	+Scroller_ScrollExecCartBank CartFile1_Bank_ColouriseRight_bin , CartFile1_Start_ColouriseRight_bin
+	rts
+
+}
 
 !zn
 AnimationInit
@@ -1290,7 +1371,14 @@ AnimationUpdateMultiplexorPre
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
+
 	lda AnimationYPos,x
+!ifdef Scroller_DiscardMinSpriteYPos {
+!if Scroller_DiscardMinSpriteYPos > 0 {
+	cmp #Scroller_DiscardMinSpriteYPos
+	bcc .blank
+}
+}
 	sta AnimationYPosToSort,x
 
 	dex
@@ -1317,12 +1405,21 @@ AnimationUpdateMultiplexor
 !ifdef Multiplex_SplitSort {
 	lda AnimationYPosToSort,x
 	cmp #$ff
-	beq .blank
-} else {
+	beq .blank2
+}
+!ifndef Multiplex_SplitSort {
 	; Is the sprite totally blank? If yes then skip it
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
-	beq .blank2
+	beq .blank
+	lda AnimationYPos,x
+!ifdef Scroller_DiscardMinSpriteYPos {
+!if Scroller_DiscardMinSpriteYPos > 0 {
+	cmp #Scroller_DiscardMinSpriteYPos
+	bcc .blank
+}
+}
+	sta Multiplex_YPos,x
 }
 	lda AnimationSpriteFrame,x
 	sta Multiplex_SpriteFrame,x
@@ -1342,25 +1439,25 @@ AnimationUpdateMultiplexor
 	sta Multiplex_XPosLo,x
 	lda AnimationXPosHi,x
 	sta Multiplex_XPosHi,x
-	lda AnimationYPos,x
-	sta Multiplex_YPos,x
 
 	dex
 	bpl .l1
 	rts
 
-.blank2
-	lda #$ff
 .blank
+	lda #$ff
+.blank2
 	sta Multiplex_YPos,x
 	dex
 	bpl .l1
 	rts
 
 
-
+!ifdef Scroller_MultiDirection {
+!ifndef DisableUpdateMultiplexorToAnimation {
 !zn
 UpdateMultiplexorToAnimation
+	jsr Multiplex_Default_Init
 	ldx #Multiplex_items-1
 .l1
 	lda Multiplex_SpriteFrame,x
@@ -1379,3 +1476,184 @@ UpdateMultiplexorToAnimation
 	dex
 	bpl .l1
 	rts
+
+!source "../SpriteMultiplexor/SpriteMultiplexorDefaultPattern.a"
+} ;< !ifndef DisableUpdateMultiplexorToAnimation {
+} ;< !ifdef Scroller_MultiDirection {
+
+
+
+!ifdef Scroller_DisableUpdateSprites {} else {
+!zn
+UpdateSprites
+	; Update sprites here from the frame data. i.e. Copy them from the frame data to the interrupt data
+	; MPi: TODO: Optimisation. Don't copy the sprite data have double buffered sprite data. One for calc, one for draw.
+	lda scrollerRealMovementXPixels
+	beq .noX1
+	bmi .negX1
+	ldx Multiplex_MaxSpr
+	dex
+.spx1
+	lda AnimationXPosLo,x
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo,x
+	bcc .noxMSB1
+	lda #1
+	sta AnimationXPosHi,x
+.noxMSB1
+	dex
+	bpl .spx1
+	jmp .noX1
+
+.negX1
+	ldx Multiplex_MaxSpr
+	dex
+.spx2
+	lda AnimationXPosLo,x
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo,x
+	bcs .noxMSB2
+	lda #0
+	sta AnimationXPosHi,x
+.noxMSB2
+
+	dex
+	bpl .spx2
+
+.noX1
+
+	lda scrollerRealMovementYPixels
+	beq .noY1
+	ldx Multiplex_MaxSpr
+	dex
+.spy1
+	lda AnimationYPos,x
+	clc
+	adc scrollerRealMovementYPixels
+	sta AnimationYPos,x
+
+	dex
+	bpl .spy1
+.noY1
+
+	; MPi: TODO: Here is a good spot to add code that will remove animated sprites that are too far off screen
+
+	; MPi: Enable this code to demonstrate the multiplexor coping with bunches of sprites instead of regularly spaced sprites due to sprites being created depending on the map x pos
+!if 0 {
+	; Expire a variable amount of sprites depending on the map x pos
+	lda scrollMapHX
+	cmp Multiplex_MaxSpr
+	bcc .n1
+	lda Multiplex_MaxSpr
+.n1
+	cmp #4
+	bcs .n2
+	lda #4
+.n2
+	tax
+	inx
+	lda #255
+.sp2
+	cpx Multiplex_MaxSpr
+	bcs .sp3
+	sta AnimationYPos,x
+	inx
+	jmp .sp2
+.sp3
+}
+
+!if 1 {
+	; This code cycles sprite frames to test any screen or border split with the full range of sprite frames
+	; It alternates every other sprite to give the empty sprite rejection and sort time to handle the changes
+	ldx Multiplex_MaxSpr
+	dex
+	inc .smAlternate+1
+.smAlternate lda #0
+	and #1
+	bne .sp4
+	dex
+.sp4
+	inc AnimationSpriteFrame,x
+	dex
+	dex
+	bpl .sp4
+}
+
+	rts
+} ;< !ifdef Scroller_DisableUpdateSprites {} else {
+
+
+
+!ifdef RedirectHandleUserInput { } else {
+
+!zn
+HandleUserInput
+	jsr HandleJoystick
+	rts
+
+!zn
+.toggle !by 0
+HandleJoystick
+	inc .toggle
+	lda .toggle
+	cmp #3
+	beq .runMe
+	rts
+.runMe
+	lda #0
+	sta .toggle
+	; Update the velocity at which we want to travel
+	lda #%0100
+	bit CIA1KeyboardColumnJoystickA
+	bne .o1
+	inc frameTargetVelX
+.o1
+	lda #%1000
+	bit CIA1KeyboardColumnJoystickA
+	bne .o2
+	dec frameTargetVelX
+.o2
+	lda #%0001
+	bit CIA1KeyboardColumnJoystickA
+	bne .o3
+	inc frameTargetVelY
+.o3
+	lda #%0010
+	bit CIA1KeyboardColumnJoystickA
+	bne .o4
+	dec frameTargetVelY
+.o4
+	lda #%10000
+	bit CIA1KeyboardColumnJoystickA
+	bne .o5
+	lda #0
+	sta frameTargetVelY
+	sta frameTargetVelX
+.o5
+
+	; Clamp the velocity
+	lda frameTargetVelX
+	cmp #-Scroller_MaxScrollSpeed
+	bpl .c1
+	lda #-Scroller_MaxScrollSpeed
+.c1
+	cmp #Scroller_MaxScrollSpeed+1
+	bmi .c2
+	lda #Scroller_MaxScrollSpeed
+.c2
+	sta frameTargetVelX
+
+	lda frameTargetVelY
+	cmp #-Scroller_MaxScrollSpeed
+	bpl .c3
+	lda #-Scroller_MaxScrollSpeed
+.c3
+	cmp #Scroller_MaxScrollSpeed+1
+	bmi .c4
+	lda #Scroller_MaxScrollSpeed
+.c4
+	sta frameTargetVelY
+	rts
+} ;<!ifdef RedirectHandleUserInput { } else {

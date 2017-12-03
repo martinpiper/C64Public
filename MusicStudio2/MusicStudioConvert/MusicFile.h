@@ -36,6 +36,32 @@ const unsigned char kMusicPlayer_Glide			= 0xfe;
 // $ff seems to be unused and checked for in the block editor as a blank line
 const unsigned char kMusicPlayer_BlankCommand	= 0xff;
 
+const int kSIDVoiceFreqLo					= 0;
+const int kSIDVoiceFreqHi					= 1;
+const int kSIDVoicePulseWidthLo				= 2;
+const int kSIDVoicePulseWidthHi				= 3;
+const int kSIDVoiceControl					= 4;
+const int kSIDVoiceAttackDecay				= 5;
+const int kSIDVoiceSustainRelease			= 6;
+const int kSIDVoice_Size					= 7;
+const int kSIDMaxVoice						= 3;
+
+const int kSIDVoiceControl_Mask_Gate		= 1<<0;
+const int kSIDVoiceControl_Mask_Sync		= 1<<1;
+const int kSIDVoiceControl_Mask_Ring		= 1<<2;
+const int kSIDVoiceControl_Mask_Test		= 1<<3;
+const int kSIDVoiceControl_Mask_Triangle	= 1<<4;
+const int kSIDVoiceControl_Mask_Sawtooth	= 1<<5;
+const int kSIDVoiceControl_Mask_Pulse		= 1<<6;
+const int kSIDVoiceControl_Mask_Noise		= 1<<7;
+
+
+const int kTableIndex_Wave		= 0;
+const int kTableIndex_Note		= 1;
+const int kTableIndex_Pulse		= 2;
+const int kTableIndex_Filter	= 3;
+
+
 const unsigned char kMusicFileVersion = 1;
 
 class MusicFile;

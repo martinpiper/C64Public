@@ -1,5 +1,9 @@
 ; Initialise any constant values here
+!ifdef mainRoutineZP_start {
+mainRoutineZP = mainRoutineZP_start
+} else {
 mainRoutineZP = $2
+}
 irqAStore	= mainRoutineZP
 irqXStore	= mainRoutineZP+1
 irqYStore	= mainRoutineZP+2
@@ -22,4 +26,71 @@ tempWork9	= mainRoutineZP+18
 tempWork10	= mainRoutineZP+19
 tempWork11	= mainRoutineZP+20
 
-scrollerDemo_endVars	= mainRoutineZP+21
+scrollerRealMovementXPixels = mainRoutineZP+21
+scrollerRealMovementYPixels = mainRoutineZP+22
+
+scrollerDemo_endVars	= mainRoutineZP+23
+
+; Detect kernal mode
+!ifdef Scroller_UseKernal {
+Scroller_IRQVectorLo = IRQServiceRoutineLo
+Scroller_IRQVectorHi = IRQServiceRoutineHi
+Scroller_NMIVectorLo = NMIServiceRoutineLo
+Scroller_NMIVectorHi = NMIServiceRoutineHi
+Scroller_IRQRasterAdjust=0
+Scroller_SpriteDiscardAdjust=0
+Scroller_NMITimerAdjust=7
+Scroller_Split2Adjust=0
+Scroller_Split2Adjust2=0
+!ifndef Scroller_IRQExitDefined {
+!macro Scroller_IRQExit {
+	jmp MinimalIRQServiceRoutine
+}
+}
+!ifndef Scroller_ProcessorPort {
+Scroller_ProcessorPort = ProcessorPortKERNALWithIO
+}
+}
+
+
+; Detect all RAM mode (default)
+!ifndef Scroller_UseKernal {
+Scroller_IRQVectorLo = KERNALIRQServiceRoutineLo
+Scroller_IRQVectorHi = KERNALIRQServiceRoutineHi
+Scroller_NMIVectorLo = KERNALNMIServiceRoutineLo
+Scroller_NMIVectorHi = KERNALNMIServiceRoutineHi
+Scroller_IRQRasterAdjust=0
+Scroller_SpriteDiscardAdjust=0
+Scroller_NMITimerAdjust=0
+Scroller_Split2Adjust=0
+Scroller_Split2Adjust2=0
+!ifndef Scroller_IRQExitDefined {
+!macro Scroller_IRQExit {
+	rti
+}
+}
+!ifndef Scroller_ProcessorPort {
+Scroller_ProcessorPort = ProcessorPortAllRAMWithIO
+}
+}
+
+Multiplex_IRQServiceRoutineLo = Scroller_IRQVectorLo
+Multiplex_IRQServiceRoutineHi = Scroller_IRQVectorHi
+Multiplex_IRQExitDefined = 1
+!macro Multiplex_IRQExit {
+	+Scroller_IRQExit
+}
+
+
+!ifdef Scroller_UseKernal {
+!ifdef Scroller_EnableSpeedCode {
+Scroller_KillCartridgeBank	= 127
+Scroller_BankSwitchControl	= $de00
+Scroller_ScrollBankEntry	= $8000
+ScrollBankSplit				= $a80
+Scroller_ScrollBankEntryColouriseTop	= $8000
+Scroller_ScrollBankEntryColouriseBottom	= $8300
+Scroller_ScrollBankEntryColouriseLeft	= $8600
+Scroller_ScrollBankEntryColouriseRight	= $8800
+}
+}

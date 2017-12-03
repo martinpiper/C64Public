@@ -1,0 +1,514 @@
+!ifdef Scroller_EnableSpeedCode {
+!ifdef Scroller_EnableBlockColourSpeedCode {
+!ifdef Scroller_NeedFullColourScroll {
+!ifdef CharColoursForEveryCharacter {
+Scroller_EnableBlockColourSpeedCodeInCart = 1
+}
+}
+}
+}
+
+;*****************************************************************************
+;*****************************************************************************
+; Hotizontal strips
+;*****************************************************************************
+;*****************************************************************************
+
+!macro MACROScrollerDrawHStrip .screen, .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+	; Initialse map
+	ldy .mapHY
+	lda MapTabL,y
+	clc
+	adc .mapHX
+	sta .sm1+1
+	lda MapTabH,y
+	adc #0
+	sta .sm1+2
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLX
+	sta .partial
+
+	ldx #0	; Screen index
+
+	; Draw first partial block
+	jsr .GetBlockFromMap
+	lda .mapLY
+	asl
+	asl
+	adc .mapLX
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+.l1
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+	dec .partial
+	bne .l1
+
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+
+	; Draw the last block
+	lda .mapLX
+	bne .dl
+	rts
+.dl
+	sta .partial
+
+	; Draw last partial block
+	jsr .GetBlockFromMap
+	lda .mapLY
+	asl
+	asl
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+.l2
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+	dec .partial
+	bne .l2
+
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	inc .sm1+1
+	bne .s1
+	inc .sm1+2
+.s1
+	rts
+
+.GetBlockChar
+.sm2	lda $ffff
+	inc .sm2+1
+	rts
+
+.DrawWholeBlock
+	jsr .GetBlockFromMap
+	lda .mapLY
+	asl
+	asl
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+
+	jsr .GetBlockChar
+	sta .screen,x
+	inx
+
+	rts
+
+.partial !by 0
+}
+
+
+!macro MACROScrollerDrawHStripOneColour .colours, .mapLX, .mapHX, .mapLY, .mapHY {
+	; Set screen lohi
+	; Initialse other variables
+	ldy .mapHY
+	lda MapTabL,y
+	clc
+	adc scrollMapHX
+	sta .sm1+1
+	lda MapTabH,y
+	adc #0
+	sta .sm1+2
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLX
+	sta .partial
+
+	ldx #0	; Screen index
+
+	; Draw first partial block
+	jsr .GetBlockFromMap
+	lda BlockColours,y
+.lc1
+	sta .colours,x
+	inx
+	dec .partial
+	bne .lc1
+
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+
+	; Draw the last block
+	lda .mapLX
+	bne .dcl
+	rts
+.dcl
+	sta .partial
+
+	; Draw last partial block
+	jsr .GetBlockFromMap
+	lda BlockColours,y
+.lc2
+	sta .colours,x
+	inx
+	dec .partial
+	bne .lc2
+
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	inc .sm1+1
+	bne .s1
+	inc .sm1+2
+.s1
+	rts
+
+.DrawWholeBlockColour
+	jsr .GetBlockFromMap
+	lda BlockColours,y
+	sta .colours,x
+	inx
+	sta .colours,x
+	inx
+	sta .colours,x
+	inx
+	sta .colours,x
+	inx
+
+	rts
+
+.partial !by 0
+}
+
+!macro MACROScrollerDrawStripColouriseUnrolledSpecific .addr , .steps , .stride {
+!for .x , .steps {
+	ldx .addr + ((.x-1)*.stride)
+	lda CharColours,x
+	sta COLOURRAM + (.addr & 0x3ff) + ((.x-1)*.stride)
+	}
+}
+
+!macro MACROScrollerDrawStripColouriseUnrolled .pos , .steps , .stride {
+	ldy topScreenBank
+	lda BankToScreenAddr,y
+	cmp #$c8
+	beq .doC8
+	jmp .doCC
+.doC8
+	+MACROScrollerDrawStripColouriseUnrolledSpecific $c800 + .pos , .steps , .stride
+	rts
+.doCC
+	+MACROScrollerDrawStripColouriseUnrolledSpecific $cc00 + .pos , .steps , .stride
+	rts
+} ;< !macro MACROScrollerDrawStripColourise .pos {
+
+
+
+!macro MACROScrollerDrawHStripColourise .pos {
+	ldy topScreenBank
+	lda BankToScreenAddr,y
+!if .pos > 0 {
+	clc
+	adc #>.pos
+}
+	sta .sm1+2
+	ldy #39
+.l1
+.sm1 ldx $c800 + .pos,y
+	lda CharColours,x
+	sta COLOURRAM + .pos,y
+	dey
+	bpl .l1
+	rts
+} ;< !macro MACROScrollerDrawHStripColourise .pos {
+
+
+
+;*****************************************************************************
+;*****************************************************************************
+; Vertical strips
+;*****************************************************************************
+;*****************************************************************************
+
+!macro MACROScrollerVPlot {
+	sta (tempWork0,x)
+	lda tempWork0
+	clc
+	adc #40
+	sta tempWork0
+	bcc .over6
+	inc tempWork1
+.over6
+}
+
+!macro MACROScrollerDrawVStrip .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+	; Initialse map
+	ldy .mapHY
+	lda MapTabL,y
+	clc
+	adc .mapHX
+	sta .sm1+1
+	lda MapTabH,y
+	adc #0
+	sta .sm1+2
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLY
+	sta .partial
+
+	ldx #0	; Must be zero throughout
+
+	; Draw first partial block
+	jsr .GetBlockFromMap
+	lda .mapLY
+	asl
+	asl
+	adc .mapLX
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+.l1
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+	dec .partial
+	bne .l1
+
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+	jsr .DrawWholeBlock
+!ifdef Scroller_FullScreen {
+	jsr .DrawWholeBlock
+}
+
+	; Draw the last block
+	lda .mapLY
+!ifdef Scroller_FullScreen {
+	clc
+	adc #1
+	cmp #0
+}
+	bne .dl
+	rts
+.dl
+	sta .partial
+
+	; Draw last partial block
+	jsr .GetBlockFromMap
+	lda .mapLX
+	clc
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+.l2
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+	dec .partial
+	bne .l2
+
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	lda .sm1+1
+	clc
+	adc MapData	; Map width
+	sta .sm1+1
+	bcc .s1
+	inc .sm1+2
+.s1
+	rts
+
+.GetBlockChar
+.sm2	ldy $ffff
+	lda .sm2+1
+	clc
+	adc #4
+	sta .sm2+1
+	tya
+	rts
+
+.DrawWholeBlock
+	jsr .GetBlockFromMap
+	lda .mapLX
+	clc
+	adc .theBlockTabL,y
+	sta .sm2+1
+	lda .theBlockTabH,y
+	sta .sm2+2
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	jsr .GetBlockChar
+	+MACROScrollerVPlot
+
+	rts
+
+.partial !by 0
+}
+
+
+!macro MACROScrollerDrawVStripOneColour .mapLX, .mapHX, .mapLY, .mapHY {
+	; Set screen lohi
+	; Initialse other variables
+	ldy .mapHY
+	lda MapTabL,y
+	clc
+	adc .mapHX
+	sta .sm1+1
+	lda MapTabH,y
+	adc #0
+	sta .sm1+2
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLY
+	sta .partial
+
+	ldx #0	; Must be zero throughout
+
+	; Draw first partial block
+	jsr .GetBlockFromMap
+.lc1
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	dec .partial
+	bne .lc1
+
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+	jsr .DrawWholeBlockColour
+!ifdef Scroller_FullScreen {
+	jsr .DrawWholeBlockColour
+}
+
+	; Draw the last block
+	lda .mapLY
+!ifdef Scroller_FullScreen {
+	clc
+	adc #1
+	cmp #0
+}
+	bne .dcl
+	rts
+.dcl
+	sta .partial
+
+	; Draw last partial block
+	jsr .GetBlockFromMap
+.lc2
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	dec .partial
+	bne .lc2
+
+	rts
+
+.GetBlockFromMap
+.sm1	ldy $ffff
+	lda .sm1+1
+	clc
+	adc MapData	; Map width
+	sta .sm1+1
+	bcc .s1
+	inc .sm1+2
+.s1
+	rts
+
+.DrawWholeBlockColour
+	jsr .GetBlockFromMap
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	lda BlockColours,y
+	+MACROScrollerVPlot
+	rts
+
+.partial !by 0
+}
+
+
+!macro MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX {
+	lda scrollMapLX
+	clc
+	adc #3
+	cmp #4	; Get carry
+	and #3
+	sta .lscrollMapLX
+	lda scrollMapHX
+	adc #9
+	sta .lscrollMapHX
+}
+
+
+
+!ifdef Scroller_FullScreen {
+!macro MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY {
+	lda scrollMapLY
+	sta .lscrollMapLY
+	lda scrollMapHY
+	clc
+	adc #6
+	sta .lscrollMapHY
+}
+} else {
+!macro MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY {
+	lda scrollMapLY
+	clc
+	adc #3
+	cmp #4	; Get carry
+	and #3
+	sta .lscrollMapLY
+	lda scrollMapHY
+	adc #4
+	sta .lscrollMapHY
+}
+}

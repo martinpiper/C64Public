@@ -1,0 +1,55 @@
+!zn {
+Scroller_EarlyStartHook
+	; Backup whatever the code for the decompression is wherever the IRQ and NMI vectors are
+	; This does mean the decompression code cannot run whilst the kernal IRQ vectors are being used
+	lda IRQServiceRoutineLo
+	sta smCitadel2_BackupIRQServiceRoutineLo+1
+	lda IRQServiceRoutineHi
+	sta smCitadel2_BackupIRQServiceRoutineHi+1
+	lda NMIServiceRoutineLo
+	sta smCitadel2_BackupNMIServiceRoutineLo+1
+	lda NMIServiceRoutineHi
+	sta smCitadel2_BackupNMIServiceRoutineHi+1
+	rts
+}
+
+!zn {
+Citadel2_RestoreCallRNXPCompressionDecompress
+	; Backup whatever the code for the decompression is wherever the IRQ and NMI vectors are
+	; This does mean the decompression code cannot run whilst the kernal IRQ/NMI vectors are being used
+
+	; Backup whatever has been set
+	; MPi: TODO: Disable the restore key NMI...
+	sei
+	lda IRQServiceRoutineLo
+	sta .sm1+1
+	lda IRQServiceRoutineHi
+	sta .sm2+1
+	lda NMIServiceRoutineLo
+	sta .sm3+1
+	lda NMIServiceRoutineHi
+	sta .sm4+1
+
+	; Restore the code
+smCitadel2_BackupIRQServiceRoutineLo	lda #0
+	sta IRQServiceRoutineLo
+smCitadel2_BackupIRQServiceRoutineHi	lda #0
+	sta IRQServiceRoutineHi
+smCitadel2_BackupNMIServiceRoutineLo	lda #0
+	sta NMIServiceRoutineLo
+smCitadel2_BackupNMIServiceRoutineHi	lda #0
+	sta NMIServiceRoutineHi
+
+	jsr RNXPCompressionDecompress
+
+	; Restore the IRQ/NMI vectors
+.sm1 lda #0
+	sta IRQServiceRoutineLo
+.sm2 lda #0
+	sta IRQServiceRoutineHi
+.sm3 lda #0
+	sta NMIServiceRoutineLo
+.sm4 lda #0
+	sta NMIServiceRoutineHi
+	rts
+}

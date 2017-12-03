@@ -1,0 +1,17 @@
+100 ifpeek(44)<>4thenpoke1024,0:poke44,4:poke46,peek(46)-4:clr:load"*",8
+110 l=l+1:ifl=1thenload"turbo",8,1
+120 ifl=2thenpoke816,215:poke817,200:load"sprld.o",8,1
+130 ifl=3thensys49152:load"music7",8,1
+140 ifl=4thenload"trackconfig2.d",8,1
+150 ifl=5thenload"trackoft.d",8,1
+151 ifl=6thenload"mc3.o",8,1
+152 ifl=7thenload"blocktable.d",8,1
+153 ifl=8thenload"sideobjtab2.d",8,1
+154 ifl=9thenload"trckypos.d",8,1
+155 ifl=10thenload"rdob1.d",8,1
+156 ifl=11thenload"cornoft.d",8,1
+157 ifl=12thenload"trckcornpos.d",8,1
+160 poke816,165:poke817,244:ifl=13thenload"chrld.o",8,1
+161 sys49152
+162 fory=0to8:forx=0to99:poke(128+36+y)*256+x,13:next:next
+190 print"{clear}@@{down*2}";

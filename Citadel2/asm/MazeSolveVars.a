@@ -1,0 +1,11 @@
+; See Solver.Solve for implementation details
+!ifdef MazeSolve_ZP_base {} else {
+MazeSolve_ZP_base	= $2
+}
+MazeSolve_ZP_lo					= MazeSolve_ZP_base + 0
+MazeSolve_ZP_hi					= MazeSolve_ZP_base + 1
+MazeSolve_ZP2_lo				= MazeSolve_ZP_base + 2
+MazeSolve_ZP2_hi				= MazeSolve_ZP_base + 3
+
+MazeSolve_ZP__size	= 4
+MazeSolve_ZP_end = MazeSolve_ZP_base + MazeSolve_ZP__size

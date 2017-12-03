@@ -1,0 +1,39 @@
+!ifdef MazeSolve_LeanAndMean {
+Node_isBlocked		= 0;
+Node_aversion		= 1;
+Node_visitedAt		= 2;
+Node_currentSolveID = 3;
+Node_reachedVia		= 4;
+
+Node__size			= 5;
+
+} else {
+
+Node_isBlocked		= 0;	///< Blocked or not, a solid wall for example
+Node_travelCost		= 1;	///< The cost to travel over this Node
+Node_blockedAtFrame	= 2;	///< At a particular time this tile will be blocked
+Node_blockedBeyond	= 3;	///< After a particular time this tile will be blocked. Indicates something has stopped there.
+Node_aversion		= 4;	///< Avoid this Node metric. Higher numbers increase the cost to travel this Node
+Node_visitedAt		= 5;	///< Set with the frame count while growing the route, the value is increased every iteration
+Node_currentSolveID = 6;	///< Every solve has a unique ID (up to max int). If the current solve encounters the same ID then it knows it has visited this Node before and skips it. This avoids the need to clear the solved Node array every time a solve is a started.
+Node_reachedVia		= 7;	///< Updated during growing the solution
+
+Node__size			= 8;
+}
+
+
+!if Node__size > 127 {
+!error "Node__size cannot be more than 127"
+}
+
+Node_isBlocked_Wall		= 1
+Node_isBlocked_Player	= 2
+Node_isBlocked_Enemy	= 4
+Node_isBlocked_AutoDoor		= 8
+
+; Solver.Node.Directions
+Node_Directions_None	= 0;
+Node_Directions_Up		= 1;
+Node_Directions_Down	= 2;
+Node_Directions_Left	= 3;
+Node_Directions_Right	= 4;

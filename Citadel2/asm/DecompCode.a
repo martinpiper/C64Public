@@ -1,0 +1,13 @@
+; Decompression code
+DecompressionCode_Start = *
+!macro RNXPCompressionIncBorder_A {}
+Decompression_OptimiseForOneEscapeBit = 1
+Decompression_OptimiseNoChangingEscape = 1
+
+!source "Decompression.a"
+!source "DecompressionP2.a"
+!source "DecompressionVars.a"
+CompressionStartOfHistoryBufferTables = *
+!fill CompressionHistoryBufferTablesSize , 0
+DecompressionCode_End = *
+DecompressionCode_Size = * - DecompressionCode_Start

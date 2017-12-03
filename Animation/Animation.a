@@ -8,11 +8,14 @@
 !cpu 6510
 !ct pet
 
+!source "../MakeCart/asm/EasyFlash.a"
+!source "DeltaDecompressionMacros.a"
+
 ;Comment out this to not use the speed testing code
 ;SpeedTestCode = 1
 
 ; TAG3D logo
-!if 1 {
+!if 0 {
 ScreenColour = 0
 BGColour = 9
 BGColour1Start = 0
@@ -60,6 +63,7 @@ BGColourChangeIters = 0
 BGColour1During = BGColour1Start
 BGColour2During = BGColour2Start
 MaxFrames = 12
+CopyColours = 1
 }
 
 ; Hires horse jump
@@ -75,7 +79,7 @@ MaxFrames = 24
 }
 
 ; Vector ball rotate
-!if 0 {
+!if 1 {
 ScreenColour = 1
 BGColour = 2
 BGColour1Start = 0
@@ -84,6 +88,19 @@ BGColourChangeIters = 0
 BGColour1During = 0
 BGColour2During = 0
 MaxFrames = 128
+UseCartBanks = 1
+StartCartBank = 4
+MaxCartBank = 14
+}
+
+!ifdef UseCartBanks {
+!macro DeltaDecompression_AddressTweak {
+	ora #$60
+}
+} else {
+!macro DeltaDecompression_AddressTweak {
+	ora #$e0
+}
 }
 
 ;Multiplexor_DebugBorder = 1
@@ -104,15 +121,32 @@ Multiplex_items	= 24
 !source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
 }
 
+
 *=$400
 	sei
+!ifdef UseCartBanks {
+	lda #ProcessorPortDefault
+} else {
 	lda #ProcessorPortAllRAMWithIO
+}
 	jsr InitialiseMachine
 ;	+WaitForFire_A
+
+!ifdef UseCartBanks {
+	lda #EASYFLASH_CONTROL_16K
+	sta EASYFLASH_CONTROL
+	lda #4
+	sta EASYFLASH_BANK
+}
+
 	lda #ScreenColour
 	sta VIC2ScreenColour
 	sta VIC2BorderColour
+!ifdef UseCartBanks {
+	lda #02
+} else {
 	lda #00
+}
 	sta CIA2PortASerialBusVICBank
 	lda #VIC2ScreenControlHDefault | %10000
 	sta VIC2ScreenControlH
@@ -229,13 +263,7 @@ Multiplex_items	= 24
 }
 
 
-	; Lastly update zeropage with our zeropage RLE decompressor
-	ldx #RNXPCompressionDecompressRLECodeEnd-RNXPCompressionDecompressRLECodeStart
-.cz1
-	lda RNXPCompressionDecompressRLECodeStart-1,x
-	sta+2 RNXPCompressionDecompressRLE-1,x
-	dex
-	bne .cz1
+	jsr DeltaDecompression_InitZP
 
 	; Sync the start of IRQs and the mainline
 	+MACROWaitForTheLastScanPlus1_A
@@ -244,19 +272,31 @@ Multiplex_items	= 24
 	lda #255
 	sta VIC2Raster
 	+MACROAckRasterIRQ_A
+
+!ifdef UseCartBanks { } else {
 	cli
+}
 
 .fr1
 
+!ifdef UseCartBanks {
+	ldx #<$6000
+	ldy #>$6000
+} else {
 	ldx #<$e000
 	ldy #>$e000
-	jsr RNXPCompressionDecompressRLE_InitStore
-	jsr .unpackFrame
+}
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrame
 
 	+MACROWaitForTheLastScanPlus1_A
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
+!ifdef UseCartBanks {
+	lda #%00001010		; Screen at $c000 char data at $e800
+} else {
 	lda #%10011010		; Screen at $e400 char data at $e800
+}
 	sta VIC2MemorySetup
 
 !ifdef SpriteAnimation {
@@ -264,30 +304,16 @@ Multiplex_items	= 24
 	jsr Multiplex_SetSpritePointer
 }
 
-!if 0 {
-!if MaxFrames = 12 {
-	ldx #0
-.clc1a
-	lda $e000,x
-	sta COLOURRAM,x
-	inx
-	bne .clc1a
-.clc1b
-	lda $e000+$100,x
-	sta COLOURRAM+$100,x
-	inx
-	bne .clc1b
-.clc1c
-	lda $e000+$200,x
-	sta COLOURRAM+$200,x
-	inx
-	bne .clc1c
-.clc1d
-	lda $e000+$300,x
-	sta COLOURRAM+$300,x
-	inx
-	bne .clc1d
+!ifdef UseCartBanks {
+	lda #$64
+	ldx BouncePosX
+	ldy BouncePosY
+	jsr ScreenSegmentCopy
+	jsr UpdateBounce
 }
+
+!ifdef CopyColours {
+	+MDeltaDecompression_CopyColours $e000
 }
 
 	jsr .incrFrame
@@ -297,13 +323,22 @@ Multiplex_items	= 24
 	; The DeltaCompression application would need a command line tweak to stop banks being used.
 	; As long as the colour RAM decompress is shorter than a frame it will be OK. Time this...
 
+!ifdef UseCartBanks {
+	ldx #<$6000
+	ldy #>$6000
+} else {
 	ldx #<$e000
 	ldy #>$e000
-	jsr RNXPCompressionDecompressRLE_InitStore
-	jsr .unpackFrame
+}
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrame
 
 	+MACROWaitForTheLastScanPlus1_A
+!ifdef UseCartBanks {
+	lda #%00001110		; Screen at $c000 char data at $f800
+}else {
 	lda #%11011110		; Screen at $f400 char data at $f800
+}
 	sta VIC2MemorySetup
 
 !ifdef SpriteAnimation {
@@ -311,58 +346,35 @@ Multiplex_items	= 24
 	jsr Multiplex_SetSpritePointer
 }
 
-!if 0 {
-!if MaxFrames = 12 {
-	ldx #0
-.clc2a
-	lda $f000,x
-	sta COLOURRAM,x
-	inx
-	bne .clc2a
-.clc2b
-	lda $f000+$100,x
-	sta COLOURRAM+$100,x
-	inx
-	bne .clc2b
-.clc2c
-	lda $f000+$200,x
-	sta COLOURRAM+$200,x
-	inx
-	bne .clc2c
-.clc2d
-	lda $f000+$300,x
-	sta COLOURRAM+$300,x
-	inx
-	bne .clc2d
+!ifdef UseCartBanks {
+	lda #$74
+	ldx BouncePosX
+	ldy BouncePosY
+	jsr ScreenSegmentCopy
+	jsr UpdateBounce
 }
+
+!ifdef CopyColours {
+	+MDeltaDecompression_CopyColours $f000
 }
 
 	jsr .incrFrame
 
 	jmp .fr1
 
-.displaying !by 0
-
-.unpackFrame
-	ldx .displaying
-	lda .framesLo,x
-	ldy .framesHi,x
-	tax
-	jmp RNXPCompressionDecompressRLE
-
 .incrFrame
 
 ;	+WaitForFire_A
 
-	inc .displaying
-	lda .displaying
+	inc DeltaDecompression_Displaying
+	lda DeltaDecompression_Displaying
 	cmp #MaxFrames
 	bne .up1
 !ifdef SpeedTestCode {
 	jam	; Use this to trigger the monitor after one whole sqeuence
 }
 	lda #0
-	sta .displaying
+	sta DeltaDecompression_Displaying
 	dec .on3DCount
 	bne .up1
 	lda #BGColour1During
@@ -373,6 +385,7 @@ Multiplex_items	= 24
 	rts
 .on3DCount !by BGColourChangeIters
 
+!ifdef UseCartBanks { } else {
 .framesLo
 	!by <Frame00001
 	!by <Frame00002
@@ -608,189 +621,17 @@ Multiplex_items	= 24
 }
 }
 }
+} ; <!ifdef UseCartBanks { } else {
 
 !source "../stdlib/Initialise.a"
 
-!if 0 {
-	; The old code for a normal boring RLE, the same format used by "Compression.exe -cr"
-RNXPCompressionDecompressRLE_InitStore
-	stx RNXPCompressionDecompress_WriteByte+1
-	sty RNXPCompressionDecompress_WriteByte+2
-	rts
-
-RNXPCompressionDecompressRLE
-	stx RNXPCompressionDecompress_GetByte+1
-	sty RNXPCompressionDecompress_GetByte+2
-
-	+RNXPCompressionDecompress_GetByte
-	clc
-	adc RNXPCompressionDecompress_WriteByte+1
-	sta .smEndTestL+1
-	+RNXPCompressionDecompress_GetByte
-	adc RNXPCompressionDecompress_WriteByte+2
-	sta .smEndTestH+1
-
-	+RNXPCompressionDecompress_GetByte
-	sta .smRLEByte+1
-
-.rle1
-	+RNXPCompressionDecompress_GetByte
-.smRLEByte	cmp #00
-	beq .rle3
-	jsr RNXPCompressionDecompress_WriteByte
-	jmp .rle1
-	; Handle a run
-.rle3
-	lda RNXPCompressionDecompress_WriteByte+1
-.smEndTestL	cmp #00
-	bne .rle2
-	lda RNXPCompressionDecompress_WriteByte+2
-.smEndTestH	cmp #00
-	bne .rle2
-	rts
-.rle2
-	+RNXPCompressionDecompress_GetByte
-	tax
-	+RNXPCompressionDecompress_GetByte
-.rle4
-	jsr RNXPCompressionDecompress_WriteByte
-	dex
-	bne .rle4
-	jmp .rle1
-}
+!source "DeltaDecompression.a"
 
 ; 66 Frames Batman logo
 ; Old: $b7 frames
 ; New: $97 frames
 ; Moved to zero page
 ; New: $91 frames
-
-!macro RNXPCompressionDecompress_WriteByte {
-	sta (RNXPCompressionDecompress_WriteByteAddr),y
-	iny
-	bne .ni1
-	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
-.ni1
-}
-
-!macro RNXPCompressionDecompress_IncGetByte {
-	inc+1 RNXPCompressionDecompress_GetByteAddr
-	bne .ni1
-	inc+1 RNXPCompressionDecompress_GetByteAddr+1
-.ni1
-}
-
-!macro RNXPCompressionDecompress_GetByte {
-	+RNXPCompressionDecompress_IncGetByte
-	lda (RNXPCompressionDecompress_GetByteAddr,x)
-}
-
-
-RNXPCompressionDecompressRLE_InitStore
-	stx+1 RNXPCompressionDecompress_WriteByteAddr
-	sty+1 RNXPCompressionDecompress_WriteByteAddr+1
-	rts
-
-
-RNXPCompressionDecompressRLECodeStart
-!pseudopc $80 {
-RNXPCompressionDecompressRLE
-	stx+1 RNXPCompressionDecompress_GetByteAddr
-	sty+1 RNXPCompressionDecompress_GetByteAddr+1
-	lda+1 RNXPCompressionDecompress_GetByteAddr
-	bne .nzp1
-	dec+1 RNXPCompressionDecompress_GetByteAddr+1
-.nzp1
-	dec+1 RNXPCompressionDecompress_GetByteAddr
-
-	ldy #0
-	ldx #0
-	+RNXPCompressionDecompress_GetByte
-	sta+1 .smopcode1+1
-	+RNXPCompressionDecompress_GetByte
-	sta+1 .smopcode2+1
-	+RNXPCompressionDecompress_GetByte
-	sta+1 .smopcode3+1
-
-.rle1
-	+RNXPCompressionDecompress_IncGetByte
-RNXPCompressionDecompress_GetByteAddr  = *+1
-	lda $1234
-	bpl .notOpcode
-	; MPi: TODO: Instead of doing a cmp/beq test the delta data could use the same trick as the music player and use a negative opcode as the direct jump address for the code to run.
-	; This could either be calculated by a preprocess stage of 6502 code or the save routines can save out data that will get linked with the right values.
-.smopcode1	cmp #0
-	beq .opcode1
-.smopcode2	cmp #0
-	beq .opcode2
-.smopcode3	cmp #0
-	beq .opcode3
-.notOpcode
-RNXPCompressionDecompress_WriteByteAddr = *+1
-	sta $4321,y
-	iny
-	bne .rle1
-	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
-	jmp .rle1
-
-.RLERet
-	rts
-
-.opcode1
-	+RNXPCompressionDecompress_GetByte
-;	cmp #0
-	beq .RLERet
-	sta+1 .smc1+1
-	+RNXPCompressionDecompress_GetByte
-.smc1	ldx #00
-.rle2
-	+RNXPCompressionDecompress_WriteByte
-	dex
-	bne .rle2
-	jmp .rle1
-
-.opcode2
-	+RNXPCompressionDecompress_GetByte
-;	cmp #0
-	beq .rle3
-	clc	; MPi: TODO: Potential for reversing the above comparison to get a free CLC
-	adc+1 RNXPCompressionDecompress_WriteByteAddr
-	sta+1 RNXPCompressionDecompress_WriteByteAddr
-	bcc .rle1
-	inc+1 RNXPCompressionDecompress_WriteByteAddr+1
-	jmp .rle1
-.rle3
-	lda+1 .smopcode2+1
-	+RNXPCompressionDecompress_WriteByte
-	jmp .rle1
-
-.opcode3
-	+RNXPCompressionDecompress_GetByte
-	; MPi: TODO: Instead of doing a cmp #$ff there is scope for the delta compression to add the hi address directly to the data, then if the hi address is zero that is a better flag check to output the single opcode byte.
-	; It would also remove the need to ora #$e0
-	cmp #$ff
-	beq .rle4
-	ora #$e0
-	sta .smRLECopy+2
-	+RNXPCompressionDecompress_GetByte
-	sta .smRLECopy+1
-	+RNXPCompressionDecompress_GetByte
-	sta .smRLEC1+1
-	ldx #0
-.rle5
-.smRLECopy	lda $1234,x
-	+RNXPCompressionDecompress_WriteByte
-	inx
-.smRLEC1	cpx #0
-	bne .rle5
-	ldx #0
-	jmp .rle1
-.rle4
-	lda+1 .smopcode3+1
-	+RNXPCompressionDecompress_WriteByte
-	jmp .rle1
-}
-RNXPCompressionDecompressRLECodeEnd
 
 !ifdef SpriteAnimation {
 MultiplexExt_LastIRQ
@@ -1016,6 +857,129 @@ Message
 !scr "so the credits  necro polo did this version of mean streak  the sprites are from monty mole  the coding was by martin piper     "
 }
 
+!ifdef UseCartBanks {
+!zn
+BounceVelX !by 1
+BounceVelY !by 1
+BouncePosX !by 10
+BouncePosY !by 2
+
+UpdateBounce
+	lda BouncePosX
+	clc
+	adc BounceVelX
+	bmi .left
+	cmp #40-18
+	bcs .right
+.storeX
+	sta BouncePosX
+
+.doY
+	lda BouncePosY
+	clc
+	adc BounceVelY
+	bmi .top
+	cmp #25-18
+	bcs .bottom
+.storeY
+	sta BouncePosY
+
+	rts
+.reverseX
+	lda #0
+	sec
+	sbc BounceVelX
+	sta BounceVelX
+	rts
+
+.left
+	jsr .reverseX
+	lda #1
+	jmp .storeX
+.right
+	jsr .reverseX
+	lda #39-18
+	jmp .storeX
+
+
+.reverseY
+	lda #0
+	sec
+	sbc BounceVelY
+	sta BounceVelY
+	rts
+
+.top
+	jsr .reverseY
+	lda #0
+	jmp .storeY
+.bottom
+	jsr .reverseY
+	lda #25-18
+	jmp .storeY
+
+
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >($4000+((.table1-1) * 40)) }
+.ballPos = 11 + (4*40)
+ScreenSegmentCopy
+;	inc VIC2BorderColour
+
+	; Get the static source position
+	clc
+	adc #>.ballPos
+	sta .sm2+2
+	lda #<.ballPos
+	sta .sm2+1
+
+	; Get the target Y pos
+	lda ScreenTabH,y
+	sta .sm1+2
+
+	; Add on the X coord
+	txa
+	clc
+	adc ScreenTabL,y
+	sta .sm1+1
+	bcc .l1
+	inc .sm1+2
+.l1
+
+	ldy #17
+.l2
+	ldx #17
+.l3
+.sm2	lda $1234,x
+.sm1	sta $1234,x
+	dex
+	bpl .l3
+
+	; Move lines down
+	lda .sm1+1
+	clc
+	adc #40
+	sta .sm1+1
+	bcc .l4
+	inc .sm1+2
+.l4
+
+	lda .sm2+1
+	clc
+	adc #40
+	sta .sm2+1
+	bcc .l5
+	inc .sm2+2
+.l5
+
+	dey
+	bne .l2
+
+;	dec VIC2BorderColour
+
+	rts
+}
+
+!ifdef UseCartBanks { } else {
 Frame00001 !bin "Data/frm00001.del"
 Frame00002 !bin "Data/frm00002.del"
 Frame00003 !bin "Data/frm00003.del"
@@ -1171,6 +1135,8 @@ Frame00127 !bin "Data/frm00127.del"
 Frame00128 !bin "Data/frm00128.del"
 }
 
+} ; <!ifdef UseCartBanks { } else {
+
 
 !ifdef DoMusic {
 *=$bf00
@@ -1186,6 +1152,14 @@ Music
 
 ;Fill in the last frames in the memory, calculated by the delta compressor, so it decompresses correctly
 !initmem 0
+!ifdef UseCartBanks {
+*=$6000
+} else {
 *=$e000
-!bin "Data/frm00000.del"
+}
+!bin "Data/frm-0001.del"
+!ifdef UseCartBanks {
+*=$7ff8
+} else {
 *=$fff8
+}

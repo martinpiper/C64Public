@@ -8,6 +8,15 @@
 !cpu 6510
 !ct pet
 
+!macro Crunch .pos {
+	+MACROWaitForRaster .pos
+;	+MACRODelay_X 1
+	and #7
+;	ora #%111000
+	ora #%11000
+	sta VIC2ScreenControlV
+}
+
 *=$400
 	sei
 	lda #ProcessorPortAllRAMWithIO
@@ -15,8 +24,109 @@
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 
+	ldx #0
+.cl1
+	txa
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .cl1
+
 
 !if 1 {
+.l1
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+.l2
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .l2
+
+	+MACROWaitForRaster VIC2SpriteYBorderTop+7
+	inc VIC2BorderColour
+
+	+Crunch VIC2SpriteYBorderTop+8
+	+Crunch VIC2SpriteYBorderTop+9
+	+Crunch VIC2SpriteYBorderTop+10
+	+Crunch VIC2SpriteYBorderTop+11
+	+Crunch VIC2SpriteYBorderTop+12
+	+Crunch VIC2SpriteYBorderTop+13
+	+Crunch VIC2SpriteYBorderTop+14
+	+Crunch VIC2SpriteYBorderTop+15
+	+Crunch VIC2SpriteYBorderTop+16
+	+Crunch VIC2SpriteYBorderTop+17
+	+Crunch VIC2SpriteYBorderTop+18
+	+Crunch VIC2SpriteYBorderTop+19
+	+Crunch VIC2SpriteYBorderTop+20
+	+Crunch VIC2SpriteYBorderTop+21
+	+Crunch VIC2SpriteYBorderTop+22
+	+Crunch VIC2SpriteYBorderTop+23
+	+Crunch VIC2SpriteYBorderTop+24
+	+Crunch VIC2SpriteYBorderTop+25
+	+Crunch VIC2SpriteYBorderTop+26
+	+Crunch VIC2SpriteYBorderTop+27
+	+Crunch VIC2SpriteYBorderTop+28
+	+Crunch VIC2SpriteYBorderTop+29
+	+Crunch VIC2SpriteYBorderTop+30
+
+
+	dec VIC2BorderColour
+	jmp .l1
+}
+
+!if 0 {
+	; Keyboard scan tester
+.l1
+	+MACROWaitForRaster VIC2SpriteYBorderTop
+
+	inc VIC2BorderColour
+
+	; Read joystick
+	lda #%01111111
+	sta CIA1KeyboardColumnJoystickA
+
+	lda CIA1KeyboardColumnJoystickA
+	sta SCREENRAM+$300
+
+	; Read keyboard
+!if 0 {
+	lda #%00000000
+	sta CIA1KeyboardColumnJoystickA
+	lda CIA1KeyboardRowsJoystickB
+	sta SCREENRAM+$300+1
+
+	lda CIA1KeyboardRowsJoystickB
+	cmp #$ff
+	beq .noKey
+}
+
+	ldx #%01111111
+	ldy #0
+	txa
+.columnScan
+	sta SCREENRAM+$300+8,y
+	sta CIA1KeyboardColumnJoystickA
+.again
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again
+	sta SCREENRAM+$328+8,y
+	iny
+	txa
+	sec
+	ror
+	tax
+	bcs .columnScan
+
+.noKey
+	dec VIC2BorderColour
+	jmp .l1
+}
+
+
+!if 0 {
 	ldx #0
 .l1
 	lda #100

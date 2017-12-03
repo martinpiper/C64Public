@@ -5,16 +5,19 @@
 ; real game code starts.
 *=$400
 ScrollerInitSpecificCode_Start = *
+!ifdef Scroller_EarlyStartHook_Enable {
+	jsr Scroller_EarlyStartHook
+}
 	; Setup a nice stable blank screen and known machine state
 !ifdef Scroller_NoInitialiseMachine {} else {
-	lda #ProcessorPortAllRAMWithIO
+	lda #Scroller_ProcessorPort
 	jsr InitialiseMachine
 }
 	; Setup NMI because the initialise points to code that gets overwritten
 	lda #<ScrollerNMI1
-	sta KERNALNMIServiceRoutineLo
+	sta Scroller_NMIVectorLo
 	lda #>ScrollerNMI1
-	sta KERNALNMIServiceRoutineHi
+	sta Scroller_NMIVectorHi
 	lda #0
 	sta VIC2SpriteDoubleWidth
 	sta VIC2SpriteDoubleHeight
@@ -36,8 +39,15 @@ ScrollerSpecificCode_Start = *
 ScrollEntry
 	; The following can be called more than once if needed for a proper game type cycle
 .l1
+!ifdef Scroller_DecompressTitleScreenCodeHook {
+	jsr DecompressTitleScreenCode
+}
 !ifdef Scroller_DisplayTitleScreen {
 	jsr DisplayTitleScreen
+}
+
+!ifdef Scroller_DecompressGameCodeHook {
+	jsr DecompressGameCode
 }
 	jsr InitialiseGame
 	jsr SetupIRQs
@@ -52,8 +62,18 @@ TitleScreen_Enable_ScrollerDemoWait_Hooks !by 1
 !source "SetupIRQs.a"
 !source "ScrollMain.a"
 ; The multiplexor uses the MultiplexExt_LastIRQ label defined in "SetupIRQs.a"
-!align 255, 0
 !source "../SpriteMultiplexor/SpriteMultiplexor.a"
+
+!ifdef Scroller_EnableSpeedCode {
+!ifndef Scroller_MultiDirection {
+!error "Scroller_EnableSpeedCode without Scroller_MultiDirection is not implemented"
+}
+CartSelectBank_ProcessorPort=ProcessorPortDefault
+CartKillBank_ProcessorPort=Scroller_ProcessorPort
+!source "../MakeCart/asm/EasyFlash_Code.a"
+;!source "../MakeCart/asm/GMod2_Code.a"
+!source "CatchUndefCartFiles.a"
+}
 
 ScrollerSpecificCode_End = *
 ScrollerSpecificCode_Size = * - ScrollerSpecificCode_Start

@@ -1,0 +1,38 @@
+100 *=1024
+101 lda 53280
+102 sta tmp
+103 lda 53270
+104 sta tmp2
+110 ldy #0
+120 sty $fb
+130 sty $fd
+140 lda #200
+150 sta $fc
+160 lda #8
+170 sta $fe
+180 sei
+190 lda #$34
+200 sta 1
+210 l1 lda ($fb),y
+220 sta ($fd),y
+230 inc 1
+240 inc 1
+250 sta 53280
+260 sty 53270
+270 dec 1
+280 dec 1
+290 iny
+300 bne l1
+310 inc $fe
+320 inc $fc
+330 lda $fc
+340 bne l1
+341 lda #55
+342 sta 1
+350 lda tmp
+360 sta 53280
+370 lda tmp2
+380 sta 53270
+390 rts
+400 tmp byt 0
+410 tmp2 byt 0

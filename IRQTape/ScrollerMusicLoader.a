@@ -120,8 +120,10 @@ MainSecondLoaderStart
 	lda .spriteColours
 	sta VIC2Sprite0Colour
 	; And switch on the sprite
+!ifdef MainLoad_EnableScreen {
 	lda #1
 	sta VIC2SpriteEnable
+}
 	; Setup some screen display values, just to make sure everything is OK
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
@@ -130,8 +132,10 @@ MainSecondLoaderStart
 	sta CIA2PortASerialBusVICBank
 	lda #VIC2ScreenControlHDefault
 	sta VIC2ScreenControlH
+!ifdef MainLoad_EnableScreen {
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
+}
 
 .MainLoop
 	; Some debugging that allows us to see spare mainline cycles between the IRQs by changing the screen colour

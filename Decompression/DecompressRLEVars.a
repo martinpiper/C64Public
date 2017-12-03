@@ -1,0 +1,20 @@
+!ifdef RNXPCompressionDecompress_WriteByteAddr { } else {
+RNXPCompressionDecompress_WriteByteAddr = $400
+}
+!ifdef RNXPCompressionDecompress_GetByteAddr { } else {
+RNXPCompressionDecompress_GetByteAddr = $401
+}
+
+RNXPCompressionDecompress_WriteByte	sta RNXPCompressionDecompress_WriteByteAddr
+	inc RNXPCompressionDecompress_WriteByte+1
+	bne .e1
+	inc RNXPCompressionDecompress_WriteByte+2
+.e1
+	rts
+
+RNXPCompressionDecompress_GetByte	lda RNXPCompressionDecompress_GetByteAddr
+	inc RNXPCompressionDecompress_GetByte+1
+	bne .e2
+	inc RNXPCompressionDecompress_GetByte+2
+.e2
+	rts

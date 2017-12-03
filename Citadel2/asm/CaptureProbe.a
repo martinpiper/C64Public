@@ -1,0 +1,495 @@
+CaptureProbe_LastClickTimer	!by -1
+CaptureProbe_RunningProbe	!by -1
+CaptureProbe_LockedAnim		!by -1
+CaptureProbe_BreakLockDelay	!by 0
+CaptureProbe_LockedAnimIgnoreTime	!by 0
+
+; UI tweakable constants
+CaptureProbe_ClickInterval				= 15
+CaptureProbe_SnapBox					= 6
+CaptureProbe_MoveSpeed					= 4
+CaptureProbe_BreakLockDelayLimit		= 25
+CaptureProbe_LockedAnimIgnoreTimeDelay	= 4
+
+CaptureProbe_CapturedList_max = 3
+; List of captured enemy IDs
+CaptureProbe_CapturedList				!fill CaptureProbe_CapturedList_max , -1
+CaptureProbe_CapturedListAnimations		!fill CaptureProbe_CapturedList_max , -1
+
+!zn {
+CaptureProbe_Init
+	jsr CaptureProbe_ResetEnterTimer
+
+	lda #-1
+	sta CaptureProbe_RunningProbe
+	sta CaptureProbe_LockedAnim
+
+	ldx #CaptureProbe_CapturedList_max-1
+.l1
+	sta CaptureProbe_CapturedList,x
+	sta CaptureProbe_CapturedListAnimations,x
+	dex
+	bpl .l1
+
+	lda #0
+	sta CaptureProbe_LockedAnimIgnoreTime
+
+	lda #CaptureProbe_BreakLockDelayLimit
+	sta CaptureProbe_BreakLockDelay
+
+	rts
+}
+
+!zn {
+; Called when static and with a positive edge on fire pressed
+; Exit:
+; EQ = Started capture probe mode
+; NE = No capture probe yet
+CaptureProbe_CheckAction
+	lda CaptureProbe_RunningProbe
+	bpl .ret
+
+	lda CaptureProbe_LastClickTimer
+	bmi .init
+
+	; Is the second click less than this interval?
+	cmp #CaptureProbe_ClickInterval-1
+	bcs .init
+
+	jsr AnimationFindFreeSlot
+	bcs .ret
+	stx CaptureProbe_RunningProbe
+	ldy #20
+	jsr AnimationInitWithType
+
+	ldy EnemyToAnimationIndex
+	lda AnimationXPosHi,y
+	sta AnimationXPosHi,x
+	lda AnimationXPosLo,y
+	sta AnimationXPosLo,x
+	lda AnimationYPos,y
+	sta AnimationYPos,x
+
+	lda #-1
+	sta CaptureProbe_LockedAnim
+
+	lda #0
+	rts
+
+.init
+	lda #CaptureProbe_ClickInterval
+	sta CaptureProbe_LastClickTimer
+.ret
+	lda #1
+	rts
+}
+
+!zn {
+; Called when fire is released or there is movement
+CaptureProbe_ResetEnterTimer
+	lda #-1
+	sta CaptureProbe_LastClickTimer
+
+	rts
+}
+
+
+!zn {
+CaptureProbe_TickEnterTimer
+	lda CaptureProbe_LastClickTimer
+	bmi .ret
+	dec CaptureProbe_LastClickTimer
+.ret
+	rts
+}
+
+!zn {
+CaptureProbe_GeneralTick
+
+	; Update the captured list by removing any dead enemies
+	ldx #0
+	stx .smCount+1
+.l1
+	ldy CaptureProbe_CapturedList,x
+	bmi .l2b
+	lda EnemyType-1,y
+	bpl .l2
+	lda #-1
+	sta CaptureProbe_CapturedList,x
+	jmp .l2b
+.l2
+	inc .smCount+1
+.l2b
+	inx
+	cpx #CaptureProbe_CapturedList_max
+	bne .l1
+
+.smCount	lda #0
+	cmp #2
+	bcc .onlyOneOrLess
+
+	lda Keyboard_Pressed_Space
+	beq .onlyOneOrLess
+
+	; Rotate the captured list around when space is pressed
+	ldy CaptureProbe_CapturedList
+	ldx #0
+.rl1
+	lda CaptureProbe_CapturedList+1,x
+	sta CaptureProbe_CapturedList,x
+	inx
+	cpx #CaptureProbe_CapturedList_max-1
+	bne .rl1
+	sty CaptureProbe_CapturedList+CaptureProbe_CapturedList_max-1
+
+.onlyOneOrLess
+
+
+	; Compact the list by moving the values down if possible
+	; This is iterative, over several frame if needed
+	ldx #0
+.l3
+	lda CaptureProbe_CapturedList,x
+	bpl .l4
+	lda CaptureProbe_CapturedList+1,x
+	sta CaptureProbe_CapturedList,x
+	lda #-1
+	sta CaptureProbe_CapturedList+1,x
+.l4
+	inx
+	cpx #CaptureProbe_CapturedList_max-1
+	bne .l3
+
+
+	; Update score panel characters
+	ldx #0
+.l5
+	ldy CaptureProbe_CapturedList,x
+	bmi .notActive
+
+	lda EnemyToAnimationIndex-1,y
+	sta CaptureProbe_CapturedListAnimations,x
+
+	lda ScorePanelColourLookup+ScorePanel_CapturedChar
+	sta ScorePanel_Captured_ColourAddr,x
+
+	lda EnemyFlags-1,y
+	and #EnemyFlags_StayHere
+	beq .n1
+
+	lda #ScorePanel_StayChar
+	sta ScorePanel_CapturedIndicator_Addr,x
+	jmp .l6
+
+.n1
+	lda EnemyFlags-1,y
+	and #EnemyFlags_FollowPlayer
+	beq .n2
+
+	lda #ScorePanel_FollowPlayerChar
+	sta ScorePanel_CapturedIndicator_Addr,x
+	jmp .l6
+
+.n2
+	lda EnemyFlags-1,y
+	and #EnemyFlags_Destroy
+	beq .n3
+
+	lda #ScorePanel_DestroyChar
+	sta ScorePanel_CapturedIndicator_Addr,x
+	jmp .l6
+
+.n3
+	lda #ScorePanel_EmptyChar
+	sta ScorePanel_CapturedIndicator_Addr,x
+
+	jmp .l6
+.notActive
+	lda #VIC2Multicolour_Black
+	sta ScorePanel_Captured_ColourAddr,x
+	lda #ScorePanel_EmptyChar
+	sta ScorePanel_CapturedIndicator_Addr,x
+
+	lda #-1
+	sta CaptureProbe_CapturedListAnimations,x
+
+.l6
+	inx
+	cpx #CaptureProbe_CapturedList_max
+	bne .l5
+
+	rts
+}
+
+!zn {
+CaptureProbe_RunCapture
+	ldx CaptureProbe_LockedAnim
+	bpl .somethingLocked
+
+.nothingLocked
+	rts
+
+.nothingLockedClear
+.failedToCapture	; MPi: TODO: Implement
+	rts
+
+.somethingLocked
+	; Something was captured!
+
+	lda #-1
+	sta CaptureProbe_LockedAnim
+
+	ldy AnimationActiveSlot,x
+	beq .nothingLockedClear	; This should never happen...
+
+	; Y = Enemy DB index
+	lda EnemyFlags-1,y
+	and #EnemyFlags_IsCaptured
+	bne .nothingLockedClear	; Ignore capture attempts on something already captured
+
+	; Player energy check here
+	; If it's too low, then fail the takeover attempt
+	stx .smx1+1
+
+	ldx EnemyType-1,y
+	lda EnemyTemplate_CaptureEnergyCost,x
+	cmp PlayerHealth
+	bcc .haveEnoughEnergy
+	beq .haveEnoughEnergy
+
+	; Failed to capture the enemy
+	jmp .failedToCapture
+
+.haveEnoughEnergy
+	sty .smy1+1
+	jsr AnimationHitPlayerLogic
+.smy1	ldy #0
+
+	; Shunt the list by one to make room
+	lda CaptureProbe_CapturedList + CaptureProbe_CapturedList_max - 1
+	sta .smoldestCaptured+1
+
+	ldx #CaptureProbe_CapturedList_max-1
+.l1
+	lda CaptureProbe_CapturedList-1,x
+	sta CaptureProbe_CapturedList,x
+	dex
+	bne .l1
+
+.smx1	ldx #0
+
+	; Now capture it
+	sty CaptureProbe_CapturedList
+	lda EnemyFlags-1,y
+	ora #EnemyFlags_IsCaptured
+	sta EnemyFlags-1,y
+	sta AnimationEnemyFlags,x
+
+	stx CaptureProbe_CapturedListAnimations
+
+	; Unflag any oldest captured enemy
+.smoldestCaptured ldy #0
+	bmi .nothingOld
+	lda EnemyFlags-1,y
+	and #!(EnemyFlags_IsCaptured|EnemyFlags_StayHere|EnemyFlags_FollowPlayer|EnemyFlags_Destroy)
+	sta EnemyFlags-1,y
+	ldx EnemyToAnimationIndex-1,y
+	bmi .nothingOld
+	sta AnimationEnemyFlags,x
+	lda AnimationSpriteColourBackup,x
+	sta AnimationSpriteColour,x
+
+.smAnim lda $1234,y
+
+.nothingOld
+
+	rts
+}
+
+!zn {
+.ret
+	rts
+CaptureProbe_HandleProbe
+	ldx CaptureProbe_RunningProbe
+	bmi .ret
+
+	lda AnimationYPos,x
+	cmp #$ff
+	beq .wentOffScreen
+
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .gotFire
+
+	; Runs the takeover code as well
+	jsr CaptureProbe_RunCapture
+	ldx CaptureProbe_RunningProbe
+
+	; Free the probe
+.wentOffScreen
+	lda #-1
+	sta CaptureProbe_RunningProbe
+	sta AnimationYPos,x
+	rts
+
+.gotFire
+
+	; Move the capture probe
+	lda #0
+	sta AnimationSimpleMoveX,x
+	sta AnimationSimpleMoveY,x
+
+
+	lda #JoystickBits_Left
+	bit JoystickA_Processed
+	bne .notGotLeft
+
+	lda #-CaptureProbe_MoveSpeed
+	sta AnimationSimpleMoveX,x
+
+.notGotLeft
+
+	lda #JoystickBits_Right
+	bit JoystickA_Processed
+	bne .notGotRight
+
+	lda #CaptureProbe_MoveSpeed
+	sta AnimationSimpleMoveX,x
+
+.notGotRight
+
+	lda #JoystickBits_Up
+	bit JoystickA_Processed
+	bne .notGotUp
+
+	lda #-CaptureProbe_MoveSpeed
+	sta AnimationSimpleMoveY,x
+
+.notGotUp
+
+	lda #JoystickBits_Down
+	bit JoystickA_Processed
+	bne .notGotDown
+
+	lda #CaptureProbe_MoveSpeed
+	sta AnimationSimpleMoveY,x
+
+
+.notGotDown
+
+	ldy CaptureProbe_LockedAnim
+	bmi .notLocked
+
+	lda AnimationXPosHi,y
+	sta AnimationXPosHi,x
+	lda AnimationXPosLo,y
+	sta AnimationXPosLo,x
+	lda AnimationYPos,y
+	sta AnimationYPos,x
+
+	lda AnimationSimpleMoveX,x
+	ora AnimationSimpleMoveY,x
+	beq .notLocked
+
+	; Increase the delay
+	dec CaptureProbe_BreakLockDelay
+	bpl .notLocked2
+
+	; Back to the capture probe without flashing
+	ldy #20
+	jsr AnimationMutateToType
+
+	lda #CaptureProbe_LockedAnimIgnoreTimeDelay
+	sta CaptureProbe_LockedAnimIgnoreTime
+
+	lda #-1
+	sta CaptureProbe_LockedAnim
+	jmp .notLocked2
+
+.notLocked
+	lda #CaptureProbe_BreakLockDelayLimit
+	sta CaptureProbe_BreakLockDelay
+.notLocked2
+
+	lda CaptureProbe_LockedAnimIgnoreTime
+	beq .doSnapCheck
+	dec CaptureProbe_LockedAnimIgnoreTime
+
+	rts
+
+.doSnapCheck
+
+	; Get the probe coordinates for testing with
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	sta tempWork0
+
+	lda AnimationYPos,x
+	sta tempWork1
+
+	; Look through the active enemies
+	ldy #0
+.l1
+	; Skip the player slot
+	cpy EnemyToAnimationIndex
+	beq .notUsed
+
+	; Find enemies only
+	lda AnimationActiveSlot,y
+	beq .notUsed
+
+	lda AnimationYPos,y
+	sec
+	sbc tempWork1
+	bpl .isPos1
+	eor #$ff
+	clc
+	adc #1
+.isPos1
+	cmp #CaptureProbe_SnapBox
+	bcs .notUsed
+
+	lda AnimationXPosHi,y
+	lsr
+	lda AnimationXPosLo,y
+	ror
+	sec
+	sbc tempWork0
+	bpl .isPos2
+	eor #$ff
+	clc
+	adc #1
+.isPos2
+	cmp #(CaptureProbe_SnapBox+1)/2
+	bcs .notUsed
+
+	; Ignore already captured enemies
+	lda AnimationEnemyFlags,y
+	and #EnemyFlags_IsCaptured
+	bne .notUsed
+
+	; Found one
+	cpy CaptureProbe_LockedAnim
+	beq .skipRest
+	sty CaptureProbe_LockedAnim
+
+	; Flash the capture probe
+	ldy #21
+	jsr AnimationMutateToType
+
+	jmp .skipRest
+
+.notUsed
+	iny
+	cpy #Multiplex_items
+	bne .l1
+
+	lda #-1
+	sta CaptureProbe_LockedAnim
+
+.skipRest
+
+	rts
+}

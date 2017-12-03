@@ -1638,12 +1638,18 @@ AnimationUpdateMultiplexorPre
 	ldx #Multiplex_items-1
 .l1
 	lda AnimationType,x
-	bmi .blank
+	bmi .blank2
 	; Is the sprite totally blank? If yes then skip it
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
 	lda AnimationYPos,x
+!ifdef Scroller_DiscardMinSpriteYPos {
+!if Scroller_DiscardMinSpriteYPos > 0 {
+	cmp #Scroller_DiscardMinSpriteYPos
+	bcc .blank
+}
+}
 	sta AnimationYPosToSort,x
 
 	dex
@@ -1653,6 +1659,7 @@ AnimationUpdateMultiplexorPre
 	; sprites.
 .blank
 	lda #$ff
+.blank2
 	sta AnimationYPosToSort,x
 	dex
 	bpl .l1
@@ -1666,14 +1673,22 @@ AnimationUpdateMultiplexor
 !ifdef Multiplex_SplitSort {
 	lda AnimationYPosToSort,x
 	cmp #$ff
-	beq .blank
+	beq .blank2
 } else {
 	lda AnimationType,x
-	bmi .blank
+	bmi .blank2
 	; Is the sprite totally blank? If yes then skip it
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
+	lda AnimationYPos,x
+!ifdef Scroller_DiscardMinSpriteYPos {
+!if Scroller_DiscardMinSpriteYPos > 0 {
+	cmp #Scroller_DiscardMinSpriteYPos
+	bcc .blank
+}
+}
+	sta Multiplex_YPos,x
 }
 	lda AnimationSpriteFrame,x
 ;	bne .ol1
@@ -1690,8 +1705,6 @@ AnimationUpdateMultiplexor
 	sta Multiplex_XPosLo,x
 	lda AnimationXPosHi,x
 	sta Multiplex_XPosHi,x
-	lda AnimationYPos,x
-	sta Multiplex_YPos,x
 
 	dex
 	bpl .l1
@@ -1699,6 +1712,8 @@ AnimationUpdateMultiplexor
 	; This discards the sprite by moving it beyond the y position where the multiplexor rejects
 	; sprites.
 .blank
+	lda #$ff
+.blank2
 	sta Multiplex_YPos,x
 	dex
 	bpl .l1

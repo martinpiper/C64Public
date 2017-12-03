@@ -1,0 +1,181 @@
+!zn {
+DeltaDecompression_InitZP
+	; Lastly update zeropage with our zeropage RLE decompressor
+	ldx #RNXPCompressionDecompressDeltaRLECodeEnd-RNXPCompressionDecompressDeltaRLECodeStart
+.cz1
+	lda RNXPCompressionDecompressDeltaRLECodeStart-1,x
+	sta+2 RNXPCompressionDecompressDeltaRLE-1,x
+	dex
+	bne .cz1
+	rts
+}
+
+!macro RNXPCompressionDecompressDelta_WriteByte {
+	sta (RNXPCompressionDecompressDelta_WriteByteAddr),y
+	iny
+	bne .ni1
+	inc+1 RNXPCompressionDecompressDelta_WriteByteAddr+1
+.ni1
+}
+
+!macro RNXPCompressionDecompressDelta_IncGetByte {
+	inc+1 RNXPCompressionDecompressDelta_GetByteAddr
+	bne .ni1
+	inc+1 RNXPCompressionDecompressDelta_GetByteAddr+1
+.ni1
+}
+
+!macro RNXPCompressionDecompressDelta_GetByte {
+	+RNXPCompressionDecompressDelta_IncGetByte
+	lda (RNXPCompressionDecompressDelta_GetByteAddr,x)
+}
+
+
+RNXPCompressionDecompressDeltaRLE_InitStore
+	stx+1 RNXPCompressionDecompressDelta_WriteByteAddr
+	sty+1 RNXPCompressionDecompressDelta_WriteByteAddr+1
+	rts
+
+
+RNXPCompressionDecompressDeltaRLECodeStart
+!pseudopc $80 {
+RNXPCompressionDecompressDeltaRLE
+	stx+1 RNXPCompressionDecompressDelta_GetByteAddr
+	sty+1 RNXPCompressionDecompressDelta_GetByteAddr+1
+	lda+1 RNXPCompressionDecompressDelta_GetByteAddr
+	bne .nzp1
+	dec+1 RNXPCompressionDecompressDelta_GetByteAddr+1
+.nzp1
+	dec+1 RNXPCompressionDecompressDelta_GetByteAddr
+
+	ldy #0
+	ldx #0
+	+RNXPCompressionDecompressDelta_GetByte
+	sta+1 .smopcode1+1
+	+RNXPCompressionDecompressDelta_GetByte
+	sta+1 .smopcode2+1
+	+RNXPCompressionDecompressDelta_GetByte
+	sta+1 .smopcode3+1
+
+.rle1
+	+RNXPCompressionDecompressDelta_IncGetByte
+RNXPCompressionDecompressDelta_GetByteAddr  = *+1
+	lda $1234
+	bpl .notOpcode
+	; MPi: TODO: Instead of doing a cmp/beq test the delta data could use the same trick as the music player and use a negative opcode as the direct jump address for the code to run.
+	; This could either be calculated by a preprocess stage of 6502 code or the save routines can save out data that will get linked with the right values.
+.smopcode1	cmp #0
+	beq .opcode1
+.smopcode2	cmp #0
+	beq .opcode2
+.smopcode3	cmp #0
+	beq .opcode3
+.notOpcode
+RNXPCompressionDecompressDelta_WriteByteAddr = *+1
+	sta $4321,y
+	iny
+	bne .rle1
+	inc+1 RNXPCompressionDecompressDelta_WriteByteAddr+1
+	jmp .rle1
+
+.RLERet
+	rts
+
+.opcode1
+	+RNXPCompressionDecompressDelta_GetByte
+;	cmp #0
+	beq .RLERet
+	sta+1 .smc1+1
+	+RNXPCompressionDecompressDelta_GetByte
+.smc1	ldx #00
+.rle2
+	+RNXPCompressionDecompressDelta_WriteByte
+	dex
+	bne .rle2
+	jmp .rle1
+
+.opcode2
+	+RNXPCompressionDecompressDelta_GetByte
+;	cmp #0
+	beq .rle3
+	clc	; MPi: TODO: Potential for reversing the above comparison to get a free CLC
+	adc+1 RNXPCompressionDecompressDelta_WriteByteAddr
+	sta+1 RNXPCompressionDecompressDelta_WriteByteAddr
+	bcc .rle1
+	inc+1 RNXPCompressionDecompressDelta_WriteByteAddr+1
+	jmp .rle1
+.rle3
+	lda+1 .smopcode2+1
+	+RNXPCompressionDecompressDelta_WriteByte
+	jmp .rle1
+
+.opcode3
+	+RNXPCompressionDecompressDelta_GetByte
+	; MPi: TODO: Instead of doing a cmp #$ff there is scope for the delta compression to add the hi address directly to the data, then if the hi address is zero that is a better flag check to output the single opcode byte.
+	; It would also remove the need to ora #$e0
+	cmp #$ff
+	beq .rle4
+	+DeltaDecompression_AddressTweak
+	sta .smRLECopy+2
+	+RNXPCompressionDecompressDelta_GetByte
+	sta .smRLECopy+1
+	+RNXPCompressionDecompressDelta_GetByte
+	sta .smRLEC1+1
+	ldx #0
+.rle5
+.smRLECopy	lda $1234,x
+	+RNXPCompressionDecompressDelta_WriteByte
+	inx
+.smRLEC1	cpx #0
+	bne .rle5
+	ldx #0
+	jmp .rle1
+.rle4
+	lda+1 .smopcode3+1
+	+RNXPCompressionDecompressDelta_WriteByte
+	jmp .rle1
+}
+RNXPCompressionDecompressDeltaRLECodeEnd
+
+
+
+DeltaDecompression_Displaying !by 0
+
+DeltaDecompression_UnpackFrame
+!ifdef UseCartBanks {
+.sm1	ldx $8000
+.sm2	ldy $8001
+	bne .l1
+
+	; Next bank please
+	lda #0
+	sta .sm1+1
+	lda #1
+	sta .sm2+1
+	lda #$80
+	sta .sm1+2
+	sta .sm2+2
+
+	inc .sm3+1
+.sm3	lda #StartCartBank
+	cmp #MaxCartBank
+	bne .l2
+	lda #StartCartBank
+	sta .sm3+1
+.l2
+	sta EASYFLASH_BANK
+	jmp .sm1
+.l1
+	inc .sm1+1
+	inc .sm1+1
+	inc .sm2+1
+	inc .sm2+1
+	jmp RNXPCompressionDecompressDeltaRLE
+
+} else {
+	ldx DeltaDecompression_Displaying
+	lda .framesLo,x
+	ldy .framesHi,x
+	tax
+	jmp RNXPCompressionDecompressDeltaRLE
+}

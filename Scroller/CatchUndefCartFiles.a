@@ -1,0 +1,121 @@
+; Catch the case where these values might not be defined on the first pass
+!ifndef CartFile1_Bank_Char0To1_1_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_1_bin = 0
+CartFile1_Start_Char0To1_1_bin = $3fff
+CartFile1_Bank_Char1To0_1_bin = 0
+CartFile1_Start_Char1To0_1_bin = $3fff
+CartFile1_Bank_Colour_1_bin = 0
+CartFile1_Start_Colour_1_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_m1_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_m1_bin = 0
+CartFile1_Start_Char0To1_m1_bin = $3fff
+CartFile1_Bank_Char1To0_m1_bin = 0
+CartFile1_Start_Char1To0_m1_bin = $3fff
+CartFile1_Bank_Colour_m1_bin = 0
+CartFile1_Start_Colour_m1_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_40_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_40_bin = 0
+CartFile1_Start_Char0To1_40_bin = $3fff
+CartFile1_Bank_Char1To0_40_bin = 0
+CartFile1_Start_Char1To0_40_bin = $3fff
+CartFile1_Bank_Colour_40_bin = 0
+CartFile1_Start_Colour_40_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_m40_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_m40_bin = 0
+CartFile1_Start_Char0To1_m40_bin = $3fff
+CartFile1_Bank_Char1To0_m40_bin = 0
+CartFile1_Start_Char1To0_m40_bin = $3fff
+CartFile1_Bank_Colour_m40_bin = 0
+CartFile1_Start_Colour_m40_bin = $3fff
+}
+!ifndef Scroller_MultiDirectionNoDiagonals {
+!ifndef CartFile1_Bank_Char0To1_39_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_39_bin = 0
+CartFile1_Start_Char0To1_39_bin = $3fff
+CartFile1_Bank_Char1To0_39_bin = 0
+CartFile1_Start_Char1To0_39_bin = $3fff
+CartFile1_Bank_Colour_39_bin = 0
+CartFile1_Start_Colour_39_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_m39_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_m39_bin = 0
+CartFile1_Start_Char0To1_m39_bin = $3fff
+CartFile1_Bank_Char1To0_m39_bin = 0
+CartFile1_Start_Char1To0_m39_bin = $3fff
+CartFile1_Bank_Colour_m39_bin = 0
+CartFile1_Start_Colour_m39_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_41_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_41_bin = 0
+CartFile1_Start_Char0To1_41_bin = $3fff
+CartFile1_Bank_Char1To0_41_bin = 0
+CartFile1_Start_Char1To0_41_bin = $3fff
+CartFile1_Bank_Colour_41_bin = 0
+CartFile1_Start_Colour_41_bin = $3fff
+}
+!ifndef CartFile1_Bank_Char0To1_m41_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Char0To1_m41_bin = 0
+CartFile1_Start_Char0To1_m41_bin = $3fff
+CartFile1_Bank_Char1To0_m41_bin = 0
+CartFile1_Start_Char1To0_m41_bin = $3fff
+CartFile1_Bank_Colour_m41_bin = 0
+CartFile1_Start_Colour_m41_bin = $3fff
+}
+}
+
+; Catch the case when switching from no colour to colour mode
+!ifdef Scroller_NeedFullColourScroll {
+!ifndef CartFile1_Bank_Colour_1_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_1_bin = 0
+CartFile1_Start_Colour_1_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_m1_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_m1_bin = 0
+CartFile1_Start_Colour_m1_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_40_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_40_bin = 0
+CartFile1_Start_Colour_40_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_m40_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_m40_bin = 0
+CartFile1_Start_Colour_m40_bin = $3fff
+}
+!ifndef Scroller_MultiDirectionNoDiagonals {
+!ifndef CartFile1_Bank_Colour_39_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_39_bin = 0
+CartFile1_Start_Colour_39_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_m39_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_m39_bin = 0
+CartFile1_Start_Colour_m39_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_41_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_41_bin = 0
+CartFile1_Start_Colour_41_bin = $3fff
+}
+!ifndef CartFile1_Bank_Colour_m41_bin {
+!warn "Re-assemble"
+CartFile1_Bank_Colour_m41_bin = 0
+CartFile1_Start_Colour_m41_bin = $3fff
+}
+}
+}

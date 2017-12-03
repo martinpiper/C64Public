@@ -29,6 +29,7 @@ public:
 // Attributes
 public:
 	CMusicStudioDoc* GetDocument() const;
+	static CMusicStudioView *mLastView;
 
 // Operations
 public:
@@ -83,6 +84,7 @@ protected:
 
 	void CommonUpdateRadio(void);
 
+public:
 	void CommonSaveC64File(const char *address,const bool includeSoundEffectCode = false,const bool runningInEditor = false);
 
 public:
@@ -241,7 +243,9 @@ public:
 	
 	void SafePlayerFree(void);
 	afx_msg void OnBnClickedSaveEnvelope();
+	afx_msg void OnBnClickedSaveEnvelope(CString &filename);
 	afx_msg void OnBnClickedLoadEnvelope();
+	afx_msg void OnBnClickedLoadEnvelope(CString &filename);
 	afx_msg void OnFileRipSID();
 	CStatic mDynamicHelp;
 	afx_msg void OnEnSetfocusEdit1();
@@ -258,6 +262,7 @@ public:
 	HelpState mHelpState;
 
 	void SetHelpState(const HelpState state);
+	afx_msg void OnBnClickedInsertEnvelope();
 };
 
 #ifndef _DEBUG  // debug version in MusicStudioView.cpp

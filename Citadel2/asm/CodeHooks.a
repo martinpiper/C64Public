@@ -1,0 +1,88 @@
+!zn {
+DecompressTitleScreenCode
+	jsr DisplayLoading
+
+	lda #CartFile1_Bank_Citadel2_Title_dec
+	jsr CartSelectBank_8K
+	ldx #<CartFile1_Start_Citadel2_Title_dec
+	ldy #>CartFile1_Start_Citadel2_Title_dec
+	jsr MemoryCopy_SetSource
+	lda #CartFile1_XOR_Citadel2_Title_dec
+	ldx #<CartFile1_Size_Citadel2_Title_dec
+	ldy #>CartFile1_Size_Citadel2_Title_dec
+	jsr .copyCodeCommon
+	jmp CartKillBank
+
+
+DecompressGameCode
+	jsr DisplayLoading
+
+	lda #CartFile1_Bank_Citadel2_Game_dec
+	jsr CartSelectBank_8K
+	ldx #<CartFile1_Start_Citadel2_Game_dec
+	ldy #>CartFile1_Start_Citadel2_Game_dec
+	jsr MemoryCopy_SetSource
+	lda #CartFile1_XOR_Citadel2_Game_dec
+	ldx #<CartFile1_Size_Citadel2_Game_dec
+	ldy #>CartFile1_Size_Citadel2_Game_dec
+	jsr .copyCodeCommon
+
+	lda #CartFile1_Bank_Citadel2_Game2_dec
+	jsr CartSelectBank_8K
+	ldx #<CartFile1_Start_Citadel2_Game2_dec
+	ldy #>CartFile1_Start_Citadel2_Game2_dec
+	jsr MemoryCopy_SetSource
+	lda #CartFile1_XOR_Citadel2_Game2_dec
+	ldx #<CartFile1_Size_Citadel2_Game2_dec
+	ldy #>CartFile1_Size_Citadel2_Game2_dec
+	jsr .copyCodeCommon2000
+
+	lda #CartFile1_Bank_Citadel2_Game3_dec
+	jsr CartSelectBank_8K
+	ldx #<CartFile1_Start_Citadel2_Game3_dec
+	ldy #>CartFile1_Start_Citadel2_Game3_dec
+	jsr MemoryCopy_SetSource
+	lda #CartFile1_XOR_Citadel2_Game3_dec
+	ldx #<CartFile1_Size_Citadel2_Game3_dec
+	ldy #>CartFile1_Size_Citadel2_Game3_dec
+	jsr .copyCodeCommon4000
+
+	jmp CartKillBank
+
+
+.copyCodeCommon
+	sta .sma+1
+	stx .smx+1
+	sty .smy+1
+	ldx #<GenericSpecificCode_End
+	ldy #>GenericSpecificCode_End
+	jsr MemoryCopy_SetDestination
+.sma	lda #0
+.smx	ldx #0
+.smy	ldy #$80
+	jmp MemoryCopy_ForSize_XOR
+
+.copyCodeCommon2000
+	sta .sma2+1
+	stx .smx2+1
+	sty .smy2+1
+	ldx #<(GenericSpecificCode_End+$2000)
+	ldy #>(GenericSpecificCode_End+$2000)
+	jsr MemoryCopy_SetDestination
+.sma2	lda #0
+.smx2	ldx #0
+.smy2	ldy #$80
+	jmp MemoryCopy_ForSize_XOR
+
+.copyCodeCommon4000
+	sta .sma3+1
+	stx .smx3+1
+	sty .smy3+1
+	ldx #<(GenericSpecificCode_End+$4000)
+	ldy #>(GenericSpecificCode_End+$4000)
+	jsr MemoryCopy_SetDestination
+.sma3	lda #0
+.smx3	ldx #0
+.smy3	ldy #$80
+	jmp MemoryCopy_ForSize_XOR
+}

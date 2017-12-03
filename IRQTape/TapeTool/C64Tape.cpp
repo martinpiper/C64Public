@@ -1401,6 +1401,158 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				break;
 			}
 
+
+			case 'v':
+			{
+				if (mTapeFile)
+				{
+					fclose(mTapeFile);
+				}
+				mTapeFile = 0;
+
+				argc--;
+				argv++;
+
+				if ( argc <= 0 )
+				{
+					printf("Error: Filename expected\n");
+					exit(-1);
+				}
+
+				mTapeFile = fopen( *argv , "rb+" );
+
+				if ( !mTapeFile )
+				{
+					printf( "Couldn't open '%s' for update.\n" , *argv );
+					exit(-1);
+				}
+
+				argc--;
+				argv++;
+
+				opened = true;
+
+				if ( argc <= 0 )
+				{
+					printf("Error: Variance expected\n");
+					exit(-1);
+				}
+
+				int theVariance = ParamToNum( *argv );
+				argc--;
+				argv++;
+
+				printf( "\nApplying variance %d\n" , theVariance );
+
+				fseek( mTapeFile , 0 ,SEEK_END );
+				int len = ftell( mTapeFile );
+				fseek( mTapeFile , 20 ,SEEK_SET );
+
+				int pos = 20;
+
+				while (pos < len)
+				{
+					fseek( mTapeFile , pos , SEEK_SET );
+					int thePulse = fgetc(mTapeFile);
+					int thisVariance = (rand() % ((theVariance*2)+1)) - theVariance;
+					thePulse += thisVariance;
+					if (thePulse < 1)
+					{
+						thePulse = 1;
+					}
+					if (thePulse > 254)
+					{
+						thePulse = 254;
+					}
+
+					fseek( mTapeFile , pos , SEEK_SET );
+					fputc(thePulse , mTapeFile);
+
+					pos++;
+				}
+
+				fclose(mTapeFile);
+				mTapeFile = 0;
+
+				printf( "\nFinished applying variance %d\n" , theVariance );
+				break;
+			}
+
+			case 'd':
+			{
+				if (mTapeFile)
+				{
+					fclose(mTapeFile);
+				}
+				mTapeFile = 0;
+
+				argc--;
+				argv++;
+
+				if ( argc <= 0 )
+				{
+					printf("Error: Filename expected\n");
+					exit(-1);
+				}
+
+				mTapeFile = fopen( *argv , "rb+" );
+
+				if ( !mTapeFile )
+				{
+					printf( "Couldn't open '%s' for update.\n" , *argv );
+					exit(-1);
+				}
+
+				argc--;
+				argv++;
+
+				opened = true;
+
+				if ( argc <= 0 )
+				{
+					printf("Error: Variance expected\n");
+					exit(-1);
+				}
+
+				int theDelta = ParamToNum( *argv );
+				argc--;
+				argv++;
+
+				printf( "\nApplying delta %d\n" , theDelta );
+
+				fseek( mTapeFile , 0 ,SEEK_END );
+				int len = ftell( mTapeFile );
+				fseek( mTapeFile , 20 ,SEEK_SET );
+
+				int pos = 20;
+
+				while (pos < len)
+				{
+					fseek( mTapeFile , pos , SEEK_SET );
+					int thePulse = fgetc(mTapeFile);
+					thePulse += theDelta;
+					if (thePulse < 1)
+					{
+						thePulse = 1;
+					}
+					if (thePulse > 254)
+					{
+						thePulse = 254;
+					}
+
+					fseek( mTapeFile , pos , SEEK_SET );
+					fputc(thePulse , mTapeFile);
+
+					pos++;
+				}
+
+				fclose(mTapeFile);
+				mTapeFile = 0;
+
+				printf( "\nFinished applying delta %d\n" , theDelta );
+				break;
+			}
+
 		} //< switch
 	}
 
@@ -1437,6 +1589,8 @@ t : If reading or writing truncate the tape file to the current position.\n\n\
 p <position> : Skip to the file position.\n\n\
 c : Close the file. If writing to a file then this must be used to close the file properly.\n\n\
 m[c] <file name> : Read a map file from ACME of \"label = address\" pairs. The 'c' will optionally clear the map entries before reading the file. \n\n\
+v <file name> <integer variance>: Applies random variance to a TAP file. TAP files store the pulses divided by 8, so a variance of 1 will vary the TAP file pulses to within +/-1, which is +/- 8 cycles at the C64.\n\n\
+d <file name> <integer delta>: Applies constant to a TAP file. TAP files store the pulses divided by 8, so a delta of 1 will change the TAP file pulses by +1, which is + 8 cycles at the C64.\n\n\
 \n\n\
 For the commands below: The rep is an optional number defining how many times to read/write.\n\
 The bytes can be a combination of space separated numbers or a file name followed by start offset and end offset or \"!\" to write the checksum register. For example \"ocn $89 28 @\"file name\" 4 0x20 !\" will write the two bytes, followed by the bytes from the file starting at offset 4 and ending at offset 32 followed by the checksum register.\n\

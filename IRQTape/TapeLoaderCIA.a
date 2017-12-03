@@ -61,7 +61,7 @@ MainLoaderEntry
 	lda #%11001
 	sta CIA2TimerAControl
 
-	+MACROSetTurboTimer
+	+MACROSetTurboTimerMiddle -$11
 
 	; The start of the fake decryption and execution obfuscation.
 	; The code here just falls through to $0304.

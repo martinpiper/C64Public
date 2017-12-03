@@ -821,3 +821,693 @@ This is because when the player DB scan and on-screen check runs it needs to mak
 
 * If the player is at the side of the map the scrolling goes a little bit strange because the down scroll request is larger than the side scroll velocity request.
 	There should be no downward velocity calculated for the edge of the map.
+
+
+
+* With MapBlockAlignedMovement enabled then UpdateScreenScrollCamera does not need so much to take into account partial blocks the player might be straddling since the player's movement is blocked based
+	This would make the routine a lot simpler
+
+
+
+
+* Enemies now fire at the player
+
+
+
+* Add .bulletLifetime to sets the range of the player bullets
+
+
+
+* ; TODO: A bit buggy at the moment, the sub-game switch needs to be handled correctly
+	Added RefreshScreenColourRemap
+
+
+
+* Spawning generators do a zone to player check first and only spawn if the player can be reached
+	For the generator get zone using ZoneMapTabL/H
+	Then:
+	!for .i , ZoneMapLinked_Max {
+		cmp ZoneMapLinked-1+.i
+		beq .playerCanBeRouted
+	}
+
+
+* Sound effects player now use a priority system so the important sound effects can be heard
+
+
+
+* Health be a "recharge point/tile" that players and enemy robots can use. So it's less random when a player gets health and more strategic planning
+
+
+
+* Paralax scroll chars using scrollerRealMovementXPixels and scrollerRealMovementYPixels:
+	30 32
+	31 33
+	Added Paralax_Enable, Paralax_Enable_More and Paralax.a code
+
+
+
+; Don't sweep if it is very busy
+
+
+Also tweaked the enemy start positions
+
+
+
+* Title screen to prompt for music / music + sfx / sfx mode
+	Joystick left/right switches mode
+	SFXInit and AnimationInit2 can be tweaked to stop music and set channels etc
+
+
+
+* Bug: Sometimes when entering the sub-game the player's inventory gains items!
+	The sub-game pickup animation used AnimationFlags_Pickup, when it shouldn't do!
+
+
+
+
+* EnemySpriteYPosToScreenCharPos checks can be optimised to automatically calculate the hi/lo screen Y pos
+	If hi is -ve then early out
+	* Instead of clc adc CurrentBulletBank can use ora CurrentBulletBank instead
+	Potential to move the replacement EnemySpriteYPosToScreenCharPos to two buffers before MarkEndData
+	There is an optimisation to add extra padding for the topScreenScrollY and topScreenScrollX adjustments
+	Then utilise a pre-calculated zeropage lookup instead
+	Two places EnemySpriteYPosToScreenCharPos is used, so good potential for optimisation
+	Create a macro with a parameter for the label to jump to in the case of an illegal coordinate
+	* Done Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo/hi lookup
+	* Done Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo/hi lookup
+	* Saves some decent time, reduced code space, removed one lookup table from code and moved into unused data space
+	* +SpritePosToCharacterLookup
+
+
+
+* Moved to 16KB EasyFlash cart mode
+
+
+
+* Bug: The subgame will sometimes calculate an end state that isn't possible to get because it does not wait the required amount of time to get a stable solution
+	Find the seed used for the sub-game (something like 10 tries)
+	Make sure the stable output check code waits for more frames before copying the output result
+	.seeds = 0b 00 and 0c 00
+	* Used SubGameVerticalBarSize instead
+
+
+
+* While the sub-game is calculating and .fullIterationsBeforeReject is > 0
+	Before SubGame_CopyResultToGet
+	Add some extra sprite animations falling from the top of the screen
+
+
+
+* Potential to optimise the xpos move check after: ; Update and check X pos offscreen
+
+
+
+* Added player fire types that are enabled when installing upgrades:
+	Side fire
+	Rear fire
+
+
+
+* When the game is exiting with ScrollerExitMainLineCounter then stop collision with the player, firing at the player and routing to the player
+
+
+
+* If there is a scroll, or there has been a scroll the last frame, then don't allocate or scan dynamic memory
+	Added frameIsOrWasBusy
+
+
+
+
+* Scroller "blipping" or "juddering" sometimes?
+	Find out if the player position is moving steadily in a straight line, or if the camera code is requesting strange movement, or the final scroll calculation is actually generating this
+	; MPi: TODO: Debug output the scroller movements per frame to known memory locations
+	Added these defines to control the camera behaviour:
+		CameraNotPushX
+		CameraNotPushY
+
+
+
+
+* Make the scroll X&Y start off in the middle of the character, position 4,4
+	The enemy map bounding box etc will need to be adjusted by 4,4 pixels
+
+
+
+* Score update routine
+	asm/Score.a and Score.feature added
+
+
+
+
+* Re-arrange the camera code such that if the player moves in a direction and one of CameraNotPush is enabled then the camera code does not attempt to use the follow camera.
+	Using CameraNotPushX or CameraNotPushY
+	There needs to be a proper box that the player moves in, not push scroll as such.
+	This must take into account the map edges and not start the scroll until it's the right time to do it.
+		Based off the player's map high X/Y and the intended movement
+		This means most of the push scroll and following camera clamp code can be disabled.
+
+
+
+* Add the ability to exit from the terminal without doing anything, the default option
+
+
+
+
+* Static enemies (movement -1) that just fire at the player
+	Coarse and fine movement needs to check
+
+
+
+
+* To free up extra block data space
+	* Move the following to outside the DataLevel1.a file, to inside a new file EnemyData.a, and remember to remove their entry in the BuildIt.bat file:
+	EnemyToAnimationIndex
+	EnemyOffScreenCount
+	EnemyRequestedRoute
+	EnemyPositionsXLo
+	EnemyPositionsXHi
+	EnemyPositionsYLo
+	EnemyPositionsYHi
+	EnemyBlockedCount
+	EnemyMoveStepsLo
+	EnemyMoveStepsHi
+	EnemyMoveStepsOriginalLo
+	EnemyMoveStepsOriginalHi
+	EnemyMoveGotMovement
+	EnemyMoveStepsCount
+	EnemyPreviousSolveRequestX
+	EnemyPreviousSolveRequestY
+	* Helped to find a bug in AnimationEnemiesIntoMap that was scanning more than MaxEnemies in EnemyType!
+
+
+
+* Added *SpecificCode_Size and *SpecificCode_Start and *SpecificCode_End reporting for the various code sections
+
+
+
+
+
+* TODO: Improve the random enemy spawn routine so that it uses consistent types, populates energy correctly, alterness etc.
+	Added EnemyTemplate_* arrays
+	AnimationEnemiesIntoMap can be updated to update the enemy information from EnemyType:
+		EnemyHealth
+	Make PlayerSweep_MapOpenGenerators use the full range of enemy templates for random spawning
+
+	
+	
+* Modify the enemy code so that a "ramming" type of enemy can be defined that ignores the player's block information
+	*Added: EnemyTemplate_Ram
+	Will need to modify the code near EnemyBlockedCount and "bne .isBlocked" so it detects the flag and ignores the Node_isBlocked_Player flag in Node_isBlocked
+		Probably set it to use an and with a mask !Node_isBlocked_Player
+	Also WantMazeSolveBlockIndex will need to start at 1 not 0 to ignore the first WantMazeSolveBlockTab !by Node_isBlocked_Player | Node_isBlocked_Enemy
+	Also WantMazeSolveTargetXPos and WantMazeSolveTargetYPos will need to be set to the player's position
+
+
+
+
+* Why do I seem to be seeing Purple ScrollerScreen and LightGreen ScrollerOffScreen in the same frame when stopped at ScrollerDemoWaitTopIRQ?
+	Check by using break points
+	After checking the breakpoints, the top IRQ wait, then screen scroll, then top IRQ wait, then colour scroll is definitely seen.
+	The screen buffer display must be partially updated in VICE due to the different raster positions.
+
+
+
+
+* To find out when the game frame is overrunning count the number of times one of the wait routines doesn't need to wait:
+		ScrollerDemoWaitTopIRQ
+		ScrollerDemoWaitMultiplex
+		ScrollerDemoWaitScorePanel
+	When one of the wait routines did have to wait then reset the counter
+	Then gracefully degrade the next frame by not processing some of the background routines
+	* Added ScrollerDemo_OverrunCounter
+
+
+
+* If there are more than XX enemies on screen then don't run the PlayerSweep_MapOpenGenerators routine
+	* Added EnemiesOnScreenCount
+	* OverrunCounter_EnemyProcessing
+
+
+
+
+* Added EnemyTemplate_SpawnList to alter the spawning enemy probabilities in the level
+
+
+
+
+* Ramming type of enemy doesn't seem to always want to route to the player?
+	Instead it seems to get stuck and not move anywhere?
+	* WantMazeSolveBlockIndex should have been 2, not 1, to skip all the player block type related move calculations
+
+
+
+
+* Different door type that animates open when an Node_isBlocked_Player/Enemy is next to it. And animates closed when there is no block.
+	Another list of doors not tied to terminals, can be incrementally scanned at a rate of one door per frame
+	X/Y/Tile index closed, tile index open, zone 1, zone 2
+	Can cache the map/maze lo/hi address from the X/Y and trigger pairs
+	Can reuse terminal door code to update the zones etc
+	* See MapTerminalToDoor and MapAutoDoor_*
+	* Need a routine that progressively scans MapTerminalToDoor, one per frame until the end of the list
+		It can use the animated map tile routine to open and close the door
+
+
+
+
+* Change the joystick automation to read from an buffer instead
+
+
+
+* Teleport fade out and fade in effect
+
+
+
+
+* Use the map animated tile code to open/close the terminal controlled doors. Thus removing the current requirement for the doors to be always off-screen.
+	MapAnim_* created
+	* Must add the MapAnim_* enumerations to the door structure. Keep the MapTile_* value checks as well, just allocate the MapAnim_* instead of tweaking the map tile directly.
+
+
+
+* Fade out to modify colour RAM
+
+
+
+
+* Think about how to destroy an open generator. Killing an enemy over an open generator could switch it to a destroyed generator.
+	Make it a random chance? I don't really want to have to store generator health for the whole map.
+	Have several open generator tiles with progressive damage that animates for each random chance enemy destruction, the last one doesn't generate anymore.
+	* Done - Add 4 extra frames for the damaged generator
+	* Done - Need to shuffle the charger stations up one, and the animated generator frames
+		So that tile 19 is just after tile 10
+	* Need to make them change when the tile is damaged
+		Like the code at .addOneTick using UpdateMapBlockOnScreen
+
+
+
+
+* Door open/close switch. Like the computer terminal but does not require a sub-game to toggle the door(s)
+	* CheckForSubGameEntry
+		Could check for the switch map tiles (in addition to MapTile_ComputerTerminalFacingDown) and just set these instead of entering the sub-game switch:
+			SubGame_ExitState = SubGameExit_Success
+			SubGamePickPos = -1
+		Instead of going to .lgotTerminal create a new function to to do above.
+		The rest of the after sub-game door code .subGameStateSuccess can handle the switch animation if it's set in the MapTerminalToDoor structure with another couple of map animations
+
+
+
+* Clear all of zero page before main code starts?
+
+
+
+* Use new decompression max mode
+
+
+
+* As long as InitialiseMachine does not init IRQServiceRoutineLo/Hi then it looks like $200-$3ff is free for code
+
+
+
+* Perhpas move the decompress code $200?
+	DecompressionCode_Start = 0222
+	DecompressionCode_End = 3e8
+	DecompressionCode_Size = 01c6
+
+
+
+
+* Easier sub-game by allowing these values to be tweaked:
+		SubGame_ScreenTop
+		SubGame_ScreenLeft
+		SubGame_ScreenRight
+	* Easier is:
+		Narrower by 3 (SubGame_BlockWidth), bring in SubGame_ScreenLeft and SubGame_ScreenRight for a couple of ticks
+		Shorter by 2 (SubGame_BlockHeight), bring in SubGame_ScreenTop
+		Done - SubGame_ScreenTop			= 3+2+2+2
+		SubGame_ScreenLeft			= 9+3+3
+		SubGame_ScreenRight			= 29-3-3
+
+	* The more sub-games played then get harder. Reset at start of each game. Variable number of completed sub-games before next harder level.
+	* .noResultFound logic will need changing, perhaps use a random shuffle instead?
+	* Update SubGame_Init and SubGame_ReCalculateValues
+		Added SubGame_MakeMoreDifficult on a successful sub-game
+
+
+
+
+* Title music and game music/sfx switch
+	Need to load different data from different cart banks
+
+
+
+* Tidy the transition from the game back to the title screen when restore is pressed, the sprites/chars in the score panel display rubbish
+
+
+
+
+* TODO: Different weapon types or health upgrade etc
+	Reduce sub-game difficulty - Extra CPU - Black (0)
+	Health upgrade - Battery - Red (2)
+	Will need a lookup from colour to animation type for:
+		Game = SpawnPickup
+		Sub-game = SubGameInventoryPopulate
+		.subGameStateSuccess and SubGamePickPos
+
+
+
+
+* If the on-screen enemy detects any solid char blocks underneath it, after the player bullet check, then explode it.
+	This is because it indicates there is a closed door underneath it.
+
+
+
+
+* Added Citadel2Optimisations.a
+
+
+
+
+* Glowing enemy on flag AnimationFlags_DropPickup always drops pickup
+	Added EnemyAnimationFlags so OR this in
+
+
+
+* Enemy spawn pattern and spawned enemy glowing pattern is defined per level
+
+
+
+* If the player movement with the fire button held down is static then reset .lockedDirection
+
+
+
+
+* Candidates for zeropage memory usage:
+	Using Animation.feature with 4 slots
+	Animation_MapPosXLo
+	Animation_MapPosXHi
+	Animation_MapPosYLo
+	Animation_MapPosYHi
+	* -96
+
+	; For each sprite
+	; Note: Need to expand BackupAnimationMem
+	AnimationActiveSlot
+	AnimationXPosLo
+	AnimationXPosHi
+	AnimationYPos
+	* -163
+
+	; In Scroller
+	scrollerRealMovementXPixels
+	scrollerRealMovementYPixels
+	* -261
+
+
+
+
+* The code snippets below are repeated several times for enemy, pickup and bullet to player and in SpritePosToCharacterLookup:
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	***
+	* Also pre-calculate the other sprites at the start of the logic for each sprite
+	* Store the results in ZP
+	** Marginal gains, not enough for the complexity
+
+
+* Pre-calculate the player value at the start of the loop
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	* Store the results in ZP
+	* Checking cycles 11816 with 12593 delta -777 percent 93.829903%
+
+
+
+* Enable Scroller_UseKernal support
+	Add steps to BuildIt.bat
+	Added scroller speed code with Scroller_ScrollStartingBank
+
+
+
+* There is about 2K of code space left before $8000. Start thinking about paging in blocks of code depending on if we are in the game state of title screen state.
+* Added on demand decompression of code from cart banks
+	* Using *SpecificCode_Size and *SpecificCode_Start and *SpecificCode_End reporting
+	* First measure the code that could be used only during the game.
+		ScrollerInitSpecificCode_Size	=$1ca
+		ScrollerSpecificCode_Size		=$271e
+		GenericSpecificCode_Size		=$c2a
+		TitleScreenSpecificCode_Size	=$3b7
+		GameSpecificCode_Size			=$311c
+	Also GenericSpecificCode_End  =$4348 giving quite a lot of free space for potential code paging
+	* Separate title screen from main game code into separate cartridge banks
+	* These are forward references that will need to be resolved
+	* For the game code:
+		TitleScreenAnimationHook
+		DisplayTitleScreen
+	* For the title screen code:
+		SpriteEmptyLookupTab
+		HandleUserInput
+		EnemyProcessActivation
+		BeforeScrollers
+		AfterScrollers
+		ScrollerDemoWaitTopIRQHook
+		ScrollerDemoWaitMultiplexHook
+		ScrollerDemoWaitScorePanelHook
+		ScrollerPreGameCalcuation
+		AnimationInit2
+		UpdateSprites
+	* So, plan:
+		..\acme.exe -f cbm -o c:\temp\t.prg -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a DataAutoDefs.a
+		..\acme.exe -f cbm -o c:\temp\t.prg -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a
+
+		Use the whole code from the game code assemble Citadel2Entry_Game.a
+			Defining the TitleScreenAnimationHook and DisplayTitleScreen forward references
+			Compress everything from GenericSpecificCode_End to Citadel2EndCode
+			Bank that in and decompress to GenericSpecificCode_End when needed
+		For the title screen assemble Citadel2Entry_Game.a
+			Compress everything from GenericSpecificCode_End to Citadel2EndCode
+			Automatically pull the references from the game code assemble pass
+			Bank that in and decompress to GenericSpecificCode_End when needed
+
+		Extract just the hex value from the map given the label name:
+			..\ExternalTools\Gnu\bin\sed.exe -n -e "s/MapData. =//p" DataLevel1.map | ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/;.*//p"
+		Parse hex value
+			set /A FOO=0x1234
+
+		C64\Scroller\ScrollEntryCommon.a
+			ScrollEntry
+			This flow will need extra hooks optionally defined that decompresses the right code and data at the right time
+			Before:
+				DisplayTitleScreen
+				InitialiseGame
+
+			Because ScrollerDemoInitOneTimeData before ScrollEntry accesses sprite frames and calculates to SpriteEmptyLookupTab then sprite data will need to be part of the base game code load
+
+
+
+
+
+* When going back to the title screen display the "Loading..." screen like the game does while decompressing
+
+
+
+
+* Instead of creating new banks for the *.cmp files, use the MakeCart -f option to import all of them into a bank instead.
+	Then use the file table index for the decompression
+	Create some reusable code to index this data
+
+
+
+
+- If an enemy tries to shoot you through the wall, don't move the explosion - make it stop at the wall.
+
+
+
+
+* Expand title screen code to include more graphics, providing proof of concept for complex title to game transitions
+	Done - Move graphics bank to $8000 for the title screen
+	Done - Import old logo and sprites
+	Done - Render 2x2 text
+	Done - Credit text fade
+	Done - Render 2x1 text for hiscore
+	Done - Hiscore text fade
+	Done - Proportional text negative number skips one line, not two, makes it easier to fine tune line spacing
+	Done - Middle of text logo colour split (NMI) Orange/Yellow
+		Plus blue / lightblue reset offscreen
+	Done - Below Text logo single pixel screen/border line
+		^^^ Maybe it would be easier if the first sprites were always used for the II logo instead of the last?
+			Then the sprite slots chosen would be consistent if the spinning balls were below the split...
+		Done - And hires switch
+	Done - Mullticolour switch in the animate IRQ
+	Done - Star field using chars $1b-$1d slow/medium/fast
+		Could use the Rand function
+	Done - Scroll shift animate chars 147-150 copy from 151-154
+		Or some other fancy effect, copy vertical slices from the edges to the middle
+	Done - Fade out effect for the whole screen when fire is used to start the game
+
+
+
+
+- I think you should expand the scanner - it probably only needs to show a slightly larger area than the one the player can currently see on-screen.
+
+
+
+* Reduce game "loading" time by shifting the pre-calc to use baked data generation
+	Replace MapCreateZones with uncompressed data load
+		C:\Temp\mapBefore.bin
+		C:\Temp\mapAfter.bin
+	UpdateMapToMaze is called just before, it uses >=SolidMapBlockIndex for solid blocks '#'
+		Uses: MapData, MazeWidth, MazeHeight
+	Possible to write a tool that takes DataLevel1.prg and MapData, MazeWidth, MazeHeight and SolidMapBlockIndex values
+		Uses the load address for DataLevel1.prg and MapData to parse the map and create a binary zone map
+		Then import with MakeCart -f option
+	* Created MapCreateZones tool
+
+
+
+
+* Don't use compressed assets for code and level data, just do a uncompressed data load
+	Loader.a
+		Done - LoadLevel
+	CodeHooks.a
+		Done - DecompressCodeCommon
+
+
+
+* Update the LZMPi tool to use a much faster RLE option for the main code load after the boot loader
+
+
+
+
+* MPi: TODO: Potential to optimise EnemyFlags by copying these locally to Animation data extra flags?
+	* AnimationFlags_DropPickup might need to be dual use, for pickup indicator and captured indicator
+		Or might have AnimationEnemyFlags that copies flags from EnemyFlags
+	If AnimationFlags_DropPickup is changed to be part of a new flags structure then it can be used as an optional index into an updated optional glow table
+	For example:
+		EnemyFlags_DropPickup	= (1<<0)
+		EnemyFlags_IsCaptured	= (1<<1)
+		AnimationBitMask_EnemyFlags_Glow	= EnemyFlags_DropPickup | EnemyFlags_IsCaptured
+			lda AnimationEnemyFlags,x
+			and #AnimationBitMask_EnemyFlags_Glow
+			bew .notGlowing
+			tay
+			lda AnimationSpriteColour,x
+			and #128
+			ora .glowValues,y	; Read pre-calculated glow values table with the glow type
+			sta AnimationSpriteColour,x
+		AnimationEnemyFlags can then copy from EnemyFlags for faster access
+		AnimationFlags_DropPickup usage will need to be renamed and updated to use the bitmask
+		EnemyAnimationFlags can be renamed to be EnemyFlags
+		EnemyAnimationFlags_SpawnList renamed to EnemyFlags_SpawnList
+
+
+
+* Add Keyboard_Read
+	Generate events for Keyboard_Pressed_F1/F3/F5/F7
+
+
+
+- captured droids should be immune to your bullets (they should pass right through, probably)
+
+
+
+- Automatic doors should close unless the player is on one of the adjacent squares
+	(Reduced delay to practically nothing)
+
+
+
+* For auto doors, if their actual square is blocked by anything then don't close
+	Player/enemies moving out from the door should not have the door closed on them
+
+
+
+
+* Camera.a : UpdateScreenScrollCamera
+	Optimisation is to only run this if CameraNotPushX and CameraNotPushY based on a comparison of the old player fine position
+	The old fine position will need to be reset to something invalid fir the first frame
+	Need a camera init function
+
+
+
+* Since DivideBy32 only deals with a maximum range of 40*32 then the divide does not need to be for a full 16 bits
+	The last few shifts of the high byte can be trimmed out
+
+
+
+* .enemyFire needs optimisation
+	Way too many spikes
+
+
+
+* Ramming type enemies that are captured will not ram the player
+
+
+
+* Use MemoryCopy_ForSize_EOR_Enable for code overlays
+
+
+
+
+* Add EnemyFlags_FollowPlayer functionality
+	Depending on the last joystick direction input the current player's position EnemyPositionsX/EnemyPositionsY will be used to calculate the square two squares away
+	* Done - Add UserInput_LastFollowDirectionX/Y
+	Taking into account any blocked map tiles, use #SolidMapBlockIndex and MapTabL/H should suffice
+	Make the routine generic and it can also work for the enemy to player firing check
+	* Done - Use UserInput_LastFollowDirectionX/Y with the player position every frame to calculate the ideal follow position
+
+
+
+* Show the currently selected powerup during the sub-game
+
+
+
+* Capture probe ideas
+	* Done - Double click and hold fire whilst stationary enables the capture mode
+		* Not done - Capture probe should be an "enemy"? Which would make it easier to move around the map.
+		* Done - Or a simple sprite that traces back the enemy it wants to target from the animation index
+	* Done - Capture probe indicator and lock on when over an enemy that can be captured (or recaptured)
+		* Done - Will need to note movement input and unlock the lock as well
+		* Done - If the user presses a direction for longer than X frames whilst locked then undo the lock and ignore the enemy for Y frames?
+	* Done - Simple capture, set EnemyFlags_IsCaptured shich stops the enemy firing
+	* Done - Add EnemyFlags_StayHere capability
+	* Done - Use Keyboard_Pressed_F1 to toggle EnemyFlags_StayHere for the last captured droid
+	* Player energy is used, based on enemy template energy cost, when capturing a new enemy
+		Abort the capture if the player does not have enough energy
+		Added - EnemyTemplate_CaptureEnergyCost
+	* Done - If you have 4 droids then space cycles the one to select for commands?
+		The last droid to be captured gets commands - So re-capture a captured droid to make it current.
+			Re-capture does not use energy
+		Done - You could potentially show droids and their stats/state in the status panel...
+			showing the droid graphics in the score panel is tricky, it's currently in the other bank...
+			and the multiplexor deliberately doesn't cross the screen split
+			* Need to ponder that :smile:
+		showing the status/state minus the actual sprite however is possible
+		and energy of the captured droids
+
+
+
+* Score size to six figures
+
+
+* Tweak score panel to show batteries and captured enemies
+
+
+
+* Radar player position should be obvious
+
+
+
+* Using the MakeCart +! option to force memory location $8000
+
+
+
+
+* Citadel2Cart.a will need a separate GMod2 version so that the old animation examples can still use the old EF boot
+	* After Scroller is updated to use GMod2 then update this project
+	* These need update to be shorter and contain specific data
+		Done - CartFile1_Size_DataScorePanel_prg	- Removed Sound\Citadel2_Title.prg
+		Done - CartFile1_Size_Citadel2_Game_dec

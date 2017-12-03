@@ -143,4 +143,6 @@ public:
 	void ClearCapturedSIDData(void);
 
 	void ProcessSIDCaptureData(void);
+
+	int GetInstrument(const unsigned char *SIDBytes);
 };

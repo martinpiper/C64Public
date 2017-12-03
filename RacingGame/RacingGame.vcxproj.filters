@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\asm">
+      <UniqueIdentifier>{85ffd183-fdb5-4474-9c6a-5fe6007381f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stdlib">
+      <UniqueIdentifier>{f31f2f9a-6ba6-4cf5-a968-289691a19a4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Multiplexor">
+      <UniqueIdentifier>{28f6cba7-629c-4e2e-b993-e684ffe68f85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Original">
+      <UniqueIdentifier>{1d726d1c-2b63-4a2d-859c-a3f351cfab26}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="Done.txt" />
+    <Text Include="Original\blockedit.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\blockedit.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\blockplot.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\blockplot.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\chrld.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\chrld.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\clocledit.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\codem.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\demo.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\demo2.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\dscr.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\dscr.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\makeup.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\mc1.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\mc2.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\mc2.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\mc3.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\race.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\sprld.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\sprld.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\tmpmc3.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\tmpmc3.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\trackoft.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\trackplot.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\trackpos.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="Original\trackposh.ba.txt">
+      <Filter>Original</Filter>
+    </Text>
+    <Text Include="asm\SetupIRQs.a">
+      <Filter>Source Files\asm</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RacingGameEntry.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\TrackDraw.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="..\stdlib\Initialise.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\MemoryCopy.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\PETSCII.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\stdlib.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="BuildIt.bat" />
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>Source Files\Multiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorDefaultPattern.a">
+      <Filter>Source Files\Multiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>Source Files\Multiplexor</Filter>
+    </None>
+  </ItemGroup>
+</Project>

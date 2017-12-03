@@ -3,11 +3,231 @@
 ; $0800-$0fff - Char data
 ; $1000-$bfff - Code and data
 ; $c000-$ffff - Unused by the title screen and contains graphics data for the game.
+
+TitleScreen_spritePerStroke = (Multiplex_items / 2)-2
+
+TitleScreen_SpritesAddress	= $8000
+TitleScreen_ScreenAddress	= $8400
+TitleScreen_CharsAddress	= $8800
+
+TitleScreen_Balls_YAdjust = 29
+
+TitleScreen_AnimateChars_Start	= 147
+TitleScreen_AnimateChars_End	= 150
+TitleScreen_AnimateChars_Source	= 151
+
+
+TitleScreen_colourFadeDown	!by $01,$0d,$07,$0f,$03,$05,$0a,$0c,$0e,$08,$04,$02,$0b,$06,$09,$00
+TitleScreen_colourFadeUp	!by $00,$09,$06,$0b,$02,$04,$08,$0e,$0c,$0a,$05,$03,$0f,$07,$0d,$01
+TitleScreen_colourFadePos	!by 0
+
+; Timings and positions for the screen splits
+TitleScreen_NMI_Timer1	= (134*64)+14
+
+TitleScreen_NMI_Timer2	= (23*64)
+TitleScreen_SinglePixelSplit = 107
+
+; All these state transitions will be clc when running and sec when finished
+
+!zn {
+TitleScreen_State_FadeUpLogo
+	lda TitleScreen_colourFadePos
+	cmp #20
+	bcc .l1
+	jmp TitleScreen_State_ResetCounter
+.l1
+	lda #19
+	sec
+	sbc TitleScreen_colourFadePos
+	tay
+
+	lda #VIC2Multicolour_White
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth),y
+}
+	cpy #0
+	beq .o1
+
+	lda #VIC2Colour_Blue
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth)-1,y
+}
+
+.o1
+	lda #20
+	clc
+	adc TitleScreen_colourFadePos
+	tay
+
+	lda #VIC2Multicolour_White
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth),y
+}
+	cpy #39
+	beq .o2
+
+	lda #VIC2Colour_Blue
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth)+1,y
+}
+
+.o2
+	inc TitleScreen_colourFadePos
+
+	rts
+}
+
+!zn {
+TitleScreen_State_FadeText
+	lda TitleScreen_colourFadePos
+	cmp #25+15
+	bcc .o1
+	jmp TitleScreen_State_ResetCounter
+.o1
+	sec
+	sbc #VIC2ScreenCharsHeight
+	tax
+
+	lda #<COLOURRAM+(TitleScreen_TopLogoHei*VIC2ScreenCharsWidth)
+	sta tempWork0
+	lda #>COLOURRAM+(TitleScreen_TopLogoHei*VIC2ScreenCharsWidth)
+	sta tempWork1
+	lda #VIC2ScreenCharsHeight-TitleScreen_TopLogoHei-1
+	sta tempWork2
+.l1
+	cpx #16
+	bcs .l2
+smTitleScreen_State_FadeTextTable	lda TitleScreen_colourFadeUp,x
+	ldy #VIC2ScreenCharsWidth-1
+.l3
+	sta (tempWork0),y
+	dey
+	bpl .l3
+.l2
+	inx
+	jsr TitleScreen_NextRow
+	dec tempWork2
+	bne .l1
+
+	inc TitleScreen_colourFadePos
+	clc
+	rts
+}
+
+
 !zn
-DisplayTitleScreen
+.clearTextArea
+	ldx #VIC2ScreenCharsWidth-1
+	lda #' '
+.cl1
+!for .i , (VIC2ScreenCharsHeight-TitleScreen_TopLogoHei-1) {
+	sta TitleScreen_ScreenAddress + ((TitleScreen_TopLogoHei+.i-1) * VIC2ScreenCharsWidth),x
+}
+	dex
+	bpl .cl1
+
+	ldx #VIC2ScreenCharsWidth-1
+	lda #VIC2Colour_Black
+.cl2
+!for .i , (VIC2ScreenCharsHeight-TitleScreen_TopLogoHei-1) {
+	sta COLOURRAM + ((TitleScreen_TopLogoHei+.i-1) * VIC2ScreenCharsWidth),x
+}
+	dex
+	bpl .cl2
+
+	rts
+
+; Also triggers and advance to the next state
+.state_Pause
+	inc TitleScreen_colourFadePos
+	lda TitleScreen_colourFadePos
+	cmp #200
+	bcs TitleScreen_State_ResetCounter
+	rts
+
+TitleScreen_State_ResetCounter
+	lda #0
+	sta TitleScreen_colourFadePos
+	sec
+	rts
+
+.state_RenderCredits
+	jsr .clearTextArea
+
+	jsr TitleScreen_SetProportionalTextTop
+
+	lda #<TitleScreen_CreditsText
+	ldx #>TitleScreen_CreditsText
+	ldy #0
+	jsr TitleScreen_RenderProportionalText
+
+	jmp .state_FadeUpText
+
+.state_RenderHiScores
+	jsr .clearTextArea
+
+	jsr TitleScreen_SetProportionalTextTop
+
+	lda #<HighScores_Text
+	ldx #>HighScores_Text
+	ldy #0
+	jsr TitleScreen_RenderProportionalText
+
+	jmp .state_FadeUpText
+
+.state_FadeUpText
+	lda #<TitleScreen_colourFadeUp
+	sta smTitleScreen_State_FadeTextTable+1
+	lda #>TitleScreen_colourFadeUp
+	sta smTitleScreen_State_FadeTextTable+2
+
+	jmp TitleScreen_State_ResetCounter
+
+
+TitleScreen_State_Loop
+	lda #0
+	sta .stateIndex
+	jmp TitleScreen_State_ResetCounter
+
+.state_FadeDown
+	lda #<TitleScreen_colourFadeDown
+	sta smTitleScreen_State_FadeTextTable+1
+	lda #>TitleScreen_colourFadeDown
+	sta smTitleScreen_State_FadeTextTable+2
+
+	jmp TitleScreen_State_ResetCounter
+
+.stateIndex !by 0
+!macro TitleScreen_AddState .a {
+	!by <.a , >.a
+}
+.states
+	+TitleScreen_AddState TitleScreen_State_FadeUpLogo
+
+	+TitleScreen_AddState .state_RenderCredits
+	+TitleScreen_AddState TitleScreen_State_FadeText
+	+TitleScreen_AddState .state_Pause
+	+TitleScreen_AddState .state_FadeDown
+	+TitleScreen_AddState TitleScreen_State_FadeText
+
+	+TitleScreen_AddState .state_RenderHiScores
+	+TitleScreen_AddState TitleScreen_State_FadeText
+	+TitleScreen_AddState .state_Pause
+	+TitleScreen_AddState .state_FadeDown
+	+TitleScreen_AddState TitleScreen_State_FadeText
+
+	+TitleScreen_AddState TitleScreen_State_Loop
+
+lDisplayTitleScreen
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+
+;	+WaitForFire_A
+
 	; Just to make sure we disable interrupts.
-	; This title screen code can use the multiplexor and animation engine if it wants to
+	; This title screen code can use the multiplexor if it wants to
 	sei
+
+	jsr TitleScreen_State_Loop
 
 	lda #$ff
 	jsr Multiplex_SetDiscardPosition
@@ -16,6 +236,7 @@ DisplayTitleScreen
 	lda #$7f
 	sta CIA2InterruptControl
 	lda #0
+	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
 	sta CIA2TimerAControl
 	sta CIA2TimerBControl
 	; Ack any interrupts that might have happened
@@ -33,14 +254,26 @@ DisplayTitleScreen
 	sta Multiplexor_UpdateCollisionDetailsSoftEnableFlag
 }
 }
+
+!ifdef EnableScorePanelDataHook {
+	jsr RefreshTitleScreenMusic
+}
+
 	; Init music
 
 	lda #0
 	jsr MusicPlayerInit
+	jsr SFXReset
+
+	+ClearScreenAt_AX TitleScreen_ScreenAddress , ' '
+;	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
 	
-	lda #%1000
+	lda #%11000
 	sta VIC2ScreenControlH
-	lda #%11
+	lda #VIC2Colour_Black
+	sta VIC2ExtraBackgroundColour1
+	sta VIC2ExtraBackgroundColour2
+	lda #%01
 	sta CIA2PortASerialBusVICBank
 
 !ifdef EnableScorePanelDataHook {
@@ -50,47 +283,46 @@ DisplayTitleScreen
 	; Copy the SEUCK title screen data to the relevant places in VIC bank 0
 	ldx #0
 .l1
-	lda TitleScreenCharData,x
-	eor #$ff
-	sta $0800,x
-	lda TitleScreenCharData+$100,x
-	eor #$ff
-	sta $0900,x
+!for .i , 8 {
+	lda TitleScreenCharData + ((.i-1)*256),x
+	sta TitleScreen_CharsAddress + ((.i-1)*256),x
+}
 
 	lda TitleScreenBallSprites,x
-	sta $0a00,x
+	sta TitleScreen_SpritesAddress,x
 	lda TitleScreenBallSprites+$100,x
-	sta $0b00,x
+	sta TitleScreen_SpritesAddress + $100,x
+	lda TitleScreenBallSprites+$200,x
+	sta TitleScreen_SpritesAddress + $200,x
+	lda TitleScreenBallSprites+$300,x
+	sta TitleScreen_SpritesAddress + $300,x
 
-	lda #$20
-	sta SCREENRAM,x
-	sta SCREENRAM + $100,x
-	sta SCREENRAM + $200,x
-	sta SCREENRAM + $2e8,x
 	dex
 	bne .l1
 
+	ldx #TitleScreen_TopLogoWid-1
 .l2
-	lda TitleScreenChars,x
-	jsr .convertChar
-	sta SCREENRAM + (6*40),x
-	lda TitleScreenChars+$100,x
-	jsr .convertChar
-	sta SCREENRAM + $100 + (6*40),x
-	lda TitleScreenChars+$108,x
-	jsr .convertChar
-	sta SCREENRAM + $108 + (6*40),x
-	lda #VIC2Colour_Black
-	sta COLOURRAM,x
-	sta COLOURRAM + $100,x
-	sta COLOURRAM + $200,x
-	sta COLOURRAM + $2e8,x
+!for .i , TitleScreen_TopLogoHei {
+	lda TitleScreenChars + ((.i-1) * VIC2ScreenCharsWidth),x
+	sta TitleScreen_ScreenAddress + ((.i-1) * VIC2ScreenCharsWidth),x
+;	lda #VIC2Multicolour_White
+;	sta COLOURRAM + ((.i-1) * VIC2ScreenCharsWidth),x
+}
+
 	dex
-	bne .l2
+	bpl .l2
 
 !ifdef EnableScorePanelDataHook {
 	jsr AfterScorePanelDataHook
 }
+
+	jsr HPS_Init
+	jsr TitleScreen_AnimateChars_Init
+	lda #0
+	sta smTitleScreen_GlideIn+1
+
+
+	jsr TitleScreenWaitForOffScreenFromRaster
 
 	; Display the data just copied.
 	lda #%00011011
@@ -101,28 +333,28 @@ DisplayTitleScreen
 
 	; Initialise the multiplexor, animation engine and IRQs for the title screen code to use if it wants to
 	; MPi: TODO: Init sprite multicolour mode and extended colours here
-	lda #7
+	lda #$87
 	jsr Multiplex_SetSpritePointer
 	lda #Multiplex_items
 	sta Multiplex_MaxSpr
 	jsr Multiplex_InitSort
-	jsr AnimationInit
+;	jsr AnimationInit
 	jsr AnimationClearMultiplexor
 	lda #$ff
 	sta VIC2SpriteMulticolour
 	lda #VIC2Colour_White
 	sta VIC2ExtraSpriteColour1
-	lda #VIC2Colour_DarkGrey
+	lda #VIC2Colour_Red
 	sta VIC2ExtraSpriteColour2
 
 	ldx #Multiplex_items-1
 .fl1
 	txa
-;	lda #VIC2Colour_Grey
+	lda #VIC2Colour_LightRed
 	sta Multiplex_Colour,x
 	lda #0
 	sta Multiplex_XPosHi,x
-	lda #$28	; Some sprite frame for now
+	lda #0	; Some sprite frame for now
 	sta Multiplex_SpriteFrame,x
 	lda Multiplex_YPos,x
 !ifdef Multiplex_SplitSort {
@@ -131,54 +363,157 @@ DisplayTitleScreen
 	dex
 	bpl .fl1
 
+	; Logo sprites
+	ldx #8
+	stx Multiplex_SpriteFrame
+	inx
+	stx Multiplex_SpriteFrame + 1
+	inx
+	stx Multiplex_SpriteFrame + 2
+	inx
+	stx Multiplex_SpriteFrame + 3
+	lda #110
+;	lda #160
+	sta Multiplex_YPos
+	sta Multiplex_YPos + 1
+	sec
+	sbc #VIC2SpriteSizeY
+	sta Multiplex_YPos + 2
+	sta Multiplex_YPos + 3
+	lda #0
+	sta Multiplex_XPosLo
+	sta Multiplex_XPosLo + 2
+	sta Multiplex_XPosLo + 1
+	sta Multiplex_XPosLo + 3
+
+
+
 	jsr Multiplex_Sort
 !ifdef Multiplex_SplitSort {
 	jsr CopyMultiplexTables
 }
 
 	jsr SetupIRQsForTitleScreen
+
+	; Setup NMI
+	lda #<TitleScreen_ScrollerNMI1
+	sta Scroller_NMIVectorLo
+	lda #>TitleScreen_ScrollerNMI1
+	sta Scroller_NMIVectorHi
+	; Turn on NMI generated by timer B
+	lda #$81
+	sta CIA2InterruptControl
+
 	; Now the loop which displays the title screen
 .l3
-
-	jsr ScrollerDemoWaitScorePanel
-
-	jsr Joystick_Read
-
-!ifdef Scroller_DebugMainlineBorder {
-	inc VIC2BorderColour
-}
-!ifdef Scroller_NoMusic {} else {
-	jsr MusicPlayerPlay
-}
-!ifdef Scroller_DebugMainlineBorder {
-	inc VIC2BorderColour
-}
-
-!ifdef Scroller_DebugMainlineBorder {
-	inc VIC2BorderColour
-}
-
 !ifdef Scroller_DebugMainlineBorder {
 	lda #0
 	sta VIC2BorderColour
 }
 
-	lda #VIC2Colour_Red
-	sta VIC2ScreenColour
+	jsr ScrollerDemoWaitScorePanel
+
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	ldx .stateIndex
+	lda .states,x
+	sta .smjsr+1
+	lda .states+1,x
+	sta .smjsr+2
+	; Run the state or just skip the state execution
+!if 1 {
+.smjsr	jsr $ffff
+} else {
+.smjsr	lda $ffff
+}
+	bcc .o1
+	; sec means advance the state
+	inc .stateIndex
+	inc .stateIndex
+.o1
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr TitleScreen_AnimateChars_Animate
+
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr HPS_Tick
+
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+
+	jsr Joystick_Read
+	jsr Keyboard_Read
+
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
+
+!ifdef Scroller_DebugMainlineBorder {
+	inc VIC2BorderColour
+}
 
 	; Wait for fire
-	lda #%10000
+	lda #JoystickBits_Fire
 	bit JoystickA_Processed
 	beq .joystick0start
+
+	lda #JoystickBits_Left
+	bit JoystickA_Processed
+	bne .notLeft
+
+	lda #1
+	sta AnimationStopMusic
+	lda #3
+	sta SFX_Voices
+	lda #0
+	sta SFX_VoiceLowerReset
+	lda #3
+	sta SFX_VoiceUpperWrap
+
+	+DisplayColourTextAt_AX .textSFX_Start , .textSFX_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
+
+.notLeft
+	lda #JoystickBits_Right
+	bit JoystickA_Processed
+	bne .notRight
+
+	lda #0
+	sta AnimationStopMusic
+	lda #2
+	sta SFX_Voices
+	lda #1
+	sta SFX_VoiceLowerReset
+	lda #3
+	sta SFX_VoiceUpperWrap
+
+	+DisplayColourTextAt_AX .textMusicSFX_Start , .textMusicSFX_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
+
+.notRight
+	lda #JoystickBits_Up
+	bit JoystickA_Processed
+	bne .notUp
+
+	lda #0
+	sta AnimationStopMusic
+	lda #0
+	sta SFX_Voices
+
+	+DisplayColourTextAt_AX .textMusic_Start , .textMusic_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
+
+.notUp
 
 	jmp .l3
 
 .joystick0start
+	jsr TitleScreen_All_FadeDown
+
 	sei
 
-	jsr TitleScreenWaitForOffScreenFromRaster
-
-	+BlankScreenBorderSpriteSound_A
 
 	lda #0
 	sta TitleScreenJoystickStarted
@@ -186,26 +521,24 @@ DisplayTitleScreen
 	lda #scorePanelPos1-1
 	jsr Multiplex_SetDiscardPosition
 
-	+SetDefaultScreenLowerCase_A
-	+DisplayColourTextMiddle_AX .textStart_Loading , .textEnd_Loading , SCREENRAM + (9*VIC2ScreenCharsWidth) , VIC2Colour_White
+	jsr DisplayLoading
 
 	lda #0
 	jsr LoadLevel
 
-	rts
-.textStart_Loading
-!scr "Loading..."
-.textEnd_Loading
+	lda #1
+	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
 
-; Converts a character to display it on the screen
-.convertChar
-	and #$3f
-	cmp #$30
-	bcc .ret
-	clc
-	adc #6
-.ret
 	rts
+.textSFX_Start
+!scr "sfx          "
+.textSFX_End
+.textMusicSFX_Start
+!scr "music and sfx"
+.textMusicSFX_End
+.textMusic_Start
+!scr "music        "
+.textMusic_End
 
 TitleScreen_SpriteAnimateCount !by 0
 
@@ -216,153 +549,273 @@ TitleScreen_SpriteAnimateCount !by 0
 
 ; Spread evenly
 .spriteSpread = 17
-.spritePerStroke = 12
-;.spritePerStroke = 8
+;.spriteSpread = 20
 
 ; Very tight packing
 ;.spriteSpread = 8
-;.spritePerStroke = 12
+;TitleScreen_spritePerStroke = 12
 .xposTweak = 24
 
-!if Multiplex_items < (.spritePerStroke * 2) {
-!error "Not enough Multiplex_items for title screen sprite animation .spritePerStroke"
+!if Multiplex_items < (TitleScreen_spritePerStroke * 2) {
+!error "Not enough Multiplex_items for title screen sprite animation TitleScreen_spritePerStroke"
 }
 
+.spritePerStroke=TitleScreen_spritePerStroke
+
+!zn {
+TitleScreen_NMI_SetTimer
+	; Setup a NMI timer to trigger
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+	sta CIA2TimerBControl
+	; Ack any interrupts that have happened
+	lda CIA2InterruptControl
+	; Turn off timer A
+	lda #0
+	sta CIA2TimerAControl
+
+	; Reset timer B count
+	stx CIA2TimerALo
+	sty CIA2TimerAHi
+
+	; Turn on timer A
+	lda #$9						; Trigger timer A once only
+	sta CIA2TimerAControl
+	; Reset interrupt control for NMI so that if restore is pressed it only misses one frame.
+	lda #$81
+	sta CIA2InterruptControl
+	rts
+}
+
+
 .upDownTab !by 0,1,2,3,4,5,6,7,7,6,5,4,3,2,1,0
-TitleScreenAnimationHook
+lTitleScreenAnimationHook
+!ifdef Scroller_DebugIRQBorder {
+	inc VIC2BorderColour
+}
+	ldx #<TitleScreen_NMI_Timer1
+	ldy #>TitleScreen_NMI_Timer1
+	jsr TitleScreen_NMI_SetTimer
+
+	; Setup NMI
+	lda #<TitleScreen_ScrollerNMI1
+	sta Scroller_NMIVectorLo
+	lda #>TitleScreen_ScrollerNMI1
+	sta Scroller_NMIVectorHi
+
+	; Top half of the logo colours
+	lda #VIC2Colour_Blue
+	sta VIC2ExtraBackgroundColour1
+	lda #VIC2Colour_LightBlue
+	sta VIC2ExtraBackgroundColour2
+
+	lda #%11000
+	sta VIC2ScreenControlH
+
+smTitleScreen_GlideIn	lda #0
+	bne .glideOut
+	; Glide in the II logo
+	lda #VIC2SpriteXBorderLeft + (20*8) - VIC2SpriteSizeX - 2
+	sec
+	sbc Multiplex_XPosLo
+	lsr
+	lsr
+	lsr
+	clc
+	adc Multiplex_XPosLo
+	sta Multiplex_XPosLo
+	sta Multiplex_XPosLo + 2
+	clc
+	adc #VIC2SpriteSizeX
+	sta Multiplex_XPosLo + 1
+	sta Multiplex_XPosLo + 3
+	jmp .glideOver
+.glideOut
+
+	; Glide out the II logo
+	lda Multiplex_XPosLo
+	cmp #16
+	bcc .glideOff
+	lsr
+	lsr
+	lsr
+	eor #$ff
+	clc
+	adc Multiplex_XPosLo
+	sta Multiplex_XPosLo
+	sta Multiplex_XPosLo + 2
+	clc
+	adc #VIC2SpriteSizeX
+	sta Multiplex_XPosLo + 1
+	sta Multiplex_XPosLo + 3
+	jmp .glideOver
+.glideOff
+	lda #0
+	sta Multiplex_XPosLo
+	sta Multiplex_XPosLo + 1
+	sta Multiplex_XPosLo + 2
+	sta Multiplex_XPosLo + 3
+
+.glideOver
+
 	inc TitleScreen_SpriteAnimateCount
 
-	ldx TitleScreen_SpriteAnimateCount
-	ldy #0
+	ldy TitleScreen_SpriteAnimateCount
+	ldx #0
 .l1
 	; If something is already animating in this slot then continue with the animation
-	lda Multiplex_YPos,y
+	lda Multiplex_YPos+4,x
 	cmp #$ff
 	bne .alreadyOn1
 	; Otherwise calculate if the sprite is really small before allowing the animaton to start
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
-	lsr
-	tax
-	lda .upDownTab,x
+;	lsr
+	and #15
+	tay
+	lda .upDownTab,y
 	cmp #7
 	bne .skipIt1
 	pla
-	tax
+	tay
 .alreadyOn1
-	lda TitleScreen_SinTab,x
-	sta Multiplex_YPos,y
-!ifdef Multiplex_SplitSort {
-	sta AnimationYPosToSort,y
+	lda TitleScreen_SinTab,y
+!ifdef TitleScreen_Balls_YAdjust {
+	clc
+	adc #TitleScreen_Balls_YAdjust
 }
-	txa
+	sta Multiplex_YPos+4,x
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort+4,x
+}
+	tya
 	pha
 	lsr
 	lsr
 	lsr
-	lsr
-	tax
-	lda .upDownTab,x
-	clc
-	adc #$28
-	sta Multiplex_SpriteFrame,y
+;	lsr
+	and #15
+	tay
+	lda .upDownTab,y
+;	clc
+;	adc #$28
+	sta Multiplex_SpriteFrame+4,x
 .skipIt1
 	pla
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l1
 
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset0
-	tax
-	ldy #0
+	asl
+	tay
+	ldx #0
 .l2
-	lda TitleScreen_SinTab,x
+	lda TitleScreen_SinTab,y
 	clc
 	adc #.xposTweak
-	sta Multiplex_XPosLo,y
-	txa
+	sta Multiplex_XPosLo+4,x
+	tya
 	clc
-	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	adc #.spriteSpread*3
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l2
 
 !if 1 {
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset1
-	tax
-	ldy #0
+	tay
+	ldx #0
 .l3
 	; If something is already animating in this slot then continue with the animation
-	lda Multiplex_YPos+16,y
+	lda Multiplex_YPos+.spritePerStroke+4,x
 	cmp #$ff
 	bne .alreadyOn2
 	; Otherwise calculate if the sprite is really small before allowing the animaton to start
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
+	tay
+	lda .upDownTab,y
 	cmp #7
 	bne .skipIt2
 	pla
-	tax
+	tay
 .alreadyOn2
-	lda TitleScreen_SinTab,x
-	sta Multiplex_YPos+16,y
-!ifdef Multiplex_SplitSort {
-	sta AnimationYPosToSort+16,y
+	lda TitleScreen_SinTab,y
+!ifdef TitleScreen_Balls_YAdjust {
+	clc
+	adc #TitleScreen_Balls_YAdjust
 }
-	txa
+	sta Multiplex_YPos+.spritePerStroke+4,x
+!ifdef Multiplex_SplitSort {
+	sta AnimationYPosToSort+.spritePerStroke+4,x
+}
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
-	clc
-	adc #$28
-	sta Multiplex_SpriteFrame+16,y
+	tay
+	lda .upDownTab,y
+;	clc
+;	adc #$28
+	sta Multiplex_SpriteFrame+.spritePerStroke+4,x
 .skipIt2
 	pla
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l3
 
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset2
-	tax
-	ldy #0
+	asl
+	tay
+	ldx #0
 .l4
-	lda TitleScreen_SinTab,x
+	lda TitleScreen_SinTab,y
 	clc
 	adc #.xposTweak
-	sta Multiplex_XPosLo+16,y
-	txa
+	sta Multiplex_XPosLo+.spritePerStroke+4,x
+	tya
 	clc
-	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	adc #.spriteSpread*3
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l4
+}
+
+!ifdef Scroller_DebugIRQBorder {
+	inc VIC2BorderColour
+}
+
+	jsr MusicPlayerPlay
+
+!ifdef Scroller_DebugIRQBorder {
+	dec VIC2BorderColour
+	dec VIC2BorderColour
 }
 
 	; After this function returns the mutiplexor will sort the sprites and display them
@@ -383,19 +836,640 @@ TitleScreenWaitForOffScreenFromRaster
 	rts
 
 TitleScreen_SinTab
- !by $8d,$8f,$92,$94,$96,$98,$9a,$9c,$9f,$a1,$a3,$a5,$a7,$a9,$ab,$ad
- !by $af,$b1,$b3,$b5,$b7,$b9,$bb,$bc,$be,$c0,$c2,$c3,$c5,$c7,$c8,$ca
- !by $cb,$cd,$ce,$d0,$d1,$d2,$d4,$d5,$d6,$d7,$d8,$d9,$da,$db,$dc,$dd
- !by $de,$df,$e0,$e0,$e1,$e1,$e2,$e2,$e3,$e3,$e3,$e4,$e4,$e4,$e4,$e4
- !by $e4,$e4,$e4,$e4,$e3,$e3,$e3,$e2,$e2,$e1,$e1,$e0,$e0,$df,$de,$dd
- !by $dc,$db,$da,$d9,$d8,$d7,$d6,$d5,$d4,$d2,$d1,$d0,$ce,$cd,$cb,$ca
- !by $c8,$c7,$c5,$c3,$c2,$c0,$be,$bc,$bb,$b9,$b7,$b5,$b3,$b1,$af,$ad
- !by $ab,$a9,$a7,$a5,$a3,$a1,$9f,$9c,$9a,$98,$96,$94,$92,$8f,$8d,$8b
- !by $89,$87,$84,$82,$80,$7e,$7c,$7a,$77,$75,$73,$71,$6f,$6d,$6b,$69
- !by $67,$65,$63,$61,$5f,$5d,$5b,$5a,$58,$56,$54,$53,$51,$4f,$4e,$4c
- !by $4b,$49,$48,$46,$45,$44,$42,$41,$40,$3f,$3e,$3d,$3c,$3b,$3a,$39
- !by $38,$37,$36,$36,$35,$35,$34,$34,$33,$33,$33,$32,$32,$32,$32,$32
- !by $32,$32,$32,$32,$33,$33,$33,$34,$34,$35,$35,$36,$36,$37,$38,$39
- !by $3a,$3b,$3c,$3d,$3e,$3f,$40,$41,$42,$44,$45,$46,$48,$49,$4b,$4c
- !by $4e,$4f,$51,$53,$54,$56,$58,$5a,$5b,$5d,$5f,$61,$63,$65,$67,$69
- !by $6b,$6d,$6f,$71,$73,$75,$77,$7a,$7c,$7e,$80,$82,$84,$87,$89,$8b
+	!for .i , 256 {
+;		!by 141 + (90 * sin( (float(.i) / 128) * 3.14159265 ))
+		!by 141 + (60 * sin( (float(.i) / 128) * 3.14159265 ))
+	}
+
+!zn {
+TitleScreenProportionalChars_Top
+	!bin "TitleScreen.ctm" , 40 , $14 + (TitleScreen_NumChars*9) + (2*TitleScreen_TopLogoWid*TitleScreen_TopLogoHei) , 2
+	!bin "TitleScreen.ctm" , 40 , $14 + (TitleScreen_NumChars*9) + (2*TitleScreen_TopLogoWid*TitleScreen_TopLogoHei) + (TitleScreen_TopLogoWid*2*2) , 2
+TitleScreenProportionalChars_Bottom
+	!bin "TitleScreen.ctm" , 40 , $14 + (TitleScreen_NumChars*9) + (2*TitleScreen_TopLogoWid*TitleScreen_TopLogoHei) + (TitleScreen_TopLogoWid*2), 2
+	!bin "TitleScreen.ctm" , 40 , $14 + (TitleScreen_NumChars*9) + (2*TitleScreen_TopLogoWid*TitleScreen_TopLogoHei) + (TitleScreen_TopLogoWid*2) + (TitleScreen_TopLogoWid*2*2) , 2
+
+TitleScreenProportionalChars_Start
+	; Starting with <space> then A, B...
+	!by 53,	0,	2,	4,	6,	8,	10,	12,	14,	16,	17,	19,	21,	23,	26,	28,	30,	32,	34,	36,	38
+	; Next line - U
+	!by 40,	42,	44,	47,	49,	51
+	; Numbers - 0
+	!by 54,	55,	56,	57,	58,	59,	60,	61,	62,	63
+TitleScreenProportionalChars_Width
+	!by 1,	2,	2,	2,	2,	2,	2,	2,	2,	1,	2,	2,	2,	3,	2,	2,	2,	2,	2,	2,	2
+	!by 2,	2,	3,	2,	2,	2
+	!by 1,	1,	1,	1,	1,	1,	1,	1,	1,	1
+
+; Displays a Proportional proportional character at the screen position specified by tempWork0/tempWork2 and Y
+; Entry:
+; A = Character index
+; Y = Horizontal screen position
+; tempWork0 = Top row screen address
+; tempWork2 = Bottom row screen address
+; Exit:
+; A = Trashed
+; X = Preserved
+; Y = Updated horizontal screen position
+; tempWork0 tempWork2 = Preserved
+; tempWork4 = Trashed
+TitleScreen_RenderProportionalAt
+	stx .smx+1
+
+	cmp #32	; ' '
+	bne .o1
+	lda #0
+	jmp .o2
+.o1
+	cmp #48	; '0'
+	bcc .o2
+	sbc #(48-27)	; Rebase the number to be after the letters
+.o2
+	tax
+
+	lda TitleScreenProportionalChars_Width,x
+	sta tempWork4
+
+	lda TitleScreenProportionalChars_Start,x
+	tax
+.o3
+	lda TitleScreenProportionalChars_Top,x
+	sta (tempWork0),y
+	lda TitleScreenProportionalChars_Bottom,x
+	sta (tempWork2),y
+	inx
+	iny
+	dec tempWork4
+	bne .o3
+
+.smx	ldx #0
+	rts
+
+TitleScreen_NextRow0To2
+	; Calculate the next row
+	lda tempWork0
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta tempWork2
+	lda tempWork1
+	adc #0
+	sta tempWork3
+	rts
+
+TitleScreen_NextRow
+	; Calculate the next row
+	lda tempWork0
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta tempWork0
+	lda tempWork1
+	adc #0
+	sta tempWork1
+	rts
+}
+
+!zn {
+; Entry:
+; A/X = lo/hi of the screen text
+; Y = Screen horizontal position
+; tempWork0 = Position on the screen
+; Exit:
+; A/X = Trashed
+; Y = Screen horizontal position at the end of the text
+; tempWork0 = Preserved
+; tempWork2 = Next row calculated from tempWork0
+TitleScreen_RenderProportionalText
+	sta .sm1+1
+	stx .sm1+2
+
+	jsr TitleScreen_NextRow0To2
+
+	ldx #0
+.tl1
+.sm1	lda TitleScreen_CreditsText,x
+	beq .tl2
+	bpl .tl3
+	; -1 = Next text line, with the more negative the numebr signifying the horizontal position of the new line
+	eor #$ff
+	tay
+	jsr TitleScreen_NextRow
+	jsr TitleScreen_NextRow0To2
+	inx
+	jmp .sm1
+.tl3
+	jsr TitleScreen_RenderProportionalAt
+	inx
+	jmp .tl1
+.tl2
+	rts
+}
+
+!zn {
+TitleScreen_SetProportionalTextTop
+	lda #<(TitleScreen_ScreenAddress + (10 * VIC2ScreenCharsWidth))
+	sta tempWork0
+	lda #>(TitleScreen_ScreenAddress + (10 * VIC2ScreenCharsWidth))
+	sta tempWork1
+	rts
+}
+
+TitleScreen_CreditsText
+!by -5
+!scr "code  martin piper"
+!by -1
+!by -1
+!by -8
+!scr "sound   bayliss"
+!by -1
+!by -1
+!by -13
+!scr "art  me"
+!by -1
+!by -1
+!by -1
+!by -1
+!by -9
+!scr "copyright 2017"
+!by 0
+
+
+; Remove all possibility that the timings will change due to previous code
+!align 255,0
+!zn {
+TitleScreen_ScrollerNMI1
+!ifdef Scroller_DebugNMIBorder {
+	inc VIC2BorderColour
+}
+	sta NMI_areg
+	stx NMI_xreg
+	sty NMI_yreg
+
+	; Check to see if this NMI happened due to the timer happening.
+	; If not then we assume restore was pressed
+	lda CIA2InterruptControl
+	and #1
+	bne .wasTimer
+	; Don't do any other work since we are not timer generated.
+	jmp .retNMI
+.wasTimer
+
+	; Top half of the logo colours
+	lda #VIC2Colour_Orange
+	ldx #VIC2Colour_Yellow
+
+	sta VIC2ExtraBackgroundColour1
+	stx VIC2ExtraBackgroundColour2
+
+	; Setup NMI
+	lda #<TitleScreen_ScrollerNMI2
+	sta Scroller_NMIVectorLo
+	lda #>TitleScreen_ScrollerNMI2
+	sta Scroller_NMIVectorHi
+
+	ldx #<TitleScreen_NMI_Timer2
+	ldy #>TitleScreen_NMI_Timer2
+	jsr TitleScreen_NMI_SetTimer
+
+.retNMI
+	lda NMI_areg
+	ldx NMI_xreg
+	ldy NMI_yreg
+
+!ifdef Scroller_DebugNMIBorder {
+	dec VIC2BorderColour
+}
+	rti
+}
+
+
+!zn {
+TitleScreen_ScrollerNMI2
+!ifdef Scroller_DebugNMIBorder {
+	inc VIC2BorderColour
+}
+;	dec VIC2BorderColour
+
+	sta NMI_areg
+	stx NMI_xreg
+	sty NMI_yreg
+
+	; Check to see if this NMI happened due to the timer happening.
+	; If not then we assume restore was pressed
+	lda CIA2InterruptControl
+	and #1
+	bne .wasTimer
+	; Don't do any other work since we are not timer generated.
+	jmp .retNMI
+.wasTimer
+
+	; Stablise the raster for the one pixel high screen/border change
+	lda #VIC2Colour_White
+
+	; Depending on the sprites used by the multiplexor (Multiplex_ReverseOrder) and badline situation this timing will change
+	ldx #TitleScreen_SinglePixelSplit
+.l2
+	cpx VIC2Raster
+	bcs .l2
+
+	ldx #9
+.dl2
+	dex
+	bne .dl2
+
+	nop
+;	nop
+;	nop
+;	nop
+
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+	lda #VIC2Colour_Black
+
+	ldx #9
+.dl1
+	dex
+	bne .dl1
+
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+
+	; Hires proportional font switch
+	lda #%01000
+	sta VIC2ScreenControlH
+
+.retNMI
+	lda NMI_areg
+	ldx NMI_xreg
+	ldy NMI_yreg
+
+!ifdef Scroller_DebugNMIBorder {
+	dec VIC2BorderColour
+}
+	rti
+}
+
+
+!zn {
+TitleScreen_AnimateChars_Init
+	ldx #((TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start+1)*8)-1
+	lda #0
+	sta .state
+	sta .counter
+.l1
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	dex
+	bpl .l1
+	rts
+
+.state !by 0
+.counter !by 0
+.lstate0 jmp .state0
+.lstate1 jmp .state1
+.lstate2 jmp .state2
+.lstate3 jmp .state3
+.lstate4 jmp .state4
+.lstate5 jmp .state5
+TitleScreen_AnimateChars_Animate
+	lda .state
+	beq .lstate0
+	cmp #1
+	beq .lstate1
+	cmp #2
+	beq .lstate3
+	cmp #3
+	beq .lstate2
+	cmp #4
+	beq .lstate4
+	cmp #5
+	beq .lstate1
+	cmp #6
+	beq .lstate2
+	cmp #7
+	beq .lstate5
+	cmp #8
+	beq .lstate3
+	lda #1
+	sta .state
+	rts
+
+.state0
+	lda .counter
+	lsr
+	lsr
+	cmp #8
+	bcs .nextState
+	tax
+	eor #$ff
+	adc #7
+	tay
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8),x
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+8,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+8,y
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+16,x
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+16,x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+24,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+24,y
+	inc .counter
+	rts
+
+.nextState
+	lda #0
+	sta .counter
+	inc .state
+	rts
+
+.state1
+	inc .counter
+	lda .counter
+	cmp #(TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start)*4*4
+	bcs .nextState
+
+	jsr .shiftLeft
+	jsr .shiftLeft
+
+	rts
+
+.state2
+	inc .counter
+	lda .counter
+	cmp #(TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start)*4*4
+	bcs .nextState
+
+	jsr .shiftRight
+	jsr .shiftRight
+	
+	rts
+
+.state3
+	inc .counter
+	lda .counter
+	cmp #64
+	bcs .nextState
+
+	lsr
+	lsr
+	lsr
+	sta .smc1+1
+	lda .counter
+	and #7
+.smc1 cmp #0
+	bcc .off1
+
+	ldx #((TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start+1)*8)-1
+.on1
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8),x
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	dex
+	bpl .on1
+	rts
+
+.off1
+	ldx #((TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start+1)*8)-1
+	lda #0
+.off2
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	dex
+	bpl .off2
+	rts
+
+.state4
+	inc .counter
+	lda .counter
+	cmp #64
+	bcs .nextState
+
+	lsr
+	lsr
+	lsr
+	sta .smc1a+1
+	lda .counter
+	and #7
+.smc1a cmp #0
+	bcc .off1a
+
+	ldx #7
+	ldy #0
+.on1a
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8),y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+8,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+8,x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+16,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+16,x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+24,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+24,x
+	iny
+	dex
+	bpl .on1a
+	rts
+
+.off1a
+	ldx #((TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start+1)*8)-1
+.off2a
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8),x
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	dex
+	bpl .off2a
+	rts
+
+.lnextState jmp .nextState
+
+.state5
+	inc .counter
+	lda .counter
+	cmp #64
+	bcs .lnextState
+
+	lsr
+	lsr
+	lsr
+	sta .smc1b+1
+	lda .counter
+	and #7
+.smc1b cmp #0
+	bcs .off1b
+
+	ldx #7
+	ldy #0
+.on1b
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8),y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+8,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+8,x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+16,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+16,x
+	lda TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Source*8)+24,y
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8)+24,x
+	iny
+	dex
+	bpl .on1b
+	rts
+
+.off1b
+	ldx #((TitleScreen_AnimateChars_End-TitleScreen_AnimateChars_Start+1)*8)-1
+	lda #0
+.off2b
+	sta TitleScreen_CharsAddress+(TitleScreen_AnimateChars_Start*8),x
+	dex
+	bpl .off2b
+	rts
+
+.shiftLeft
+	ldx #7
+.cl1
+	clc
+	rol TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+3)*8),x
+	rol TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+2)*8),x
+	rol TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+1)*8),x
+	rol TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+0)*8),x
+	bcc .cl2
+	lda TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+3)*8),x
+	ora #%0000001
+	sta TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+3)*8),x
+.cl2
+	dex
+	bpl .cl1
+	rts
+
+.shiftRight
+	ldx #7
+.cl3
+	clc
+	ror TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+0)*8),x
+	ror TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+1)*8),x
+	ror TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+2)*8),x
+	ror TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+3)*8),x
+	bcc .cl4
+	lda TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+0)*8),x
+	ora #%10000000
+	sta TitleScreen_CharsAddress+((TitleScreen_AnimateChars_Start+0)*8),x
+.cl4
+	dex
+	bpl .cl3
+	rts
+
+}
+
+
+!zn {
+TitleScreen_All_FadeDown
+	jsr TitleScreen_State_ResetCounter
+	inc smTitleScreen_GlideIn+1
+
+.fade1
+	jsr HPS_Tick
+
+	; Remove sprites
+	lda TitleScreen_colourFadePos
+	cmp #16
+	bcs .noVolume
+	lda #15
+	sec
+	sbc TitleScreen_colourFadePos
+	sta tempWork0
+
+	lda TitleMusic_Volume
+	and #%11110000
+	ora tempWork0
+	sta TitleMusic_Volume
+.noVolume
+	lda TitleScreen_colourFadePos
+	cmp #21
+	bcs .noDelSprite
+	; x 3
+	sta tempWork0
+	clc
+	adc tempWork0
+	adc tempWork0
+	tax
+	lda #0
+!for .i , 8 {
+	sta TitleScreen_SpritesAddress + ((.i-1) * 64),x
+	sta TitleScreen_SpritesAddress + ((.i-1) * 64) + 1,x
+	sta TitleScreen_SpritesAddress + ((.i-1) * 64) + 2,x
+}
+	
+.noDelSprite
+
+	jsr ScrollerDemoWaitScorePanel
+
+	; Fade out the various character effects
+	lda TitleScreen_colourFadePos
+	cmp #20
+	bcs .next1
+
+	lda #19
+	sec
+	sbc TitleScreen_colourFadePos
+	tay
+
+	lda #VIC2Colour_Black
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth),y
+}
+	cpy #0
+	beq .o1
+
+	lda #VIC2Multicolour_Blue
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth)-1,y
+}
+
+.o1
+	lda #20
+	clc
+	adc TitleScreen_colourFadePos
+	tay
+
+	lda #VIC2Colour_Black
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth),y
+}
+	cpy #39
+	beq .o2
+
+	lda #VIC2Multicolour_Blue
+!for .i , (TitleScreen_TopLogoHei) {
+	sta COLOURRAM+((.i-1)*VIC2ScreenCharsWidth)+1,y
+}
+
+.o2
+.next1
+	lda TitleScreen_colourFadePos
+	cmp #25+15+10
+	bcc .o3
+
+	rts
+.o3
+	sec
+	sbc #VIC2ScreenCharsHeight
+	tax
+
+	lda #<COLOURRAM+(TitleScreen_TopLogoHei*VIC2ScreenCharsWidth)
+	sta tempWork0
+	lda #>COLOURRAM+(TitleScreen_TopLogoHei*VIC2ScreenCharsWidth)
+	sta tempWork1
+	lda #VIC2ScreenCharsHeight-TitleScreen_TopLogoHei-1
+	sta tempWork2
+.la1
+	cpx #16
+	bcs .la2
+	lda TitleScreen_colourFadeDown,x
+	ldy #VIC2ScreenCharsWidth-1
+.la3
+	sta (tempWork0),y
+	dey
+	bpl .la3
+.la2
+	inx
+	jsr TitleScreen_NextRow
+	dec tempWork2
+	bne .la1
+
+	inc TitleScreen_colourFadePos
+	clc
+	jmp .fade1
+}

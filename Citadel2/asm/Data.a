@@ -1,7 +1,10 @@
 ; Free space since the screen used for the status bar doesn't render anything up at the top of the screen
 ; No maze calculation results when the sub-game is active
 TraceBackResultBuffer	= $c00 + VIC2ScreenCharsWidth
-BackupAnimationMem		= TraceBackResultBuffer + 192
+BackupAnimationMemParts	= TraceBackResultBuffer + 192
+; 4*Multiplex_items due to Citadel2Optimisations.a defining AnimationActiveSlot/AnimationXPosLo/AnimationXPosHi/AnimationYPos in zeropage
+BackupAnimationMemPartsSize = (4*Multiplex_items)
+BackupAnimationMem		= BackupAnimationMemParts + BackupAnimationMemPartsSize
 
 DynamicMemoryData = $9800
 DynamicMemorySize = $400
@@ -24,43 +27,19 @@ MarkBeginData = *
 
 ; MazeSolve.a MazeNodes goes here
 MazeNodes
-!fill (MazeWidth* MazeHeight * Node__size) , 0
+!source "FingerPrint.a"
+;!fill (MazeWidth* MazeHeight * Node__size) , 0
+* = MazeNodes + (MazeWidth* MazeHeight * Node__size)
 
-; An index back into the enemy DB. A zero index indicates this is not an enemy DB slot, but it might be a simple on-screen animation instead
 Animation_StartMem = *
-AnimationActiveSlot			!fill Multiplex_items , 0
-AnimationXPosLo				!fill Multiplex_items
-AnimationXPosHi				!fill Multiplex_items
-AnimationYPos				!fill Multiplex_items
-!ifdef Multiplex_SplitSort {
-AnimationYPosToSort			!fill Multiplex_items
-}
-AnimationSpriteColour		!fill Multiplex_items
-AnimationSpriteFrame		!fill Multiplex_items
-AnimationAddrLo				!fill Multiplex_items
-AnimationAddrHi				!fill Multiplex_items
-AnimationSpriteFrameCount	!fill Multiplex_items
-AnimationNumFrames			!fill Multiplex_items
-AnimationSpeed				!fill Multiplex_items
-AnimationSpeedReset			!fill Multiplex_items
-AnimationFlags				!fill Multiplex_items
-AnimationSimpleMoveX		!fill Multiplex_items
-AnimationSimpleMoveY		!fill Multiplex_items
-AnimationParam1				!fill Multiplex_items , 0
+!source "asm/AnimationsMemory.a"
 Animation_EndMem = *
 Animation_MemSize = Animation_EndMem - Animation_StartMem
 
-!if (BackupAnimationMem + Animation_MemSize) > ($0c00+20*40) { !error "Animation backup overwrites important data in ghost screen" }
+;!if (BackupAnimationMem + Animation_MemSize) > ($0c00+20*40) { !error "Animation backup overwrites important data in ghost screen" }
+!if (BackupAnimationMem + Animation_MemSize + BackupAnimationMemPartsSize) > ($0c00+20*40) { !error "Animation backup overwrites important data in ghost screen" }
 
-SpriteFixedColours
-!bin "LevelSprites.spd" , 2 , $7
-
-ScorePanelBGCol0
-!bin "ScorePanel.ctm" , 1 , 4
-ScorePanelBGCol1
-!bin "ScorePanel.ctm" , 1 , 5
-ScorePanelBGCol2
-!bin "ScorePanel.ctm" , 1 , 6
+!source "asm/AnimationsData.a"
 
 ; The end of the data files in memory
 MarkEndData = *
@@ -70,31 +49,23 @@ MarkEndData = *
 ; Reserve empty space for level data
 
 *=LevelDataStart
-!fill $1000
+;!fill $1000
 ;!bin "DataLevel1.prg" ,, 2
 !source "DataAutoDefs.a"
 
 
-
 * = MusicPlayerInit
-!bin "MusicAndSFX.prg",,$2	; Remember to skip any lo/hi file information by using $2
-
+;!bin "MusicAndSFX.prg",,$2	; Remember to skip any lo/hi file information by using $2
+;!bin "Sound\Citadel2_Title.prg",,2
 
 
 
 
 ; VIC Graphics data
-*=$c000
-CharData
+*=CharData
 !bin "Level1.ctm" , $800 , $14
 
-MaxSpriteNumber = 187
+!source "FingerPrint.a"
 
-*=$d000
-SpriteData
+*=SpriteData
 !bin "LevelSprites.spd" , MaxSpriteNumber*64 , $9
-
-SpriteEmptyLookupTab		!fill 256 , 0
-!ifdef SpriteEmptyLookupTab2Enable {
-SpriteEmptyLookupTab2		!fill 256 , 0
-}

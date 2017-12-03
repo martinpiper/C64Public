@@ -1,37 +1,89 @@
 !zn
 RadarYOffset
-!for y , MazeHeight {
+!for y , MazeHeight/2 {
 !zn {
-.y2 = ((y-1) * 24) / MazeHeight
+.y2 = ((y-1) * 24) / (MazeHeight/2)
 	!by ((.y2/8) * 3 * 8) + (.y2 & 7)
 }
 }
 
-RadarXChar0
-!for x , MazeWidth {
+RadarYOffsetm1
+!for y , MazeHeight/2 {
 !zn {
-.x2 = ((x-1) * 24) / MazeWidth
+.y2 = (((y-1) * 24) / (MazeHeight/2))-1
+!if .y2 < 0 {
+	!by 0
+} else {
+	!by ((.y2/8) * 3 * 8) + (.y2 & 7)
+}
+}
+}
+
+RadarYOffsetp1
+!for y , MazeHeight/2 {
+!zn {
+.y2 = (((y-1) * 24) / (MazeHeight/2))+1
+!if .y2 >= 24 {
+	!by (2*3*8)+7
+} else {
+	!by ((.y2/8) * 3 * 8) + (.y2 & 7)
+}
+}
+}
+
+RadarXChar0
+!for x , MazeWidth/2 {
+!zn {
+.x2 = ((x-1) * 24) / (MazeWidth/2)
 	!by ((1<<23) >> (.x2+16)) & 0xff
 }
 }
 
 RadarXChar1
-!for x , MazeWidth {
+!for x , MazeWidth/2 {
 !zn {
-.x2 = ((x-1) * 24) / MazeWidth
+.x2 = ((x-1) * 24) / (MazeWidth/2)
 	!by ((1<<23) >> (.x2+8)) & 0xff
 }
 }
 
 RadarXChar2
-!for x , MazeWidth {
+!for x , MazeWidth/2 {
 !zn {
-.x2 = ((x-1) * 24) / MazeWidth
+.x2 = ((x-1) * 24) / (MazeWidth/2)
 	!by ((1<<23) >> .x2) & 0xff
 }
 }
 
+; Player crosshairs horizontal part
+RadarXChar0Player
+!for x , MazeWidth/2 {
+!zn {
+.x2 = ((x-1) * 24) / (MazeWidth/2)
+	!by ((7<<22) >> (.x2+16)) & 0xff
+}
+}
+
+RadarXChar1Player
+!for x , MazeWidth/2 {
+!zn {
+.x2 = ((x-1) * 24) / (MazeWidth/2)
+	!by ((7<<22) >> (.x2+8)) & 0xff
+}
+}
+
+RadarXChar2Player
+!for x , MazeWidth/2 {
+!zn {
+.x2 = ((x-1) * 24) / (MazeWidth/2)
+	!by ((7<<22) >> .x2) & 0xff
+}
+}
+
 RadarTempSpace !fill 3*3*8 , 0
+
+RadarOffset_X !by 0
+RadarOffset_Y !by 0
 
 RadarUpdate
 	ldx #(3*3*8)-1
@@ -42,11 +94,47 @@ RadarUpdate
 	sta RadarTempSpace,x
 	dex
 	bpl .cl1
+
+	lda EnemyPositionsX
+	sta .EnemyPositionsXOld
+	lda EnemyPositionsY
+	sta .EnemyPositionsYOld
+
+	lda EnemyPositionsX
+	sec
+	sbc #MazeWidth/4
+	bpl .o1
+	lda #0
+.o1
+	cmp #MazeWidth/2
+	bcc .o1a
+	lda #MazeWidth/2
+.o1a
+	sta RadarOffset_X
+
+	lda EnemyPositionsY
+	sec
+	sbc #MazeHeight/4
+	bpl .o2
+	lda #0
+.o2
+	cmp #MazeHeight/2
+	bcc .o2a
+	lda #MazeHeight/2
+.o2a
+	sta RadarOffset_Y
 	rts
 
 RadarEnemyUpdate
 	; Update the radar
-	ldx EnemyPositionsX-1,y
+	lda EnemyPositionsX-1,y
+	sec
+	sbc RadarOffset_X
+	bmi .ret
+	cmp #MazeWidth/2
+	bcs .ret
+	tax
+
 	lda RadarXChar0,x
 	sta tempWork0
 	lda RadarXChar1,x
@@ -54,7 +142,14 @@ RadarEnemyUpdate
 	lda RadarXChar2,x
 	sta tempWork2
 
-	ldx EnemyPositionsY-1,y
+	lda EnemyPositionsY-1,y
+	sec
+	sbc RadarOffset_Y
+	bmi .ret
+	cmp #MazeHeight/2
+	bcs .ret
+	tax
+
 	lda RadarYOffset,x
 	tax
 
@@ -67,4 +162,81 @@ RadarEnemyUpdate
 	lda RadarTempSpace+16,x
 	ora tempWork2
 	sta RadarTempSpace+16,x
+
+.ret
+	rts
+
+.EnemyPositionsXOld !by 0
+.EnemyPositionsYOld !by 0
+RadarEnemyPlayerUpdate
+	; Update the radar
+	lda .EnemyPositionsXOld
+	sec
+	sbc RadarOffset_X
+	bmi .ret
+	cmp #MazeWidth/2
+	bcs .ret
+	tax
+
+	lda RadarXChar0,x
+	sta tempWork0
+	lda RadarXChar1,x
+	sta tempWork1
+	lda RadarXChar2,x
+	sta tempWork2
+
+	lda RadarXChar0Player,x
+	sta tempWork3
+	lda RadarXChar1Player,x
+	sta tempWork4
+	lda RadarXChar2Player,x
+	sta tempWork5
+
+	lda .EnemyPositionsYOld
+	sec
+	sbc RadarOffset_Y
+	bmi .ret
+	cmp #MazeHeight/2
+	bcs .ret
+	tax
+
+	lda RadarYOffset,x
+	tay
+
+	lda $800+(ScorePanel_RadarChar*8),y
+	eor tempWork3
+	sta $800+(ScorePanel_RadarChar*8),y
+	lda $800+(ScorePanel_RadarChar*8)+8,y
+	eor tempWork4
+	sta $800+(ScorePanel_RadarChar*8)+8,y
+	lda $800+(ScorePanel_RadarChar*8)+16,y
+	eor tempWork5
+	sta $800+(ScorePanel_RadarChar*8)+16,y
+	
+	lda RadarYOffsetm1,x
+	tay
+
+	lda $800+(ScorePanel_RadarChar*8),y
+	eor tempWork0
+	sta $800+(ScorePanel_RadarChar*8),y
+	lda $800+(ScorePanel_RadarChar*8)+8,y
+	eor tempWork1
+	sta $800+(ScorePanel_RadarChar*8)+8,y
+	lda $800+(ScorePanel_RadarChar*8)+16,y
+	eor tempWork2
+	sta $800+(ScorePanel_RadarChar*8)+16,y
+
+	lda RadarYOffsetp1,x
+	tay
+
+	lda $800+(ScorePanel_RadarChar*8),y
+	eor tempWork0
+	sta $800+(ScorePanel_RadarChar*8),y
+	lda $800+(ScorePanel_RadarChar*8)+8,y
+	eor tempWork1
+	sta $800+(ScorePanel_RadarChar*8)+8,y
+	lda $800+(ScorePanel_RadarChar*8)+16,y
+	eor tempWork2
+	sta $800+(ScorePanel_RadarChar*8)+16,y
+
 	rts

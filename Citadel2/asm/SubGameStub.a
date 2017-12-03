@@ -27,6 +27,7 @@ SubGameRunnerEntry
 	jsr SubGameEnter
 .l1
 	+MACROWaitForTheLastScan_A
+	jsr Joystick_Read
 	jsr SubGameUpdate
 	jmp .l1
 
@@ -46,13 +47,20 @@ BackupSprites
 RestoreSprites
 ClearGameColourTo
 ClearGameScreen
+RefreshScreenColourRemap
 SubGameAddLoseSprites
 SubGameAddWinSprites
 SubGameHandleInventory
+	lda #-1
 SubGameInventoryPopulate
+SubGameAddWaitingSprite
+SFXInit
 	clc
 	rts
+
+JoystickA_Enable = 1
 
 !source "ScrollerVars.a"
 !source "asm/SubGame.a"
 !source "asm/Joystick.a"
+!source "../BerzerkRedux/Rand.a"

@@ -1,6 +1,18 @@
+; http://skoe.de/easyflash/files/devdocs/EasyFlash-ProgRef.pdf
+
 EASYFLASH_BANK			= $DE00
 
 EASYFLASH_CONTROL		= $DE02
-EASYFLASH_CONTROL_LED	= $80 ; note the LED is only on DEV versions 
-EASYFLASH_CONTROL_16K	= $07
-EASYFLASH_CONTROL_KILL	= $04
+
+EASYFLASH_CONTROL_GAME_FROM_JUMPER_EXROM_HI		= %000	; Ultimax or off
+EASYFLASH_CONTROL_RESERVED						= %001	; Do not use
+EASYFLASH_CONTROL_GAME_FROM_JUMPER_EXROM_LO		= %010	; 16K or 8K
+EASYFLASH_CONTROL_RESERVED_2					= %011	; Do not use
+EASYFLASH_CONTROL_KILL							= %100	; ROM Off, RAM still available at $df00
+EASYFLASH_CONTROL_ULTIMAX						= %101	; Low bank at $8000 high bank at $e000
+EASYFLASH_CONTROL_8K							= %110	; Low bank at $8000
+EASYFLASH_CONTROL_16K							= %111	; Low bank at $8000, high bank at $a000
+EASYFLASH_CONTROL_LED							= %10000000	; note the LED is only on DEV versions
+
+
+CartKillBank_Bank=$7f

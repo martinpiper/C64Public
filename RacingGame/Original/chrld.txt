@@ -1,0 +1,15 @@
+100 *=49152
+110 lda #4
+120 ldx #<file1
+130 ldy #>file1
+140 jsr $ffbd
+150 lda #1
+160 ldx #8
+170 ldy #0
+180 jsr $ffba
+190 lda #0
+200 ldx #0
+210 ldy #$c8
+220 jsr $ffd5
+230 rts
+240 file1 byt "chrs",0

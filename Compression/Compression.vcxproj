@@ -87,7 +87,18 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Decompression\Decompression.a" />
+    <None Include="..\Decompression\DecompressionP2.a" />
+    <None Include="..\Decompression\DecompressionVars.a" />
+    <None Include="..\Decompression\DecompressRLE.a" />
+    <None Include="..\Decompression\TestDecompression.a" />
+    <None Include="..\Decompression\TestDecompression2.a" />
+    <None Include="..\Decompression\TestDecompression3.a" />
     <None Include="RunTests.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Decompression\Done.txt" />
+    <Text Include="..\Decompression\TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

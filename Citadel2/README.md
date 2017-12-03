@@ -12,6 +12,46 @@ It is setup to use JUnit automatically.
 
 Also BuildIt*.bat will produce C64 ready prg files suitable for the normal BASIC load and run in an emulator or the real computer.
 
+# Instructions
+
+The CRT file will need to be mounted as a cartridge in a suitable emulator or written to a compatible GMod2 ROM.
+
+## Computer terminals and switches
+
+To access a computer terminal in a wall, stop the player, hold down fire while pushing the joystick in the direction of the terminal until the screen changes.
+The first default option for the terminal sub-game is: Exit back to the game.
+The next option is: Open/close (toggle) the associated door.
+The next options are any collected powerups.
+Choose the option with left/right and use fire to select it.
+
+A switch in a wall looks a bit like a computer terminal, using it is the same as a computer terminal except that it will just toggle its associated door.
+
+## Teleporters
+
+To use a teleporter stop the player and hold down fire.
+
+## Capturing enemies
+
+While stationary double free and hold the fire button to activate the capture probe. Move the probe over an enemy to capture it, if you have enough energy to do so. Once captured, the enemy status will be displayed on the status panel.
+
+It is possible to capture and control up to three enemies at once. The currently active captured enemy will quickly pulse grey, other captured enemies will slowly pulse grey. Cycle through the captured enemies with by pressing the "space bar".
+
+The currently captured enemy can be ordered to do different actions with the function keys:
+
+	* F1 - Orders Stay or continue moving, it toggles the order
+	* F3 - Follow the player, the point to be followed is two squares along the last direction the player fired.
+	* F5 - TBA
+	* F7 - TBA
+
+
+## Dropped pickups
+
+	* Flashing weapon pod - Upgrades weapons. Bullet range, rear shot, side shot etc
+	* CPU icon - Reduce sub-game difficulty
+	* Battery - Health increase
+
+
+
 # Diary of a game
 
 ## Technical review
@@ -252,3 +292,81 @@ If you want to add map tiles, then alter the number for numMapUsedTiles = 32 to 
 If you want to enable a full colour scroll then in C64\Citadel2\asm\DataDefs.a enable the line ";CharColoursForEveryCharacter = 1" by removing the ";"
 This will allow you to mix hi-res and multi-colour graphics for each character in CharPad.
 This is a bit buggy at the moment, the sub-game switch needs to be handled correctly. Which will be done if there is a good graphical design that needs it.
+
+
+
+## Day 13 - Demo
+
+Enemies now fire at the player. The player bullet range and firing speed has been tweaked so at the start of the game.
+Charger points have been added to various locations. Stay static over them for a short period and charge will be transferred to you.
+
+When the player is destroyed the enemies now stop firing and start to patrol as usual.
+
+When installing upgrades in the sub-game the player will progressively receive rear firing followed by side fire.
+During the sub-game the first option is to exit without opening/closing a door or using any inventory item.
+The second option is to open/close a door.
+The remaining options will be to use a collected inventory item.
+
+Enemy types are now defined by templates so that consistent enemies are spawned in the generators.
+Some enemy types try to ram you.
+
+
+
+## Day 14 - 
+
+Added ScrollerDemo_OverrunCounter to allow the code to detect when the frame is overrunning and stop executing certain non-critical code to recover the time in the next frame.
+Enemy generators limit the number of enemies they create on screen at the same time.
+Different doors types have been added that will open for the player, or enemies. The timing of the doors as well as their animations can also be set.
+A quick teleport fade effect has been added, to test the position changing code and check the rest of the game logic can handle the update.
+
+
+
+## Day 15 -
+
+Activated generators can now be destroyed by repeatedly destroying enemies whilst over the open generator. The explosion damage eventually destroys the generator.
+Switches have been added that will open/close certain linked doors. They are activated like the computer terminals.
+
+
+
+## Day 16 - Demo
+
+The sub-game now starts in easy mode and gets progressively harder with each successful attempt.
+The switch between title screen and game can use different music. Graphics still need to be switched.
+New dropped pickup tytpes:
+	Flashing weapon pod
+	CPU icon - Reduce sub-game difficulty
+	Battery - Health increase
+
+Doors now cause damage if they close on an unsuspecting enemy/player.
+
+
+
+## Day 17 - Demo
+
+A day of optimisations, mostly by moving lots of arrays, especially for the multiplexor, into zero page.
+Speed code, massive unrolled block of code, are now used for the char and colour RAM copy/scroll. These are stored in cartridge banks and only enabled when a scroll is needed. This means a lot of memory during normal runtime can be freed. I think this is the first cartridge game using a multiplexor to swapping in and out large chunks of cartridge executed speed code while scrolling. Not only does this save a lot of RAM, it also saves a lot of CPU time because we no longer need to used absolute indexed addressing.
+
+Also the code for the title screen and the game code has been split into separate chunks. This means the common code, for the multiplexor/input/sound effects, is kept in memory while the game can utilise the space left by the title screen.
+
+Glowing enemies now always drop a pickup. A nice hint for the player.
+The sequence of enemies can be set for each level and also the precise pattern of pickups can be defined. This allows level design to be more strategic instead of just random.
+
+
+
+## Day 18 - Demo
+
+To really test the title screen to game to title screen switching code I resurrected the graphics and design from the old game attempt from 1992 (on the GTW site https://www.gamesthatwerent.com/gtw64/citadel-2/ ). The code I wrote from scratch however, there's quite a lot of timing work in there for the various splits with sprites moving around over them.
+
+The player's radar has also been improved. It now shows a more "zoomed in" view than before and moves around with the player.
+
+At this point the slow part of the title screen to game transition was where the C64 had to calculate the level zone map. This zone map needed a quick tool to be generated that would use the PC building the game to calculate it in much quicker time than the C64 even could.
+the MakeCart tool was updated to allow simple addition of different file data in the cartridge and pack it all into contiguous banks. This means it is much easier to build complex data structures in the cart ready for the game code to swap them in quickly.
+
+Decompression has been optimised for speed and memory, so the game now starts quicker than before. It has also freed memory at $200-$3ff so I have an extra .5K of code to play with.
+
+
+
+# Day 19 - Demo
+
+Up to three enemies can now be captured with the player's capture probe. Pressing the function keys will order them around to stay or follow the player.
+Captured enemies are immune to the player's bullets, but can still be destroyed if the player rams them, or they ram the player.

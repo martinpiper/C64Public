@@ -91,14 +91,17 @@ BEGIN_MESSAGE_MAP(CMusicStudioView, CFormView)
 	ON_BN_CLICKED(IDC_BUTTON6, &CMusicStudioView::OnBnClickedLoadEnvelope)
 	ON_COMMAND(ID_FILE_RIPSID, &CMusicStudioView::OnFileRipSID)
 	ON_EN_SETFOCUS(IDC_EDIT1, &CMusicStudioView::OnEnSetfocusEdit1)
+	ON_BN_CLICKED(IDC_BUTTON7, &CMusicStudioView::OnBnClickedInsertEnvelope)
 END_MESSAGE_MAP()
 
 // CMusicStudioView construction/destruction
+CMusicStudioView *CMusicStudioView::mLastView = 0;
 
 CMusicStudioView::CMusicStudioView()
 	: CFormView(CMusicStudioView::IDD) , mPlayerHandle(0) , mIgnoreAnyUpdates(0), mLastPlayWasSFX(false) ,
 	mCurrentTableEditIndex(0) , mHelpState(kNone)
 {
+	mLastView = this;
 	int i;
 	for (i=0;i<MusicStudio1::MusicFile::kMaxTables;i++)
 	{
@@ -2560,6 +2563,17 @@ void CMusicStudioView::SafePlayerFree(void)
 
 void CMusicStudioView::OnBnClickedSaveEnvelope()
 {
+	CString defExt;
+	defExt.LoadString(IDS_MSENV);
+	CString filter;
+	filter.LoadString(IDS_MSENVFILTER);
+	CFileDialog dlg(FALSE,defExt,GetDocument()->mEnvelopeNames[GetCurrentEnvelopeNum()],OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_CREATEPROMPT,filter);
+	dlg.DoModal();
+	OnBnClickedSaveEnvelope(dlg.GetPathName());
+}
+
+void CMusicStudioView::OnBnClickedSaveEnvelope(CString &filename)
+{
 	MusicStudio1::Envelope &envelope = GetDocument()->mEnvelopes[GetCurrentEnvelopeNum()];
 	CInstrument instrument;
 	instrument.mName = GetDocument()->mEnvelopeNames[GetCurrentEnvelopeNum()];
@@ -2619,16 +2633,8 @@ void CMusicStudioView::OnBnClickedSaveEnvelope()
 		}
 	}
 
-
-	CString defExt;
-	defExt.LoadString(IDS_MSENV);
-	CString filter;
-	filter.LoadString(IDS_MSENVFILTER);
-	CFileDialog dlg(FALSE,defExt,GetDocument()->mEnvelopeNames[GetCurrentEnvelopeNum()],OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_CREATEPROMPT,filter);
-	dlg.DoModal();
-
 	CFile file;
-	if (!file.Open(dlg.GetPathName(),CFile::modeCreate|CFile::modeWrite|CFile::shareExclusive|CFile::typeBinary))
+	if (!file.Open(filename,CFile::modeCreate|CFile::modeWrite|CFile::shareExclusive|CFile::typeBinary))
 	{
 		AfxMessageBox(_T("Couldn't create the file!"));
 		return;
@@ -2641,18 +2647,22 @@ void CMusicStudioView::OnBnClickedSaveEnvelope()
 
 void CMusicStudioView::OnBnClickedLoadEnvelope()
 {
-	MusicStudio1::Envelope &envelope = GetDocument()->mEnvelopes[GetCurrentEnvelopeNum()];
-	CInstrument instrument;
-
 	CString defExt;
 	defExt.LoadString(IDS_MSENV);
 	CString filter;
 	filter.LoadString(IDS_MSENVFILTER);
 	CFileDialog dlg(TRUE,defExt,0,OFN_FILEMUSTEXIST | OFN_READONLY,filter);
 	dlg.DoModal();
+	OnBnClickedLoadEnvelope(dlg.GetPathName());
+}
+
+void CMusicStudioView::OnBnClickedLoadEnvelope(CString &filename)
+{
+	MusicStudio1::Envelope &envelope = GetDocument()->mEnvelopes[GetCurrentEnvelopeNum()];
+	CInstrument instrument;
 
 	CFile file;
-	if (!file.Open(dlg.GetPathName(),CFile::modeRead|CFile::shareDenyWrite))
+	if (!file.Open(filename,CFile::modeRead|CFile::shareDenyWrite))
 	{
 		AfxMessageBox(_T("Couldn't open the file!"));
 		return;
@@ -2757,7 +2767,7 @@ void CMusicStudioView::OnBnClickedLoadEnvelope()
 			GetDocument()->mTablesControls[i][pos] = 0xff;
 			if (instrument.mTableLoops[i] >= 0)
 			{
-				GetDocument()->mTablesValues[i][pos++] = highestPos[0]+1 + instrument.mTableLoops[i];
+				GetDocument()->mTablesValues[i][pos++] = highestPos[i]+1 + instrument.mTableLoops[i];
 			}
 			else
 			{
@@ -2786,9 +2796,9 @@ void CMusicStudioView::OnFileRipSID()
 	CStringA path(dlg.GetPathName());
 #else
 	// Hard coded debugging to save my poor little fingers from having to do the same thing over and over whilst testing
-	CStringA path("D:\\Downloads\\Wizball_guitar.sid");
-//	CStringA path("D:\\Downloads\\Wizball_score.sid");
-//	CStringA path("D:\\Downloads\\Wizball_title.sid");
+//	CStringA path("C:\\Downloads\\Wizball_guitar.sid");
+	CStringA path("C:\\Downloads\\Wizball_Highscore_Tune.sid");
+//	CStringA path("C:\\Downloads\\Wizball_title.sid");
 #endif
 
 	GetDocument()->ClearCapturedSIDData();
@@ -2948,4 +2958,106 @@ void CMusicStudioView::SetHelpState(const HelpState state)
 		default:
 			break;
 	}
+}
+
+void CMusicStudioView::OnBnClickedInsertEnvelope()
+{
+	int envelope = GetCurrentEnvelopeNum();
+	if ((envelope < 0) || (envelope>= MusicStudio1::MusicFile::kMaxEnvelopes))
+	{
+		return;
+	}
+
+	// Discard the cached version
+	if (!mIgnoreAnyUpdates)
+	{
+		mLastPlayWasSFX = false;
+	}
+
+	CMusicStudioDoc *doc = GetDocument();
+
+	int i;
+	for (i = MusicStudio1::MusicFile::kMaxEnvelopes-2 ; i >= envelope ; i--)
+	{
+		doc->mEnvelopes[i+1] = doc->mEnvelopes[i];
+		doc->mEnvelopeNames[i+1] = doc->mEnvelopeNames[i];
+	}
+
+	doc->mEnvelopes[envelope] = MusicStudio1::Envelope();
+	doc->mEnvelopeNames[envelope] = _T("");
+
+	for (i = 0 ; i < MusicStudio1::MusicFile::kMaxBlocks ; i++)
+	{
+		if (doc->mBlockLastEditedAsTracker[i])
+		{
+			bool changed = false;
+			//doc->mBlockEditTrackerMaxCalcedRow[i]
+			int j;
+			for (j=0 ; j < CMusicStudioDoc::kMaxInternalTrackerRows ; j++)
+			{
+				CString env = doc->mBlockTrackerRows[i][j][1];
+
+				if (env.IsEmpty())
+				{
+					continue;
+				}
+
+				int theNum = -1;
+				_stscanf(env,_T("%x"),&theNum);
+
+				if (theNum >= envelope)
+				{
+					theNum++;
+
+					CString newNum;
+					newNum.Format(_T("%02X"),theNum);
+
+					doc->mBlockTrackerRows[i][j][1] = newNum;
+
+					changed = true;
+				}
+				
+			}
+			if(changed)
+			{
+				doc->UpdateTrackerBlockToInternal(i);
+			}
+		}
+		else
+		{
+			if (doc->mBlocks[i].IsEmpty())
+			{
+				continue;
+			}
+			bool changed = false;
+			CString block = doc->mBlocks[i];
+
+			int j;
+			for (j = MusicStudio1::MusicFile::kMaxEnvelopes-2 ; j >= envelope ; j--)
+			{
+				CString oldNum;
+				CString newNum;
+				block.MakeUpper();
+				oldNum.Format(_T("ENV:%02X"),j);
+				newNum.Format(_T("ENV:%02X"),j+1);
+				if (block.Replace(oldNum , newNum) > 0)
+				{
+					changed = true;
+				}
+			}
+
+			if (changed)
+			{
+				doc->mBlocks[i] = block;
+
+				CStringA ansiBlock(block);
+				int byteSize = 0;
+				int totalDuration = 0;
+				GetDocument()->mMusicFile.SetBlockFromText(i,ansiBlock,doc->mBlockErrorReport[i],byteSize,totalDuration);
+			}
+		}
+	}
+
+	CommonSetModified();
+	RedrawView();
 }

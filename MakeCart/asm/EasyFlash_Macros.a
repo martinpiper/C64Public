@@ -1,0 +1,42 @@
+!source "../MakeCart/asm/EasyFlash.a"
+
+CART_SELECT_BANK	= EASYFLASH_BANK
+
+!macro MACRO_CartKillBank {
+	; On other cart types this control write is ignored or used as a bank select
+	lda #EASYFLASH_CONTROL_KILL
+	sta EASYFLASH_CONTROL
+	; Stop the cartridge from selecting the bank by selecting an invalid bank
+	; This ordering, control then bank select, works for other cart types where an invalid bank enables RAM instead of ROM
+	; as long as the cartridge is smaller than the selected kill bank
+	lda #CartKillBank_Bank
+	sta EASYFLASH_BANK
+	lda #CartKillBank_ProcessorPort
+	sta ZPProcessorPort
+}
+
+!macro MACRO_CartSelectBank_8K_NoSEI_A {
+; Entry
+; A = Cart bank number
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
+	ldx #CartSelectBank_ProcessorPort
+	stx ZPProcessorPort
+
+	ldx #EASYFLASH_CONTROL_8K
+	stx EASYFLASH_CONTROL
+	sta EASYFLASH_BANK
+}
+
+!macro MACRO_CartSelectBank_16K_NoSEI_A {
+; Entry
+; A = Cart bank number
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
+	ldx #CartSelectBank_ProcessorPort
+	stx ZPProcessorPort
+
+	ldx #EASYFLASH_CONTROL_16K
+	stx EASYFLASH_CONTROL
+	sta EASYFLASH_BANK
+}

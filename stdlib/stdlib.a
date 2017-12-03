@@ -20,6 +20,7 @@ ZPProcessorPort					= $01
 ProcessorPortDefault			= %110111
 ProcessorPortAllRAMWithIO		= %100101
 ProcessorPortAllRAM				= %100000
+ProcessorPortKERNALWithIO		= %100110
 
 ; $02 - $06 are unused (apparently).
 
@@ -424,7 +425,7 @@ SIDVoice1PulseWidthHi			= $d403		; Write only
 ; Bit 3: 1 = Test.
 ; Bit 4: 1 = Triangle waveform enable.
 ; Bit 5: 1 = Sawtooth waveform enable.
-; Bit 6: 1 = Rectangle waveform enable.
+; Bit 6: 1 = Pulse waveform enable.
 ; Bit 7: 1 = Noise waveform enable.
 SIDVoice1Control				= $d404		; Write only
 
@@ -530,11 +531,11 @@ SIDVoice3ADSROutput				= $d41c		; Read only
 
 ; CIA1
 
-JoystickBits_Up		= 1
-JoystickBits_Down	= 2
-JoystickBits_Left	= 4
-JoystickBits_Right	= 8
-JoystickBits_Fire	= 16
+JoystickBits_Up		= %1
+JoystickBits_Down	= %10
+JoystickBits_Left	= %100
+JoystickBits_Right	= %1000
+JoystickBits_Fire	= %10000
 
 ; Port A read:
 ; Bit 0: 0 = Port 2 joystick up pressed.
@@ -713,6 +714,12 @@ CyclesPerSecondPALC64 = 985248
 
 
 ; Useful code fragments
+!macro MDebugBreak {
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+}
+
 !macro MACROAckRasterIRQ_A {
 	lda #1
 	sta VIC2InteruptStatus				; Ack Raster interupt
@@ -867,22 +874,22 @@ CyclesPerSecondPALC64 = 985248
 !macro WaitForFire_A {
 .ft1
 	lda CIA1KeyboardColumnJoystickA
-	and #%10000
+	and #JoystickBits_Fire
 	bne .ft1
 .ft2
 	lda CIA1KeyboardColumnJoystickA
-	and #%10000
+	and #JoystickBits_Fire
 	beq .ft2
 }
 
 !macro WaitForFireB_A {
 .ft1
 	lda CIA1KeyboardRowsJoystickB
-	and #%10000
+	and #JoystickBits_Fire
 	bne .ft1
 .ft2
 	lda CIA1KeyboardRowsJoystickB
-	and #%10000
+	and #JoystickBits_Fire
 	beq .ft2
 }
 
@@ -940,4 +947,11 @@ CyclesPerSecondPALC64 = 985248
 
 !macro SpriteLine .v {
 	!by .v>>16, (.v>>8)&255, .v&255
+}
+
+!macro MACRODelay_X .time {
+	ldx #.time
+.l1
+	dex
+	bne .l1
 }

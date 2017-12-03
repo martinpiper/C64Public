@@ -1,0 +1,100 @@
+!zn
+; The time for the player to be static until they are recharged one tick
+.chargerTimeStatic = 50
+
+; Check the current player map tile position for a charger and used the charger point if needed
+; Exit:
+; A/X/Y/ST = Trashed
+.chargerTime !by 0
+CheckCharger
+	lda ScrollerExitMainLineCounter
+	bne .exit
+
+	lda PlayerHealth
+	cmp #PlayerHealthMax
+	bcs .exit
+
+
+	; Player has to be stationary
+	lda #0
+	ora scrollerRealMovementXPixels
+	ora scrollerRealMovementYPixels
+	ora frameWantScrX
+	ora frameWantScrY
+	ora frameTotalScrScroll
+	ora frameScrollMoveColours
+	beq .check
+.exit
+	lda #0
+	sta .chargerTime
+.exitNoReset
+	rts
+
+.check
+	lda EnemyPositionsXLo
+	and #31
+	cmp #9
+	bcs .exit
+	lda EnemyPositionsYLo
+	and #31
+	cmp #12
+	bcs .exit
+
+	; Get the map tile
+	ldx EnemyPositionsY
+	lda MapTabL,x
+	sta tempWork0
+	lda MapTabH,x
+	sta tempWork1
+	ldy EnemyPositionsX
+	lda (tempWork0),y
+
+	; Check for the correct tile
+	cmp #MapTile_Charger4
+	beq .checkChargeTime
+	cmp #MapTile_Charger3
+	beq .checkChargeTime
+	cmp #MapTile_Charger2
+	beq .checkChargeTime
+	cmp #MapTile_Charger1
+	beq .checkChargeTime
+
+	rts
+
+.checkChargeTime
+	tax
+	inc .chargerTime
+	lda .chargerTime
+	cmp #.chargerTimeStatic
+	bcs .addOneTick
+	rts
+
+.addOneTick
+	; Update the map tile since the charger is being used for one tick
+	lda CurrentBulletBank
+	sta tempWork0
+	inx
+	txa
+	ldy EnemyPositionsX
+	ldx EnemyPositionsY
+	; This works because the player and scroll are static
+	jsr UpdateMapBlockOnScreen
+
+	lda #0
+	sta .chargerTime
+
+	; Note: Fall through
+PlayerAddHealthTick
+	lda PlayerHealth
+	cmp #PlayerHealthMax
+	bcs .exit2
+
+	ldx PlayerHealth
+	ldy SCREENRAM + (ScorePanelEnergy_YPos * VIC2ScreenCharsWidth) + ScorePanelEnergy_XPos , x
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelEnergy_YPos * VIC2ScreenCharsWidth) + ScorePanelEnergy_XPos , x
+
+	inc PlayerHealth
+
+.exit2
+	rts

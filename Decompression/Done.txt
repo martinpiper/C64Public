@@ -2,3 +2,11 @@
 	-c64m or -c64mb to enable "max" mode.
 	Now $200-$ffff can be used for decompression, but it kills the vectors and the rest of zeropage.
 	
+
+
+* Add an option to use the DecompressRLE.a code for -c64 and -c64m options in LZMPi.exe
+	* Will need to create to create versions of TestDecompression2.a (non-max) and TestDecompression3.a (max ode) that use the RLE code
+	* Done - Created TestDecompression3RLE.a without border effect
+		It can be used for non-max and max mode since the code is tiny and sits just before the stack and partially into the stack
+	* Not done - Add border effect, use of RNXPCompressionIncBorder_A, to DecompressRLE.a
+	* Done for -c64mr, nor -c64mrb - Then import those binary blobs into the LZMPi (Compression) project

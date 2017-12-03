@@ -7,23 +7,23 @@
 !cpu 6510
 !ct pet
 
+; Define what the multiplexor can use
+Multiplex_spritepointer	= SPRITEFRAME
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+Multiplex_DiscardSpritesYPos=255
+
+;Multiplex_ReverseOrder = 1
+
 ; Uncomment this to allow colision logging to be turned on and update into the screen area
 ;Multiplex_LogCollisions = 1
 Multiplex_CollisionCounter		= SCREENRAM + (16*40)
 Multiplex_CollisionHistory		= SCREENRAM + (18*40)
 Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
 
-; Define what the multiplexor can use
-Multiplex_VarBase	= $02
-Multiplex_spritepointer	= SPRITEFRAME
-Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
-Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
-Multiplex_DiscardSpritesYPos=255
+;Multiplexor_UseShiftedYPos = 1
 
 ;Multiplex_MaintainPriority = 1
-
-Multiplex_ReverseOrder = 1
-
 !ifdef Multiplex_LogCollisions {
 	!ifdef Multiplex_MaintainPriority {
 	Multiplex_items	= 16
@@ -35,9 +35,31 @@ Multiplex_ReverseOrder = 1
 	Multiplex_items	= 16
 	} else {
 	Multiplex_items	= 48
+;	Multiplex_items	= 20
 	}
 }
 
+
+!if 1 {
+; This will move the sprite information into zeropage. With the maximum number of sprites there won't be enough space in zeropage for all o
+defined_Multiplex_YPos			= 1
+defined_Multiplex_XPosLo		= 1
+defined_Multiplex_XPosHi		= 1
+;defined_Multiplex_Colour		= 1
+;defined_Multiplex_SpriteFrame	= 1
+Multiplex_YPos+1			= $02
+Multiplex_XPosLo+1		= Multiplex_YPos + Multiplex_items
+Multiplex_XPosHi+1		= Multiplex_XPosLo + Multiplex_items
+;Multiplex_Colour		= Multiplex_XPosHi + Multiplex_items
+;Multiplex_SpriteFrame	= Multiplex_Colour + Multiplex_items
+
+
+;Multiplex_VarBase	= Multiplex_SpriteFrame + Multiplex_items
+Multiplex_VarBase	= Multiplex_XPosHi + Multiplex_items
+
+} else {
+Multiplex_VarBase	= $02
+}
 
 !source "SpriteMultiplexorVars.a"
 
@@ -69,6 +91,10 @@ yspeed	= Multiplex_endVars+$07
 
 xoffset	= Multiplex_endVars+$08
 yoffset	= Multiplex_endVars+$09
+
+!if yoffset+1 >= $fb {
+!error "Cannot use EnableMusic with most of the zeropage used for the multiplexor"
+}
 
 !source "../stdlib/BASICEntry900.a"
 
@@ -194,6 +220,8 @@ Start
 .3	sta $00,x
 	inx
 	bne .3
+
+	jsr Multiplex_Default_Init
 
 	lda #Multiplex_items					; MPi: Increase to 48 sprites from the original 24 sprite demo
 	sta Multiplex_MaxSpr
@@ -347,19 +375,19 @@ MultiplexExt_LastIRQ2
 	jsr Multiplex_InitSort
 	jmp .over
 .notYet
-	ldy Multiplex_MaxSpr
-	dey
+	ldx Multiplex_MaxSpr
+	dex
 	bmi .over
 
 .off1
-	lda Multiplex_YPos,y
+	lda Multiplex_YPos,x
 	cmp #255
 	beq .skipOff1
 	clc
 	adc #1
-	sta Multiplex_YPos,y
+	sta Multiplex_YPos,x
 .skipOff1
-	dey
+	dex
 	bpl .off1
 	jmp .over
 
@@ -377,20 +405,20 @@ MultiplexExt_LastIRQ2
 	; Because we are exiting the current screen of sprites to display we can move the sprites and sort them.
 	jsr move
 
-	ldx countDown3
+	ldy countDown3
 	beq .over
-	ldy Multiplex_MaxSpr
-	dey
+	ldx Multiplex_MaxSpr
+	dex
 	bmi .over
 .fiddle
-	txa
+	tya
 	clc
-	adc Multiplex_YPos,y
+	adc Multiplex_YPos,x
 	bcc .fiddle2
 	lda #255
 .fiddle2
-	sta Multiplex_YPos,y
-	dey
+	sta Multiplex_YPos,x
+	dex
 	bpl .fiddle
 
 .over
@@ -412,6 +440,7 @@ MultiplexExt_LastIRQ2
 }
 
 !source "SpriteMultiplexor.a"
+!source "SpriteMultiplexorDefaultPattern.a"
 
 countDown	!by 0
 countDown2	!by 0
@@ -486,9 +515,9 @@ move
 	adc counterx1
 	tax
 	lda sinx,x
-	sta Multiplex_XPosLo,y
+	sta+2 Multiplex_XPosLo,y
 	lda sinxhi,x
-	sta Multiplex_XPosHi,y
+	sta+2 Multiplex_XPosHi,y
 
 	lda countery2
 	clc
@@ -498,7 +527,7 @@ move
 	adc countery1
 	tax
 	lda siny,x
-	sta Multiplex_YPos,y
+	sta+2 Multiplex_YPos,y
 
 	dey
 	bpl .1

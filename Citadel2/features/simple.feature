@@ -6,7 +6,7 @@ Feature: Simple 6502 code test
   This ensures the BDD6502 system is included and initialised properly.
 
 Scenario: Simple code test
-  Given I have a simple 6502 system
+  Given I have a simple overclocked 6502 system
   And I start writing memory at $400
   And I write the following hex bytes
       | 78 ee 20 d0 60 4c 01 04 |

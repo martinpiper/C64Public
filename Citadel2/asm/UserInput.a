@@ -3,6 +3,15 @@
 .joystickDirectionToXVel !by  0 ,  0 ,  0 ,  0 ,  1 ,  1 ,  1 ,  1 , -1 , -1 , -1 , -1 ,  0 ,  0 ,  0 ,  0
 .joystickDirectionToYVel !by  0 ,  1 , -1 ,  1 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0
 
+.joystickDirectionToXVelRear !by  0 ,  0 ,  0 ,  0 , -1 , -1 , -1 , -1 ,  1 ,  1 ,  1 ,  1 ,  0 ,  0 ,  0 ,  0
+.joystickDirectionToYVelRear !by  0 , -1 ,  1 , -1 ,  0 , -1 ,  1 ,  0 ,  0 , -1 ,  1 ,  0 ,  0 , -1 ,  1 ,  0
+
+.joystickDirectionToXVelRot90 !by  0 , -1 ,  1 , -1 ,  0 , -1 ,  1 ,  0 ,  0 , -1 ,  1 ,  0 ,  0 , -1 ,  1 ,  0
+.joystickDirectionToYVelRot90 !by  0 ,  0 ,  0 ,  0 ,  1 ,  1 ,  1 ,  1 , -1 , -1 , -1 , -1 ,  0 ,  0 ,  0 ,  0
+
+.joystickDirectionToXVelRot270 !by  0 ,  1 , -1 ,  1 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0 ,  0 ,  1 , -1 ,  0
+.joystickDirectionToYVelRot270 !by  0 ,  0 ,  0 ,  0 , -1 , -1 , -1 , -1 ,  1 ,  1 ,  1 ,  1 ,  0 ,  0 ,  0 ,  0
+
 .joystickValidDirection !by   0 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 ,  1 , -1 , -1 , -1 , -1 ,  0 ,  1 ,  1 ,  0
 
 .toggle !by 0
@@ -11,20 +20,102 @@
 } else {
 .playerSpeed !by 2
 }
-.fireCounter !by 0
-.fireCounterDelay !by 10
-.lockedDirection !by %1111
-.lSubGameUpdate jmp SubGameUpdate
-.lnoSubGameState jmp .noSubGameState
-.lsubGameStateSuccess jmp .subGameStateSuccess
+.fireCounter		!by 0
+.fireCounterDelay	!by 10
+.enableRearFire		!by 0
+.enableSideFire		!by 0
+.bulletLifetime		!by 10
+.lockedDirection	!by %1111
+.wasFire			!by 0
+UserInput_LastFollowDirectionX	!by 1
+UserInput_LastFollowDirectionY	!by 0
+UserInput_LastFollowPosX			!by 0
+UserInput_LastFollowPosY			!by 0
+
+
+
+UserInput_Init
+	lda #0
+	sta .fireCounter
+	sta .enableRearFire
+	sta .enableSideFire
+	sta .wasFire
+	lda #16
+	sta .fireCounterDelay
+	lda #10
+	sta .bulletLifetime
+
+	; MPi: TODO: Need MLA here
+	lda #1
+	sta UserInput_LastFollowDirectionX
+	lda #0
+	sta UserInput_LastFollowDirectionY
+
+
+	lda #%1111
+	sta .lockedDirection
+
+	jsr SubGame_ResetEnterTimer
+	jsr Teleport_ResetEnterTimer
+	jsr CaptureProbe_Init
+
+	jsr CalculateFollowPosition
+
+	rts
+
 .exitingGame
 	lda #%1111
 	sta .lockedDirection
 	jsr UpdateScreenScrollCamera
+	jsr CameraClampVelocity
+	jsr CameraClampMapBox
 
+.exitQuick
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 	rts
+
+.lSubGameUpdate jmp SubGameUpdate
+.lnoSubGameState jmp .noSubGameState
+.lsubGameStateSuccess jmp .subGameStateSuccess
+
 HandleUserInput
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jsr CaptureProbe_GeneralTick
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+}
+	jsr CalculateFollowPosition
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	lda #0
+	sta frameTargetVelX
+	sta frameTargetVelY
+
+	lda Teleport_TimeToSwitchMap
+	bne .exitQuick
+
 	jsr Joystick_Read
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	jsr HandleKeyboard
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Purple
+	sta VIC2BorderColour
+}
+
+
 
 	lda ScrollerExitMainLineCounter
 	bne .exitingGame
@@ -49,14 +140,49 @@ HandleUserInput
 
 	jmp .noSubGameState
 
+.runProbe
+	jsr CaptureProbe_HandleProbe
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+
 .lsubGameStateFailure
 	lda #2
 	jsr AnimationHitPlayerLogic
 
 .noSubGameState
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
 	jsr UpdateScreenScrollCamera
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	jsr CameraClampVelocity
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+	jsr CameraClampMapBox
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+}
+	jsr CheckCharger
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Brown
+	sta VIC2BorderColour
+}
+	jsr AutoDoor_Iterate
 
-;	inc VIC2BorderColour
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_LightRed
+	sta VIC2BorderColour
+}
 	; Don't run this sweep every frame, so use this counter instead
 	lda DynamicMemory_BlockSweepCount
 	and #1
@@ -68,9 +194,51 @@ HandleUserInput
 	and #3
 	cmp #1
 	bne .noSweep2
+
+	; Limit the number of enemies spawned with those already on screen
+	lda EnemiesOnScreenCount
+	cmp #MaxEnemyOnScreenBeforeSpawn
+	bcs .noSweep2
+
 	jsr PlayerSweep_MapOpenGenerators
 .noSweep2
-;	dec VIC2BorderColour
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_DarkGrey
+	sta VIC2BorderColour
+}
+
+	lda CaptureProbe_RunningProbe
+	bpl .runProbe
+
+	; Fire was pressed previous frame
+	lda #JoystickBits_Fire
+	bit JoystickA_Processed
+	beq .gotFire1
+	lda #0
+	sta .wasFire
+	jmp .overFirePositiveEdge
+.gotFire1
+	lda .wasFire
+	bne .overFirePositiveEdge
+	inc .wasFire
+
+	; Joystick and locked direction is empty?
+	lda JoystickA_Processed
+	and .lockedDirection
+	and #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	cmp #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
+	bne .notStationary3
+
+	jsr CaptureProbe_CheckAction
+	jmp .notStationary3b
+
+.notStationary3
+	jsr CaptureProbe_ResetEnterTimer
+
+.notStationary3b
+
+.overFirePositiveEdge
+	jsr CaptureProbe_TickEnterTimer
 
 	lda #JoystickBits_Fire
 	bit JoystickA_Processed
@@ -162,6 +330,7 @@ HandleUserInput
 	bit .lockedDirection
 	bne .o1
 
+	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
 	lda EnemyPositionsXLo
 	clc
@@ -183,8 +352,9 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o1
-	
+	bne .o1Stop
+
+!if 0 {
 	lda EnemyPositionsYLo
 	clc
 	adc #10
@@ -195,11 +365,16 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o1
+	bne .o1Stop
+}
 
 	lda EnemyPositionsYLo
 	clc
+!ifdef MapBlockAlignedMovement {
+	adc #24
+} else {
 	adc #20
+}
 	sta tempWork2
 	lda EnemyPositionsYHi
 	adc #0
@@ -207,7 +382,20 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o1
+	bne .o1Stop
+
+!ifdef CameraNotPushX {
+	lda frameTargetVelX
+	sec
+	sbc .playerSpeed
+	sta frameTargetVelX
+}
+
+	; Set the follow pos based on the directional input
+;	lda #1
+;	sta UserInput_LastFollowDirectionX
+;	lda #0
+;	sta UserInput_LastFollowDirectionY
 
 
 	lda EnemyPositionsXLo
@@ -219,14 +407,19 @@ HandleUserInput
 .oo1
 !ifdef MapBlockAlignedMovement {
 	jmp .nowTestFire
+} else {
+	jmp .o1
 }
-
+.o1Stop
+	lda .lockedDirection
+	ora #JoystickBits_Right
+	sta .lockedDirection
 .o1
 	lda #JoystickBits_Left
 	bit .lockedDirection
 	bne .o2
 
-
+	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
 	lda EnemyPositionsXLo
 	sec
@@ -248,8 +441,9 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o2
+	bne .o2Stop
 	
+!if 0 {
 	lda EnemyPositionsYLo
 	clc
 	adc #10
@@ -260,11 +454,16 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o2
+	bne .o2Stop
+}
 
 	lda EnemyPositionsYLo
 	clc
+!ifdef MapBlockAlignedMovement {
+	adc #24
+} else {
 	adc #20
+}
 	sta tempWork2
 	lda EnemyPositionsYHi
 	adc #0
@@ -272,7 +471,20 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o2
+	bne .o2Stop
+
+!ifdef CameraNotPushX {
+	lda frameTargetVelX
+	clc
+	adc .playerSpeed
+	sta frameTargetVelX
+}
+
+	; Set the follow pos based on the directional input
+;	lda #-1
+;	sta UserInput_LastFollowDirectionX
+;	lda #0
+;	sta UserInput_LastFollowDirectionY
 
 
 	lda EnemyPositionsXLo
@@ -284,14 +496,20 @@ HandleUserInput
 .oo2
 !ifdef MapBlockAlignedMovement {
 	jmp .nowTestFire
+} else {
+	jmp .o2
 }
-
+.o2Stop
+	lda .lockedDirection
+	ora #JoystickBits_Left
+	sta .lockedDirection
 .o2
 	lda #JoystickBits_Down
 	bit .lockedDirection
 	bne .o3
 
 
+	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
 	lda EnemyPositionsXLo
 	sec
@@ -316,8 +534,9 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o3
+	bne .o3Stop
 	
+!if 0 {
 	lda EnemyPositionsXLo
 	clc
 	adc #10
@@ -328,7 +547,8 @@ HandleUserInput
 	jsr DivideBy32
 
 	jsr .testPosition
-	bne .o3
+	bne .o3Stop
+}
 
 	lda EnemyPositionsXLo
 	clc
@@ -340,7 +560,20 @@ HandleUserInput
 	jsr DivideBy32
 
 	jsr .testPosition
-	bne .o3
+	bne .o3Stop
+
+!ifdef CameraNotPushY {
+	lda frameTargetVelY
+	sec
+	sbc .playerSpeed
+	sta frameTargetVelY
+}
+
+	; Set the follow pos based on the directional input
+;	lda #0
+;	sta UserInput_LastFollowDirectionX
+;	lda #1
+;	sta UserInput_LastFollowDirectionY
 
 
 	lda EnemyPositionsYLo
@@ -352,14 +585,20 @@ HandleUserInput
 .oo3
 !ifdef MapBlockAlignedMovement {
 	jmp .nowTestFire
+} else {
+	jmp .o3
 }
-
+.o3Stop
+	lda .lockedDirection
+	ora #JoystickBits_Down
+	sta .lockedDirection
 .o3
 	lda #JoystickBits_Up
 	bit .lockedDirection
 	bne .o4
 
 
+	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
 	lda EnemyPositionsXLo
 	sec
@@ -384,8 +623,9 @@ HandleUserInput
 	jsr DivideBy32_2
 
 	jsr .testPosition
-	bne .o4
+	bne .o4Stop
 	
+!if 0 {
 	lda EnemyPositionsXLo
 	clc
 	adc #10
@@ -396,7 +636,8 @@ HandleUserInput
 	jsr DivideBy32
 
 	jsr .testPosition
-	bne .o4
+	bne .o4Stop
+}
 
 	lda EnemyPositionsXLo
 	clc
@@ -408,7 +649,20 @@ HandleUserInput
 	jsr DivideBy32
 
 	jsr .testPosition
-	bne .o4
+	bne .o4Stop
+
+!ifdef CameraNotPushY {
+	lda frameTargetVelY
+	clc
+	adc .playerSpeed
+	sta frameTargetVelY
+}
+
+	; Set the follow pos based on the directional input
+;	lda #0
+;	sta UserInput_LastFollowDirectionX
+;	lda #-1
+;	sta UserInput_LastFollowDirectionY
 
 
 	lda EnemyPositionsYLo
@@ -420,10 +674,19 @@ HandleUserInput
 .oo4
 !ifdef MapBlockAlignedMovement {
 	jmp .nowTestFire
+} else {
+	jmp .o4
 }
-
+.o4Stop
+	lda .lockedDirection
+	ora #JoystickBits_Up
+	sta .lockedDirection
 .o4
 .nowTestFire
+	jsr CameraClampVelocity
+	jsr CameraClampMapBox
+
+
 	lda #JoystickBits_Fire
 	bit JoystickA_Processed
 	beq .no5
@@ -435,7 +698,7 @@ HandleUserInput
 	cmp #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
 	bne .notStationary
 	jsr CheckForSubGameEntry
-	beq .o5
+	beq .lo5
 .notStationary
 
 	lda JoystickA_Processed
@@ -444,7 +707,7 @@ HandleUserInput
 	bne .notStationary2
 
 	jsr CheckTeleportAction
-	beq .o5
+	beq .lo5
 
 .notStationary2
 
@@ -452,15 +715,21 @@ HandleUserInput
 	and #15
 	tay
 	lda .joystickValidDirection,y
-	beq .o5
+	bne .isValid
+	jmp .o5
+.isValid
 	sty .smjd+1
 
 	ldy EnemyToAnimationIndex
-	bmi .o5
+	bpl .isValid2
+	jmp .o5
+.isValid2
 
 	; Rate limit the firing speed
 	dec .fireCounter
-	bpl .oo5
+	bmi .timeOK
+	jmp .oo5
+.timeOK
 	lda .fireCounterDelay
 	sta .fireCounter
 
@@ -468,9 +737,11 @@ HandleUserInput
 	jsr EnemyAddPlayerAggression
 
 	jsr AllocatePlayerBullet
-	bcs .o5
+	bcc .doFire
+.lo5b	jmp .o5
+.doFire
 
-	lda #1
+	lda #3
 	jsr SFXInit
 
 	; Fire bullets!
@@ -481,9 +752,10 @@ HandleUserInput
 	sbc topScreenScrollY
 	tax
 	lda PlayerSpriteYPosToScreenCharPos,x
-	bmi .o5
+	bmi .lo5b
 	ldx tempWork2
 	sta PlayerBulletsY,x
+	sta tempWork4
 
 	lda topScreenScrollX
 	lsr
@@ -497,16 +769,93 @@ HandleUserInput
 	sbc tempWork0
 	tax
 	lda PlayerSpriteXPosToScreenCharPos,x
-	bmi .o5
+	bmi .lo5b
 	ldx tempWork2
 	sta PlayerBulletsX,x
+	sta tempWork5
 
 .smjd	ldy #0
+	; Set the follow pos based on the directional input
 	lda .joystickDirectionToXVel,y
 	sta PlayerBulletsXVel,x
+	sta UserInput_LastFollowDirectionX
 	lda .joystickDirectionToYVel,y
 	sta PlayerBulletsYVel,x
+	sta UserInput_LastFollowDirectionY
 
+
+;	lda #VIC2Multicolour_Yellow
+;	sta PlayerBulletsCol,x
+	lda .bulletLifetime
+	sta PlayerBulletsTime,x
+
+	inc .smAlternate2+1
+.smAlternate2	lda #1
+	and #1
+	beq .s3
+
+	; Rear fire
+	lda .enableRearFire
+	beq .s3
+	jsr AllocatePlayerBullet
+	bcc .doFire2
+	jmp .o5
+.doFire2
+
+	lda tempWork5
+	sta PlayerBulletsX,x
+	lda tempWork4
+	sta PlayerBulletsY,x
+	lda .joystickDirectionToXVelRear,y
+	sta PlayerBulletsXVel,x
+	lda .joystickDirectionToYVelRear,y
+	sta PlayerBulletsYVel,x
+;	lda #VIC2Multicolour_Yellow
+;	sta PlayerBulletsCol,x
+	lda .bulletLifetime
+	; Rear fire has half the lifetime
+	lsr
+	sta PlayerBulletsTime,x
+
+.s3
+
+	; Side fire
+	lda .enableSideFire
+	beq .s4
+	jsr AllocatePlayerBullet
+	bcc .doFire3
+	jmp .o5
+.doFire3
+
+	inc .smAlternate1+1
+.smAlternate1	lda #1
+	and #1
+	beq .s1
+
+	lda .joystickDirectionToXVelRot90,y
+	sta PlayerBulletsXVel,x
+	lda .joystickDirectionToYVelRot90,y
+	sta PlayerBulletsYVel,x
+	jmp .s2
+.s1
+	lda .joystickDirectionToXVelRot270,y
+	sta PlayerBulletsXVel,x
+	lda .joystickDirectionToYVelRot270,y
+	sta PlayerBulletsYVel,x
+.s2
+
+	lda tempWork5
+	sta PlayerBulletsX,x
+	lda tempWork4
+	sta PlayerBulletsY,x
+;	lda #VIC2Multicolour_Yellow
+;	sta PlayerBulletsCol,x
+	lda .bulletLifetime
+	; Side fire has half the lifetime
+	lsr
+	sta PlayerBulletsTime,x
+
+.s4
 	jmp .oo5
 
 .o5
@@ -524,30 +873,10 @@ HandleUserInput
 	jsr SubGame_ResetEnterTimer
 	jsr Teleport_ResetEnterTimer
 .fireHeldDown
-
-
-	; Clamp the velocity
-	lda frameTargetVelX
-	cmp #-4
-	bpl .c1
-	lda #-4
-.c1
-	cmp #5
-	bmi .c2
-	lda #4
-.c2
-	sta frameTargetVelX
-
-	lda frameTargetVelY
-	cmp #-4
-	bpl .c3
-	lda #-4
-.c3
-	cmp #5
-	bmi .c4
-	lda #4
-.c4
-	sta frameTargetVelY
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 	rts
 
 
@@ -560,7 +889,7 @@ HandleUserInput
 
 	ldy #Node_isBlocked
 	lda (tempWork4),y
-	and #Node_isBlocked_Wall
+	and #Node_isBlocked_Wall | Node_isBlocked_AutoDoor
 	rts
 
 
@@ -576,16 +905,80 @@ PlayerSpriteXPosToScreenCharPos
 
 ; Will check MapTerminalToDoor with SubGame_ExitStateX/Y and modify the map and the maze node blocked state
 .ldtEnd jmp .dtEnd
-.ldt2 jmp .dt2
 .subGameStateSuccess
+	jsr SubGame_MakeMoreDifficult
 	lda SubGamePickPos
 	bmi .doDoor
 	; TODO: Different weapon types or health upgrade etc
 
+	cmp #0
+	bne .notCPU
+
+	jsr SubGame_Init
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+
+.notCPU
+	cmp #1
+	bne .notBattery
+
+	jsr PlayerAddHealthTick
+	jsr PlayerAddHealthTick
+	jsr PlayerAddHealthTick
+	jsr PlayerAddHealthTick
+
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+.notBattery
+	; The rest of the values have various weapons combinations
+
+	lda SubGamePickPos
+	and #1
+	beq .ow1
+
 	; For now this increases the weapon fire rate
 	dec .fireCounterDelay
 
+.ow1
+
+	lda SubGamePickPos
+	and #2
+	beq .ow2
+
+	; And the bullet range
+	inc .bulletLifetime
+
+.ow2
+
+	lda SubGamePickPos
+	and #4
+	beq .ow3
+
+	; Debug: Progressively add read and then side fire
+	lda .enableRearFire
+	bne .e2
+	inc .enableRearFire
+	jmp .e1
+.ow3
+.e2
+	lda .enableSideFire
+	bne .e1
+	inc .enableSideFire
+.e1
+!ifdef HandleUserInput_DebugFineTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 	rts
+
+.ldt2 jmp .dt2
+
 .doDoor
 	; Force the zone cache to be invalidated when doors open or close
 	lda #-1
@@ -613,7 +1006,7 @@ PlayerSpriteXPosToScreenCharPos
 
 	; Found a terminal, so check the linked door
 
-	; Door X , Y
+	; Read door X , Y
 	iny
 	lda (tempWork0),y
 	sta tempWork2
@@ -621,23 +1014,51 @@ PlayerSpriteXPosToScreenCharPos
 	lda (tempWork0),y
 	sta tempWork3
 
-	; Tile index
+	; Read tile index
 	iny
 	lda (tempWork0),y
 	sta tempWork4
 
-	; Tile index other
+	; Read other tile index
 	iny
 	lda (tempWork0),y
 	sta tempWork7
 
-	; Now get the map tile position
+	; Read MapAnim close
+	iny
+	lda (tempWork0),y
+	sta tempWork8
+
+	; Read MapAnim open
+	iny
+	lda (tempWork0),y
+	sta tempWork9
+
+	; Read MapAnim switch off
+	iny
+	lda (tempWork0),y
+	sta .sm_switch_off+1
+
+	; Read MapAnim switch on
+	iny
+	lda (tempWork0),y
+	sta .sm_switch_on+1
+
+	; At this point
+	; tempWork2/tempWork3 = Door X/Y
+	; tempWork4 = Tile index
+	; tempWork7 = Other tile index
+	; tempWork8 = MapAnim close
+	; tempWork9 = MapAnim open
+
+	; Now get the map tile position from the read x/y position
 	ldx tempWork3
 	lda MapTabL,x
 	sta tempWork5
 	lda MapTabH,x
 	sta tempWork6
 
+	; Is it open or closed door in the map?
 	ldy tempWork2
 	lda tempWork4
 	cmp (tempWork5),y
@@ -654,9 +1075,23 @@ PlayerSpriteXPosToScreenCharPos
 	lda #-1
 	sta (tempWork5),y
 
+	; Run the close MapAnim
+	lda tempWork8
+	ldx tempWork2
+	ldy tempWork3
+	jsr MapAnimations_Allocate
+
+	; Run the switch off MapAnim
+.sm_switch_off	lda #0
+	bmi .noSwitch1
+	ldx SubGame_ExitStateX
+	ldy SubGame_ExitStateY
+	jsr MapAnimations_Allocate
+.noSwitch1
+
 	; Unmap the zones, since the door is closed
 	ldy #MapTerminalToDoor_Index_Zone1
-;	lda #-1
+	lda #-1
 	sta (tempWork0),y
 	iny
 	sta (tempWork0),y
@@ -755,6 +1190,23 @@ PlayerSpriteXPosToScreenCharPos
 	sta (tempWork0),y
 
 
+
+	; Run the open MapAnim
+	lda tempWork9
+	ldx tempWork2
+	ldy tempWork3
+	jsr MapAnimations_Allocate
+
+
+	; Run the switch on MapAnim
+.sm_switch_on	lda #0
+	bmi .noSwitch2
+	ldx SubGame_ExitStateX
+	ldy SubGame_ExitStateY
+	jsr MapAnimations_Allocate
+.noSwitch2
+
+
 	; Unblock the maze cell for the door
 	jsr .dtGetMazeTile
 	ldy #Node_isBlocked
@@ -785,3 +1237,101 @@ PlayerSpriteXPosToScreenCharPos
 	rts
 
 } ;<!ifdef RedirectHandleUserInput {
+
+
+!zn {
+HandleKeyboard
+	jsr Keyboard_Read
+
+	; Prepare for kkeyboard based commands
+	ldy CaptureProbe_CapturedList
+	bmi .nothingRecent
+
+	lda #0
+	sta .smCopyFlags+1
+
+	lda Keyboard_Pressed_F1
+	beq .notF1
+
+;	inc VIC2BorderColour
+
+	; Toggle StayHere
+	lda EnemyFlags-1,y
+	eor #EnemyFlags_StayHere
+	sta EnemyFlags-1,y
+	inc .smCopyFlags+1
+
+.notF1
+
+	lda Keyboard_Pressed_F3
+	beq .notF3
+
+	; Toggle StayHere
+	lda EnemyFlags-1,y
+	eor #EnemyFlags_FollowPlayer
+	and #!EnemyFlags_StayHere
+	sta EnemyFlags-1,y
+	inc .smCopyFlags+1
+
+.notF3
+
+.smCopyFlags lda #0
+	beq .nothingRecent
+	ldx EnemyToAnimationIndex,y
+	bmi .nothingRecent
+	lda EnemyFlags-1,y
+	sta AnimationEnemyFlags,x
+
+.nothingRecent
+	rts
+}
+
+
+!zn {
+CalculateFollowPosition
+	lda EnemyPositionsX
+	sta tempWork1
+	lda EnemyPositionsY
+	sta tempWork2
+
+	; 2 map blocks away
+	ldx #2
+.l1
+	; Potential position
+	lda tempWork1
+	clc
+	adc UserInput_LastFollowDirectionX
+	sta tempWork3
+
+	lda tempWork2
+	clc
+	adc UserInput_LastFollowDirectionY
+	sta tempWork4
+
+	tay
+	lda MapTabL,y
+	sta tempWork5
+	lda MapTabH,y
+	sta tempWork6
+	ldy tempWork3
+	lda (tempWork5),y
+	cmp #SolidMapBlockIndex
+	bcs .hitWall
+
+	; Position good, so use it next
+	lda tempWork3
+	sta tempWork1
+	lda tempWork4
+	sta tempWork2
+
+	dex
+	bne .l1
+
+.hitWall
+	lda tempWork1
+	sta UserInput_LastFollowPosX
+	lda tempWork2
+	sta UserInput_LastFollowPosY
+
+	rts
+}

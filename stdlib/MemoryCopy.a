@@ -1,0 +1,101 @@
+!zn {
+
+MemoryCopy_Source !by 0,0
+MemoryCopy_Destination !by 0,0
+
+; Entry
+; x/y = Source address lo/hi
+MemoryCopy_SetSource
+	stx MemoryCopy_Source
+	sty MemoryCopy_Source+1
+	rts
+
+; Entry
+; x/y = Destination address lo/hi
+MemoryCopy_SetDestination
+	stx MemoryCopy_Destination
+	sty MemoryCopy_Destination+1
+	rts
+
+!macro MACROMemoryCopy_ForSize .eor {
+!if .eor > 0 {
+	sta .smEor1+1
+	sta .smEor2+1
+}
+	lda MemoryCopy_Source
+	sta .sm1+1
+	lda MemoryCopy_Source+1
+	sta .sm1+2
+
+	lda MemoryCopy_Destination
+	sta .sm2+1
+	lda MemoryCopy_Destination+1
+	sta .sm2+2
+
+	stx .sm3+1
+	cpy #0
+	beq .l2
+	ldx #0
+.l1
+.sm1	lda $1234,x
+!if .eor > 0 {
+.smEor1	eor #0
+}
+.sm2	sta $1234,x
+	dex
+	bne .l1
+	inc .sm1+2
+	inc .sm2+2
+	dey
+	bne .l1
+
+.l2
+.sm3	ldx #0
+	beq .ret
+
+	lda .sm1+1
+	sec
+	sbc #1
+	sta .sm1a+1
+	lda .sm1+2
+	sbc #0
+	sta .sm1a+2
+
+	lda .sm2+1
+	sec
+	sbc #1
+	sta .sm2a+1
+	lda .sm2+2
+	sbc #0
+	sta .sm2a+2
+
+.l3
+.sm1a	lda $1234,x
+!if .eor > 0 {
+.smEor2	eor #0
+}
+.sm2a	sta $1234,x
+	dex
+	bne .l3
+.ret
+	rts
+}
+
+; Copies a number of bytes using the values set by MemoryCopy_SetSource and MemoryCopy_SetDestination
+; Entry
+; x/y = Size lo/hi
+MemoryCopy_ForSize
+	+MACROMemoryCopy_ForSize 0
+
+!ifdef MemoryCopy_ForSize_EOR_Enable {
+; Copies a number of bytes using the values set by MemoryCopy_SetSource and MemoryCopy_SetDestination and a XOR value
+; Entry
+; a = xor value
+; x/y = Size lo/hi
+MemoryCopy_ForSize_XOR
+	+MACROMemoryCopy_ForSize 1
+
+}
+
+
+}

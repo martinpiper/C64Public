@@ -1,0 +1,71 @@
+100 *=49152
+110 jmp irqsetup
+120 col1 byt 10
+130 col2 byt 9
+140 rast byt 138
+220 irqsetup sei
+230 lda #0
+240 sta 650
+241 jsr $1800
+250 lda #$7f
+260 sta $dc0d
+270 lda $dc0d
+280 lda #$1b
+290 sta $d011
+300 lda #255   ! <- set this number
+310 sta $d012  !    to the first line
+320 lda #<irq1 !    you want your
+330 sta $314   !    colours to start.
+340 lda #>irq1
+350 sta $315
+360 lda #1
+370 sta $d019
+380 sta $d01a
+390 cli
+400 rts
+500 irq1 lda col1
+510 sta 53281
+511 lda #216
+512 sta 53270
+513 lda #18
+514 sta 53272
+520 lda #<irq2
+530 ldx #>irq2
+540 sta 788
+550 stx 789
+560 lda rast
+570 sta $d012
+580 dec $d019
+581 jsr $1806
+590 jmp $ea31
+600 irq2 ldx col2
+601 l1 lda $d012
+602 cmp $d012
+603 bne l1
+610 stx 53281
+620 lda #<irq3
+630 ldx #>irq3
+640 sta 788
+650 stx 789
+660 lda #210
+670 sta $d012
+680 dec $d019
+690 jmp $ea81
+700 irq3 ldx #0
+701 l2 lda $d012
+702 cmp $d012
+703 bne l2
+704 nop
+710 stx 53281
+711 lda #200
+712 sta 53270
+713 lda #20
+714 sta 53272
+720 lda #<irq1
+730 ldx #>irq1
+740 sta 788
+750 stx 789
+760 lda #255
+770 sta $d012
+780 dec $d019
+790 jmp $ea81

@@ -25,3 +25,9 @@ Assemble
 
 Now copy C64\IRQDisk\TestIRQDisk2.prg to the D64 and name it MAIN.
 Now copy C64\PictureLink\PictureLink.prg to the D64 and name it GAME.
+
+
+
+* Remote debugging
+C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe
+-remotemonitor $(ProjectDir)\BerzerkRedux.prg

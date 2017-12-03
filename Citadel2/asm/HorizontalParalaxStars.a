@@ -1,0 +1,255 @@
+; Horizontal paralax stars
+; Labels prefixed with HPS for short because I'm not going to type HorizontalParalaxStars for every prefix :D
+
+HPS_NumStarsSlow	= 12
+HPS_NumStarsMedium	= 8
+HPS_NumStarsFast	= 6
+HPS_NumStars	= HPS_NumStarsSlow + HPS_NumStarsMedium + HPS_NumStarsFast
+
+!ifndef HPS_ZPStart {
+HPS_ZPStart		= tempWork0
+}
+
+!ifndef HPS_CharsetAddr {
+HPS_CharsetAddr	= $8800
+}
+!ifndef HPS_ScreenAddr {
+HPS_ScreenAddr	= $8400
+}
+HPS_ScreenTabL !for .table1,25 {!by <(HPS_ScreenAddr+((.table1-1) * 40)) }
+HPS_ScreenTabH !for .table1,25 {!by >(HPS_ScreenAddr+(((.table1-1) * 40))) }
+HPS_ColourTabH !for .table1,25 {!by >(COLOURRAM + (((.table1-1) * 40))) }
+
+!ifndef HPS_StarCharClear {
+HPS_StarCharClear	= ' '
+}
+!ifndef HPS_StarCharSlow {
+HPS_StarCharSlow	= $1b
+}
+!ifndef HPS_StarCharMedium {
+HPS_StarCharMedium	= $1c
+}
+!ifndef HPS_StarCharFast {
+HPS_StarCharFast	= $1d
+}
+
+!ifndef HPS_StarColourSlow {
+HPS_StarColourSlow		= VIC2Colour_Grey
+}
+!ifndef HPS_StarColourMedium {
+HPS_StarColourMedium	= VIC2Colour_LightGrey
+}
+!ifndef HPS_StarColourFast {
+HPS_StarColourFast		= VIC2Colour_White
+}
+
+!ifndef HPS_StartYPos {
+HPS_StartYPos	= 0
+}
+!ifndef HPS_Height {
+HPS_Height		= VIC2ScreenCharsHeight
+}
+!ifndef HPS_HeightMask {
+HPS_HeightMask	= 31
+}
+!ifndef HPS_StartXPos {
+HPS_StartXPos	= 0
+}
+!ifndef HPS_Width {
+HPS_Width		= VIC2ScreenCharsWidth
+}
+!ifndef HPS_WidthMask {
+HPS_WidthMask	= 63
+}
+
+HPS_XPos !fill HPS_NumStars , 0
+HPS_YPos !fill HPS_NumStars , 0
+
+
+!zn {
+HPS_Init
+	ldx #HPS_NumStars-1
+.l1
+
+	; Y pos
+	jsr Rand
+	and #HPS_HeightMask
+.l2
+	cmp #HPS_Height
+	bcc .okPos1
+	sbc #HPS_Height
+	jmp .l2
+.okPos1
+!if HPS_StartYPos > 0 {
+	adc #HPS_StartYPos
+}
+	sta HPS_YPos,x
+
+	; X pos
+	jsr Rand
+	and #HPS_WidthMask
+.l3
+	cmp #HPS_Width-1
+	bcc .okPos2
+	sbc #HPS_Width-1
+	jmp .l3
+.okPos2
+!if HPS_StartXPos > 0 {
+	adc #HPS_StartXPos
+}
+	sta HPS_XPos,x
+
+	dex
+	bpl .l1
+
+	; Clear the various stars
+	ldx #7
+	lda #0
+.cl1
+	sta HPS_CharsetAddr+(HPS_StarCharSlow*8),x
+	sta HPS_CharsetAddr+(HPS_StarCharMedium*8),x
+	sta HPS_CharsetAddr+(HPS_StarCharFast*8),x
+	dex
+	bpl .cl1
+
+	; Create the various stars
+	lda #%10000000
+	sta HPS_CharsetAddr+(HPS_StarCharSlow*8)+4
+	sta HPS_CharsetAddr+(HPS_StarCharMedium*8)+4
+	lda #%00010000
+	sta HPS_CharsetAddr+(HPS_StarCharFast*8)+3
+	sta HPS_CharsetAddr+(HPS_StarCharFast*8)+5
+	lda #%00111000
+	sta HPS_CharsetAddr+(HPS_StarCharFast*8)+4
+
+	rts
+}
+
+
+
+
+!zn {
+HPS_Tick
+	lsr HPS_CharsetAddr+(HPS_StarCharSlow*8)+4
+	bcc .noSlowUpdate
+
+	lda #HPS_StarCharSlow
+	sta .smStar+1
+	lda #HPS_StarColourSlow
+	sta .smStarCol+1
+
+	lda #%10000000
+	sta HPS_CharsetAddr+(HPS_StarCharSlow*8)+4
+
+	ldx #0
+.l1
+	jsr .advanceStar
+	inx
+	cpx #HPS_NumStarsSlow
+	bne .l1
+
+.noSlowUpdate
+
+	lsr HPS_CharsetAddr+(HPS_StarCharMedium*8)+4
+	lsr HPS_CharsetAddr+(HPS_StarCharMedium*8)+4
+	bcc .noMediumUpdate
+
+	lda #HPS_StarCharMedium
+	sta .smStar+1
+	lda #HPS_StarColourMedium
+	sta .smStarCol+1
+
+	lda #%10000000
+	sta HPS_CharsetAddr+(HPS_StarCharMedium*8)+4
+
+	ldx #HPS_NumStarsSlow
+.l2
+	jsr .advanceStar
+	inx
+	cpx #HPS_NumStarsSlow + HPS_NumStarsMedium
+	bne .l2
+
+.noMediumUpdate
+
+
+	lda #HPS_StarCharFast
+	sta .smStar+1
+	lda #HPS_StarColourFast
+	sta .smStarCol+1
+
+	ldx #HPS_NumStarsSlow + HPS_NumStarsMedium
+.l3
+	jsr .advanceStar
+	inx
+	cpx #HPS_NumStarsSlow + HPS_NumStarsMedium + HPS_NumStarsFast
+	bne .l3
+
+	rts
+
+.advanceStar
+	jsr .getStarAddresses
+	ldy HPS_XPos,x
+	lda (HPS_ZPStart+0),y
+	cmp #HPS_StarCharSlow
+	beq .wasDrawn
+	cmp #HPS_StarCharMedium
+	beq .wasDrawn
+	cmp #HPS_StarCharFast
+	bne .wasNotDrawn
+.wasDrawn
+	lda #HPS_StarCharClear
+	sta (HPS_ZPStart+0),y
+.wasNotDrawn
+	iny
+	cpy #HPS_StartXPos+HPS_Width
+	bcs .newRandomPos
+.tryDrawStar
+	tya
+	sta HPS_XPos,x
+	lda (HPS_ZPStart+0),y
+	cmp #HPS_StarCharClear
+	beq .okDrawStar
+	cmp #HPS_StarCharSlow
+	beq .okDrawStar
+	cmp #HPS_StarCharMedium
+	beq .okDrawStar
+	cmp #HPS_StarCharFast
+	beq .okDrawStar
+	rts
+.okDrawStar
+.smStar	lda #0
+	sta (HPS_ZPStart+0),y
+.smStarCol	lda #VIC2Colour_White
+	sta (HPS_ZPStart+2),y
+	rts
+
+.newRandomPos
+	; New Y pos
+	jsr Rand
+	and #HPS_HeightMask
+.pl1
+	cmp #HPS_Height
+	bcc .okPos1
+	sbc #HPS_Height
+	jmp .pl1
+.okPos1
+!if HPS_StartYPos > 0 {
+	adc #HPS_StartYPos
+}
+	sta HPS_YPos,x
+
+	jsr .getStarAddresses
+	ldy #0
+	jmp .tryDrawStar
+
+.getStarAddresses
+	ldy HPS_YPos,x
+	lda HPS_ScreenTabL,y
+	sta HPS_ZPStart+0
+	sta HPS_ZPStart+2
+	lda HPS_ScreenTabH,y
+	sta HPS_ZPStart+1
+	lda HPS_ColourTabH,y
+	sta HPS_ZPStart+3
+	rts
+}

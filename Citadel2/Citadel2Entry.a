@@ -7,45 +7,86 @@
 !pdb "Citadel2.pdb"
 !cpu 6510
 !ct pet
-!initmem %10101010
+!initmem $f2	; JAM
+
+!source "../stdlib/stdlib.a"
+
+InvalidAddress = $7fff
+
+Scroller_UseKernal = 1
+Scroller_EnableSpeedCode = 1
+Scroller_EnableBlockColourSpeedCode = 1
+
+!source "_f_index1.a"
+!if CartFile1_Start_DataScorePanel_prg != $8000 {
+!error "CartFile1_Start_DataScorePanel_prg must be $8000 the first file in a new cart bank"
+}
+
+Multiplex_ReverseOrder = 1
+;Multiplex_items	= 32
+;Multiplex_items	= 24
+;Multiplex_items	= 20
+; This is the maximum with all the zerpage optimisations enabled
+;Multiplex_items	= 19
+;Multiplex_items	= 18
+Multiplex_items	= 16
+
+; To account for an NMI appearing in the top IRQ for the title screen NMI colour split code
+eMultiplex_ExtraIRQHeightTweak = 2
+
+Scroller_DecompressTitleScreenCodeHook = 1
+Scroller_DecompressGameCodeHook = 1
+
+Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
+
+; Tweaks how often enemy bullets can be fired
+EnemyBulletBusy_Max = 28
+EnemyBulletBusy_Add = 30
+
+!source "Citadel2Optimisations.a"
 
 !source "asm/DataDefs.a"
 !source "ScrollerVars.a"
 
+;Paralax_Enable = 1
+Paralax_Enable_More = 1
+
 ; Define this to enable the player map block alignement tests
 MapBlockAlignedMovement = 1
+
+; Define these to make the player movement alter the camera scroll directly, instead of using a push
+CameraNotPushX = 1
+CameraNotPushY = 1
+CameraFollowWiggleX = 0
+CameraFollowWiggleY = 0
 
 ScrollerPreGameCalcuation_Enable = 1
 
 DynamicMemory_ZP_lo = tempWork7
 DynamicMemory_ZP_hi = tempWork8
+Score_ZeroPage		= tempWork7
 
 ; Define what the multiplexor can use
 Multiplex_VarBase	= scrollerDemo_endVars
 Multiplex_spritepointer	= $cbf8
-Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
-Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
-;Multiplex_items	= 32
-Multiplex_items	= 24
-;Multiplex_items	= 16
 Multiplex_DiscardSpritesYPosUseLocation = 1
 
 ; Clears the animation state
 UseAnimationInit = 1
 UseAnimationInit2 = 1
-SolidMapBlockIndex = 12
 
 ;DisableSound = 1
 
-; Allows the number of enemy slots to check each frame of the on-screen check to be tweaked
-numEnemySlotsToOnScreenCheck = 4				; Must by power of 2
-numMaxEnemySlotsToOnScreenCheckShiftRight = 4
-!if numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck > 32 {
-!error "numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck must be <= 32 to allow the offscreen check enough time to activate the enemy DB position into the animation system"
-}
-!if (2^numMaxEnemySlotsToOnScreenCheckShiftRight) != (numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck) {
-!error "2^numMaxEnemySlotsToOnScreenCheckShiftRight must equal numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck"
-}
+; Enable this to include ramming enemies code
+kRammingEnemy = 1
+
+; Limit the number of enemies spawned with those already on screen
+MaxEnemyOnScreenBeforeSpawn = 7
+
+; When the frame gets busier than this threshold then start to not execute certain functions to save time and recover the frame
+; Compares with ScrollerDemo_OverrunCounter
+OverrunCounter_EnemyProcessing = 5
+
 
 UseEnemyProcessActivation = 1
 RedirectHandleUserInput = 1
@@ -69,6 +110,7 @@ Multiplex_EnableEarlyOut = 1
 Multiplex_OverflowRasterCheck1 = 1
 Multiplex_OverflowRasterCheck2 = 1
 Multiplex_BunchingCheck = 1
+DisableUpdateMultiplexorToAnimation = 1
 
 ; Debug colour changes for the border
 ;Multiplexor_DebugBorder = 1
@@ -82,6 +124,12 @@ Multiplex_BunchingCheck = 1
 ;Scroller_DebugScreenScrollTimings = 1
 ;Scroller_DebugParalaxScrollTimings = 1
 ;MazeSolve_DebugBorder = 1
+
+; The debug fine timings should only be enabled once, since the increment the border a lot
+;HandleUserInput_DebugFineTimings = 1
+
+
+Scroller_PlaySoundEffectsDuringGame = 1
 
 Scroller_MultiDirection = 1
 ; Saves 1K of code space
@@ -109,7 +157,7 @@ Scroller_SpriteNegativeColourEqualsFlashingColour = VIC2Colour_White
 Scroller_FullScreen = 1
 ; Issues with the ScrollerOpenBorderCopyBank* routine, since it uses memory used for TraceBackResultBuffer = $c00
 ; Also there are timing issues with the top of the screen flickering.
-IRQOpenBorders = 1
+;IRQOpenBorders = 1
 ScorePlayer1XPos = 44
 ScorePlayer2XPos = 228
 }
@@ -125,66 +173,81 @@ EnableScorePanelDataHook = 1
 EnableAfterScrollersHook = 1
 EnableBeforeScrollersHook = 1
 
-; Wall chars >= than this
-MapWallChars=160
-
-ClearGameScreensChar = 71
-
-PickupDropChance = 128
-;PickupDropChance = 220
-
 Scroller_DisplayTitleScreen = 1
 TitleScreenAnimationHook_Enable = 1
 
+!source "asm/FIFO.a"
+
+Scroller_NoInitialiseMachine = 1
+Initialise_NoIRQServiceRoutine = 1
+
+!source "asm/PreBoot.a"
+!source "asm/DecompCode.a"
+
+Scroller_EarlyStartHook_Enable = 1
 !source "ScrollEntryCommon.a"
-!source "asm/Animations.a"
+
 MazeNodesAlloced = 1
 MazeSolve_ZP_base	= Multiplex_endVars
 MazeSolveReversedOff = 1
 MazeSolve_LeanAndMean = 1
-!source "asm/MazeSolve.a"
-!source "asm/MazeSupport.a"
-!source "asm/MapUtils.a"
-!source "asm/Enemy.a"
-!source "asm/UserInput.a"
-!zn {
-DynamicMemory_HeapCorruptHook
-	sei
-.l1
-	inc VIC2BorderColour
-	jmp .l1
+!source "asm/MazeSolveDefs.a"
+!source "asm/MazeSolveVars.a"
+
+Citadel2_ZP_base = MazeSolve_ZP_end
+!source "asm/Citadel2Vars.a"
+
+!if Citadel2_ZP_end >= $fb {
+!error "Multiplex_endVars is out of zeropage"
 }
-!source "asm/DynamicMemory.a"
-!source "asm/PlayerBullets.a"
-!source "asm/Maths.a"
-!source "asm/Camera.a"
-!source "asm/SubGame.a"
-!source "asm/SubGameInput.a"
-!source "asm/Teleport.a"
-!source "asm/Radar.a"
-!source "SFXWithMusic.a"
-!source "asm/Inventory.a"
-!source "asm/TitleScreen.a"
+;!if Citadel2_ZP_end >= ZPCurrentFileDeviceNumber {
+;!error "ZPCurrentFileDeviceNumber overwrite!"
+;}
+
+; Generic code
+GenericSpecificCode_Start = *
+MemoryCopy_ForSize_EOR_Enable = 1
+!source "../stdlib/MemoryCopy.a"
+!source "asm/DecompInterop.a"
+!source "asm/CodeHooks.a"
 !source "asm/Loader.a"
-
-; Decompression code
-!macro RNXPCompressionIncBorder_A {}
-Decompression_OptimiseForOneEscapeBit = 1
-Decompression_OptimiseNoChangingEscape = 1
-
-!source "Decompression.a"
-!source "DecompressionP2.a"
-!source "DecompressionVars.a"
-CompressionStartOfHistoryBufferTables = *
-!fill CompressionHistoryBufferTablesSize , 0
+!source "../BerzerkRedux/Rand.a"
 
 JoystickA_Enable = 1
 ; Enable this to use debug automation for the joystick code, this fakes player input
 ;Joystick_DebugAutomate = 1
 !source "asm/Joystick.a"
-!source "asm/MapAnimations.a"
-!source "asm/PlayerSweep.a"
+!source "asm/Keyboard.a"
 
-Citadel2EndCode = *
+!source "asm/SFXTables.a"
 
-!source "asm/Data.a"
+!source "SFXWithMusic.a"
+
+!source "asm/HiScores.a"
+
+ScorePanelColourLookup
+!bin "ScorePanel.ctm" , ScorePanelNumChars , $814
+
+
+; Must not be in cart bank memory because they are read by the IRQ
+SpriteFixedColours
+!bin "LevelSprites.spd" , 2 , $7
+
+ScorePanelBGCol0
+!bin "ScorePanel.ctm" , 1 , 4
+ScorePanelBGCol1
+!bin "ScorePanel.ctm" , 1 , 5
+ScorePanelBGCol2
+!bin "ScorePanel.ctm" , 1 , 6
+
+BackgroundFixedColours
+!by 0,0,0
+
+AnimationStopMusic !by 0
+
+GenericSpecificCode_End = *
+GenericSpecificCode_Size = * - GenericSpecificCode_Start
+
+; Now generate forward references
+TitleScreenAnimationHook	= GenericSpecificCode_End
+DisplayTitleScreen			= GenericSpecificCode_End + 3

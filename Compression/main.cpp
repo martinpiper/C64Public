@@ -161,6 +161,18 @@ unsigned char sC64DecompBorderEffectMax[] = {
 	0x20, 0x42, 0x00, 0x88, 0xD0, 0xFA, 0xC6, 0x8E, 0xD0, 0xF6, 0x4C, 0xAB, 0x00
 };
 
+unsigned char sC64DecompNoEffectMaxRLE[] = {
+	0x0B, 0x08, 0x01, 0x00, 0x9E, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xA2, 0xFF, 0x9A, 
+	0xA9, 0x20, 0x85, 0x01, 0xA2, 0x00, 0xBD, 0x23, 0x08, 0x9D, 0xD0, 0x00, 0xCA, 0xD0, 0xF7, 0x4C, 
+	0xE4, 0x00, 0x8D, 0x01, 0x08, 0xE6, 0xD1, 0xD0, 0x02, 0xE6, 0xD2, 0x60, 0xAD, 0x0C, 0x6E, 0xE6, 
+	0xDB, 0xD0, 0x02, 0xE6, 0xDC, 0x60, 0xBD, 0x84, 0x99, 0x9D, 0x00, 0xFF, 0xCA, 0xD0, 0xF7, 0xC6, 
+	0xE6, 0xC6, 0xE9, 0xA5, 0xE6, 0xC9, 0x06, 0xD0, 0xED, 0x4C, 0xFA, 0x00, 0x20, 0xDA, 0x00, 0x18, 
+	0x65, 0xD1, 0x8D, 0x21, 0x01, 0x20, 0xDA, 0x00, 0x65, 0xD2, 0x8D, 0x27, 0x01, 0x20, 0xDA, 0x00, 
+	0x8D, 0x15, 0x01, 0x20, 0xDA, 0x00, 0xC9, 0x00, 0xF0, 0x06, 0x20, 0xD0, 0x00, 0x4C, 0x11, 0x01, 
+	0xA5, 0xD1, 0xC9, 0x00, 0xD0, 0x09, 0xA5, 0xD2, 0xC9, 0x00, 0xD0, 0x03, 0x4C, 0x00, 0x09, 0x20, 
+	0xDA, 0x00, 0xAA, 0x20, 0xDA, 0x00, 0x20, 0xD0, 0x00, 0xCA, 0xD0, 0xFA, 0x4C, 0x11, 0x01
+};
+
 const u32 sStartOfBASIC = 0x801;
 
 
@@ -233,7 +245,7 @@ int main(int argc,char **argv)
 		printf("LZMPi : A very simple file compressor or decompressor suitable for C64 files.\n\n"
 		 " -c <input file> <outfile file> [offset from the start of the file]\n"
 		 " -d <input file> <outfile file>\n"
-		 " -c64[m][b] <input file> <outfile file> <run address> [start address]\n\n"
+		 " -c64[m][b][r] <input file> <outfile file> <run address> [start address]\n\n"
 		 "Use the following to skip a number of bytes from the start of the file and\n"
 		 "set a length. If the length equals 0 the length is still set from the file: \n"
 		 " -c <input file> <outfile file> <offset> [length]\n\n"
@@ -242,6 +254,7 @@ int main(int argc,char **argv)
 		 "read from the first two bytes of the prg file.\n"
 		 "-c64b will cause the border to flash during decompression.\n"
 		 "-c64m or -c64mb will use max mode ($200-$ffff available) without or with border flashing.\n"
+		 "-c64mr will use RLE max mode ($200-$ffff available) without border flashing.\n"
 		 "By default the border will not flash.\n\n");
 
 		exit(-1);
@@ -279,6 +292,12 @@ int main(int argc,char **argv)
 			{
 				printf("Making the border flash.\n");
 				flashBorder = true;
+			}
+
+			if (argv[1][4] == 'r' || argv[1][5] == 'r')
+			{
+				printf("Using RLE mode\n");
+				useRLE = true;
 			}
 
 			startC64Code = ParamToNum(argv[4]);
@@ -517,7 +536,35 @@ int main(int argc,char **argv)
 			// MPi: TODO: remove these magic numbers such as 0x83a and 0x844 from here and below and make them constants.
 
 			// The commented values are for the super expanded decompression code that makes $200-$fff available
-			if (maxMode)
+			if (maxMode && useRLE)
+			{
+				outSize += 2;	//	For the 2 byte original size header
+
+				theC64Code = sC64DecompNoEffectMaxRLE;
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRLE) + outSize;
+				sizeToWrite = sizeof(sC64DecompNoEffectMaxRLE);
+/*
+				if (flashBorder)
+				{
+					theC64Code = sC64DecompBorderEffectMax;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMax) + outSize;
+					sizeToWrite = sizeof(sC64DecompBorderEffectMax);
+				}
+*/
+
+				theC64Code[0x87e - sStartOfBASIC] = (u8) (startC64Code & 0xff);
+				theC64Code[0x87f - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
+
+				theC64Code[0x838 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[0x839 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+
+				theC64Code[0x82e - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
+				theC64Code[0x82f - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+
+				theC64Code[0x824 - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
+				theC64Code[0x825 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+			}
+			else if (maxMode)
 			{
 				theC64Code = sC64DecompNoEffectMax;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMax) + outSize;
@@ -567,6 +614,11 @@ int main(int argc,char **argv)
 			}
 
 			fwrite(theC64Code,1,sizeToWrite,fp);
+
+			if (useRLE)
+			{
+				fwrite(&inputSize,1,sizeof(inputSize),fp);
+			}
 		}
 
 		fwrite(output,1,outSize,fp);

@@ -4,76 +4,113 @@
 ; Exit:
 ; A/X/Y = Trashed
 LoadLevel
-!if 1 {
-	; Bank in the correct cart bank, copy the data, decompress it
-	sei
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
-	lda #ProcessorPortDefault
-	sta ZPProcessorPort
+	lda #CartFile1_Bank_DataLevel1_prg
+	jsr CartSelectBank_8K
 
-	; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
-	; This will need a file system builder tool for the cart banks
-	lda #8
-	sta MemoryMappedIOArea1
-
-	lda #$80
-	sta .sm1+2
-	sta .sm2+2
-
-	; $800 should be more than enough for the compressed level data from $a000 to $b000
-	; MPi: TODO: Add size checks for the compressed level data
-	ldx #$8
-	ldy #0
-.l1
-.sm1	lda $8000,y
-.sm2	sta $8000,y
-	dey
-	bne .l1
-	inc .sm1+2
-	inc .sm2+2
-	dex
-	bne .l1
-
-	; Stop the cartridge from selecting the bank by selecting an invalid bank
-	lda #$7f
-	sta MemoryMappedIOArea1
-
-	lda #ProcessorPortAllRAMWithIO
-	sta ZPProcessorPort
-
-	; Will need extra decompression of character data and/or sprites if needed
+	ldx #<CartFile1_Start_DataLevel1_prg
+	ldy #>CartFile1_Start_DataLevel1_prg
+	jsr MemoryCopy_SetSource
 
 	ldx #<LevelDataStart
 	ldy #>LevelDataStart
-	jsr RNXPCompressionDecompress_InitStore
-	; Decompress from where the cartridge will be
-	ldx #0
-	ldy #$80
-	jsr RNXPCompressionDecompress
+	jsr MemoryCopy_SetDestination
 
-;	inc VIC2BorderColour
+	ldx #<CartFile1_Size_DataLevel1_prg
+	ldy #>CartFile1_Size_DataLevel1_prg
+	lda #0
+	jsr MemoryCopy_ForSize
+
+	jsr CartKillBank
+
+!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
+	; Because block colour data cannot be in the banked in ROM position whilst the colourise code is running
+	ldx #0
+.l1
+	lda CharColoursSource,x
+	sta CharColours,x
+	dex
+	bne .l1
+} else {
+CharColours = CharColoursSource
 }
+
 	rts
+
+!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
+CharColours
+	!fill 256 , 1
+}
+
 
 !zn
 BeforeScorePanelDataHook
-	sei
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
-	lda #ProcessorPortDefault
-	sta ZPProcessorPort
-
-	; TODO: Calculate the correct cart bank and start copying address inside the cart based on a lookup table for the "file ID" value to load
-	; This will need a file system builder tool for the cart banks
-	lda #7
-	sta MemoryMappedIOArea1
-	rts
+	lda #CartFile1_Bank_DataScorePanel_prg
+	jmp CartSelectBank_8K
 
 !zn
-AfterScorePanelDataHook
-	lda #$7f
-	sta MemoryMappedIOArea1
-	lda #ProcessorPortAllRAMWithIO
-	sta ZPProcessorPort
+AfterScorePanelDataHook = CartKillBank
+
+
+!zn
+RefreshTitleScreenMusic
+	lda #CartFile1_Bank_Citadel2_Title_prg
+	jsr CartSelectBank_8K
+
+	ldx #<CartFile1_Start_Citadel2_Title_prg
+	ldy #>CartFile1_Start_Citadel2_Title_prg
+	jsr MemoryCopy_SetSource
+
+	ldx #<MusicPlayerInit
+	ldy #>MusicPlayerInit
+	jsr MemoryCopy_SetDestination
+
+	ldx #<CartFile1_Size_Citadel2_Title_prg
+	ldy #>CartFile1_Size_Citadel2_Title_prg
+	lda #0
+	jsr MemoryCopy_ForSize
+
+	jsr CartKillBank
+	rts
+
+
+
+!zn
+DisplayLoading
+	sei
+;	+MACROWaitForTheLastScan_A
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+BlankScreenBorderSpriteSound_A
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreenLowerCase_A
+	+DisplayColourTextMiddle_AX .textStart_Loading , .textEnd_Loading , SCREENRAM + (9*VIC2ScreenCharsWidth) , VIC2Colour_White
+	rts
+
+.textStart_Loading
+!scr "Loading..."
+.textEnd_Loading
+
+
+
+
+
+!zn
+; To be called afer UpdateMapToMaze
+MapCreateZones
+	lda #CartFile1_Bank_ZonesLevel1_bin
+	jsr CartSelectBank_8K
+
+	ldx #<CartFile1_Start_ZonesLevel1_bin
+	ldy #>CartFile1_Start_ZonesLevel1_bin
+	jsr MemoryCopy_SetSource
+
+	ldx #<Maze
+	ldy #>Maze
+	jsr MemoryCopy_SetDestination
+
+	ldx #<CartFile1_Size_ZonesLevel1_bin
+	ldy #>CartFile1_Size_ZonesLevel1_bin
+	lda #0
+	jsr MemoryCopy_ForSize
+
+	jsr CartKillBank
 	rts

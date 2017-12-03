@@ -17,5 +17,24 @@ AnimationDefOffset_Frames		= 4	; Last in the list
 
 ; This structure is followed by the sprite frame data
 !macro MakeAnimation .flags , .colour , .numFrames , .speed {
+!if .speed > 127 {!error "Invalid speed"}
+!if .speed < 1 {!error "Invalid speed"}
+!if .colour > 15 {!error "Invalid colour"}
+!if .colour < 0 {!error "Invalid colour"}
+!if .numFrames > 127 {!error "Invalid number of frame"}
+!if .numFrames < 1 {!error "Invalid number of frame"}
+
+!if .flags & AnimationFlags_PlayerCollideS {
+!if .flags & AnimationFlags_PlayerCollideL {
+!error "Cannot use AnimationFlags_PlayerCollideS and AnimationFlags_PlayerCollideL at the same time"
+}
+}
+
+!if .flags & AnimationFlags_PlayerCollideS {
+!if .flags & AnimationFlags_Pickup {
+!error "Cannot use AnimationFlags_PlayerCollideS and AnimationFlags_Pickup at the same time"
+}
+}
+
 !by .flags , .colour , .numFrames , .speed
 }

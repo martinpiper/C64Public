@@ -18,12 +18,21 @@ public class FIFO
 
 	@Given("^I have a new FIFO with maximum (\\d+) elements$")
 	public void i_have_a_new_SlotLinkList_with_maximum_elements(String arg1) throws Throwable {
-		c64.i_have_a_simple_6502_system();
+		c64.i_have_a_simple_overclocked_6502_system();
 		c64.i_create_file_with("t.a",
 				"!sal\n" +
 				"*=$400\n" +
+				"!source \"asm/FIFO.a\"\n" +
 				"FIFOEntries = " + arg1 + "\n" +
-				"!source \"asm/FIFO.a\"\n"
+				"FIFOStartIndex\t!by 0\n" +
+				"FIFOEndIndex\t!by 0\n" +
+				"FIFOSlotsLo\t\t!fill FIFOEntries\n" +
+				"FIFOSlotsHi\t\t!fill FIFOEntries\n" +
+				"FIFOInit\t+MFIFOInit\t\tFIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi\n" +
+				"FIFOSize\t+MFIFOSize\t\tFIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi\n" +
+				"FIFOIsEmpty\t+MFIFOIsEmpty\tFIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi\n" +
+				"FIFOAdd\t\t+MFIFOAdd\t\tFIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi\n" +
+				"FIFORemove\t+MFIFORemove\tFIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi\n"
 		);
 		c64.i_run_the_command_line("..\\acme.exe -o t.prg --labeldump t.lbl -f cbm t.a");
 		c64.i_load_prg("t.prg");

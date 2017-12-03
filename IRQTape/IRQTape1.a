@@ -30,17 +30,28 @@
 ; whole tape IRQ on a page boundary and have a self modified JMP using the lo byte of the next
 ; routine to execute.
 
+; MPi: Done: Depending on the timing for the detection/trigger of the IRQ and the timer restart (store into CIA1TimerAControl) adjust the +MACROSetTurboTimerMiddle <tweak> value accordingly
+; Verify with a breakpoint where timer underflow (or trigger method) is read and CIA1TimerAControl is reset.
+; The timer value for short pulses should have a remaining timer count of TapeTurboSpeed
+
+; MPi: TODO: Add a multiplexor loader. Mainline waits for rasters,  IRQ still for tape loader of course. Or maybe use an NMI for tape signals?
+
+
 ; Define this to cause the extended code for Legion of the Damned to be used
 ;Scroller_LOTD = 1
 
 ; Define this to remove top and bottom borders whilst loading.
 OpenBorders = 1
 
+; Define this to enable the screen during the main load, otherwise the screen and sprite are turned off
+MainLoad_EnableScreen = 1
+
+
 
 ; These options are for the initial boot loader. They cannot be both enabled at the same time.
 ; Uncomment the following line to use a tiny loader that doesn't switch on the screen.
 ; This loader uses a sawtooth waveform and sets the freqHi with the bytes being loaded.
-;SmallLoader = 1
+SmallLoader = 1
 
 ; Uncomment the following line to enable the MartyLoad code instead of the black screen with white
 ; file name text.

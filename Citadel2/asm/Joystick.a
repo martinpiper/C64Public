@@ -29,38 +29,98 @@ JoystickB_Processed		!by $ff
 }
 
 !ifdef Joystick_DebugAutomate {
-.joystickFakeCount !by 0
-.joystickFake !by 0
-.joystickFakeCount2 !by 0
+.joystickFake		!by 0
+.joystickFakePos	!by 0
+.joystickFakeDelay	!by 0
+
+.joystickDoRestore	!by 0 , 0
+
+; Input followed by the number of frames delay, until input = 0
+.joystickInputs
+	!by !(JoystickBits_Up)			, 50
+	!by !(JoystickBits_Down)		, 50
+	!by !(JoystickBits_Left)		, 50
+	!by !(JoystickBits_Right)		, 50
+	!by !(JoystickBits_Fire)		, 1
+
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+	!by !(JoystickBits_Left)		, 50
+	!by !(JoystickBits_Up)			, 50
+	!by !(0)						, 50
+	!by !(JoystickBits_Left)		, 50
+	!by !(0)						, 50
+
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+	!by !(JoystickBits_Down)		, 5
+	!by !(0)						, 50
+
+	!by !(JoystickBits_Fire)		, 10
+	!by !(JoystickBits_Left | JoystickBits_Fire)	, 50
+	!by !(JoystickBits_Right | JoystickBits_Fire)	, 50
+	!by !(JoystickBits_Up | JoystickBits_Fire)		, 50
+	!by !(JoystickBits_Down | JoystickBits_Fire)	, 50
+
+	!by !(JoystickBits_Left)		, 50
+	!by !(JoystickBits_Up)			, 150
+
+	!by !(0)						, 50
+	!by !(JoystickBits_Fire)		, 10
+	!by !(JoystickBits_Up | JoystickBits_Fire)	, 150
+
+	!by 0
 }
 
 Joystick_Read
 !ifdef Joystick_DebugAutomate {
-	; Fake some user input to exercise the game
-	inc .joystickFakeCount
-	bne .l1
-	inc .joystickFakeCount2
-	lda .joystickFakeCount2
-	and #15
-	cmp #15
-	bne .l1
+	ldy .joystickFakePos
+
+	lda .joystickFakeDelay
+	bne .justTick
+
+	iny
+	iny
+	sty .joystickFakePos
+
+.resetRead
+	lda .joystickInputs+1,y
+	sta .joystickFakeDelay
+.justTick
+	dec .joystickFakeDelay
+
+	lda .joystickInputs,y
+	bne .doInput
+
+	; Reached the end of the list so
+	ldy #0
+	sty .joystickFakePos
+	jmp .resetRead
+
+.doInput
+	sta .joystickFake
+
+	; Generate a fake quit NMI after some time
+	inc .joystickDoRestore
+	bne .noExit
+	inc .joystickDoRestore+1
+	lda .joystickDoRestore+1
+	cmp #50
+	bcc .noExit
+
+	lda #0
+	sta .joystickDoRestore+1
+
 	; After a long time fake a game reset
 	inc NMINotTimerGenerated
-.l1
-	ldy .joystickFakeCount
-	tya
-	lsr
-	lsr
-	lsr
-	lsr
-	lsr
-	eor #$ff
-	ora #%11110000
-	cpy #160
-	bcc .noFire
-	and #!JoystickBits_Fire
-.noFire
-	sta .joystickFake
+.noExit
+
 }
 
 !ifdef JoystickA_Enable {

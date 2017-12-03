@@ -1,0 +1,57 @@
+Uses:
+; Score_ZeroCharacter
+; ScorePanel_Score_NumDigits
+; ScorePanel_Score_Addr
+
+; To cater for different fonts
+HighScores_ZeroCharacter = 48
+HighScores_NumNameChars = 9
+HighScores_NumEntries = 5
+
+HighScores_Text
+	!by -12
+	!scr "hi scores"
+	!by -1
+	!by -1
+	!by -1
+HighScore_entry0
+	!scr "0000100000"
+	!scr " "
+	!scr "martin   "
+	!by -1
+	!by -1
+
+HighScore_entry1
+	!scr "0000020000"
+	!scr " "
+	!scr "bethany  "
+	!by -1
+	!by -1
+
+HighScore_entry2
+	!scr "0000003000"
+	!scr " "
+	!scr "kexin    "
+	!by -1
+	!by -1
+
+HighScore_entry3
+	!scr "0000000400"
+	!scr " "
+	!scr "yoda     "
+	!by -1
+	!by -1
+
+HighScore_entry4
+	!scr "0000000050"
+	!scr " "
+	!scr "porgs    "
+	!by 0
+
+
+HighScores_Table
+	!by <HighScore_entry0 , >HighScore_entry0
+	!by <HighScore_entry1 , >HighScore_entry1
+	!by <HighScore_entry2 , >HighScore_entry2
+	!by <HighScore_entry3 , >HighScore_entry3
+	!by <HighScore_entry4 , >HighScore_entry4

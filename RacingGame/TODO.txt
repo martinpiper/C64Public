@@ -1,0 +1,28 @@
+* Track side smoothing (TrackDraw.a:smoothedge) needs vast improvement
+	* smoothedge currently seems to calculate a gradient based on the current rendered row index in yfl and to the next different row Y pos
+	* Perhaps an improvement would be to take the row index in yfl and look ahead 4 rows and calculate a gradient based on that
+	* Since the background is char 0 then first render the road and the objects, minus the smooth edge
+	* For each screen row store the left an right calculated rendered values and the row index in the first pass
+	* Then as a second pass after the road plus objects have been drawn use the first pass data to draw the smooth edges
+		* This will need a char 0 check to avoid draing over the objects etc
+	* This will save calculating the positions and indexes twice
+
+	
+
+
+
+
+* With corners, or steering, the road side objects seem to be using positions that appear to be inside theroad at some extremes?
+
+
+
+* Add multiplexor sort
+
+
+	
+* Move TrackDraw_chars to speed code in the cartridge
+
+
+
+
+* TODO: Supporting raised roads, like bridges or ramps, the horizon index can be separated from the plot culling functionality.

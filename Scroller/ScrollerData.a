@@ -44,33 +44,43 @@ AnimationSpriteFrame !fill Multiplex_items
 !align 255,0
 BlockColours
 ;!bin "../FreeDirRant/level4.blk",$80
+!ifdef BlockColoursForEveryCharacter {
 ; This needs BlockColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
-;!bin "../FreeDirRant/attribs.raw"
+!bin "../FreeDirRant/attribs.raw"
+}
 
 ; This needs CharColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
-!ifdef CharColoursForEveryCharacter {
-CharColours
 numMapUsedChars = 194
+!ifndef BlockColoursForEveryCharacter {
+CharColours
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars , $14 + (numMapUsedChars * 8)
 }
 
 !align 255,0
 BlockData
 ;!bin "../FreeDirRant/level4.blk",,$80
-;!bin "../FreeDirRant/tiles.raw"
+!ifdef BlockColoursForEveryCharacter {
+!bin "../FreeDirRant/tiles.raw"
+}
 numMapUsedTiles = 172
+!ifndef BlockColoursForEveryCharacter {
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedTiles*4*4 , $14 + (numMapUsedChars * 8) + numMapUsedChars , 2
+}
 
 
 !align 255,0
 ; First two bytes = width,height
 MapData
 ;!bin "../FreeDirRant/level4.map"
-;!by 137,51
-;!bin "../FreeDirRant/map.raw"
+!ifdef BlockColoursForEveryCharacter {
+!by 137,51
+!bin "../FreeDirRant/map.raw"
+}
+!ifndef BlockColoursForEveryCharacter {
 !by 170
 !by 48
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , 170*48 , $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) , 2
+}
 
 
 BackgroundFixedColours
@@ -310,8 +320,12 @@ MarkEndData = *
 *=$c000
 CharData
 ;!bin "../FreeDirRant/level4.chr",,$100
-;!bin "../FreeDirRant/chars.raw"
+!ifdef BlockColoursForEveryCharacter {
+!bin "../FreeDirRant/chars.raw"
+}
+!ifndef BlockColoursForEveryCharacter {
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars * 8 , $14
+}
 
 
 *=$fe00
@@ -474,13 +488,27 @@ SpriteScoreChars
 !ifdef SpriteEmptyLookupTab2Enable {
 +reserve ~SpriteEmptyLookupTab2 , 256
 }
+!ifndef defined_Multiplex_YPos {
 +reserve ~Multiplex_YPos , Multiplex_items
+}
+!ifndef defined_Multiplex_XPosLo {
 +reserve ~Multiplex_XPosLo , Multiplex_items
+}
+!ifndef defined_Multiplex_XPosHi {
 +reserve ~Multiplex_XPosHi , Multiplex_items
+}
+!ifndef defined_Multiplex_Colour {
 +reserve ~Multiplex_Colour , Multiplex_items
+}
+!ifndef defined_Multiplex_SpriteFrame {
 +reserve ~Multiplex_SpriteFrame , Multiplex_items
+}
+!ifndef defined_Multiplex_Sortlo {
 +reserve ~Multiplex_Sortlo , Multiplex_items
+}
+!ifndef defined_Multiplex_Sorthi {
 +reserve ~Multiplex_Sorthi , Multiplex_items
+}
 
 ; Moved these tables for the animation engine
 +reserve ~AnimationType , Multiplex_items

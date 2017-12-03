@@ -25,3 +25,8 @@ Enable one of the !bin to include one of the game data files from the SEUCK dire
 
 To create your own p00 game data file use the Vice C64 emulator, detach all d64 files, in SEUCK choose storage and save all data.
 Then reference the saved p00 data file on your PC by putting the path to the file in one of the !bin commands in the ScrollerData.a file.
+
+
+* Useful VICE options
+-remotemonitor $(ProjectDir)\Scroller.prg
+-remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt

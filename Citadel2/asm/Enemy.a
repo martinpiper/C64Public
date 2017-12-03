@@ -1,25 +1,16 @@
+!source "asm/EnemyCommon.a"
 !zn
 .previousSlotsChecked !by 0
 
- ; tempWork0 ,  tempWork1 used for animation def temporary work
-;OnScreenCheckLeft_MapPosX	= tempWork2
-;OnScreenCheckRight_MapPosX	= tempWork3
-;OnScreenCheckTop_MapPosY	= tempWork4
-;OnScreenCheckBottom_MapPosY	= tempWork5
-
-MaxEnemyBlockedCount = 50
-
-MapTileToFineXLo !for .num , 40 { !by <(((.num-1)*32)+4) }
-MapTileToFineXHi !for .num , 40 { !by >(((.num-1)*32)+4) }
-
-MapTileToFineYLo !for .num , 25 { !by <(((.num-1)*32)+6) }
-MapTileToFineYHi !for .num , 25 { !by >(((.num-1)*32)+6) }
+; tempWork0 ,  tempWork1 used for animation def temporary work
 
 EnemyProcessActivationInit
 	lda #0
 	sta .enemyOffsetTweak
 	sta .enemyOffsetTweak2
 	sta .previousSlotsChecked
+	sta ScrollerDemo_OverrunCounter
+	sta frameIsOrWasBusy
 	rts
 
 EnemyMapClear
@@ -29,6 +20,7 @@ EnemyMapClear
 	sta EnemyToAnimationIndex-1,x
 	lda #0
 	sta EnemyOffScreenCount-1,x
+	sta EnemyRequestedRoute-1,x
 	sta EnemyPositionsXLo-1,x
 	sta EnemyPositionsXHi-1,x
 	sta EnemyPositionsYLo-1,x
@@ -41,6 +33,8 @@ EnemyMapClear
 	sta EnemyMoveStepsOriginalHi-1,x
 	sta EnemyMoveGotMovement-1,x
 	sta EnemyMoveStepsCount-1,x
+	sta EnemyPreviousSolveRequestX-1,x
+	sta EnemyPreviousSolveRequestY-1,x
 	dex
 	bne .cledb1
 	rts
@@ -67,8 +61,23 @@ EnemyAddPlayerAggression
 EnemyProcessActivation
 	lda DisplayingSubGame
 	beq .os1
+.exit2
+;	inc VIC2BorderColour
+.exit
 	rts
 .os1
+	lda ScrollerDemo_OverrunCounter
+!if 0 {
+	sta VIC2BorderColour
+}
+	cmp #OverrunCounter_EnemyProcessing
+	bcs .exit2
+;	lda frameIsOrWasBusy
+!if 0 {
+;	sta VIC2BorderColour
+}
+;	bne .exit2
+
 
 	inc DynamicMemory_BlockSweepCount
 	inc .enemyOffsetTweak
@@ -80,23 +89,27 @@ EnemyProcessActivation
 	sta .enemyOffsetTweak2
 
 	; Update bounding box coordinates
-	; Two map blocks around the edge will decide on/off screen behaviour
+	; "enemyActivateTileExtra" map blocks around the edge will decide on/off screen behaviour
 	lda scrollMapHX
 	sec
-	sbc #2
+	sbc #enemyActivateTileExtra
 	sta .smOnScreenCheckLeft_MapPosX+1
 	lda scrollMapHX
 	clc
-	adc #10+2
+	adc #10+enemyActivateTileExtra
 	sta .smOnScreenCheckRight_MapPosX+1
 
 	lda scrollMapHY
 	sec
-	sbc #2
+	sbc #enemyActivateTileExtra
 	sta .smOnScreenCheckTop_MapPosY+1
 	lda scrollMapHY
 	clc
-	adc #5+2
+!ifdef Scroller_FullScreen {
+	adc #6+enemyActivateTileExtra
+} else {
+	adc #5+enemyActivateTileExtra
+}
 	sta .smOnScreenCheckBottom_MapPosY+1
 
 	jmp .olincEnemy
@@ -216,22 +229,31 @@ EnemyProcessActivation
 	; If it fails to find a free animation slot then assume the screen is very cluttered and act like it's offscreen to allow others to process
 	bcs .offScreenDB
 
+	inc EnemiesOnScreenCount
+
 	; Link the entry for the enemy DB to the animation array, and vice-versa
 	tya
 	sta AnimationActiveSlot,x
 	txa
 	sta EnemyToAnimationIndex-1,y
 
-	tya
-	pha
+	sty .smy+1
+
+	lda EnemyFlags-1,y
+	sta .sm2+1
 
 	lda EnemyType-1,y
+	tay
+	lda EnemyTemplate_Animation,y
 	tay
 
 	jsr AnimationInitWithType
 
-	pla
-	tay
+	; Include EnemyFlags updates
+.sm2	lda #0
+	sta AnimationEnemyFlags,x
+
+.smy ldy #0
 
 	; Continue with the enemy animation initialisation here
 
@@ -459,8 +481,16 @@ EnemyMoveCoarseUpdate2
 .l6
 	rts
 
+.fakeImmediateBlock
+	lda #MaxEnemyBlockedCount
+	sta EnemyBlockedCount-1,x
+	jmp .isBlockedQuick
 
 .checkBlockedMove
+	lda EnemyFlags-1,x
+	and #EnemyFlags_StayHere
+	bne .fakeImmediateBlock
+
 	lda EnemyBlockedCount-1,x
 	cmp #MaxEnemyBlockedCount
 	bcs .isBlockedQuick
@@ -470,10 +500,24 @@ EnemyMoveCoarseUpdate2
 	lda EnemyPositionsY-1,x
 	sta .targetY
 
-	txa
-	pha
-	tya
-	pha
+	stx .smx1+1
+	sty .smy1+1
+
+!ifdef kRammingEnemy {
+	lda EnemyFlags-1,x
+	and #EnemyFlags_IsCaptured
+	bne .notRam2
+	; Ignore the player when ramming
+	ldy EnemyType-1,x
+	lda EnemyTemplate_Ram,y
+	beq .notRam2
+	lda #!Node_isBlocked_Player
+	jmp .notRam3
+.notRam2
+	lda #$ff
+.notRam3
+	sta .sma1+1
+}
 
 	ldx .targetX
 	ldy .targetY
@@ -482,6 +526,9 @@ EnemyMoveCoarseUpdate2
 	stx tempWork1
 	ldy #Node_isBlocked
 	lda (tempWork0),y
+!ifdef kRammingEnemy {
+.sma1 and #$ff
+}
 	bne .isBlocked
 	ora #Node_isBlocked_Enemy
 	sta (tempWork0),y
@@ -496,10 +543,8 @@ EnemyMoveCoarseUpdate2
 	and #!Node_isBlocked_Enemy
 	sta (tempWork0),y
 
-	pla
-	tay
-	pla
-	tax
+.smx1	ldx #0
+.smy1	ldy #0
 
 	inc EnemyMoveStepsLo-1,x
 	bne .o1
@@ -507,11 +552,12 @@ EnemyMoveCoarseUpdate2
 .o1
 	rts
 
+.lblockedToolong
+	jmp .blockedToolong
+
 .isBlocked
-	pla
-	tay
-	pla
-	tax
+	ldx .smx1+1
+	ldy .smy1+1
 
 .isBlockedQuick
 	lda #0
@@ -551,9 +597,6 @@ EnemyMoveCoarseUpdate2
 
 	rts
 
-.lblockedToolong
-	jmp .blockedToolong
-
 
 
 !zn
@@ -566,6 +609,15 @@ EnemiesOnScreenWithoutRouteLastCycle	!by 1
 ; Processes a robot think function. This does not happen every frame.
 EnemyThink
 ;	rts
+
+	; If it cannot move then don't consider it for routing
+	ldx EnemyType-1,y
+	lda EnemyTemplate_Speed,x
+	bmi .skipEnemy
+
+	lda EnemyFlags-1,y
+	and #EnemyFlags_StayHere
+	bne .skipEnemy
 
 	; Already moving?
 	lda EnemyMoveStepsHi-1,y
@@ -602,6 +654,7 @@ EnemyThink
 	jmp .noRouteSoThink
 
 .busyRouteCalcAlready
+.skipEnemy
 	rts
 
 .skipPriorityCheck2
@@ -614,6 +667,7 @@ EnemyThink
 .lrefuseRoute jmp .refuseRoute
 .noRouteSoThink
 ;	inc VIC2BorderColour
+	; Save enemy index
 	sty .sm1+1
 
 	lda #2
@@ -640,11 +694,34 @@ EnemyThink
 	bmi .lrefuseRoute
 	sta .tempZone
 
-	; Check for where to route to based on agression and altertness
+	; Restore enemy index
 	ldy .sm1+1
+
+	lda EnemyFlags-1,y
+	and #EnemyFlags_FollowPlayer
+	beq .notFollowingPlayer
+
+	; Is following so...
+	lda UserInput_LastFollowPosX
+	sta WantMazeSolveTargetXPos
+	sta EnemyPreviousSolveRequestX-1,y
+	lda UserInput_LastFollowPosY
+	sta WantMazeSolveTargetYPos
+	sta EnemyPreviousSolveRequestY-1,y
+
+	jmp .doRouting
+
+.notFollowingPlayer
+
+	; Check for where to route to based on agression and altertness
 	lda Enemy_PlayerAggression
-	cmp EnemyAlertness-1,y
+	ldx EnemyType-1,y
+	cmp EnemyTemplate_Alertness,x
 	bcc .ljustPatrol
+
+	; Stop enemy routing to the player when the game is exiting
+	lda ScrollerExitMainLineCounter
+	bne .ljustPatrol
 
 	; Get the player's zone
 	ldx EnemyPositionsY
@@ -653,6 +730,20 @@ EnemyThink
 	sta tempWork2
 	lda ZoneMapTabH,x
 	sta tempWork3
+
+!ifdef kRammingEnemy {
+	lda EnemyFlags-1,y
+	and #EnemyFlags_IsCaptured
+	bne .notRam4
+	; Check for ramming enemies and route straight to the player's position
+	ldx EnemyType-1,y
+	lda EnemyTemplate_Ram,x
+	beq .notRam4
+	ldy EnemyPositionsX
+	jmp .thisPos
+.notRam4
+}
+
 	inc .playerPosVariation
 	lda .playerPosVariation
 	and #3
@@ -670,6 +761,7 @@ EnemyThink
 	lda (tempWork2),y
 	bpl .goodZone
 	dey
+.thisPos
 	lda (tempWork2),y
 	bmi .justPatrol
 	jmp .goodZone
@@ -812,6 +904,18 @@ EnemyThink
 
 	lda #0
 	sta WantMazeSolveBlockIndex
+!ifdef kRammingEnemy {
+	lda EnemyFlags-1,y
+	and #EnemyFlags_IsCaptured
+	bne .notRam
+	; If the enemy type is a ramming type then ignore the player's bitmask for routing requests
+	ldx EnemyType-1,y
+	lda EnemyTemplate_Ram,x
+	beq .notRam
+	inc WantMazeSolveBlockIndex
+	inc WantMazeSolveBlockIndex
+.notRam
+}
 
 	lda #WantMazeSolve_doInit
 	sta WantMazeSolveState
@@ -820,22 +924,6 @@ EnemyThink
 
 
 !zn
-WantMazeSolveForEnemyDBIndex !by 0
-WantMazeSolveTargetXPos !by 0
-WantMazeSolveTargetYPos !by 0
-
-WantMazeSolveBytes !by 0
-
-WantMazeSolveBlockIndex !by 0
-WantMazeSolveBlockTab !by Node_isBlocked_Player | Node_isBlocked_Enemy , Node_isBlocked_Player , Node_isBlocked_Enemy , 0
-
-WantMazeSolveState !by WantMazeSolve_Idle
-WantMazeSolve_Idle			= 0	; Must always be zero
-WantMazeSolve_doInit		= 1
-WantMazeSolve_step			= 2
-WantMazeSolve_traceBackStep	= 3
-WantMazeSolve_traceBackMemory = 4
-
 .endPosition !by 0 , 0
 
 ScrollerDemoWaitTopIRQHook
@@ -871,6 +959,11 @@ RunMazeSolveCalcs
 	cmp #50
 	bcc .ooNotIdle
 
+	; Don't sweep if it is very busy
+	lda frameIsOrWasBusy
+	bne .looExit
+
+
 !ifdef MazeSolve_DebugBorder {
 	lda #VIC2Colour_White
 	sta VIC2BorderColour
@@ -878,9 +971,20 @@ RunMazeSolveCalcs
 	jsr DynamicMemory_BlockSweep
 	lda #0
 	sta DynamicMemory_BlockSweepCount
+.looExit
 	jmp .ooExit
 
+.ljustDoIdle jmp .justDoIdle
+
 .ooNotIdle
+
+	; If the solver is running for an enemy that wants to just stay then abort all the solve workers
+	ldy WantMazeSolveForEnemyDBIndex
+	lda EnemyFlags-1,y
+	and #EnemyFlags_StayHere
+	bne .ljustDoIdle
+
+
 	lda WantMazeSolveState
 	cmp #WantMazeSolve_doInit
 	bne .oo0
@@ -933,12 +1037,15 @@ RunMazeSolveCalcs
 	jsr MazeSolve_startTraceBack
 
 	inc WantMazeSolveState
-	jmp .ooExit
+.looExit1	jmp .ooExit
 
 .oo1
 	lda WantMazeSolveState
 	cmp #WantMazeSolve_traceBackStep
 	bne .oo2
+
+	lda frameIsOrWasBusy
+	bne .looExit1
 
 !ifdef MazeSolve_DebugBorder {
 	lda #VIC2Colour_Blue
@@ -984,6 +1091,9 @@ RunMazeSolveCalcs
 	cmp #WantMazeSolve_traceBackMemory
 	bne .oo3
 
+	lda frameIsOrWasBusy
+	bne .ooExit
+
 !ifdef MazeSolve_DebugBorder {
 	lda #VIC2Colour_Yellow
 	sta VIC2BorderColour
@@ -1023,6 +1133,9 @@ RunMazeSolveCalcs
 	lda #VIC2Colour_Purple
 	sta VIC2BorderColour
 }
+	lda frameIsOrWasBusy
+	bne .ooExit
+
 	jsr DynamicMemory_BlockSweep
 	lda #0
 	sta DynamicMemory_BlockSweepCount

@@ -1,5 +1,45 @@
 !zn
+!ifdef CameraNotPushX {
+!ifdef CameraNotPushY {
+.oldPlayerPosXLo !by 0
+;.oldPlayerPosXHi !by 0
+.oldPlayerPosYLo !by 0
+;.oldPlayerPosYHi !by 0
+}
+}
+
+.exitQuick rts
 UpdateScreenScrollCamera
+	lda Teleport_TimeToSwitchMap
+	bne .exitQuick
+
+!ifdef CameraNotPushX {
+!ifdef CameraNotPushY {
+	lda .oldPlayerPosXLo
+	cmp EnemyPositionsXLo
+	bne .different
+;	lda .oldPlayerPosXHi
+;	cmp EnemyPositionsXHi
+;	bne .different
+	lda .oldPlayerPosYLo
+	cmp EnemyPositionsYLo
+	bne .different
+;	lda .oldPlayerPosYHi
+;	cmp EnemyPositionsYHi
+;	bne .different
+	rts
+
+.different
+	lda EnemyPositionsXLo
+	sta .oldPlayerPosXLo
+;	lda EnemyPositionsXHi
+;	sta .oldPlayerPosXHi
+	lda EnemyPositionsYLo
+	sta .oldPlayerPosYLo
+;	lda EnemyPositionsYHi
+;	sta .oldPlayerPosYHi
+}
+}
 
 !if 1 {
 	; Clear any player maze blocked flag
@@ -13,6 +53,7 @@ UpdateScreenScrollCamera
 	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
 	sta (tempWork0),y
 
+!ifdef MapBlockAlignedMovement { } else {
 	ldx .oldMapBlockX
 	inx
 	ldy .oldMapBlockY
@@ -46,6 +87,7 @@ UpdateScreenScrollCamera
 	lda (tempWork0),y
 	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
 	sta (tempWork0),y
+}
 }
 
 !if 1 {
@@ -85,15 +127,32 @@ UpdateScreenScrollCamera
 	jsr DivideBy32
 	lda tempWork0
 	sta EnemyPositionsY
+}
+
+!ifdef CameraNotPushX { } else {
+;	lda frameTargetVelX
+;	bne .o1
 
 	lda scrollMapHX
 	clc
 	adc #5
 	sec
 	sbc EnemyPositionsX
+;	cmp #-1
+;	beq .o1
+;	cmp #1
+;	beq .o1
 ;	cmp #$80
 ;	ror
+	clc
+	adc frameTargetVelX
 	sta frameTargetVelX
+.o1
+}
+
+!ifdef CameraNotPushY { } else {
+;	lda frameTargetVelY
+;	bne .o2
 
 	lda scrollMapHY
 	clc
@@ -103,60 +162,11 @@ UpdateScreenScrollCamera
 ;	cmp #$80
 ;	ror
 	asl
+	clc
+	adc frameTargetVelY
 	sta frameTargetVelY
+.o2
 }
-
-!if 1 {
-	; Make sure we do not calculate scroll velocities that would result in a out of boundary movement request
-	lda scrollMapHY
-	cmp #MazeHeight-6
-	bcc .oc1
-	lda scrollMapLY
-	cmp #3
-	bcc .oc1
-	lda frameTargetVelY
-	beq .oc1
-	bpl .oc1
-	lda #0
-	sta frameTargetVelY
-.oc1
-
-	lda scrollMapHY
-	bne .oc2
-	lda scrollMapLY
-	bne .oc2
-	lda frameTargetVelY
-	beq .oc2
-	bmi .oc2
-	lda #0
-	sta frameTargetVelY
-.oc2
-
-	lda scrollMapHX
-	bne .oc3
-	lda scrollMapLX
-	bne .oc3
-	lda frameTargetVelX
-	beq .oc3
-	bmi .oc3
-	lda #0
-	sta frameTargetVelX
-.oc3
-
-	lda scrollMapHX
-	cmp #MazeWidth-11
-	bcc .oc4
-	lda scrollMapLX
-	cmp #3
-	bcc .oc4
-	lda frameTargetVelX
-	beq .oc4
-	bpl .oc4
-	lda #0
-	sta frameTargetVelX
-.oc4
-}
-
 
 !if 1 {
 	; Now set the real player postions for map push scrolling
@@ -220,6 +230,7 @@ UpdateScreenScrollCamera
 	sta tempWork5
 	sta .oldMapBlockY
 
+!ifdef MapBlockAlignedMovement { } else {
 	; Adjust for other potential player positions for map node blocking
 	lda EnemyPositionsXLo
 	sta tempWork0
@@ -254,8 +265,9 @@ UpdateScreenScrollCamera
 	jsr DivideBy32
 	lda tempWork0
 	sta tempWork7
+}
 
-
+!if 1 {
 	; Set player maze blocked flag
 	ldx tempWork4
 	ldy tempWork5
@@ -267,6 +279,7 @@ UpdateScreenScrollCamera
 	ora #Node_isBlocked_Player
 	sta (tempWork0),y
 
+!ifdef MapBlockAlignedMovement { } else {
 	ldx tempWork6
 	ldy tempWork7
 	jsr GetMazeNodesIndex
@@ -297,8 +310,149 @@ UpdateScreenScrollCamera
 	ora #Node_isBlocked_Player
 	sta (tempWork0),y
 }
+}
+}
 
 	rts
 .oldMapBlockX !by 0
 .oldMapBlockY !by 0
 
+
+CameraClampMapBox
+
+
+!ifdef CameraNotPushY {
+	lda frameTargetVelY
+	beq .lo1
+	bpl .lo2
+	lda AnimationYPos
+	cmp #120+CameraFollowWiggleY
+	bcs .lo1
+	lda #0
+	sta frameTargetVelY
+	jmp .lo1
+.lo2
+	lda AnimationYPos
+	cmp #122-CameraFollowWiggleY
+	bcc .lo1
+	lda #0
+	sta frameTargetVelY
+.lo1
+}
+
+!ifdef CameraNotPushX {
+	lda frameTargetVelX
+	beq .lo1b
+	bpl .lo2b
+	lda AnimationXPosHi
+	ror
+	lda AnimationXPosLo
+	ror
+	cmp #84+CameraFollowWiggleX
+	bcs .lo1b
+	lda #0
+	sta frameTargetVelX
+	jmp .lo1b
+.lo2b
+	lda AnimationXPosHi
+	ror
+	lda AnimationXPosLo
+	ror
+	cmp #85-CameraFollowWiggleX
+	bcc .lo1b
+	lda #0
+	sta frameTargetVelX
+.lo1b
+}
+
+
+!if 1 {
+	; Make sure we do not calculate scroll velocities that would result in a out of boundary movement request
+	lda scrollMapHY
+	cmp #MazeHeight-6
+	bcc .oc1
+	lda scrollMapLY
+	cmp #3
+	bcc .oc1
+	lda frameTargetVelY
+	beq .oc1
+	bpl .oc1
+	lda #0
+	sta frameTargetVelY
+.oc1
+
+	lda scrollMapHY
+	bne .oc2
+	lda scrollMapLY
+	bne .oc2
+	lda frameTargetVelY
+	beq .oc2
+	bmi .oc2
+	lda #0
+	sta frameTargetVelY
+.oc2
+
+	lda scrollMapHX
+	bne .oc3
+	lda scrollMapLX
+	bne .oc3
+	lda frameTargetVelX
+	beq .oc3
+	bmi .oc3
+	lda #0
+	sta frameTargetVelX
+.oc3
+
+	lda scrollMapHX
+	cmp #MazeWidth-11
+	bcc .oc4
+	lda scrollMapLX
+	cmp #3
+	bcc .oc4
+	lda frameTargetVelX
+	beq .oc4
+	bpl .oc4
+	lda #0
+	sta frameTargetVelX
+.oc4
+}
+	rts
+
+CameraClampVelocity
+	.maxVelocity = 2
+	; Clamp the velocity
+	lda frameTargetVelX
+	cmp #-.maxVelocity
+	bpl .c1
+	lda #-.maxVelocity
+.c1
+	cmp #.maxVelocity+1
+	bmi .c2
+	lda #.maxVelocity
+.c2
+	sta frameTargetVelX
+
+	lda frameTargetVelY
+	cmp #-.maxVelocity
+	bpl .c3
+	lda #-.maxVelocity
+.c3
+	cmp #.maxVelocity+1
+	bmi .c4
+	lda #.maxVelocity
+.c4
+	sta frameTargetVelY
+	rts
+
+
+Camera_Init
+!ifdef CameraNotPushX {
+!ifdef CameraNotPushY {
+	lda #-1
+	sta .oldPlayerPosXLo
+;	sta .oldPlayerPosXHi
+	sta .oldPlayerPosYLo
+;	sta .oldPlayerPosYHi
+}
+}
+	rts

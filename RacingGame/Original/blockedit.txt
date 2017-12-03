@@ -1,0 +1,90 @@
+100 *=49152
+110 jmp blpl2
+120 ! high and low screen addresses !
+130 hiscrb byt 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
+140 loscrb byt 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+150 byt $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+160 xwid byt 18
+170 ywid byt 18
+180 ybtl byt 19
+190 xbtl byt 19
+200 yorg byt 0
+210 xorg byt 0
+220 xhot byt 2
+230 ymax byt 20
+240 winx =40
+250 ybt byt 0
+260 ypl byt 0
+270 blpl2 lda #0
+271 sei
+272 ldx #54
+273 stx 1
+280 ldx #0
+290 bp1 sta $c428,x
+300 sta $c528,x
+310 sta $c628,x
+320 dex
+330 bne bp1
+340 blockplot lda #150
+350 cmp $d012
+360 bne blockplot
+370 inc $d020
+380 sei
+510 lda xorg
+520 sta blps1+1
+530 sta blps2+1
+540 lda yorg
+550 clc
+560 adc #128
+570 sta blps1+2
+571 clc
+580 adc #36
+590 sta blps2+2
+600 lda ywid
+610 sta ybt
+620 lda ybtl
+630 sec
+640 sbc ywid
+650 sta ypl
+660 inc ypl
+670 bl1 ldx ypl
+680 cpx ymax
+690 bcs bl2
+700 lda loscrb,x
+710 sta blpt1+1
+720 sta blpt2+1
+730 lda hiscrb,x
+731 clc
+732 adc #$c0
+740 sta blpt1+2
+741 lda hiscrb,x
+750 clc
+760 adc #212
+770 sta blpt2+2
+780 lda xbtl
+790 sec
+800 sbc xhot
+810 tay
+820 ldx #0
+830 bl3 !
+840 cpy #40
+850 bcs bl2
+860 blps1 lda $8000,x
+861 beq bl3b
+870 blpt1 sta $0400,y
+880 blps2 lda $8000,x
+890 blpt2 sta $0400,y
+900 bl3b iny
+910 inx
+920 cpx xwid
+930 bne bl3
+940 bl2 inc ypl
+950 inc blps1+2
+960 inc blps2+2
+970 dec ybt
+980 bne bl1
+990 blend dec $d020
+1000 lda #55
+1010 sta 1
+1020 cli
+1030 rts

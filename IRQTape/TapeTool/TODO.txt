@@ -3,6 +3,10 @@ A tool to provide a command line interface that enables C64 format TAP files to 
 ********************************************
 
 
+* Explain how poke193,0:poke194,4:poke174,0:poke175,7:sys63562 works and how $F867 can be used to write similar blocks.
+	It directly calls the kernal tape loader that loads a block of data, even the tape header is a block of data and can be loaded to different addresses.
+
+
 Decompress while loading.
 Each block of compressed data will have to be fully read before decompression is allowed to happen.
 This is because each block will need to pass the checksum test before being used for decompression.

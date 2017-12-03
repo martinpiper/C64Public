@@ -1,0 +1,963 @@
+100 *=2048
+101 debug=$d020
+110 ldx #4
+120 nop
+130 nop
+140 nop
+150 sei
+160 lda #54
+170 sta 1
+180 ldy #0
+190 lda #15
+200 colmemin2 sta $0400,y
+210 sta $d800,y
+220 sta $0500,y
+230 sta $d900,y
+240 sta $0600,y
+250 sta $da00,y
+260 sta $06e7,y
+270 sta $dae7,y
+280 iny
+290 bne colmemin2
+291 tya
+292 kill sta $c700,y
+293 sta $c300,y
+294 iny
+295 bne kill
+300 lda #0
+310 sta 56576
+320 lda #0
+330 sta 53280
+340 lda #12
+350 sta 53282
+360 lda #11
+370 sta 53283
+380 lda #18
+390 sta k53272k
+400 sta 53272
+410 jsr sprsetup
+420 lda #0
+430 jsr $1800
+440 jmp irqsetup
+450 col1 byt 10
+460 col2 byt 9
+470 tsdx byt 0
+480 tsdy byt 0
+490 tsdy2 byt 0
+500 sidel byt 0
+510 rast byt 122
+520 rast2 byt 122
+530 tmp2 byt 50
+540 boty byt 20
+550 lpose byt 0
+560 rpose byt 0
+570 lstiny byt 00
+580 skd byt 50
+590 k53272k byt 0
+600 trckoft byt 21
+610 trckoft2 byt 64
+620 ancnt1 byt 0
+630 ancnt2 byt 70
+640 ytrack byt 0
+650 turbo byt 0
+651 spdom1 byt 10
+652 spdom2 byt 0
+660 ypost byt "{space*40}"
+670 xwidt byt "{space*40}"
+680 toftt byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+690 byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+700 corntab byt 18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18
+710 byt 18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18
+720 lpos byt 0
+730 rpos byt 0
+740 lsty byt 0
+750 yfl byt 0
+760 irqsetup sei
+770 lda #0
+780 sta 650
+790 lda #$7f
+800 sta $dc0d
+810 lda $dc0d
+820 lda #$1b
+830 sta $d011
+840 lda #255   ! <- set this number
+850 sta $d012  !    to the first line
+860 lda #<irq1 !    you want your
+870 sta $314   !    colours to start.
+880 lda #>irq1
+890 sta $315
+900 lda #1
+910 sta $d019
+920 sta $d01a
+930 cli
+940 jmp trckplot
+950 irq1 lda col1
+960 sta 53281
+970 lda #216
+980 sta 53270
+990 lda #<irq2
+1000 ldx #>irq2
+1010 sta 788
+1020 stx 789
+1030 lda rast2
+1040 sta $d012
+1050 dec $d019
+1060 jsr $1806
+1070 lda k53272k
+1080 cmp 53272
+1090 beq irq1gh
+1100 ldy rast
+1110 sty rast2
+1120 !ldy #0
+1130 !colmemin lda $0400,y
+1140 !sta $d800,y
+1150 !lda $0500,y
+1160 !sta $d900,y
+1170 !lda $0600,y
+1180 !sta $da00,y
+1190 !iny
+1200 !bne colmemin
+1210 irq1gh !
+1220 sta 53272
+1230 jmp $ea31
+1240 irq2 ldx col2
+1250 l1 lda $d012
+1260 cmp $d012
+1270 bne l1
+1280 stx 53281
+1290 lda #<irq3
+1300 ldx #>irq3
+1310 sta 788
+1320 stx 789
+1330 lda #210
+1340 sta $d012
+1350 dec $d019
+1360 jmp $ea81
+1370 irq3 ldx #0
+1380 l2 lda $d012
+1390 cmp $d012
+1400 bne l2
+1410 nop
+1420 stx 53281
+1430 lda #200
+1440 sta 53270
+1450 lda #<irq1
+1460 ldx #>irq1
+1470 sta 788
+1480 stx 789
+1490 lda #255
+1500 sta $d012
+1510 dec $d019
+1520 ldx #0
+1530 ldy turbo
+1540 beq jiop1
+1550 ldx #2
+1560 jiop1 stx 53281
+1570 jmp $ea81
+1580 ! high and low screen addresses !
+1590 hiscr byt $c4,$c4,$c4,$c4,$c4,$c4,$c4,$c5,$c5,$c5,$c5,$c5,$c5
+1600 byt $c6,$c6,$c6,$c6,$c6,$c6,$c6,$c7,$c7,$c7,$c7,$c7,$c7
+1610 hiscrtr byt 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
+1620 byt 8,8,8,8,8,8,8,9,9,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,11
+1630 loscr byt 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+1640 byt $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+1650 byt 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+1660 byt $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+1670 trckplot !
+1680 lda #0
+1690 !sta debug
+1700 r1 lda $d012
+1710 cmp #208
+1720 bne r1
+1730 lda #11
+1740 !sta debug
+1741 jmp missit
+1750 ldx #0
+1760 cia1 lda $0400,x
+1770 sta $d800,x
+1780 inx
+1790 bne cia1
+1791 !inc debug
+1800 cia2 lda $0500,x
+1810 sta $d900,x
+1820 inx
+1830 bne cia2
+1831 !inc debug
+1832 cia3 lda $0600,x
+1833 sta $da00,x
+1834 inx
+1835 bne cia3
+1836 missit !stx debug
+1840 ldx ancnt2
+1850 stx $c7f8
+1860 stx $c3f8
+1870 inx
+1880 stx $c7f9
+1890 stx $c3f9
+1900 inx
+1910 stx $c7fa
+1920 stx $c3fa
+1930 ldx trckoft
+1940 lda hiscrtr,x
+1950 clc
+1960 adc #60
+1970 sta $d4
+1980 lda loscr,x
+1990 sta $d3
+2000 ldy #37
+2010 lda ($d3),y
+2020 tax
+2030 asl a
+2040 asl a
+2050 asl a
+2060 clc
+2070 adc #50
+2080 sta rast
+2090 l5x lda loscr,x
+2100 sta l5y+1
+2110 lda hiscr,x
+2120 sta l5y+2
+2130 ldy #39
+2140 lda #0
+2150 l5y sta $c000,y
+2160 dey
+2170 bpl l5y
+2180 dex
+2190 bpl l5x
+2200 trckloop !
+2210 ldy #39
+2220 l5 lda ($d3),y
+2230 sta ypost,y
+2240 dey
+2250 bpl l5
+2260 lda $d4
+2270 clc
+2280 adc #8
+2290 sta $d4
+2300 lda #255
+2310 sta lsty
+2320 ldy #39
+2330 l6 lda ($d3),y
+2340 sta xwidt,y
+2350 dey
+2360 bpl l6
+2370 ldy #0
+2380 sty yfl
+2390 l7 ldy yfl
+2400 lda #20
+2410 sta ymax
+2420 ldx ypost,y
+2430 cpx lsty
+2440 bne l10lo
+2450 jmp l10
+2460 l10lo cpy ypost+38
+2470 sty lstiny
+2480 bcs l10a
+2490 lda ypost,y
+2500 clc
+2510 adc #1
+2520 sty tmp2
+2530 ldy ypost+38
+2540 cmp ypost,y
+2550 beq l10b
+2560 bcs l10
+2570 l10b !
+2580 ldy tmp2
+2590 l10a stx lsty
+2600 lda loscr,x
+2610 sta $d5
+2620 lda hiscr,x
+2630 sta $d6
+2640 cpx #20
+2650 bcs l10
+2660 lda #19
+2670 sec
+2680 sbc xwidt,y
+2690 clc
+2700 adc toftt,y
+2710 sta lpos
+2720 lda #21
+2730 clc
+2740 adc xwidt,y
+2750 clc
+2760 adc toftt,y
+2770 sta rpos
+2780 lda $d5
+2790 sta l9p+1
+2800 lda $d6
+2810 sta l9p+2
+2820 lda #0
+2830 ldy #39
+2840 l9p sta $c000,y
+2850 dey
+2860 bpl l9p
+2870 lda rpos
+2880 cmp #40
+2890 bcs l9
+2900 ldy rpos
+2910 lda #16
+2920 sta ($d5),y
+2930 l9 ldy lpos
+2940 cpy #40
+2950 bcs l11b
+2960 lda #5
+2970 sta ($d5),y
+2980 l11b lda #1
+2990 l11 ldy lpos
+3000 iny
+3010 l12 cpy #40
+3020 bcs l13
+3030 sta ($d5),y
+3040 l13 iny
+3050 cpy rpos
+3060 bne l12
+3070 jsr smoothedge
+3080 l10 ldy yfl
+3090 jsr objsprint
+3100 inc yfl
+3110 lda yfl
+3120 cmp #36
+3130 beq loop
+3140 jmp l7
+3150 loop jsr buffer
+3160 loop3 lda 53272
+3170 cmp k53272k
+3180 beq loop3
+3190 !inc $d020
+3200 ldx #20
+3210 fgh1 dex
+3220 bne fgh1
+3230 !dec $d020
+3240 lda 197
+3250 cmp #60
+3260 bne loop2d
+3270 lda #101
+3280 sta turbo
+3290 loop2d lda turbo
+3300 beq loop2
+3310 dec turbo
+3320 jsr advance
+3340 loop2 lda 56320
+3350 !cmp #127
+3360 !bne loop3z
+3370 !jsr animback
+3380 !lda 56320
+3390 loop3z and #1
+3400 bne m1z
+3410 dec spdom1
+3411 bne m1b
+3412 lda #10
+3413 sta spdom1
+3414 lda spdom2
+3415 cmp #3
+3416 beq m1b
+3417 inc spdom2
+3418 jmp m1b
+3419 m1z dec spdom1
+3420 bne m1b
+3421 lda #10
+3422 sta spdom1
+3423 lda spdom2
+3424 beq m1b
+3425 dec spdom2
+3430 m1b lda 56320
+3440 and #8
+3450 bne m1
+3460 jsr left
+3470 jmp loopr
+3480 m1 lda 56320
+3490 and #4
+3500 bne m2
+3510 jsr right
+3520 jmp loopr
+3530 m2 jsr animback
+3531 loopr ldy spdom2
+3532 beq loopr2
+3533 loopr3 jsr advance
+3534 dey
+3535 bne loopr3
+3540 loopr2 jsr cornoftfig
+3550 jsr trackoftfig
+3560 ldx trckoft2
+3570 loop2z !stx 2023
+3580 lda tabletrck,x
+3590 sta trckoft
+3600 jmp trckplot
+3610 tabletrck =$7900
+3620 tablecorn =$7800
+3630 cornoftfig ldy trckoft2
+3640 ldx tablecorn,y
+3650 cpx #19
+3660 bcs rcorn
+3670 lda hiscrtr,x
+3680 clc
+3690 adc #$54
+3700 sta tcf1+2
+3710 lda loscr,x
+3720 sta tcf1+1
+3730 ldx #35
+3740 tcf1 lda $5000,x
+3750 sta corntab,x
+3760 dex
+3770 bpl tcf1
+3780 rts
+3790 rcorn txa
+3800 sec
+3810 sbc #19
+3820 sta cb1+1
+3830 lda #18
+3840 sec
+3850 cb1 sbc #0
+3860 tax
+3870 lda hiscrtr,x
+3880 clc
+3890 adc #$54
+3900 sta tcf2+2
+3910 lda loscr,x
+3920 sta tcf2+1
+3930 ldx #35
+3940 tcf2 lda $5000,x
+3950 sta corntab,x
+3960 lda #0
+3970 sec
+3980 sbc corntab,x
+3990 sta corntab,x
+4000 dex
+4010 bpl tcf2
+4020 rts
+4030 toftl byt $00,$24,$48,$6c,$90,$b4,$d8,$fc
+4040 byt $20,$44,$68,$8c,$b0,$d4,$f8
+4050 byt $1c,$40,$64,$88,$ac,$d0,$f4
+4060 byt $18,$3c,$60,$84,$a8,$cc,$f0
+4070 byt $14,$38,$5c,$80,$a4,$c8,$ec
+4080 byt $10,$34,$58,$7c,$a0,$c4,$e8
+4090 byt $0c,$30,$54,$78,$9c,$c0,$e4
+4100 byt $08
+4110 tofth byt $50,$50,$50,$50,$50,$50,$50,$50
+4120 byt $51,$51,$51,$51,$51,$51,$51
+4130 byt $52,$52,$52,$52,$52,$52,$52
+4140 byt $53,$53,$53,$53,$53,$53,$53
+4150 byt $54,$54,$54,$54,$54,$54,$54
+4160 byt $55,$55,$55,$55,$55,$55,$55
+4170 byt $56,$56,$56,$56,$56,$56,$56
+4180 byt $57
+4190 trackoftfig !
+4200 ldx skd
+4210 cpx #51
+4220 bcs t1
+4230 lda #50
+4240 sec
+4250 sbc skd
+4260 tax
+4270 lda toftl,x
+4280 sta t2b+1
+4290 lda tofth,x
+4300 sta t2b+2
+4310 ldx #35
+4320 t2 lda #0
+4330 sec
+4340 t2b sbc $5000,x
+4350 clc
+4360 adc corntab,x
+4370 sta toftt,x
+4380 dex
+4390 bpl t2
+4400 rts
+4410 t1 lda skd
+4420 sec
+4430 sbc #50
+4440 tax
+4450 lda toftl,x
+4460 sta t3+1
+4470 lda tofth,x
+4480 sta t3+2
+4490 ldx #35
+4500 t3 lda $5000,x
+4510 clc
+4520 adc corntab,x
+4530 sta toftt,x
+4540 dex
+4550 bpl t3
+4560 rts
+4570 left dec skd
+4580 jsr canimr
+4590 lda skd
+4600 cmp #$ff
+4610 bne m4
+4620 lda #0
+4630 sta skd
+4640 m4 rts
+4650 right inc skd
+4660 jsr caniml
+4670 lda skd
+4680 cmp #101
+4690 bne m5
+4700 lda #100
+4710 sta skd
+4720 m5 rts
+4730 sprsetup lda #255
+4740 sta 53248+21
+4750 sta 53248+28
+4760 lda #182
+4770 sta 53249
+4780 sta 53251
+4790 sta 53253
+4800 lda #152
+4810 sta 53248
+4820 lda #152+24
+4830 sta 53250
+4840 lda #152+24+24
+4850 sta 53252
+4860 lda #1
+4870 sta 53248+37
+4880 lda #0
+4890 sta 53248+38
+4900 lda #2
+4910 sta 53248+39
+4920 sta 53248+40
+4930 sta 53248+41
+4940 ldy #$40
+4950 sty $c7f8
+4960 iny
+4970 sty $c7f9
+4980 iny
+4990 sty $c7fa
+5000 cpx #4
+5010 beq yonoproc
+5020 jsr scramble
+5030 yonoproc rts
+5040 caniml !
+5050 lda ancnt2
+5060 cmp #64
+5070 beq ca1
+5080 inc ancnt1
+5090 lda ancnt1
+5100 cmp #2
+5110 bne ca1
+5120 lda #0
+5130 sta ancnt1
+5140 dec ancnt2
+5150 dec ancnt2
+5160 dec ancnt2
+5170 ca1 rts
+5180 canimr !
+5190 lda ancnt2
+5200 cmp #76
+5210 beq ca2
+5220 inc ancnt1
+5230 lda ancnt1
+5240 cmp #2
+5250 bne ca2
+5260 lda #0
+5270 sta ancnt1
+5280 inc ancnt2
+5290 inc ancnt2
+5300 inc ancnt2
+5310 ca2 rts
+5320 animback lda ancnt2
+5330 cmp #70
+5340 beq ca3
+5350 bcs caniml
+5360 bcc canimr
+5370 ca3 rts
+5380 !*=49152
+5390 jmp blpl2
+5400 ! high and low screen addresses !
+5410 hiscrb byt 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
+5420 loscrb byt 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+5430 byt $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+5440 xwid byt 4
+5450 ywid byt 8
+5460 ybtl byt 19
+5470 xbtl byt 19
+5480 yorg byt 0
+5490 xorg byt 0
+5500 xhot byt 4
+5510 ymax byt 20
+5520 winx =40
+5530 ybt byt 0
+5540 ypl byt 0
+5550 blpl2 lda #42
+5560 ldx #0
+5570 bp1 sta $0428,x
+5580 sta $0528,x
+5590 sta $0628,x
+5600 dex
+5610 bne bp1
+5620 blockplot !lda #150
+5630 !cmp $d012
+5640 !bne blockplot
+5650 !inc $d020
+5660 !lda ybtl
+5670 !cmp #19
+5680 !bcc plotit
+5690 !rts
+5700 !plotit !
+5710 lda xorg
+5720 sta blps1+1
+5730 sta blps2+1
+5740 lda yorg
+5750 clc
+5760 adc #128
+5770 sta blps1+2
+5780 clc
+5790 adc #36
+5800 sta blps2+2
+5810 lda ywid
+5820 sta ybt
+5830 lda ybtl
+5840 sec
+5850 sbc ywid
+5860 sta ypl
+5870 inc ypl
+5880 bl1 ldx ypl
+5890 cpx ymax
+5900 bcs bl2
+5910 lda loscr,x
+5920 sta blpt1+1
+5930 sta blpt2+1
+5940 lda hiscr,x
+5950 sta blpt1+2
+5960 lda hiscrb,x
+5961 ! look
+5970 clc
+5980 adc #212
+5990 sta blpt2+2
+6000 lda xbtl
+6010 sec
+6020 sbc xhot
+6030 tay
+6040 ldx #0
+6050 bl3 !
+6060 cpy #40
+6070 bcs bl3b
+6080 blps1 lda $8000,x
+6090 beq bl3b
+6100 blpt1 sta $0400,y
+6110 blps2 lda $a400,x
+6120 blpt2 sta $0400,y
+6130 bl3b iny
+6140 inx
+6150 cpx xwid
+6160 bne bl3
+6170 bl2 inc ypl
+6180 inc blps1+2
+6190 inc blps2+2
+6200 dec ybt
+6210 bne bl1
+6220 blend !dec $d020
+6230 rts
+6240 objsprint sty tsdy
+6250 ldx objhorizl,y
+6260 beq l10g
+6270 lda #$7c
+6280 sta oh1+2
+6290 sta oh2+2
+6300 sta oh3+2
+6310 sta oh4+2
+6320 sta oh5+2
+6330 dex
+6340 txa
+6350 clc
+6360 adc pertaby,y
+6370 asl a
+6380 bcc op1
+6390 jsr incallobj
+6400 op1 !
+6410 asl a
+6420 bcc op2
+6430 jsr incallobj
+6440 op2 !
+6450 asl a
+6460 bcc op3
+6470 jsr incallobj
+6480 op3 !
+6490 tax
+6500 stx tsdx
+6510 oh1 lda $7c00,x
+6520 sta xorg
+6530 oh2 lda $7c01,x
+6540 sta yorg
+6550 lda ypost,y
+6560 sta ybtl
+6570 dec ybtl
+6580 oh3 lda $7c02,x
+6590 sta xwid
+6600 oh4 lda $7c03,x
+6610 sta ywid
+6620 lda #19
+6630 sec
+6640 sbc xwidt,y
+6650 clc
+6660 adc toftt,y
+6670 sta xbtl
+6680 oh5 lda $7c04,x
+6690 sta xhot
+6700 jsr blockplot
+6710 l10g lda #$7c
+6720 sta oi1+2
+6730 sta oi2+2
+6740 sta oi3+2
+6750 sta oi4+2
+6760 sta oi5+2
+6770 ldy tsdy
+6780 ldx objhorizr,y
+6790 beq l10gz
+6800 dex
+6810 txa
+6820 clc
+6830 adc pertaby,y
+6840 asl a
+6850 bcc ok1
+6860 jsr incallobj2
+6870 ok1 !
+6880 asl a
+6890 bcc ok2
+6900 jsr incallobj2
+6910 ok2 !
+6920 asl a
+6930 bcc ok3
+6940 jsr incallobj2
+6950 ok3 !
+6960 tax
+6970 stx tsdx
+6980 oi1 lda $7c00,x
+6990 sta xorg
+7000 oi2 lda $7c01,x
+7010 sta yorg
+7020 lda ypost,y
+7030 sta ybtl
+7040 dec ybtl
+7050 oi3 lda $7c02,x
+7060 sta xwid
+7070 oi4 lda $7c03,x
+7080 sta ywid
+7090 lda #21
+7100 clc
+7110 adc xwidt,y
+7120 clc
+7130 adc toftt,y
+7140 sta xbtl
+7150 oi5 lda $7c05,x
+7160 sta xhot
+7170 jsr blockplot
+7180 l10gz rts
+7190 incallobj inc oh1+2
+7200 inc oh2+2
+7210 inc oh3+2
+7220 inc oh4+2
+7230 inc oh5+2
+7240 rts
+7250 incallobj2 inc oi1+2
+7260 inc oi2+2
+7270 inc oi3+2
+7280 inc oi4+2
+7290 inc oi5+2
+7300 rts
+7310 pertaby byt 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5
+7320 byt 6,6,6,6,7,7,7,7,8,8,8,8
+7330 byt 8,8,8,8,8,8,8,8,8,8,8,8
+7340 objhorizl byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+7350 byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+7360 ! spare
+7370 byt 0,0,0
+7380 objhorizr byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+7390 byt 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+7400 ! spare
+7410 byt 0,0,0
+7420 advance ldx #34
+7430 ad1 lda objhorizl,x
+7440 sta objhorizl+1,x
+7450 lda objhorizr,x
+7460 sta objhorizr+1,x
+7470 dex
+7480 bpl ad1
+7490 ldx #34
+7500 ad2 lda objhorizl,x
+7510 sta objhorizl+1,x
+7520 lda objhorizr,x
+7530 sta objhorizr+1,x
+7540 dex
+7550 cpx #13
+7560 bne ad2
+7570 lda #0
+7580 sta objhorizr+14
+7590 sta objhorizl+14
+7600 ldx sidel
+7610 lda $7a00,x
+7620 sta objhorizl
+7630 lda $7b00,x
+7640 sta objhorizr
+7650 inc sidel
+7651 inc trckoft2
+7660 rts
+7670 buffer lda hiscr
+7680 cmp #$c4
+7690 beq hibuff
+7700 cmp #$c0
+7710 beq lobuff
+7720 rts
+7730 hibuff lda #18
+7740 ldx #23
+7750 sta k53272k
+7760 hb1 lda hiscr,x
+7770 sec
+7780 sbc #4
+7790 sta hiscr,x
+7800 dex
+7810 bpl hb1
+7820 rts
+7830 lobuff lda #2
+7840 sta k53272k
+7850 ldx #23
+7860 hb2 lda hiscr,x
+7870 clc
+7880 adc #4
+7890 sta hiscr,x
+7900 dex
+7910 bpl hb2
+7920 rts
+7930 scramble ldy #0
+7940 sty $d3
+7950 lda #$c0
+7960 sta $d4
+7970 sei
+7980 lda #$34
+7990 sta 1
+8000 sr1 tya
+8010 eor ($d3),y
+8020 sta ($d3),y
+8030 inc 1
+8040 inc 1
+8050 sta 53280
+8060 dec 1
+8070 dec 1
+8080 iny
+8090 bne sr1
+8100 inc $d4
+8110 bne sr1
+8120 lda #54
+8130 sta 1
+8140 rts
+8150 downsmooth jmp rightseu
+8160 smoothedge ldy yfl
+8170 cpy #32
+8180 bne sed1
+8190 ldy #28
+8200 lda ypost+28
+8210 cmp ypost+24
+8220 jmp se2
+8230 sed1 lda ypost,y
+8240 se1 cmp ypost,y
+8250 bne se2
+8260 iny
+8270 cpy #36
+8280 bcc se1
+8290 dey
+8300 cmp ypost,y
+8310 se2 bcs downsmooth
+8320 lda #1
+8330 !sta debug
+8340 upsmooth !
+8350 lda #19
+8360 sec
+8370 sbc xwidt,y
+8380 clc
+8390 adc toftt,y
+8400 sta lpose
+8410 lda #21
+8420 clc
+8430 adc xwidt,y
+8440 clc
+8450 adc toftt,y
+8460 sta rpose
+8470 lda lpos
+8480 cmp lpose
+8490 bne lddownz
+8500 jmp lddown
+8510 lddownz bcc ldleftz
+8520 jmp ldleft
+8530 ldleftz !
+8540 ! ldright
+8550 ! "{223}"
+8560 lda #2
+8570 !sta debug
+8580 lda lpose
+8590 sec
+8600 sbc lpos
+8610 !sta debug
+8620 cmp #1
+8630 beq ldr1
+8640 cmp #2
+8650 beq ldr2
+8660 cmp #3
+8670 beq ldr3
+8680 cmp #4
+8690 beq ldr4
+8700 cmp #5
+8710 bcs ldr5
+8720 ldr1 lda #$14
+8730 ldy lpos
+8740 cpy #40
+8750 bcs ldr1a
+8760 sta ($d5),y
+8770 ldr1a jmp rightseu
+8780 ldr2 lda #$15
+8790 ldy lpos
+8800 cpy #40
+8810 bcs ldr2a
+8820 sta ($d5),y
+8830 ldr2a iny
+8840 cpy #40
+8850 bcs ldr1a
+8860 lda #$16
+8870 sta ($d5),y
+8880 jmp rightseu
+8890 ldr3 lda #$34
+8900 ldy lpos
+8910 cpy #40
+8920 bcs ldr3a
+8930 sta ($d5),y
+8940 ldr3a iny
+8950 cpy #40
+8960 bcs ldr3b
+8970 lda #$35
+8980 sta ($d5),y
+8990 ldr3b lda #$36
+9000 iny
+9010 cpy #40
+9020 bcs ldr3c
+9030 sta ($d5),y
+9040 ldr3c jmp rightseu
+9050 ldr4 lda #$3b
+9060 ldy lpos
+9070 cpy #40
+9080 bcs ldr4a
+9090 sta ($d5),y
+9100 ldr4a iny
+9110 cpy #40
+9120 bcs ldr4b
+9130 lda #$3c
+9140 sta ($d5),y
+9150 ldr4b lda #$3d
+9160 iny
+9170 cpy #40
+9180 bcs ldr4c
+9190 sta ($d5),y
+9200 ldr4c iny
+9210 cpy #40
+9220 bcs ldr4d
+9230 lda #$3e
+9240 sta ($d5),y
+9250 ldr4d jmp rightseu
+9260 ldr5 jmp rightseu
+9270 lddowna jmp rightseu
+9280 lddown ldy lpos
+9290 cpy #40
+9300 bcs lddowna
+9310 lda #4
+9320 sta ($d5),y
+9330 ldleft jmp rightseu
+9340 rightseu lda #0
+9350 !sta debug
+9360 rts

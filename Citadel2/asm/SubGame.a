@@ -20,27 +20,33 @@ SubGameChance_Down			= 128
 SubGameChance_ViaColour		= 128
 
 ; Various layout constants
-SubGame_ScreenTop			= 3
+kSubGame_ScreenTop		= 3
+kSubGame_ScreenLeft		= 9
+kSubGame_ScreenRight	= 29
+kSubGame_HorizontalBarTickTime	= 100
+
 SubGame_ScreenBottom		= 15
-SubGame_ScreenLeft			= 9
-SubGame_ScreenRight			= 29
 SubGame_BlockWidth			= 3
 SubGame_BlockHeight			= 2
-SubGame_NumBlockX			= (SubGame_ScreenRight - (SubGame_ScreenLeft+2)) / SubGame_BlockWidth
-SubGame_NumBlockY			= (SubGame_ScreenBottom - SubGame_ScreenTop) / SubGame_BlockHeight
 SubGame_PointerYPos			= SubGame_ScreenBottom+2
 SubGame_HorizontalBarYPos	= SubGame_PointerYPos+1
 SubGame_HorizontalBarSize	= 30
 SubGame_HorizontalBarXStart	= (VIC2ScreenCharsWidth-SubGame_HorizontalBarSize)/2
 SubGame_HorizontalBarXEnd	= SubGame_HorizontalBarXStart + SubGame_HorizontalBarSize
-SubGame_HorizontalBarTickTime = 50
 
 SubGameVerticalBarTop		= SubGame_ScreenBottom - 8
 SubGameVerticalBarBottom	= SubGame_ScreenBottom
 SubGameVerticalBarSize		= SubGameVerticalBarBottom - SubGameVerticalBarTop
-SubGameVerticalBarXPos		= SubGame_ScreenRight + 5
 
-!source "..\BerzerkRedux\Rand.a"
+; These can vary due to difficulty
+SubGame_ScreenTop			!by 3
+SubGame_ScreenLeft			!by 9
+SubGame_ScreenRight			!by 29
+SubGame_ScreenRightPlus1	!by 0
+SubGame_ScreenRightMinusSubGame_BlockWidth	!by 0
+SubGame_NumBlockX			!by 0 ; (SubGame_ScreenRight - (SubGame_ScreenLeft+2)) / SubGame_BlockWidth
+SubGameVerticalBarXPos		!by 0 ; SubGame_ScreenRight + 5
+SubGame_HorizontalBarTickTime !by kSubGame_HorizontalBarTickTime
 
 SubGameExit_Null			= 0	; Must be zero
 SubGameExit_Success			= 1
@@ -62,6 +68,97 @@ tWaitForFire_A
 !macro WaitDebug {
 }
 }
+
+!zn
+SubGame_Init
+	lda #kSubGame_ScreenTop+SubGame_BlockHeight+SubGame_BlockHeight+SubGame_BlockHeight
+	sta SubGame_ScreenTop
+
+	lda #kSubGame_ScreenLeft+SubGame_BlockWidth+SubGame_BlockWidth
+	sta SubGame_ScreenLeft
+	lda #kSubGame_ScreenRight-SubGame_BlockWidth-SubGame_BlockWidth
+	sta SubGame_ScreenRight
+
+	lda #kSubGame_HorizontalBarTickTime
+	sta SubGame_HorizontalBarTickTime
+
+	jsr SubGame_ReCalculateValues
+	rts
+
+!zn
+SubGame_MakeMoreDifficult
+	lda SubGame_ScreenTop
+	cmp #kSubGame_ScreenTop
+	beq .l1
+	sec
+	sbc #SubGame_BlockHeight
+	sta SubGame_ScreenTop
+	jmp .o1
+
+.l1
+	lda SubGame_ScreenLeft
+	cmp #kSubGame_ScreenLeft
+	beq .l2
+	sec
+	sbc #SubGame_BlockWidth
+	sta SubGame_ScreenLeft
+
+	lda SubGame_ScreenRight
+	clc
+	adc #SubGame_BlockWidth
+	sta SubGame_ScreenRight
+	jmp .o1
+
+.l2
+
+.o1
+	lda SubGame_HorizontalBarTickTime
+	cmp #kSubGame_HorizontalBarTickTime/2
+	bcc .o2
+	sec
+	sbc #2
+	sta SubGame_HorizontalBarTickTime
+.o2
+
+	jsr SubGame_ReCalculateValues
+	rts
+
+
+!zn
+; This will use updated SubGame_ScreenTop, SubGame_ScreenLeft and SubGame_ScreenRight to adjust any other calculated values used in the code
+; Like SubGame_NumBlockX etc
+SubGame_ReCalculateValues
+	;SubGame_NumBlockX = (SubGame_ScreenRight - (SubGame_ScreenLeft+2)) / SubGame_BlockWidth
+	lda SubGame_ScreenLeft
+	clc
+	adc #2
+	sta .sm1+1
+	lda SubGame_ScreenRight
+	sec
+.sm1	sbc #0
+	tax
+	lda .div3Tab,x
+	sta SubGame_NumBlockX
+
+	;SubGameVerticalBarXPos		!by 0 ; SubGame_ScreenRight + 5
+	lda SubGame_ScreenRight
+	clc
+	adc #5
+	sta SubGameVerticalBarXPos
+
+
+	ldx SubGame_ScreenRight
+	inx
+	stx SubGame_ScreenRightPlus1
+
+
+	lda SubGame_ScreenRight
+	sec
+	sbc #SubGame_BlockWidth
+	sta SubGame_ScreenRightMinusSubGame_BlockWidth
+
+	rts
+.div3Tab !for .a , 40 { !by (.a-1) / 3 }
 
 !zn
 SubGameEnter
@@ -123,7 +220,7 @@ SubGameDrawPuzzleScreen
 
 	; Draw a line for the vertical energy bar
 	ldx #SubGameVerticalBarBottom
-	ldy #SubGameVerticalBarXPos
+	ldy SubGameVerticalBarXPos
 .cll5
 	jsr .getScreen
 	lda #SubGameChar_EnergyBar
@@ -149,12 +246,15 @@ SubGameDrawPuzzleScreen
 	bpl .cll1
 
 	; Initialise the various variables
-	lda #SubGame_ScreenLeft+2
+;	lda #SubGame_ScreenLeft+2
+	lda SubGame_ScreenLeft
+	clc
+	adc #2
 	sta .counterSolveXPos0
 
 	; This many full interations solving the circuit before the animation happens that shuffles the board
 	; This gives enough time for SubGame_CopyResultToGet to copy the resultant end state
-	lda #2
+	lda #SubGameVerticalBarSize+1
 	sta .fullIterationsBeforeReject
 	lda #32		; TODO - This can be made more difficult by raising the number of shuffles
 ;	lda #0		; Debug: Turns off shuffling
@@ -164,7 +264,7 @@ SubGameDrawPuzzleScreen
 	sta .fullIterationDone
 
 	; Setup the horizontal bar values
-	lda #SubGame_HorizontalBarTickTime	; Can be variable, to make the sub-game harder or easier
+	lda SubGame_HorizontalBarTickTime	; Can be variable, to make the sub-game harder or easier
 	sta .horizontalBarTickTime
 	sta .horizontalBarTick
 	lda #SubGame_HorizontalBarXEnd
@@ -214,6 +314,8 @@ SubGameUpdate
 	beq .inventoryDone
 	jsr SubGameHandleInventory
 	bcs .notDoneInventoryYet
+	cmp #-2
+	beq .exitChosen
 	lda #0
 	sta .doInventory
 .notDoneInventoryYet
@@ -229,6 +331,7 @@ SubGameUpdate
 	cmp #50
 	bcc .justRet
 
+.exitChosen
 	; After the above pause then finally exit
 	lda #0
 	sta DisplayingSubGame
@@ -286,14 +389,17 @@ SubGameUpdate
 	jsr Rand
 	and #15	; This should really be the (min power of 2 larger than SubGame_NumBlockX)-1
 .checkPos
-	cmp #SubGame_NumBlockX
+	cmp SubGame_NumBlockX
 	bcc .posOK
-	sbc #SubGame_NumBlockX
+	sbc SubGame_NumBlockX
 	jmp .checkPos
 .posOK
 	sta .shufflePos
 	jsr .doSlideDown
-	jmp .noUserInput
+	jsr SubGameAddWaitingSprite
+	; No need to run the solve while sliding blocks around during the rejection phase
+	rts
+;	jmp .noUserInput
 
 .doUserInput
 	jsr SubGame_HandleUserUpdates
@@ -303,12 +409,15 @@ SubGameUpdate
 
 	lda .verticalBarValue
 	cmp #SubGameVerticalBarSize
-	beq .noUserInput
-	bcc .noUserInput
+	beq .noWinYet
+	bcc .noWinYet
 
 	; Success, so exit the sub-game
 	inc .endPuzzleDo
 	; Flag success back to the main game.
+	lda #$7
+	jsr SFXInit
+
 	lda #SubGameExit_Success
 	sta SubGame_ExitState
 
@@ -317,6 +426,9 @@ SubGameUpdate
 	rts
 
 .noUserInput
+	jsr SubGameAddWaitingSprite
+
+.noWinYet
 
 	jsr SubGame_SolveXStripPreCalc
 	; Solve the same strip a few times to speed up the resolution of the sub-game paths, especially for the vertical traces
@@ -352,7 +464,7 @@ SubGameChar_UpdateVerticalBar
 	ldx #SubGameVerticalBarBottom
 .pvc1
 	jsr .getScreen
-	ldy #SubGameVerticalBarXPos
+	ldy SubGameVerticalBarXPos
 	lda tempWork4
 	beq .pvc5
 	bmi .pvc5
@@ -393,6 +505,8 @@ SubGame_DrawPointer
 
 	ldx .shufflePos
 	lda .shufflePosToXPos,x
+	clc
+	adc SubGame_ScreenLeft
 	tay
 	lda #VIC2Multicolour_White
 !for .a , SubGame_BlockWidth-1 {
@@ -427,6 +541,9 @@ SubGameChar_UpdateHorizontalBar
 	; Trigger the end of the sub-game
 	inc .endPuzzleDo
 	; Flag failure back to the main game
+	lda #$8
+	jsr SFXInit
+
 	lda #SubGameExit_Failure
 	sta SubGame_ExitState
 
@@ -465,18 +582,25 @@ SubGame_HandleUserUpdates
 
 .gotLeft
 	+SubGame_DirLatch .dirLatch , .sgu1
+	lda #$9
+	jsr SFXInit
 	dec .shufflePos
 	bpl .sgu1
-	lda #SubGame_NumBlockX-1
+;	lda SubGame_NumBlockX-1
+	lda SubGame_NumBlockX
+	sec
+	sbc #1
 	sta .shufflePos
 .sgu1	; Multiple paths return via here
 	rts
 
 .gotRight
 	+SubGame_DirLatch .dirLatch , .sgu1
+	lda #$9
+	jsr SFXInit
 	inc .shufflePos
 	lda .shufflePos
-	cmp #SubGame_NumBlockX
+	cmp SubGame_NumBlockX
 	bcc .sgu1
 	lda #0
 	sta .shufflePos
@@ -484,12 +608,16 @@ SubGame_HandleUserUpdates
 
 .gotUp
 	+SubGame_DirLatch .dirLatch , .sgu1
+	lda #$9
+	jsr SFXInit
 	jsr .doSlideUp
 
 	rts
 
 .gotDown
 	+SubGame_DirLatch .dirLatch , .sgu1
+	lda #$9
+	jsr SFXInit
 	jsr .doSlideDown
 	rts
 
@@ -498,12 +626,17 @@ SubGame_HandleUserUpdates
 
 
 .doSlideUp
-	ldx #SubGame_ScreenTop - SubGame_BlockHeight
+	lda SubGame_ScreenTop
+	sec
+	sbc #SubGame_BlockHeight
+	tax
 	jsr .getScreen
 	jsr .addScreen
 
 	ldx .shufflePos
 	lda .shufflePosToXPos,x
+	clc
+	adc SubGame_ScreenLeft
 	sta .smystart+1
 
 	ldy .smystart+1
@@ -516,7 +649,10 @@ SubGame_HandleUserUpdates
 }
 
 
-	ldx #(SubGame_ScreenBottom + SubGame_BlockHeight) - SubGame_ScreenTop
+	lda #(SubGame_ScreenBottom + SubGame_BlockHeight)
+	sec
+	sbc SubGame_ScreenTop
+	tax
 .shufl1
 .smystart	ldy #0
 !for .a , SubGame_BlockWidth {
@@ -550,6 +686,8 @@ SubGame_HandleUserUpdates
 
 	ldx .shufflePos
 	lda .shufflePosToXPos,x
+	clc
+	adc SubGame_ScreenLeft
 	sta .smystart2+1
 
 	ldy .smystart2+1
@@ -562,7 +700,10 @@ SubGame_HandleUserUpdates
 }
 
 
-	ldx #(SubGame_ScreenBottom + SubGame_BlockHeight) - SubGame_ScreenTop
+	lda #(SubGame_ScreenBottom + SubGame_BlockHeight)
+	sec
+	sbc SubGame_ScreenTop
+	tax
 .shufl12
 .smystart2	ldy #0
 !for .a , SubGame_BlockWidth {
@@ -671,7 +812,7 @@ SubGame_HandleUserUpdates
 
 
 .shufflePosToXPos
-!for .a , SubGame_NumBlockX { !by ((.a-1)*SubGame_BlockWidth) + SubGame_ScreenLeft + 2 }
+!for .a , 13 { !by ((.a-1)*SubGame_BlockWidth) + 2 }
 
 SubGame_SolveXStripPreCalc
 	; Pre-calc some values for use later
@@ -697,7 +838,8 @@ SubGame_SolveXStripUpdatePosition
 	; Progress one strip to the right each frame
 	ldx .counterSolveXPos0
 	inx
-	cpx #SubGame_ScreenRight+1
+;	cpx #SubGame_ScreenRight+1
+	cpx SubGame_ScreenRightPlus1
 	bne .sbuo1
 
 	inc .fullIterationDone
@@ -709,31 +851,47 @@ SubGame_SolveXStripUpdatePosition
 	bne .sbuo2
 	jsr SubGame_CopyResultToGet
 .sbuo2
-	ldx #SubGame_ScreenLeft+2
+;	ldx #SubGame_ScreenLeft+2
+	ldx SubGame_ScreenLeft
+	inx
+	inx
 .sbuo1
 	stx .counterSolveXPos0
 	rts
 
 	; No valid result was found, so start adding circuit lines until we get something
 .noResultFound
+
+	; Pick a randomish position
+	jsr Rand
+	and #7
+	sta tempWork4
+	lda SubGame_ScreenTop
+.pl1
 	; Get a different Y pos each time
-.smPos1		lda #SubGame_ScreenTop
 	clc
 	adc #SubGame_BlockHeight
 	cmp #SubGame_ScreenBottom
 	bne .okPos
-	lda #SubGame_ScreenTop
+	lda SubGame_ScreenTop
 .okPos
-	sta .smPos1+1
+	dec tempWork4
+	bpl .pl1
+
 	tax
 	dex
 	jsr .getScreen
 
-	lda #SubGame_ScreenLeft+2
+;	lda #SubGame_ScreenLeft+2
+	lda SubGame_ScreenLeft
+	clc
+	adc #2
 	sta tempWork4
-	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth
+;	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth
+	adc #VIC2ScreenCharsWidth
 	sta tempWork5
-	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth+VIC2ScreenCharsWidth
+;	lda #SubGame_ScreenLeft+2+VIC2ScreenCharsWidth+VIC2ScreenCharsWidth
+	adc #VIC2ScreenCharsWidth
 	sta tempWork6
 .bl1
 	; If up or down sections exist at this position then connect to them
@@ -767,15 +925,15 @@ SubGame_SolveXStripUpdatePosition
 	inc tempWork5
 	inc tempWork6
 	lda tempWork4
-	cmp #SubGame_ScreenRight
+	cmp SubGame_ScreenRight
 	bne .bl1
 	jmp .sbuo2
 
 SubGame_CopyResultToGet
-	ldx #SubGame_ScreenTop
+	ldx SubGame_ScreenTop
 .sbc1
 	jsr .getScreen
-	ldy #SubGame_ScreenRight
+	ldy SubGame_ScreenRight
 	lda (tempWork2),y
 	iny
 	iny
@@ -803,10 +961,10 @@ SubGame_CopyResultToGet
 ; EQ = Colours match
 ; NE = Colours don't match
 SubGame_CheckResult
-	ldx #SubGame_ScreenTop
+	ldx SubGame_ScreenTop
 .sbc2
 	jsr .getScreen
-	ldy #SubGame_ScreenRight
+	ldy SubGame_ScreenRight
 	lda (tempWork2),y
 	and #15
 	sta .smc2+1
@@ -832,10 +990,10 @@ SubGame_CheckResult
 ; EQ = Is all blank
 ; NE = Is not all blank
 SubGame_CheckPassIsBlank
-	ldx #SubGame_ScreenTop
+	ldx SubGame_ScreenTop
 .sbc3
 	jsr .getScreen
-	ldy #SubGame_ScreenRight
+	ldy SubGame_ScreenRight
 	lda (tempWork2),y
 	and #15
 	cmp #VIC2Multicolour_Black
@@ -854,7 +1012,8 @@ SubGame_CheckPassIsBlank
 
 ; This solves one vertical strip at the X position
 SubGame_SolveXStrip
-	ldx #SubGame_ScreenTop-1	; Offset by -1 so that counterSolveXPos* works with -1,0,+1 lines
+	ldx SubGame_ScreenTop
+	dex
 .sbs1
 	jsr .getScreen
 
@@ -978,7 +1137,10 @@ SubGame_SolveXStrip
 	ldy .counterSolveXPos80
 	lda #VIC2Colour_Black
 	sta (tempWork2),y
-	ldx #SubGame_ScreenTop-SubGame_BlockHeight-1
+	lda SubGame_ScreenTop
+	clc	; extra -1
+	sbc #SubGame_BlockHeight
+	tax
 	jsr .getScreen
 	ldy .counterSolveXPos0
 	lda #VIC2Colour_Black
@@ -1002,9 +1164,12 @@ SubGame_ResetEnterTimer
 	; Restore the main game state
 	jsr ScrollerFlipBank
 
+!ifdef CharColoursForEveryCharacter {
+	jsr RefreshScreenColourRemap
+} else {
 	lda #Scroller_ClearColour
 	jsr ClearGameColourTo
-
+}
 
 	jsr RestoreSprites
 	rts
@@ -1039,21 +1204,22 @@ SubGameCreatePuzzle
 	sta .smc1+1
 
 	; Draw the terminals
-	lda #SubGame_ScreenTop
+	lda SubGame_ScreenTop
 	sta tempWork4
 .tl1
 	ldx tempWork4
 	jsr .getScreen
 
 	; Left terminal
-	ldy #SubGame_ScreenLeft
+	ldy SubGame_ScreenLeft
 	lda #SubGameChar_Term1
 	sta (tempWork0),y
 	iny
 	lda #SubGameChar_Term2
 	sta (tempWork0),y
 
-	ldy #SubGame_ScreenLeft
+	ldy SubGame_ScreenLeft
+
 .smc1	lda #VIC2Multicolour_Green
 	sta (tempWork2),y
 	iny
@@ -1071,7 +1237,7 @@ SubGameCreatePuzzle
 	sta .smc1+1
 
 	; Right terminal
-	ldy #SubGame_ScreenRight
+	ldy SubGame_ScreenRight
 	lda #SubGameChar_Term1
 	sta (tempWork0),y
 	iny
@@ -1084,7 +1250,7 @@ SubGameCreatePuzzle
 	lda #SubGameChar_Term2
 	sta (tempWork0),y
 
-	ldy #SubGame_ScreenRight
+	ldy SubGame_ScreenRight
 	lda #VIC2Multicolour_Black
 	sta (tempWork2),y
 	iny
@@ -1106,11 +1272,14 @@ SubGameCreatePuzzle
 
 	; Now iterate on producing the puzzle
 	; X
-	lda #SubGame_ScreenLeft+2
+;	lda #SubGame_ScreenLeft+2
+	lda SubGame_ScreenLeft
+	clc
+	adc #2
 	sta tempWork5
 .ts1
 	; Y
-	lda #SubGame_ScreenTop
+	lda SubGame_ScreenTop
 	sta tempWork4
 .ts2
 	; Decide what to draw here
@@ -1231,17 +1400,21 @@ SubGameCreatePuzzle
 	clc
 	adc #SubGame_BlockWidth
 	sta tempWork5
-	cmp #SubGame_ScreenRight
+	cmp SubGame_ScreenRight
 	bne .lts1
 
 
 	; Now process the output to add vias to stop blank lines from appearing
 	; Look for any SubGameChar_Right characters that have a ClearGameScreensChar to their left
-	ldx #SubGame_ScreenTop
+	ldx SubGame_ScreenTop
 .tsv1
 	jsr .getScreen
 	; No via in the first column, obvious, so don't waste time checking this at all
-	ldy #SubGame_ScreenLeft+2+SubGame_BlockWidth
+;	ldy #SubGame_ScreenLeft+2+SubGame_BlockWidth
+	lda SubGame_ScreenLeft
+	clc
+	adc #2+SubGame_BlockWidth
+	tay
 .tsv2
 	lda (tempWork0),y
 	cmp #SubGameChar_Right
@@ -1273,7 +1446,8 @@ SubGameCreatePuzzle
 	adc #SubGame_BlockWidth
 	tay
 	; No via in the last column, otherwise the sub-game gets too easy
-	cpy #SubGame_ScreenRight-SubGame_BlockWidth
+;	cpy #SubGame_ScreenRight-SubGame_BlockWidth
+	cpy SubGame_ScreenRightMinusSubGame_BlockWidth
 	bne .tsv2
 	txa
 	clc

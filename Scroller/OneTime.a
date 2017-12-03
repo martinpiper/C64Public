@@ -1,5 +1,6 @@
 !zn
 ScrollerDemoInitOneTimeData
+	sei
 	; We are going to be reading from under the IO space so we enable RAM there instead of IO
 	lda #ProcessorPortAllRAM
 	sta ZPProcessorPort
@@ -277,7 +278,7 @@ ScrollerDemoInitOneTimeData
 }
 
 	; Enable IO again
-	lda #ProcessorPortAllRAMWithIO
+	lda #Scroller_ProcessorPort
 	sta ZPProcessorPort
 
 	rts

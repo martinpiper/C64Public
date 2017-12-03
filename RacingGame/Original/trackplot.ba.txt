@@ -1,0 +1,62 @@
+0 goto110
+1 open1,8,0,"$"
+2 get#1,a$:printa$;:goto2
+9 fort=0to119:poke064*256+t,peek(004*256+t):next
+10 a$="{home}{down*20}{white}{213}{192*38}{201}{dark gray}{home}"
+11 print"{clear}";a$
+100 l=l+1:ifl=1thenload"trackconfig2.d",8,1
+101 ifl=2thenload"tracklev",8,1
+102 ifl=3thenload"mc1.o",8,1
+110 poke53281,0:poke53281,0
+111 yp=64*256
+112 xp=72*256
+113 h=0:rem h=hill
+114 c=0:rem c=corner
+1 poke1024+peek(16384+t)*40+peek(16384+80+t)+21+peek(65*256+o*30+t),1
+115 dime%(35):fort=0to35:read e%(t):next
+116 data 18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,4,4,4,3,2
+117 data 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+120 print"{gray}{clear}":poke49152+3+2,peek(16384)*8+50:sys49152
+121 printa$:tf=0
+122 foro=.00001to10step.1
+123 print"{gray}{clear}":rempoke49152+3+2,peek(yp+h*40+37)*8+50
+125 ls=255
+126 h=21
+130 fort=0to35
+131 ifpeek(yp+t+h*40)=lsthen160
+132 ift>=peek(yp+h*40+38)then140
+133 poke53280,t:d=peek(yp+h*40+38):ifpeek(yp+t+h*40)+1>peek(yp+h*40+d)then160
+134 rempoke 80*256+tf*40+t,e%(t)
+140 poke1024+peek(yp+t+h*40)*40+peek(xp+t+h*40)+21+peek(80*256+t+tf*40),1
+150 poke1024+peek(yp+t+h*40)*40-peek(xp+t+h*40)+19+peek(80*256+tf*40+t),1
+151 ls=peek(yp+t+h*40)
+153 ife%(t)<>0thene%(t)=e%(t)-1
+160 next
+161 print"{home}":inputa$:ifa$="e"thengosub171
+163 print"{clear}"
+164 tf=tf+1
+170 next
+171 input"linedown";ld:ld=ld-1:poke80*256+ld*4+tf*40,peek(80*256+ld*4+tf*40)+1
+172 a$=""
+173 tf=tf-1:return
+199 fort=0to13*40:poke1024+t,peek(68*256+t):next
+200 fory=1to11:forx=0to39:ifpeek(1024+y*40+x-40)=peek(1024+12*40+x)then220
+210 poke1024+y*40+x,peek(1024-40+y*40+x)+1:goto230
+220 poke1024+y*40+x,peek(1024-40+y*40+x)
+230 nextx,y
+240 fort=0to13*40:poke68*256+t,peek(1024+t):next
+999 stop
+1000 fort=4*40to0step-1:poke04*256+t+7*40,peek(04*256+t+6*40):next
+2000 forh=0to24
+2010 poke68*256+h*40+38,0
+2011 print"{clear}"
+2020 forx=0to35:ifpeek(68*256+h*40+x)<24thenpoke1024+peek(68*256+h*40+x)*40+x,160
+2021 next
+2030 geta$:ifa$="z"thenpoke68*256+h*40+38,peek(68*256+h*40+38)-1
+2040 ifa$="x"thenpoke68*256+h*40+38,peek(68*256+h*40+38)+1
+2050 poke1024+peek(68*256+h*40+38),42
+2051 poke1024+peek(68*256+h*40+38)+200,42
+2052 poke1024+peek(68*256+h*40+38)+400,42
+2053 poke1024+peek(68*256+h*40+38)+600,42
+2060 ifa$<>"{f1}"then2030
+2070 nexth

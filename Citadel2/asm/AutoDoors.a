@@ -1,0 +1,159 @@
+; Processes the auto doors in MapAutoDoor
+
+!zn
+.currentDoorL !by 0
+.currentDoorH !by 0
+
+
+AutoDoor_Init
+.reset
+	lda #<MapAutoDoor
+	sta .currentDoorL
+	lda #>MapAutoDoor
+	sta .currentDoorH
+	rts
+
+
+.currentMask !by 0
+
+AutoDoor_Iterate
+	lda .currentDoorL
+	sta tempWork0
+	lda .currentDoorH
+	sta tempWork1
+
+	; Prepare to get the next in the list
+	lda .currentDoorL
+	clc
+	adc #MapAutoDoor_Size
+	sta .currentDoorL
+	bcc .l1
+	inc .currentDoorH
+.l1
+
+	; Get door maze node
+	ldy #MapAutoDoor_DoorX
+	lda (tempWork0),y
+	bmi .reset
+	sta tempWork2
+	ldy #MapAutoDoor_DoorY
+	lda (tempWork0),y
+	sta tempWork3
+
+	ldx tempWork2
+	ldy tempWork3
+	jsr GetMazeNodesIndex
+	sta tempWork4
+	stx tempWork5
+
+
+	; Get hot spot 1 maze node
+	ldy #MapAutoDoor_HotSpot1X
+	lda (tempWork0),y
+	sta tempWork6
+	ldy #MapAutoDoor_HotSpot1Y
+	lda (tempWork0),y
+	sta tempWork7
+
+	ldx tempWork6
+	ldy tempWork7
+	jsr GetMazeNodesIndex
+	sta tempWork6
+	stx tempWork7
+
+
+	; Get hot spot 2 maze node
+	ldy #MapAutoDoor_HotSpot2X
+	lda (tempWork0),y
+	sta tempWork8
+	ldy #MapAutoDoor_HotSpot2Y
+	lda (tempWork0),y
+	sta tempWork9
+
+	ldx tempWork8
+	ldy tempWork9
+	jsr GetMazeNodesIndex
+	sta tempWork8
+	stx tempWork9
+
+	; Check for the mask
+	ldy #MapAutoDoor_DetectMask
+	lda (tempWork0),y
+	sta .currentMask
+
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	; Any blocks on the door itself and it won't close
+	and #Node_isBlocked_Player | Node_isBlocked_Enemy	;.currentMask
+	bne .openDoor
+
+	; Use the door detection mask for the hot spots
+	lda (tempWork6),y
+	and .currentMask
+	bne .openDoor
+
+	lda (tempWork8),y
+	and .currentMask
+	bne .openDoor
+
+	; Nothing blocking the door spots, so consider closing it
+	ldy #MapAutoDoor_DelayCount
+	lda (tempWork0),y
+	clc
+	sbc #1
+	bmi .closeDoor
+	sta (tempWork0),y
+
+	rts
+.closeDoor
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	; Check the map tile is not already closed
+	and #Node_isBlocked_AutoDoor
+	bne .ret
+
+	ldy #MapAutoDoor_CloseAnim
+	lda (tempWork0),y
+	ldx tempWork2
+	ldy tempWork3
+	jsr MapAnimations_Allocate
+	bcs .ret
+
+	ldy #MapAutoDoor_DelayCount
+	lda #127
+	sta (tempWork0),y
+
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	ora #Node_isBlocked_AutoDoor
+	sta (tempWork4),y
+
+.ret
+	rts
+
+
+.openDoor
+	ldy #MapAutoDoor_DelayReset
+	lda (tempWork0),y
+	ldy #MapAutoDoor_DelayCount
+	sta (tempWork0),y
+
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	; Check the map tile is not already open
+	and #Node_isBlocked_AutoDoor
+	beq .ret
+
+	ldy #MapAutoDoor_OpenAnim
+	lda (tempWork0),y
+	ldx tempWork2
+	ldy tempWork3
+	jsr MapAnimations_Allocate
+	bcs .ret
+
+	ldy #Node_isBlocked
+	lda (tempWork4),y
+	and #!Node_isBlocked_AutoDoor
+	sta (tempWork4),y
+
+	rts

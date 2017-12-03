@@ -6,6 +6,8 @@
 !zn
 MessageScrollX !by 0
 DisplayTitleScreen
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+
 	; Just to make sure we disable interrupts.
 	; This title screen code can use the multiplexor and animation engine if it wants to
 	sei
@@ -274,11 +276,15 @@ TitleScreen_SpriteAnimateCount !by 0
 
 ; Spread evenly
 .spriteSpread = 17
-.spritePerStroke = 15
+;.spriteSpread = 20
+;.spritePerStroke = 12
+;.spritePerStroke = 10
+;.spritePerStroke = 8
+.spritePerStroke = Multiplex_items / 2
 
 ; Very tight packing
 ;.spriteSpread = 8
-;.spritePerStroke = 15
+;.spritePerStroke = 12
 .xposTweak = 24
 
 !if Multiplex_items < (.spritePerStroke * 2) {
@@ -290,136 +296,136 @@ TitleScreenAnimationHook
 !ifdef TitleScreen_AnimatingSprites {
 	inc TitleScreen_SpriteAnimateCount
 
-	ldx TitleScreen_SpriteAnimateCount
-	ldy #0
+	ldy TitleScreen_SpriteAnimateCount
+	ldx #0
 .l1
 	; If something is already animating in this slot then continue with the animation
-	lda Multiplex_YPos,y
+	lda Multiplex_YPos,x
 	cmp #$ff
 	bne .alreadyOn1
 	; Otherwise calculate if the sprite is really small before allowing the animaton to start
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
+	tay
+	lda .upDownTab,y
 	cmp #7
 	bne .skipIt1
 	pla
-	tax
+	tay
 .alreadyOn1
-	lda TitleScreen_SinTab,x
-	sta Multiplex_YPos,y
+	lda TitleScreen_SinTab,y
+	sta Multiplex_YPos,x
 !ifdef Multiplex_SplitSort {
-	sta AnimationYPosToSort,y
+	sta AnimationYPosToSort,x
 }
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
+	tay
+	lda .upDownTab,y
 	clc
 	adc #$28
-	sta Multiplex_SpriteFrame,y
+	sta Multiplex_SpriteFrame,x
 .skipIt1
 	pla
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l1
 
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset0
-	tax
-	ldy #0
+	tay
+	ldx #0
 .l2
-	lda TitleScreen_SinTab,x
+	lda TitleScreen_SinTab,y
 	clc
 	adc #.xposTweak
-	sta Multiplex_XPosLo,y
-	txa
+	sta Multiplex_XPosLo,x
+	tya
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l2
 
 !if 1 {
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset1
-	tax
-	ldy #0
+	tay
+	ldx #0
 .l3
 	; If something is already animating in this slot then continue with the animation
-	lda Multiplex_YPos+16,y
+	lda Multiplex_YPos+.spritePerStroke,x
 	cmp #$ff
 	bne .alreadyOn2
 	; Otherwise calculate if the sprite is really small before allowing the animaton to start
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
+	tay
+	lda .upDownTab,y
 	cmp #7
 	bne .skipIt2
 	pla
-	tax
+	tay
 .alreadyOn2
-	lda TitleScreen_SinTab,x
-	sta Multiplex_YPos+16,y
+	lda TitleScreen_SinTab,y
+	sta Multiplex_YPos+.spritePerStroke,x
 !ifdef Multiplex_SplitSort {
-	sta AnimationYPosToSort+16,y
+	sta AnimationYPosToSort+.spritePerStroke,x
 }
-	txa
+	tya
 	pha
 	lsr
 	lsr
 	lsr
 	lsr
-	tax
-	lda .upDownTab,x
+	tay
+	lda .upDownTab,y
 	clc
 	adc #$28
-	sta Multiplex_SpriteFrame+16,y
+	sta Multiplex_SpriteFrame+.spritePerStroke,x
 .skipIt2
 	pla
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l3
 
 	lda TitleScreen_SpriteAnimateCount
 	clc
 	adc #.spriteOffset2
-	tax
-	ldy #0
+	tay
+	ldx #0
 .l4
-	lda TitleScreen_SinTab,x
+	lda TitleScreen_SinTab,y
 	clc
 	adc #.xposTweak
-	sta Multiplex_XPosLo+16,y
-	txa
+	sta Multiplex_XPosLo+.spritePerStroke,x
+	tya
 	clc
 	adc #.spriteSpread
-	tax
-	iny
-	cpy #.spritePerStroke
+	tay
+	inx
+	cpx #.spritePerStroke
 	bne .l4
 }
 

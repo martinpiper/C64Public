@@ -1,0 +1,37 @@
+* Created cart based minimal build project, using ProcessorPortDefault, with the multiplexor enabled
+
+
+* For: *.S.* *.BA.* in C:\CCS64\MyOldE114Software\ProjectX
+Use this to convert: C:\work\Tok64\Debug\Tok64.exe /6510+ /stomp /totxt <filename>
+
+* Extract meaningful graphical data for:
+	Sprites
+	Charsets
+	Characters
+	Road side objects
+
+* Extract meaningful road data and data generation routines
+
+
+* Understand how the plot routines work, tidy up from original source or engineer new versions.
+
+
+
+* TrackDraw.a tidy code
+	* Make data offsets position independant
+	* Make multi-screen bank capable
+	* Update multiplexor bank config
+	* Update the sprite cull to be just above the score panel
+	* Add a bottom of screen IRQ above the score panel for the screen split
+	* Add NMI for horizon, use the bottom of screen IRQ above the score panel for the timing
+
+
+
+
+* TODO: While rendering from back to front, there is an track object optimisation (for jsr objsprint), where the ymax of the draw can be adjusted to be higher.
+When a far road row is being drawn below the near horizon the ymax can be the near horizon (i.e. hill crest) position.
+	From the column 38 index, i.e. at the start of the track draw, before the road row draw loop, set ymax to be the Y pos from the hill crest horizon index
+	The ymax reset with the hill crest index can be the first thing in the new road row plot loop
+		i.e. Then after the near horizon position is drawn the ymax is is set to be the screen height again.
+	* TODO: Below mentioned ymax optimisation available here, set ymax to max height
+	* Use Debug_ForceTrackStateRender=X to render a certain track type

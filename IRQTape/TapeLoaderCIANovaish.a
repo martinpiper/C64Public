@@ -32,7 +32,7 @@ TapeRelocatedStart
 	; Grab everything on the stack earlier
 	txs
 
-	+MACROSetTurboTimer
+	+MACROSetTurboTimerMiddle -$11
 
 	; Because the kernal loader has been interrupted we have to switch on the screen :)
 	lda #VIC2ScreenControlVDefault

@@ -68,6 +68,7 @@ public class Maze extends MazeCommon
 				"TraceBackResultBuffer !fill 256,0\n" +
 				"MazeWidth = " + width + "\n" +
 				"MazeHeight = " + height + "\n" +
+				"!source \"asm/FIFO.a\"\n" +
 				"!source \"asm/MazeSolve.a\"\n"
 		);
 		c64.i_run_the_command_line("..\\acme.exe -o t.prg -f cbm t.a");

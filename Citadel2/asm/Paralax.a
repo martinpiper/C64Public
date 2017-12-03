@@ -1,0 +1,112 @@
+!zn
+; Paralax scroll chars using scrollerRealMovementXPixels and scrollerRealMovementYPixels:
+;	30 32
+;	31 33
+paralaxScrollXPixels !by 0
+paralaxScrollYPixels !by 0
+
+ParalaxUpdate
+!ifdef Scroller_DebugParalaxScrollTimings {
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+}
+	jsr ParalaxUpdateX
+	jsr ParalaxUpdateY
+!ifdef Scroller_DebugParalaxScrollTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	rts
+
+!zn
+ParalaxUpdateX
+.l0
+	lda paralaxScrollXPixels
+	beq .noX
+
+	bpl .posx
+
+	ldx #15
+.l1
+	lda CharData+(32*8),x
+	ror
+	ror CharData+(30*8),x
+	ror CharData+(32*8),x
+	dex
+	bpl .l1
+
+	inc paralaxScrollXPixels
+	jmp .l0
+
+.posx
+	ldx #15
+.l2
+	lda CharData+(30*8),x
+	rol
+	rol CharData+(32*8),x
+	rol CharData+(30*8),x
+	dex
+	bpl .l2
+
+	dec paralaxScrollXPixels
+	jmp .l0
+
+.noX
+
+	rts
+
+
+!zn
+ParalaxUpdateY
+.l0
+	lda paralaxScrollYPixels
+	beq .noY
+
+	bpl .posy
+
+	lda CharData+(30*8)+15
+	sta tempWork0
+	lda CharData+(32*8)+15
+	sta tempWork1
+	ldx #14
+.l1
+	lda CharData+(30*8),x
+	sta CharData+(30*8)+1,x
+	lda CharData+(32*8),x
+	sta CharData+(32*8)+1,x
+	dex
+	bpl .l1
+	lda tempWork0
+	sta CharData+(30*8)
+	lda tempWork1
+	sta CharData+(32*8)
+
+	inc paralaxScrollYPixels
+	jmp .l0
+
+.posy
+
+	lda CharData+(30*8)
+	sta tempWork0
+	lda CharData+(32*8)
+	sta tempWork1
+	ldx #0
+.l2
+	lda CharData+(30*8)+1,x
+	sta CharData+(30*8),x
+	lda CharData+(32*8)+1,x
+	sta CharData+(32*8),x
+	inx
+	cpx #15
+	bne .l2
+	lda tempWork0
+	sta CharData+(30*8)+15
+	lda tempWork1
+	sta CharData+(32*8)+15
+
+	dec paralaxScrollYPixels
+	jmp .l0
+
+.noY
+
+	rts

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="asm">
+      <UniqueIdentifier>{0d5d97cb-ed05-4235-8880-3da8bb63d849}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
@@ -43,5 +46,30 @@
     <None Include="RunTests.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="..\Decompression\Decompression.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionP2.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionVars.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressRLE.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression2.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression3.a">
+      <Filter>asm</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Decompression\Done.txt" />
+    <Text Include="..\Decompression\TODO.txt" />
   </ItemGroup>
 </Project>

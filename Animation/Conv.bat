@@ -1,4 +1,4 @@
-call ConvFrame.bat frm00000
+rem call ConvFrame.bat frm00000
 call ConvFrame.bat frm00001
 call ConvFrame.bat frm00002
 call ConvFrame.bat frm00003
@@ -34,7 +34,7 @@ rem goto end
 call ConvFrame.bat frm00027
 call ConvFrame.bat frm00028
 
-goto end
+rem goto end
 
 call ConvFrame.bat frm00029
 call ConvFrame.bat frm00020
@@ -242,12 +242,12 @@ call ConvFrame.bat frm00200
 :end
 pushd DeltaCompression
 rem $1ff8 because the decompressed data loads at $e000 and we don't want to hit the IRQ vectors at $1ff8
-Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 28 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 100 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 200 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 66 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch 0 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 24 2 $1000 $1ff8 ..\Data\frm*05d.del
-rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 128 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 28 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 100 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 200 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 66 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch 0 1 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del
+rem Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 24 2 $1000 $1ff8 ..\Data\frm*05d.del
+Release\DeltaCompression.exe ..\Data\frm*05d.sch $400 1 1 128 2 $1000 $1ff8 ..\Data\frm*05d.del
 popd

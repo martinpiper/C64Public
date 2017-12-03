@@ -1,0 +1,23 @@
+; An index back into the enemy DB. A zero index indicates this is not an enemy DB slot, but it might be a simple on-screen animation instead
+; ** NOTE ** If changing this then change the code around BackupAnimationMemParts to take into account of the extra ZP storage
+;AnimationActiveSlot			!fill Multiplex_items , 0
+;AnimationXPosLo				!fill Multiplex_items
+;AnimationXPosHi				!fill Multiplex_items
+;AnimationYPos				!fill Multiplex_items
+!ifdef Multiplex_SplitSort {
+AnimationYPosToSort			!fill Multiplex_items
+}
+AnimationSpriteColour		!fill Multiplex_items
+AnimationSpriteColourBackup	!fill Multiplex_items
+AnimationSpriteFrame		!fill Multiplex_items
+AnimationAddrLo				!fill Multiplex_items
+AnimationAddrHi				!fill Multiplex_items
+AnimationSpriteFrameCount	!fill Multiplex_items
+AnimationNumFrames			!fill Multiplex_items
+AnimationSpeed				!fill Multiplex_items
+AnimationSpeedReset			!fill Multiplex_items
+AnimationFlags				!fill Multiplex_items	; Uses AnimationFlags_*
+AnimationEnemyFlags			!fill Multiplex_items	; Uses EnemyFlags_*
+AnimationSimpleMoveX		!fill Multiplex_items
+AnimationSimpleMoveY		!fill Multiplex_items
+AnimationParam1				!fill Multiplex_items , 0

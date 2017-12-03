@@ -16,12 +16,16 @@ DivideBy32
 	ror tempWork0
 	lsr tempWork1
 	ror tempWork0
-	lsr tempWork1
-	ror tempWork0
-	lsr tempWork1
-	ror tempWork0
+	; The last few shifts of the high byte can be trimmed out
+;	lda tempWork1
+;	bne .oops
+;	lsr tempWork1
+	lsr tempWork0
+;	lsr tempWork1
+	lsr tempWork0
 	rts
-
+;.oops inc $d020
+;	jmp .oops
 !zn
 DivideBy32_2
 	lsr tempWork3
@@ -30,8 +34,12 @@ DivideBy32_2
 	ror tempWork2
 	lsr tempWork3
 	ror tempWork2
-	lsr tempWork3
-	ror tempWork2
-	lsr tempWork3
-	ror tempWork2
+;	lda tempWork3
+;	bne .oops
+;	lsr tempWork3
+	lsr tempWork2
+;	lsr tempWork3
+	lsr tempWork2
 	rts
+;.oops inc $d020
+;	jmp .oops

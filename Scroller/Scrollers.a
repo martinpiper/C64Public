@@ -6,6 +6,10 @@ ScrollBank0To1_1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_1_bin , CartFile1_Start_Char0To1_1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_1_bin , CartFile1_Start_Char0To1_1_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(0*40),x
@@ -66,6 +70,7 @@ ScrollBank0To1_1
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -78,6 +83,10 @@ ScrollBank1To0_1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_1_bin , CartFile1_Start_Char1To0_1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_1_bin , CartFile1_Start_Char1To0_1_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(0*40),x
@@ -138,6 +147,7 @@ ScrollBank1To0_1
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -154,6 +164,10 @@ ScrollBank0To1_m1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m1_bin , CartFile1_Start_Char0To1_m1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m1_bin , CartFile1_Start_Char0To1_m1_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -214,6 +228,7 @@ ScrollBank0To1_m1
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -226,6 +241,10 @@ ScrollBank1To0_m1
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m1_bin , CartFile1_Start_Char1To0_m1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m1_bin , CartFile1_Start_Char1To0_m1_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -286,6 +305,7 @@ ScrollBank1To0_m1
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -302,6 +322,10 @@ ScrollBank0To1_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_40_bin , CartFile1_Start_Char0To1_40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_40_bin , CartFile1_Start_Char0To1_40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -360,6 +384,7 @@ ScrollBank0To1_40
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -372,6 +397,10 @@ ScrollBank1To0_40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_40_bin , CartFile1_Start_Char1To0_40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_40_bin , CartFile1_Start_Char1To0_40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -430,6 +459,7 @@ ScrollBank1To0_40
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -446,6 +476,10 @@ ScrollBank0To1_m40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m40_bin , CartFile1_Start_Char0To1_m40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m40_bin , CartFile1_Start_Char0To1_m40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(1*40),x
@@ -504,6 +538,7 @@ ScrollBank0To1_m40
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank1
@@ -516,6 +551,10 @@ ScrollBank1To0_m40
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m40_bin , CartFile1_Start_Char1To0_m40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m40_bin , CartFile1_Start_Char1To0_m40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(1*40),x
@@ -574,6 +613,7 @@ ScrollBank1To0_m40
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
@@ -590,6 +630,10 @@ ScrollBank0To1_41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_41_bin , CartFile1_Start_Char0To1_41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_41_bin , CartFile1_Start_Char0To1_41_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(0*40),x
@@ -648,6 +692,7 @@ ScrollBank0To1_41
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
@@ -661,6 +706,10 @@ ScrollBank1To0_41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_41_bin , CartFile1_Start_Char1To0_41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_41_bin , CartFile1_Start_Char1To0_41_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(0*40),x
@@ -719,6 +768,7 @@ ScrollBank1To0_41
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
@@ -733,6 +783,10 @@ ScrollBank0To1_39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_39_bin , CartFile1_Start_Char0To1_39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_39_bin , CartFile1_Start_Char0To1_39_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(0*40),x
@@ -791,6 +845,7 @@ ScrollBank0To1_39
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
@@ -804,6 +859,10 @@ ScrollBank1To0_39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_39_bin , CartFile1_Start_Char1To0_39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_39_bin , CartFile1_Start_Char1To0_39_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(0*40),x
@@ -862,6 +921,7 @@ ScrollBank1To0_39
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
@@ -878,6 +938,10 @@ ScrollBank0To1_m41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m41_bin , CartFile1_Start_Char0To1_m41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m41_bin , CartFile1_Start_Char0To1_m41_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $c800+00+(1*40),x
@@ -936,6 +1000,7 @@ ScrollBank0To1_m41
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
@@ -949,6 +1014,10 @@ ScrollBank1To0_m41
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m41_bin , CartFile1_Start_Char1To0_m41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m41_bin , CartFile1_Start_Char1To0_m41_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda $cc00+00+(1*40),x
@@ -1007,6 +1076,7 @@ ScrollBank1To0_m41
 	dex
 	bne .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
@@ -1021,6 +1091,10 @@ ScrollBank0To1_m39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m39_bin , CartFile1_Start_Char0To1_m39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char0To1_m39_bin , CartFile1_Start_Char0To1_m39_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $c800+00+(1*40),x
@@ -1079,6 +1153,7 @@ ScrollBank0To1_m39
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
@@ -1092,6 +1167,10 @@ ScrollBank1To0_m39
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m39_bin , CartFile1_Start_Char1To0_m39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Char1To0_m39_bin , CartFile1_Start_Char1To0_m39_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda $cc00+00+(1*40),x
@@ -1150,6 +1229,7 @@ ScrollBank1To0_m39
 	dex
 	bpl .l2
 }
+}
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
@@ -1175,7 +1255,10 @@ ScrollColour_1
 	sta VIC2BorderColour
 }
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_1_bin , CartFile1_Start_Colour_1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_1_bin , CartFile1_Start_Colour_1_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda COLOURRAM+00+(0*40),x
@@ -1240,6 +1323,7 @@ ScrollColour_1
 }
 	dex
 	bpl .l2
+}
 	jsr ScrollerDrawStripLeftColour
 } ;< !ifdef Scroller_NeedFullColourScroll
 
@@ -1254,7 +1338,10 @@ ScrollColour_m1
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m1_bin , CartFile1_Start_Colour_m1_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m1_bin , CartFile1_Start_Colour_m1_bin + ScrollBankSplit
+} else {
 	ldx #1
 .l1
 	lda COLOURRAM+00+(0*40),x
@@ -1321,6 +1408,7 @@ ScrollColour_m1
 	inx
 	cpx #40
 	bne .l2
+}
 	jsr ScrollerDrawStripRightColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -1339,7 +1427,10 @@ ScrollColour_40
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_40_bin , CartFile1_Start_Colour_40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_40_bin , CartFile1_Start_Colour_40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1404,6 +1495,7 @@ ScrollColour_40
 	sta COLOURRAM+40+(9*40),x
 	dex
 	bpl .l2
+}
 	jsr ScrollerDrawStripTopColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -1419,7 +1511,10 @@ ScrollColour_m40
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m40_bin , CartFile1_Start_Colour_m40_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m40_bin , CartFile1_Start_Colour_m40_bin + ScrollBankSplit
+} else {
 	ldx #39
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1482,6 +1577,7 @@ ScrollColour_m40
 }
 	dex
 	bpl .l2
+}
 	jsr ScrollerDrawStripBottomColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -1500,7 +1596,10 @@ ScrollColour_39
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_39_bin , CartFile1_Start_Colour_39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_39_bin , CartFile1_Start_Colour_39_bin + ScrollBankSplit
+} else {
 	ldx #1
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1567,7 +1666,7 @@ ScrollColour_39
 	inx
 	cpx #40
 	bne .l2
-
+}
 
 	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripRightColour
@@ -1585,7 +1684,10 @@ ScrollColour_m39
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m39_bin , CartFile1_Start_Colour_m39_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m39_bin , CartFile1_Start_Colour_m39_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1648,6 +1750,7 @@ ScrollColour_m39
 }
 	dex
 	bpl .l2
+}
 	jsr ScrollerDrawStripBottomColour
 	jsr ScrollerDrawStripLeftColour
 
@@ -1664,7 +1767,10 @@ ScrollColour_41
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_41_bin , CartFile1_Start_Colour_41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_41_bin , CartFile1_Start_Colour_41_bin + ScrollBankSplit
+} else {
 	ldx #38
 .l1
 	lda COLOURRAM+00+(9*40),x
@@ -1729,6 +1835,7 @@ ScrollColour_41
 	sta COLOURRAM+41+(9*40),x
 	dex
 	bpl .l2
+}
 	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripLeftColour
 
@@ -1745,7 +1852,10 @@ ScrollColour_m41
 }
 
 !ifdef Scroller_NeedFullColourScroll {
-
+!ifdef Scroller_EnableSpeedCode {
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m41_bin , CartFile1_Start_Colour_m41_bin
+	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m41_bin , CartFile1_Start_Colour_m41_bin + ScrollBankSplit
+} else {
 	ldx #1
 .l1
 	lda COLOURRAM+00+(1*40),x
@@ -1810,6 +1920,7 @@ ScrollColour_m41
 	inx
 	cpx #40
 	bne .l2
+}
 	jsr ScrollerDrawStripBottomColour
 	jsr ScrollerDrawStripRightColour
 

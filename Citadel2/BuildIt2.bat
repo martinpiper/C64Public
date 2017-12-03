@@ -7,5 +7,5 @@ if not exist SolveRunner.prg goto error
 goto end
 :error
 echo SolveRunner.prg not created!
-exit -1
+exit /B -1
 :end

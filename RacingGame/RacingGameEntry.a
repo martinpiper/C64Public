@@ -1,0 +1,301 @@
+!to "RacingGame.prg", cbm
+!sal
+!sl "RacingGame.map"
+!svl "RacingGame.lbl"
+!pdb "RacingGame.pdb"
+!cpu 6510
+!ct pet
+!initmem %10101010
+
+!source "../stdlib/stdlib.a"
+
+
+Scroller_IRQVectorLo			= IRQServiceRoutineLo
+Scroller_IRQVectorHi			= IRQServiceRoutineHi
+
+Scroller_NMIVectorLo			= NMIServiceRoutineLo
+Scroller_NMIVectorHi			= NMIServiceRoutineHi
+
+; Define what the multiplexor can use
+Multiplex_VarBase	= $02
+Multiplex_spritepointer	= $c000+SPRITEFRAMESCROFF
+Multiplex_IRQServiceRoutineLo = IRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = IRQServiceRoutineHi
+Multiplex_IRQExitDefined = 1
+!macro Multiplex_IRQExit {
+	jmp MinimalIRQServiceRoutine
+}
+
+Multiplex_items	= 32
+Multiplex_DiscardSpritesYPos=scorePanelPos1 - 1
+scorePanelPos1 = VIC2SpriteYBorderTop + (20*8)
+
+!source "..\SpriteMultiplexor\SpriteMultiplexorVars.a"
+
+Multiplex_EnableEarlyOut = 1
+Multiplex_BunchingCheck = 1
+
+;DebugMainlineBorder = 1
+;Multiplexor_DebugBorder = 1
+
+;Debug_ForceTrackStateRender=$ca	; Hill crest and valley
+;Debug_ForceTrackStateRender=$2c		; Straight road
+
+; Zero page variables
+foo	= Multiplex_endVars+$00
+
+
+*=$400
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	lda #Multiplex_items
+	sta Multiplex_MaxSpr
+	jsr Multiplex_InitSort
+
+	lda #0
+	sta CIA2PortASerialBusVICBank
+	lda #%00000010
+	sta VIC2MemorySetup
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+	lda #%00011011
+	sta VIC2ScreenControlV
+
+	jsr init
+
+!ifdef Debug_ForceTrackStateRender {
+	lda #0		; Right steer (road to the left)
+	lda #100	; Left steer (road to the right)
+	lda #90
+	sta skd
+
+	lda #Debug_ForceTrackStateRender
+	sta trckoft2
+
+!if 0 {
+	lda #$1
+	ldx #34
+.ts1
+	lda #$13
+	sta objhorizl,x
+	sta objhorizr,x
+	dex
+	lda #$1
+	sta objhorizl,x
+	sta objhorizr,x
+	dex
+	bne .ts1
+}
+
+.dl1
+
+	lda #0
+	sta VIC2BorderColour
+	inc VIC2BorderColour
+	lda #1
+	sta topScreenBank
+	jsr TrackDraw_offscreen
+	inc VIC2BorderColour
+	jsr TrackDraw_chars
+	inc VIC2BorderColour
+	lda #0
+	sta topScreenBank
+	jsr TrackDraw_colours
+	jmp .dl1
+}
+
+	jsr Multiplex_StartTopInterrupt
+
+	jsr SetupIRQs
+
+	cli
+
+.l1
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	jsr TrackDraw_offscreen
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+	jsr TrackDraw_chars
+
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	lda #scorePanelPos1+10
+.wl1
+	cmp VIC2Raster
+	bne .wl1
+
+	; Update the timed raster position from the off screen draw
+	lda rast
+	sta NMIRaster
+
+	; Update the bank
+	lda topScreenBank
+	eor #1
+	sta topScreenBank
+	tax
+	lda BankToAddrDisplay,x
+	ora #3
+	jsr Multiplex_SetSpritePointer
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+}
+	jsr TrackDraw_colours
+
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jmp .l1
+
+BankToAddrDisplay		!by $c0 , $c4
+BankToAddrOffscreen		!by $c4 , $c0
+
+!macro MSetSprite .sprite , .xpos , .ypos , .col {
+	lda #(.xpos & 0xff)
+	sta Multiplex_XPosLo + .sprite
+	!if .xpos >= 256 {
+		sty Multiplex_XPosHi + .sprite
+	} else {
+		stx Multiplex_XPosHi + .sprite
+	}
+	lda #.ypos
+	sta Multiplex_YPos + .sprite
+	lda #.col
+	sta Multiplex_Colour + .sprite
+}
+
+!macro MSetFrame .oft , .frame , .frameSpeed , .speed {
+	dec .frameSpeed
+	bne .over
+	lda #.speed
+	sta .frameSpeed
+
+	lda .frame
+	clc
+	adc #6
+	cmp #24
+	bne .l1
+	lda #0
+.l1
+	sta .frame
+	tax
+	ldy #0
+.l2
+	lda SpriteIndices,x
+	sta Multiplex_SpriteFrame + .oft,y
+	inx
+	iny
+	cpy #6
+	bne .l2
+.over
+}
+
+; Create a 3x2 sprite block at an index, xpos, ypos and colour
+!macro MSetCharacter .idx , .x , .y , .col {
+	+MSetSprite .idx	, .x , .y	, .col
+	+MSetSprite .idx+1  , .x+24 , .y	, .col
+	+MSetSprite .idx+2  , .x , .y+21	, .col
+	+MSetSprite .idx+3  , .x+24 , .y+21	, .col
+	+MSetSprite .idx+4  , .x , .y+42	, .col
+	+MSetSprite .idx+5  , .x+24 , .y+42	, .col
+}
+
+!zn {
+init
+	ldy #Multiplex_items-1
+.l1
+	lda #255
+	sta Multiplex_YPos,y
+	lda #VIC2Colour_White
+	sta Multiplex_Colour,y
+	dey
+	bpl .l1
+
+	ldx #0
+	ldy #1
+	+MSetCharacter 0	, 100	, 50	, VIC2Colour_White
+	+MSetCharacter 6	, 50	, 60	, VIC2Colour_Green
+	+MSetCharacter 12	, 150	, 90	, VIC2Colour_Brown
+	+MSetCharacter 18	, 200	, 140	, VIC2Colour_Yellow
+	+MSetCharacter 24	, 100	, 170	, VIC2Colour_Blue
+	+MSetCharacter 30	, 230	, 190	, VIC2Colour_Red
+
+	lda GameScreenBGCol0
+	sta VIC2ScreenColour
+	lda GameScreenBGCol1
+	sta VIC2ExtraBackgroundColour1
+	lda GameScreenBGCol2
+	sta VIC2ExtraBackgroundColour2
+
+	jsr Multiplex_Sort
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+
+	rts
+}
+
+
+!source "../stdlib/Initialise.a"
+!source "asm\TrackDraw.a"
+!source "asm\SetupIRQs.a"
+
+!source "..\SpriteMultiplexor\SpriteMultiplexor.a"
+
+GameScreenBGCol0
+!bin "Graphics/Level1.ctm" , 1 , 4
+GameScreenBGCol1
+!bin "Graphics/Level1.ctm" , 1 , 5
+GameScreenBGCol2
+!bin "Graphics/Level1.ctm" , 1 , 6
+
+
+
+*=$4000
+Data_trackconfig2 = *
+!bin "Original/trackconfig2.d.prg" ,,  2
+*=$5000
+Data_trackoft = *
+!bin "Original/trackoft.d.prg" ,,  2
+*=$5800
+Data_cornoft = *
+!bin "Original/cornoft.d.prg" ,,  2
+*=$7800
+Data_trckcornpos = *
+!bin "Original/trckcornpos.d.prg" ,,  2
+*=$7900
+Data_trckypos = *
+!bin "Original/trckypos.d.prg" ,,  2
+*=$7a00
+Data_sideobjtab2 = *
+!bin "Original/sideobjtab2.d.prg" ,,  2
+*=$7c00
+Data_blocktable = *
+!bin "Original/blocktable.d.prg" ,,  2
+
+
+*=$8000
+RoadsideObjectData
+!bin "Graphics/Level1.ctm" , ($100 * $15) , $91c , 2
+
+RoadsideObjectColourLookup
+!bin "Graphics/Level1.ctm" , $100 , $814
+
+*=$c800
+!bin "Graphics/Level1.ctm" , $800 , $14
+

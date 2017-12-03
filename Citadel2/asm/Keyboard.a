@@ -1,0 +1,136 @@
+!zn {
+; Positive edge event, maintained for one frame
+Keyboard_Pressed_F1	!by 0
+Keyboard_Pressed_F3	!by 0
+Keyboard_Pressed_F5	!by 0
+Keyboard_Pressed_F7	!by 0
+Keyboard_Pressed_Space	!by 0
+
+; State
+Keyboard_Down_F1	!by 0
+Keyboard_Down_F3	!by 0
+Keyboard_Down_F5	!by 0
+Keyboard_Down_F7	!by 0
+Keyboard_Down_Space	!by 0
+
+; Internal previous state
+.keyboard_Prev_F1	!by 0
+.keyboard_Prev_F3	!by 0
+.keyboard_Prev_F5	!by 0
+.keyboard_Prev_F7	!by 0
+.keyboard_Prev_Space	!by 0
+
+Keyboard_Read
+
+	; https://www.c64-wiki.com/wiki/Keyboard
+	; Read the function keys column
+	lda #%11111110
+	sta CIA1KeyboardColumnJoystickA
+
+.again
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again
+
+	sta tempWork0
+
+	lda Keyboard_Down_F1
+	sta .keyboard_Prev_F1
+	lda Keyboard_Down_F3
+	sta .keyboard_Prev_F3
+	lda Keyboard_Down_F5
+	sta .keyboard_Prev_F5
+	lda Keyboard_Down_F7
+	sta .keyboard_Prev_F7
+	lda Keyboard_Down_Space
+	sta .keyboard_Prev_Space
+
+	; Potential flags
+	ldx #0
+	ldy #1
+
+	stx Keyboard_Down_F1
+	stx Keyboard_Down_F3
+	stx Keyboard_Down_F5
+	stx Keyboard_Down_F7
+	stx Keyboard_Down_Space
+	stx Keyboard_Pressed_F1
+	stx Keyboard_Pressed_F3
+	stx Keyboard_Pressed_F5
+	stx Keyboard_Pressed_F7
+	stx Keyboard_Pressed_Space
+
+	lda #%00010000
+	bit tempWork0
+	bne .notF1
+	sty Keyboard_Down_F1
+.notF1
+
+	lda #%00100000
+	bit tempWork0
+	bne .notF3
+	sty Keyboard_Down_F3
+.notF3
+
+	lda #%01000000
+	bit tempWork0
+	bne .notF5
+	sty Keyboard_Down_F5
+.notF5
+
+	lda #%00001000
+	bit tempWork0
+	bne .notF7
+	sty Keyboard_Down_F7
+.notF7
+
+	; Figure out the edge events
+	lda .keyboard_Prev_F1
+	bne .not1
+	lda Keyboard_Down_F1
+	beq .not1
+	sty Keyboard_Pressed_F1
+.not1
+
+	lda .keyboard_Prev_F3
+	bne .not3
+	lda Keyboard_Down_F3
+	beq .not3
+	sty Keyboard_Pressed_F3
+.not3
+
+	lda .keyboard_Prev_F5
+	bne .not5
+	lda Keyboard_Down_F5
+	beq .not5
+	sty Keyboard_Pressed_F5
+.not5
+
+	lda .keyboard_Prev_F7
+	bne .not7
+	lda Keyboard_Down_F7
+	beq .not7
+	sty Keyboard_Pressed_F7
+.not7
+
+	; Reset to joystick
+	lda #%01111111
+	sta CIA1KeyboardColumnJoystickA
+
+	; Detect space
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardRowsJoystickB
+	bne .notSpace
+
+	sty Keyboard_Down_Space
+	lda .keyboard_Prev_Space
+	bne .not8
+	lda Keyboard_Down_Space
+	beq .not8
+	sty Keyboard_Pressed_Space
+.not8
+
+.notSpace
+
+	rts
+}

@@ -1,0 +1,103 @@
+!ifdef Score_ZeroCharacter { } else {
+Score_ZeroCharacter	= 0x30
+}
+
+!ifdef Score_ZeroPage { } else {
+Score_ZeroPage		= $fb
+}
+
+!zn
+; Entry:
+; A/X = lo/hi of the scrore address
+; Exit:
+; A/X/Y/ST = Preserved
+ScoreSetAddress
+	sta Score_ZeroPage
+	stx Score_ZeroPage+1
+	rts
+
+!zn
+; Entry:
+; ScoreSetAddress must have been called before.
+; Y = Numbers of digits
+; Exit:
+; A/Y/ST = Trashed
+ScoreInit
+	lda #Score_ZeroCharacter
+.l1
+	dey
+	sta (Score_ZeroPage),y
+	bne .l1
+	rts
+
+
+
+!zn
+; Entry:
+; ScoreSetAddress must have been called before.
+; A/X = lo/hi of the scrore to add
+; 0  : Right hand digits column to start from in ScoreSetAddress.
+; 1  : Number of digits in list
+; 2+ : The digits to add, in reverse order
+; For example: 05 04  06 04 03 01
+; Given the number: 3456789
+; Adds the digits 6, 4, 3, 1 starting from the right hand column 5, so in effect performs the sum of:
+; 3456789
+;   13460
+; -------
+; 3470249
+; The last 0 is implied by column 5 being specified since it is not touched during the sum.
+
+; Exit:
+; A/X/Y/ST = Trashed
+ScoreAdd
+	sta .sm1+1
+	stx .sm1+2
+	jsr .getValue
+	tay
+	jsr .getValue
+	tax
+.l1
+	jsr .getValue
+	clc
+	adc (Score_ZeroPage),y
+	sta (Score_ZeroPage),y
+	cmp #Score_ZeroCharacter+10
+	bcc .noCarry
+
+	; Ripple carry
+	sty .sm2+1
+
+	sbc #10
+	sta (Score_ZeroPage),y
+	dey
+	bmi .ret
+
+.l2
+	lda (Score_ZeroPage),y
+	clc
+	adc #1
+	sta (Score_ZeroPage),y
+	cmp #Score_ZeroCharacter+10
+	bcc .l3
+	lda #Score_ZeroCharacter
+	sta (Score_ZeroPage),y
+	dey
+	bpl .l2
+
+.l3
+.sm2	ldy #0
+
+.noCarry
+	dey
+	dex
+	bne .l1
+	rts
+
+.getValue
+.sm1 lda $1234
+	inc .sm1+1
+	bne .ret
+	inc .sm1+2
+.ret
+	rts

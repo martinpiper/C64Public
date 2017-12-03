@@ -1,0 +1,224 @@
+!to "AnimationsStub.prg", cbm
+!sal
+!sl "AnimationsStub.map"
+!svl "AnimationsStub.lbl"
+!pdb "AnimationsStub.pdb"
+!cpu 6510
+!ct pet
+!initmem %10101010
+
+!source "../stdlib/stdlib.a"
+
+IsUnitTesting = 1
+Multiplex_items = 4
+
+!source "Citadel2Optimisations.a"
+
+!source "asm/DataDefs.a"
+;!source "asm/MazeSolveDefs.a"
+!source "ScrollerVars.a"
+
+; Fake a screen with no solid blocks or player bullets
+* = SCREENRAM
+!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , 64
+
+* = $800
+
+;scrollerRealMovementXPixels		!by 0
+;scrollerRealMovementYPixels		!by 0
+scrollMapHX						!by 0
+scrollMapHY						!by 0
+ScrollerExitMainLineCounter		!by 0
+
+
+Multiplex_MaxSpr !by Multiplex_items
+!source "asm/AnimationsMemory.a"
+
+EnemyType
+	!by 1
+	!by 2
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyType),-1	; Fill the rest with nothing
+
+; Positive index means the enemy has been allocated an on-screen animation slot
+; Negative means it is not allocated an on-screen slot
+EnemyToAnimationIndex
+	!fill MaxEnemies , $ff
+
+EnemyOffScreenCount
+	!fill MaxEnemies , 0
+
+EnemyRequestedRoute
+	!fill MaxEnemies , 0
+
+EnemyPositionsXLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsXHi
+	!fill MaxEnemies , 0
+
+EnemyPositionsYLo
+	!fill MaxEnemies , 0
+
+EnemyPositionsYHi
+	!fill MaxEnemies , 0
+
+; Map tile positions
+EnemyPositionsX
+	!by 8
+	!by 2
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsX),-1	; Fill the rest with nothing
+
+EnemyPositionsY
+	!by 3
+	!by 5
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsY),-1	; Fill the rest with nothing
+
+EnemyHealth
+	!by -1
+	!by 0
+
+	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyHealth),-1	; Fill the rest with nothing
+
+
+EnemyBlockedCount
+	!fill MaxEnemies , 0
+
+
+EnemyMoveStepsLo
+	!fill MaxEnemies , 0
+
+; If this hi byte is 0 then there are no queued steps
+; If this is initialised then EnemyMoveStepsCount must be non-zero
+EnemyMoveStepsHi
+	!fill MaxEnemies , 0
+
+; The original values for EnemyMoveStepsLo/EnemyMoveStepsHi
+EnemyMoveStepsOriginalLo
+	!fill MaxEnemies , 0
+EnemyMoveStepsOriginalHi
+	!fill MaxEnemies , 0
+
+EnemyMoveGotMovement
+	!fill MaxEnemies , 0
+
+EnemyMoveStepsCount
+	!fill MaxEnemies , 0
+
+EnemyPreviousSolveRequestX
+	!fill MaxEnemies , 0
+EnemyPreviousSolveRequestY
+	!fill MaxEnemies , 0
+
+AnimationTypeTableLo
+!by <AnimationData_0 , <AnimationData_1
+AnimationTypeTableHi
+!by >AnimationData_0 , >AnimationData_1
+
+MapAnimationTypeTableLo
+!by <MapAnimationData_0
+MapAnimationTypeTableHi
+!by >MapAnimationData_0
+
+; The AnimationFlags_Pickup flag will remove the pickup if it happens to be hit by a wall character
+AnimationData_0		+MakeAnimation AnimationFlags_Cycle | AnimationFlags_CharCollide | AnimationFlags_Pickup, VIC2Colour_Brown , 4 , 2
+!by 10, 11 , 12 , 13
+
+AnimationData_1		+MakeAnimation AnimationFlags_Cycle | AnimationFlags_CharCollide | AnimationFlags_Pickup , VIC2Colour_Green , 4 , 1
+!by 20, 21 , 22 , 23
+
+MapAnimationData_0
+	!by 0 , 1 , 2 , 3 , -1
+
+
+
+EnemyTemplate_Animation
+	!by	5,	0,	1,	2,	3,	15,	0,	0
+EnemyTemplate_Speed
+	!by	-1,	0,	1,	2,	3,	-1,	0,	0
+EnemyTemplate_Health
+	!by	-1,	0,	1,	2,	3,	1,	0,	0
+; The lower the number the more alert the enemy is for .playerAgression and will start chasing the player instead
+EnemyTemplate_Alertness
+	!by	-1,	10,	20,	30,	40,	-1,	0,	0
+EnemyTemplate_Ram
+	!by	0,	0,	0,	0,	1,	0,	0,	0
+
+
+scorePanelPos1 = 205
+topScreenScrollY	!by 0
+topScreenScrollX	!by 0
+
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+
+MapTabL !by 0
+MapTabH !by 0
+
+!source "asm/EnemyCommon.a"
+!source "asm/MazeSolveDefs.a"
+
+AnimationStopMusic !by 0
+
+CurrentBulletBank	!by $04
+kNumPlayerBullets	= 8
+PlayerBulletsY		!fill kNumPlayerBullets , 0
+
+Enemy_PlayerAggression	!by 0
+
+frameTotalScrScroll		!by 0
+frameScrollMoveColours	!by 0
+DisplayingSubGame		!by 0
+frameScrollX			!by 0
+frameScrollY			!by 0
+
+Teleport_TimeToSwitchMap !by 0
+
+MazeNodes
+!fill (MazeWidth* MazeHeight * Node__size) , 0
+
+EnemyAddPlayerAggression
+SFXInit
+DynamicMemory_Init
+DynamicMemory_FreeBytes
+EnemyMoveFineUpdate
+EnemyMoveFineUpdate
+UpdateMapToMaze
+MazeSolve_init
+MapCreateZones
+MapPlacesToZone
+UserInput_Init
+MapAnimations_Init
+PlayerBullets_Init
+EnemyProcessActivationInit
+EnemyMapClear
+SpriteFixedColours
+EnemyProcessActivation
+ScrollerInitVariables
+ScoreSetAddress
+ScoreInit
+ScoreAdd
+Teleport_CheckFadeAction
+Fade_Init
+Fade_Process
+Fade_Stop
+SubGame_Init
+AutoDoor_Init
+UpdateMapBlockOnScreenInternal
+PlayerSweep_Init
+	clc
+	rts
+
+Citadel2_ZP_base = scrollerDemo_endVars
+!source "asm/Citadel2Vars.a"
+!source "asm/Animations.a"
+!source "asm/AnimationsData.a"
+!source "asm/Joystick.a"
+!source "asm/MazeSupport.a"
+!source "..\BerzerkRedux\Rand.a"
+!source "asm/Inventory.a"
+
+EnemyFlags
+	!by 0

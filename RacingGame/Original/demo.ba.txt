@@ -1,0 +1,9 @@
+100 ifpeek(44)<128thenpoke32768,0:poke44,128:poke46,peek(46)+128:clr:load"*",8
+110 l=l+1:ifl=1thenload"turbo",8,1
+120 ifl=2thenpoke816,215:poke817,200:load"sprld.o",8,1
+130 ifl=3thensys49152:load"music7",8,1
+140 ifl=4thenload"trackconfig.d",8,1
+150 ifl=5thenload"trackoft.d",8,1
+151 ifl=6thenload"mc3.o",8,1
+160 poke816,165:poke817,244:ifl=7thenload"chrld.o",8,1
+170 sys49152:sys2048

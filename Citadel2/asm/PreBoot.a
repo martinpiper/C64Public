@@ -1,0 +1,20 @@
+*=$f00
+!source "FingerPrint.a"
+
+*=$200
+	sei
+
+	lda #Scroller_ProcessorPort
+	jsr InitialiseMachine
+	; Clobber all the lower memory (again)
+	ldx #0
+	txa
+.cl1
+	sta $0002,x
+	sta $0102,x
+	inx
+	bne .cl1
+	jmp $400
+
+*=(13*40)+15
+!scr "<<loading>>"

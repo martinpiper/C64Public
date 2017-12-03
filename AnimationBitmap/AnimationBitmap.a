@@ -1,0 +1,94 @@
+; Bitmap animation test code
+
+!source "../stdlib/stdlib.a"
+!to "AnimationBitmap.prg", cbm
+!sal
+!sl "AnimationBitmap.map"
+!svl "AnimationBitmap.lbl"
+!cpu 6510
+!ct pet
+
+!source "../MakeCart/asm/EasyFlash.a"
+!source "../Animation/DeltaDecompressionMacros.a"
+
+BGColour = 0
+UseCartBanks = 1
+StartCartBank = 4
+;MaxCartBank = 63
+;MaxCartBank = 14
+;MaxCartBank = 53
+MaxCartBank = 33
+!macro DeltaDecompression_AddressTweak {
+	clc
+	adc #4
+}
+ScreenColour = VIC2Colour_Black
+
+
+*=$c000
+	sei
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+;	+WaitForFire_A
+
+	lda #EASYFLASH_CONTROL_16K
+	sta EASYFLASH_CONTROL
+	lda #4
+	sta EASYFLASH_BANK
+
+	lda #ScreenColour
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+	lda #%00101000
+	sta VIC2MemorySetup
+;	lda #VIC2ScreenControlVDefault | %100000
+;	sta VIC2ScreenControlV
+
+	lda #%10
+	sta CIA2PortASerialBusVICBank
+
+	+MDeltaDecompression_CopyColours $4400
+
+	jsr DeltaDecompression_InitZP
+
+	; Sync the start of IRQs and the mainline
+	+MACROWaitForTheLastScanPlus1_A
+	lda #VIC2ScreenControlVDefault | %100000
+	sta VIC2ScreenControlV
+
+.fr1
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrame
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #%11
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta VIC2ScreenControlV
+
+	+MDeltaDecompression_CopyColours $400
+
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrame
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #%10
+	sta CIA2PortASerialBusVICBank
+
+	+MDeltaDecompression_CopyColours $4400
+
+	jmp .fr1
+
+!source "../stdlib/Initialise.a"
+
+!source "../Animation/DeltaDecompression.a"
+
+*=$400
+!bin "Data/frm-0001.del"

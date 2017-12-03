@@ -1,0 +1,808 @@
+!zn
+; high and low screen addresses
+hiscr !by $c4,$c4,$c4,$c4,$c4,$c4,$c4,$c5,$c5,$c5,$c5,$c5,$c5
+	!by $c6,$c6,$c6,$c6,$c6,$c6,$c6,$c7,$c7,$c7,$c7,$c7,$c7
+
+hisc_off !by 0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3
+
+hiscrtr !by 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
+	!by 8,8,8,8,8,8,8,9,9,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,11
+loscr !by 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+	!by $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+	!by 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
+	!by $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+
+
+; high and low screen addresses for block plotting
+xwid !by 4
+ywid !by 8
+ybtl !by 19
+xbtl !by 19
+yorg !by 0
+xorg !by 0
+xhot !by 4
+ymax !by 20
+ybt !by 0
+ypl !by 0
+
+
+toftl !by $00,$24,$48,$6c,$90,$b4,$d8,$fc
+!by $20,$44,$68,$8c,$b0,$d4,$f8
+!by $1c,$40,$64,$88,$ac,$d0,$f4
+!by $18,$3c,$60,$84,$a8,$cc,$f0
+!by $14,$38,$5c,$80,$a4,$c8,$ec
+!by $10,$34,$58,$7c,$a0,$c4,$e8
+!by $0c,$30,$54,$78,$9c,$c0,$e4
+!by $08
+tofth !by $50,$50,$50,$50,$50,$50,$50,$50
+!by $51,$51,$51,$51,$51,$51,$51
+!by $52,$52,$52,$52,$52,$52,$52
+!by $53,$53,$53,$53,$53,$53,$53
+!by $54,$54,$54,$54,$54,$54,$54
+!by $55,$55,$55,$55,$55,$55,$55
+!by $56,$56,$56,$56,$56,$56,$56
+!by $57
+
+pertaby !by 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5
+	!by 6,6,6,6,7,7,7,7,8,8,8,8
+	!by 8,8,8,8,8,8,8,8,8,8,8,8
+objhorizl !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	!by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+; spare
+	!by 0,0,0
+objhorizr !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	!by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+; spare
+	!by 0,0,0
+
+
+col1 !by 10
+col2 !by 9
+tsdx !by 0
+tsdy !by 0
+tsdy2 !by 0
+sidel !by 0
+rast !by 122
+boty !by 20
+lpose !by 0
+rpose !by 0
+skd !by 50
+trckoft !by 21
+trckoft2 !by 64
+ancnt1 !by 0
+ancnt2 !by 70
+ytrack !by 0
+turbo !by 0
+spdom1 !by 10
+spdom2 !by 0
+ypost !fill 40,0
+xwidt !fill 40,0
+toftt !fill 40,0
+corntab !fill 40,18
+lpos !by 0
+rpos !by 0
+lsty !by 0
+yfl !by 0
+
+
+; MPi: TODO: This takes mroe than a frame
+; This is an exceptionally good candidate for speed code in cart banks
+TrackDraw_colours
+	lda topScreenBank
+	beq .displaying_c0
+
+	ldx #0
+
+.cia1 ldy $c400,x
+	lda RoadsideObjectColourLookup,y
+	sta $d800,x
+	inx
+	bne .cia1
+
+.cia2 ldy $c500,x
+	lda RoadsideObjectColourLookup,y
+	sta $d900,x
+	inx
+	bne .cia2
+
+.cia3 ldy $c600,x
+	lda RoadsideObjectColourLookup,y
+	sta $da00,x
+	inx
+	bne .cia3
+
+	ldx #$47
+.cia4 ldy $c700,x
+	lda RoadsideObjectColourLookup,y
+	sta $db00,x
+	dex
+	bpl .cia4
+	rts
+
+.displaying_c0
+	ldx #0
+
+.cia1b ldy $c000,x
+	lda RoadsideObjectColourLookup,y
+	sta $d800,x
+	inx
+	bne .cia1b
+
+.cia2b ldy $c100,x
+	lda RoadsideObjectColourLookup,y
+	sta $d900,x
+	inx
+	bne .cia2b
+
+.cia3b ldy $c200,x
+	lda RoadsideObjectColourLookup,y
+	sta $da00,x
+	inx
+	bne .cia3b
+
+	ldx #$47
+.cia4b ldy $c300,x
+	lda RoadsideObjectColourLookup,y
+	sta $db00,x
+	dex
+	bpl .cia4b
+	rts
+
+
+TrackDraw_chars
+
+	ldx topScreenBank
+	lda BankToAddrOffscreen,x
+	sta .sm1+1
+
+	ldx #24
+.up1
+	lda hisc_off,x
+.sm1	ora #0
+	sta hiscr,x
+	dex
+	bpl .up1
+
+	ldx trckoft
+	lda hiscrtr,x
+	clc
+	adc #(>Data_trackconfig2)-4
+	sta $d4
+	lda loscr,x
+	sta $d3
+	ldy #37
+	lda ($d3),y
+	tax
+	asl
+	asl
+	asl
+	clc
+	adc #VIC2SpriteYBorderTop
+	sta rast
+l5x
+	lda loscr,x
+	sta l5y+1
+	lda hiscr,x
+	sta l5y+2
+	ldy #39
+	lda #0
+l5y	sta $c000,y
+	dey
+	bpl l5y
+	dex
+	bpl l5x
+
+	ldy #39
+l5
+	lda ($d3),y
+	sta ypost,y
+	dey
+	bpl l5
+	lda $d4
+	clc
+	adc #8
+	sta $d4
+	lda #255
+	sta lsty
+	ldy #39
+l6
+	lda ($d3),y
+	sta xwidt,y
+	dey
+	bpl l6
+
+	; Setup the bottom clipping position to be any hill crest
+	ldx ypost+38
+	lda ypost,x
+	sta ymax
+
+	; Start drawing from the far row
+	ldy #0
+	sty yfl
+l7
+;	+WaitForFire_A
+
+	ldy yfl
+
+	; Once the hill crest has been encountered then set the maximum screen height
+	cpy ypost+38
+	bcc .notNearCrest
+	lda #20
+	sta ymax
+.notNearCrest
+
+	ldx ypost,y
+	cpx lsty
+	bne l10lo
+	jmp l10
+l10lo
+	; Row index >= any crest? Then skip the y pos check
+	cpy ypost+38
+	bcs l10a
+
+	; Row y pos >= crest? Then skip drawing the row
+	lda ypost,y
+	cmp ymax
+	bcs l10
+l10a
+	stx lsty
+	lda loscr,x
+	sta $d5
+	lda hiscr,x
+	sta $d6
+;	cpx #20
+;	bcs l10
+	lda #19
+	sec
+	sbc xwidt,y
+	clc
+	adc toftt,y
+	sta lpos
+	lda #21
+	clc
+	adc xwidt,y
+	clc
+	adc toftt,y
+	sta rpos
+	lda $d5
+	sta l9p+1
+	lda $d6
+	sta l9p+2
+	lda #0
+	ldy #39
+l9p	sta $c000,y
+	dey
+	bpl l9p
+	lda rpos
+	cmp #40
+	bcs l9
+	ldy rpos
+	lda #16
+	sta ($d5),y
+l9
+	ldy lpos
+	cpy #40
+	bcs l11b
+	lda #5
+	sta ($d5),y
+l11b	lda #1
+l11
+	ldy lpos
+	iny
+l12
+	cpy #40
+	bcs l13
+	sta ($d5),y
+l13
+	iny
+	cpy rpos
+	bne l12
+	jsr smoothedge
+l10
+	ldy yfl
+	jsr objsprint
+	inc yfl
+	lda yfl
+	cmp #36
+	beq loop
+	jmp l7
+loop
+	rts
+
+TrackDraw_offscreen
+loop2
+	lda 56320
+	and #1
+	bne m1z
+	dec spdom1
+	bne m1b
+	lda #10
+	sta spdom1
+	lda spdom2
+	cmp #3
+	beq m1b
+	inc spdom2
+	jmp m1b
+m1z
+	dec spdom1
+	bne m1b
+	lda #10
+	sta spdom1
+	lda spdom2
+	beq m1b
+	dec spdom2
+m1b
+	lda 56320
+	and #8
+	bne m1
+	jsr left
+	jmp loopr
+m1
+	lda 56320
+	and #4
+	bne m2
+	jsr right
+	jmp loopr
+m2	;jsr animback
+loopr
+	ldy spdom2
+	beq loopr2
+loopr3
+	jsr advance
+	dey
+	bne loopr3
+
+loopr2
+	jsr cornoftfig
+	jsr trackoftfig
+	ldx trckoft2
+loop2z
+	lda tabletrck,x
+	sta trckoft
+	rts
+
+tabletrck = Data_trckypos
+tablecorn = Data_trckcornpos
+
+cornoftfig
+	ldy trckoft2
+	ldx tablecorn,y
+	cpx #19
+	bcs rcorn
+	lda hiscrtr,x
+	clc
+	adc #(>Data_cornoft)-4
+	sta tcf1+2
+	lda loscr,x
+	sta tcf1+1
+	ldx #35
+tcf1 lda $5000,x
+	sta corntab,x
+	dex
+	bpl tcf1
+	rts
+
+rcorn
+	txa
+	sec
+	sbc #19
+	sta cb1+1
+	lda #18
+	sec
+cb1 sbc #0
+	tax
+	lda hiscrtr,x
+	clc
+	adc #(>Data_cornoft)-4
+	sta tcf2+2
+	lda loscr,x
+	sta tcf2+1
+	ldx #35
+tcf2 lda $5000,x
+	sta corntab,x
+	lda #0
+	sec
+	sbc corntab,x
+	sta corntab,x
+	dex
+	bpl tcf2
+	rts
+
+trackoftfig
+	ldx skd
+	cpx #51
+	bcs t1
+
+	lda #50
+	sec
+	sbc skd
+	tax
+	lda toftl,x
+	sta t2b+1
+	lda tofth,x
+	sta t2b+2
+
+	ldx #35
+t2
+	lda #0
+	sec
+t2b	sbc $5000,x
+	clc
+	adc corntab,x
+	sta toftt,x
+	dex
+	bpl t2
+	rts
+
+t1
+	lda skd
+	sec
+	sbc #50
+	tax
+	lda toftl,x
+	sta t3+1
+	lda tofth,x
+	sta t3+2
+	ldx #35
+
+t3	lda $5000,x
+	clc
+	adc corntab,x
+	sta toftt,x
+	dex
+	bpl t3
+	rts
+
+left dec skd
+;	jsr canimr
+	lda skd
+	cmp #$ff
+	bne m4
+	lda #0
+	sta skd
+m4 rts
+right inc skd
+;	jsr caniml
+	lda skd
+	cmp #101
+	bne m5
+	lda #100
+	sta skd
+m5 rts
+
+
+blockplot
+	lda xorg
+	sta blps1+1
+	lda yorg
+	clc
+	adc #128
+	sta blps1+2
+	lda ywid
+	sta ybt
+	lda ybtl
+	sec
+	sbc ywid
+	sta ypl
+	inc ypl
+bl1
+	ldx ypl
+	cpx ymax
+	bcs bl2
+	lda loscr,x
+	sta blpt1+1
+	lda hiscr,x
+	sta blpt1+2
+
+	lda xbtl
+	sec
+	sbc xhot
+	tay
+	ldx #0
+bl3
+	cpy #40
+	bcs bl3b
+blps1 lda $8000,x
+	beq bl3b
+blpt1 sta $0400,y
+bl3b
+	iny
+	inx
+	cpx xwid
+	bne bl3
+bl2
+	inc ypl
+	inc blps1+2
+	dec ybt
+	bne bl1
+
+blend
+	rts
+
+objsprint
+	sty tsdy
+	ldx objhorizl,y
+	beq l10g
+	lda #>Data_blocktable
+	sta oh1+2
+	sta oh2+2
+	sta oh3+2
+	sta oh4+2
+	sta oh5+2
+	dex
+	txa
+	clc
+	adc pertaby,y
+	asl
+	bcc op1
+	jsr incallobj
+op1
+	asl
+	bcc op2
+	jsr incallobj
+op2
+	asl
+	bcc op3
+	jsr incallobj
+op3
+	tax
+	stx tsdx
+oh1	lda $7c00,x
+	sta xorg
+oh2	lda $7c01,x
+	sta yorg
+	lda ypost,y
+	sta ybtl
+	dec ybtl
+oh3	lda $7c02,x
+	sta xwid
+oh4	lda $7c03,x
+	sta ywid
+	lda #19
+	sec
+	sbc xwidt,y
+	clc
+	adc toftt,y
+	sta xbtl
+oh5	lda $7c04,x
+	sta xhot
+	jsr blockplot
+l10g	lda #>Data_blocktable
+	sta oi1+2
+	sta oi2+2
+	sta oi3+2
+	sta oi4+2
+	sta oi5+2
+	ldy tsdy
+	ldx objhorizr,y
+	beq l10gz
+	dex
+	txa
+	clc
+	adc pertaby,y
+	asl
+	bcc ok1
+	jsr incallobj2
+ok1
+	asl
+	bcc ok2
+	jsr incallobj2
+ok2
+	asl
+	bcc ok3
+	jsr incallobj2
+ok3
+	tax
+	stx tsdx
+oi1	lda $7c00,x
+	sta xorg
+oi2	lda $7c01,x
+	sta yorg
+	lda ypost,y
+	sta ybtl
+	dec ybtl
+oi3	lda $7c02,x
+	sta xwid
+oi4	lda $7c03,x
+	sta ywid
+	lda #21
+	clc
+	adc xwidt,y
+	clc
+	adc toftt,y
+	sta xbtl
+oi5	lda $7c05,x
+	sta xhot
+	jsr blockplot
+l10gz	rts
+
+incallobj	inc oh1+2
+	inc oh2+2
+	inc oh3+2
+	inc oh4+2
+	inc oh5+2
+	rts
+
+incallobj2	inc oi1+2
+	inc oi2+2
+	inc oi3+2
+	inc oi4+2
+	inc oi5+2
+	rts
+
+
+advance
+	ldx #34
+ad1
+	lda objhorizl,x
+	sta objhorizl+1,x
+	lda objhorizr,x
+	sta objhorizr+1,x
+	dex
+	bpl ad1
+
+	ldx #34
+ad2
+	lda objhorizl,x
+	sta objhorizl+1,x
+	lda objhorizr,x
+	sta objhorizr+1,x
+	dex
+	cpx #13
+	bne ad2
+
+	lda #0
+	sta objhorizr+14
+	sta objhorizl+14
+	ldx sidel
+	lda $7a00,x
+	sta objhorizl
+	lda $7b00,x
+	sta objhorizr
+	inc sidel
+	inc trckoft2
+	rts
+
+
+downsmooth
+	jmp rightseu
+smoothedge
+	ldy yfl
+	cpy #32
+	bne sed1
+	ldy #28
+	lda ypost+28
+	cmp ypost+24
+	jmp se2
+sed1
+	lda ypost,y
+se1
+	cmp ypost,y
+	bne se2
+	iny
+	cpy #36
+	bcc se1
+	dey
+	cmp ypost,y
+se2
+	bcs downsmooth
+
+	lda #1
+upsmooth
+	lda #19
+	sec
+	sbc xwidt,y
+	clc
+	adc toftt,y
+	sta lpose
+	lda #21
+	clc
+	adc xwidt,y
+	clc
+	adc toftt,y
+	sta rpose
+	lda lpos
+	cmp lpose
+	bne lddownz
+	jmp lddown
+lddownz
+	bcc ldleftz
+
+	jmp ldleft
+ldleftz
+
+	lda lpose
+	sec
+	sbc lpos
+	cmp #1
+	beq ldr1
+	cmp #2
+	beq ldr2
+	cmp #3
+	beq ldr3
+	cmp #4
+	beq ldr4
+	cmp #5
+	bcs ldr5
+ldr1
+	lda #$14
+	ldy lpos
+	cpy #40
+	bcs ldr1a
+	sta ($d5),y
+ldr1a
+	jmp rightseu
+ldr2
+	lda #$15
+	ldy lpos
+	cpy #40
+	bcs ldr2a
+	sta ($d5),y
+ldr2a
+	iny
+	cpy #40
+	bcs ldr1a
+	lda #$16
+	sta ($d5),y
+	jmp rightseu
+ldr3
+	lda #$34
+	ldy lpos
+	cpy #40
+	bcs ldr3a
+	sta ($d5),y
+ldr3a
+	iny
+	cpy #40
+	bcs ldr3b
+	lda #$35
+	sta ($d5),y
+ldr3b
+	lda #$36
+	iny
+	cpy #40
+	bcs ldr3c
+	sta ($d5),y
+ldr3c
+	jmp rightseu
+ldr4
+	lda #$3b
+	ldy lpos
+	cpy #40
+	bcs ldr4a
+	sta ($d5),y
+ldr4a
+	iny
+	cpy #40
+	bcs ldr4b
+	lda #$3c
+	sta ($d5),y
+ldr4b
+	lda #$3d
+	iny
+	cpy #40
+	bcs ldr4c
+	sta ($d5),y
+ldr4c
+	iny
+	cpy #40
+	bcs ldr4d
+	lda #$3e
+	sta ($d5),y
+ldr4d
+	jmp rightseu
+ldr5
+	jmp rightseu
+lddowna
+	jmp rightseu
+lddown
+	ldy lpos
+	cpy #40
+	bcs lddowna
+	lda #4
+	sta ($d5),y
+ldleft
+	jmp rightseu
+rightseu
+	lda #0
+	rts

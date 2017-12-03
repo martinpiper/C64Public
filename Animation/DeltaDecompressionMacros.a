@@ -1,0 +1,23 @@
+!macro MDeltaDecompression_CopyColours .cols {
+	ldx #0
+.clc1a
+	lda .cols,x
+	sta COLOURRAM,x
+	inx
+	bne .clc1a
+.clc1b
+	lda .cols+$100,x
+	sta COLOURRAM+$100,x
+	inx
+	bne .clc1b
+.clc1c
+	lda .cols+$200,x
+	sta COLOURRAM+$200,x
+	inx
+	bne .clc1c
+.clc1d
+	lda .cols+$300,x
+	sta COLOURRAM+$300,x
+	inx
+	bne .clc1d
+}

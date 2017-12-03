@@ -1,0 +1,13 @@
+﻿!ifdef Citadel2_ZP_base {} else {
+Citadel2_ZP_base	= $2
+}
+Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo				= Citadel2_ZP_base + 0
+Citadel2_ZP_EnemySpriteYPosToScreenCharPosLohi				= Citadel2_ZP_base + 1
+Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo				= Citadel2_ZP_base + 2
+Citadel2_ZP_EnemySpriteYPosToScreenCharPosHihi				= Citadel2_ZP_base + 3
+
+Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo				= Citadel2_ZP_base + 4
+Citadel2_ZP_EnemySpriteXPosToScreenCharPoshi				= Citadel2_ZP_base + 5
+
+Citadel2_ZP__size	= 6
+Citadel2_ZP_end = Citadel2_ZP_base + Citadel2_ZP__size

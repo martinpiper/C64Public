@@ -43,6 +43,14 @@
     <CustomBuild Include="..\stdlib\Initialise.a" />
     <CustomBuild Include="..\stdlib\stdlib.a" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="SpriteMultiplexorDefaultPattern.a" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

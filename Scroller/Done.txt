@@ -37,3 +37,108 @@
 	ScrollerDemoWaitScorePanelHook
 	ScrollerDemoWaitTopIRQHook
 	* Added TitleScreen_Enable_ScrollerDemoWait_Hooks flag
+
+	
+	
+	
+* Consider using cartridge based speed code for unrolled screen scrolling code.
+	C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe +warp -cartcrt Citadel2.crt
+	Code and data would need to be re-arranged to account for $8000-$9fff being mapped at ROM sometimes
+		Cycles per char
+			Looping	4 + 4 + 2 + 3	= 13
+			Speed	4 + 4			= 8
+		Code size:
+			Looping:	ScreenScrollerCodeEnd - ScreenScrollerCodeStart = 2484 - 1c04 = 880
+			Speed:		40 * 20 * 8 * 2 * 6 = 12C00 (12C0 per bank per direction, so need 16 ROM banks for 8 way 2 banks)
+	ScrollerStrips has self modifying code so it's not a candidate
+	* Will need a common batch file for creating the relevant scroller binaries
+		* Can import values from the map
+	* and creating a crt image
+	http://codebase64.org/doku.php?id=base:crt_file_format#ocean_type_1
+	* bin\MakeCart.exe already supports larger carts with higher bank numbers
+	Added code to ScrollersNoColour.a to use +Scroller_ScrollExecCartBank
+	Adding scroller code into CartCode, this will then get added to a cart image
+		cd /d c:\Work\C64\Scroller\CartCode
+		..\..\acme.exe -o c:\temp\t0.bin ScrollerNoColour0To1_1.a
+		..\..\acme.exe -o c:\temp\t1.bin ScrollerNoColour1To0_1.a
+		..\..\bin\MakeCart.exe -n -b 9 -r c:\temp\t0.bin -c 0 0 $2000 -w -r -b 10 -r c:\temp\t1.bin -c 0 0 $2000 -w -b 11 -r c:\temp\t0.bin -c 0 0 $2000 -w -b 12 -r c:\temp\t0.bin -c 0 0 $2000 -w -o c:\temp\t.crt
+	** This will need changes to the IRQ hanlders, including the multiplexor, to allow their "rti" use to be changed to a "jmp MinimalIRQServiceRoutine" or similar IRQ exit routine.
+	* In Scroller\Scrollers.a ScrollBank*To*_* and ScrollColour_* routines also need +Scroller_ScrollExecCartBank additions
+	* First add code to make ProcessorPortDefault or ProcessorPortKERNALWithIO selectable in addition to ProcessorPortAllRAMWithIO for Scroller\ScrollEntryCommon.a.
+	* Then add code to handle the cart banking scrollers
+	* Added Scroller_UseKernal
+	** Screen score panel split IRQ entry timing needs adjusting by the cycles for the kernal routine at FF48
+		= cycles 3 + 2 + 3 + 2 + 3 + 2 + 4 + 2 + 3 + 5
+		== 29 cycles
+		ScorePanel1Quick
+		ScorePanel1
+	* Added automatic build for left/right directions using the CartCode source files
+	* Done - When Scroller_FullScreen is used with IRQOpenBorders the kernal NMI code needs to be added. Similar to Multiplex_IRQExit but use Multiplex_NMIExit
+	* Don't forget to seyup ScreenBTemp in BuildIt.bat for the colour scrollers
+	* Added automatic build for up/down directions using the CartCode source files
+	* Need diagonals... *sigh*
+	** Done 39
+	** Done -39
+	** Done 41
+	** Done -41
+
+
+
+
+* SEUCK Redux code enabled, with Scroller_UseKernal and when loading it from a cart doesn't work.
+	But the multi-directional scroll build with speed code does work with cart.
+	It looks like BASIC is being switched on when the title screen is displayed?
+		lda #Scroller_KillCartridgeBank
+		sta EASYFLASH_BANK
+		lda #EASYFLASH_CONTROL_KILL
+		sta EASYFLASH_CONTROL
+
+
+
+
+* Use the MakeCart -f option to more efficiently pack the speed code, since it is position independant code it can execute from anywhere in the cart's bank
+	Can also take into account the Scroller_MultiDirectionNoDiagonals flag to reduce the size of the data needed even further
+	Scroller_ScrollExecCartBank can also use cart access macros or common code from EasyFlash_Code.a
+
+	
+	
+* Narrow the split, to increase score panel space or increase screen draw space.
+	* Debug by adding the ability to force Y position offsets and frameScrollY updates for range testing
+	Added Multiplex_DefaultPatternYPosTweak and Scroller_DebugSplit
+
+
+
+
+* Added Scroller_DiscardMinSpriteYPos : Set this to allow the AnimationUpdateMultiplexor to skip sprites above this limit
+
+
+
+
+*	@47/205
+	> d011 17
+	@ 34/256
+	> d011 13
+	Screen height is not changed, causing the score panel to be displayed one char line earlier
+
+
+
+; For map types where each character is mapped to a specific colour (block colour data is *not* duplicated in the block data)
+; then the side colour update can be a fast unrolled section of code that does a lookup based on the screen data that will be switched to.
+; This means the colour block plot doesn't need to do so much work.
+	* Added Scroller_EnableBlockColourSpeedCode
+
+
+
+
+* If Scroller_EnableSpeedCode and Scroller_EnableBlockColourSpeedCode is enabled then make sure the Scroller_EnableBlockColourSpeedCode enabled strips code is removed from RAM into ROM only
+	Added calculated Scroller_EnableBlockColourSpeedCodeInCart
+
+
+
+* Using the MakeCart +! option to force memory location $8000
+
+
+
+* Update to use GMod2, 8KB banks
+	* Different cart boot code, use runstop to cause it to do a normal boot
+	* The speed code scrollers might need splitting, into their separate top/bottom half routines, to squeeze them into 8KB banks instead of 16KB banks

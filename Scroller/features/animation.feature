@@ -47,8 +47,6 @@ Scenario: Enemy animation allocation test
 
 	Multiplex_VarBase	= scrollerDemo_endVars
 	Multiplex_spritepointer	= $cbf8
-	Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
-	Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
 	Multiplex_items	= 32
 
 	!source "../SpriteMultiplexor/SpriteMultiplexorVars.a"

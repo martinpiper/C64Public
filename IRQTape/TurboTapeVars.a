@@ -22,11 +22,15 @@
 }
 
 
-!macro MACROSetTurboTimer {
+!macro MACROSetTurboTimer .time {
 	; Setup CIA1 TimerA which is used for timing the load pulses
 	; We set the timer to be exactly half way between the bit 0 (2 lots of TapeTurboSpeed) value and bit 1 (4 lots of TapeTurboSpeed) value, which just happens to be TapeTurboSpeed*3
-	lda #<(TapeTurboSpeed*3)
+	lda #<.time
 	sta CIA1TimerALo
-	lda #>(TapeTurboSpeed*3)
+	lda #>.time
 	sta CIA1TimerAHi
+}
+
+!macro MACROSetTurboTimerMiddle .tweak {
+	+MACROSetTurboTimer (TapeTurboSpeed*3) + .tweak
 }

@@ -1,7 +1,6 @@
 !macro Scroller_ScrollExecCartBank .bank , .entry {
 	lda #.bank
-	sta MemoryMappedIOArea1
+	jsr CartSelectBank_8K_NoSEI
 	jsr .entry
-	lda #Scroller_KillCartridgeBank
-	sta MemoryMappedIOArea1
+	jsr CartKillBank
 }

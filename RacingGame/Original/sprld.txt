@@ -1,0 +1,66 @@
+100 *=49152
+110 lda #15
+120 ldx #0
+130 cv1 sta $a000,x
+140 sta $d020
+150 inx
+160 bne cv1
+170 inc cv1+2
+180 ldy cv1+2
+190 cpy #192
+200 bne cv1
+210 lda #5
+220 ldx #<file1
+230 ldy #>file1
+240 jsr $ffbd
+250 lda #1
+260 ldx #8
+270 ldy #0
+280 jsr $ffba
+290 lda #0
+300 ldx #0
+310 ldy #$50
+320 jsr $ffd5
+330 lda #6
+340 ldx #<file2
+350 ldy #>file2
+360 jsr $ffbd
+370 lda #1
+380 ldx #8
+390 ldy #0
+400 jsr $ffba
+410 lda #0
+420 ldx #0
+430 ldy #$60
+440 jsr $ffd5
+450 ldy #0
+460 lda #0
+470 sta $fb
+480 sta $fd
+490 lda #$50
+500 sta $fc
+510 lda #$d0
+520 sta $fe
+530 sei
+540 lda #$34
+550 sta 1
+560 l1 lda ($fb),y
+570 sta ($fd),y
+580 inc 1
+590 inc 1
+600 sta 53280
+610 lda $fe
+620 sta 53281
+630 dec 1
+640 dec 1
+650 iny
+660 bne l1
+670 inc $fc
+680 inc $fe
+690 bne l1
+700 lda #55
+710 sta 1
+720 cli
+730 rts
+740 file1 byt "car.g",0
+750 file2 byt "car2.g",0

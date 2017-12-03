@@ -38,6 +38,7 @@ MusicPlayerPlaySFX
 
 .noteDurationCounter !by 0,0,0	; Read by the music player demo to determine when the note is going to start next
 .gate !by 0,0,0					; Read by the music player demo to determine when a note is in the attack phase
+.volu !by 15					; Can be set by various code to force the volume to fade
 
 !ifdef TableCodeActivateNote {
 ; The note table processing functions that are triggered once per command
@@ -420,7 +421,6 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	!by 31,33,35,37,39,42,44,47,50,53,56,59,63,67,71,75,79,84,89,94,100,106
 	!by 112,119,126,134,142,150,159,168,179,189,200,212,225,238,253
 
-.volu !by 15
 .start
 	tax
 	lda #0

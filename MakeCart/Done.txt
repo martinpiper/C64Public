@@ -5,3 +5,25 @@ Added -te for EasyFlash output
 
 
 Added -a <address> to set the bank's address
+
+
+
+Added -f <max size> <num entries> <file name entries>
+	Add multiple files in specific order starting from bank and size.
+	Produces an assembler suitable index file in the form "_f_indexX.a"
+
+
+
+* For -f have the option to set an XOR value per file
+	<file name>+~<num>
+
+
+
+* To allow Scroller ScrollerLongBranch to be removed:
+	* Add the option to force certain data files to certain in bank memory locations.
+	* Or add the option of relocating jmp/jsr in 6502 code fragments included as data.
+	* Done - Adding the MakeCart +! option to force memory location $8000
+
+
+
+* Added -tg for GMod2 output

@@ -41,6 +41,10 @@ CheckForSubGameEntry
 
 	cmp #MapTile_ComputerTerminalFacingDown
 	beq .lgotTerminal
+	cmp #MapTile_DoorSwitchOffFacingDown
+	beq .lgotSwitch
+	cmp #MapTile_DoorSwitchOnFacingDown
+	beq .lgotSwitch
 	jsr SubGame_ResetEnterTimer
 .notUp
 
@@ -69,6 +73,10 @@ CheckForSubGameEntry
 
 	cmp #MapTile_ComputerTerminalFacingUp
 	beq .lgotTerminal
+	cmp #MapTile_DoorSwitchOffFacingUp
+	beq .lgotSwitch
+	cmp #MapTile_DoorSwitchOnFacingUp
+	beq .lgotSwitch
 	jsr SubGame_ResetEnterTimer
 .notDown
 
@@ -94,11 +102,38 @@ CheckForSubGameEntry
 	sta frameTargetVelY
 	sta frameTargetVelX
 
+	lda #$6
+	jsr SFXInit
+
 	jsr SubGameEnter
 
 	lda #0
 	; EQ set, so enter sub-game
 	rts
+
+.lgotSwitch
+	lda hackSubGameCounter
+	beq .o1S
+
+	dec hackSubGameCounter
+	bne .o1S
+	jmp .enterS
+
+.o1S
+	; NE set, so do nothing
+	lda #1
+	rts
+
+.enterS
+	lda #SubGameExit_Success
+	sta SubGame_ExitState
+	lda #-1
+	sta SubGamePickPos
+
+	lda #0
+	; EQ set, so enter sub-game
+	rts
+
 
 
 GetMapTileFromPosition
@@ -121,6 +156,13 @@ BackupSprites
 !if Animation_MemSize >= 511 { !error "Too big!" }
 }
 
+	ldx #BackupAnimationMemPartsSize
+.l3
+	lda AnimationActiveSlot-1,x
+	sta BackupAnimationMemParts-1,x
+	dex
+	bne .l3
+
 	ldx #0
 .l1
 	lda Animation_StartMem,x
@@ -141,6 +183,13 @@ BackupSprites
 
 !zn
 RestoreSprites
+	ldx #BackupAnimationMemPartsSize
+.l3
+	lda BackupAnimationMemParts-1,x
+	sta AnimationActiveSlot-1,x
+	dex
+	bne .l3
+
 	ldx #0
 .l1
 	lda BackupAnimationMem,x
@@ -202,6 +251,45 @@ ClearGameScreen
 	bpl .l3
 	rts
 
+
+!zn
+!ifdef CharColoursForEveryCharacter {
+RefreshScreenColourRemap
+	ldy topScreenBank
+	ldx BankToScreenAddr,y
+	stx .sm1+2
+	inx
+	stx .sm2+2
+	inx
+	stx .sm3+2
+	inx
+	stx .sm4+2
+
+	ldx #0
+	lda #ClearGameScreensChar
+.l2
+.sm1	ldy $ff00,x
+	lda CharColours,y
+	sta COLOURRAM,x
+.sm2	ldy $ff00,x
+	lda CharColours,y
+	sta COLOURRAM+$100,x
+.sm3	ldy $ff00,x
+	lda CharColours,y
+	sta COLOURRAM+$200,x
+	inx
+	bne .l2
+
+	ldx #31
+.l3
+.sm4	ldy $ff00,x
+	lda CharColours,y
+	sta COLOURRAM+$300,x
+	dex
+	bpl .l3
+	rts
+}
+
 SubGameAllocateExplosionSprite
 	jsr AnimationFindFreeSlot
 	bcs .noFree
@@ -226,12 +314,19 @@ SubGameAllocateExplosionSprite
 
 !zn
 SubGameAddWinSprites
-	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+;	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+	lda SubGame_ScreenTop
+	asl
+	asl
+	asl
+	clc
+	adc #VIC2SpriteYBorderTop-10
+
 	sta tempWork8
 .l1
 	jsr SubGameAllocateExplosionSprite
 	bcs .noFree
-.t = (SubGame_ScreenLeft*8)+VIC2SpriteXBorderLeft
+.t = (kSubGame_ScreenLeft*8)+VIC2SpriteXBorderLeft-VIC2SpriteSizeX
 	lda #<.t
 	sta AnimationXPosLo,x
 	lda #>.t
@@ -260,12 +355,19 @@ SubGameAddWinSprites
 
 !zn
 SubGameAddLoseSprites
-	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+;	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
+	lda SubGame_ScreenTop
+	asl
+	asl
+	asl
+	clc
+	adc #VIC2SpriteYBorderTop-10
+
 	sta tempWork8
 .l1
 	jsr SubGameAllocateExplosionSprite
 	bcs .noFree
-.t = (SubGame_ScreenRight*8)+VIC2SpriteXBorderLeft
+.t = (kSubGame_ScreenRight*8)+VIC2SpriteXBorderLeft
 	lda #<.t
 	sta AnimationXPosLo,x
 	lda #>.t
@@ -293,6 +395,44 @@ SubGameAddLoseSprites
 .noFree
 	rts
 
+
+!zn
+.timerSpace !by 0
+SubGameAddWaitingSprite
+	dec .timerSpace
+	bpl .noFree
+	lda #1
+	sta .timerSpace
+	jsr SubGameAllocateExplosionSprite
+	bcs .noFree
+	
+	jsr Rand
+	and #$7f
+	clc
+	adc #(VIC2SpriteXBorderLeft+20)/2
+	clc
+	rol
+	sta AnimationXPosLo,x
+	lda #0
+	rol
+	sta AnimationXPosHi,x
+
+	lda #VIC2SpriteYBorderTop-VIC2SpriteSizeY
+	sta AnimationYPos,x
+
+
+	jsr Rand
+	and #7
+	clc
+	adc #1
+	sta AnimationSimpleMoveY,x
+	lda #0
+	sta AnimationSimpleMoveX,x
+
+.noFree
+	rts
+
+
 SubGameSinTab
 !for .i , 256 {
 	!by 64 + (64 * sin( (float(.i) / 128) * 3.14159265 ))
@@ -305,12 +445,21 @@ SubGameInventoryPopulate
 	sta SubGameMaxDisplayed
 	sta SubGamePickPos
 
+	; The exit
+	jsr AnimationFindFreeSlot
+	ldy #14
+	jsr AnimationInitWithType
+	lda #128
+	sta AnimationYPos,x
+;	inc SubGameMaxDisplayed
+
 	; The door
 	jsr AnimationFindFreeSlot
 	ldy #8
 	jsr AnimationInitWithType
 	lda #128
 	sta AnimationYPos,x
+	inc SubGameMaxDisplayed
 
 .l1
 	ldy tempWork8
@@ -319,14 +468,21 @@ SubGameInventoryPopulate
 
 	; The pickups, without expirations
 	jsr AnimationFindFreeSlot
-	ldy #13
-	jsr AnimationInitWithType
 	lda #128
 	sta AnimationYPos,x
 
 	ldy tempWork8
 	lda PlayerInventory,y
+	sta AnimationParam1,x
+	clc
+	adc #1
 	sta AnimationSpriteColour,x
+
+	ldy AnimationParam1,x
+	lda Inventory_TypeToSubGameAnimation,y
+	tay
+	jsr AnimationInitWithType
+
 
 	inc SubGameMaxDisplayed
 
@@ -349,11 +505,7 @@ SubGameMaxDisplayed	!by 0
 
 .bouncePos			!by 0
 
-.lquickExit jmp .quickExit
 SubGameHandleInventory
-	lda SubGameMaxDisplayed
-	beq .lquickExit
-
 	lda #JoystickBits_Left
 	bit JoystickA_Processed
 	beq .gotLeft
@@ -462,16 +614,16 @@ SubGameHandleInventory
 	lda SubGameGotFireFlag
 	bne .debounceFailed
 
-.quickExit
-	jsr AnimationClear
+	jsr AnimationClearExcept
 
-	; -1 SubGamePickPos means the door was chosen, else the inventory item was chosen
+	; -2 means the exit was chosen, -1 SubGamePickPos means the door was chosen, else the inventory item was chosen
 	dec SubGamePickPos
-	bmi .itsADoor
+	dec SubGamePickPos
+	bmi .itsADoorOrExit
 
-	; Convert to an item colour
+	; Convert to an item type
 	ldx SubGamePickPos
-	lda AnimationSpriteColour+1,x
+	lda AnimationParam1+2,x
 	sta SubGamePickPos
 
 	; Look for and remove one of the used item type from the inventory since it's been selected for use
@@ -483,12 +635,32 @@ SubGameHandleInventory
 	lda #$ff
 	sta PlayerInventory,x
 
-	jmp .itsADoor
+	; Note, don't exit with -2
+	clc
+	rts
+
 .notThisEntry
 	dex
 	bpl .l2
 
-.itsADoor
-
+.itsADoorOrExit
+	lda SubGamePickPos
 	clc
+	rts
+
+
+
+!zn
+AnimationClearExcept
+	ldx #Multiplex_items-1
+.l1
+	cpx SubGamePickPos
+	beq .l2
+	lda #$ff
+	sta AnimationYPos,x
+	lda #0
+	sta AnimationActiveSlot,x
+.l2
+	dex
+	bpl .l1
 	rts

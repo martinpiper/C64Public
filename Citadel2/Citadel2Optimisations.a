@@ -1,0 +1,36 @@
+; Move various information into zeropage from the absolute addresses they normally occupy
+!ifndef Multiplex_items {
+!error "Multiplex_items must be set when including Citadel2Optimisations.a.a"
+}
+; This optionally moves multiplexor sprites data into the zero page
+Multiplex_YPos			= $2
+Multiplex_XPosLo		= Multiplex_YPos + Multiplex_items
+Multiplex_XPosHi		= Multiplex_XPosLo + Multiplex_items
+Multiplex_Colour		= Multiplex_XPosHi + Multiplex_items
+Multiplex_SpriteFrame	= Multiplex_Colour + Multiplex_items
+
+Animation_PlayerXPosDiv2	= Multiplex_SpriteFrame + Multiplex_items
+
+Animation_MapPosXLo			= Animation_PlayerXPosDiv2 + 1
+Animation_MapPosXHi			= Animation_MapPosXLo + 1
+Animation_MapPosYLo			= Animation_MapPosXHi + 1
+Animation_MapPosYHi			= Animation_MapPosYLo + 1
+
+; MPi: TODO: Potentially replace these from AnimationsMemory.a
+; But the BackupSprites and RestoreSprites routines will need to do more copying from these locations as they are not located at Animation_StartMem
+; ** NOTE ** If changing this then change the code around BackupAnimationMemParts to take into account of the extra ZP storage
+AnimationActiveSlot		= Animation_MapPosYHi + 1
+AnimationXPosLo			= AnimationActiveSlot + Multiplex_items
+AnimationXPosHi			= AnimationXPosLo + Multiplex_items
+AnimationYPos			= AnimationXPosHi + Multiplex_items
+
+; Tell the assembler that we really have defined them
+defined_Multiplex_YPos = 1
+defined_Multiplex_XPosLo = 1
+defined_Multiplex_XPosHi = 1
+defined_Multiplex_Colour = 1
+defined_Multiplex_SpriteFrame = 1
+
+; Sets the start zeropage address that that ScrollerVars.a will use
+;mainRoutineZP_start = Multiplex_SpriteFrame + Multiplex_items
+mainRoutineZP_start = AnimationYPos + Multiplex_items

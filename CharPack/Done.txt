@@ -13,3 +13,10 @@ Process C:\Work\C64\EdelinTales\Graphics\Knight\Walk_SE_01.bmp into sprites
 
 
 
+Add multicolour and hires bitmap screen conversion options.
+Multicolour
+Bit pair = %00: Pixel has Background Color.
+Bit pair = %01: Pixel color is determined by bits #4-#7 of the corresponding screen byte in Screen RAM.
+Bit pair = %10: Pixel color is determined by bits #0-#3 of the corresponding screen byte in Screen RAM.
+Bit pair = %11: Pixel color is determined by the corresponding color byte in Color RAM.
+Make it possible to convert large screens of data, either wide or high. Think about data orientation output in character strips.

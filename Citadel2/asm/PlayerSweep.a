@@ -1,3 +1,12 @@
+EnemyTemplate_SpawnListCount		!by 0
+EnemyFlags_SpawnListCount	!by 0
+
+PlayerSweep_Init
+	lda #0
+	sta EnemyTemplate_SpawnListCount
+	sta EnemyTemplate_SpawnListCount
+	rts
+
 !macro PlayerSweep_Common .lsweepCount , .lMaxSweepSteps , .lSweepPosX , .lSweepPosY {
 	ldy .lsweepCount
 	iny
@@ -61,7 +70,7 @@ PlayerSweep_MapClosedGenerators
 
 	+PlayerSweep_Common .sweepCount , .maxSweepSteps , .sweepPosX , .sweepPosY
 
-	cmp #MapTile_Generator
+	cmp #MapTile_GeneratorClosed
 	beq .isGenerator
 	rts
 
@@ -77,7 +86,7 @@ PlayerSweep_MapClosedGenerators
 	lda #2
 	jsr EnemyAddPlayerAggression
 
-	lda #6
+	lda #$a
 	jsr SFXInit
 
 	rts
@@ -112,7 +121,13 @@ PlayerSweep_MapOpenGenerators
 
 	+PlayerSweep_Common .sweepCount , .maxSweepSteps , .sweepPosX , .sweepPosY
 
-	cmp #MapTile_GeneratorOpen
+	cmp #MapTile_GeneratorOpen1
+	beq .isGenerator
+	cmp #MapTile_GeneratorOpen2
+	beq .isGenerator
+	cmp #MapTile_GeneratorOpen3
+	beq .isGenerator
+	cmp #MapTile_GeneratorOpen4
 	beq .isGenerator
 	rts
 
@@ -120,6 +135,44 @@ PlayerSweep_MapOpenGenerators
 	sty tempWork0
 	stx tempWork1
 
+	ldy tempWork0
+	ldx tempWork1
+	; Check the target zone to the player using the cached router information
+	lda ZoneMapTabL,x
+	sta tempWork2
+	lda ZoneMapTabH,x
+	sta tempWork3
+	lda (tempWork2),y
+	bpl .gotGeneratorZone
+	rts
+
+.gotGeneratorZone
+	sta tempWork4
+
+	; Get the player zone
+	ldx EnemyPositionsY
+	lda ZoneMapTabL,x
+	sta tempWork2
+	lda ZoneMapTabH,x
+	sta tempWork3
+	ldy EnemyPositionsX
+	lda (tempWork2),y
+	bpl .gotPlayerZone
+	rts
+
+.gotPlayerZone
+	cmp tempWork4
+	beq .playerCanBeRouted
+	jsr CalculateConnectedZones
+
+	lda tempWork4
+	!for .i , ZoneMapLinked_Max {
+		cmp ZoneMapLinked-1+.i
+		beq .playerCanBeRouted
+	}
+	rts
+
+.playerCanBeRouted
 	ldx tempWork0
 	ldy tempWork1
 
@@ -130,6 +183,7 @@ PlayerSweep_MapOpenGenerators
 	ldy #Node_isBlocked
 	lda (tempWork2),y
 	beq .noBlocked
+
 	rts
 .noBlocked
 	; Find a free slot in the enemy DB
@@ -149,9 +203,20 @@ PlayerSweep_MapOpenGenerators
 	sta (tempWork2),y
 
 	; Allocate an enemy in the enemy DB at the open generator square
-	jsr Rand
-	and #3
+	inc EnemyTemplate_SpawnListCount
+	lda EnemyTemplate_SpawnListCount
+	cmp #EnemyTemplate_MaxSpawnList
+	bcc .doSpawn
+	lda #0
+	sta EnemyTemplate_SpawnListCount
+.doSpawn
+	tay
+	lda EnemyTemplate_SpawnList,y
 	sta EnemyType,x
+	tay
+	lda EnemyTemplate_Health,y
+	sta EnemyHealth,x
+
 	lda #$ff
 	sta EnemyToAnimationIndex,x
 
@@ -159,16 +224,6 @@ PlayerSweep_MapOpenGenerators
 	sta EnemyPositionsX,x
 	lda tempWork1
 	sta EnemyPositionsY,x
-
-	jsr Rand
-	and #7
-	sta EnemyAlertness,x
-	jsr Rand
-	and #3
-	sta EnemySpeed,x
-	jsr Rand
-	and #3
-	sta EnemyHealth,x
 
 	lda #0
 	sta EnemyBlockedCount,x
@@ -178,6 +233,19 @@ PlayerSweep_MapOpenGenerators
 	sta EnemyMoveStepsCount,x
 	sta EnemyPreviousSolveRequestX,x
 	sta EnemyPreviousSolveRequestY,x
+
+	; Adjust spawned EnemyFlags based on chance
+	inc EnemyFlags_SpawnListCount
+	lda EnemyFlags_SpawnListCount
+	cmp #EnemyFlags_MaxSpawnList
+	bcc .doCheck
+	lda #0
+	sta EnemyFlags_SpawnListCount
+.doCheck
+	tay
+	lda EnemyFlags_SpawnList,y
+
+	sta EnemyFlags,x
 
 	rts
 

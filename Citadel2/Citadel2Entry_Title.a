@@ -1,0 +1,18 @@
+; Title screen specific code
+TitleScreenSpecificCode_Start = *
+* = TitleScreenAnimationHook
+	jmp lTitleScreenAnimationHook
+* = DisplayTitleScreen
+	jmp lDisplayTitleScreen
+
+!source "Sound/Citadel2_Title_Offsets.a"
+!source "asm/TitleScreen.a"
+
+HPS_StartYPos	= 9
+HPS_Height		= VIC2ScreenCharsHeight-HPS_StartYPos
+HPS_ScreenAddr	= TitleScreen_ScreenAddress
+HPS_CharsetAddr	= TitleScreen_CharsAddress
+!source "asm/HorizontalParalaxStars.a"
+
+TitleScreenSpecificCode_End = *
+TitleScreenSpecificCode_Size = * - TitleScreenSpecificCode_Start

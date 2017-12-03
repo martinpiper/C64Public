@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>-te -n -b 0 -r ../BerzerkReduxCart/BerzerkReduxCart.prg -c 0 2 $ffff -w -r ../BerzerkRedux/BerzerkRedux.prg -a $a000 -b 0 -c 0 $0001 $ffff -w -a $8000 -b 1 -c 0 $2001 $ffff -w -a $a000 -b 1 -c 0 $4001 $ffff -w -o testEasy.crt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-te -n -a $8000 -b 4 -f 16384 18 C:\work\c64\AnimationBitmap\data\frm00000.del+47 C:\work\c64\AnimationBitmap\data\frm00001.del C:\work\c64\AnimationBitmap\data\frm00002.del C:\work\c64\AnimationBitmap\data\frm00003.del C:\work\c64\AnimationBitmap\data\frm00004.del C:\work\c64\AnimationBitmap\data\frm00005.del C:\work\c64\AnimationBitmap\data\frm00006.del C:\work\c64\AnimationBitmap\data\frm00007.del C:\work\c64\AnimationBitmap\data\frm00008.del C:\work\c64\AnimationBitmap\data\frm00009.del C:\work\c64\AnimationBitmap\data\frm00010.del C:\work\c64\AnimationBitmap\data\frm00011.del C:\work\c64\AnimationBitmap\data\frm00012.del C:\work\c64\AnimationBitmap\data\frm00013.del C:\work\c64\AnimationBitmap\data\frm00014.del C:\work\c64\AnimationBitmap\data\frm00015.del C:\work\c64\AnimationBitmap\data\frm00016.del C:\work\c64\AnimationBitmap\data\frm00017.del+~$77 -o c:\temp\t.crt</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

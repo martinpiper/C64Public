@@ -4,7 +4,7 @@ Feature: Test the Rand code
   This assembles the Rand.a code and checks the expected results after executing it
 
   Scenario: Simple Rand test without seed
-    Given I have a simple 6502 system
+    Given I have a simple overclocked 6502 system
     And I run the command line: ..\acme.exe -o test.prg --labeldump test.lbl -f cbm --setpc $400 ..\BerzerkRedux\Rand.a
     And I load prg "test.prg"
     And I load labels "test.lbl"
@@ -20,7 +20,7 @@ Feature: Test the Rand code
 
 
   Scenario: Simple Rand test with seed
-    Given I have a simple 6502 system
+    Given I have a simple overclocked 6502 system
     And I run the command line: ..\acme.exe -o test.prg --labeldump test.lbl -f cbm --setpc $400 ..\BerzerkRedux\Rand.a
     And I load prg "test.prg"
     And I load labels "test.lbl"

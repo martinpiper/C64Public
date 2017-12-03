@@ -15,6 +15,7 @@ First make sure the "_config.a" file only has the following lines enabled:
 	NovaishLoad = 1
 	EnableBlockChecksum = 1
 	TapeTurboSpeed = $80
+	MainLoad_EnableScreen = 1
 This config file tells the tape turbo code how to build. It enables the border opening code in the Nova load style loader.
 It also enables extended error checksums for file data. It sets the tape turbo speed to be $80 and also defines the different
 turbo tape byte codes used. The turbo byte codes don't really need to be changed but they can be configured if required.

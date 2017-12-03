@@ -157,6 +157,7 @@
 #define IDC_EDIT60                      1090
 #define IDC_BUTTON5                     1091
 #define IDC_BUTTON6                     1092
+#define IDC_BUTTON7                     1094
 #define ID_EDIT_OPTIMISE                32771
 #define ID_FILE_EXPORTTOC64             32774
 #define ID_VIEW_EXTENDEDVIEW            32775
@@ -170,7 +171,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        317
 #define _APS_NEXT_COMMAND_VALUE         32779
-#define _APS_NEXT_CONTROL_VALUE         1094
+#define _APS_NEXT_CONTROL_VALUE         1095
 #define _APS_NEXT_SYMED_VALUE           312
 #endif
 #endif

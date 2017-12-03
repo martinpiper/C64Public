@@ -1,0 +1,44 @@
+; Main game specific code
+GameSpecificCode_Start = *
+
+!source "asm/Animations.a"
+!source "asm/MazeSolve.a"
+!source "asm/MazeSupport.a"
+!source "asm/MapUtils.a"
+!source "asm/Enemy.a"
+!source "asm/UserInput.a"
+!zn {
+DynamicMemory_HeapCorruptHook
+	sei
+.l1
+	inc VIC2BorderColour
+	jmp .l1
+}
+!source "asm/DynamicMemory.a"
+!source "asm/PlayerBullets.a"
+!source "asm/Maths.a"
+!source "asm/Camera.a"
+!source "asm/SubGame.a"
+!source "asm/SubGameInput.a"
+!source "asm/Teleport.a"
+!source "asm/CaptureProbe.a"
+!source "asm/Radar.a"
+!source "asm/Inventory.a"
+
+!source "asm/MapAnimations.a"
+!source "asm/PlayerSweep.a"
+!source "asm/Charger.a"
+!ifdef Paralax_Enable {
+!source "asm/Paralax.a"
+}
+!source "asm/Score.a"
+!source "asm/AutoDoors.a"
+!source "asm/Fade.a"
+
+; Misc data at the end of the code
+!source "asm/EnemyData.a"
+
+GameSpecificCode_End = *
+GameSpecificCode_Size = * - GameSpecificCode_Start
+
+Citadel2EndCode = *

@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E5F4B8D7-D805-4D15-8224-FFEAC1FC5E00}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>RacingGame.crt</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt.bat</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>RacingGame.crt</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt.bat</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="asm\SetupIRQs.a" />
+    <Text Include="Done.txt" />
+    <Text Include="Original\blockedit.ba.txt" />
+    <Text Include="Original\blockedit.txt" />
+    <Text Include="Original\blockplot.ba.txt" />
+    <Text Include="Original\blockplot.txt" />
+    <Text Include="Original\chrld.ba.txt" />
+    <Text Include="Original\chrld.txt" />
+    <Text Include="Original\clocledit.ba.txt" />
+    <Text Include="Original\codem.txt" />
+    <Text Include="Original\demo.ba.txt" />
+    <Text Include="Original\demo2.ba.txt" />
+    <Text Include="Original\dscr.ba.txt" />
+    <Text Include="Original\dscr.txt" />
+    <Text Include="Original\makeup.ba.txt" />
+    <Text Include="Original\mc1.txt" />
+    <Text Include="Original\mc2.ba.txt" />
+    <Text Include="Original\mc2.txt" />
+    <Text Include="Original\mc3.txt" />
+    <Text Include="Original\race.ba.txt" />
+    <Text Include="Original\sprld.ba.txt" />
+    <Text Include="Original\sprld.txt" />
+    <Text Include="Original\tmpmc3.ba.txt" />
+    <Text Include="Original\tmpmc3.txt" />
+    <Text Include="Original\trackoft.ba.txt" />
+    <Text Include="Original\trackplot.ba.txt" />
+    <Text Include="Original\trackpos.ba.txt" />
+    <Text Include="Original\trackposh.ba.txt" />
+    <Text Include="ReadMe.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a" />
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorDefaultPattern.a" />
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a" />
+    <None Include="..\stdlib\Initialise.a" />
+    <None Include="..\stdlib\MemoryCopy.a" />
+    <None Include="..\stdlib\PETSCII.a" />
+    <None Include="..\stdlib\stdlib.a" />
+    <None Include="asm\TrackDraw.a" />
+    <None Include="BuildIt.bat" />
+    <None Include="RacingGameEntry.a" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

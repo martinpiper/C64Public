@@ -1,0 +1,25 @@
+!zn {
+ScrollerDrawStripTopColour
+!ifdef Scroller_NeedFullColourScroll {
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+!ifdef CharColoursForEveryCharacter {
+!ifdef Scroller_EnableBlockColourSpeedCode {
+	+MACROScrollerDrawStripColouriseUnrolled 0 , 40 , 1
+} else {
+	+MACROScrollerDrawHStripColourise 0
+}
+} else {
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawHStrip $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawHStripOneColour $d800, scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
+}
+} else {
+	rts
+} ;< !ifdef Scroller_NeedFullColourScroll
+
+}

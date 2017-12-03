@@ -1,0 +1,185 @@
+!zn
+.fadePos	!by 0,0
+.fadeSteps	!by 0
+.fadeDelay	!by 0
+
+.fadeDirection	!by 0
+
+.fadeSpeed = 4
+.fadeSpeedDown = 4
+
+.fadeCharStrip=8
+
+;						$00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $0e, $0f
+.fadeDownTab		!by $00, $0d, $09, $0c, $02, $08, $00, $0f, $02, $00, $08, $09, $04, $03, $04, $05
+
+.fadeUpTab
+	!by 0,VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_Blue
+	!by $9 , $2 , $4 , $e
+
+; Entry:
+; A = Direction -1, 0 or 1
+; If A = 1
+; X and Y = colour table start indexes to use (4 colours each)
+; If A = -1 then X/Y are ignored
+Fade_Init
+	sta .fadeDirection
+
+	lda #0
+	sta .fadeDelay
+
+	stx .fadePos
+	sty .fadePos+1
+
+	lda #4
+	sta .fadeSteps
+
+	lda #0
+	sta smFadeStart+1
+
+	jsr Fade_Process
+
+	rts
+
+Fade_Process
+	lda .fadeDirection
+	beq .exit2
+	bmi .fadeDown
+
+	lda SpriteFixedColours
+	sta VIC2ExtraSpriteColour1
+	lda SpriteFixedColours+1
+	sta VIC2ExtraSpriteColour2
+
+	lda .fadeSteps
+	beq Fade_Stop
+
+	ldy .fadePos
+	lda .fadeUpTab,y
+	sta BackgroundFixedColours+1
+
+	ldy .fadePos+1
+	lda .fadeUpTab,y
+	sta BackgroundFixedColours+2
+
+	dec .fadeDelay
+	bpl .exit2
+
+	lda #.fadeSpeed
+	sta .fadeDelay
+
+	inc .fadePos
+	inc .fadePos+1
+
+	dec .fadeSteps
+	beq Fade_Stop
+
+	jmp .exit2
+
+Fade_Stop
+	lda #0
+	sta .fadeDirection
+
+.exit2
+	rts
+
+.exitFlag !by 0
+
+.fadeDown
+	dec .fadeDelay
+	bpl .exit2
+
+	lda #.fadeSpeedDown
+	sta .fadeDelay
+
+	lda #0
+	sta .exitFlag
+
+	; Background colours
+	ldx BackgroundFixedColours+1
+	lda .fadeDownTab,x
+	sta BackgroundFixedColours+1
+	beq .l1
+	inc .exitFlag
+.l1
+
+	ldx BackgroundFixedColours+2
+	lda .fadeDownTab,x
+	sta BackgroundFixedColours+2
+	beq .l2
+	inc .exitFlag
+.l2
+
+	; Sprite common colours
+	lda VIC2ExtraSpriteColour1
+	and #15
+	tax
+	lda .fadeDownTab,x
+	sta VIC2ExtraSpriteColour1
+	beq .ls1
+	inc .exitFlag
+.ls1
+
+	lda VIC2ExtraSpriteColour2
+	and #15
+	tax
+	lda .fadeDownTab,x
+	sta VIC2ExtraSpriteColour2
+	beq .ls2
+	inc .exitFlag
+.ls2
+
+	; Sprite colours
+	ldx #Multiplex_items-1
+.l3
+	; Turn off any glowing animation for this animation
+	lda AnimationEnemyFlags,x
+	and #!AnimationBitMask_EnemyFlags_Glow
+	sta AnimationEnemyFlags,x
+
+	lda AnimationSpriteColour,x
+	and #15
+	tay
+	lda .fadeDownTab,y
+	sta AnimationSpriteColour,x
+	beq .l4
+	inc .exitFlag
+.l4
+	dex
+	bpl .l3
+
+	lda .exitFlag
+	beq .doChars
+
+	rts
+
+.doChars
+
+!if 1 {
+
+	lda smFadeStart+1
+	clc
+	adc #.fadeCharStrip
+	sta .sm3+1
+
+	lda #0
+	sta .fadeDelay
+smFadeStart	ldx #0
+.l5
+	sta COLOURRAM+$000,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	inx
+.sm3	cpx #8
+	bne .l5
+
+	lda smFadeStart+1
+	clc
+	adc #.fadeCharStrip
+	sta smFadeStart+1
+
+	beq .lFade_Stop
+	rts
+}
+.lFade_Stop
+	jmp Fade_Stop

@@ -1,3 +1,3 @@
 #pragma once
 
-extern "C++" int ParamToNum(char *arg);
+extern "C++" int ParamToNum(const char *arg);

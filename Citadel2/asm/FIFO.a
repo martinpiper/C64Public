@@ -1,73 +1,91 @@
+; All macros accept these parameters in order: .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi
+; Typical usage can look like this:
+;	!source "asm/FIFO.a"
+;	FIFOEntries = 64
+;	FIFOStartIndex	!by 0
+;	FIFOEndIndex	!by 0
+;	FIFOSlotsLo		!fill FIFOEntries
+;	FIFOSlotsHi		!fill FIFOEntries
+;	FIFOInit	+MFIFOInit		FIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi
+;	FIFOSize	+MFIFOSize		FIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi
+;	FIFOIsEmpty	+MFIFOIsEmpty	FIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi
+;	FIFOAdd		+MFIFOAdd		FIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi
+;	FIFORemove	+MFIFORemove	FIFOStartIndex , FIFOEndIndex , FIFOEntries , FIFOSlotsLo , FIFOSlotsHi
+
+
 !zn
 ; A Trashed
-FIFOInit
+!macro MFIFOInit .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi {
 	lda #0
-	sta FIFOStartIndex
-	sta FIFOEndIndex
+	sta .MFIFOStartIndex
+	sta .MFIFOEndIndex
 	rts
+}
 
 ; Exit
 ; A Size
-FIFOSize
-	lda FIFOEndIndex
-	cmp FIFOStartIndex
+!macro MFIFOSize .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi {
+	lda .MFIFOEndIndex
+	cmp .MFIFOStartIndex
 	bcc .l1
 	; sec ; Always set
-	sbc FIFOStartIndex
+	sbc .MFIFOStartIndex
 	rts
 .l1
-	lda #FIFOEntries
+	lda #.MFIFOEntries
 	sec
-	sbc FIFOStartIndex
+	sbc .MFIFOStartIndex
 	clc
-	adc FIFOEndIndex
+	adc .MFIFOEndIndex
 	rts
+}
 
 ; Exit
 ; A Trashed
 ; ST EQ = Empty
-FIFOIsEmpty
-	lda FIFOStartIndex
-	cmp FIFOEndIndex
+!macro MFIFOIsEmpty .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi {
+	lda .MFIFOStartIndex
+	cmp .MFIFOEndIndex
 	rts
+}
 
 ; A/X Value lo/hi to add
 ; Exit
 ; A/Y Trashed
-FIFOAdd
-	ldy FIFOEndIndex
-	sta FIFOSlotsLo,y
+!macro MFIFOAdd .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi {
+	ldy .MFIFOEndIndex
+	sta .MFIFOSlotsLo,y
+!if .MFIFOSlotsHi > 0 {
 	txa
-	sta FIFOSlotsHi,y
+	sta .MFIFOSlotsHi,y
+}
 	iny
-	cpy #FIFOEntries
+	cpy #.MFIFOEntries
 	beq .l2
-	sty FIFOEndIndex
+	sty .MFIFOEndIndex
 	rts
 .l2
 	ldy #0
-	sty FIFOEndIndex
+	sty .MFIFOEndIndex
 	rts
+}
 
 ; Exit
 ; A/X Value lo/hi removed
 ; Y Trashed
-FIFORemove
-	ldy FIFOStartIndex
-	lda FIFOSlotsLo,y
-	ldx FIFOSlotsHi,y
+!macro MFIFORemove .MFIFOStartIndex , .MFIFOEndIndex , .MFIFOEntries , .MFIFOSlotsLo , .MFIFOSlotsHi {
+	ldy .MFIFOStartIndex
+	lda .MFIFOSlotsLo,y
+!if .MFIFOSlotsHi > 0 {
+	ldx .MFIFOSlotsHi,y
+}
 	iny
-	cpy #FIFOEntries
+	cpy #.MFIFOEntries
 	beq .l3
-	sty FIFOStartIndex
+	sty .MFIFOStartIndex
 	rts
 .l3
 	ldy #0
-	sty FIFOStartIndex
+	sty .MFIFOStartIndex
 	rts
-
-
-FIFOStartIndex !by 0
-FIFOEndIndex !by 0
-FIFOSlotsLo !fill FIFOEntries
-FIFOSlotsHi !fill FIFOEntries
+}

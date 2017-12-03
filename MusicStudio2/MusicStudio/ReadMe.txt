@@ -498,6 +498,28 @@ This file can be altered to reduce the CPU time needed for some PC configuration
 
 
 
+Commmand line options:
+----------------------
+
+In addition to the standard Windows MFC command line options the following are recognised:
+	/hide
+	/exit
+	/openFile <filename>
+	/exportToSID <filename>
+	/exportToSelf <y/n> <filename>
+	/exportToC64 <$hex or decimal address> <y/n> <filename>
+	/play
+	/loadEnvelope <hex position> <filename>
+	/saveEnvelope <hex position> <filename>
+	/insertEnvelope <hex position>
+	/pressEnvelopeForceUsedFX <hex position>
+	/deleteTrackPos <hex voice> <hex position> <hex count>
+
+All hex values are zero based.
+These options can be concatenated together and are executed in sequence. For example:
+	/openFile ..\MeanStreak.msmus /saveEnvelope 1 "c:\temp\t.msenv" /insertEnvelope 1 /loadEnvelope 1 "Sounds\Tom tom1.msenv" /deleteTrackPos 0 3 3 /exportToC64 $400 y c:\temp\t2.prg /exit
+
+
 Credits:
 --------
 

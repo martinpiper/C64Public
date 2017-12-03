@@ -1,0 +1,11 @@
+10 poke53281,12
+100 poke53248+37,1:poke53248+38,0:fort=0to7:poke53248+39+t,2:next
+110 poke53248+21,255:poke53248+28,255
+120 fort=0to2:poke53248+t*2,156+t*24:poke53249+t*2,170:next
+121 fort=0to2:poke53248+t*2+10,84+t*24:poke53249+t*2+10,170:next
+130 fort=128to142step3:ford=0to2:poke2040+d,t+d:nextd:forg=0to0:nextg,t
+131 fort=128to142step3:ford=0to2:poke2040+d+5,t+d:nextd:forg=0to0:nextg,t
+140 fort=140to128step-3:ford=0to2:poke2040+d,t+d:nextd:forg=0to0:nextg,t
+141 fort=140to128step-3:ford=0to2:poke2040+d+5,t+d:nextd:forg=0to0:nextg,t
+142 geta$:ifa$=""then142
+150 goto130

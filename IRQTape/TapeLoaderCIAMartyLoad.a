@@ -58,7 +58,7 @@ MainLoaderEntry
 	; Grab everything on the stack earlier
 	txs
 
-	+MACROSetTurboTimer
+	+MACROSetTurboTimerMiddle -$11
 
 	ldx #39
 	bne .TapeHeaderCode

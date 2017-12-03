@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int ParamToNum(char *arg)
+int ParamToNum(const char *arg)
 {
 	int num;
 

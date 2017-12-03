@@ -81,6 +81,12 @@
 ;Multiplex_ReverseOrder = 1
 
 
+; Use this to shift the sprite YPos by 1 or 2 places to the right.
+; This can sometimes help to optimise the sort, by reducing the number of buckets, when sprites move around a lot.
+;Multiplexor_UseShiftedYPos = 1
+;Multiplexor_UseShiftedYPos = 2
+
+
 ; Define various zeropage working variables
 Multiplex_areg				= Multiplex_VarBase+$00
 Multiplex_xreg				= Multiplex_VarBase+$01
@@ -130,4 +136,15 @@ MultiplexSort_indextable = Multiplex_indextable
 MultiplexSort_YPos = Multiplex_YPos
 MultiplexSort_MaxSprSorted = Multiplex_MaxSprSorted
 
+}
+
+!if Multiplex_endVars >= $100 {
+!error "Multiplex_endVars is out of zeropage"
+}
+
+
+!ifndef Multiplex_IRQExitDefined {
+!macro Multiplex_IRQExit {
+	rti
+}
 }

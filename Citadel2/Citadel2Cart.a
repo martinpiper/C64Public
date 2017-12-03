@@ -1,11 +1,21 @@
-;Citadel2Cart boot code
+; Citadel2Cart boot code
+; EasyFlash version
 ;-truedrive -cartcrt Citadel2Cart.crt
 
 !source "../stdlib/stdlib.a"
-!to "Citadel2Cart.prg", cbm
-!sl "Citadel2Cart.map"
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortDefault
+
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+;!source "../MakeCart/asm/GMod2_Macros.a"
+;!to "Citadel2Cart.prg", cbm
+!to "Citadel2Cart_8K.prg", cbm
+;!sl "Citadel2Cart.map"
+!sl "Citadel2Cart_8K.map"
 !sal
-!svl "Citadel2Cart.lbl"
+;!svl "Citadel2Cart.lbl"
+!svl "Citadel2Cart_8K.lbl"
 !cpu 6510
 !ct pet
 
@@ -17,38 +27,34 @@
 ; If bank 0 ever gets over 8K or the compressed game code gets over $b800 (47104) bytes then this approach is screwed. :)
 
 *=$8000
+; Used by MakeCart to place this address at 0xfffc into the second chip (bank 0 address a000)
+; When making EasyFlash carts
+; EasyFlash replaces the kernal and so this address is used for the kernal reset vector
 !word Boot
+; This is used by GMod2, since it uses the normal 8K boot ROM location we use the CBM80 magic bytes instead
 !word Boot
-	!byte $c3 ;c
-	!byte $c2 ;b
-	!byte $cd ;m
-	!byte $38 ;8
-	!byte $30 ;0
-
+!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
 Boot
 	sei
-	jsr $fda3 ;prepare irq
-	jsr $fd50 ;init memory
-	jsr $fd15 ;init i/o
-;	jsr $ff5b ;init video
+	cld
 
+	ldx #PreBootEnd-PreBoot
+.l1
+	lda PreBoot,x
+	sta PreBootReal,x
+	dex
+	bpl .l1
+	txs
+	jmp PreBootReal
+
+!zone
+PreBoot
+!pseudopc $100 {
+PreBootReal
+!ifdef EASYFLASH_CONTROL_16K {
+	; EasyFlash defaults to Ultimax mode and we want RAM at $c000 so select bank 0 instead
 	lda #0
-	sta ZPCurrentFileDeviceNumber
-
-	; Init drive code
-!if 1 {
-	; If a drive exists then fake init the disk drive device number
-	lda #8
-	jsr LISTEN
-	lda #$6f	; $f (command channel) OR $60
-	jsr SECOND
-	jsr READST
-	and #%10000011	; Ignore EOI
-	bne .noDrive
-	lda #8
-	sta ZPCurrentFileDeviceNumber
-.noDrive
-	jsr UNLSN
+	+MACRO_CartSelectBank_8K_NoSEI_A
 }
 
 	; Need to use indirect addressing to do the copy since we cannot use self modifying code
@@ -56,23 +62,24 @@ Boot
 	sta $fb
 	lda #>CodeMoveStart
 	sta $fc
-	lda #(>(CodeMoveEnd-CodeMoveStart))+1
-	sta $fd
+	ldx #(>(CodeMoveEnd-CodeMoveStart))+1
 	lda #<RealCodeStart
-	sta $fe
+	sta $fd
 	lda #>RealCodeStart
-	sta $ff
+	sta $fe
 	ldy #0
 .l1
 	lda ($fb),y
-	sta ($fe),y
+	sta ($fd),y
 	dey
 	bne .l1
 	inc $fc
-	inc $ff
-	dec $fd
+	inc $fe
+	dex
 	bne .l1
 	jmp RealCodeStart
+}
+PreBootEnd
 
 !zone
 CodeMoveStart
@@ -81,19 +88,59 @@ RealCodeStart
 	lda #ProcessorPortDefault
 	jsr InitialiseMachine
 
+	; Using the kernal process to init the machine
+;	stx VIC2ScreenControlH
+	jsr IOINIT ;prepare i/o
+	jsr RAMTAS ;init memory
+	jsr RESTOR ;init i/o
+;	jsr CINT
+
+	; Check for runstop being pressed
+	lda #$ff
+	sta CIA1PortADDR
+	lda #0
+	sta CIA1PortBDDR
+	lda #$7f
+	sta CIA1KeyboardColumnJoystickA
+;	lda #$7f
+	cmp CIA1KeyboardRowsJoystickB
+	bne .notRunstop
+
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+
+	; Runstop is pressed, so just do a normal reset after killing the cartridge bank
+	+MACRO_CartKillBank
+	jmp (KERNALColdStartResetLo)
+
+.notRunstop
+	; Now really grab the machine
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	lda #0
+	sta ZPCurrentFileDeviceNumber
+
 	+ClearScreenAt_AX SCREENRAM , ' '
 	+MACROWaitForTheLastScanPlus1_A
 	+SetDefaultScreenLowerCase_A
 
+
 	; Check the cart banks switch properly, otherwise there is a hardware problem
 	lda $8000
-	ldx $8001
+	pha
+	lda $8001
+	pha
+
 	; Switch to the next bank and compare for data differences
-	ldy #1
-	sty MemoryMappedIOArea1
-	cmp $8000
+	lda #1
+	+MACRO_CartSelectBank_8K_NoSEI_A
+
+	pla
+	cmp $8001
 	bne .diff
-	cpx $8001
+	pla
+	cpx $8000
 	bne .diff
 
 	+DisplayColourTextMiddle_AX .HWFail , .HWFailEnd , SCREENRAM + (12*40) , VIC2Colour_White
@@ -105,19 +152,26 @@ RealCodeStart
 
 .diff
 	; Display message in zero page...
-	ldx #0
-	lda #VIC2Colour_Black
-.cl1
-	sta COLOURRAM ,x
-	sta COLOURRAM + $100 ,x
-	sta COLOURRAM + $200 ,x
-	sta COLOURRAM + $2e8 ,x
-	dex
-	bne .cl1
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
 
-	+DisplayColourTextMiddle_AX .loading , .loadingEnd , $0000 + (17*40) , VIC2Colour_White
+!if 1 {
+	; No disc access needed, so clobber it all
+	; Clobber all the lower memory
+	ldx #0
+	txa
+.cl2
+	sta $0002,x
+	sta $0100,x
+	sta $0200,x
+	sta $0300,x
+	inx
+	bne .cl2
+}
+
+	+DisplayColourTextMiddle_AX .loading , .loadingEnd , $0000 + (13*40) , VIC2Colour_White
 
 	+MACROWaitForTheLastScanPlus1_A
+	; Standard ROM character set and screen at $0
 	lda #4
 	sta VIC2MemorySetup
 
@@ -125,7 +179,7 @@ RealCodeStart
 	lda #0
 	tax
 	ldy #1
-	sty MemoryMappedIOArea1
+	sty CART_SELECT_BANK
 .l2
 .sm1	lda $8000,x
 .sm2	sta $0800,x
@@ -138,6 +192,7 @@ RealCodeStart
 	cmp #$c0
 	beq .RunGame
 
+	; Loop the cart end address block copying $8000 - $a000
 	lda .sm1+2
 	cmp #$a0
 	bne .l2
@@ -146,19 +201,18 @@ RealCodeStart
 	sta .sm1+2
 	; Next bank
 	iny
-	sty MemoryMappedIOArea1
+	sty CART_SELECT_BANK
 	jmp .l2
 
 .RunGame
 	; Stop the cartridge from selecting the bank by selecting an invalid bank
-	lda #$7f
-	sta MemoryMappedIOArea1
+	+MACRO_CartKillBank
 
 	; Start the compressed game code
 	jmp 2061
 
 
-.loading !scr "<<loading>>"
+.loading !scr "  loading  "	; The extra spaces are important to give these blank spaces some colour for the later decompressed data that used << and >>
 .loadingEnd
 
 .HWFail !scr "Hardware failure, banks not switching!"

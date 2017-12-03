@@ -1,31 +1,99 @@
 ; Common values that are shared between the game code and the level data
+MaxSpriteNumber = 187
+CharData=$c000
+SpriteData=$d000
+
+
+TitleScreen_NumChars	= 204
+TitleScreen_TopLogoWid	= 40
+TitleScreen_TopLogoHei	= 7
+
+
+
+numMapUsedChars = 256
+numMapUsedTiles = 44
+SolidMapBlockIndex = 20
 
 LevelDataStart = $a000
 
-MusicPlayerInit = $b000
-MusicPlayerPlay = $b003
-MusicPlayerPlaySFX = $b009
+MusicPlayerInit = $af00
+MusicPlayerPlay = $af03
+MusicPlayerStop = $af06
+MusicPlayerPlaySFX = $af09
 
 numMaxEnemySlotsToOnScreenCheck = 64			; Must be power of 2
 MaxEnemies = numMaxEnemySlotsToOnScreenCheck
 MazeWidth = 40
 MazeHeight = 25
 
-!source "../stdlib/stdlib.a"
+EnemyTemplate_MaxSpawnList = 24
+EnemyFlags_MaxSpawnList = 30
+
+; Allows the number of enemy slots to check each frame of the on-screen check to be tweaked
+numEnemySlotsToOnScreenCheck = 2	; Must be power of 2
+numMaxEnemySlotsToOnScreenCheckShiftRight = 5
+!if numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck > 32 {
+!error "numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck must be <= 32 to allow the offscreen check enough time to activate the enemy DB position into the animation system"
+}
+!if (2^numMaxEnemySlotsToOnScreenCheckShiftRight) != (numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck) {
+!error "2^numMaxEnemySlotsToOnScreenCheckShiftRight must equal numMaxEnemySlotsToOnScreenCheck/numEnemySlotsToOnScreenCheck"
+}
+enemyActivateTileExtra = 3
+
+; These are used by EnemyFlags to modify
+EnemyFlags_None			= 0
+EnemyFlags_DropPickup	= (1<<0)
+EnemyFlags_IsCaptured	= (1<<1)
+AnimationBitMask_EnemyFlags_Glow	= EnemyFlags_DropPickup | EnemyFlags_IsCaptured
+EnemyFlags_StayHere		= (1<<2)
+EnemyFlags_FollowPlayer	= (1<<3)
+EnemyFlags_Destroy		= (1<<4)
+
 !source "asm/AnimationDefs.a"
 
-MapTerminalToDoor_Size		= 8
+MapTerminalToDoor_Size		= 12
 MapTerminalToDoor_EndList	= -1	; Must be negative for simplified check
-MapTerminalToDoor_Index_Zone1	= 6
-MapTerminalToDoor_Index_Zone2	= 7
+MapTerminalToDoor_Index_Zone1	= 10
+MapTerminalToDoor_Index_Zone2	= 11
 
-MapTile_Generator					= 2
-MapTile_Floor						= 3
-MapTile_Teleport					= 4
+MapAutoDoor_Size			= 11
+MapAutoDoor_EndList			= -1
 
-MapTile_VerticalOpenDoor			= 5
-MapTile_HorizontalOpenDoor			= 6
-MapTile_GeneratorOpen				= 7
+MapAutoDoor_DoorX			= 0
+MapAutoDoor_DoorY			= 1
+MapAutoDoor_HotSpot1X		= 2
+MapAutoDoor_HotSpot1Y		= 3
+MapAutoDoor_HotSpot2X		= 4
+MapAutoDoor_HotSpot2Y		= 5
+MapAutoDoor_OpenAnim		= 6
+MapAutoDoor_CloseAnim		= 7
+MapAutoDoor_DetectMask		= 8
+MapAutoDoor_DelayReset		= 9
+MapAutoDoor_DelayCount		= 10
+
+MapTile_Floor						= 2
+MapTile_Teleport					= 3
+
+MapTile_VerticalOpenDoor			= 4
+MapTile_HorizontalOpenDoor			= 5
+
+; Generator map tiles
+MapTile_GeneratorClosed				= 6
+MapTile_GeneratorOpening1			= 7
+MapTile_GeneratorOpening2			= 8
+MapTile_GeneratorOpening3			= 9
+MapTile_GeneratorOpen1				= 10
+MapTile_GeneratorOpen2				= 11
+MapTile_GeneratorOpen3				= 12
+MapTile_GeneratorOpen4				= 13
+MapTile_GeneratorDestroyed			= 14
+
+; The amount of charge left in the charger tile
+MapTile_Charger4					= 15
+MapTile_Charger3					= 16
+MapTile_Charger2					= 17
+MapTile_Charger1					= 18
+MapTile_Charger0					= 19
 
 MapTile_ComputerTerminalFacingDown	= 20
 MapTile_ComputerTerminalFacingUp	= 21
@@ -34,13 +102,88 @@ MapTile_ComputerTerminalDistance	= 10
 MapTile_VerticalDoor				= 22
 MapTile_HorizontalDoor				= 23
 
+MapTile_VerticalAutoDoor			= 33
+MapTile_HorizontalAutoDoor			= 32
+
+MapTile_VerticalAutoDoor2			= 35
+MapTile_HorizontalAutoDoor2			= 34
+
+MapTile_DoorSwitchOffFacingDown		= 40
+MapTile_DoorSwitchOffFacingUp		= 41
+MapTile_DoorSwitchOnFacingDown		= 42
+MapTile_DoorSwitchOnFacingUp		= 43
+
 MaxInterestingPlaces = 48
 
 ; Score panel graphics
-ScorePanel_RadarChar = 20
+ScorePanelNumChars			= 40
 
-ScorePanelNumChars = 32
+ScorePanel_EmptyChar		= 0
+
+Score_ZeroCharacter			= 7
+ScorePanel_RadarChar		= 20
+ScorePanelEnergyCharacter	= 34
+
+ScorePanelEnergy_XPos		= 9
+ScorePanelEnergy_YPos		= 22
+
+ScorePanel_Score_NumDigits	= 6
+ScorePanel_Score_XPos		= 2
+ScorePanel_Score_YPos		= 22
+ScorePanel_Score_Addr		= SCREENRAM + (ScorePanel_Score_YPos * VIC2ScreenCharsWidth) + ScorePanel_Score_XPos
+
+ScorePanel_Captured_XPos			= 35
+ScorePanel_Captured_YPos			= 22
+ScorePanel_CapturedIndicator_YPos	= 23
+ScorePanel_Captured_Addr			= SCREENRAM + (ScorePanel_Captured_YPos * VIC2ScreenCharsWidth) + ScorePanel_Captured_XPos
+ScorePanel_Captured_ColourAddr		= COLOURRAM + (ScorePanel_Captured_YPos * VIC2ScreenCharsWidth) + ScorePanel_Captured_XPos
+ScorePanel_CapturedIndicator_Addr	= SCREENRAM + (ScorePanel_CapturedIndicator_YPos * VIC2ScreenCharsWidth) + ScorePanel_Captured_XPos
+
+ScorePanel_StayChar			= 30
+ScorePanel_FollowPlayerChar	= 31
+ScorePanel_DestroyChar		= 32
+ScorePanel_CapturedChar		= 33
 
 ; Enable this to allow full colour scrolling
-; TODO: This is a bit buggy at the moment, the sub-game switch needs to be handled correctly
-;CharColoursForEveryCharacter = 1
+CharColoursForEveryCharacter = 1
+
+; Wall chars >= than this
+MapSolidChars=160
+
+ClearGameScreensChar = 71
+
+
+; Smaller chance value means more probable
+;PickupDropChance = 128
+PickupDropChance = 220	; Not likely
+;PickupDropChance = 0	; Very likely, certain
+
+GeneratorDamageChance = 192
+
+
+
+; The maximum number of bullet chars used
+; the actual number of bullets active at one time is kNumPlayerBullets
+; The maximum number of different bullets visible is MaxNumBulletChars/kNumPlayerBullets
+; MPi: TODO: By dynamically copying in the 8 bytes for each character when fired the number of characters the number of reserved characters can be reduced to kNumPlayerBullets
+MaxNumBulletChars	= 16
+
+AutoDoorChars_Min	= 34
+AutoDoorChars_Max	= 38
+
+
+; Map animation enumerations
+MapAnim_GeneratorOpen				= 0
+MapAnim_HorizontalOpenDoor			= 1
+MapAnim_HorizontalAutoDoorClose		= 2
+MapAnim_VerticalOpenDoor			= 3
+MapAnim_VertialAutoDoorClose		= 4
+MapAnim_HorizontalAutoDoorClose2	= 5
+MapAnim_VerticalAutoDoorClose2		= 6
+MapAnim_HorizontalDoorClose			= 7
+MapAnim_VerticalDoorClose			= 8
+
+MapAnim_DoorSwitchOffFacingDown		= 9
+MapAnim_DoorSwitchOffFacingUp		= 10
+MapAnim_DoorSwitchOnFacingDown		= 11
+MapAnim_DoorSwitchOnFacingUp		= 12

@@ -1,0 +1,23 @@
+WantMazeSolveForEnemyDBIndex !by 0
+WantMazeSolveTargetXPos !by 0
+WantMazeSolveTargetYPos !by 0
+
+WantMazeSolveBytes !by 0
+
+WantMazeSolveBlockIndex !by 0
+WantMazeSolveBlockTab !by Node_isBlocked_Player | Node_isBlocked_Enemy , Node_isBlocked_Player , Node_isBlocked_Enemy , 0
+
+WantMazeSolveState !by WantMazeSolve_Idle
+WantMazeSolve_Idle			= 0	; Must always be zero
+WantMazeSolve_doInit		= 1
+WantMazeSolve_step			= 2
+WantMazeSolve_traceBackStep	= 3
+WantMazeSolve_traceBackMemory = 4
+
+MaxEnemyBlockedCount = 50
+
+MapTileToFineXLo !for .num , 40 { !by <(((.num-1)*32)+4) }
+MapTileToFineXHi !for .num , 40 { !by >(((.num-1)*32)+4) }
+
+MapTileToFineYLo !for .num , 25 { !by <(((.num-1)*32)+6) }
+MapTileToFineYHi !for .num , 25 { !by >(((.num-1)*32)+6) }

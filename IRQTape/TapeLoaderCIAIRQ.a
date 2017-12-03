@@ -29,7 +29,7 @@ TapeLoaderInitialiseIRQ
 	lda #%10010000
 	sta CIA1InterruptControl
 
-	+MACROSetTurboTimer
+	+MACROSetTurboTimerMiddle -$12
 
 	; Ack any interrupts that have happened from CIA1 only. We don't ack anything on CIA2 because we want to keep restore disabled.
 	lda CIA1InterruptControl

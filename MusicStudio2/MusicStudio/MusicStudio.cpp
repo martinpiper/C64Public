@@ -54,42 +54,36 @@ CMusicStudioApp theApp;
 BOOL CMusicStudioApp::InitInstance()
 {
 	// Detect where ACME is and set the current directory if needed
-	FILE *fp = fopen("..\\..\\acme.exe","rb");
+	FILE *fp;
+	LPWSTR str = GetCommandLineW();
+	int argc;
+	LPWSTR *argv;
+	argv = CommandLineToArgvW(str,&argc);
+	CStringW path = argv[0];
+//	LocalFree(argv);
+
+	do
+	{
+		int pos = path.ReverseFind('\\');
+		if (pos >= 0)
+		{
+			path.Delete(pos,path.GetLength());
+		}
+		SetCurrentDirectoryW(path);
+
+		fp = fopen("..\\..\\acme.exe","rb");
+	} while (!fp && (path.GetLength() > 3));
+
 	if (fp)
 	{
 		fclose(fp);
 	}
 	else
 	{
-		LPWSTR str = GetCommandLineW();
-		int argc;
-		LPWSTR *argv;
-		argv = CommandLineToArgvW(str,&argc);
-		CStringW path = argv[0];
-		LocalFree(argv);
-
-		do
-		{
-			int pos = path.ReverseFind('\\');
-			if (pos >= 0)
-			{
-				path.Delete(pos,path.GetLength());
-			}
-			SetCurrentDirectoryW(path);
-
-			fp = fopen("..\\..\\acme.exe","rb");
-		} while (!fp && path.GetLength());
-
-		if (fp)
-		{
-			fclose(fp);
-		}
-		else
-		{
-			// MPi: TODO: Convert all these message boxes to use proper string resources
-			MessageBox(0,_T("Could not find the ACME tool, so music files cannot be played or exported."),_T("Error"),MB_OK);
-		}
+		// MPi: TODO: Convert all these message boxes to use proper string resources
+		MessageBox(0,_T("Could not find the ACME tool, so music files cannot be played or exported."),_T("Error"),MB_OK);
 	}
+
 	GetCurrentDirectory(2048,mCurrentDirectory);
 
 	// InitCommonControlsEx() is required on Windows XP if an application
@@ -200,6 +194,137 @@ BOOL CMusicStudioApp::InitInstance()
 	if (!ProcessShellCommand(cmdInfo))
 		return FALSE;
 
+	// Parse application specific command line options
+	// For example:
+	// /hide /openFile $(ProjectDir)\..\MeanStreak.msmus /exportToSID c:\temp\t.sid /exportToSelf y c:\temp\t.prg /exportToC64 $400 y c:\temp\t2.prg /exit
+	// /hide /openFile $(ProjectDir)\..\MeanStreak.msmus /play
+	// /openFile $(ProjectDir)\..\MeanStreak.msmus /loadEnvelope 2 "$(ProjectDir)\..\Tom tom1.msenv" /saveEnvelope 1 "c:\temp\t.msenv" /insertEnvelope 1 /deleteTrackPos 1 3 3
+	int i;
+	for (i = 1 ; i < argc ; i++)
+	{
+		LPWSTR arg = argv[i];
+		if (arg[0] == '/' || arg[0] == '-')
+		{
+			arg = arg+1;
+			if (wcscmp(arg , L"hide") == 0)
+			{
+				ShowWindow(GetActiveWindow() , SW_HIDE);
+				continue;
+			}
+			if (wcscmp(arg , L"exit") == 0)
+			{
+				return FALSE;
+				continue;
+			}
+			if (wcscmp(arg , L"openFile") == 0)
+			{
+				i++;
+				OpenDocumentFile(argv[i] , FALSE);
+				continue;
+			}
+			if (wcscmp(arg , L"exportToSID") == 0)
+			{
+				CMusicStudioView::mLastView->CommonSaveC64File("sid");
+				i++;
+				_tremove(argv[i]);
+				_trename(_T("t.sid"),argv[i]);
+
+				continue;
+			}
+			if (wcscmp(arg , L"exportToSelf") == 0)
+			{
+				i++;
+				if (argv[i][0] == 'y')
+				{
+					CMusicStudioView::mLastView->CommonSaveC64File("self" , true);
+				}
+				else
+				{
+					CMusicStudioView::mLastView->CommonSaveC64File("self" , false);
+				}
+				i++;
+				_tremove(argv[i]);
+				_trename(_T("t.prg"),argv[i]);
+
+				continue;
+			}
+			if (wcscmp(arg , L"exportToC64") == 0)
+			{
+				i++;
+				CStringA ansi(argv[i]);
+				i++;
+				if (argv[i][0] == 'y')
+				{
+					CMusicStudioView::mLastView->CommonSaveC64File(ansi , true);
+				}
+				else
+				{
+					CMusicStudioView::mLastView->CommonSaveC64File(ansi , false);
+				}
+				i++;
+				_tremove(argv[i]);
+				_trename(_T("t.prg"),argv[i]);
+
+				continue;
+			}
+			if (wcscmp(arg , L"play") == 0)
+			{
+				CMusicStudioView::mLastView->OnBnClickedPlay();
+				continue;
+			}
+			if (wcscmp(arg , L"loadEnvelope") == 0)
+			{
+				i++;
+				CMusicStudioView::mLastView->mEnvelopeNum.SetWindowTextW(argv[i]);
+				i++;
+				CMusicStudioView::mLastView->OnBnClickedLoadEnvelope(CString(argv[i]));
+				continue;
+			}
+			if (wcscmp(arg , L"saveEnvelope") == 0)
+			{
+				i++;
+				CMusicStudioView::mLastView->mEnvelopeNum.SetWindowTextW(argv[i]);
+				i++;
+				CMusicStudioView::mLastView->OnBnClickedSaveEnvelope(CString(argv[i]));
+				continue;
+			}
+			if (wcscmp(arg , L"insertEnvelope") == 0)
+			{
+				i++;
+				CMusicStudioView::mLastView->mEnvelopeNum.SetWindowTextW(argv[i]);
+				CMusicStudioView::mLastView->OnBnClickedInsertEnvelope();
+				continue;
+			}
+			if (wcscmp(arg , L"pressEnvelopeForceUsedFX") == 0)
+			{
+				i++;
+				CMusicStudioView::mLastView->mEnvelopeNum.SetWindowTextW(argv[i]);
+				CMusicStudioView::mLastView->GetDlgItem(IDC_CHECK4)->SendMessage(WM_LBUTTONDOWN, MK_LBUTTON , 0);
+				CMusicStudioView::mLastView->GetDlgItem(IDC_CHECK4)->SendMessage(WM_LBUTTONUP, MK_LBUTTON , 0);
+				CMusicStudioView::mLastView->OnBnClickedCheck4ForceUsed();
+				continue;
+			}
+			if (wcscmp(arg , L"deleteTrackPos") == 0)
+			{
+				i++;
+				int track = 0;
+				_stscanf(argv[i],_T("%x"),&track);
+				i++;
+				int index = 0;
+				_stscanf(argv[i],_T("%x"),&index);
+				i++;
+				int count = 0;
+				_stscanf(argv[i],_T("%x"),&count);
+				while (count > 0)
+				{
+					CMusicStudioView::mLastView->OnEditNumRemove(MAKEWORD(index , track) , 0);
+					count--;
+				}
+				continue;
+			}
+		}
+	}
+
 	// The main window has been initialized, so show and update it
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
@@ -208,7 +333,9 @@ BOOL CMusicStudioApp::InitInstance()
 	// Causes the file to be opened when the application starts.
 	// Useful when debugging and when you don't want to keep on going to the menu.
 //	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\moz_k299.mid") );
-	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
+//	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
+//	OpenDocumentFile( _T("C:\\Downloads\\GTC_Citadel_2.sng") );
+	
 #endif
 
 	return TRUE;

@@ -7,5 +7,5 @@ if not exist SubGameStub.prg goto error
 goto end
 :error
 echo SubGameStub.prg not created!
-exit -1
+exit /B -1
 :end

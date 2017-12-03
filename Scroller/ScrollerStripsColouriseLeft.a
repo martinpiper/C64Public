@@ -1,0 +1,77 @@
+!ifndef Scroller_EnableBlockColourSpeedCode {
+!ifdef CharColoursForEveryCharacter {
+!zn {
+CharColours_GeneralCharsColourise
+	sta .sm1+1
+	sta .sm2+1
+
+	ldy topScreenBank
+	lda BankToScreenAddr,y
+	sta .sm1+2
+	lda #>COLOURRAM
+	sta .sm2+2
+!ifdef Scroller_FullScreen {
+	ldy #24
+} else {
+	ldy #19
+}
+.l1
+.sm1	ldx $c800
+	lda CharColours,x
+.sm2	sta COLOURRAM
+	lda .sm1+1
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta .sm1+1
+	sta .sm2+1
+	bcc .l2
+	inc .sm1+2
+	inc .sm2+2
+.l2
+	dey
+	bpl .l1
+	rts
+}
+}
+}
+
+
+!zn {
+ScrollerDrawStripLeftColour
+!ifdef Scroller_NeedFullColourScroll {
+!ifndef CharColoursForEveryCharacter {
+	lda #0
+	sta tempWork0
+	lda #$d8
+	sta tempWork1
+}
+
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+!ifdef CharColoursForEveryCharacter {
+!ifdef Scroller_EnableBlockColourSpeedCode {
+
+!ifdef Scroller_FullScreen {
+	+MACROScrollerDrawStripColouriseUnrolled 0 , 25 , 40
+} else {
+	+MACROScrollerDrawStripColouriseUnrolled 0 , 20 , 40
+}
+
+} else {
+	lda #0
+	jmp CharColours_GeneralCharsColourise
+}
+} else {
+!ifdef BlockColoursForEveryCharacter {
+	+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockColTabL , BlockColTabH
+} else {
+	+MACROScrollerDrawVStripOneColour scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY
+}
+}
+} else {
+	rts
+}
+}
+

@@ -243,3 +243,49 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 * Dynamic track/table/block quick help reference in the lower right hand corner.
 
 2.2.0.4
+
+* Insert instrument positions.
+
+
+* Fixed an issue where sometimes acme and the supporting sources cannot be found by the tool when starting from a msmus file in Explorer.
+
+
+* Command line conversion and play mode.
+	// See: Parse application specific command line options
+		Load file
+		Play song position
+		Save msmus file
+		Load envelope at pos
+		Save envelope at pos
+		Save SID, prg, +SFX, address
+		Change zero page value
+		Insert envelope at pos
+		Delete track at pos for count
+	* Options:
+	/hide
+	/exit
+	/openFile <filename>
+	/exportToSID <filename>
+	/exportToSelf <y/n> <filename>
+	/exportToC64 <addr> <y/n> <filename>
+	/play
+	/loadEnvelope <position> <filename>
+	/saveEnvelope <position> <filename>
+	/insertEnvelope <position>
+	/deleteTrackPos <voice> <position> <count>
+
+* Added:
+	/pressEnvelopeForceUsedFX <position>
+
+
+
+
+
+* When ripping a SID, capture the AD/SR and first few wav table entries.
+	Capture entries while the gate is on whilst also timing how long the gate is on for.
+	Then also continue to capture for at least that time period after the gate is off.
+	* MPi: TODO: Calculate sensible block sizes based on analysis for the ripped SID
+	* Done - // MPi: TODO: Progress onto new blocks when they reach their end times
+	* Done - Have sensible defaults for ProcessSIDCaptureData()
+	* Write routines to use those first
+	* Reduce instrument duplicates

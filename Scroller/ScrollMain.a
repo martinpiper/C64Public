@@ -142,7 +142,9 @@ InitialiseGame
 	sei
 !ifdef Scroller_MultiDirection {
 	; Copies the intial sprite positions from the multiplexor to the simple animation table storage
+!ifndef DisableUpdateMultiplexorToAnimation {
 	jsr UpdateMultiplexorToAnimation
+}
 } else {
 	jsr TitleScreenWaitForOffScreenFromRaster
 }
@@ -997,15 +999,6 @@ SkipLevelFrameLogic
 .notS3
 }
 
-!ifdef UseEnemyProcessActivation {
-!ifdef Scroller_DebugMainlineBorder {
-	lda #VIC2Colour_LightRed
-	sta VIC2BorderColour
-}
-!ifdef Scroller_MultiDirection {
-	jsr EnemyProcessActivation
-}
-}
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Green
@@ -1184,6 +1177,16 @@ SkipLevelFrameLogic
 	jsr ParalaxUpdate
 }
 
+!ifdef UseEnemyProcessActivation {
+!ifdef Scroller_DebugMainlineBorder {
+	lda #VIC2Colour_LightRed
+	sta VIC2BorderColour
+}
+!ifdef Scroller_MultiDirection {
+	jsr EnemyProcessActivation
+}
+}
+
 	; When this is set, it will execute a count down timer and then exit.
 	; Very useful for triggering an end of game situation on player death.
 	lda ScrollerExitMainLineCounter
@@ -1218,79 +1221,6 @@ SpellPlayer2Counter !by 0
 frameTargetVelX		!by 0
 frameTargetVelY		!by 0
 
-!ifdef Scroller_MultiDirection {
-!ifdef RedirectHandleUserInput { } else {
-
-!zn
-HandleUserInput
-	jsr HandleJoystick
-	rts
-
-!zn
-.toggle !by 0
-HandleJoystick
-	inc .toggle
-	lda .toggle
-	cmp #3
-	beq .runMe
-	rts
-.runMe
-	lda #0
-	sta .toggle
-	; Update the velocity at which we want to travel
-	lda #%0100
-	bit CIA1KeyboardColumnJoystickA
-	bne .o1
-	inc frameTargetVelX
-.o1
-	lda #%1000
-	bit CIA1KeyboardColumnJoystickA
-	bne .o2
-	dec frameTargetVelX
-.o2
-	lda #%0001
-	bit CIA1KeyboardColumnJoystickA
-	bne .o3
-	inc frameTargetVelY
-.o3
-	lda #%0010
-	bit CIA1KeyboardColumnJoystickA
-	bne .o4
-	dec frameTargetVelY
-.o4
-	lda #%10000
-	bit CIA1KeyboardColumnJoystickA
-	bne .o5
-	lda #0
-	sta frameTargetVelY
-	sta frameTargetVelX
-.o5
-
-	; Clamp the velocity
-	lda frameTargetVelX
-	cmp #-4
-	bpl .c1
-	lda #-4
-.c1
-	cmp #5
-	bmi .c2
-	lda #4
-.c2
-	sta frameTargetVelX
-
-	lda frameTargetVelY
-	cmp #-4
-	bpl .c3
-	lda #-4
-.c3
-	cmp #5
-	bmi .c4
-	lda #4
-.c4
-	sta frameTargetVelY
-	rts
-} ;<!ifdef RedirectHandleUserInput { } else {
-}
 
 ScrollerDemo_OverrunCounter !by 0
 
@@ -1382,65 +1312,6 @@ ScrollerDemoWaitScorePanel
 	sta panelIRQDone
 	rts
 
-!ifdef Scroller_DisableUpdateSprites {} else {
-!zn
-UpdateSprites
-	; Update sprites here from the frame data. i.e. Copy them from the frame data to the interrupt data
-	; MPi: TODO: Optimisation. Don't copy the sprite data have double buffered sprite data. One for calc, one for draw.
-	ldx Multiplex_MaxSpr
-	dex
-.sp1
-!ifdef Scroller_MultiDirection {
-	lda AnimationXPosLo,x
-	clc
-	adc scrollerRealMovementXPixels
-	sta AnimationXPosLo,x
-}
-
-	lda AnimationYPos,x
-	clc
-	adc scrollerRealMovementYPixels
-
-	sta AnimationYPos,x
-	dex
-	bpl .sp1
-
-	; MPi: Enable this code to demonstrate the multiplexor coping with bunches of sprites instead of regularly spaced sprites due to sprites being created depending on the map x pos
-!if 0 {
-	; Expire a variable amount of sprites depending on the map x pos
-	lda scrollMapHX
-	cmp Multiplex_MaxSpr
-	bcc .n1
-	lda Multiplex_MaxSpr
-.n1
-	cmp #4
-	bcs .n2
-	lda #4
-.n2
-	tax
-	inx
-	lda #255
-.sp2
-	cpx Multiplex_MaxSpr
-	bcs .sp3
-	sta AnimationYPos,x
-	inx
-	jmp .sp2
-.sp3
-}
-
-!if 1 {
-	; This code cycles sprite frames to test any screen or border split with the full range of sprite frames
-	ldx Multiplex_MaxSpr
-	dex
-.sp4
-	inc AnimationSpriteFrame,x
-	dex
-	bpl .sp4
-}
-
-	rts
-} ;< !ifdef Scroller_DisableUpdateSprites {} else {
 
 !ifdef Scroller_MultiDirection {
 !source "Scroller.a"
@@ -1457,6 +1328,23 @@ UpdateSprites
 !source "TitleScreen.a"
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 !ifdef Scroller_PlaySoundMusicAndSoundEffectsDuringGame {
+
+; A lookup table that converts SEUCK SFX number to the music player envelope number
+; There are 24 SEUCK sound effects
+SEUCKToMusicSFX
+	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
+	!by 8 , 9 , $a , $b , $c , 3 , 4 , 5
+	!by 6 , 7 , 0 , 1 , 2 , 3 , 4 , 5
+; A lookup table to allow each sound effect to have a different note
+SEUCKToMusicSFXNote
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+SEUCKToMusicPriority
+	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+	!by 0 , 0 , 50 , 75 , 15 , 0 , 0 , 0
+	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+
 !source "SFXWithMusic.a"
 } else {
 !source "../SFX/SFX.a"

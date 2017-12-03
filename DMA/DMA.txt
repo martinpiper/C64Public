@@ -1,0 +1,62 @@
+XC9572XL easyflash 3
+C:\Downloads\Xilinx_ISE_DS_Win_14.7_1015_1\Xilinx_ISE_DS_Win_14.7_1015_1
+
+https://bitbucket.org/skoe/easyflash/src/ee80f932cfacd12397cd831d82e727c074ba39ef/Hardware/ef3-vhdl/src/?at=default
+http://skoe.de/easyflash/doku.php
+https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools.html
+https://www.xilinx.com/products/design-tools/vivado.html
+http://store.go4retro.com/easyflash-3/
+
+byte = 8 bits
+word = 16 bits
+
+A CPU RAM based DMA is started by writing the start CPU memory lo/hi address bytes to de00/de01
+A cart ROM based DMA is started by writing the start cartridge memory lo/hi address bytes to df00/df01 and the cart bank to df02
+
+SETSRCBANK <byte:bank>
+Sets the source DMA to use a specific bank from the cartridge
+
+SETSRCCPU
+Sets the source DMA to use the C64 memory.
+
+The destination DMA always uses the CPU memory.
+
+SETSRCADDR <word:address>
+Sets the source DMA address pointer.
+
+SETDSTADDR <word:address>
+Sets the destination DMA address.
+
+DMACOPY <byte:bytes>
+Copies bytes from source DMA address to the destination DMA address.
+The source and destination addresses are incremented after each copied byte.
+Subsequent DMACOPY instructions will use the updated source/destination addresses.
+
+ADDSRCADDRB <byte:offset>
+Adds the unsigned byte value to the source DMA address.
+
+ADDDSTADDRB <byte:offset>
+Adds the unsigned byte value to the destination DMA address.
+
+ADDSRCADDRW <word:offset>
+Adds the unsigned word value to the source DMA address.
+
+ADDDSTADDRW <word:offset>
+Adds the unsigned word value to the destination DMA address.
+
+All ADD*ADDR* operations and addresses will be 16 bits, meaning that addresses will wrap around.
+
+WRITEBYTES <byte:count> <byte:bytes...>
+Will write count bytes following the opcode directly to the destination DMA address.
+The destination DMA address will be updated with the number of bytes copied.
+
+DMAEND
+End the DMA chain and returns control back to the CPU.
+If the CPU encounters an IRQ or NMI then the DMA is paused until the IRQ/NMI returns.
+i.e. The DMA only executes when not in IRQ CPU status.
+
+
+
+TODO
+* Cart DMAs that will trigger on specific cycles and store values to the VIC regs :slightly_smiling_face:
+possibly more important that memory copy DMAs

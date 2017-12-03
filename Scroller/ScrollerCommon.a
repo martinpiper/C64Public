@@ -66,6 +66,7 @@ ScrollerFlipBank
 	; Do this first since the colour scroll can take some time
 	lda topScreenBank
 	eor #1
+ScrollerSetBank
 	sta topScreenBank
 	beq .m1
 	lda #$cf

@@ -3,6 +3,12 @@
 PlayerInventory_Max = 12
 PlayerInventory !fill PlayerInventory_Max , -1
 
+Inventory_TypeToGameAnimation
+	!by 16 , 18 , 7 , 7 , 7 , 7 , 7 , 7
+
+Inventory_TypeToSubGameAnimation
+	!by 17 , 19 , 13 , 13 , 13 , 13 , 13 , 13
+
 ; A = Item number to add
 ; Exit
 ; A = Trashed
@@ -22,6 +28,11 @@ PlayerInventory_Init
 }
 
 !zn {
+; Entry:
+; A = The type of the pickup (usually the sprite colour)
+; Exit:
+; A/X = Trashed
+; Y = Preserved
 PlayerInventory_Add
 	sta .sm1+1
 	txa

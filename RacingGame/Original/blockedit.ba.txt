@@ -1,0 +1,38 @@
+100 rem
+110 l=l+1:ifl=1thenload"turbo",8,1
+120 ifl=2thenpoke816,215:poke817,200:goto100
+130 ifl=3thenload"sprld.o",8,1
+140 ifl=4thensys49152:load"blocktable.d",8,1
+141 ifl=6thengoto100
+150 ifl=5thenload"rdob1.d",8,1
+151 ifl=8thensys49152:load"blockedit.o",8,1
+160 poke816,165:poke817,244:ifl=7thenload"chrld.o",8,1
+180 remprint"fory=0to18:forx=0to18:poke(128+y+36)*256+x,10:next:next"
+190 print"{clear}";
+200 poke56576,0:poke53281,10:poke53280,0:poke53272,18
+201 poke53282,12:poke53282,11:poke53270,216
+210 poke 49210,20:poke49209,19
+220 sys49152:bh=124*256+bk*8
+230 xo=peek(bh):yo=peek(bh+1):xw=peek(bh+2):yw=peek(bh+3):lh=peek(bh+4)
+240 rh=peek(bh+5)
+250 geta$:yw=yw+(a$="/")-(a$=";")
+251 yo=yo+(a$="{down}")-(a$="{up}")
+260 xw=xw+(a$="z")-(a$="x")
+261 xo=xo+(a$="{left}")-(a$="{right}")
+270 lh=lh+(a$="q")-(a$="w")
+280 rh=rh+(a$="o")-(a$="p")
+281 ifa$="+"thenbk=bk+1:goto220
+282 ifa$="-"thenbk=bk-1:goto220
+283 ifyo<0thenyo=0
+284 ifxw<0thenxw=0
+285 ifxo<0thenxo=0
+286 iflh<0thenlh=0
+287 ifrh<0thenrh=0
+288 ifa$="_"thenfort=0to7:pokebh+8+t,peek(bh+t):next
+289 ifyw<0thenyw=0
+290 poke bh+2,xw:pokebh+3,yw:pokebh+4,lh:pokebh+5,yh
+300 poke bh,xo:pokebh+1,yo
+310 poke 49212,xo:poke49211,yo:poke49207,xw:poke49208,yw
+320 ifa$="{f1}"orfl=0thenhm=lh:fl=0
+330 ifa$="{f7}"orfl=1thenhm=rh:fl=1
+340 poke 40213,hm:sys49152:goto230
