@@ -25,6 +25,9 @@
     <Filter Include="Original">
       <UniqueIdentifier>{1d726d1c-2b63-4a2d-859c-a3f351cfab26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Data">
+      <UniqueIdentifier>{0de52fdc-1ce8-49a4-a90a-9e0b835a95cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -113,9 +116,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="RacingGameEntry.a">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="asm\TrackDraw.a">
       <Filter>Source Files\asm</Filter>
     </None>
@@ -141,5 +141,21 @@
     <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
       <Filter>Source Files\Multiplexor</Filter>
     </None>
+    <None Include="Data\RoadWidthByRows.a">
+      <Filter>Data</Filter>
+    </None>
+    <None Include="Data\RoadYPosByRows.a">
+      <Filter>Data</Filter>
+    </None>
+    <None Include="asm\TrackDraw_EdgeLeft.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="asm\TrackDraw_EdgeRight.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="asm\TrackDraw_EdgeCommon.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="RacingGameEntry.a" />
   </ItemGroup>
 </Project>

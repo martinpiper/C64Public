@@ -92,7 +92,12 @@
     <None Include="..\stdlib\PETSCII.a" />
     <None Include="..\stdlib\stdlib.a" />
     <None Include="asm\TrackDraw.a" />
+    <None Include="asm\TrackDraw_EdgeCommon.a" />
+    <None Include="asm\TrackDraw_EdgeLeft.a" />
+    <None Include="asm\TrackDraw_EdgeRight.a" />
     <None Include="BuildIt.bat" />
+    <None Include="Data\RoadWidthByRows.a" />
+    <None Include="Data\RoadYPosByRows.a" />
     <None Include="RacingGameEntry.a" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

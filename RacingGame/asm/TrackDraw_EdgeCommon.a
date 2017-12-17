@@ -1,0 +1,585 @@
+!zn
+!macro TrackDraw_SmoothEdge .offset , .direction , .xPosLeft , .xPosLeftNext {
+	ldx #0
+
+.l1
+	lda TrackRendered_ScrLo,x
+	sta TrackDraw_ZP_ScreenLoHi
+	lda TrackRendered_ScrHi,x
+	sta TrackDraw_ZP_ScreenLoHi+1
+
+	lda .xPosLeft,x
+	cmp .xPosLeftNext,x
+	beq .lsameX
+!if .direction < 0 {
+	bmi .lleftToRight
+} else {
+	bpl .lleftToRight
+}
+
+	tay
+!if .direction < 0 {
+	dey
+} else {
+;	iny
+}
+	; Right to Left
+	sec
+	sbc .xPosLeftNext,x
+
+	cmp #1		* (-.direction)
+	bne .not1
+
+	+MTrackDraw_EdgeChar 6		+ .offset
+
+	jmp .nextRow
+
+.lsameX jmp .sameX
+.lleftToRight jmp .leftToRight
+
+.not1
+
+	cmp #2		* (-.direction)
+	bne .not2
+
+	+MTrackDraw_EdgeChar 8		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 7		+ .offset
+	jmp .nextRow
+
+.not2
+
+	cmp #3		* (-.direction)
+	bne .not3
+
+	+MTrackDraw_EdgeChar 14		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 12		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 9		+ .offset
+	jmp .nextRow
+
+.not3
+
+	cmp #4		* (-.direction)
+	bne .not4
+
+	+MTrackDraw_EdgeChar 15		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 13		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 11		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 9		+ .offset
+	jmp .nextRow
+
+.not4
+
+	cmp #5		* (-.direction)
+	bne .not5
+
+	+MTrackDraw_EdgeChar 15		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 14		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 12		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 9		+ .offset
+	jmp .nextRow
+
+.not5
+
+	cmp #6		* (-.direction)
+	bne .not6
+
+	+MTrackDraw_EdgeChar 15		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 14		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 13		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 11		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 9		+ .offset
+	jmp .nextRow
+
+.not6
+
+	+MTrackDraw_EdgeChar 15		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 14		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 13		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 12		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 11		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeChar 9		+ .offset
+	jmp .nextRow
+
+
+.leftToRight
+
+	ldy .xPosLeftNext,x
+!if .direction < 0 {
+	dey
+} else {
+;	iny
+}
+
+	lda .xPosLeft,x
+	sec
+	sbc .xPosLeftNext,x
+
+	cmp #-1		* (-.direction)
+	bne .notn1
+
+	+MTrackDraw_EdgeCharInside 6	+10		+ .offset
+
+	jmp .nextRow
+
+.notn1
+
+
+
+	cmp #-2		* (-.direction)
+	bne .notn2
+
+	+MTrackDraw_EdgeCharInside 8	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 7	+10		+ .offset
+	jmp .nextRow
+
+.notn2
+
+	cmp #-3		* (-.direction)
+	bne .notn3
+
+	+MTrackDraw_EdgeCharInside 14	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 12	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
+	jmp .nextRow
+
+.notn3
+
+	cmp #-4		* (-.direction)
+	bne .notn4
+
+	+MTrackDraw_EdgeCharInside 15	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 13	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 11	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
+	jmp .nextRow
+
+.notn4
+
+	cmp #-5		* (-.direction)
+	bne .notn5
+
+	+MTrackDraw_EdgeCharInside 15	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 14	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 12	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 10	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
+	jmp .nextRow
+
+.notn5
+
+	cmp #-6		* (-.direction)
+	bne .notn6
+
+	+MTrackDraw_EdgeCharInside 15	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 14	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 13	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 11	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 10	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
+	jmp .nextRow
+
+.notn6
+
+	+MTrackDraw_EdgeCharInside 15	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 14	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 13	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 12	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 11	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 10	+10		+ .offset
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
+	jmp .nextRow
+
+
+
+
+.sameX
+	sta .smxpos+1
+	; Count how many lines are the same
+	ldy #1
+.sx1
+	iny
+	cpy #6
+	beq .maxsx1
+	inx
+	cpx TrackRendered_Row
+	beq .maxsx1
+	lda .smxpos+1
+	cmp .xPosLeftNext,x
+	beq .sx1
+.maxsx1
+	lda .smxpos+1
+	cmp .xPosLeftNext,x
+
+!if .direction < 0 {
+	bmi .sxnegative
+} else {
+	bpl .sxnegative
+}
+	jmp .sxpositive
+.sxnegative
+
+	tya
+	ldy .smxpos+1
+
+!if .direction < 0 {
+;	dey
+} else {
+	dey
+}
+
+	cmp #2
+	bne .notsxn2
+
+	+MTrackDraw_EdgeCharInside 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
+
+	jmp .nextRow
+.notsxn2
+
+	cmp #3
+	bne .notsxn3
+
+	+MTrackDraw_EdgeCharInside 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
+
+	jmp .nextRow
+.notsxn3
+
+	cmp #4
+	bne .notsxn4
+
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
+
+	jmp .nextRow
+.notsxn4
+
+	cmp #5
+	bne .notsxn5
+
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
+
+	jmp .nextRow
+.notsxn5
+
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeCharInside 5		+ .offset
+
+	jmp .nextRow
+
+.sxpositive
+	tya
+.smxpos	ldy #0
+!if .direction < 0 {
+	dey
+} else {
+;	iny
+}
+
+	cmp #2
+	bne .notsx2
+
+	+MTrackDraw_EdgeChar 2		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 4		+ .offset
+
+	jmp .nextRow
+.notsx2
+
+	cmp #3
+	bne .notsx3
+
+	+MTrackDraw_EdgeChar 2		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 4		+ .offset
+
+	jmp .nextRow
+.notsx3
+
+	cmp #4
+	bne .notsx4
+
+	+MTrackDraw_EdgeChar 2		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 5		+ .offset
+
+	jmp .nextRow
+.notsx4
+
+	cmp #5
+	bne .notsx5
+
+	+MTrackDraw_EdgeChar 2		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 4		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 5		+ .offset
+
+	jmp .nextRow
+.notsx5
+
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+	jsr TrackDraw_AdvanceRow
+	+MTrackDraw_EdgeChar 3		+ .offset
+
+.nextRow
+	inx
+	cpx TrackRendered_Row
+	bcs .ret
+	jmp .l1
+.ret
+	rts
+}

@@ -32,17 +32,22 @@ scorePanelPos1 = VIC2SpriteYBorderTop + (20*8)
 
 !source "..\SpriteMultiplexor\SpriteMultiplexorVars.a"
 
+!source "asm\TrackDraw_EdgeCommon.a"
+
 Multiplex_EnableEarlyOut = 1
 Multiplex_BunchingCheck = 1
 
 ;DebugMainlineBorder = 1
 ;Multiplexor_DebugBorder = 1
 
-;Debug_ForceTrackStateRender=$ca	; Hill crest and valley
 ;Debug_ForceTrackStateRender=$2c		; Straight road
+;Debug_ForceTrackStateRender=$4a		; Right corner
+;Debug_ForceTrackStateRender=$ca		; Hill crest and valley
+;Debug_ForceTrackStateRender=$ec			; Hill
 
 ; Zero page variables
-foo	= Multiplex_endVars+$00
+TrackDraw_ZP_TrackLoHi		= Multiplex_endVars+$00
+TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
 
 
 *=$400
@@ -68,6 +73,7 @@ foo	= Multiplex_endVars+$00
 	lda #0		; Right steer (road to the left)
 	lda #100	; Left steer (road to the right)
 	lda #90
+	lda #50		; Middle
 	sta skd
 
 	lda #Debug_ForceTrackStateRender
@@ -99,6 +105,12 @@ foo	= Multiplex_endVars+$00
 	inc VIC2BorderColour
 	jsr TrackDraw_chars
 	inc VIC2BorderColour
+	jsr TrackDraw_SmoothEdgeFixup
+	inc VIC2BorderColour
+	jsr TrackDraw_SmoothEdgeLeft
+	inc VIC2BorderColour
+	jsr TrackDraw_SmoothEdgeRight
+	inc VIC2BorderColour
 	lda #0
 	sta topScreenBank
 	jsr TrackDraw_colours
@@ -125,6 +137,24 @@ foo	= Multiplex_endVars+$00
 }
 	jsr TrackDraw_chars
 
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Purple
+	sta VIC2BorderColour
+}
+
+	jsr TrackDraw_SmoothEdgeFixup
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+
+	jsr TrackDraw_SmoothEdgeLeft
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+	jsr TrackDraw_SmoothEdgeRight
 
 !ifdef DebugMainlineBorder {
 	lda #VIC2Colour_Black
@@ -161,6 +191,8 @@ foo	= Multiplex_endVars+$00
 	sta VIC2BorderColour
 }
 	jmp .l1
+
+!source "FingerPrint.a"
 
 BankToAddrDisplay		!by $c0 , $c4
 BankToAddrOffscreen		!by $c4 , $c0
@@ -229,11 +261,11 @@ init
 	ldx #0
 	ldy #1
 	+MSetCharacter 0	, 100	, 50	, VIC2Colour_White
-	+MSetCharacter 6	, 50	, 60	, VIC2Colour_Green
-	+MSetCharacter 12	, 150	, 90	, VIC2Colour_Brown
-	+MSetCharacter 18	, 200	, 140	, VIC2Colour_Yellow
-	+MSetCharacter 24	, 100	, 170	, VIC2Colour_Blue
-	+MSetCharacter 30	, 230	, 190	, VIC2Colour_Red
+;	+MSetCharacter 6	, 50	, 60	, VIC2Colour_Green
+;	+MSetCharacter 12	, 150	, 90	, VIC2Colour_Brown
+;	+MSetCharacter 18	, 200	, 140	, VIC2Colour_Yellow
+;	+MSetCharacter 24	, 100	, 170	, VIC2Colour_Blue
+;	+MSetCharacter 30	, 230	, 190	, VIC2Colour_Red
 
 	lda GameScreenBGCol0
 	sta VIC2ScreenColour
@@ -268,7 +300,11 @@ GameScreenBGCol2
 
 *=$4000
 Data_trackconfig2 = *
-!bin "Original/trackconfig2.d.prg" ,,  2
+!source "Data/RoadYPosByRows.a"
+
+*=$4800
+!source "Data/RoadWidthByRows.a"
+
 *=$5000
 Data_trackoft = *
 !bin "Original/trackoft.d.prg" ,,  2

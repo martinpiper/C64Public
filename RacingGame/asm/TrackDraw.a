@@ -68,7 +68,7 @@ lpose !by 0
 rpose !by 0
 skd !by 50
 trckoft !by 21
-trckoft2 !by 64
+trckoft2 !by 0
 ancnt1 !by 0
 ancnt2 !by 70
 ytrack !by 0
@@ -85,7 +85,103 @@ lsty !by 0
 yfl !by 0
 
 
-; MPi: TODO: This takes mroe than a frame
+TrackRendered_Row			!by 0
+TrackRendered_PreviousRow	!by -1
+
+TrackRendered_Index			!fill 25
+TrackRendered_IndexNext		!fill 25
+TrackRendered_YPos			!fill 25
+TrackRendered_XPosLeft		!fill 25
+TrackRendered_XPosRight		!fill 25
+TrackRendered_XPosLeftNext	!fill 25
+TrackRendered_XPosRightNext	!fill 25
+TrackRendered_ScrLo			!fill 25
+TrackRendered_ScrHi			!fill 25
+
+!zn
+!macro MTrackDraw_EdgeChar .char {
+	cpy #40
+	bcs .nextChar
+	lda (TrackDraw_ZP_ScreenLoHi),y
+	bne .nextChar
+	lda #.char
+	sta (TrackDraw_ZP_ScreenLoHi),y
+.nextChar
+}
+
+!macro MTrackDraw_EdgeCharInside .char {
+	cpy #40
+	bcs .nextChar
+	lda (TrackDraw_ZP_ScreenLoHi),y
+	cmp #2
+	bcs .nextChar
+	lda #.char
+	sta (TrackDraw_ZP_ScreenLoHi),y
+.nextChar
+}
+
+TrackDraw_AdvanceRow
+	lda TrackDraw_ZP_ScreenLoHi
+	clc
+	adc #40
+	sta TrackDraw_ZP_ScreenLoHi
+	bcc .tdar1
+	inc TrackDraw_ZP_ScreenLoHi+1
+.tdar1
+	rts
+
+!zn
+TrackDraw_SmoothEdgeFixup
+	ldx #0
+
+.l1
+	lda TrackRendered_IndexNext,x
+	bpl .gotNext
+
+.calculateNextRow
+	; Start from the current position
+	ldy TrackRendered_Index,x
+	lda ypost,y
+
+.l2
+	cpy #35
+	beq .gotNextY
+	cmp ypost,y
+	bne .gotNextY
+	iny
+	jmp .l2
+
+.gotNextY
+	; Calculate the next positions
+	lda #19
+	sec
+	sbc xwidt,y
+	clc
+	adc toftt,y
+	sta TrackRendered_XPosLeftNext,x
+
+	lda #21
+	clc
+	adc xwidt,y
+	clc
+	adc toftt,y
+	sta TrackRendered_XPosRightNext,x
+
+.gotNext
+	inx
+	cpx TrackRendered_Row
+	beq .ret
+	jmp .l1
+.ret
+	rts
+
+
+!source "asm/TrackDraw_EdgeLeft.a"
+!source "asm/TrackDraw_EdgeRight.a"
+
+!zn
+
+; MPi: TODO: This takes more than a frame
 ; This is an exceptionally good candidate for speed code in cart banks
 TrackDraw_colours
 	lda topScreenBank
@@ -155,6 +251,11 @@ TrackDraw_chars
 	lda BankToAddrOffscreen,x
 	sta .sm1+1
 
+	lda #0
+	sta TrackRendered_Row
+	lda #-1
+	sta TrackRendered_PreviousRow
+
 	ldx #24
 .up1
 	lda hisc_off,x
@@ -167,11 +268,11 @@ TrackDraw_chars
 	lda hiscrtr,x
 	clc
 	adc #(>Data_trackconfig2)-4
-	sta $d4
+	sta TrackDraw_ZP_TrackLoHi+1
 	lda loscr,x
-	sta $d3
+	sta TrackDraw_ZP_TrackLoHi
 	ldy #37
-	lda ($d3),y
+	lda (TrackDraw_ZP_TrackLoHi),y
 	tax
 	asl
 	asl
@@ -194,19 +295,19 @@ l5y	sta $c000,y
 
 	ldy #39
 l5
-	lda ($d3),y
+	lda (TrackDraw_ZP_TrackLoHi),y
 	sta ypost,y
 	dey
 	bpl l5
-	lda $d4
+	lda TrackDraw_ZP_TrackLoHi+1
 	clc
 	adc #8
-	sta $d4
+	sta TrackDraw_ZP_TrackLoHi+1
 	lda #255
 	sta lsty
 	ldy #39
 l6
-	lda ($d3),y
+	lda (TrackDraw_ZP_TrackLoHi),y
 	sta xwidt,y
 	dey
 	bpl l6
@@ -231,25 +332,35 @@ l7
 	sta ymax
 .notNearCrest
 
-	ldx ypost,y
-	cpx lsty
+	lda ypost,y
+	cmp lsty
 	bne l10lo
 	jmp l10
+
+.ll10
+	lda #-1
+	sta TrackRendered_PreviousRow
+	jmp l10
+
 l10lo
 	; Row index >= any crest? Then skip the y pos check
 	cpy ypost+38
 	bcs l10a
 
 	; Row y pos >= crest? Then skip drawing the row
-	lda ypost,y
 	cmp ymax
-	bcs l10
+	bcs .ll10
 l10a
+	ldx TrackRendered_Row
+	sta TrackRendered_YPos,x
+
+	tax
 	stx lsty
+
 	lda loscr,x
-	sta $d5
+	sta TrackDraw_ZP_ScreenLoHi
 	lda hiscr,x
-	sta $d6
+	sta TrackDraw_ZP_ScreenLoHi+1
 ;	cpx #20
 ;	bcs l10
 	lda #19
@@ -258,46 +369,77 @@ l10a
 	clc
 	adc toftt,y
 	sta lpos
+
+	ldx TrackRendered_Row
+	sta TrackRendered_XPosLeft,x
+
+	; Store the row index
+	tya
+	sta TrackRendered_Index,x
+
 	lda #21
 	clc
 	adc xwidt,y
 	clc
 	adc toftt,y
 	sta rpos
-	lda $d5
-	sta l9p+1
-	lda $d6
-	sta l9p+2
+
+	sta TrackRendered_XPosRight,x
+	inc TrackRendered_Row
+
+	lda TrackDraw_ZP_ScreenLoHi
+	sta TrackRendered_ScrLo,x
+	lda TrackDraw_ZP_ScreenLoHi+1
+	sta TrackRendered_ScrHi,x
+
+	lda #-1
+	sta TrackRendered_IndexNext,x
+
+	ldy TrackRendered_PreviousRow
+	bmi .noValidPrevious
+
+	; Update any next values from the previous row
+	lda TrackRendered_XPosRight,x
+	sta TrackRendered_XPosRightNext,y
+	lda TrackRendered_XPosLeft,x
+	sta TrackRendered_XPosLeftNext,y
+
+	txa
+	sta TrackRendered_IndexNext,y
+
+.noValidPrevious
+
+	stx TrackRendered_PreviousRow
+
+	; Clear the current line and draw the road span all in one go
 	lda #0
 	ldy #39
-l9p	sta $c000,y
-	dey
-	bpl l9p
-	lda rpos
-	cmp #40
-	bcs l9
-	ldy rpos
-	lda #16
-	sta ($d5),y
-l9
-	ldy lpos
-	cpy #40
-	bcs l11b
-	lda #5
-	sta ($d5),y
-l11b	lda #1
-l11
-	ldy lpos
-	iny
-l12
-	cpy #40
-	bcs l13
-	sta ($d5),y
-l13
-	iny
+.rsl1
 	cpy rpos
-	bne l12
-	jsr smoothedge
+	bmi .doRoad1
+	sta (TrackDraw_ZP_ScreenLoHi),y
+	dey
+	bpl .rsl1
+	jmp l10
+
+.doRoad1
+	lda #1
+.rsl2
+	cpy lpos
+	bmi .doGround1
+	sta (TrackDraw_ZP_ScreenLoHi),y
+	dey
+	bpl .rsl2
+	jmp l10
+
+.doGround1
+	lda #0
+.rsl3
+	sta (TrackDraw_ZP_ScreenLoHi),y
+	dey
+	bpl .rsl3
+
+	
 l10
 	ldy yfl
 	jsr objsprint
@@ -661,148 +803,4 @@ ad2
 	sta objhorizr
 	inc sidel
 	inc trckoft2
-	rts
-
-
-downsmooth
-	jmp rightseu
-smoothedge
-	ldy yfl
-	cpy #32
-	bne sed1
-	ldy #28
-	lda ypost+28
-	cmp ypost+24
-	jmp se2
-sed1
-	lda ypost,y
-se1
-	cmp ypost,y
-	bne se2
-	iny
-	cpy #36
-	bcc se1
-	dey
-	cmp ypost,y
-se2
-	bcs downsmooth
-
-	lda #1
-upsmooth
-	lda #19
-	sec
-	sbc xwidt,y
-	clc
-	adc toftt,y
-	sta lpose
-	lda #21
-	clc
-	adc xwidt,y
-	clc
-	adc toftt,y
-	sta rpose
-	lda lpos
-	cmp lpose
-	bne lddownz
-	jmp lddown
-lddownz
-	bcc ldleftz
-
-	jmp ldleft
-ldleftz
-
-	lda lpose
-	sec
-	sbc lpos
-	cmp #1
-	beq ldr1
-	cmp #2
-	beq ldr2
-	cmp #3
-	beq ldr3
-	cmp #4
-	beq ldr4
-	cmp #5
-	bcs ldr5
-ldr1
-	lda #$14
-	ldy lpos
-	cpy #40
-	bcs ldr1a
-	sta ($d5),y
-ldr1a
-	jmp rightseu
-ldr2
-	lda #$15
-	ldy lpos
-	cpy #40
-	bcs ldr2a
-	sta ($d5),y
-ldr2a
-	iny
-	cpy #40
-	bcs ldr1a
-	lda #$16
-	sta ($d5),y
-	jmp rightseu
-ldr3
-	lda #$34
-	ldy lpos
-	cpy #40
-	bcs ldr3a
-	sta ($d5),y
-ldr3a
-	iny
-	cpy #40
-	bcs ldr3b
-	lda #$35
-	sta ($d5),y
-ldr3b
-	lda #$36
-	iny
-	cpy #40
-	bcs ldr3c
-	sta ($d5),y
-ldr3c
-	jmp rightseu
-ldr4
-	lda #$3b
-	ldy lpos
-	cpy #40
-	bcs ldr4a
-	sta ($d5),y
-ldr4a
-	iny
-	cpy #40
-	bcs ldr4b
-	lda #$3c
-	sta ($d5),y
-ldr4b
-	lda #$3d
-	iny
-	cpy #40
-	bcs ldr4c
-	sta ($d5),y
-ldr4c
-	iny
-	cpy #40
-	bcs ldr4d
-	lda #$3e
-	sta ($d5),y
-ldr4d
-	jmp rightseu
-ldr5
-	jmp rightseu
-lddowna
-	jmp rightseu
-lddown
-	ldy lpos
-	cpy #40
-	bcs lddowna
-	lda #4
-	sta ($d5),y
-ldleft
-	jmp rightseu
-rightseu
-	lda #0
 	rts

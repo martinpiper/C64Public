@@ -35,3 +35,21 @@ When a far road row is being drawn below the near horizon the ymax can be the ne
 		i.e. Then after the near horizon position is drawn the ymax is is set to be the screen height again.
 	* TODO: Below mentioned ymax optimisation available here, set ymax to max height
 	* Use Debug_ForceTrackStateRender=X to render a certain track type
+
+
+
+* Clear the current line and draw the road span all in one go
+
+
+
+* Done - ; MPi: TODO: Needs to forward scan for the next row and calculate fixup values and store them back for the right edge render
+	Done - Last column in the screen at $4800 should be 'S' not 'R' not fix the last line perspective
+	* Done - Need to convert these data files into included data statements in source files
+* Separated TrackDraw_SmoothEdgeFixup from TrackDraw_SmoothEdgeLeft
+	* .leftToRight	; Done
+	* .sameX			; Done
+
+
+
+* Right hand edge
+	Take the code for the left edge, make it a macro and input the relevant left/right edge tables plus the character offset and the iny/dey parts will need handling
