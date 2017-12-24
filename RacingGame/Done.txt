@@ -49,7 +49,78 @@ When a far road row is being drawn below the near horizon the ymax can be the ne
 	* .leftToRight	; Done
 	* .sameX			; Done
 
+* Track side smoothing (TrackDraw.a:smoothedge) needs vast improvement
+	* smoothedge currently seems to calculate a gradient based on the current rendered row index in yfl and to the next different row Y pos
+	* Perhaps an improvement would be to take the row index in yfl and look ahead 4 rows and calculate a gradient based on that
+	* Since the background is char 0 then first render the road and the objects, minus the smooth edge
+	* For each screen row store the left an right calculated rendered values and the row index in the first pass
+	* Then as a second pass after the road plus objects have been drawn use the first pass data to draw the smooth edges
+		* This will need a char 0 check to avoid draing over the objects etc
+	* This will save calculating the positions and indexes twice
+	* Added:
+		TrackRendered_Row			!by 0
+		TrackRendered_Index			!fill 25
+		TrackRendered_YPos			!fill 25
+		TrackRendered_XPosLeft		!fill 25
+		TrackRendered_XPosRight		!fill 25
+		TrackRendered_ScrLo			!fill 25
+		TrackRendered_ScrHi			!fill 25
+
+	* Added:
+		TrackRendered_PreviousRow
+		TrackRendered_IndexNext
+		TrackRendered_XPos[Left/Right]Next
+	* Info:
+		After rendering this is the number of entries in the below tables
+		TrackRendered_YPos			Y Position on the screen for this rendered line
+		TrackRendered_Index			Index of the line that is rendered
+		TrackRendered_IndexNext		For the above index the next line index. If it is -1 then no next line was rendered for this position
+									Then some extra searching downwards will be needed to get the position delta
+		TrackRendered_ScrLo/Hi		Screen address for this rendered line
+		TrackRendered_XPosLeft		Left position
+		TrackRendered_XPosLeftNext	Left position next
+		TrackRendered_XPosRight		As above, but for right
+		TrackRendered_XPosRightNext	Ditto
+
+	* Graphics\Level1.ctm has some example left side road slopes on the bottom row
+		Use these and draw slopes using the calculated edge data
+		Quite successful with the rendering implemented so far!
 
 
 * Right hand edge
 	Take the code for the left edge, make it a macro and input the relevant left/right edge tables plus the character offset and the iny/dey parts will need handling
+
+
+
+* The track side object table at $7c00 should be stored differently to allow easier offset into the data structure
+	* Done - Vertically instead of horizontally would be easier to work with
+	* Done - Storing the data in packed format would save a lot of memory
+		Complete implementation of packed blockplot using RoadObject_dataLo/Hi
+		Then shift RoadObject_data to $8000 instead of $b000
+	Now the road side object data size is $584 compared to $1500 bytes
+
+
+
+
+* Add horizon graphics from char 60 in 4x3 block
+	* HorizonDraw to use ymax and ypost
+
+
+
+* Add pause/quit handling
+
+
+
+* Investigate Debug_ForceTrackStateRender=$c7 it isn't rendering the smooth edge, probably something to do with the edge trace not finding the right gradient?
+	trckoft = $1c
+	The x register was advancing 1 too far in .sameX, so added .endRow
+
+
+
+
+* Investigate Debug_ForceTrackStateRender=$4a to handle segments like:	**			**
+																		**			**
+																		****		*****
+																		******		*******
+	* This would need some extra logic to stop the vertical draw one row earlier, if the gap is more than 1 char, to allow the horizontal smoothing to take over
+	* Changed the edge overdraw test a little and where it's used

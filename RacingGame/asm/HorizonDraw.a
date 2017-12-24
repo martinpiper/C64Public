@@ -1,0 +1,72 @@
+!zn
+
+; The horizon X position is shifted by this to give some "sub-pixel" accuracy to the scroll speed while moving around corners
+HorizonXPostion_shift = 4
+HorizonXPostion !by 0
+
+Horizon_startChar = 60
+
+.scrolledBlock
+!fill 3*4
+
+!macro HorizonDraw_setColumn .scrolledBlock , .char {
+	lda #.char
+	sta .scrolledBlock,y
+	lda #.char+4
+	sta .scrolledBlock+4,y
+	lda #.char+4+4
+	sta .scrolledBlock+4+4,y
+}
+
+!macro HorizonDraw_advanceColumn {
+	iny
+	tya
+	and #3
+	tay
+}
+
+!macro HorizonDraw_line .scrolledBlock , .line {
+	lda ypost
+	sec
+	sbc #.line
+	cmp ymax
+	bcc .dl1
+
+	rts
+
+.dl1
+	tax
+	lda loscr,x
+	sta TrackDraw_ZP_ScreenLoHi
+	lda hiscr,x
+	sta TrackDraw_ZP_ScreenLoHi+1
+
+	ldy #0
+	!for .x , 40 {
+	lda .scrolledBlock + ((3-.line)*4) + ((.x-1) & 3)
+	sta (TrackDraw_ZP_ScreenLoHi),y
+	iny
+}
+}
+
+HorizonDraw
+	lda HorizonXPostion
+!for .x , HorizonXPostion_shift {
+	lsr
+}
+	and #3
+	tay
+
+	+HorizonDraw_setColumn .scrolledBlock , 60
+	+HorizonDraw_advanceColumn
+	+HorizonDraw_setColumn .scrolledBlock , 61
+	+HorizonDraw_advanceColumn
+	+HorizonDraw_setColumn .scrolledBlock , 62
+	+HorizonDraw_advanceColumn
+	+HorizonDraw_setColumn .scrolledBlock , 63
+
+	+HorizonDraw_line .scrolledBlock , 1
+	+HorizonDraw_line .scrolledBlock , 2
+	+HorizonDraw_line .scrolledBlock , 3
+
+	rts

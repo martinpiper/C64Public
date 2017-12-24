@@ -1,0 +1,47 @@
+RoadObject_dataLo	= Data_blocktable + (RoadObject_Max * 0)
+RoadObject_dataHi	= Data_blocktable + (RoadObject_Max * 1)
+RoadObject_width	= Data_blocktable + (RoadObject_Max * 2)
+RoadObject_height	= Data_blocktable + (RoadObject_Max * 3)
+RoadObject_hotLeft	= Data_blocktable + (RoadObject_Max * 4)
+RoadObject_hotRight	= Data_blocktable + (RoadObject_Max * 5)
+
+!macro RoadObject .xpos , .ypos , .width , .height , .hotLeft , .hotRight {
+
+!if (.width * .height) >= 256 {
+	; Not needed, since blockplot does a "adc xwid" for blps1+1/2
+;	!error "Road side objects cannot be more than 256 characters big"
+}
+
+* = RoadObject_width + RoadObject_index
+	!by .width
+
+* = RoadObject_height + RoadObject_index
+	!by .height
+
+* = RoadObject_hotLeft + RoadObject_index
+	!by .hotLeft
+
+* = RoadObject_hotRight + RoadObject_index
+	!by .hotRight
+
+* = RoadObject_dataLo + RoadObject_index
+	!by <RoadObject_data
+
+* = RoadObject_dataHi + RoadObject_index
+	!by >RoadObject_data
+
+* = RoadObject_data
+	!for .y , .height {
+		!bin "Graphics/Level1.ctm" , .width , $91c  + ((((.ypos + .y - 1) * $100) + .xpos) * 2), 2
+	}
+
+
+	; Update the index and address for the next object
+	!set RoadObject_index = RoadObject_index + 1
+
+	!set RoadObject_data = RoadObject_data + (.width * .height)
+}
+
+!set RoadObject_index = 0
+
+!set RoadObject_data = $8100

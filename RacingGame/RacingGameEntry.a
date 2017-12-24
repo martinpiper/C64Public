@@ -40,19 +40,24 @@ Multiplex_BunchingCheck = 1
 ;DebugMainlineBorder = 1
 ;Multiplexor_DebugBorder = 1
 
+;Debug_ForceTrackStateRender=$c7		; *Hill crest and valley
 ;Debug_ForceTrackStateRender=$2c		; Straight road
-;Debug_ForceTrackStateRender=$4a		; Right corner
-;Debug_ForceTrackStateRender=$ca		; Hill crest and valley
-;Debug_ForceTrackStateRender=$ec			; Hill
+;Debug_ForceTrackStateRender=$4a		; *Right corner
+;Debug_ForceTrackStateRender=$ca		; Hill crest and valley again
+;Debug_ForceTrackStateRender=$ec		; Hill
 
 ; Zero page variables
 TrackDraw_ZP_TrackLoHi		= Multiplex_endVars+$00
 TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
 
+RoadObject_Max = 128
+
 
 *=$400
-	lda #ProcessorPortDefault
+GameStart
+	lda #ProcessorPortKERNALWithIO
 	jsr InitialiseMachine
+	jsr UnpauseAndSetVolume
 
 	lda #Multiplex_items
 	sta Multiplex_MaxSpr
@@ -103,6 +108,8 @@ TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
 	sta topScreenBank
 	jsr TrackDraw_offscreen
 	inc VIC2BorderColour
+	jsr TrackDraw_setup
+	inc VIC2BorderColour
 	jsr TrackDraw_chars
 	inc VIC2BorderColour
 	jsr TrackDraw_SmoothEdgeFixup
@@ -123,13 +130,124 @@ TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
 
 	cli
 
+	jmp .l1
+
+; If this is already at 0 then don't count down and don't exit.
+; If this is > 0 then count down and if the count reaches zero then exit the mainline loop.
+ScrollerExitMainLineCounter !by 0
+MainlineIsPaused !by 0
+
+.pauseKeyPressed !by 0
+.quitKeyPressed !by 0
+.scannedKeys !by 0
+.rsReleasetoggle !by 0
+
 .l1
+
+	; Pause and quit key check
+	; MPi: TODO: Consider tidying this into a couple of functions
+.lk1
+	lda #0
+	sta .pauseKeyPressed
+	sta .quitKeyPressed
+	sta CIA1KeyboardColumnJoystickA
+	lda CIA1KeyboardRowsJoystickB
+	cmp #$ff
+	beq .noKey
+
+	; Prime what part of the keyboard to read
+	lda #%01111111
+	sta CIA1KeyboardColumnJoystickA
+.again
+	lda CIA1KeyboardRowsJoystickB
+	cmp CIA1KeyboardRowsJoystickB
+	bne .again
+	cmp #$ff
+	beq .noKey
+	sta .scannedKeys
+	lda #%10000000
+	bit .scannedKeys
+	bne .notRunStop
+	lda #1
+	sta .pauseKeyPressed
+.notRunStop
+	lda #%01000000
+	bit .scannedKeys
+	bne .noKey
+	lda #1
+	sta .quitKeyPressed
+.noKey
+
+	; Reset the port read
+	lda #%01111111
+	sta CIA1KeyboardColumnJoystickA
+
+	; Check for the fire buttons unpausing
+	lda MainlineIsPaused
+	beq .overFire
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	beq .fireUnpause
+	bit CIA1KeyboardRowsJoystickB
+	beq .fireUnpause
+	jmp .overFire
+.fireUnpause
+	jsr UnpauseAndSetVolume
+.overFire
+
+	; Check for an errant NMI being generated (like the restore key) and quit if needed.
+	lda NMINotTimerGenerated
+	bne .retFromGame
+
+	; Now process the key toggle pressing
+	lda .pauseKeyPressed
+	beq .notPressedRS
+	lda .rsReleasetoggle
+	bne .overRSTest
+	lda #1
+	sta .rsReleasetoggle
+	eor MainlineIsPaused
+	sta MainlineIsPaused
+	bne .overRSTest
+.fireUnpause2
+	jsr UnpauseAndSetVolume
+	jmp .overRSTest
+.notPressedRS
+	lda #0
+	sta .rsReleasetoggle
+.overRSTest
+
+	; Now check the pause status
+	lda MainlineIsPaused
+	beq .notPaused
+	lda .quitKeyPressed
+	beq .notPressedQ
+	; Quit, yes this is really it
+.retFromGame
+	; TODO
+	jmp GameStart
+	rts
+.notPressedQ
+	lda #0
+	sta SIDVolumeFilter
+	jmp .l1
+.notPaused
+
+
+
 
 !ifdef DebugMainlineBorder {
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
 	jsr TrackDraw_offscreen
+	jsr TrackDraw_setup
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+	jsr HorizonDraw
 
 !ifdef DebugMainlineBorder {
 	lda #VIC2Colour_Cyan
@@ -192,6 +310,13 @@ TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
 }
 	jmp .l1
 
+UnpauseAndSetVolume
+	lda #15
+	sta SIDVolumeFilter
+	lda #0
+	sta MainlineIsPaused
+	rts
+
 !source "FingerPrint.a"
 
 BankToAddrDisplay		!by $c0 , $c4
@@ -211,31 +336,6 @@ BankToAddrOffscreen		!by $c4 , $c0
 	sta Multiplex_Colour + .sprite
 }
 
-!macro MSetFrame .oft , .frame , .frameSpeed , .speed {
-	dec .frameSpeed
-	bne .over
-	lda #.speed
-	sta .frameSpeed
-
-	lda .frame
-	clc
-	adc #6
-	cmp #24
-	bne .l1
-	lda #0
-.l1
-	sta .frame
-	tax
-	ldy #0
-.l2
-	lda SpriteIndices,x
-	sta Multiplex_SpriteFrame + .oft,y
-	inx
-	iny
-	cpy #6
-	bne .l2
-.over
-}
 
 ; Create a 3x2 sprite block at an index, xpos, ypos and colour
 !macro MSetCharacter .idx , .x , .y , .col {
@@ -260,12 +360,40 @@ init
 
 	ldx #0
 	ldy #1
-	+MSetCharacter 0	, 100	, 50	, VIC2Colour_White
+;	+MSetCharacter 0	, 100	, 50	, VIC2Colour_White
 ;	+MSetCharacter 6	, 50	, 60	, VIC2Colour_Green
 ;	+MSetCharacter 12	, 150	, 90	, VIC2Colour_Brown
 ;	+MSetCharacter 18	, 200	, 140	, VIC2Colour_Yellow
 ;	+MSetCharacter 24	, 100	, 170	, VIC2Colour_Blue
 ;	+MSetCharacter 30	, 230	, 190	, VIC2Colour_Red
+
+	; Draw a car
+	lda #VIC2SpriteYBorderTop + (16*8) + 4
+	sta Multiplex_YPos
+	sta Multiplex_YPos+1
+	sta Multiplex_YPos+2
+	lda #VIC2Colour_Red
+	sta Multiplex_Colour
+	sta Multiplex_Colour+1
+	sta Multiplex_Colour+2
+	lda #VIC2SpriteXBorderLeft + (15*8) + 4
+	sta Multiplex_XPosLo
+	clc
+	adc #24
+	sta Multiplex_XPosLo+1
+	adc #24
+	sta Multiplex_XPosLo+2
+	lda #0
+	sta Multiplex_XPosHi
+	sta Multiplex_XPosHi+1
+	sta Multiplex_XPosHi+2
+	ldx #$46
+	stx Multiplex_SpriteFrame
+	inx
+	stx Multiplex_SpriteFrame+1
+	inx
+	stx Multiplex_SpriteFrame+2
+
 
 	lda GameScreenBGCol0
 	sta VIC2ScreenColour
@@ -279,6 +407,12 @@ init
 	lda #$ff
 	sta VIC2SpriteMulticolour
 
+	lda #VIC2Colour_White
+	sta VIC2ExtraSpriteColour1
+
+	lda #VIC2Colour_Black
+	sta VIC2ExtraSpriteColour2
+
 	rts
 }
 
@@ -286,6 +420,7 @@ init
 !source "../stdlib/Initialise.a"
 !source "asm\TrackDraw.a"
 !source "asm\SetupIRQs.a"
+!source "asm\HorizonDraw.a"
 
 !source "..\SpriteMultiplexor\SpriteMultiplexor.a"
 
@@ -322,16 +457,16 @@ Data_sideobjtab2 = *
 !bin "Original/sideobjtab2.d.prg" ,,  2
 *=$7c00
 Data_blocktable = *
-!bin "Original/blocktable.d.prg" ,,  2
+!source "asm/RoadObject_Macro.a"
+!source "Data/Level1RoadObjects.a"
 
 
 *=$8000
-RoadsideObjectData
-!bin "Graphics/Level1.ctm" , ($100 * $15) , $91c , 2
-
 RoadsideObjectColourLookup
 !bin "Graphics/Level1.ctm" , $100 , $814
 
 *=$c800
 !bin "Graphics/Level1.ctm" , $800 , $14
 
+*=$d000
+!bin "Graphics/Car.spd" , 15*64 , $9

@@ -30,7 +30,7 @@
 	cmp #1		* (-.direction)
 	bne .not1
 
-	+MTrackDraw_EdgeChar 6		+ .offset
+	+MTrackDraw_EdgeCharInside 6		+ .offset
 
 	jmp .nextRow
 
@@ -42,13 +42,13 @@
 	cmp #2		* (-.direction)
 	bne .not2
 
-	+MTrackDraw_EdgeChar 8		+ .offset
+	+MTrackDraw_EdgeCharInside 8		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 7		+ .offset
+	+MTrackDraw_EdgeCharInside 7		+ .offset
 	jmp .nextRow
 
 .not2
@@ -56,19 +56,19 @@
 	cmp #3		* (-.direction)
 	bne .not3
 
-	+MTrackDraw_EdgeChar 14		+ .offset
+	+MTrackDraw_EdgeCharInside 14		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 12		+ .offset
+	+MTrackDraw_EdgeCharInside 12		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 9		+ .offset
+	+MTrackDraw_EdgeCharInside 9		+ .offset
 	jmp .nextRow
 
 .not3
@@ -76,25 +76,25 @@
 	cmp #4		* (-.direction)
 	bne .not4
 
-	+MTrackDraw_EdgeChar 15		+ .offset
+	+MTrackDraw_EdgeCharInside 15		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 13		+ .offset
+	+MTrackDraw_EdgeCharInside 13		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 11		+ .offset
+	+MTrackDraw_EdgeCharInside 11		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 9		+ .offset
+	+MTrackDraw_EdgeCharInside 9		+ .offset
 	jmp .nextRow
 
 .not4
@@ -102,31 +102,31 @@
 	cmp #5		* (-.direction)
 	bne .not5
 
-	+MTrackDraw_EdgeChar 15		+ .offset
+	+MTrackDraw_EdgeCharInside 15		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 14		+ .offset
+	+MTrackDraw_EdgeCharInside 14		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 12		+ .offset
+	+MTrackDraw_EdgeCharInside 12		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 10		+ .offset
+	+MTrackDraw_EdgeCharInside 10		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 9		+ .offset
+	+MTrackDraw_EdgeCharInside 9		+ .offset
 	jmp .nextRow
 
 .not5
@@ -134,78 +134,78 @@
 	cmp #6		* (-.direction)
 	bne .not6
 
-	+MTrackDraw_EdgeChar 15		+ .offset
+	+MTrackDraw_EdgeCharInside 15		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 14		+ .offset
+	+MTrackDraw_EdgeCharInside 14		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 13		+ .offset
+	+MTrackDraw_EdgeCharInside 13		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 11		+ .offset
+	+MTrackDraw_EdgeCharInside 11		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 10		+ .offset
+	+MTrackDraw_EdgeCharInside 10		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 9		+ .offset
+	+MTrackDraw_EdgeCharInside 9		+ .offset
 	jmp .nextRow
 
 .not6
 
-	+MTrackDraw_EdgeChar 15		+ .offset
+	+MTrackDraw_EdgeCharInside 15		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 14		+ .offset
+	+MTrackDraw_EdgeCharInside 14		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 13		+ .offset
+	+MTrackDraw_EdgeCharInside 13		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 12		+ .offset
+	+MTrackDraw_EdgeCharInside 12		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 11		+ .offset
+	+MTrackDraw_EdgeCharInside 11		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 10		+ .offset
+	+MTrackDraw_EdgeCharInside 10		+ .offset
 !if .direction < 0 {
 	dey
 } else {
 	iny
 }
-	+MTrackDraw_EdgeChar 9		+ .offset
+	+MTrackDraw_EdgeCharInside 9		+ .offset
 	jmp .nextRow
 
 
@@ -447,7 +447,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsxn2
 
 	cmp #3
@@ -459,7 +459,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsxn3
 
 	cmp #4
@@ -473,7 +473,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsxn4
 
 	cmp #5
@@ -489,7 +489,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsxn5
 
 	+MTrackDraw_EdgeCharInside 5		+ .offset
@@ -502,7 +502,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 
 .sxpositive
 	tya
@@ -520,7 +520,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsx2
 
 	cmp #3
@@ -532,7 +532,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsx3
 
 	cmp #4
@@ -546,7 +546,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsx4
 
 	cmp #5
@@ -562,7 +562,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
-	jmp .nextRow
+	jmp .endRow
 .notsx5
 
 	+MTrackDraw_EdgeChar 3		+ .offset
@@ -575,8 +575,11 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
 
+	jmp .endRow
+
 .nextRow
 	inx
+.endRow
 	cpx TrackRendered_Row
 	bcs .ret
 	jmp .l1

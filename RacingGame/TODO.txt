@@ -1,53 +1,47 @@
-* Track side smoothing (TrackDraw.a:smoothedge) needs vast improvement
-	* smoothedge currently seems to calculate a gradient based on the current rendered row index in yfl and to the next different row Y pos
-	* Perhaps an improvement would be to take the row index in yfl and look ahead 4 rows and calculate a gradient based on that
-	* Since the background is char 0 then first render the road and the objects, minus the smooth edge
-	* For each screen row store the left an right calculated rendered values and the row index in the first pass
-	* Then as a second pass after the road plus objects have been drawn use the first pass data to draw the smooth edges
-		* This will need a char 0 check to avoid draing over the objects etc
-	* This will save calculating the positions and indexes twice
-	* Added:
-		TrackRendered_Row			!by 0
-		TrackRendered_Index			!fill 25
-		TrackRendered_YPos			!fill 25
-		TrackRendered_XPosLeft		!fill 25
-		TrackRendered_XPosRight		!fill 25
-		TrackRendered_ScrLo			!fill 25
-		TrackRendered_ScrHi			!fill 25
-
-	* Added:
-		TrackRendered_PreviousRow
-		TrackRendered_IndexNext
-		TrackRendered_XPos[Left/Right]Next
-	* Info:
-		After rendering this is the number of entries in the below tables
-		TrackRendered_YPos			Y Position on the screen for this rendered line
-		TrackRendered_Index			Index of the line that is rendered
-		TrackRendered_IndexNext		For the above index the next line index. If it is -1 then no next line was rendered for this position
-									Then some extra searching downwards will be needed to get the position delta
-		TrackRendered_ScrLo/Hi		Screen address for this rendered line
-		TrackRendered_XPosLeft		Left position
-		TrackRendered_XPosLeftNext	Left position next
-		TrackRendered_XPosRight		As above, but for right
-		TrackRendered_XPosRightNext	Ditto
-
-	* Graphics\Level1.ctm has some example left side road slopes on the bottom row
-		Use these and draw slopes using the calculated edge data
-		Quite successful with the rendering implemented so far!
-
-
 * With corners, or steering, the road side objects seem to be using positions that appear to be inside the road at some extremes?
 	Check the hot spots
+	* Add some form of roadside tweak, that basically adds extra offset as a fraction of the road width or perspective?
+	* The hotspot offset seems to be always using sbc? Is this accounted for in the data?
+		lda xbtl
+		sec
+		sbc xhot
 
 
 
-* Add multiplexor sort
+
+* Could do with a tool to edit the in-memory road tables whilst Vice renders the roads
+
+
+
+
+
+
+* One of the hill and valley sections has a badly drawn smooth edge, it seems to skip the rendering completely
+
+
+
+
+
+
+* Add multiplexor animation copy and sort
 
 
 	
-* Move TrackDraw_chars to speed code in the cartridge
-
+* Move TrackDraw_colours to speed code in the cartridge
 
 
 
 * TODO: Supporting raised roads, like bridges or ramps, the horizon index can be separated from the plot culling functionality.
+
+
+
+* Store the roadside objects differently. Optimise their storage based on a linear buffer.
+	Tool can be used to extract all this information.
+
+
+
+* In addition to the left/right roadside objects, can also have an above road list as well.
+
+
+
+* Road split can be done by rendering up to a limit of the middle section that advances towards the screen like the roadside objects

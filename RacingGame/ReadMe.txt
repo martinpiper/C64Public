@@ -41,8 +41,10 @@ Each object definition is 8 bytes long starting at 124*256 0x7c00:
 1 = char y pos in the map
 2 = char width
 3 = char height
-4/5 = Used but unknown (From QWOP keys)
+4 = left road side hotspot
+5 = right road side hotspot
 6/7 = Seem to be unused
+
 
 
 Memory map:
@@ -106,15 +108,15 @@ Column 38 = ?, but it is filled in with something for the hill crest? (No appare
 					Otherwise compare the current column Y pos+1 with the Y pos from the "Column 38" index
 					If that is greater than or equal to the Y pos then don't draw the road row, skip to the track object draw
 
-TODO: While rendering from back to front, there is an track object optimisation (for jsr objsprint), where the ymax of the draw can be adjusted to be higher.
-When a far road row is being drawn below the near horizon the ymax can be the near horizon (i.e. hill crest) position.
-	From the column 38 index, i.e. at the start of the track draw, before the road row draw loop, set ymax to be the Y pos from the hill crest horizon index
-	The ymax reset with the hill crest index can be the first thing in the new road row plot loop
-		i.e. Then after the near horizon position is drawn the ymax is is set to be the screen height again.
-
-		
-		
-TODO: Supporting raised roads, like bridges or ramps, the horizon index can be separated from the plot culling functionality.
+Track side object plotting
+	* For the track side object plot, first objsprint is called with Y set to the currently drawn road row
+	* This indexes into objhorizl and objhorizr
+	* Zero index means no object for this position
+	* Then pertaby is added for the road row offset
+		This ranges from 0 to 8, meaning we have up to 9 object size steps to define for the perspective
+	* Then the left/right positions are offset with the relevant hotspots
+	* There is no Y hotspot offset, although there certainly could be later on
+	* Eventually the object is drawn with blockplot
 
 
 

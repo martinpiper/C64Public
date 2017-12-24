@@ -18,12 +18,12 @@ xwid !by 4
 ywid !by 8
 ybtl !by 19
 xbtl !by 19
-yorg !by 0
-xorg !by 0
 xhot !by 4
 ymax !by 20
 ybt !by 0
 ypl !by 0
+block_dataLo	!by 0
+block_dataHi	!by 0
 
 
 toftl !by $00,$24,$48,$6c,$90,$b4,$d8,$fc
@@ -113,7 +113,7 @@ TrackRendered_ScrHi			!fill 25
 	cpy #40
 	bcs .nextChar
 	lda (TrackDraw_ZP_ScreenLoHi),y
-	cmp #2
+	cmp #50
 	bcs .nextChar
 	lda #.char
 	sta (TrackDraw_ZP_ScreenLoHi),y
@@ -245,7 +245,7 @@ TrackDraw_colours
 	rts
 
 
-TrackDraw_chars
+TrackDraw_setup
 
 	ldx topScreenBank
 	lda BankToAddrOffscreen,x
@@ -316,6 +316,11 @@ l6
 	ldx ypost+38
 	lda ypost,x
 	sta ymax
+
+	rts
+
+!zn
+TrackDraw_chars
 
 	; Start drawing from the far row
 	ldy #0
@@ -491,6 +496,12 @@ loopr
 	beq loopr2
 loopr3
 	jsr advance
+
+	lda HorizonXPostion
+	clc
+	adc lastCorner
+	sta HorizonXPostion
+
 	dey
 	bne loopr3
 
@@ -506,8 +517,19 @@ loop2z
 tabletrck = Data_trckypos
 tablecorn = Data_trckcornpos
 
+lastCorner !by 0
+
 cornoftfig
 	ldy trckoft2
+	lda tablecorn,y
+	sec
+	sbc #19
+	cmp #$80
+	ror
+	cmp #$80
+	ror
+	sta lastCorner
+
 	ldx tablecorn,y
 	cpx #19
 	bcs rcorn
@@ -614,12 +636,11 @@ m5 rts
 
 
 blockplot
-	lda xorg
+	lda block_dataLo
 	sta blps1+1
-	lda yorg
-	clc
-	adc #128
+	lda block_dataHi
 	sta blps1+2
+
 	lda ywid
 	sta ybt
 	lda ybtl
@@ -654,7 +675,13 @@ bl3b
 	bne bl3
 bl2
 	inc ypl
+	lda blps1+1
+	clc
+	adc xwid
+	sta blps1+1
+	bcc .noC1
 	inc blps1+2
+.noC1
 	dec ybt
 	bne bl1
 
@@ -665,56 +692,38 @@ objsprint
 	sty tsdy
 	ldx objhorizl,y
 	beq l10g
-	lda #>Data_blocktable
-	sta oh1+2
-	sta oh2+2
-	sta oh3+2
-	sta oh4+2
-	sta oh5+2
+
 	dex
 	txa
 	clc
 	adc pertaby,y
-	asl
-	bcc op1
-	jsr incallobj
-op1
-	asl
-	bcc op2
-	jsr incallobj
-op2
-	asl
-	bcc op3
-	jsr incallobj
-op3
 	tax
 	stx tsdx
-oh1	lda $7c00,x
-	sta xorg
-oh2	lda $7c01,x
-	sta yorg
 	lda ypost,y
 	sta ybtl
 	dec ybtl
-oh3	lda $7c02,x
+	lda RoadObject_width,x
 	sta xwid
-oh4	lda $7c03,x
+	lda RoadObject_height,x
 	sta ywid
+
+	lda RoadObject_dataLo,x
+	sta block_dataLo
+	lda RoadObject_dataHi,x
+	sta block_dataHi
+
 	lda #19
 	sec
 	sbc xwidt,y
 	clc
 	adc toftt,y
 	sta xbtl
-oh5	lda $7c04,x
+	lda RoadObject_hotLeft,x
 	sta xhot
 	jsr blockplot
-l10g	lda #>Data_blocktable
-	sta oi1+2
-	sta oi2+2
-	sta oi3+2
-	sta oi4+2
-	sta oi5+2
+
+	; Now the right hand road edge
+l10g
 	ldy tsdy
 	ldx objhorizr,y
 	beq l10gz
@@ -722,55 +731,31 @@ l10g	lda #>Data_blocktable
 	txa
 	clc
 	adc pertaby,y
-	asl
-	bcc ok1
-	jsr incallobj2
-ok1
-	asl
-	bcc ok2
-	jsr incallobj2
-ok2
-	asl
-	bcc ok3
-	jsr incallobj2
-ok3
 	tax
 	stx tsdx
-oi1	lda $7c00,x
-	sta xorg
-oi2	lda $7c01,x
-	sta yorg
 	lda ypost,y
 	sta ybtl
 	dec ybtl
-oi3	lda $7c02,x
+	lda RoadObject_width,x
 	sta xwid
-oi4	lda $7c03,x
+	lda RoadObject_height,x
 	sta ywid
+
+	lda RoadObject_dataLo,x
+	sta block_dataLo
+	lda RoadObject_dataHi,x
+	sta block_dataHi
+
 	lda #21
 	clc
 	adc xwidt,y
 	clc
 	adc toftt,y
 	sta xbtl
-oi5	lda $7c05,x
+oi5	lda RoadObject_hotRight,x
 	sta xhot
 	jsr blockplot
 l10gz	rts
-
-incallobj	inc oh1+2
-	inc oh2+2
-	inc oh3+2
-	inc oh4+2
-	inc oh5+2
-	rts
-
-incallobj2	inc oi1+2
-	inc oi2+2
-	inc oi3+2
-	inc oi4+2
-	inc oi5+2
-	rts
 
 
 advance
