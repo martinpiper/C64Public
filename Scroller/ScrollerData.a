@@ -31,15 +31,7 @@ SpriteEmptyLookupTab		!fill 256 , 0
 SpriteEmptyLookupTab2		!fill 256 , 0
 }
 
-AnimationXPosLo !fill Multiplex_items
-AnimationXPosHi !fill Multiplex_items
-AnimationYPos !fill Multiplex_items
-!ifdef Multiplex_SplitSort {
-AnimationYPosToSort !fill Multiplex_items
-}
-AnimationSpriteColour !fill Multiplex_items
-AnimationSpriteFrame !fill Multiplex_items
-
+!source "ScrollerAnimationMemory.a"
 
 !align 255,0
 BlockColours

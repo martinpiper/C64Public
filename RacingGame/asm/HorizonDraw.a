@@ -32,7 +32,7 @@ Horizon_startChar = 60
 	cmp ymax
 	bcc .dl1
 
-	rts
+	jmp .over
 
 .dl1
 	tax
@@ -47,6 +47,7 @@ Horizon_startChar = 60
 	sta (TrackDraw_ZP_ScreenLoHi),y
 	iny
 }
+.over
 }
 
 HorizonDraw

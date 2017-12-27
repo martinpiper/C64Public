@@ -1688,8 +1688,8 @@ AnimationUpdateMultiplexor
 	bcc .blank
 }
 }
-	sta Multiplex_YPos,x
 }
+	sta Multiplex_YPos,x
 	lda AnimationSpriteFrame,x
 ;	bne .ol1
 ;bph

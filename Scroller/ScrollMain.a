@@ -1354,19 +1354,4 @@ SEUCKToMusicPriority
 
 !source "ScrollerCommon.a"
 
-!ifdef Multiplex_SplitSort {
-CopyMultiplexTables
-	; Copy over the index table that was sorted during the multiplexor IRQ
-	ldx #Multiplex_items-1
-.mpc1
-	lda MultiplexSort_indextable,x
-	sta Multiplex_indextable,x
-	dex
-	bpl .mpc1
-	; Also copy over the max sprites this frame
-	lda MultiplexSort_MaxSprSorted
-	sta Multiplex_MaxSprSorted
-	rts
-}
-
 MarkEndCode = *

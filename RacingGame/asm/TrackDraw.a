@@ -56,6 +56,29 @@ objhorizr !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	!by 0,0,0
 
 
+RoadObject_Sprite_Type_EnemyCar = 1
+
+; With some spare
+RoadObject_Sprite
+	!by RoadObject_Sprite_Type_EnemyCar
+	!fill 14 , 0
+	!by RoadObject_Sprite_Type_EnemyCar
+	!fill 19 , 0
+	!by RoadObject_Sprite_Type_EnemyCar
+	!fill 4 , 0
+
+PerspectiveTab_13
+	!by  0, 0, 1, 1, 2, 2, 3, 3, 4, 4
+	!by  5, 5, 6, 6, 7, 7, 7, 8, 8, 9
+	!by  9, 9,10,10,10,11,11,11,12,12
+	!by 12,12,12,12,12,12
+
+MulTab_5
+	!for .a , 13 {
+		!by (.a-1) * 5
+	}
+
+
 col1 !by 10
 col2 !by 9
 tsdx !by 0
@@ -68,7 +91,7 @@ lpose !by 0
 rpose !by 0
 skd !by 50
 trckoft !by 21
-trckoft2 !by 0
+trckoft2 !by $2c
 ancnt1 !by 0
 ancnt2 !by 70
 ytrack !by 0
@@ -97,6 +120,7 @@ TrackRendered_XPosLeftNext	!fill 25
 TrackRendered_XPosRightNext	!fill 25
 TrackRendered_ScrLo			!fill 25
 TrackRendered_ScrHi			!fill 25
+TrackRendered_YMax			!fill 25
 
 !zn
 !macro MTrackDraw_EdgeChar .char {
@@ -118,6 +142,15 @@ TrackRendered_ScrHi			!fill 25
 	lda #.char
 	sta (TrackDraw_ZP_ScreenLoHi),y
 .nextChar
+}
+
+!macro MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow {
+	inc .tempYPos
+	lda .tempYPos
+	cmp .tempYMax
+	bcc .ok1
+	jmp .endRow
+.ok1
 }
 
 TrackDraw_AdvanceRow
@@ -187,61 +220,23 @@ TrackDraw_colours
 	lda topScreenBank
 	beq .displaying_c0
 
-	ldx #0
-
-.cia1 ldy $c400,x
-	lda RoadsideObjectColourLookup,y
-	sta $d800,x
-	inx
-	bne .cia1
-
-.cia2 ldy $c500,x
-	lda RoadsideObjectColourLookup,y
-	sta $d900,x
-	inx
-	bne .cia2
-
-.cia3 ldy $c600,x
-	lda RoadsideObjectColourLookup,y
-	sta $da00,x
-	inx
-	bne .cia3
-
-	ldx #$47
-.cia4 ldy $c700,x
-	lda RoadsideObjectColourLookup,y
-	sta $db00,x
-	dex
-	bpl .cia4
+	lda #CartFile1_Bank_Colourise_c400_bin
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jsr CartFile1_Start_Colourise_c400_bin
+	lda #CartFile1_Bank_Colourise_c400_2_bin
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jsr CartFile1_Start_Colourise_c400_2_bin
+	+MACRO_CartKillBank
 	rts
 
 .displaying_c0
-	ldx #0
-
-.cia1b ldy $c000,x
-	lda RoadsideObjectColourLookup,y
-	sta $d800,x
-	inx
-	bne .cia1b
-
-.cia2b ldy $c100,x
-	lda RoadsideObjectColourLookup,y
-	sta $d900,x
-	inx
-	bne .cia2b
-
-.cia3b ldy $c200,x
-	lda RoadsideObjectColourLookup,y
-	sta $da00,x
-	inx
-	bne .cia3b
-
-	ldx #$47
-.cia4b ldy $c300,x
-	lda RoadsideObjectColourLookup,y
-	sta $db00,x
-	dex
-	bpl .cia4b
+	lda #CartFile1_Bank_Colourise_c000_bin
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jsr CartFile1_Start_Colourise_c000_bin
+	lda #CartFile1_Bank_Colourise_c000_2_bin
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jsr CartFile1_Start_Colourise_c000_2_bin
+	+MACRO_CartKillBank
 	rts
 
 
@@ -320,7 +315,10 @@ l6
 	rts
 
 !zn
+RoadObject_AnimationIndex	!by 3
 TrackDraw_chars
+	lda #3
+	sta RoadObject_AnimationIndex
 
 	; Start drawing from the far row
 	ldy #0
@@ -396,6 +394,9 @@ l10a
 	sta TrackRendered_ScrLo,x
 	lda TrackDraw_ZP_ScreenLoHi+1
 	sta TrackRendered_ScrHi,x
+
+	lda ymax
+	sta TrackRendered_YMax,x
 
 	lda #-1
 	sta TrackRendered_IndexNext,x
@@ -490,7 +491,7 @@ m1
 	bne m2
 	jsr right
 	jmp loopr
-m2	;jsr animback
+m2	jsr animback
 loopr
 	ldy spdom2
 	beq loopr2
@@ -618,7 +619,7 @@ t3	lda $5000,x
 	rts
 
 left dec skd
-;	jsr canimr
+	jsr canimr
 	lda skd
 	cmp #$ff
 	bne m4
@@ -626,13 +627,52 @@ left dec skd
 	sta skd
 m4 rts
 right inc skd
-;	jsr caniml
+	jsr caniml
 	lda skd
 	cmp #101
 	bne m5
 	lda #100
 	sta skd
 m5 rts
+
+
+caniml
+	lda ancnt2
+	cmp #64
+	beq ca1
+	inc ancnt1
+	lda ancnt1
+	cmp #2
+	bne ca1
+	lda #0
+	sta ancnt1
+	dec ancnt2
+	dec ancnt2
+	dec ancnt2
+ca1	rts
+
+canimr
+	lda ancnt2
+	cmp #76
+	beq ca2
+	inc ancnt1
+	lda ancnt1
+	cmp #2
+	bne ca2
+	lda #0
+	sta ancnt1
+	inc ancnt2
+	inc ancnt2
+	inc ancnt2
+ca2	rts
+
+animback
+	lda ancnt2
+	cmp #70
+	beq ca3
+	bcs caniml
+	bcc canimr
+ca3	rts
 
 
 blockplot
@@ -755,7 +795,134 @@ l10g
 oi5	lda RoadObject_hotRight,x
 	sta xhot
 	jsr blockplot
-l10gz	rts
+l10gz
+
+	lda ypost,y
+	cmp ymax
+	bcs .skipSprite
+	ldy tsdy
+	lda RoadObject_Sprite,y
+	bne .gotASprite
+.skipSprite
+	rts
+
+.gotASprite
+	cmp #RoadObject_Sprite_Type_EnemyCar
+	beq .gotEnemyCar
+	rts
+
+.gotEnemyCar
+	lda PerspectiveTab_13,y
+	tax
+	lda MulTab_5,x
+	tax
+
+	; Figure out the X and Y position
+	lda #20
+	clc
+	adc toftt,y
+	; Note: Mul 4, the final mul 2 is later on
+	asl
+	asl
+	clc
+	adc #VIC2SpriteXBorderLeft/2	; Note: Div 2
+	sta .sprObjX
+
+	lda ypost,y
+	asl
+	asl
+	asl
+	clc
+	adc #VIC2SpriteYBorderTop
+	sta .sprObjY
+
+	ldy RoadObject_AnimationIndex
+	cpy #Multiplex_items-4
+	bcc .gotSpace0
+	rts
+.gotSpace0
+
+	; 0 Sprite
+	lda .enemyCarSprites + 2,x
+	sta AnimationSpriteFrame,y
+	lda #VIC2Colour_LightBlue
+	sta AnimationSpriteColour,y
+	lda .enemyCarSprites,x
+	clc
+	adc .sprObjX
+	asl
+	sta AnimationXPosLo,y
+	lda #0
+	rol
+	sta AnimationXPosHi,y
+
+	lda .enemyCarSprites+1,x
+	clc
+	adc .sprObjY
+	sta AnimationYPos,y
+
+	inc RoadObject_AnimationIndex
+	iny
+	cpy #Multiplex_items-4
+	bcc .gotSpace1
+	rts
+.gotSpace1
+
+	; Sprite 1
+	lda .enemyCarSprites + 3,x
+	bne .gotSprite1
+	rts
+.gotSprite1
+	sta AnimationSpriteFrame,y
+	lda #VIC2Colour_LightBlue
+	sta AnimationSpriteColour,y
+	lda .enemyCarSprites,x
+	clc
+	adc .sprObjX
+	clc
+	adc #VIC2SpriteSizeX/2
+	asl
+	sta AnimationXPosLo,y
+	lda #0
+	rol
+	sta AnimationXPosHi,y
+
+	lda .enemyCarSprites+1,x
+	clc
+	adc .sprObjY
+	sta AnimationYPos,y
+
+	inc RoadObject_AnimationIndex
+	iny
+
+	rts
+.sprObjX !by 0
+.sprObjY !by 0
+
+!macro RoadObject_Sprite_3_1 .offsetX , .offsetY , .spr1 {
+	!by .offsetX , .offsetY , .spr1 , 0 , 0
+}
+!macro RoadObject_Sprite_3_2 .offsetX , .offsetY , .spr1 , .spr2 {
+	!by .offsetX , .offsetY , .spr1 , .spr2 , 0
+}
+!macro RoadObject_Sprite_3_3 .offsetX , .offsetY , .spr1 , .spr2 , .spr3 {
+	!by .offsetX , .offsetY , .spr1 , .spr2 , .spr3
+}
+.enemyCarSprites
+	+RoadObject_Sprite_3_1	 -1 , -20 + 1 ,	64 + 15 + 32
+	+RoadObject_Sprite_3_1	 -2 , -20 + 2 ,	64 + 15 + 31
+	+RoadObject_Sprite_3_1	 -2 , -20 + 2 ,	64 + 15 + 30
+	+RoadObject_Sprite_3_1	 -2 , -20 + 3 ,	64 + 15 + 29
+	+RoadObject_Sprite_3_1	 -4 , -20 + 3 ,	64 + 15 + 28
+	+RoadObject_Sprite_3_1	 -5 , -20 + 4 ,	64 + 15 + 27
+	+RoadObject_Sprite_3_1	 -6 , -20 + 5 ,	64 + 15 + 26
+	+RoadObject_Sprite_3_2	 -7 , -20 + 7 ,	64 + 15 + 24 ,	64 + 15 + 25
+	+RoadObject_Sprite_3_2	 -8 , -20 + 7 ,	64 + 15 + 22 ,	64 + 15 + 23
+	+RoadObject_Sprite_3_2	 -9 , -20 + 7 ,	64 + 15 + 20 ,	64 + 15 + 21
+	+RoadObject_Sprite_3_2	 -9 , -20 + 8 ,	64 + 15 + 16 ,	64 + 15 + 17
+	+RoadObject_Sprite_3_2	-10 , -20 + 8 ,	64 + 15 + 10 ,	64 + 15 + 11
+	+RoadObject_Sprite_3_2	-11 , -20 + 8 ,	64 + 15 + 3 ,	64 + 15 + 4
+
 
 
 advance
@@ -765,6 +932,8 @@ ad1
 	sta objhorizl+1,x
 	lda objhorizr,x
 	sta objhorizr+1,x
+	lda RoadObject_Sprite,x
+	sta RoadObject_Sprite+1,x
 	dex
 	bpl ad1
 
@@ -774,6 +943,8 @@ ad2
 	sta objhorizl+1,x
 	lda objhorizr,x
 	sta objhorizr+1,x
+	lda RoadObject_Sprite,x
+	sta RoadObject_Sprite+1,x
 	dex
 	cpx #13
 	bne ad2
@@ -781,11 +952,26 @@ ad2
 	lda #0
 	sta objhorizr+14
 	sta objhorizl+14
+	sta RoadObject_Sprite+14
 	ldx sidel
 	lda $7a00,x
 	sta objhorizl
 	lda $7b00,x
 	sta objhorizr
+	lda SpriteRoadTab,x
+	sta RoadObject_Sprite
 	inc sidel
 	inc trckoft2
 	rts
+
+SpriteRoadTab
+!for .a , 12 {
+	!fill 16 ,0
+	!by RoadObject_Sprite_Type_EnemyCar
+}
+!for .a , 8 {
+	!fill 8 ,0
+	!by RoadObject_Sprite_Type_EnemyCar
+}
+	; Safety
+	!fill 255 , 0

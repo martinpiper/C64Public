@@ -670,6 +670,10 @@ MultiplexSort_YPosShifted !fill Multiplex_items , 0
 }
 Multiplex_Sort
 	lda Multiplex_MaxSpr
+Multiplex_SortStore
+!ifndef Multiplex_SplitSort {
+	sta Multiplex_MaxSpr
+}
 	sta MultiplexSort_MaxSprSorted
 	cmp #$02
 	bcc .exit
@@ -682,7 +686,7 @@ Multiplex_Sort
 
 !ifdef Multiplexor_UseShiftedYPos {
 !if Multiplexor_UseShiftedYPos > 0 {
-	ldx Multiplex_MaxSpr
+	ldx MultiplexSort_MaxSprSorted
 	dex
 .sl1
 	lda MultiplexSort_YPos,x
@@ -699,13 +703,15 @@ Multiplex_Sort
 }
 }
 
-	; Self modifying code that puts an RTS ($60) or LDX $xx into the sort routine below depending on how many sprites it wants to process in the index table.
+	; Self modifying code that puts an RTS ($60) into the sort routine below depending on how many sprites it wants to process in the index table.
 	ldy #$00
-	lda #$60
+	lda (Multiplex_bal),y
+	sta .smbackup+1
+	lda #$60	; (rts)
 	sta (Multiplex_bal),y
 	jsr .over0
 	ldy #$00
-	lda #$a6	; ldx $xx
+.smbackup	lda #$ff
 	sta (Multiplex_bal),y
 
 !ifdef Multiplex_EnableEarlyOut {
@@ -875,5 +881,19 @@ Multiplex_Sorthi	!fill Multiplex_items-1
 
 }
 
+!ifdef Multiplex_SplitSort {
+CopyMultiplexTables
+	; Copy over the index table that was sorted during the multiplexor IRQ
+	ldx #Multiplex_items-1
+.mpc1
+	lda MultiplexSort_indextable,x
+	sta Multiplex_indextable,x
+	dex
+	bpl .mpc1
+	; Also copy over the max sprites this frame
+	lda MultiplexSort_MaxSprSorted
+	sta Multiplex_MaxSprSorted
+	rts
+}
 
 MarkMultiplexorEndCode = *

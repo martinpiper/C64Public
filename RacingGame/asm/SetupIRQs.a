@@ -122,7 +122,7 @@ IRQUsedScreenScrollPos !by 0
 
 !zn
 ; Timed to be just above the bad line for easier timing
-.timerCountTweak = 7
+.timerCountTweak = 6
 .timerCountTweakFine = 18
 NMIRaster !by 50
 .timerCalc !by 0,0
@@ -137,7 +137,7 @@ IrqTopOfScreen
 
 	lda NMIRaster
 	sec
-	sbc #.timerCountTweak 
+	sbc #.timerCountTweak
 	sta .timerCalc
 	lda #0
 	sta .timerCalc+1

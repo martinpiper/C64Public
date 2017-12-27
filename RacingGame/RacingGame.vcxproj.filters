@@ -28,6 +28,12 @@
     <Filter Include="Data">
       <UniqueIdentifier>{0de52fdc-1ce8-49a4-a90a-9e0b835a95cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Scroller">
+      <UniqueIdentifier>{fe042b63-37e5-4ff6-96b4-1bb81e8efd79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cart">
+      <UniqueIdentifier>{481d6126-74a6-4768-9256-7b34d804e780}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -164,6 +170,30 @@
       <Filter>Source Files\asm</Filter>
     </None>
     <None Include="asm\HorizonDraw.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerAnimationMemory.a">
+      <Filter>Source Files\Scroller</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerAnimation.a">
+      <Filter>Source Files\Scroller</Filter>
+    </None>
+    <None Include="asm\Colourise_c000.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="asm\Colourise_c400.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash_Macros.a">
+      <Filter>Source Files\cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\GMod2_Macros.a">
+      <Filter>Source Files\cart</Filter>
+    </None>
+    <None Include="asm\Colourise_c000_2.a">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="asm\Colourise_c400_2.a">
       <Filter>Source Files\asm</Filter>
     </None>
   </ItemGroup>

@@ -1,9 +1,9 @@
 ; Changing the "GAME3" to "GAME1" will include the other game example file.
 !macro SEUCKFileData .size, .offset {
-!bin "../SEUCK/GAME1__I.P00",.size,.offset
+;!bin "../SEUCK/GAME1__I.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.size,.offset
-;!bin "../SEUCK/GAME3__I.P00",.size,.offset
+!bin "../SEUCK/GAME3__I.P00",.size,.offset
 ;!bin "../SEUCK/GAME4__I.P00",.size,.offset
 ;!bin "../SEUCK/demo4.bin",.size,.offset
 ;!bin "../SEUCK/VIOSGAME.P00",.size,.offset

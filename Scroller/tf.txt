@@ -4,7 +4,7 @@ Opening 'ScrollerOrig.prg' for reading...
 Read load address as $0400
 Opening 'Scroller.prg' for writing...
 Working...
-Input length = $fb00 output length = $2ea7
+Input length = $fb00 output length = $2ee5
 Setting EasyFlash mode
 New address $8000
 New bank $0
@@ -15,14 +15,14 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'Scroller.prg' read $2ea7
+File 'Scroller.prg' read $2ee5
 New address $8000
 New bank $1
  Copy from $1 len $2000 to $0
  Write bank
 New address $8000
 New bank $2
- Copy from $2001 len $ea6 to $0
+ Copy from $2001 len $ee4 to $0
  Write bank
 New address $8000
 New bank $3
@@ -38,29 +38,33 @@ New bank $6
  Write bank
 New address $8000
 New bank $7
-File 'bin\ColouriseTop.bin' read $2df
+Problem reading file 'bin\ColouriseTop.bin'
+Problem reading file 'bin\ColouriseBottom.bin'
+Problem reading file 'bin\ColouriseLeft.bin'
+Problem reading file 'bin\ColouriseRight.bin'
+Problem 2 reading file 'bin\ColouriseTop.bin'
 File 'bin\Char0To1_1.bin' read $12bb
 File 'bin\Char1To0_1.bin' read $12bb
 New bank $7
  Write multi-bank 7 $8000
-File 'bin\ColouriseBottom.bin' read $2df
+Problem 2 reading file 'bin\ColouriseBottom.bin'
+File 'bin\Char0To1_m1.bin' read $12bb
 New bank $8
  Write multi-bank 8 $8000
-File 'bin\Char0To1_m1.bin' read $12bb
 File 'bin\Char1To0_m1.bin' read $12bb
 New bank $9
  Write multi-bank 9 $8000
-File 'bin\ColouriseLeft.bin' read $177
+Problem 2 reading file 'bin\ColouriseLeft.bin'
+File 'bin\Char0To1_40.bin' read $12f1
 New bank $a
  Write multi-bank 10 $8000
-File 'bin\Char0To1_40.bin' read $12f1
 File 'bin\Char1To0_40.bin' read $12f1
 New bank $b
  Write multi-bank 11 $8000
-File 'bin\ColouriseRight.bin' read $177
+Problem 2 reading file 'bin\ColouriseRight.bin'
+File 'bin\Char0To1_m40.bin' read $13e1
 New bank $c
  Write multi-bank 12 $8000
-File 'bin\Char0To1_m40.bin' read $13e1
 File 'bin\Char1To0_m40.bin' read $13e1
 New bank $d
  Write multi-bank 13 $8000

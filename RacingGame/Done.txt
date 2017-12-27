@@ -124,3 +124,22 @@ When a far road row is being drawn below the near horizon the ymax can be the ne
 																		******		*******
 	* This would need some extra logic to stop the vertical draw one row earlier, if the gap is more than 1 char, to allow the horizontal smoothing to take over
 	* Changed the edge overdraw test a little and where it's used
+
+
+
+* During hill sections when the track is far off to the side there are occaisional vertical smoothed edges being plotted "under" the road.
+	For every entry in the smooth edge table, TrackRendered_*, include the max y used for that road row. Use that to limit the draw of vertical smoothed edge plots.
+	When Debug_ForceTrackStateRender=$ca to the far left/right
+	* Added TrackRendered_YMax and checks in MTrackDraw_CheckYMax
+
+
+
+
+* Add multiplexor animation copy and sort
+	Create simple animation library in Scroller?
+	Used ScrollerAnimation.a
+
+
+
+* Move TrackDraw_colours to speed code in the cartridge
+	RoadsideObjectColourLookup cannot be in the cart space!

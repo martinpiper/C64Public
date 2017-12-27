@@ -31,7 +31,7 @@ Scroller_EnableSpeedCode = 1
 !source "_f_index1.a"
 
 ;Enable this to unroll block colour plotting speed code where possible
-Scroller_EnableBlockColourSpeedCode = 1
+;Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page
@@ -100,7 +100,7 @@ Scroller_MaxScrollSpeed = 4
 !ifdef Scroller_FullScreen {
 ; Enable the following line to allow the bottom and top borders to be opened and have sprites.
 ; This is only used when Scroller_FullScreen is enabled
-;IRQOpenBorders = 1
+IRQOpenBorders = 1
 }
 
 ; Use this to enable a demonstration of how to skip the level in the game at any point

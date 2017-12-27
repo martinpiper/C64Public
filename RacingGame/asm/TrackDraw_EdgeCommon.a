@@ -404,9 +404,16 @@
 
 
 
+.tempYPos !by 0
+.tempYMax !by 0
 
 .sameX
 	sta .smxpos+1
+	lda TrackRendered_YPos,x
+	sta .tempYPos
+	lda TrackRendered_YMax,x
+	sta .tempYMax
+
 	; Count how many lines are the same
 	ldy #1
 .sx1
@@ -444,6 +451,7 @@
 	bne .notsxn2
 
 	+MTrackDraw_EdgeCharInside 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
@@ -454,10 +462,12 @@
 	bne .notsxn3
 
 	+MTrackDraw_EdgeCharInside 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
-	+MTrackDraw_EdgeCharInside 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 
 	jmp .endRow
 .notsxn3
@@ -466,10 +476,13 @@
 	bne .notsxn4
 
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
@@ -477,15 +490,21 @@
 .notsxn4
 
 	cmp #5
-	bne .notsxn5
+	beq .sxn5
+	jmp .notsxn5
+.sxn5
 
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
@@ -493,12 +512,16 @@
 .notsxn5
 
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
 
@@ -517,6 +540,7 @@
 	bne .notsx2
 
 	+MTrackDraw_EdgeChar 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
@@ -527,8 +551,10 @@
 	bne .notsx3
 
 	+MTrackDraw_EdgeChar 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
@@ -539,10 +565,13 @@
 	bne .notsx4
 
 	+MTrackDraw_EdgeChar 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
@@ -550,15 +579,21 @@
 .notsx4
 
 	cmp #5
-	bne .notsx5
+	beq .sx5
+	jmp .notsx5
+.sx5
 
 	+MTrackDraw_EdgeChar 2		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
@@ -566,12 +601,16 @@
 .notsx5
 
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
+	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
 

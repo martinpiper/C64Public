@@ -9,6 +9,10 @@
 
 !source "../stdlib/stdlib.a"
 
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+;!source "../MakeCart/asm/GMod2_Macros.a"
+
+!source "_f_index1.a"
 
 Scroller_IRQVectorLo			= IRQServiceRoutineLo
 Scroller_IRQVectorHi			= IRQServiceRoutineHi
@@ -22,15 +26,21 @@ Multiplex_spritepointer	= $c000+SPRITEFRAMESCROFF
 Multiplex_IRQServiceRoutineLo = IRQServiceRoutineLo
 Multiplex_IRQServiceRoutineHi = IRQServiceRoutineHi
 Multiplex_IRQExitDefined = 1
+Multiplex_SplitSort = 1
+Multiplex_ReverseOrder = 1
+Multiplex_MaintainPriority = 1
 !macro Multiplex_IRQExit {
 	jmp MinimalIRQServiceRoutine
 }
 
 Multiplex_items	= 32
-Multiplex_DiscardSpritesYPos=scorePanelPos1 - 1
 scorePanelPos1 = VIC2SpriteYBorderTop + (20*8)
+Multiplex_DiscardSpritesYPos=scorePanelPos1 - 1
 
 !source "..\SpriteMultiplexor\SpriteMultiplexorVars.a"
+!ifdef Multiplex_SplitSort {
+MultiplexSort_YPos = AnimationYPosToSort
+}
 
 !source "asm\TrackDraw_EdgeCommon.a"
 
@@ -40,18 +50,21 @@ Multiplex_BunchingCheck = 1
 ;DebugMainlineBorder = 1
 ;Multiplexor_DebugBorder = 1
 
-;Debug_ForceTrackStateRender=$c7		; *Hill crest and valley
+;Debug_ForceTrackStateRender=$c7		; Hill crest and valley
 ;Debug_ForceTrackStateRender=$2c		; Straight road
-;Debug_ForceTrackStateRender=$4a		; *Right corner
+;Debug_ForceTrackStateRender=$4a		; Right corner
 ;Debug_ForceTrackStateRender=$ca		; Hill crest and valley again
 ;Debug_ForceTrackStateRender=$ec		; Hill
 
 ; Zero page variables
-TrackDraw_ZP_TrackLoHi		= Multiplex_endVars+$00
-TrackDraw_ZP_ScreenLoHi		= Multiplex_endVars+$02
+TrackDraw_ZP_TrackLoHi			= Multiplex_endVars+$00
+TrackDraw_ZP_ScreenLoHi			= Multiplex_endVars+$02
+
 
 RoadObject_Max = 128
 
+CartSelectBank_ProcessorPort=ProcessorPortDefault
+CartKillBank_ProcessorPort=ProcessorPortKERNALWithIO
 
 *=$400
 GameStart
@@ -274,6 +287,35 @@ MainlineIsPaused !by 0
 }
 	jsr TrackDraw_SmoothEdgeRight
 
+	ldx ancnt2
+	stx AnimationSpriteFrame
+	inx
+	stx AnimationSpriteFrame+1
+	inx
+	stx AnimationSpriteFrame+2
+
+
+!ifdef DebugMainlineBorder {
+	lda #VIC2Colour_Brown
+	sta VIC2BorderColour
+}
+
+!ifdef Multiplex_SplitSort {
+	jsr AnimationUpdateMultiplexorPre
+;	lda RoadObject_AnimationIndex
+;	jsr Multiplex_SortStore
+	ldy RoadObject_AnimationIndex
+	lda #$ff
+.cl1
+	cpy #Multiplex_items
+	bcs .cl2
+	sta AnimationYPosToSort,y
+	iny
+	jmp .cl1
+.cl2
+	jsr Multiplex_Sort
+}
+
 !ifdef DebugMainlineBorder {
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
@@ -298,10 +340,37 @@ MainlineIsPaused !by 0
 	jsr Multiplex_SetSpritePointer
 
 !ifdef DebugMainlineBorder {
+	lda #VIC2Colour_LightRed
+	sta VIC2BorderColour
+}
+
+	jsr AnimationUpdateMultiplexor
+!ifndef Multiplex_SplitSort {
+;	lda RoadObject_AnimationIndex
+;	jsr Multiplex_SortStore
+
+	ldy RoadObject_AnimationIndex
+	lda #$ff
+.cl3
+	cpy #Multiplex_items
+	bcs .cl4
+	sta AnimationYPosToSort,y
+	iny
+	jmp .cl3
+.cl4
+
+	jsr Multiplex_Sort
+} else {
+	jsr CopyMultiplexTables
+}
+
+!ifdef DebugMainlineBorder {
 	lda #VIC2Colour_White
 	sta VIC2BorderColour
 }
+;	inc VIC2BorderColour
 	jsr TrackDraw_colours
+;	dec VIC2BorderColour
 
 
 !ifdef DebugMainlineBorder {
@@ -324,16 +393,19 @@ BankToAddrOffscreen		!by $c4 , $c0
 
 !macro MSetSprite .sprite , .xpos , .ypos , .col {
 	lda #(.xpos & 0xff)
-	sta Multiplex_XPosLo + .sprite
+	sta AnimationXPosLo + .sprite
 	!if .xpos >= 256 {
-		sty Multiplex_XPosHi + .sprite
+		sty AnimationXPosHi + .sprite
 	} else {
-		stx Multiplex_XPosHi + .sprite
+		stx AnimationXPosHi + .sprite
 	}
 	lda #.ypos
-	sta Multiplex_YPos + .sprite
+	sta AnimationYPos + .sprite
 	lda #.col
-	sta Multiplex_Colour + .sprite
+	sta AnimationSpriteColour + .sprite
+	lda #$40 + .sprite
+	sta AnimationSpriteFrame + .sprite
+
 }
 
 
@@ -349,14 +421,7 @@ BankToAddrOffscreen		!by $c4 , $c0
 
 !zn {
 init
-	ldy #Multiplex_items-1
-.l1
-	lda #255
-	sta Multiplex_YPos,y
-	lda #VIC2Colour_White
-	sta Multiplex_Colour,y
-	dey
-	bpl .l1
+	jsr AnimationInit
 
 	ldx #0
 	ldy #1
@@ -369,30 +434,30 @@ init
 
 	; Draw a car
 	lda #VIC2SpriteYBorderTop + (16*8) + 4
-	sta Multiplex_YPos
-	sta Multiplex_YPos+1
-	sta Multiplex_YPos+2
+	sta AnimationYPos
+	sta AnimationYPos+1
+	sta AnimationYPos+2
 	lda #VIC2Colour_Red
-	sta Multiplex_Colour
-	sta Multiplex_Colour+1
-	sta Multiplex_Colour+2
+	sta AnimationSpriteColour
+	sta AnimationSpriteColour+1
+	sta AnimationSpriteColour+2
 	lda #VIC2SpriteXBorderLeft + (15*8) + 4
-	sta Multiplex_XPosLo
+	sta AnimationXPosLo
 	clc
 	adc #24
-	sta Multiplex_XPosLo+1
+	sta AnimationXPosLo+1
 	adc #24
-	sta Multiplex_XPosLo+2
+	sta AnimationXPosLo+2
 	lda #0
-	sta Multiplex_XPosHi
-	sta Multiplex_XPosHi+1
-	sta Multiplex_XPosHi+2
+	sta AnimationXPosHi
+	sta AnimationXPosHi+1
+	sta AnimationXPosHi+2
 	ldx #$46
-	stx Multiplex_SpriteFrame
+	stx AnimationSpriteFrame
 	inx
-	stx Multiplex_SpriteFrame+1
+	stx AnimationSpriteFrame+1
 	inx
-	stx Multiplex_SpriteFrame+2
+	stx AnimationSpriteFrame+2
 
 
 	lda GameScreenBGCol0
@@ -402,7 +467,14 @@ init
 	lda GameScreenBGCol2
 	sta VIC2ExtraBackgroundColour2
 
+!ifdef Multiplex_SplitSort {
+	jsr AnimationUpdateMultiplexorPre
+}
+	jsr AnimationUpdateMultiplexor
 	jsr Multiplex_Sort
+!ifdef Multiplex_SplitSort {
+	jsr CopyMultiplexTables
+}
 
 	lda #$ff
 	sta VIC2SpriteMulticolour
@@ -423,6 +495,17 @@ init
 !source "asm\HorizonDraw.a"
 
 !source "..\SpriteMultiplexor\SpriteMultiplexor.a"
+
+!ifdef Multiplex_SplitSort {
+MultiplexSort_MaxSprSorted !by 0
+}
+
+!source "..\Scroller\ScrollerAnimationMemory.a"
+SpriteEmptyLookupTab
+	!fill $40 , 0
+	!fill $c0 , 1
+
+!source "..\Scroller\ScrollerAnimation.a"
 
 GameScreenBGCol0
 !bin "Graphics/Level1.ctm" , 1 , 4
@@ -461,7 +544,7 @@ Data_blocktable = *
 !source "Data/Level1RoadObjects.a"
 
 
-*=$8000
+*=$7f00
 RoadsideObjectColourLookup
 !bin "Graphics/Level1.ctm" , $100 , $814
 
@@ -470,3 +553,4 @@ RoadsideObjectColourLookup
 
 *=$d000
 !bin "Graphics/Car.spd" , 15*64 , $9
+!bin "Graphics/EnemyCar.spd" , 33*64 , $9
