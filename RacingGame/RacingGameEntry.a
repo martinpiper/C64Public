@@ -354,7 +354,7 @@ MainlineIsPaused !by 0
 .cl3
 	cpy #Multiplex_items
 	bcs .cl4
-	sta AnimationYPosToSort,y
+	sta AnimationYPos,y
 	iny
 	jmp .cl3
 .cl4

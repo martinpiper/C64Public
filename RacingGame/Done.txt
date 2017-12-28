@@ -143,3 +143,11 @@ When a far road row is being drawn below the near horizon the ymax can be the ne
 
 * Move TrackDraw_colours to speed code in the cartridge
 	RoadsideObjectColourLookup cannot be in the cart space!
+
+
+
+* Add some extra sprite objects tied to road position
+	EnemyCar.spd
+	Think about defining a generic way to define these objects, from their single sprite to multi-sprite formations
+	Especially with regards to road position, perspective step/size and any angled/twisted left/right versions that might be used
+	* In progress: .gotASprite RoadObject_Sprite_Type_EnemyCar SpriteRoadTab

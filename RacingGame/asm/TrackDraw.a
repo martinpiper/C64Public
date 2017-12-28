@@ -69,13 +69,70 @@ RoadObject_Sprite
 
 PerspectiveTab_13
 	!by  0, 0, 1, 1, 2, 2, 3, 3, 4, 4
-	!by  5, 5, 6, 6, 7, 7, 7, 8, 8, 9
-	!by  9, 9,10,10,10,11,11,11,12,12
+	!by  5, 5, 6, 6, 7, 7, 8, 8, 9, 9
+	!by  9,10,10,10,11,11,11,11,12,12
 	!by 12,12,12,12,12,12
 
-MulTab_5
+RoadObject_Sprite_size		= 7
+RoadObject_Sprite_xoft		= 0
+RoadObject_Sprite_yoft		= 1
+RoadObject_Sprite_left		= 2
+RoadObject_Sprite_right		= 3
+RoadObject_Sprite_spr1		= 4
+RoadObject_Sprite_spr2		= 5
+RoadObject_Sprite_spr3		= 6
+
+!macro RoadObject_Sprite_1 .offsetX , .offsetY , .spr1 {
+	!by .offsetX , .offsetY , 0 , 0 , .spr1 , 0 , 0
+}
+!macro RoadObject_Sprite_2 .offsetX , .offsetY , .spr1 , .spr2 {
+	!by .offsetX , .offsetY , 0 , 0 , .spr1 , .spr2 , 0
+}
+!macro RoadObject_Sprite_2_lr .offsetX , .offsetY , .left , .right , .spr1 , .spr2 {
+	!by .offsetX , .offsetY , .left , .right , .spr1 , .spr2 , 0
+}
+!macro RoadObject_Sprite_3 .offsetX , .offsetY , .spr1 , .spr2 , .spr3 {
+	!by .offsetX , .offsetY , 0 , 0 , .spr1 , .spr2 , .spr3
+}
+
+
+!macro RoadObject_Sprite_to_plexor .enemyCarSprites , .sprObjX , .sprObjY , .index , .xoft {
+	cpy #Multiplex_items-4
+	bcc .gotSpace0
+	rts
+.gotSpace0
+
+	; Sprite 1
+	lda .enemyCarSprites + .index,x
+	sta AnimationSpriteFrame,y
+	lda #VIC2Colour_LightBlue
+	sta AnimationSpriteColour,y
+	lda .enemyCarSprites + RoadObject_Sprite_xoft,x
+	clc
+	adc .sprObjX
+!if .xoft > 0 {
+	clc
+	adc #.xoft
+}
+	asl
+	sta AnimationXPosLo,y
+	lda #0
+	rol
+	sta AnimationXPosHi,y
+
+	lda .enemyCarSprites + RoadObject_Sprite_yoft,x
+	clc
+	adc .sprObjY
+	sta AnimationYPos,y
+
+	inc RoadObject_AnimationIndex
+	iny
+}
+
+
+MulTab_RoadObject_Sprite_size
 	!for .a , 13 {
-		!by (.a-1) * 5
+		!by (.a-1) * RoadObject_Sprite_size
 	}
 
 
@@ -493,6 +550,24 @@ m1
 	jmp loopr
 m2	jsr animback
 loopr
+
+	; Debug single step
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .noFire
+	lda #0
+	sta spdom2
+.smPrevFire	lda #0
+	bne .noFire2
+	inc .smPrevFire+1
+	lda #1
+	sta spdom2
+	jmp .noFire2
+.noFire
+	lda #0
+	sta .smPrevFire+1
+.noFire2
+
 	ldy spdom2
 	beq loopr2
 loopr3
@@ -814,7 +889,7 @@ l10gz
 .gotEnemyCar
 	lda PerspectiveTab_13,y
 	tax
-	lda MulTab_5,x
+	lda MulTab_RoadObject_Sprite_size,x
 	tax
 
 	; Figure out the X and Y position
@@ -828,6 +903,24 @@ l10gz
 	adc #VIC2SpriteXBorderLeft/2	; Note: Div 2
 	sta .sprObjX
 
+	cmp #50
+	bcc .isLeft
+	cmp #130
+	bcs .isRight
+	jmp .isStraight
+.isLeft
+	lda .enemyCarSprites + RoadObject_Sprite_left,x
+	beq .isStraight
+	tax
+	jmp .isStraight
+
+.isRight
+	lda .enemyCarSprites + RoadObject_Sprite_right,x
+	beq .isStraight
+	tax
+;	jmp .isStraight
+
+.isStraight
 	lda ypost,y
 	asl
 	asl
@@ -837,92 +930,47 @@ l10gz
 	sta .sprObjY
 
 	ldy RoadObject_AnimationIndex
-	cpy #Multiplex_items-4
-	bcc .gotSpace0
-	rts
-.gotSpace0
 
-	; 0 Sprite
-	lda .enemyCarSprites + 2,x
-	sta AnimationSpriteFrame,y
-	lda #VIC2Colour_LightBlue
-	sta AnimationSpriteColour,y
-	lda .enemyCarSprites,x
-	clc
-	adc .sprObjX
-	asl
-	sta AnimationXPosLo,y
-	lda #0
-	rol
-	sta AnimationXPosHi,y
-
-	lda .enemyCarSprites+1,x
-	clc
-	adc .sprObjY
-	sta AnimationYPos,y
-
-	inc RoadObject_AnimationIndex
-	iny
-	cpy #Multiplex_items-4
-	bcc .gotSpace1
-	rts
-.gotSpace1
-
-	; Sprite 1
-	lda .enemyCarSprites + 3,x
-	bne .gotSprite1
-	rts
-.gotSprite1
-	sta AnimationSpriteFrame,y
-	lda #VIC2Colour_LightBlue
-	sta AnimationSpriteColour,y
-	lda .enemyCarSprites,x
-	clc
-	adc .sprObjX
-	clc
-	adc #VIC2SpriteSizeX/2
-	asl
-	sta AnimationXPosLo,y
-	lda #0
-	rol
-	sta AnimationXPosHi,y
-
-	lda .enemyCarSprites+1,x
-	clc
-	adc .sprObjY
-	sta AnimationYPos,y
-
-	inc RoadObject_AnimationIndex
-	iny
-
+	+RoadObject_Sprite_to_plexor .enemyCarSprites , .sprObjX , .sprObjY , RoadObject_Sprite_spr1 , 0
+	+RoadObject_Sprite_to_plexor .enemyCarSprites , .sprObjX , .sprObjY , RoadObject_Sprite_spr2 , VIC2SpriteSizeX/2
+	+RoadObject_Sprite_to_plexor .enemyCarSprites , .sprObjX , .sprObjY , RoadObject_Sprite_spr3 , VIC2SpriteSizeX
+	
 	rts
 .sprObjX !by 0
 .sprObjY !by 0
 
-!macro RoadObject_Sprite_3_1 .offsetX , .offsetY , .spr1 {
-	!by .offsetX , .offsetY , .spr1 , 0 , 0
-}
-!macro RoadObject_Sprite_3_2 .offsetX , .offsetY , .spr1 , .spr2 {
-	!by .offsetX , .offsetY , .spr1 , .spr2 , 0
-}
-!macro RoadObject_Sprite_3_3 .offsetX , .offsetY , .spr1 , .spr2 , .spr3 {
-	!by .offsetX , .offsetY , .spr1 , .spr2 , .spr3
-}
 .enemyCarSprites
-	+RoadObject_Sprite_3_1	 -1 , -20 + 1 ,	64 + 15 + 32
-	+RoadObject_Sprite_3_1	 -2 , -20 + 2 ,	64 + 15 + 31
-	+RoadObject_Sprite_3_1	 -2 , -20 + 2 ,	64 + 15 + 30
-	+RoadObject_Sprite_3_1	 -2 , -20 + 3 ,	64 + 15 + 29
-	+RoadObject_Sprite_3_1	 -4 , -20 + 3 ,	64 + 15 + 28
-	+RoadObject_Sprite_3_1	 -5 , -20 + 4 ,	64 + 15 + 27
-	+RoadObject_Sprite_3_1	 -6 , -20 + 5 ,	64 + 15 + 26
-	+RoadObject_Sprite_3_2	 -7 , -20 + 7 ,	64 + 15 + 24 ,	64 + 15 + 25
-	+RoadObject_Sprite_3_2	 -8 , -20 + 7 ,	64 + 15 + 22 ,	64 + 15 + 23
-	+RoadObject_Sprite_3_2	 -9 , -20 + 7 ,	64 + 15 + 20 ,	64 + 15 + 21
-	+RoadObject_Sprite_3_2	 -9 , -20 + 8 ,	64 + 15 + 16 ,	64 + 15 + 17
-	+RoadObject_Sprite_3_2	-10 , -20 + 8 ,	64 + 15 + 10 ,	64 + 15 + 11
-	+RoadObject_Sprite_3_2	-11 , -20 + 8 ,	64 + 15 + 3 ,	64 + 15 + 4
+	+RoadObject_Sprite_1		 -1 , -20 + 1 ,	64 + 15 + 32
+	+RoadObject_Sprite_1		 -2 , -20 + 2 ,	64 + 15 + 31
+	+RoadObject_Sprite_1		 -2 , -20 + 2 ,	64 + 15 + 30
+	+RoadObject_Sprite_1		 -2 , -20 + 3 ,	64 + 15 + 29
+	+RoadObject_Sprite_1		 -4 , -20 + 3 ,	64 + 15 + 28
+	+RoadObject_Sprite_1		 -5 , -20 + 4 ,	64 + 15 + 27
+	+RoadObject_Sprite_1		 -6 , -20 + 5 ,	64 + 15 + 26
+	+RoadObject_Sprite_2		 -7 , -20 + 7 ,	64 + 15 + 24 ,	64 + 15 + 25
+	+RoadObject_Sprite_2		 -8 , -20 + 7 ,	64 + 15 + 22 ,	64 + 15 + 23
+	+RoadObject_Sprite_2		 -9 , -20 + 7 ,	64 + 15 + 20 ,	64 + 15 + 21
+	+RoadObject_Sprite_2_lr		 -9 , -20 + 8 ,	.enemyCarSprite_10_left - .enemyCarSprites , .enemyCarSprite_10_right - .enemyCarSprites , 64 + 15 + 16 ,	64 + 15 + 17
+	+RoadObject_Sprite_2_lr		-10 , -20 + 8 ,	.enemyCarSprite_11_left - .enemyCarSprites , .enemyCarSprite_11_right - .enemyCarSprites , 64 + 15 + 10 ,	64 + 15 + 11
+	+RoadObject_Sprite_2_lr		-11 , -20 + 8 ,	.enemyCarSprite_12_left - .enemyCarSprites , .enemyCarSprite_12_right - .enemyCarSprites , 64 + 15 + 3 ,	64 + 15 + 4
 
+.enemyCarSprite_10_left
+	+RoadObject_Sprite_2		-9 , -20 + 8 ,	64 + 15 + 18 ,	64 + 15 + 19
+
+.enemyCarSprite_10_right
+	+RoadObject_Sprite_2		-9 , -20 + 8 ,	64 + 15 + 14 ,	64 + 15 + 15
+
+.enemyCarSprite_11_left
+	+RoadObject_Sprite_2		-10 , -20 + 8 ,	64 + 15 + 12 ,	64 + 15 + 13
+
+.enemyCarSprite_11_right
+	+RoadObject_Sprite_2		-10 , -20 + 8 ,	64 + 15 + 8 ,	64 + 15 + 9
+
+.enemyCarSprite_12_left
+	+RoadObject_Sprite_3		-11 , -20 + 8 ,	64 + 15 + 5 ,	64 + 15 + 6 ,	64 + 15 + 7
+
+.enemyCarSprite_12_right
+	+RoadObject_Sprite_3		-11 , -20 + 8 ,	64 + 15 + 0 ,	64 + 15 + 1 ,	64 + 15 + 2
 
 
 advance
