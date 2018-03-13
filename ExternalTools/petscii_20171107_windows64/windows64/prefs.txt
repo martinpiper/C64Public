@@ -1,0 +1,21 @@
+# Minimum 1, probably very slow after 3.
+ZOOM=2
+# Normally 60. Decrease for less CPU use, increase for responsiveness.
+FRAMERATE=60
+# One of: C64, C64FLICKER, VIC20, PET, PETHI, PLUS4. Leave empty for selector.
+MACHINE=C64
+# One of: PAL, NTSC, SQUARE. Used for stretch calculations.
+ASPECT=
+# Default image and ref path, leave empty for default.
+PATH=
+# Name with optional full path for the backup file instead of _backup_.c
+BACKUPFILE=
+# Show character position memory offsets (0=no, 1=yes).
+OFFSET=
+# Canvas x and y size, leave empty for defaults.
+XSIZE=
+YSIZE=
+# Maximum undo steps (32 by default).
+UNDODEPTH=
+# Command line for making animated gifs. Leave empty if none.
+CONVERTER=

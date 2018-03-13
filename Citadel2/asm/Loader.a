@@ -22,24 +22,8 @@ LoadLevel
 
 	jsr CartKillBank
 
-!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
-	; Because block colour data cannot be in the banked in ROM position whilst the colourise code is running
-	ldx #0
-.l1
-	lda CharColoursSource,x
-	sta CharColours,x
-	dex
-	bne .l1
-} else {
-CharColours = CharColoursSource
-}
-
 	rts
 
-!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
-CharColours
-	!fill 256 , 1
-}
 
 
 !zn

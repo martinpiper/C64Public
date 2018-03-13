@@ -37,9 +37,15 @@
 	lda #>TheIRQ
 	sta IRQServiceRoutineHi
 
-	; Waste a few frames to give the reset SID time to settle down
-	+MACROWaitForTheLastScan_A
 	+SetDefaultScreenLowerCase_A
+
+	; Waste a few frames to give the reset SID time to settle down
+	ldx #50
+.l3
+	+MACROWaitForTheLastScan_A
+	+MACROWaitForTheLastScanPlus1_A
+	dex
+	bne .l3
 
 	+MACROAckAllIRQs_A
 	cli
@@ -65,7 +71,12 @@ text
 !source "t3.a"
 !by CHR_Return
 !by CHR_LightBlue
-!tx "Raster time used 00"
+!tx "Raster time used: 00 lines"
+!by CHR_Return
+!tx "Average: 00 lines"
+!by CHR_Return
+!by CHR_Blue
+!tx "Time: 00:00:00"
 !by CHR_Return
 !by CHR_Return
 !by CHR_Grey
@@ -101,18 +112,99 @@ DisplayScreenText
 	jsr BASICTextPrint
 	rts
 
+
+.movingAverageShift = 6
+.movingAverageSize = (1 << .movingAverageShift)
+.movingAverage !fill .movingAverageSize , 0
 Mainline
 .l1
 	+MACROWaitForTheLastScan_A
-	ldy .rasterTime
+.smidx	ldx #0
+	lda .rasterTime
+	sta .movingAverage,x
+
+	tay
 	lda .valDiv10,y
 	clc
 	adc #'0'
-	sta SCREENRAM + (6*40) + 17
+	sta SCREENRAM + (6*40) + 18
 	lda .valMod10,y
 	clc
 	adc #'0'
-	sta SCREENRAM + (6*40) + 17 + 1
+	sta SCREENRAM + (6*40) + 18 + 1
+
+	; Populate the rest of the table gradually over time
+	inc .smidx+1
+	lda .smidx+1
+	and #.movingAverageSize-1
+	sta .smidx+1
+
+	; Calculate the moving average
+	ldx #.movingAverageSize-1
+	lda #0
+	sta $19
+	sta $1a
+.ma1
+	lda $19
+	clc
+	adc .movingAverage,x
+	sta $19
+	bcc .ma2
+	inc $1a
+.ma2
+	dex
+	bpl .ma1
+
+	; Divide the sum
+!for .i , .movingAverageShift {
+	lsr $1a
+	ror $19
+}
+
+	; Render
+	ldy $19
+	lda .valDiv10,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (7*40) + 9
+	lda .valMod10,y
+	clc
+	adc #'0'
+	sta SCREENRAM + (7*40) + 9 + 1
+
+
+!macro MAddNumber .pos , .max {
+	clc
+	adc .pos
+	cmp #.max+1
+	bcs .no1
+	sta .pos
+	lda #0	; No carry!
+	jmp .no2
+.no1
+	sec
+	sbc #(.max - '0')+1
+	sta .pos
+	lda #1	; Carry!
+.no2
+}
+
+	lda #2
+	+MAddNumber SCREENRAM + (8*40) + 13 , '9'
+	+MAddNumber SCREENRAM + (8*40) + 12 , '9'
+	beq .noTimeCarry1
+
+	+MAddNumber SCREENRAM + (8*40) + 10 , '9'
+	beq .noTimeCarry1
+	+MAddNumber SCREENRAM + (8*40) + 9 , '5'
+	beq .noTimeCarry1
+
+	+MAddNumber SCREENRAM + (8*40) + 7 , '9'
+	beq .noTimeCarry1
+	+MAddNumber SCREENRAM + (8*40) + 6 , '9'
+	beq .noTimeCarry1
+
+.noTimeCarry1
 
 !ifdef SoundEffectsActive {
 	lda ZPCurrentKeyPressed
@@ -158,14 +250,24 @@ TheIRQ
 	lda VIC2Raster
 	bne .i1
 
-	inc VIC2BorderColour
+	ldx #10
+.l2
+	dex
+	bne .l2
+	nop
+
+	lda #VIC2Colour_Grey
+	sta VIC2BorderColour
 	jsr MusicPlayerPlay
 
-	lda VIC2Raster
-	sta .rasterTime
+	; Adjust for stable raster overhead
+	ldx VIC2Raster
+	dex
+	stx .rasterTime
 
 !ifdef MusicPlayer_DebugBorder { } else {
-	dec VIC2BorderColour
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
 }
 	+MACROAckRasterIRQ_A
 	jmp DefaultIRQServiceRoutine

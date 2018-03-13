@@ -2083,7 +2083,6 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 	const char *argv[] = {acmeCommandLine,theCommand,0};
 	intptr_t ret = _spawnvp(_P_WAIT,acmeCommandLine,argv);
 #else
-	// Register the GameLobby COM objects
 	STARTUPINFOA			si;
 	PROCESS_INFORMATION		pi;
 	

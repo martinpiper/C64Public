@@ -1,38 +1,38 @@
 ; DataScorePanel.prg
 CartFile1_Bank_DataScorePanel_prg = $7
 CartFile1_Start_DataScorePanel_prg = $8000
-CartFile1_Size_DataScorePanel_prg = $d80
+CartFile1_Size_DataScorePanel_prg = $da8
 CartFile1_XOR_DataScorePanel_prg = $0
 
+; bin\SubGame.bin
+CartFile1_Bank_SubGame_bin = $8
+CartFile1_Start_SubGame_bin = $8000
+CartFile1_Size_SubGame_bin = $898
+CartFile1_XOR_SubGame_bin = $0
+
 ; Sound\Citadel2_Title.prg
-CartFile1_Bank_Citadel2_Title_prg = $7
-CartFile1_Start_Citadel2_Title_prg = $8d80
+CartFile1_Bank_Citadel2_Title_prg = $8
+CartFile1_Start_Citadel2_Title_prg = $8898
 CartFile1_Size_Citadel2_Title_prg = $d89
 CartFile1_XOR_Citadel2_Title_prg = $0
 
 ; Citadel2_Title.dec
-CartFile1_Bank_Citadel2_Title_dec = $8
+CartFile1_Bank_Citadel2_Title_dec = $9
 CartFile1_Start_Citadel2_Title_dec = $8000
-CartFile1_Size_Citadel2_Title_dec = $d13
+CartFile1_Size_Citadel2_Title_dec = $dd2
 CartFile1_XOR_Citadel2_Title_dec = $77
 
 ; Citadel2_Game.dec
-CartFile1_Bank_Citadel2_Game_dec = $9
+CartFile1_Bank_Citadel2_Game_dec = $a
 CartFile1_Start_Citadel2_Game_dec = $8000
 CartFile1_Size_Citadel2_Game_dec = $2000
 CartFile1_XOR_Citadel2_Game_dec = $f7
 
 ; Citadel2_Game2.dec
-CartFile1_Bank_Citadel2_Game2_dec = $a
+CartFile1_Bank_Citadel2_Game2_dec = $b
 CartFile1_Start_Citadel2_Game2_dec = $8000
-CartFile1_Size_Citadel2_Game2_dec = $2504
+CartFile1_Size_Citadel2_Game2_dec = $17f9
 CartFile1_XOR_Citadel2_Game2_dec = $f7
-
-; Citadel2_Game3.dec
-CartFile1_Bank_Citadel2_Game3_dec = $b
-CartFile1_Start_Citadel2_Game3_dec = $8000
-CartFile1_Size_Citadel2_Game3_dec = $504
-CartFile1_XOR_Citadel2_Game3_dec = $f7
 
 ; DataLevel1.prg
 CartFile1_Bank_DataLevel1_prg = $c
@@ -118,27 +118,105 @@ CartFile1_Start_Char1To0_m40_bin = $8000
 CartFile1_Size_Char1To0_m40_bin = $13e1
 CartFile1_XOR_Char1To0_m40_bin = $0
 
+; bin\Char0To1_41.bin
+CartFile1_Bank_Char0To1_41_bin = $16
+CartFile1_Start_Char0To1_41_bin = $8000
+CartFile1_Size_Char0To1_41_bin = $12bb
+CartFile1_XOR_Char0To1_41_bin = $0
+
+; bin\Char1To0_41.bin
+CartFile1_Bank_Char1To0_41_bin = $17
+CartFile1_Start_Char1To0_41_bin = $8000
+CartFile1_Size_Char1To0_41_bin = $12bb
+CartFile1_XOR_Char1To0_41_bin = $0
+
+; bin\Char0To1_39.bin
+CartFile1_Bank_Char0To1_39_bin = $18
+CartFile1_Start_Char0To1_39_bin = $8000
+CartFile1_Size_Char0To1_39_bin = $12bb
+CartFile1_XOR_Char0To1_39_bin = $0
+
+; bin\Char1To0_39.bin
+CartFile1_Bank_Char1To0_39_bin = $19
+CartFile1_Start_Char1To0_39_bin = $8000
+CartFile1_Size_Char1To0_39_bin = $12bb
+CartFile1_XOR_Char1To0_39_bin = $0
+
+; bin\Char0To1_m41.bin
+CartFile1_Bank_Char0To1_m41_bin = $1a
+CartFile1_Start_Char0To1_m41_bin = $8000
+CartFile1_Size_Char0To1_m41_bin = $13a5
+CartFile1_XOR_Char0To1_m41_bin = $0
+
+; bin\Char1To0_m41.bin
+CartFile1_Bank_Char1To0_m41_bin = $1b
+CartFile1_Start_Char1To0_m41_bin = $8000
+CartFile1_Size_Char1To0_m41_bin = $13a5
+CartFile1_XOR_Char1To0_m41_bin = $0
+
+; bin\Char0To1_m39.bin
+CartFile1_Bank_Char0To1_m39_bin = $1c
+CartFile1_Start_Char0To1_m39_bin = $8000
+CartFile1_Size_Char0To1_m39_bin = $13a5
+CartFile1_XOR_Char0To1_m39_bin = $0
+
+; bin\Char1To0_m39.bin
+CartFile1_Bank_Char1To0_m39_bin = $1d
+CartFile1_Start_Char1To0_m39_bin = $8000
+CartFile1_Size_Char1To0_m39_bin = $13a5
+CartFile1_XOR_Char1To0_m39_bin = $0
+
 ; bin\Colour_1.bin
-CartFile1_Bank_Colour_1_bin = $16
+CartFile1_Bank_Colour_1_bin = $1e
 CartFile1_Start_Colour_1_bin = $8000
 CartFile1_Size_Colour_1_bin = $12bb
 CartFile1_XOR_Colour_1_bin = $0
 
 ; bin\Colour_m1.bin
-CartFile1_Bank_Colour_m1_bin = $17
+CartFile1_Bank_Colour_m1_bin = $1f
 CartFile1_Start_Colour_m1_bin = $8000
 CartFile1_Size_Colour_m1_bin = $12bb
 CartFile1_XOR_Colour_m1_bin = $0
 
 ; bin\Colour_40.bin
-CartFile1_Bank_Colour_40_bin = $18
+CartFile1_Bank_Colour_40_bin = $20
 CartFile1_Start_Colour_40_bin = $8000
 CartFile1_Size_Colour_40_bin = $13e1
 CartFile1_XOR_Colour_40_bin = $0
 
 ; bin\Colour_m40.bin
-CartFile1_Bank_Colour_m40_bin = $19
+CartFile1_Bank_Colour_m40_bin = $21
 CartFile1_Start_Colour_m40_bin = $8000
 CartFile1_Size_Colour_m40_bin = $13e1
 CartFile1_XOR_Colour_m40_bin = $0
+
+; bin\Colour_39.bin
+CartFile1_Bank_Colour_39_bin = $22
+CartFile1_Start_Colour_39_bin = $8000
+CartFile1_Size_Colour_39_bin = $13a5
+CartFile1_XOR_Colour_39_bin = $0
+
+; bin\Colour_m39.bin
+CartFile1_Bank_Colour_m39_bin = $23
+CartFile1_Start_Colour_m39_bin = $8000
+CartFile1_Size_Colour_m39_bin = $13a5
+CartFile1_XOR_Colour_m39_bin = $0
+
+; bin\Colour_41.bin
+CartFile1_Bank_Colour_41_bin = $24
+CartFile1_Start_Colour_41_bin = $8000
+CartFile1_Size_Colour_41_bin = $13a5
+CartFile1_XOR_Colour_41_bin = $0
+
+; bin\Colour_m41.bin
+CartFile1_Bank_Colour_m41_bin = $25
+CartFile1_Start_Colour_m41_bin = $8000
+CartFile1_Size_Colour_m41_bin = $13a5
+CartFile1_XOR_Colour_m41_bin = $0
+
+; bin\BlockStrips.bin
+CartFile1_Bank_BlockStrips_bin = $25
+CartFile1_Start_BlockStrips_bin = $93a5
+CartFile1_Size_BlockStrips_bin = $b86
+CartFile1_XOR_BlockStrips_bin = $0
 

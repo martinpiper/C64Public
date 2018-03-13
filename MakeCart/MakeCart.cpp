@@ -514,8 +514,19 @@ int main( int argc , char **argv )
 
 							fseek(fp,0,SEEK_END);
 							int fileLen = ftell(fp) - tweakOffset;
-
 							fclose(fp);
+
+							if (fileLen <= 0)
+							{
+								printf("Skip file '%s' due to zero or negative length\n" , filename);
+								continue;
+							}
+							if (fileLen > maxSize)
+							{
+								fileLen = maxSize;
+							}
+
+							printf("File '%s' offset $%x xor $%x len $%x\n" , filename , tweakOffset , fileXOR , fileLen);
 
 							if ( (fileReset && (bankSize > 0)) || (bankSize + fileLen) >= maxSize )
 							{
@@ -557,12 +568,22 @@ int main( int argc , char **argv )
 
 							if ( fileData.Read( filename , true ) )
 							{
-								printf("File '%s' read $%x\n" , filename , fileData.GetBufferSize() - tweakOffset);
+								printf("File '%s' read $%x to use $%x\n" , filename , fileData.GetBufferSize() , fileData.GetBufferSize() - tweakOffset);
 							}
 							else
 							{
 								printf("Problem 2 reading file '%s'\n" , filename );
 								continue;
+							}
+
+							int fileLen = fileData.GetBufferSize() - tweakOffset;
+							if (fileLen <= 0)
+							{
+								continue;
+							}
+							if (fileLen > maxSize)
+							{
+								fileLen = maxSize;
 							}
 
 							int i;
@@ -574,12 +595,12 @@ int main( int argc , char **argv )
 
 
 							// Decide when to flush the current buffer
-							if ( (fileReset && (chunkData.GetSize() > 0)) || (chunkData.GetSize() + fileData.GetBufferSize() - tweakOffset) >= maxSize )
+							if ( (fileReset && (chunkData.GetSize() > 0)) || (chunkData.GetSize() + fileLen) >= maxSize )
 							{
 								startBankNum = WriteChunkToBanks(startBankNum, maxSize, chunkData, startAddress, output);
 							}
 
-							chunkData.AddData((char*)fileData.GetBuffer() + tweakOffset , fileData.GetBufferSize() - tweakOffset);
+							chunkData.AddData((char*)fileData.GetBuffer() + tweakOffset , fileLen);
 						}
 
 

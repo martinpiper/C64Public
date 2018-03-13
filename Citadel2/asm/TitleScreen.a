@@ -6,9 +6,12 @@
 
 TitleScreen_spritePerStroke = (Multiplex_items / 2)-2
 
+; Watch out for CHARGEN
 TitleScreen_SpritesAddress	= $8000
-TitleScreen_ScreenAddress	= $8400
-TitleScreen_CharsAddress	= $8800
+TitleScreen_ScreenAddress	= $a800
+TitleScreen_CharsAddress	= $a000
+
+TitleScreen_SpritesStart = (TitleScreen_SpritesAddress & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
 
 TitleScreen_Balls_YAdjust = 29
 
@@ -328,12 +331,12 @@ lDisplayTitleScreen
 	lda #%00011011
 	sta VIC2ScreenControlV
 
-	lda #%00010010
+	+MVIC2MemorySetup_ScreenChar_A TitleScreen_ScreenAddress , TitleScreen_CharsAddress
 	sta VIC2MemorySetup
 
 	; Initialise the multiplexor, animation engine and IRQs for the title screen code to use if it wants to
 	; MPi: TODO: Init sprite multicolour mode and extended colours here
-	lda #$87
+	lda #>(TitleScreen_ScreenAddress+SPRITEFRAMESCROFF)
 	jsr Multiplex_SetSpritePointer
 	lda #Multiplex_items
 	sta Multiplex_MaxSpr
@@ -354,7 +357,7 @@ lDisplayTitleScreen
 	sta Multiplex_Colour,x
 	lda #0
 	sta Multiplex_XPosHi,x
-	lda #0	; Some sprite frame for now
+	lda #TitleScreen_SpritesStart	; Some sprite frame for now
 	sta Multiplex_SpriteFrame,x
 	lda Multiplex_YPos,x
 !ifdef Multiplex_SplitSort {
@@ -364,7 +367,7 @@ lDisplayTitleScreen
 	bpl .fl1
 
 	; Logo sprites
-	ldx #8
+	ldx #TitleScreen_SpritesStart+8
 	stx Multiplex_SpriteFrame
 	inx
 	stx Multiplex_SpriteFrame + 1
@@ -702,8 +705,10 @@ smTitleScreen_GlideIn	lda #0
 	and #15
 	tay
 	lda .upDownTab,y
-;	clc
-;	adc #$28
+!if TitleScreen_SpritesStart > 0 {
+	clc
+	adc #TitleScreen_SpritesStart
+}
 	sta Multiplex_SpriteFrame+4,x
 .skipIt1
 	pla
@@ -775,8 +780,10 @@ smTitleScreen_GlideIn	lda #0
 	lsr
 	tay
 	lda .upDownTab,y
-;	clc
-;	adc #$28
+!if TitleScreen_SpritesStart > 0 {
+	clc
+	adc #TitleScreen_SpritesStart
+}
 	sta Multiplex_SpriteFrame+.spritePerStroke+4,x
 .skipIt2
 	pla

@@ -1,0 +1,40 @@
+SubGameChar_EnergyBar		= 182
+SubGameChar_Pointer			= 183
+SubGameChar_Term1			= 184
+SubGameChar_Term2			= 185
+SubGameChar_VertToRight		= 186
+SubGameChar_Via				= 187
+SubGameChar_Up				= 188
+SubGameChar_Down			= 189
+SubGameChar_Change			= 190
+SubGameChar_Right			= 191
+
+; Chances of each of the circuit elements appearing (out of 256 obviously)
+SubGameChance_Right			= 128
+SubGameChance_Change		= 32
+SubGameChance_Up			= 128
+SubGameChance_Down			= 128
+SubGameChance_ViaColour		= 128
+
+; Various layout constants
+kSubGame_ScreenTop		= 3
+kSubGame_ScreenLeft		= 9
+kSubGame_ScreenRight	= 29
+kSubGame_HorizontalBarTickTime	= 100
+
+SubGame_ScreenBottom		= 15
+SubGame_BlockWidth			= 3
+SubGame_BlockHeight			= 2
+SubGame_PointerYPos			= SubGame_ScreenBottom+2
+SubGame_HorizontalBarYPos	= SubGame_PointerYPos+1
+SubGame_HorizontalBarSize	= 30
+SubGame_HorizontalBarXStart	= (VIC2ScreenCharsWidth-SubGame_HorizontalBarSize)/2
+SubGame_HorizontalBarXEnd	= SubGame_HorizontalBarXStart + SubGame_HorizontalBarSize
+
+SubGameVerticalBarTop		= SubGame_ScreenBottom - 8
+SubGameVerticalBarBottom	= SubGame_ScreenBottom
+SubGameVerticalBarSize		= SubGameVerticalBarBottom - SubGameVerticalBarTop
+
+SubGameExit_Null			= 0	; Must be zero
+SubGameExit_Success			= 1
+SubGameExit_Failure			= 2

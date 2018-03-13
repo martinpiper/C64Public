@@ -1,3 +1,19 @@
+; Memory map
+LevelDataStart		= $7800
+
+MusicPlayerInit		= $8700
+MusicPlayerPlay		= $8703
+MusicPlayerStop		= $8706
+MusicPlayerPlaySFX	= $8709
+
+OtherCodeMemory		= $9800
+
+MarkBeginData		= $a000
+
+DynamicMemoryData	= $b800
+DynamicMemorySize	= $400
+
+
 ; Common values that are shared between the game code and the level data
 MaxSpriteNumber = 187
 CharData=$c000
@@ -8,18 +24,9 @@ TitleScreen_NumChars	= 204
 TitleScreen_TopLogoWid	= 40
 TitleScreen_TopLogoHei	= 7
 
-
-
-numMapUsedChars = 256
-numMapUsedTiles = 44
-SolidMapBlockIndex = 20
-
-LevelDataStart = $a000
-
-MusicPlayerInit = $af00
-MusicPlayerPlay = $af03
-MusicPlayerStop = $af06
-MusicPlayerPlaySFX = $af09
+numMapUsedChars			= 256
+numMapUsedTiles			= 44
+SolidMapBlockIndex		= 20
 
 numMaxEnemySlotsToOnScreenCheck = 64			; Must be power of 2
 MaxEnemies = numMaxEnemySlotsToOnScreenCheck
@@ -116,16 +123,28 @@ MapTile_DoorSwitchOnFacingUp		= 43
 MaxInterestingPlaces = 48
 
 ; Score panel graphics
-ScorePanelNumChars			= 40
+ScorePanelNumChars			= 45
 
 ScorePanel_EmptyChar		= 0
 
-Score_ZeroCharacter			= 7
-ScorePanel_RadarChar		= 20
-ScorePanelEnergyCharacter	= 34
+Score_ZeroCharacter				= 7
+ScorePanel_RadarChar			= 20
+ScorePanelEnergyCharacterRed	= 34
+ScorePanelEnergyCharacterYellow	= 35
+ScorePanelEnergyCharacterGreen	= 36
+ScorePanelCharBatteryBar		= 44
+ScorePanelCharBatteryArrow		= 40
 
-ScorePanelEnergy_XPos		= 9
+; Battery and energy bar display
+PlayerHealthMax				= 6
+Battery_RechargeDelay		= 1	; The larger the number the more movement the player needs to do before one unit of the battery will recharge
+ScorePanelEnergy_XPos		= 10
 ScorePanelEnergy_YPos		= 22
+ScorePanelBattery1_XPos		= 12
+ScorePanelBattery1_YPos		= 21
+ScorePanelBattery2_XPos		= 12
+ScorePanelBattery2_YPos		= 23
+ScorePanelBattery_Size		= 4
 
 ScorePanel_Score_NumDigits	= 6
 ScorePanel_Score_XPos		= 2

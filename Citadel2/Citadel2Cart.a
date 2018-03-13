@@ -26,7 +26,7 @@ CartKillBank_ProcessorPort		= ProcessorPortDefault
 
 ; If bank 0 ever gets over 8K or the compressed game code gets over $b800 (47104) bytes then this approach is screwed. :)
 
-*=$8000
+* = C64Cartridge_Lo_8K
 ; Used by MakeCart to place this address at 0xfffc into the second chip (bank 0 address a000)
 ; When making EasyFlash carts
 ; EasyFlash replaces the kernal and so this address is used for the kernal reset vector
@@ -127,9 +127,9 @@ RealCodeStart
 
 
 	; Check the cart banks switch properly, otherwise there is a hardware problem
-	lda $8000
+	lda C64Cartridge_Lo_8K
 	pha
-	lda $8001
+	lda C64Cartridge_Lo_8K+1
 	pha
 
 	; Switch to the next bank and compare for data differences
@@ -137,10 +137,10 @@ RealCodeStart
 	+MACRO_CartSelectBank_8K_NoSEI_A
 
 	pla
-	cmp $8001
+	cmp C64Cartridge_Lo_8K+1
 	bne .diff
 	pla
-	cpx $8000
+	cpx C64Cartridge_Lo_8K
 	bne .diff
 
 	+DisplayColourTextMiddle_AX .HWFail , .HWFailEnd , SCREENRAM + (12*40) , VIC2Colour_White
@@ -181,7 +181,7 @@ RealCodeStart
 	ldy #1
 	sty CART_SELECT_BANK
 .l2
-.sm1	lda $8000,x
+.sm1	lda C64Cartridge_Lo_8K,x
 .sm2	sta $0800,x
 	dex
 	bne .l2
@@ -189,12 +189,12 @@ RealCodeStart
 	inc .sm2+2
 
 	lda .sm2+2
-	cmp #$c0
+	cmp #>VIC2_Bank3
 	beq .RunGame
 
 	; Loop the cart end address block copying $8000 - $a000
 	lda .sm1+2
-	cmp #$a0
+	cmp #>BASICROM
 	bne .l2
 
 	lda #$80

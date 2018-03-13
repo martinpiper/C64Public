@@ -13,6 +13,10 @@
       <Configuration>SolveRunner</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="SubGame|Win32">
+      <Configuration>SubGame</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\BerzerkRedux\Rand.a" />
@@ -25,6 +29,20 @@
     <None Include="..\MakeCart\asm\GMod2_Code.a" />
     <None Include="..\MakeCart\asm\GMod2_Macros.a" />
     <None Include="..\Scroller\AnimationEngine.a" />
+    <None Include="..\Scroller\CartCode\CartOpts.a" />
+    <None Include="..\Scroller\CartCode\Header.a" />
+    <None Include="..\Scroller\CartCode\HeaderEntry.a" />
+    <None Include="..\Scroller\CartCode\ScreenConfig.a" />
+    <None Include="..\Scroller\CartCode\Scroll_1.a" />
+    <None Include="..\Scroller\CartCode\Scroll_39.a" />
+    <None Include="..\Scroller\CartCode\Scroll_40.a" />
+    <None Include="..\Scroller\CartCode\Scroll_41.a" />
+    <None Include="..\Scroller\CartCode\Scroll_m1.a" />
+    <None Include="..\Scroller\CartCode\Scroll_m39.a" />
+    <None Include="..\Scroller\CartCode\Scroll_m40.a" />
+    <None Include="..\Scroller\CartCode\Scroll_m41.a" />
+    <None Include="..\Scroller\CartCode\StripsOffsets.a" />
+    <None Include="..\Scroller\CatchUndefCartFiles.a" />
     <None Include="..\Scroller\DataCheck.a" />
     <None Include="..\Scroller\LevelControl.a" />
     <None Include="..\Scroller\OneTime.a" />
@@ -47,7 +65,11 @@
     <None Include="..\Scroller\ScrollerStripsColouriseLeft.a" />
     <None Include="..\Scroller\ScrollerStripsColouriseRight.a" />
     <None Include="..\Scroller\ScrollerStripsColouriseTop.a" />
+    <None Include="..\Scroller\ScrollerStripsCommon.a" />
+    <None Include="..\Scroller\ScrollerStripsLeft.a" />
     <None Include="..\Scroller\ScrollerStripsMacros.a" />
+    <None Include="..\Scroller\ScrollerStripsRight.a" />
+    <None Include="..\Scroller\ScrollerStripsTop.a" />
     <None Include="..\Scroller\ScrollerVars.a" />
     <None Include="..\Scroller\ScrollMain.a" />
     <None Include="..\Scroller\SetupIRQs.a" />
@@ -64,6 +86,7 @@
     <None Include="asm\AnimationsMemory.a" />
     <None Include="asm\AnimationsStub.a" />
     <None Include="asm\AutoDoors.a" />
+    <None Include="asm\Battery.a" />
     <None Include="asm\Camera.a" />
     <None Include="asm\CaptureProbe.a" />
     <None Include="asm\Charger.a" />
@@ -102,7 +125,11 @@
     <None Include="asm\Score.a" />
     <None Include="asm\SFXTables.a" />
     <None Include="asm\SubGame.a" />
+    <None Include="asm\SubGameCart.a" />
+    <None Include="asm\SubGameConstants.a" />
+    <None Include="asm\SubGameData.a" />
     <None Include="asm\SubGameInput.a" />
+    <None Include="asm\SubGameMacro.a" />
     <None Include="asm\SubGameStub.a" />
     <None Include="asm\Teleport.a" />
     <None Include="asm\TitleScreen.a" />
@@ -151,6 +178,11 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SubGame|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Citadel2|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -165,6 +197,9 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SolveRunner|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SubGame|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Citadel2|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -177,8 +212,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SolveRunner|Win32'">
     <NMakeBuildCommandLine>buildIt2.bat</NMakeBuildCommandLine>
-    <NMakeOutput>Citadel2.prg</NMakeOutput>
+    <NMakeOutput>SolveRunner.prg</NMakeOutput>
     <NMakeReBuildCommandLine>BuildIt2.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SubGame|Win32'">
+    <NMakeBuildCommandLine>buildIt3.bat</NMakeBuildCommandLine>
+    <NMakeOutput>SubGameStub.prg</NMakeOutput>
+    <NMakeReBuildCommandLine>BuildIt3.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Citadel2|Win32'">

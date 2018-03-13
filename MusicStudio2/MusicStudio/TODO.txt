@@ -1,13 +1,61 @@
 To build:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
-..\..\acme.exe --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
+..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
 
 Or:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
-..\..\acme.exe --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
+..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
+
+Or:
+cls && ..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a && ..\..\bin\LZMPi.exe -c64 t.prg t.prg 2061 && t.prg
 
 
 TODO
+
+* Somewhere around .checkVoiceRetrigger check for a new tick box in the extended screen of global hard restart being enabled or disabled.
+	Default is on, but can be switched off.
+	http://csdb.dk/forums/?roomid=14&topicid=110119&showallposts=1
+	Upgrade: For msmus default is enabled HR.
+		For old prg import default is disabled HR.
+	If HR is disabled then completely remove the HR code at .checkVoiceRetrigger and .didHardRestart
+
+
+
+
+* Track repeat values block repeat option:
+	$40-$5f as normal
+	Add	$60-$7e Start repeat block XX-$60
+		$7f finish repeat block
+
+
+
+* Detect and optimise out various NoteTableCommandXX options
+
+
+
+* From a blank editor in release mode, when importing an old file, the export/extended view menu options are not available?
+
+
+
+* For the standalone player add compression and include the exe in the final release output
+
+
+
+* Raster time while playing. Will probably need to be cycle time based instead, pulled from the SID player code.
+
+
+
+* Need some BDD feature files to test the results of hard restart drum tests etc, make sure the SID registers are set at the correct times
+
+
+
+
+* Tempo options
+	* Sequence tempo - For counterA from valueA to 0, when counterA is >= valueB then process updates every valueC frames
+	* Table tempo - At .VoiceTableHandling with similar independant counters in a similar configuration to the above
+
+
+
 
 * Ripping preferences window. Tracker block length, split into time periods, tempo. Extract instruments etc.
 

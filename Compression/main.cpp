@@ -23,6 +23,7 @@
 //-c UnitTest1.dat c:\temp\ut1.cdat
 //-c64m C:\work\C64\RacingGame\OriginalData.prg c:\temp\tc.prg 2048
 //-c64mb C:\work\C64\RacingGame\OriginalData.prg c:\temp\tc.prg 2048
+//-cut c:\temp\t.txt c:\temp\tout.txt 123 $200
 
 
 // TODP: Add an option to compress and run BASIC code.
@@ -249,12 +250,14 @@ int main(int argc,char **argv)
 		 "Use the following to skip a number of bytes from the start of the file and\n"
 		 "set a length. If the length equals 0 the length is still set from the file: \n"
 		 " -c <input file> <outfile file> <offset> [length]\n\n"
-		 "-c64 will compress a C64 prg file with the start address being the first two\n"
+		 " -cut <input file> <outfile file> <offset> [length]\n"
+		 "-cut will not compress the file, meaning data is just effectively cut and written to the output file.\n"
+		 " -c64 will compress a C64 prg file with the start address being the first two\n"
 		 "bytes of the file. The optional start address will override the start address\n"
 		 "read from the first two bytes of the prg file.\n"
-		 "-c64b will cause the border to flash during decompression.\n"
-		 "-c64m or -c64mb will use max mode ($200-$ffff available) without or with border flashing.\n"
-		 "-c64mr will use RLE max mode ($200-$ffff available) without border flashing.\n"
+		 " -c64b will cause the border to flash during decompression.\n"
+		 " -c64m or -c64mb will use max mode ($200-$ffff available) without or with border flashing.\n"
+		 " -c64mr will use RLE max mode ($200-$ffff available) without border flashing.\n"
 		 "By default the border will not flash.\n\n");
 
 		exit(-1);
@@ -377,6 +380,14 @@ int main(int argc,char **argv)
 
 	if (argv[1][1] == 'c')
 	{
+		if (argv[1][2] == 'u' && argv[1][3] == 't')
+		{
+			fwrite(input , 1 , inputSize , fp);
+			fclose(fp);
+			printf("offset = $%04x length = $%04x\n",(int)offset,(int)inputSize);
+			return 0;
+		}
+
 #if 0
 		u16 j;
 		for (j=0;j<inputSize;j++)

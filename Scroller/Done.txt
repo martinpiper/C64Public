@@ -142,3 +142,25 @@
 * Update to use GMod2, 8KB banks
 	* Different cart boot code, use runstop to cause it to do a normal boot
 	* The speed code scrollers might need splitting, into their separate top/bottom half routines, to squeeze them into 8KB banks instead of 16KB banks
+
+
+
+* Added ScrollerStripsCodeSize/Start/End to aid debugging
+
+
+
+
+* Unroll the block plotting code for characters
+	* A bit like the code for Scroller_EnableBlockColourSpeedCode
+	* Also put this code in the cart banks if Scroller_EnableSpeedCode is enabled and remove from RAM
+	* Tricky because the block data can be under the cart ROM that is banked in...
+	Before with no debug colours: ScrollerStripsCodeSize  =$5cf
+	* Done - DataCheck.a - Use this to check for all the externally referenced data
+	* Done - Split into ScrollerStripsTop/Bottom/Left/Right.a to prepare for Scroller_EnableBlockStripsSpeedCodeInCart versions later
+	* When Scroller_EnableBlockStripsSpeedCode then unroll bottom/top/right/left versions
+		Done - MACROScrollerDrawHStripUnrolled + top + bottom
+		Done - MACROScrollerDrawVStripUnrolled + left + right
+	* Create Scroller_EnableBlockStripsSpeedCodeInCart like Scroller_EnableBlockColourSpeedCodeInCart
+		Add extra Scroller_EnableBlockStripsSpeedCodeInCart option that is activated with Scroller_EnableSpeedCode like that used for Scroller_EnableBlockColourSpeedCodeInCart
+	* When Scroller_EnableBlockStripsSpeedCodeInCart assemble the unrolled code separately
+		Make sure used variables/defines are extracted by sed in BuildIt.bat

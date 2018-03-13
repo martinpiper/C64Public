@@ -12,11 +12,11 @@
 BlockData
 !bin "Level1.ctm" , numMapUsedTiles*4*4 ,  $14 + (numMapUsedChars * 9) , 2
 
-!align 255,0
+;!align 255,0
 BlockColours
 
 !ifdef CharColoursForEveryCharacter {
-CharColoursSource
+CharColours
 !bin "Level1.ctm" , numMapUsedChars , $14 + (numMapUsedChars * 8)
 }
 
@@ -25,6 +25,7 @@ CharColoursSource
 MapData
 !by MazeWidth,MazeHeight
 !bin "Level1.ctm" , (MazeWidth*MazeHeight) ,  $14 + (numMapUsedChars * 9) + (numMapUsedTiles*4*4 * 2) , 2
+MapDataEnd
 
 
 NumInterestingPlaces !by calcedNumPlaces
@@ -188,7 +189,10 @@ EnemyTemplate_Alertness
 EnemyTemplate_Ram
 	!by	0,	0,	0,	0,	1,	0,	0,	0
 EnemyTemplate_CaptureEnergyCost
-	!by	1,	3,	1,	1,	1,	2,	1,	1
+	!by	-1,	3,	2,	2,	2,	3,	2,	2
+EnemyTemplate_FireSpeed
+	!by	-1,	180,	100,	30,	100,	120,	100,	110
+
 
 ; The index into the Enemy structures is shifted by -1 because 0 is used as a clear index flag for AnimationActiveSlot
 ; A negative flag cannot be used because we want potentially >128 enemies in the DB
@@ -198,6 +202,7 @@ EnemyTemplate_CaptureEnergyCost
 EnemyType
 	!by 0	; Player!
 	!by 1
+;	!by 2
 !if 1 {
 	!by 2 , 3
 	!by 4 , 5
@@ -213,7 +218,9 @@ EnemyType
 ; Anything in these flags gets copied into AnimationEnemyFlags when it is allocated
 EnemyFlags
 	!by 0	; Player!
+
 	!by EnemyFlags_DropPickup
+;	!by 0
 	!by 0 , 0
 	!by 0 , EnemyFlags_DropPickup
 	!by 0
@@ -227,11 +234,12 @@ EnemyFlags
 ; Map tile positions
 EnemyPositionsX
 	!by 8
-;	!by 6
+;	!by 10
 ;	!by 12
 ;	!by 38
 
 	!by 1
+;	!by 1
 	!by 1 , 4
 	!by 1 , 8
 	!by 17
@@ -249,6 +257,7 @@ EnemyPositionsY
 ;	!by 7
 
 	!by 5
+;	!by 5
 	!by 12 , 10
 	!by 21 , 20
 	!by 11
@@ -438,5 +447,6 @@ LevelData_Size = LevelDataEnd - LevelDataStart
 
 * = MusicPlayerInit
 !bin "Sound\Citadel2_Level1_SFX.prg",,$2
+MusicPlayerEndData = *
 
-!if * >= $c000 { !error "Music data end must not impact CharData at $c000" }
+!if * >= $a000 { !error "Music data end must not impact MarkBeginData at $a000" }

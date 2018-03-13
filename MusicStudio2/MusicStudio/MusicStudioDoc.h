@@ -116,6 +116,8 @@ public:
 
 	void OptimiseTables(const bool assumeAllEnvelopesUsed = false);
 
+	int getNextFreeTableControl(const int tableIndex);
+
 protected:
 	CMultiDocTemplate* mDocTemplateExtended;
 
@@ -131,6 +133,8 @@ public:
 	bool LoadGoatTrackerSong(CArchive &ar,const int version);
 
 	bool LoadMIDIFile(CArchive &ar);
+
+	bool LoadMWMusicFile(CArchive &ar);
 
 	void RemoveTableByteAt(const int table, const int position);
 

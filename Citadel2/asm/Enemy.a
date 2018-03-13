@@ -244,6 +244,8 @@ EnemyProcessActivation
 
 	lda EnemyType-1,y
 	tay
+	lda EnemyTemplate_FireSpeed,y
+	sta .sm2b+1
 	lda EnemyTemplate_Animation,y
 	tay
 
@@ -252,6 +254,8 @@ EnemyProcessActivation
 	; Include EnemyFlags updates
 .sm2	lda #0
 	sta AnimationEnemyFlags,x
+.sm2b	lda #0
+	sta AnimationFireSpeed,x
 
 .smy ldy #0
 

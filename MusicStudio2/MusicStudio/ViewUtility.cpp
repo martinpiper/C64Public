@@ -26,9 +26,14 @@ void SetNumToEdit(CEdit &edit,const unsigned char num)
 	{
 		return;
 	}
+	edit.SetWindowText(GetNum(num));
+}
+
+CString GetNum(const unsigned char num)
+{
 	CString newNum;
 	newNum.Format(_T("%02X"),num);
-	edit.SetWindowText(newNum);
+	return newNum;
 }
 
 void SetNumToEdit(CEdit &edit,const unsigned char num,LPCTSTR separator,const unsigned char num2)

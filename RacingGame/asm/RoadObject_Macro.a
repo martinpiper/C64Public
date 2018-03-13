@@ -1,10 +1,3 @@
-RoadObject_dataLo	= Data_blocktable + (RoadObject_Max * 0)
-RoadObject_dataHi	= Data_blocktable + (RoadObject_Max * 1)
-RoadObject_width	= Data_blocktable + (RoadObject_Max * 2)
-RoadObject_height	= Data_blocktable + (RoadObject_Max * 3)
-RoadObject_hotLeft	= Data_blocktable + (RoadObject_Max * 4)
-RoadObject_hotRight	= Data_blocktable + (RoadObject_Max * 5)
-
 !macro RoadObject .xpos , .ypos , .width , .height , .hotLeft , .hotRight {
 
 !if (.width * .height) >= 256 {

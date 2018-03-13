@@ -1,0 +1,51 @@
+!zn {
+.lscrollMapHY	= tempWork11
+.lscrollMapLY	= tempWork10
+
+ScrollerDrawStripBottomBank0
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
+!ifdef Scroller_FullScreen {
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawHStripUnrolled $cbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawHStrip $cbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	}
+} else {
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawHStripUnrolled $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawHStrip $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	}
+}
+
+}
+
+!zn {
+.lscrollMapHY	= tempWork11
+.lscrollMapLY	= tempWork10
+
+ScrollerDrawStripBottomBank1
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
+!ifdef Scroller_FullScreen {
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawHStripUnrolled $cfc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawHStrip $cfc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	}
+} else {
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawHStripUnrolled $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawHStrip $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+	}
+}
+
+}

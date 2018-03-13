@@ -426,21 +426,6 @@ FullScreenRender
 .colTabAnimateBarEnd	!by 16	,57	,24	,(coltabBot-coltab)+10
 .colTabAnimateAllEqual !by 0
 
-!macro DelayFor .cycles {
-	!if (.cycles >= 3) {
-	!if (.cycles & 1) = 1 {
-	lda $01
-	.realCycles = .cycles - 3
-	} else {
-	.realCycles = .cycles
-	}
-	} else {
-	.realCycles = .cycles
-	}
-	!for .i , (.realCycles/2) {
-	nop
-	}
-}
 
 !macro DoLine1To2 .sourceColour , .destination1 , .destination2 , .delay {
 	lda .sourceColour

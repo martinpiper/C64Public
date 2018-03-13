@@ -1,3 +1,20 @@
+* = OtherCodeMemory
+
+; Code here can be moved back to before GameSpecificCode_End in Citadel2Entry_Game.a if needed
+
+!source "FingerPrint.a"
+; Misc data at the end of the code
+!source "asm/Score.a"
+!source "asm/AutoDoors.a"
+!source "asm/Fade.a"
+!source "asm/EnemyData.a"
+!source "asm/Charger.a"
+
+OtherCodeMemory_End = *
+OtherCodeMemory_Size = OtherCodeMemory_End - OtherCodeMemory
+OtherCodeMemory_Free = MarkBeginData - OtherCodeMemory_End
+
+
 ; Free space since the screen used for the status bar doesn't render anything up at the top of the screen
 ; No maze calculation results when the sub-game is active
 TraceBackResultBuffer	= $c00 + VIC2ScreenCharsWidth
@@ -6,8 +23,6 @@ BackupAnimationMemParts	= TraceBackResultBuffer + 192
 BackupAnimationMemPartsSize = (4*Multiplex_items)
 BackupAnimationMem		= BackupAnimationMemParts + BackupAnimationMemPartsSize
 
-DynamicMemoryData = $9800
-DynamicMemorySize = $400
 * = DynamicMemoryData
 !fill DynamicMemorySize , ' '
 
@@ -21,8 +36,7 @@ ZoneMap = Maze
 !fill (MazeWidth*MazeHeight) , ' '
 MazeEnd = *
 
-* = $8000
-MarkBeginData = *
+* = MarkBeginData
 ; Data that doesn't need to be accessed between levels
 
 ; MazeSolve.a MazeNodes goes here

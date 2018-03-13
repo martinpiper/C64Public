@@ -16,10 +16,14 @@ InvalidAddress = $7fff
 Scroller_UseKernal = 1
 Scroller_EnableSpeedCode = 1
 Scroller_EnableBlockColourSpeedCode = 1
+Scroller_EnableBlockStripsSpeedCode = 1
 
 !source "_f_index1.a"
-!if CartFile1_Start_DataScorePanel_prg != $8000 {
+!if CartFile1_Start_DataScorePanel_prg != C64Cartridge_Lo_8K {
 !error "CartFile1_Start_DataScorePanel_prg must be $8000 the first file in a new cart bank"
+}
+!if CartFile1_Start_SubGame_bin != C64Cartridge_Lo_8K {
+!error "CartFile1_Start_SubGame_bin must be $8000 the first file in a new cart bank"
 }
 
 Multiplex_ReverseOrder = 1
@@ -52,13 +56,15 @@ EnemyBulletBusy_Add = 30
 Paralax_Enable_More = 1
 
 ; Define this to enable the player map block alignement tests
-MapBlockAlignedMovement = 1
+;MapBlockAlignedMovement = 1
 
 ; Define these to make the player movement alter the camera scroll directly, instead of using a push
-CameraNotPushX = 1
-CameraNotPushY = 1
-CameraFollowWiggleX = 0
-CameraFollowWiggleY = 0
+;CameraNotPushX = 1
+;CameraNotPushY = 1
+;CameraFollowWiggleX = 0
+;CameraFollowWiggleY = 0
+CameraFollowWiggleX = 32
+CameraFollowWiggleY = 32
 
 ScrollerPreGameCalcuation_Enable = 1
 
@@ -133,7 +139,7 @@ Scroller_PlaySoundEffectsDuringGame = 1
 
 Scroller_MultiDirection = 1
 ; Saves 1K of code space
-Scroller_MultiDirectionNoDiagonals = 1
+;Scroller_MultiDirectionNoDiagonals = 1
 
 ; With this enabled the memory gets a little tight, but the level data still fits.
 ; However there are some frame timing issues when the display shows a lot of enemies that fire.

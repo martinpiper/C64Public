@@ -408,7 +408,7 @@ YY
 YY is always the frame delay.
 XX:
 0 = Don't change wave this time, previous waveform is used.
-FF = Jump to position. pos 0 = stop
+FF = Jump to position and frame delay ignored. YY = pos 0 = stop
 Any other value is used as the waveform using the SID format which can be ORed together:
 bit7	80	Noise
 bit6	40	Pulse
@@ -432,7 +432,7 @@ ZZ
 X = 0 Set pulse Y & ZZ = Pulse
 X = 1 Pulse add with unsigned ZZ for Y ticks (ticks zero based)
 X = 2 Pulse subtract with unsigned ZZ for Y ticks (ticks zero based)
-FF = Jump to position. pos 0 = stop
+FF = Jump to position. ZZ = pos 0 = stop
 
 
 - Note table
@@ -442,12 +442,13 @@ Y = Except command 0 frame delay (0-15) (ticks zero based)
 X = Command
 Command:
 00 (both nybbles XY) = No note change. Do nothing. Delay time in ZZ
-1 = Set absolute note ZZ = note. Does this once at the start of the command. Effects can be active.
+1 = Set absolute note ZZ = note and remembers the previous note (used by command 2). Does this once at the start of the command. Effects can be active.
+2 = Restore remembred note
 8 = Timed note step add upper nybble Z+1 with time of lower nybble+1 (zero based).
 9 = Timed note step sub upper nybble Z-1 with time of lower nybble+1 (zero based).
 A = Relative note step ZZ = step signed 8 bit value each frame. For fast glides it is better to use this, the code is quicker and shorter.
 B = Set hi frequency to ZZ lo is zeroed. Skips other effects for the duration of this effect.
-FF = Jump to position and frame delay ignored. XX = pos 0 = stop
+FF = Jump to position and frame delay ignored. ZZ = pos 0 = stop
 
 
 - Filter table

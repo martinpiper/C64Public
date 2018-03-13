@@ -4,7 +4,7 @@
 !source "../stdlib/stdlib.a"
 !source "asm/DataDefs.a"
 
-* = $8000
+* = C64Cartridge_Lo_8K
 
 ScorePanelChars
 !bin "ScorePanel.ctm" , (ScorePanelNumChars * 8) , $14

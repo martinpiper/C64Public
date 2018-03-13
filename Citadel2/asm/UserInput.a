@@ -25,7 +25,7 @@
 .enableRearFire		!by 0
 .enableSideFire		!by 0
 .bulletLifetime		!by 10
-.lockedDirection	!by %1111
+.lockedDirection	!by JoystickBits_AllDirections
 .wasFire			!by 0
 UserInput_LastFollowDirectionX	!by 1
 UserInput_LastFollowDirectionY	!by 0
@@ -52,10 +52,10 @@ UserInput_Init
 	sta UserInput_LastFollowDirectionY
 
 
-	lda #%1111
+	lda #JoystickBits_AllDirections
 	sta .lockedDirection
 
-	jsr SubGame_ResetEnterTimer
+	jsr CartSubGame_ResetEnterTimer
 	jsr Teleport_ResetEnterTimer
 	jsr CaptureProbe_Init
 
@@ -64,7 +64,7 @@ UserInput_Init
 	rts
 
 .exitingGame
-	lda #%1111
+	lda #JoystickBits_AllDirections
 	sta .lockedDirection
 	jsr UpdateScreenScrollCamera
 	jsr CameraClampVelocity
@@ -77,9 +77,11 @@ UserInput_Init
 }
 	rts
 
-.lSubGameUpdate jmp SubGameUpdate
+.lSubGameUpdate jmp CartSubGameUpdate
 .lnoSubGameState jmp .noSubGameState
 .lsubGameStateSuccess jmp .subGameStateSuccess
+
+.movementTime	!word 0
 
 HandleUserInput
 !ifdef HandleUserInput_DebugFineTimings {
@@ -96,6 +98,29 @@ HandleUserInput
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
 }
+
+	; Increase any batteries that we might have
+	lda Battery_NumInstalled
+	beq .gs1
+	lda .lockedDirection
+	and #JoystickBits_AllDirections
+	cmp #JoystickBits_AllDirections
+	bne .gotSomeMovement
+	lda #0
+	sta .movementTime
+	sta .movementTime+1
+.gotSomeMovement
+	inc .movementTime
+	bne .gs1
+	inc .movementTime+1
+	lda .movementTime+1
+	cmp #Battery_RechargeDelay
+	bcc .gs1
+	lda #0
+	sta .movementTime
+	sta .movementTime+1
+	jsr Battery_AddTick
+.gs1
 
 	lda #0
 	sta frameTargetVelX
@@ -325,10 +350,13 @@ HandleUserInput
 
 .gotFire
 
+.beginPlayerMovement
+
 	; Update the velocity at which we want to travel
 	lda #JoystickBits_Right
 	bit .lockedDirection
 	bne .o1
+
 
 	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
@@ -418,6 +446,7 @@ HandleUserInput
 	lda #JoystickBits_Left
 	bit .lockedDirection
 	bne .o2
+
 
 	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
@@ -870,7 +899,7 @@ HandleUserInput
 	bit JoystickA_Processed
 	beq .fireHeldDown
 .resetSubGameTimer
-	jsr SubGame_ResetEnterTimer
+	jsr CartSubGame_ResetEnterTimer
 	jsr Teleport_ResetEnterTimer
 .fireHeldDown
 !ifdef HandleUserInput_DebugFineTimings {
@@ -906,7 +935,7 @@ PlayerSpriteXPosToScreenCharPos
 ; Will check MapTerminalToDoor with SubGame_ExitStateX/Y and modify the map and the maze node blocked state
 .ldtEnd jmp .dtEnd
 .subGameStateSuccess
-	jsr SubGame_MakeMoreDifficult
+	jsr CartSubGame_MakeMoreDifficult
 	lda SubGamePickPos
 	bmi .doDoor
 	; TODO: Different weapon types or health upgrade etc
@@ -914,7 +943,7 @@ PlayerSpriteXPosToScreenCharPos
 	cmp #0
 	bne .notCPU
 
-	jsr SubGame_Init
+	jsr CartSubGame_Init
 !ifdef HandleUserInput_DebugFineTimings {
 	lda #VIC2Colour_Black
 	sta VIC2BorderColour
@@ -929,6 +958,8 @@ PlayerSpriteXPosToScreenCharPos
 	jsr PlayerAddHealthTick
 	jsr PlayerAddHealthTick
 	jsr PlayerAddHealthTick
+
+	jsr Battery_Install
 
 !ifdef HandleUserInput_DebugFineTimings {
 	lda #VIC2Colour_Black
@@ -1243,9 +1274,9 @@ PlayerSpriteXPosToScreenCharPos
 HandleKeyboard
 	jsr Keyboard_Read
 
-	; Prepare for kkeyboard based commands
+	; Prepare for keyboard based commands
 	ldy CaptureProbe_CapturedList
-	bmi .nothingRecent
+	beq .nothingRecent
 
 	lda #0
 	sta .smCopyFlags+1
@@ -1269,15 +1300,59 @@ HandleKeyboard
 	; Toggle StayHere
 	lda EnemyFlags-1,y
 	eor #EnemyFlags_FollowPlayer
-	and #!EnemyFlags_StayHere
+	and #!(EnemyFlags_StayHere | EnemyFlags_Destroy)
 	sta EnemyFlags-1,y
 	inc .smCopyFlags+1
 
 .notF3
 
+	lda Keyboard_Pressed_F5
+	beq .notF5
+
+	; Toggle StayHere
+	lda EnemyFlags-1,y
+	eor #EnemyFlags_Destroy
+	and #!(EnemyFlags_StayHere | EnemyFlags_FollowPlayer)
+	sta EnemyFlags-1,y
+	inc .smCopyFlags+1
+
+.notF5
+
+	lda Keyboard_Pressed_F7
+	beq .notF7
+
+	; Choose the lowest from half the capture cost or the remaining health
+	lda EnemyHealth-1,y
+	bmi .alreadyDead
+	sta tempWork0
+
+	stx .smx1+1
+	sty .smy1+1
+
+	ldx EnemyType-1,y
+	lda EnemyTemplate_CaptureEnergyCost,x
+	lsr
+	cmp tempWork0
+	bcs .ah1
+	sta tempWork0
+
+.ah1
+	jsr PlayerAddHealthTick
+	dec tempWork0
+	bpl .ah1
+
+.smx1	ldx #0
+.smy1	ldy #0
+
+	lda #-1
+	sta EnemyHealth-1,y
+.alreadyDead
+
+.notF7
+
 .smCopyFlags lda #0
 	beq .nothingRecent
-	ldx EnemyToAnimationIndex,y
+	ldx EnemyToAnimationIndex-1,y
 	bmi .nothingRecent
 	lda EnemyFlags-1,y
 	sta AnimationEnemyFlags,x

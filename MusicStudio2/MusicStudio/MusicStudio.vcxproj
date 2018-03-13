@@ -63,7 +63,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>C:\ReplicaNet\ReplicaNetPublic\Includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\;C:\ReplicaNet\ReplicaNetPublic\Includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -84,6 +84,9 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies> windowscodecs.lib</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -94,7 +97,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>C:\ReplicaNet\ReplicaNetPublic\Includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\;C:\ReplicaNet\ReplicaNetPublic\Includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -110,16 +113,27 @@
     </ResourceCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies> windowscodecs.lib</AdditionalDependencies>
+      <AdditionalDependencies> uafxcw.lib;LIBCMT.lib;windowscodecs.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>uafxcw.lib;LIBCMT.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\MWMusic\CompactorTool\FileOps.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\MWMusic\CompactorTool\Music.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="ExportToC64.cpp" />
@@ -130,6 +144,7 @@
     <ClCompile Include="MusicStudioDoc.cpp" />
     <ClCompile Include="MusicStudioDocGoatTracker.cpp" />
     <ClCompile Include="MusicStudioDocMIDI.cpp" />
+    <ClCompile Include="MusicStudioDocMWMusic.cpp" />
     <ClCompile Include="MusicStudioDocVersion0.cpp" />
     <ClCompile Include="MusicStudioDocVersion1.cpp" />
     <ClCompile Include="MusicStudioDocVersion2.cpp" />
@@ -149,20 +164,19 @@
     <ClCompile Include="ViewUtility.cpp" />
     <ClCompile Include="..\..\..\..\ReplicaNet\ReplicaNetPublic\AmalgamatedReplicaNet.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">REPLICANET_NO_REPLICA_OBJECTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">REPLICANET_NO_REPLICA_OBJECTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\MusicStudioConvert\MusicFile.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\MWMusic\CompactorTool\Block.h" />
+    <ClInclude Include="..\..\MWMusic\CompactorTool\FileOps.h" />
+    <ClInclude Include="..\..\MWMusic\CompactorTool\Music.h" />
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="ExportToC64.h" />

@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-c64mr C:\work\C64\RacingGame\OriginalData.prg c:\temp\tc.prg 2048</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-cut c:\temp\t.txt c:\temp\tout.txt 123 $200</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-c64mr C:\work\C64\RacingGame\OriginalData.prg c:\temp\tc.prg 2048</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-cut c:\temp\t.txt c:\temp\tout.txt 123 $200</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

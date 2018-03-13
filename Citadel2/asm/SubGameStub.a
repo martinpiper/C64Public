@@ -24,12 +24,25 @@ SubGameRunnerEntry
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
 
+	jsr SubGame_Init
+	jsr SubGame_MakeMoreDifficult
+	jsr SubGame_MakeMoreDifficult
+	jsr SubGame_MakeMoreDifficult
+	jsr SubGame_MakeMoreDifficult
+	jsr SubGame_ResetEnterTimer
 	jsr SubGameEnter
 .l1
 	+MACROWaitForTheLastScan_A
 	jsr Joystick_Read
-	jsr SubGameUpdate
+	jsr CartSubGameUpdate
 	jmp .l1
+
+
+CartSubGame_Init				= SubGame_Init
+CartSubGame_ResetEnterTimer		= SubGame_ResetEnterTimer
+CartSubGameEnter				= SubGameEnter
+CartSubGameUpdate				= SubGameUpdate
+CartSubGame_MakeMoreDifficult	= SubGame_MakeMoreDifficult
 
 
 topScreenBank		!by 0
@@ -39,14 +52,12 @@ ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
 ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
 ColourTabH !for .table1,25 {!by (>COLOURRAM) + >(((.table1-1) * 40)) }
 
-ClearGameScreensChar	= 32
+ClearGameScreensChar	= 0
 Scroller_ClearColour	= 0
 
 ScrollerFlipBank
 BackupSprites
 RestoreSprites
-ClearGameColourTo
-ClearGameScreen
 RefreshScreenColourRemap
 SubGameAddLoseSprites
 SubGameAddWinSprites
@@ -54,13 +65,25 @@ SubGameHandleInventory
 	lda #-1
 SubGameInventoryPopulate
 SubGameAddWaitingSprite
-SFXInit
+SubGame_SFXInit
 	clc
 	rts
+
+ClearGameScreen
+	+ClearScreenAt_AX SCREENRAM , ClearGameScreensChar
+	rts
+
+ClearGameColourTo
+	+ClearScreenAt_AX COLOURRAM , Scroller_ClearColour
+	rts
+
 
 JoystickA_Enable = 1
 
 !source "ScrollerVars.a"
+!source "asm/SubGameMacro.a"
+!source "asm/SubGameConstants.a"
+!source "asm/SubGameData.a"
 !source "asm/SubGame.a"
 !source "asm/Joystick.a"
 !source "../BerzerkRedux/Rand.a"

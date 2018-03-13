@@ -1462,6 +1462,7 @@ Also tweaked the enemy start positions
 
 
 * Show the currently selected powerup during the sub-game
+* During the sub-game display the pickup being activated.
 
 
 
@@ -1511,3 +1512,109 @@ Also tweaked the enemy start positions
 	* These need update to be shorter and contain specific data
 		Done - CartFile1_Size_DataScorePanel_prg	- Removed Sound\Citadel2_Title.prg
 		Done - CartFile1_Size_Citadel2_Game_dec
+
+
+
+* Without MapBlockAlignedMovement and CameraNotPushX/Y then
+	* The MapAutoDoor MapAnim_VerticalOpenDoor at 11 , 23 is not blocking when the player moves right and up but is blocking when left and down.
+		Why?
+		Camera.a was not clearing with !Node_isBlocked_Player (it was using Node_isBlocked_Player | Node_isBlocked_Wall) so the Node_isBlocked_AutoDoor was being cleared
+
+
+
+* Disabled MapBlockAlignedMovement CameraNotPushX/Y Scroller_MultiDirectionNoDiagonals added some CameraFollowWiggleX/Y
+
+
+
+
+* Sub-game code overlay?
+	SubGameSpecificCode_Size  =$8c9
+		Possible to move it into a cart bank and execute the code from there?
+		SubGame_HandleUserUpdates calls music/sfx, need to move this out from the ROM
+	SubGameInputSpecificCode_Size  =$4cc
+		Trickier since it calls the music/sound effects player which is under cart ROM
+	* Since there seems to be a bunch of routines for the SubGame that touch data under the cart ROM,
+		then will need to create new file for routines strictly cart ROM data instead
+		* Removed self modifying code from SubGame.a
+	After:
+		SubGameSpecificCode_Size  =$2b
+		Citadel2EndCode  =$76a2
+
+
+
+* To avoid Citadel2_Game.dec/Citadel2_Game2.dec/Citadel2_Game3.dec the MakeCart tool can have a start offset into the file to start including data from
+
+
+
+
+* To use Scroller_EnableBlockStripsSpeedCode = 1
+	To do this the map and block data must not be in $4000-$c000 range
+	This means game specific code and data will need to be shuffled around
+	There is now space for the map and block data at the end of the code Citadel2EndCode  =$76a2
+	* Potentially move BlockData and MapData to $7800
+	* Also have CharColours in RAM around $7800 area, not under ROM, and therfore remove the need for CharColoursSource
+		Remove code for: ; Because block colour data cannot be in the banked in ROM position whilst the colourise code is running
+	* Music/SFX MusicPlayerInit to $8700
+
+
+
+* Then move some code into OtherCodeMemory at $9800-$9fff it would need to be code that only exports labels, to be easier than trying to resolve labels in the game code again
+	* It is currently untouched by the title screen and main game code, theoretically it could be included in the base code build and left there
+	* Note: Be careful that any data/code moved there is not accessed whilst the cartridge is active, including the sub-game code
+
+
+
+* Use Scroller_EnableBlockStripsSpeedCode = 1
+	Before Citadel2EndCode = $6e6d
+	After = $696d
+
+
+
+
+* I think they should only become targets for certain enemies under certain conditions.
+	Static droids - most droids will realise they can't walk through them and retreat. More aggressive (or higher ranking?) droids could ram or shoot them.
+	Follow droids
+	Seek & Destroy droids - as soon as they open fire on an enemy, that enemy (and others nearby) should realise its gone rogue and attack it.
+		Done - * These can fire player bullets, since captured enemies are not vulnerable to player bullets there doesn't need to be any extra collision filtering logic
+		.enemyFire and EnemyFlags_IsCaptured check
+		Code similar to UserInput.a .doFire can be used
+		Done - * Needs to check for the EnemyFlags_Destroy flag before firing of course
+		; MPi: TODO: Calculate direction to a suitable enemy from this enemy
+			If there is no other enemy then don't fire or fire in a random direction?
+			.doCharFire should preserve X early, then find an enemy index on screen, then calculate the direction based on map tile positions
+			Finding the next enemy animation index while filtering for Y, the current animation, means it can continue searching from the last position found
+			This will create a nice cycling target list of enemies to fire at
+			The map tile difference can then be divided down until -1 <= X|Y <= 1
+			* Animation_FindOtherEnemyNotInY
+
+
+
+
+* MPi: TODO: Enemy fire rate check
+	Need enemy template check EnemyTemplate_
+	EnemyTemplate_FireSpeed
+	Copied into AnimationFireSpeed
+
+
+
+
+* Done - slow grey colour pulse for captured, and fast grey pulse for the currently commanded captured
+	- Done - allow player to cycle through droids with SPACE
+	- Done - F1 - Toggle static/wander
+	- Done - F3 - Set to follow
+	- Done - F5 - Set to seek/destroy
+	- Done - F7 - Assimilate
+
+
+
+* Installable batteries, slowly recharge as the player moves.
+	main energy bar and energy bars for each battery
+	we have vertical score panel space for three parallel energy bars
+	batteries hold less charge than your main energy
+	if the main energy is reduced below 2 then the battery depletes and boosts the main energy by that amount
+		instant energy transfer from battery to main energy
+		visually interesting to try to convey this with a limited character screen :s
+	Vertical ticks, two ticks per char, energy bar
+	* ScorePanelCharBatteryBar ScorePanelCharBatteryArrow
+	* ScorePanelBattery* : ScorePanelBattery1_XPos ScorePanelBattery1_YPos ScorePanelBattery_Size etc
+	* Added: Battery_Init Battery_Install Battery_AddTick Battery_Drain

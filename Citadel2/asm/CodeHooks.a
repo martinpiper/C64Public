@@ -2,6 +2,10 @@
 DecompressTitleScreenCode
 	jsr DisplayLoading
 
+!if CartFile1_Size_Citadel2_Title_dec >= kSize_8K {
+	!error "CartFile1_Size_Citadel2_Title_dec might need to be split"
+}
+
 	lda #CartFile1_Bank_Citadel2_Title_dec
 	jsr CartSelectBank_8K
 	ldx #<CartFile1_Start_Citadel2_Title_dec
@@ -27,6 +31,7 @@ DecompressGameCode
 	ldy #>CartFile1_Size_Citadel2_Game_dec
 	jsr .copyCodeCommon
 
+!ifdef CartFile1_Size_Citadel2_Game2_dec {
 	lda #CartFile1_Bank_Citadel2_Game2_dec
 	jsr CartSelectBank_8K
 	ldx #<CartFile1_Start_Citadel2_Game2_dec
@@ -36,7 +41,9 @@ DecompressGameCode
 	ldx #<CartFile1_Size_Citadel2_Game2_dec
 	ldy #>CartFile1_Size_Citadel2_Game2_dec
 	jsr .copyCodeCommon2000
+}
 
+!ifdef CartFile1_Size_Citadel2_Game3_dec {
 	lda #CartFile1_Bank_Citadel2_Game3_dec
 	jsr CartSelectBank_8K
 	ldx #<CartFile1_Start_Citadel2_Game3_dec
@@ -46,6 +53,7 @@ DecompressGameCode
 	ldx #<CartFile1_Size_Citadel2_Game3_dec
 	ldy #>CartFile1_Size_Citadel2_Game3_dec
 	jsr .copyCodeCommon4000
+}
 
 	jmp CartKillBank
 
@@ -85,4 +93,34 @@ DecompressGameCode
 .smx3	ldx #0
 .smy3	ldy #$80
 	jmp MemoryCopy_ForSize_XOR
+}
+
+
+!zn {
+; Handle SubGame cart code calling
+!source "SubGameAutoDefs.a"	; Extracted entry points from: SubGame.a
+SubGame_SFXInit
+	pha
+	jsr CartKillBank
+	pla
+	jsr SFXInit
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+	rts
+
+CartSubGame_Init
+	+Scroller_ScrollExecCartBank CartFile1_Bank_SubGame_bin , SubGame_Init
+	rts
+CartSubGame_ResetEnterTimer
+	+Scroller_ScrollExecCartBank CartFile1_Bank_SubGame_bin , SubGame_ResetEnterTimer
+	rts
+CartSubGameEnter
+	+Scroller_ScrollExecCartBank CartFile1_Bank_SubGame_bin , SubGameEnter
+	rts
+CartSubGameUpdate
+	+Scroller_ScrollExecCartBank CartFile1_Bank_SubGame_bin , SubGameUpdate
+	rts
+CartSubGame_MakeMoreDifficult
+	+Scroller_ScrollExecCartBank CartFile1_Bank_SubGame_bin , SubGame_MakeMoreDifficult
+	rts
 }

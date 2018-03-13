@@ -1,12 +1,20 @@
 !zn
 !macro TrackDraw_SmoothEdge .offset , .direction , .xPosLeft , .xPosLeftNext {
+	lda #.direction
+	sta .previousGoodDirection
 	ldx #0
-
+	stx .previousGoodDirectionAfterVertical
 .l1
 	lda TrackRendered_ScrLo,x
 	sta TrackDraw_ZP_ScreenLoHi
 	lda TrackRendered_ScrHi,x
 	sta TrackDraw_ZP_ScreenLoHi+1
+
+	lda TrackRendered_IndexNext,x
+	bpl .gotNext
+	lda #0
+	sta .previousGoodDirection
+.gotNext
 
 	lda .xPosLeft,x
 	cmp .xPosLeftNext,x
@@ -16,6 +24,32 @@
 } else {
 	bpl .lleftToRight
 }
+
+	ldy .previousGoodDirectionAfterVertical
+	beq .noApex
+!if .direction < 0 {
+	bpl .noApex
+} else {
+	bmi .noApex
+}
+	; If the next row would use a 0/-direction gradient then continue as normal
+	lda .xPosLeftNext-1,x
+	sec
+	sbc .xPosLeft-1,x
+	beq .noApex2
+	cmp #-.direction
+	beq .noApex2
+
+	; Since the step from vertical to horizontal would be too sharp, handle apex by rewinding one row
+	dex
+	lda TrackRendered_ScrLo,x
+	sta TrackDraw_ZP_ScreenLoHi
+	lda TrackRendered_ScrHi,x
+	sta TrackDraw_ZP_ScreenLoHi+1
+.noApex2
+	lda .xPosLeft,x
+
+.noApex
 
 	tay
 !if .direction < 0 {
@@ -27,18 +61,22 @@
 	sec
 	sbc .xPosLeftNext,x
 
+	sta .previousGoodDirection
+
 	cmp #1		* (-.direction)
 	bne .not1
 
 	+MTrackDraw_EdgeCharInside 6		+ .offset
 
-	jmp .nextRow
+	jmp .nextRowResetPrevious
+
+.previousGoodDirection !by 0
+.previousGoodDirectionAfterVertical !by 0
 
 .lsameX jmp .sameX
 .lleftToRight jmp .leftToRight
 
 .not1
-
 	cmp #2		* (-.direction)
 	bne .not2
 
@@ -49,7 +87,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 7		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .not2
 
@@ -69,7 +107,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .not3
 
@@ -95,7 +133,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .not4
 
@@ -127,7 +165,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .not5
 
@@ -165,7 +203,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .not6
 
@@ -206,10 +244,35 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 
 .leftToRight
+	ldy .previousGoodDirectionAfterVertical
+	beq .onoApex
+!if .direction > 0 {
+	bpl .onoApex
+} else {
+	bmi .onoApex
+}
+	; If the next row would use a 0/-direction gradient then continue as normal
+	lda .xPosLeftNext-1,x
+	sec
+	sbc .xPosLeft-1,x
+	beq .onoApex2
+	cmp #.direction
+	beq .onoApex2
+
+	; Since the step from vertical to horizontal would be too sharp, handle apex by rewinding one row
+	dex
+	lda TrackRendered_ScrLo,x
+	sta TrackDraw_ZP_ScreenLoHi
+	lda TrackRendered_ScrHi,x
+	sta TrackDraw_ZP_ScreenLoHi+1
+.onoApex2
+;	lda .xPosLeft,x
+
+.onoApex
 
 	ldy .xPosLeftNext,x
 !if .direction < 0 {
@@ -222,12 +285,14 @@
 	sec
 	sbc .xPosLeftNext,x
 
+	sta .previousGoodDirection
+
 	cmp #-1		* (-.direction)
 	bne .notn1
 
 	+MTrackDraw_EdgeCharInside 6	+10		+ .offset
 
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn1
 
@@ -243,7 +308,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 7	+10		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn2
 
@@ -263,7 +328,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn3
 
@@ -289,7 +354,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn4
 
@@ -321,7 +386,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn5
 
@@ -359,7 +424,7 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
-	jmp .nextRow
+	jmp .nextRowResetPrevious
 
 .notn6
 
@@ -400,15 +465,32 @@
 	iny
 }
 	+MTrackDraw_EdgeCharInside 9	+10		+ .offset
-	jmp .nextRow
+!if .direction < 0 {
+	dey
+} else {
+	iny
+}
+	+MTrackDraw_EdgeCharInside 0
+	jmp .nextRowResetPrevious
 
 
 
 .tempYPos !by 0
 .tempYMax !by 0
 
+.lmaxsx1
+	; Handle special case for the last road row
+	ldx TrackRendered_Row
+	dex
+	lda .xPosLeftNext,x
+	inx
+	jmp .maxsx1
 .sameX
 	sta .smxpos+1
+
+	lda .previousGoodDirection
+	sta .previousGoodDirectionAfterVertical
+
 	lda TrackRendered_YPos,x
 	sta .tempYPos
 	lda TrackRendered_YMax,x
@@ -419,23 +501,26 @@
 .sx1
 	iny
 	cpy #6
-	beq .maxsx1
+	beq .maxsx2
 	inx
 	cpx TrackRendered_Row
-	beq .maxsx1
+	bcs .lmaxsx1
 	lda .smxpos+1
 	cmp .xPosLeftNext,x
 	beq .sx1
+.maxsx2
+	lda .xPosLeftNext,x
 .maxsx1
-	lda .smxpos+1
-	cmp .xPosLeftNext,x
+	cmp .smxpos+1
 
 !if .direction < 0 {
-	bmi .sxnegative
-} else {
+	beq .lsxpositive
 	bpl .sxnegative
+} else {
+	bmi .sxnegative
 }
-	jmp .sxpositive
+.lsxpositive	jmp .sxpositive
+
 .sxnegative
 
 	tya
@@ -455,7 +540,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsxn2
 
 	cmp #3
@@ -468,8 +553,9 @@
 	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_CheckYMax .tempYPos , .tempYMax , .endRow
+	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsxn3
 
 	cmp #4
@@ -486,7 +572,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsxn4
 
 	cmp #5
@@ -508,7 +594,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 2		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsxn5
 
 	+MTrackDraw_EdgeCharInside 5		+ .offset
@@ -525,7 +611,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeCharInside 5		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 
 .sxpositive
 	tya
@@ -544,7 +630,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsx2
 
 	cmp #3
@@ -558,7 +644,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 4		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsx3
 
 	cmp #4
@@ -575,7 +661,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsx4
 
 	cmp #5
@@ -597,7 +683,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 5		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 .notsx5
 
 	+MTrackDraw_EdgeChar 3		+ .offset
@@ -614,7 +700,7 @@
 	jsr TrackDraw_AdvanceRow
 	+MTrackDraw_EdgeChar 3		+ .offset
 
-	jmp .endRow
+	jmp .nextRow
 
 .nextRow
 	inx
@@ -624,4 +710,9 @@
 	jmp .l1
 .ret
 	rts
+
+.nextRowResetPrevious
+	lda #0
+	sta .previousGoodDirectionAfterVertical
+	jmp .nextRow
 }

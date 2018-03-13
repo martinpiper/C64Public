@@ -1,0 +1,11 @@
+!cpu 6510
+!sl "bin/SubGameCart.map"
+
+!source "../stdlib/stdlib.a"
+!source "CartOpts.a"
+!source "GameAutoDefs.a"
+
+*=C64Cartridge_Lo_8K
+!source "asm/SubGameMacro.a"
+!source "asm/SubGameConstants.a"
+!source "asm/SubGame.a"

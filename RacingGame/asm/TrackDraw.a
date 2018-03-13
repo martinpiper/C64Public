@@ -1,16 +1,18 @@
 !zn
 ; high and low screen addresses
-hiscr !by $c4,$c4,$c4,$c4,$c4,$c4,$c4,$c5,$c5,$c5,$c5,$c5,$c5
-	!by $c6,$c6,$c6,$c6,$c6,$c6,$c6,$c7,$c7,$c7,$c7,$c7,$c7
+TrackDraw_ScreenHi !fill VIC2ScreenCharsHeight
 
-hisc_off !by 0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3
+TrackDraw_tableHi
+	!for .y , VIC2ScreenCharsHeight { !by >((.y-1) * VIC2ScreenCharsWidth) }
+	!by 0
+	!for .y , VIC2ScreenCharsHeight { !by 4 + >((.y-1) * VIC2ScreenCharsWidth) }
+	!by 0
 
-hiscrtr !by 4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7
-	!by 8,8,8,8,8,8,8,9,9,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,11
-loscr !by 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
-	!by $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
-	!by 0,$28,$50,$78,$a0,$c8,$f0,$18,$40,$68,$90,$b8,$e0,$08,$30,$58,$80
-	!by $a8,$d0,$f8,$20,$48,$70,$98,$c0,$e8
+TrackDraw_tableLo
+	!for .i , 2 {
+		!for .y , VIC2ScreenCharsHeight { !by <((.y-1) * VIC2ScreenCharsWidth) }
+		!by 0
+	}
 
 
 ; high and low screen addresses for block plotting
@@ -26,31 +28,27 @@ block_dataLo	!by 0
 block_dataHi	!by 0
 
 
-toftl !by $00,$24,$48,$6c,$90,$b4,$d8,$fc
-!by $20,$44,$68,$8c,$b0,$d4,$f8
-!by $1c,$40,$64,$88,$ac,$d0,$f4
-!by $18,$3c,$60,$84,$a8,$cc,$f0
-!by $14,$38,$5c,$80,$a4,$c8,$ec
-!by $10,$34,$58,$7c,$a0,$c4,$e8
-!by $0c,$30,$54,$78,$9c,$c0,$e4
-!by $08
-tofth !by $50,$50,$50,$50,$50,$50,$50,$50
-!by $51,$51,$51,$51,$51,$51,$51
-!by $52,$52,$52,$52,$52,$52,$52
-!by $53,$53,$53,$53,$53,$53,$53
-!by $54,$54,$54,$54,$54,$54,$54
-!by $55,$55,$55,$55,$55,$55,$55
-!by $56,$56,$56,$56,$56,$56,$56
-!by $57
+TrackDraw_steeringLo
+!for .i , kRoadSteeringSteps+1 {
+	!by <(Data_steeringOffset+((.i-1)*kRoadRows))
+}
 
-pertaby !by 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5
+TrackDraw_steeringHi
+!for .i , kRoadSteeringSteps+1 {
+	!by >(Data_steeringOffset+((.i-1)*kRoadRows))
+}
+
+
+TrackDraw_perspectiveSideObject !by 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5
 	!by 6,6,6,6,7,7,7,7,8,8,8,8
 	!by 8,8,8,8,8,8,8,8,8,8,8,8
-objhorizl !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+RoadObjects_left !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	!by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ; spare
 	!by 0,0,0
-objhorizr !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+RoadObjects_right !by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	!by 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ; spare
 	!by 0,0,0
@@ -146,7 +144,7 @@ rast !by 122
 boty !by 20
 lpose !by 0
 rpose !by 0
-skd !by 50
+skd !by kRoadSteeringSteps
 trckoft !by 21
 trckoft2 !by $2c
 ancnt1 !by 0
@@ -310,18 +308,17 @@ TrackDraw_setup
 
 	ldx #24
 .up1
-	lda hisc_off,x
+	lda TrackDraw_tableHi,x
 .sm1	ora #0
-	sta hiscr,x
+	sta TrackDraw_ScreenHi,x
 	dex
 	bpl .up1
 
 	ldx trckoft
-	lda hiscrtr,x
-	clc
-	adc #(>Data_trackconfig2)-4
+	lda TrackDraw_tableHi,x
+	ora #>Data_RoadYPosByRows
 	sta TrackDraw_ZP_TrackLoHi+1
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta TrackDraw_ZP_TrackLoHi
 	ldy #37
 	lda (TrackDraw_ZP_TrackLoHi),y
@@ -333,9 +330,9 @@ TrackDraw_setup
 	adc #VIC2SpriteYBorderTop
 	sta rast
 l5x
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta l5y+1
-	lda hiscr,x
+	lda TrackDraw_ScreenHi,x
 	sta l5y+2
 	ldy #39
 	lda #0
@@ -351,15 +348,22 @@ l5
 	sta ypost,y
 	dey
 	bpl l5
-	lda TrackDraw_ZP_TrackLoHi+1
-	clc
-	adc #8
+
+	; This reads the matching road width tweaks for the road row Y position
+;	ldx #$18
+;	lda TrackDraw_tableLo,x
+;	sta TrackDraw_ZP_TrackLoHi
+	ldx trckoft
+	lda TrackDraw_tableHi,x
+	ora #>Data_RoadWidthByRows
 	sta TrackDraw_ZP_TrackLoHi+1
+
 	lda #255
 	sta lsty
 	ldy #39
 l6
 	lda (TrackDraw_ZP_TrackLoHi),y
+;	lda #2
 	sta xwidt,y
 	dey
 	bpl l6
@@ -417,9 +421,9 @@ l10a
 	tax
 	stx lsty
 
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta TrackDraw_ZP_ScreenLoHi
-	lda hiscr,x
+	lda TrackDraw_ScreenHi,x
 	sta TrackDraw_ZP_ScreenLoHi+1
 ;	cpx #20
 ;	bcs l10
@@ -508,7 +512,7 @@ l10
 	jsr objsprint
 	inc yfl
 	lda yfl
-	cmp #36
+	cmp #kRoadRows
 	beq loop
 	jmp l7
 loop
@@ -590,8 +594,8 @@ loop2z
 	sta trckoft
 	rts
 
-tabletrck = Data_trckypos
-tablecorn = Data_trckcornpos
+tabletrck = Data_trackYPos
+tablecorn = Data_trackCorner
 
 lastCorner !by 0
 
@@ -609,11 +613,10 @@ cornoftfig
 	ldx tablecorn,y
 	cpx #19
 	bcs rcorn
-	lda hiscrtr,x
-	clc
-	adc #(>Data_cornoft)-4
+	lda TrackDraw_tableHi,x
+	ora #>Data_cornerOffsets
 	sta tcf1+2
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta tcf1+1
 	ldx #35
 tcf1 lda $5000,x
@@ -631,11 +634,10 @@ rcorn
 	sec
 cb1 sbc #0
 	tax
-	lda hiscrtr,x
-	clc
-	adc #(>Data_cornoft)-4
+	lda TrackDraw_tableHi,x
+	ora #>Data_cornerOffsets
 	sta tcf2+2
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta tcf2+1
 	ldx #35
 tcf2 lda $5000,x
@@ -650,16 +652,16 @@ tcf2 lda $5000,x
 
 trackoftfig
 	ldx skd
-	cpx #51
+	cpx #kRoadSteeringSteps+1
 	bcs t1
 
-	lda #50
+	lda #kRoadSteeringSteps
 	sec
 	sbc skd
 	tax
-	lda toftl,x
+	lda TrackDraw_steeringLo,x
 	sta t2b+1
-	lda tofth,x
+	lda TrackDraw_steeringHi,x
 	sta t2b+2
 
 	ldx #35
@@ -677,11 +679,11 @@ t2b	sbc $5000,x
 t1
 	lda skd
 	sec
-	sbc #50
+	sbc #kRoadSteeringSteps
 	tax
-	lda toftl,x
+	lda TrackDraw_steeringLo,x
 	sta t3+1
-	lda tofth,x
+	lda TrackDraw_steeringHi,x
 	sta t3+2
 	ldx #35
 
@@ -704,9 +706,9 @@ m4 rts
 right inc skd
 	jsr caniml
 	lda skd
-	cmp #101
+	cmp #(kRoadSteeringSteps*2)+1
 	bne m5
-	lda #100
+	lda #kRoadSteeringSteps*2
 	sta skd
 m5 rts
 
@@ -767,9 +769,9 @@ bl1
 	ldx ypl
 	cpx ymax
 	bcs bl2
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta blpt1+1
-	lda hiscr,x
+	lda TrackDraw_ScreenHi,x
 	sta blpt1+2
 
 	lda xbtl
@@ -805,13 +807,13 @@ blend
 
 objsprint
 	sty tsdy
-	ldx objhorizl,y
+	ldx RoadObjects_left,y
 	beq l10g
 
 	dex
 	txa
 	clc
-	adc pertaby,y
+	adc TrackDraw_perspectiveSideObject,y
 	tax
 	stx tsdx
 	lda ypost,y
@@ -840,12 +842,12 @@ objsprint
 	; Now the right hand road edge
 l10g
 	ldy tsdy
-	ldx objhorizr,y
+	ldx RoadObjects_right,y
 	beq l10gz
 	dex
 	txa
 	clc
-	adc pertaby,y
+	adc TrackDraw_perspectiveSideObject,y
 	tax
 	stx tsdx
 	lda ypost,y
@@ -896,6 +898,14 @@ l10gz
 	lda #20
 	clc
 	adc toftt,y
+
+	; Signed horizontal clip test
+	cmp #50
+	bpl .skipSprite
+	cmp #-10
+	bmi .skipSprite
+
+.okPos
 	; Note: Mul 4, the final mul 2 is later on
 	asl
 	asl
@@ -903,7 +913,7 @@ l10gz
 	adc #VIC2SpriteXBorderLeft/2	; Note: Div 2
 	sta .sprObjX
 
-	cmp #50
+	cmp #kRoadSteeringSteps
 	bcc .isLeft
 	cmp #130
 	bcs .isRight
@@ -976,10 +986,10 @@ l10gz
 advance
 	ldx #34
 ad1
-	lda objhorizl,x
-	sta objhorizl+1,x
-	lda objhorizr,x
-	sta objhorizr+1,x
+	lda RoadObjects_left,x
+	sta RoadObjects_left+1,x
+	lda RoadObjects_right,x
+	sta RoadObjects_right+1,x
 	lda RoadObject_Sprite,x
 	sta RoadObject_Sprite+1,x
 	dex
@@ -987,10 +997,10 @@ ad1
 
 	ldx #34
 ad2
-	lda objhorizl,x
-	sta objhorizl+1,x
-	lda objhorizr,x
-	sta objhorizr+1,x
+	lda RoadObjects_left,x
+	sta RoadObjects_left+1,x
+	lda RoadObjects_right,x
+	sta RoadObjects_right+1,x
 	lda RoadObject_Sprite,x
 	sta RoadObject_Sprite+1,x
 	dex
@@ -998,28 +1008,16 @@ ad2
 	bne ad2
 
 	lda #0
-	sta objhorizr+14
-	sta objhorizl+14
+	sta RoadObjects_right+14
+	sta RoadObjects_left+14
 	sta RoadObject_Sprite+14
 	ldx sidel
-	lda $7a00,x
-	sta objhorizl
-	lda $7b00,x
-	sta objhorizr
-	lda SpriteRoadTab,x
+	lda Data_trackEdgeLeft,x
+	sta RoadObjects_left
+	lda Data_trackEdgeRight,x
+	sta RoadObjects_right
+	lda Data_trackSprites,x
 	sta RoadObject_Sprite
 	inc sidel
 	inc trckoft2
 	rts
-
-SpriteRoadTab
-!for .a , 12 {
-	!fill 16 ,0
-	!by RoadObject_Sprite_Type_EnemyCar
-}
-!for .a , 8 {
-	!fill 8 ,0
-	!by RoadObject_Sprite_Type_EnemyCar
-}
-	; Safety
-	!fill 255 , 0

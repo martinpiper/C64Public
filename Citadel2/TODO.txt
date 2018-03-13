@@ -77,6 +77,105 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
+* It would be possible to run enemy bullet to enemy sprite collision detection, reusing most of the existing enemy bullet to player bounding box tests
+	This would be useful for captured enemies that could to be destroyed by enemy fire
+
+
+
+
+- stop capture probe going off-screen
+
+
+
+* Battery/weapon/upgrade installation indicator/chars
+	fireCounterDelay	: 16 down to ?
+	enableRearFire
+	enableSideFire
+	Capture slot upgrade : 0 to 2
+	Battery	: 0 to 2
+
+
+
+
+- Add text to the upgrade screen so you know what icon you're selecting (open door, install upgrade, weapon type, etc.)
+
+
+
+* DynamicMemory_BlockSweep is taking way too many rasters
+	It needs to be shortened to work incrementally. After each block pos it will store the position and exit and carry on from there.
+	A successful allocate or free will reset the sweep block pos to the start.
+	If there have been no successful allocates and no frees then it can carry on from the last block merged. Else it starts from the start again.
+	The DynamicMemory_BlockSweepCount can then be lowered
+* DynamicMemory_AllocateBytes is also taking quite a large amount of time
+
+
+
+
+* Need defines for the animation types (used by AnimationInitWithType, AnimationMutateToType etc) in DataDefs.a. No magic numbers here please.
+	* Also for SFXInit
+
+
+
+- computer terminals is a save feature - so if you lose a life you reappear at the last terminal you saved to
+	Save doors state
+	No need to save enemies
+
+
+
+
+
+* in the real game initially only one slot could be available, pressing space obviously has no effect
+collecting and installing the right upgrade adds a slot
+meaning F1 could be "assimilate power"
+which destroys the captured droid as its power is depleted?
+
+
+
+
+* It might be nice to have "reprogrammers" - droids that can, say, reprogram a droid you'd told to stay and return it to normal.
+		Reprogrammers take more energy to capture
+
+
+* Higher level droids take more energy to capture
+
+
+
+* when hovering the capture probe over a droid it will show the energy required to capture a droid
+
+
+
+
+* During sub-game reward longer successful paths with more points. Display how long the bonus will be while the routing is going on. It can count up as the routing progresses.
+
+
+
+
+* For the capture system, could roll out the functions (stay, follow, etc.) using upgrades you collect along the way.
+	* these abilities and the number of maintained droids are from dropped upgrades
+		we can control when these upgrades drop
+		to allow for strategic balanced development/progression
+	So you get the player used to one function before you unleash the next...
+	* Add pickups for the various functions
+	* Add pickups for the maximum number of captured droids
+
+
+
+* Think of a different game name:
+	Without changing the title screen charset the letters that can be constructed are: CITADELFHOU
+	Try anagram solver?
+
+
+
+* Try 8-way block aligned based movement, instead of 4-way aligned
+
+
+
+* Since the game boots to the title screen, make it so that the version of the code used in the base cartridge file is the title screen build, not the game build
+	* Hmm, tricky since the scroller code have deep level hooks into game code and the game build includes so much char/sprite data
+
+
+
+
 * Between level bonus stage. Static screen and static player in the middle. Choose direction to fire.
 	Traps open around the player in sequence and enemies come out.
 	Beat the bonus stage to get an extra life and permanent powerup.
@@ -101,32 +200,6 @@ TODO items:
 
 
 
-* For the capture system, could roll out the functions (stay, follow, etc.) using upgrades you collect along the way.
-	So you get the player used to one function before you unleash the next...
-	* Add pickups for the various functions
-	* Add pickups for the maximum number of captured droids
-
-
-
-
-* I think they should only become targets for certain enemies under certain conditions.
-	Static droids - most droids will realise they can't walk through them and retreat. More aggressive (or higher ranking?) droids could ram or shoot them.
-	Follow droids
-	Seek & Destroy droids - as soon as they open fire on an enemy, that enemy (and others nearby) should realise its gone rogue and attack it.
-
-
-
-
-* It might be nice to have "reprogrammers" - droids that can, say, reprogram a droid you'd told to stay and return it to normal.
-		Reprogrammers take more energy to capture
-	* Higher level droids take more energy to capture
-	* when hovering the capture probe over a droid it will show the energy required to capture a droid
-	* these abilities and the number of maintained droids are from dropped upgrades
-		we can control when these upgrades drop
-		to allow for strategic balanced development/progression
-
-
-
 * Maybe make EnemyTemplate_Ram part of the EnemyFlags_* flags instead?
 
 
@@ -143,49 +216,10 @@ TODO items:
 
 
 
-* Done - slow grey colour pulse for captured, and fast grey pulse for the currently commanded captured
-- stop capture probe going off-screen
-- Done - allow player to cycle through droids with SPACE
-- Done - F1 - Toggle static/wander
-- Done - F3 - Set to follow
-- F5 - Set to seek/destroy
-- F7 - Assimilate
-
 Suggestions:
 
-- Add text to the upgrade screen so you know what icon you're selecting (open door, install upgrade, weapon type, etc.)
 - Try a smooth colour fade (not char fade or bit dissolve) when using lifts - looks much slicker
 - Can we have animating chars in the background? If so, how many chars can animate per level? Can we bank-in the animations from a different charset?
-
-in the real game initially only one slot could be available, pressing space obviously has no effect
-collecting and installing the right upgrade adds a slot
-meaning F1 could be "assimilate power"
-which destroys the captured droid as its power is depleted?
-
-
-- computer terminals is a save feature - so if you lose a life you reappear at the last terminal you saved to
-	Save doors state
-	No need to save enemies
-
-
-
-
-* MPi: TODO: Enemy fire rate check
-
-
-
-
-
-
-* Installable batteries, slowly recharge as the droid moves.
-	main energy bar and energy bars for each battery
-	we have vertical score panel space for three parallel energy bars
-	batteries hold less charge than your main energy
-	if the main energy is reduced below 2 then the battery depletes and boosts the main energy by that amount
-		instant energy transfer from battery to main energy
-		visually interesting to try to convey this with a limited character screen :s
-	Vertical ticks, two ticks per char, energy bar
-
 
 
 
@@ -219,10 +253,6 @@ which destroys the captured droid as its power is depleted?
 
 
 * Think about some weird areas for needed code, like in $3e8-$3f7, between the screens and the sprite pointers.
-
-
-
-* Need defines for the animation types (used by AnimationMutateToType etc) in DataDefs.a. No magic numbers here please.
 
 
 
@@ -283,14 +313,6 @@ which destroys the captured droid as its power is depleted?
 	The FIFO start/end index and array will have to be inbetween Animation_StartMem/Animation_EndMem
 	* asm/FIFO.a now defines macros to allow the code to be re-used
 	Not sure if the extra complexity to the animation code is worth it
-
-
-
-* During the sub-game display the pickup being activated.
-
-
-
-* During sub-game reward longer successful paths with more points. Display how long the bonus will be while the routing is going on. It can count up as the routing progresses.
 
 
 
@@ -361,16 +383,6 @@ which destroys the captured droid as its power is depleted?
 	This shouldn't happen. If the dynamic memory failed and there hasn't been any free and the DynamicMemory_BlockSweep fails to merge blocks then don't try DynamicMemory_AllocateBytes again until a block is potentially free again.
 	DynamicMemory_BlockSweep should early out if it doesn't think there are any blocks to free. i.e. No frees done since the last full sweep.
 	DynamicMemory_AllocateBytes should early out with failure for the same sized block if there have been no frees or successful sweep merges since the last attempt.
-
-
-
-
-* DynamicMemory_BlockSweep is taking way too many rasters
-	It needs to be shortened to work incrementally. After each block pos it will store the position and exit and carry on from there.
-	A successful allocate or free will reset the sweep block pos to the start.
-	If there have been no successful allocates and no frees then it can carry on from the last block merged. Else it starts from the start again.
-	The DynamicMemory_BlockSweepCount can then be lowered
-* DynamicMemory_AllocateBytes is also taking quite a large amount of time
 
 
 

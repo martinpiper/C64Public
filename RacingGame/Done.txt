@@ -150,4 +150,44 @@ When a far road row is being drawn below the near horizon the ymax can be the ne
 	EnemyCar.spd
 	Think about defining a generic way to define these objects, from their single sprite to multi-sprite formations
 	Especially with regards to road position, perspective step/size and any angled/twisted left/right versions that might be used
-	* In progress: .gotASprite RoadObject_Sprite_Type_EnemyCar SpriteRoadTab
+	* In progress: .gotASprite RoadObject_Sprite_Type_EnemyCar Data_trackSprites
+
+
+
+* Incorrect vertical edge draw observed when:
+	Debug_ForceTrackStateRender=$2c
+	skd=30
+	The / or \ angled character is drawn at the end of the line instead of a smoother vertical line
+	This was probably introduced by the hill/corner fixup code.
+	Debug_ForceTrackStateRender=$c7 also checked
+
+
+
+* Test for smooth edge from vertical segment and apex point, then reduce the drawn road row by one
+
+
+
+
+* Investigate the hard corner on the left edge when:
+	Debug_ForceTrackStateRender=$4a
+	skd=$58
+	skd=$62
+	Added second apex test code near .onoApex
+
+
+
+
+* Why is the lelft hand corner missing one character to the left of the horizon compared to the right hand corner?
+	$25 is the far left steering value for Data_trackCorner, not $24
+
+
+
+
+* Replace all the binary data files with source data files or calculations. Something that is easier to maintain and alter later on.
+	Data_steeringOffset
+	Data_cornerOffsets
+	Data_trackCorner
+	Data_trackYPos
+	Data_trackEdgeLeft
+	Data_trackEdgeRight
+	Data_trackSprites

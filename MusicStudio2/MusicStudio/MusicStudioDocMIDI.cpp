@@ -1,4 +1,4 @@
-// MusicStudioDocGoatTracker.cpp : implementation of the CMusicStudioDoc class for loading Goat tracker songs
+// MusicStudioDocMIDI.cpp : implementation of the CMusicStudioDoc class for loading MIDI files
 //
 
 #include "stdafx.h"

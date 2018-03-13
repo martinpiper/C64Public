@@ -1,0 +1,43 @@
+DisplayingSubGame	!by 0
+hackSubGameCounter	!by 10
+
+; These can vary due to difficulty
+SubGame_ScreenTop			!by 3
+SubGame_ScreenLeft			!by 9
+SubGame_ScreenRight			!by 29
+SubGame_ScreenRightPlus1	!by 0
+SubGame_ScreenRightMinusSubGame_BlockWidth	!by 0
+SubGame_NumBlockX			!by 0 ; (SubGame_ScreenRight - (SubGame_ScreenLeft+2)) / SubGame_BlockWidth
+SubGameVerticalBarXPos		!by 0 ; SubGame_ScreenRight + 5
+SubGame_HorizontalBarTickTime !by kSubGame_HorizontalBarTickTime
+
+SubGame_ExitState			!by SubGameExit_Null
+SubGame_ExitStateX			!by 0
+SubGame_ExitStateY			!by 0
+
+; Local (internal) variables, that we still want to be accessible from the cart bank code
+lSubGame_theBank					!by 0
+lSubGame_smystart					!by 0
+lSubGame_counterSolveXPos0			!by 0
+lSubGame_counterSolveXPos40			!by 0
+lSubGame_counterSolveXPos80			!by 0
+lSubGame_counterSolveXPos0L			!by 0
+lSubGame_counterSolveXPos40L		!by 0
+lSubGame_counterSolveXPos80L		!by 0
+lSubGame_numShuffles				!by 8
+lSubGame_shufflePos					!by 0
+lSubGame_fullIterationDone			!by 0
+lSubGame_fullIterationsBeforeReject !by 2
+lSubGame_horizontalBarTickTime		!by 20
+lSubGame_horizontalBarTick			!by 20
+lSubGame_horizontalBarTickPos		!by SubGame_HorizontalBarXEnd
+lSubGame_verticalBarValue			!by 0
+lSubGame_doCharClear				!by 1
+lSubGame_doColourClear				!by 1
+lSubGame_doPuzzleDraw				!by 1
+lSubGame_endPuzzleDo				!by 0
+lSubGame_doInventory				!by 1
+lSubGame_seeds						!by 0 , 0
+lSubGame_tempChars					!fill SubGame_BlockWidth , 0
+lSubGame_tempCols					!fill SubGame_BlockWidth , 0
+lSubGame_dirLatch					!by 0

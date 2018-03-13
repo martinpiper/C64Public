@@ -40,15 +40,17 @@ The currently captured enemy can be ordered to do different actions with the fun
 
 	* F1 - Orders Stay or continue moving, it toggles the order
 	* F3 - Follow the player, the point to be followed is two squares along the last direction the player fired.
-	* F5 - TBA
-	* F7 - TBA
+	* F5 - Destroy mode, shoots at other enemies
+	* F7 - Assimilate, depending on the enemy health and the capture cost an amount of energy is returned to the player and the target is destroyed
 
 
 ## Dropped pickups
 
 	* Flashing weapon pod - Upgrades weapons. Bullet range, rear shot, side shot etc
 	* CPU icon - Reduce sub-game difficulty
-	* Battery - Health increase
+	* Battery - Immediate health increase. Also adds up to two batteries above and below energy bar.
+				Constantly moving slowly recharges the batteries.
+				When health is critically low and you're damaged a battery will immediately discharge and replenish your energy, saving you from destruction.
 
 
 
@@ -370,3 +372,10 @@ Decompression has been optimised for speed and memory, so the game now starts qu
 
 Up to three enemies can now be captured with the player's capture probe. Pressing the function keys will order them around to stay or follow the player.
 Captured enemies are immune to the player's bullets, but can still be destroyed if the player rams them, or they ram the player.
+
+
+
+# Day 20 -
+
+Captured enemies can now be told to use Destroy mode, where they will shoot at other enemies.
+Installable batteries, slowly recharge as the player moves.

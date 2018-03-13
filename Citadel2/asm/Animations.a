@@ -277,7 +277,7 @@ UpdateSprites
 	; Useful place to update enemy firing
 	inc AnimationParam1,x
 	lda AnimationParam1,x
-	cmp #100	; MPi: TODO: Enemy fire rate check
+	cmp AnimationFireSpeed,x	; Enemy fire rate check
 	bcs .lenemyFire_
 
 .enemyFireRet
@@ -542,6 +542,10 @@ UpdateSprites
 
 	; Debug skip code
 ;	jmp .skipEnemyBulletTest
+
+	lda EnemyHealth-1,y
+	bmi .lenemyHitBySolidBlocks
+
 
 	+SpritePosToCharacterLookup .lskipEnemyBulletTest
 
@@ -854,7 +858,6 @@ SpawnPickup
 
 EnemyBulletBusy !by 0
 
-.lnoBulletSpawned jmp .noBulletSpawned
 .lenemyFireRet jmp .enemyFireRet
 .enemyFire
 	lda #0
@@ -872,19 +875,139 @@ EnemyBulletBusy !by 0
 	lda frameIsOrWasBusy
 	bne .lenemyFireRet
 
+	stx .smxEF1+1
+	sty .smyEF1+1
+
+	; Check for destroy mode
+	lda AnimationEnemyFlags,x
+	and #EnemyFlags_Destroy
+	bne .doDestroyFireTests
+
 	; Check if the game isn't too busy to accept new enemy bullets
 	lda EnemyBulletBusy
 	cmp #EnemyBulletBusy_Max
 	bcs .lenemyFireRet
 
-	; Check if it's captured
+	; Check if it's not captured
 	lda AnimationEnemyFlags,x
 	and #EnemyFlags_IsCaptured
-	bne .lenemyFireRet
+	beq .ldoSpriteBullet
 
-	stx .smxEF1+1
-	sty .smyEF1+1
+	; Captured, but not destroy mode, then do not fire
+	jmp .enemyFireRet
 
+.doDestroyFireTests
+	; Emit a player type of bullet instead
+	; Like the code in UserInput.a : .doFire
+	txa
+	tay
+
+	jsr Animation_FindOtherEnemyNotInY
+	bcs .lnoBulletSpawned2
+	stx .smOtherEnemyAnimation+1
+
+	jsr AllocatePlayerBullet
+	bcc .doCharFire
+
+.lnoBulletSpawned2	jmp .noBulletSpawned
+.ldoSpriteBullet jmp .doSpriteBullet
+
+.doCharFire
+	lda #3
+	jsr SFXInit
+
+	; Fire bullets!
+	stx tempWork2
+
+	lda AnimationYPos,y
+	sta tempWork3
+	sec
+	sbc topScreenScrollY
+	tax
+	lda PlayerSpriteYPosToScreenCharPos,x
+	bmi .lnoBulletSpawned2
+	ldx tempWork2
+	sta PlayerBulletsY,x
+
+	lda topScreenScrollX
+	lsr
+	sta tempWork0
+
+	lda AnimationXPosHi,y
+	lsr
+	lda AnimationXPosLo,y
+	ror
+	sta tempWork4
+	sec
+	sbc tempWork0
+	tax
+	lda PlayerSpriteXPosToScreenCharPos,x
+	bmi .lnoBulletSpawned
+	ldx tempWork2
+	sta PlayerBulletsX,x
+
+	; tempWork3/tempWork4 = Source position
+.smOtherEnemyAnimation ldy #0
+
+	lda AnimationYPos,y
+	sec
+	sbc tempWork3
+	sta tempWork3
+
+	lda AnimationXPosHi,y
+	lsr
+	lda AnimationXPosLo,y
+	ror
+	sec
+	sbc tempWork4
+	sta tempWork4
+
+	; Find the approximate direction to fire
+.divl1
+	lda tempWork3
+	beq .divl2
+	cmp #-1
+	beq .divl2
+	cmp #1
+	beq .divl2
+
+.divl4
+	lda tempWork3
+	+M_ASR
+	sta tempWork3
+	lda tempWork4
+	+M_ASR
+	sta tempWork4
+
+	jmp .divl1
+
+.divl2
+	lda tempWork4
+	beq .divl3
+	cmp #-1
+	beq .divl3
+	cmp #1
+	beq .divl3
+	jmp .divl4
+.divl3
+
+	lda tempWork3
+	ora tempWork4
+	bne .divl5
+	inc tempWork3
+.divl5
+
+	; MPi: TODO: Calculate direction to a suitable enemy from this enemy
+	lda tempWork4
+	sta PlayerBulletsXVel,x
+	lda tempWork3
+	sta PlayerBulletsYVel,x
+	lda #10
+	sta PlayerBulletsTime,x
+
+.lnoBulletSpawned	jmp .noBulletSpawned
+
+.doSpriteBullet
 	lda AnimationXPosLo,x
 	sta tempWork2
 	lda AnimationXPosHi,x
@@ -1187,7 +1310,6 @@ ScrollerPreGameCalcuation
 	jsr MapPlacesToZone
 	rts
 
-PlayerHealthMax = 6
 PlayerHealth !by 6
 
 
@@ -1211,13 +1333,30 @@ AnimationInit2
 	ldy #4
 	jsr Fade_Init
 
-	jsr SubGame_Init
+	jsr CartSubGame_Init
 	jsr UserInput_Init
 	jsr PlayerInventory_Init
 	jsr MapAnimations_Init
 	jsr PlayerBullets_Init
 	jsr PlayerSweep_Init
 	jsr AutoDoor_Init
+	jsr Battery_Init
+	; Debug cheat to enable all batteries
+!if 0 {
+	jsr Battery_Install
+	jsr Battery_Install
+
+!if 0 {
+	jsr Battery_AddTick
+	jsr Battery_AddTick
+	jsr Battery_AddTick
+	jsr Battery_AddTick
+
+	jsr Battery_AddTick
+	jsr Battery_AddTick
+	jsr Battery_AddTick
+}
+}
 
 	jsr EnemyProcessActivationInit
 
@@ -1320,7 +1459,7 @@ AnimationClearDynamics
 	lda #0
 	sta AnimationActiveSlot,x
 
-	lda #$ff
+	lda #-1
 	sta EnemyToAnimationIndex-1,y
 
 .isSimple
@@ -1588,6 +1727,37 @@ AnimationHitPlayerLogic
 .sm1	sbc #0
 	bpl .notNeg
 
+	sta PlayerHealth
+
+	; Check up to 2 batteries
+	lda #2
+	sta tempWork1
+
+.al2
+	jsr Battery_Drain
+	cmp #0
+	beq .noBattery1
+
+	sta tempWork0
+
+	; TODO: Add suitable sound effect for draining a battery
+	; TODO: Add a graphical effect?
+	lda #3
+	jsr SFXInit
+
+.al1
+	jsr PlayerAddHealthTick
+	dec tempWork0
+	bne .al1
+
+	lda PlayerHealth
+	bpl .notNeg
+
+	dec tempWork1
+	bne .al2
+
+.noBattery1
+
 	; Kill the player
 	; Use this explosion type so that the player animation slot isn't freed and then used by an enemy during the player death
 	ldy #12
@@ -1724,3 +1894,52 @@ CheckGeneratorDamage
 .smx ldx #0
 	rts
 }
+
+!zn
+; Find the next enemy animation slot that isn't the same as in reg Y
+; Entry:
+; Y = The animation index not the filter
+; Exit:
+; CC = Found
+; CS = Not found
+.lastXIndex !by 0
+.numToSearch !by 0
+Animation_FindOtherEnemyNotInY
+	sty .smFilter+1
+	lda Multiplex_MaxSpr
+	sta .numToSearch
+	dec .numToSearch
+
+	ldx .lastXIndex
+.l1
+	dec .numToSearch
+	bpl .l2
+	stx .lastXIndex
+	sec
+	rts
+
+.l2
+	inx
+	cpx Multiplex_MaxSpr
+	bcc .l3
+	ldx #0
+.l3
+.smFilter	cpx #0
+	beq .l1
+
+	lda AnimationActiveSlot,x
+	beq .l1
+
+	; It's in the enemy DB
+	cpx EnemyToAnimationIndex
+	beq .l1
+
+	; It's not the player
+	lda AnimationEnemyFlags,x
+	and #EnemyFlags_IsCaptured
+	bne .l1
+
+	stx .lastXIndex
+	; It's not captured
+	clc
+	rts

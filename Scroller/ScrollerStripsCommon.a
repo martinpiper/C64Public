@@ -1,0 +1,23 @@
+!ifdef Scroller_EnableBlockStripsSpeedCode {
+!zn {
+ScrollerDrawStripBottom_GetBlockFromMap
+ScrollerDrawStripBottom_GetBlockFromMap_sm1	ldy $ffff
+	inc ScrollerDrawStripBottom_GetBlockFromMap_sm1+1
+	bne .s1
+	inc ScrollerDrawStripBottom_GetBlockFromMap_sm1+2
+.s1
+	rts
+}
+
+
+ScrollerDrawStripRight_GetBlockFromMap
+ScrollerDrawStripRight_GetBlockFromMap_sm1	ldy $ffff
+	lda ScrollerDrawStripRight_GetBlockFromMap_sm1+1
+	clc
+	adc MapData	; Map width
+	sta ScrollerDrawStripRight_GetBlockFromMap_sm1+1
+	bcc .s1
+	inc ScrollerDrawStripRight_GetBlockFromMap_sm1+2
+.s1
+	rts
+}

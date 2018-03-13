@@ -1,3 +1,4 @@
+; https://www.c64-wiki.com/wiki/Keyboard_code
 !zn {
 getkey
 	; Detect joystick and fake cursor and return keys
@@ -33,10 +34,12 @@ getkey
 	bit CIA1KeyboardColumnJoystickA
 	bne .notFire
 
+!ifndef GetKey_NoFireButtonDebounce {
 	lda #%10000
 .isStillFire
 	bit CIA1KeyboardColumnJoystickA
 	beq .isStillFire
+}
 
 	lda #$0d
 	rts

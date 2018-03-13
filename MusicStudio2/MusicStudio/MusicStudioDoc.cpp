@@ -320,6 +320,12 @@ void CMusicStudioDoc::Serialize(CArchive& ar)
 
 		if (magicTest != kMagicHeader)
 		{
+			if ( (magicTest & 0xffff) == 0x4400)
+			{
+				LoadMWMusicFile(ar);
+				UpdateDocumentDataToInternalFile();
+				return;
+			}
 			if (magicTest == kMIDIHeader)
 			{
 				LoadMIDIFile(ar);
@@ -1518,4 +1524,17 @@ int CMusicStudioDoc::GetInstrument(const unsigned char *SIDBytes)
 	OptimiseTables(true);
 
 	return maxInstrument;
+}
+
+
+int CMusicStudioDoc::getNextFreeTableControl(const int tableIndex)
+{
+	for (int i = MusicStudio1::MusicFile::kMaxTableEntries ; i >= 0 ; i--)
+	{
+		if (mTablesControls[tableIndex][i] == 0xff)
+		{
+			return i+1;
+		}
+	}
+	return 1;
 }

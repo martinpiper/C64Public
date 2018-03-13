@@ -8,13 +8,13 @@ Scroller_EnableBlockColourSpeedCodeInCart = 1
 }
 }
 
-;*****************************************************************************
-;*****************************************************************************
-; Hotizontal strips
-;*****************************************************************************
-;*****************************************************************************
+!ifdef Scroller_EnableSpeedCode {
+!ifdef Scroller_EnableBlockStripsSpeedCode {
+Scroller_EnableBlockStripsSpeedCodeInCart = 1
+}
+}
 
-!macro MACROScrollerDrawHStrip .screen, .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+!macro MACROScrollerDrawAnyStrip_InitialiseMap .mapHX , .mapHY , .sm1 {
 	; Initialse map
 	ldy .mapHY
 	lda MapTabL,y
@@ -24,6 +24,16 @@ Scroller_EnableBlockColourSpeedCodeInCart = 1
 	lda MapTabH,y
 	adc #0
 	sta .sm1+2
+}
+
+;*****************************************************************************
+;*****************************************************************************
+; Hotizontal strips
+;*****************************************************************************
+;*****************************************************************************
+
+!macro MACROScrollerDrawHStrip .screen, .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+	+MACROScrollerDrawAnyStrip_InitialiseMap .mapHX , .mapHY , .sm1
 
 	; Do adjust for the start partial block
 	lda #4
@@ -127,6 +137,84 @@ Scroller_EnableBlockColourSpeedCodeInCart = 1
 	rts
 
 .partial !by 0
+}
+
+!macro MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 {
+	jsr .GetBlockFromMap
+	lda .theBlockTabL,y
+	sta .sm2+0
+	lda .theBlockTabH,y
+	sta .sm2+1
+}
+
+!macro MACROScrollerDrawHStripUnrolled_drawChar_x .screen , .sm2 {
+	lda (.sm2),y
+	sta .screen,x
+	inx
+}
+
+!macro MACROScrollerDrawHStripUnrolled_drawChar_xny .screen , .sm2 {
+	+MACROScrollerDrawHStripUnrolled_drawChar_x .screen , .sm2
+	iny
+}
+
+!macro MACROScrollerDrawHStripUnrolled .screen, .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+	.sm1				= ScrollerDrawStripBottom_GetBlockFromMap_sm1
+	.GetBlockFromMap	= ScrollerDrawStripBottom_GetBlockFromMap
+	.partial			= tempWork9
+	.sm2				= tempWork7
+	.calcLY				= tempWork6
+
+	+MACROScrollerDrawAnyStrip_InitialiseMap .mapHX , .mapHY , .sm1
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLX
+	sta .partial
+
+	ldx #0	; Screen index
+
+	; Draw first partial block
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	lda .mapLY
+	asl
+	asl
+	sta .calcLY
+	adc .mapLX
+	tay
+.l1
+	+MACROScrollerDrawHStripUnrolled_drawChar_xny .screen , .sm2
+	dec .partial
+	bne .l1
+
+!for .i , 9 {
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	ldy .calcLY
+
+!for .j , 3 {
+	+MACROScrollerDrawHStripUnrolled_drawChar_xny .screen , .sm2
+}
+	+MACROScrollerDrawHStripUnrolled_drawChar_x .screen , .sm2
+
+}
+
+	; Draw the last block
+	lda .mapLX
+	bne .dl
+	rts
+.dl
+	sta .partial
+
+	; Draw last partial block
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	ldy .calcLY
+.l2
+	+MACROScrollerDrawHStripUnrolled_drawChar_xny .screen , .sm2
+	dec .partial
+	bne .l2
+
+	rts
 }
 
 
@@ -274,15 +362,7 @@ Scroller_EnableBlockColourSpeedCodeInCart = 1
 }
 
 !macro MACROScrollerDrawVStrip .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
-	; Initialse map
-	ldy .mapHY
-	lda MapTabL,y
-	clc
-	adc .mapHX
-	sta .sm1+1
-	lda MapTabH,y
-	adc #0
-	sta .sm1+2
+	+MACROScrollerDrawAnyStrip_InitialiseMap .mapHX , .mapHY , .sm1
 
 	; Do adjust for the start partial block
 	lda #4
@@ -389,6 +469,98 @@ Scroller_EnableBlockColourSpeedCodeInCart = 1
 
 .partial !by 0
 }
+
+
+
+!macro MACROScrollerDrawVStripUnrolled_GetBlockChar .sm2 {
+	lda (.sm2),y
+}
+
+!macro MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2 {
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar .sm2
+	iny
+	iny
+	iny
+	iny
+}
+
+!macro MACROScrollerDrawVStripUnrolled_DrawWholeBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 , .mapLX {
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	ldy .mapLX
+
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2
+	+MACROScrollerVPlot
+
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2
+	+MACROScrollerVPlot
+
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2
+	+MACROScrollerVPlot
+
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar .sm2
+	+MACROScrollerVPlot
+}
+
+!macro MACROScrollerDrawVStripUnrolled .mapLX, .mapHX, .mapLY, .mapHY , .theBlockTabL , .theBlockTabH {
+	.sm1				= ScrollerDrawStripRight_GetBlockFromMap_sm1
+	.GetBlockFromMap	= ScrollerDrawStripRight_GetBlockFromMap
+	.partial			= tempWork9
+	.sm2				= tempWork7
+	
+	+MACROScrollerDrawAnyStrip_InitialiseMap .mapHX , .mapHY , .sm1
+
+	; Do adjust for the start partial block
+	lda #4
+	sec
+	sbc .mapLY
+	sta .partial
+
+	ldx #0	; Must be zero throughout
+
+	; Draw first partial block
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	lda .mapLY
+	asl
+	asl
+	adc .mapLX
+	tay
+.l1
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2
+	+MACROScrollerVPlot
+	dec .partial
+	bne .l1
+
+!for .i , 4 {
+	+MACROScrollerDrawVStripUnrolled_DrawWholeBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 , .mapLX
+}
+!ifdef Scroller_FullScreen {
+	+MACROScrollerDrawVStripUnrolled_DrawWholeBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 , .mapLX
+}
+
+	; Draw the last block
+	lda .mapLY
+!ifdef Scroller_FullScreen {
+	clc
+	adc #1
+	cmp #0
+}
+	bne .dl
+	rts
+.dl
+	sta .partial
+
+	; Draw last partial block
+	+MACROScrollerDrawAnyStripUnrolled_newBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2
+	ldy .mapLX
+.l2
+	+MACROScrollerDrawVStripUnrolled_GetBlockChar_incy .sm2
+	+MACROScrollerVPlot
+	dec .partial
+	bne .l2
+
+	rts
+}
+
 
 
 !macro MACROScrollerDrawVStripOneColour .mapLX, .mapHX, .mapLY, .mapHY {

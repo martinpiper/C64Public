@@ -60,7 +60,7 @@ numMapUsedTiles = 172
 }
 
 
-!align 255,0
+;!align 255,0
 ; First two bytes = width,height
 MapData
 ;!bin "../FreeDirRant/level4.map"
@@ -73,6 +73,7 @@ MapData
 !by 48
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , 170*48 , $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) , 2
 }
+MapDataEnd
 
 
 BackgroundFixedColours
@@ -120,10 +121,11 @@ BlockColours
 BlockData
 +SEUCKFileData $c80,$1a + 2 - $900 + $1a00
 
-!align 255,0
+;!align 255,0
 ; This map is 8 blocks wide so it equals $200 (512) blocks high
 MapData
 +SEUCKFileData $1000,$1a + 2 - $900 + $900
+MapDataEnd
 
 ;$4085,86,87 = VIC2ScreenColour, VIC2ExtraBackgroundColour1, VIC2ExtraBackgroundColour2
 BackgroundFixedColours

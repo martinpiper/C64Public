@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommand>C:\VICE\x64.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>BlankProjectComp.prg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-remotemonitor BlankProjectComp.prg</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

@@ -1,0 +1,15 @@
+!if *-Scroller_ScrollBankEntry >= 8192 {
+!error "StripsOffsets.a - Cannot assemble to more than 8K of data without being split"
+}
+
+kCartOffset_ScrollerDrawStripLeftBank0 = ScrollerDrawStripLeftBank0 - Scroller_ScrollBankEntry
+kCartOffset_ScrollerDrawStripLeftBank1 = ScrollerDrawStripLeftBank1 - Scroller_ScrollBankEntry
+
+kCartOffset_ScrollerDrawStripRightBank0 = ScrollerDrawStripRightBank0 - Scroller_ScrollBankEntry
+kCartOffset_ScrollerDrawStripRightBank1 = ScrollerDrawStripRightBank1 - Scroller_ScrollBankEntry
+
+kCartOffset_ScrollerDrawStripTopBank0 = ScrollerDrawStripTopBank0 - Scroller_ScrollBankEntry
+kCartOffset_ScrollerDrawStripTopBank1 = ScrollerDrawStripTopBank1 - Scroller_ScrollBankEntry
+
+kCartOffset_ScrollerDrawStripBottomBank0 = ScrollerDrawStripBottomBank0 - Scroller_ScrollBankEntry
+kCartOffset_ScrollerDrawStripBottomBank1 = ScrollerDrawStripBottomBank1 - Scroller_ScrollBankEntry

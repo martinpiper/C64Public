@@ -289,3 +289,40 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 	* Done - Have sensible defaults for ProcessSIDCaptureData()
 	* Write routines to use those first
 	* Reduce instrument duplicates
+
+
+
+* When the desktop zoom level is set, the dynamic window drawing fails. Coordinates could do with a zoom level
+	https://blogs.msdn.microsoft.com/vcblog/2010/03/11/mfc-applications-now-default-to-being-dpi-aware/
+	https://msdn.microsoft.com/library/windows/desktop/mt843498(v=vs.85).aspx(d=robot)
+	Manifest Tool->Enable DPI Awareness = No
+
+
+
+
+* Stabalise the starting raster for the standalone prg player, remember to subtract 1 from the raster time
+	* Make it dark grey, not white, to avoid video interference noise on real hardware
+	* MusicStudio2\MusicStudioConvert\HeaderSelf.a
+
+
+
+* Add moving average calculation for raster time
+
+
+
+* Add a millis/seconds/minutes timer to the standalone prg player
+
+
+
+
+* Try importing expanded MW tracks, sequences and effects
+	Some of the specials might need extra functionality, especially in the pulse width modulation effects - Random inputs?
+	* C64\MusicStudio2\MusicStudio\MusicStudioDocMWMusic.cpp : CMusicStudioDoc::LoadMWMusicFile()
+	* Done - Tracks
+	* Done - Sequences
+	* Envelopes
+		First stage, creating the same default sound for every effect works
+		Now to really import the basic voice features
+		Then vibratos
+		Special effects
+		etc

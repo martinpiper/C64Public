@@ -1,3 +1,14 @@
+; Some constants
+C64Cartridge_Lo_8K	= $8000
+C64Cartridge_Hi_8K	= $e000
+VIC2_Bank0	= $0000
+VIC2_Bank1	= $4000
+VIC2_Bank2	= $8000
+VIC2_Bank3	= $c000
+kSize_8K	= 8 * 1024
+kSize_16K	= 8 * 1024
+
+
 ; Zero page
 
 ; Each enabled bit sets read and write on the processor port (ZPProcessorPort) otherwise the value can just be read.
@@ -120,7 +131,8 @@ RS232OutputBufferHi				= $fa
 ProcessorStack					= $0100		; $0100 - $01ff
 
 ; $0200 - $0292 Various keyboard buffers and buffers used by BASIC
-FlagUpperLowerCaseChange		= $0291		; $80 = Keyboard or chr$(8) does not change upper/lower case
+EZPFlagFlagRepeatKeys			= $028a		; 0 = no repeat (default). $ff = repeat all.
+EZPFlagUpperLowerCaseChange		= $0291		; $80 = Keyboard or chr$(8) does not change upper/lower case
 
 ; $0293 - $02ff RS232 and datasette control and buffers
 
@@ -297,13 +309,21 @@ VIC2SpriteDoubleHeight			= $d017
 ; In text mode:
 ; Bit 0 is unused
 ; Bits 1-3 Character memory location * $0800 (2048) inside current VIC bank selected by $dd00.
-; In VIC bank 0 and 2 bits %010 ($4) and %011 ($6) select character ROM except in ULTIMAX mode.
+; In VIC bank 0 and 2 bits %010 ($4) and %011 ($6) select character ROM (CHARGEN) except in ULTIMAX mode.
 ; In bitmap mode:
 ; Bit 3 Bitmap memory location * $2000 (8192) inside current VIC bank selected by $dd00.
 ; Bits 4-7 Screen memory location * $0400 (1024)  inside current VIC bank selected by $dd00.
 ; Default: $15, %00010101
 VIC2MemorySetupDefault			= %00010101
 VIC2MemorySetup					= $d018
+
+VIC2MemorySetup_CharsSize		= $800
+VIC2MemorySetup_ScreenSize		= $400
+VIC2MemorySetup_SpriteSize		= $40
+
+!macro MVIC2MemorySetup_ScreenChar_A .screen , .character {
+	lda #< (((.character & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_CharsSize )<<1) + (((.screen & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_ScreenSize) << 4)
+}
 
 ; Read:
 ; Bit 0: 1 = Current raster line is equal to the raster line which is set to generate an interrupt.
@@ -537,6 +557,8 @@ JoystickBits_Left	= %100
 JoystickBits_Right	= %1000
 JoystickBits_Fire	= %10000
 
+JoystickBits_AllDirections = JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right
+
 ; Port A read:
 ; Bit 0: 0 = Port 2 joystick up pressed.
 ; Bit 1: 0 = Port 2 joystick down pressed.
@@ -630,6 +652,7 @@ CIA1TimerBControl				= $dc0f
 ; Bit 7: Serial bus DATA IN; 0 = High; 1 = Low.
 CIA2PortASerialBusVICBank		= $dd00
 CIA2PortASerialBusVICBankDefault= %11
+CIA2PortASerialBusVICBankMask	= $3fff
 
 ; Read bits:
 ; Bit 0: RS232 RXD line, input bit.
@@ -742,7 +765,7 @@ CyclesPerSecondPALC64 = 985248
 
 !macro MACRODisableUpperLowerCaseChange_A {
 	lda #$80
-	sta FlagUpperLowerCaseChange
+	sta EZPFlagUpperLowerCaseChange
 }
 
 !macro MACRODisableCursorFlash_A {
@@ -870,6 +893,20 @@ CyclesPerSecondPALC64 = 985248
 	bne .dm1
 }
 
+!macro DisplayColourTextZeroSkipAt_AX .start , .end , .scr , .col , .space {
+	ldx #.end-.start
+.dm1
+	lda .start-1,x
+	bne .plot
+	lda #.space
+.plot
+	sta .scr-1,x
+	lda #.col
+	sta COLOURRAM -1 + (.scr & $3ff),x
+	dex
+	bne .dm1
+}
+
 
 !macro WaitForFire_A {
 .ft1
@@ -924,6 +961,12 @@ CyclesPerSecondPALC64 = 985248
 	sta VIC2BorderColour
 	sta VIC2ScreenControlV
 	sta VIC2SpriteEnable
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpriteSpriteCollision
+	sta VIC2SpriteBackgroundCollision
 	sta SIDVolumeFilter
 }
 
@@ -954,4 +997,32 @@ CyclesPerSecondPALC64 = 985248
 .l1
 	dex
 	bne .l1
+}
+
+!macro DelayFor .cycles {
+	!if (.cycles >= 3) {
+	!if (.cycles & 1) = 1 {
+	lda $01
+	.realCycles = .cycles - 3
+	} else {
+	.realCycles = .cycles
+	}
+	} else {
+	.realCycles = .cycles
+	}
+	!for .i , (.realCycles/2) {
+	nop
+	}
+}
+
+!macro MBASICTextPrint .addr {
+	lda #<.addr
+	ldy #>.addr
+	jsr BASICTextPrint
+}
+
+
+!macro M_ASR {
+	cmp #$80
+	ror
 }

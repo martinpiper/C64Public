@@ -75,6 +75,9 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies> windowscodecs.lib</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -106,6 +109,9 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies> windowscodecs.lib</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>false</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MusicStudioLauncher.cpp" />

@@ -1,0 +1,163 @@
+!zn
+Battery_Power1	!by 0
+Battery_Power2	!by 0
+
+Battery_NumInstalled	!by 0
+
+Battery_Init
+	lda #0
+	sta Battery_Power1
+	sta Battery_Power2
+	sta Battery_NumInstalled
+
+	lda #VIC2Colour_Black
+	ldx #ScorePanelBattery_Size+2-1
+.l1
+	sta COLOURRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos - 2, x
+	sta COLOURRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos - 2, x
+	dex
+	bpl .l1
+
+	rts
+
+
+!zn
+Battery_prime1
+	lda #VIC2Multicolour_Black
+	ldx #ScorePanelBattery_Size-1
+.l1
+	sta COLOURRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos, x
+	dex
+	bpl .l1
+	rts
+
+Battery_prime2
+	lda #VIC2Multicolour_Black
+	ldx #ScorePanelBattery_Size-1
+.l2
+	sta COLOURRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos, x
+	dex
+	bpl .l2
+	rts
+
+Battery_Install
+	lda Battery_NumInstalled
+	cmp #0
+	bne .not0
+
+	inc Battery_NumInstalled
+
+	ldy SCREENRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos - 2
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos - 2
+	ldy SCREENRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos - 1
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos - 1
+
+	jsr Battery_prime1
+
+	rts
+.not0
+	cmp #1
+	bne .not1
+	inc Battery_NumInstalled
+
+	ldy SCREENRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos - 2
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos - 2
+	ldy SCREENRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos - 1
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos - 1
+
+	jsr Battery_prime2
+
+	rts
+.not1
+
+	rts
+
+
+!zn
+Battery_AddTick
+
+	lda Battery_NumInstalled
+	cmp #1
+	bcs .got1
+
+	rts
+
+.got1
+	ldx Battery_Power1
+	cpx #ScorePanelBattery_Size
+	bcs .got2
+
+	ldy SCREENRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos,x
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery1_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery1_XPos,x
+
+	inx
+	stx Battery_Power1
+
+	rts
+
+.got2
+	lda Battery_NumInstalled
+	cmp #2
+	bcs .got3
+
+	rts
+
+.got3
+
+	ldx Battery_Power2
+	cpx #ScorePanelBattery_Size
+	bcc .got4
+
+	rts
+.got4
+
+	ldy SCREENRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos,x
+	lda ScorePanelColourLookup,y
+	sta COLOURRAM + (ScorePanelBattery2_YPos * VIC2ScreenCharsWidth) + ScorePanelBattery2_XPos,x
+
+	inx
+	stx Battery_Power2
+
+	rts
+
+
+!zn
+; Exit:
+; A = Number of energy units to add to the player health
+Battery_Drain
+	lda Battery_NumInstalled
+	bne .notRet
+
+	rts
+
+.notRet
+	cmp #2
+	beq .got2
+
+.firstGreater
+	lda Battery_Power1
+	pha
+	lda #0
+	sta Battery_Power1
+	jsr Battery_prime1
+	pla
+	rts
+
+.got2
+	lda Battery_Power1
+	cmp Battery_Power2
+	bcs .firstGreater
+
+	lda Battery_Power2
+	pha
+	lda #0
+	sta Battery_Power2
+	jsr Battery_prime2
+	pla
+
+	rts

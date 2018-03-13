@@ -1,18 +1,68 @@
-; Checks to make sure accessed data is not under the car ROM bank area when cart code is enabled
+; Checks to make sure accessed data is not under the cartridge ROM bank area when cart code is enabled
 
 !ifdef Scroller_EnableBlockColourSpeedCodeInCart {
 !ifdef CharColoursForEveryCharacter {
 !ifdef CharColours {
-!if CharColours >= $8000 {
-!if CharColours < ($8000 + $4000) {
+!if CharColours >= C64Cartridge_Lo_8K {
+!if CharColours < VIC2_Bank3 {
 !error "CharColours cannot be in the cart ROM bank memory area"
 }
 }
-!if (CharColours+numMapUsedChars) >= $8000 {
-!if (CharColours+numMapUsedChars) < ($8000 + $4000) {
+!if (CharColours+numMapUsedChars) >= C64Cartridge_Lo_8K {
+!if (CharColours+numMapUsedChars) < VIC2_Bank3 {
 !error "CharColours cannot be in the cart ROM bank memory area"
 }
 }
+}
+}
+}
+
+
+
+!ifdef Scroller_EnableBlockStripsSpeedCodeInCart {
+!ifdef BlockData {
+!if BlockData >= C64Cartridge_Lo_8K {
+!if BlockData < VIC2_Bank3 {
+!error "BlockData cannot be in the cart ROM bank memory area"
+}
+}
+!if (BlockData+(numMapUsedTiles*4*4)) >= C64Cartridge_Lo_8K {
+!if (BlockData+(numMapUsedTiles*4*4)) < VIC2_Bank3 {
+!error "BlockData cannot be in the cart ROM bank memory area"
+}
+}
+}
+}
+
+
+
+!ifdef Scroller_EnableBlockStripsSpeedCodeInCart {
+!ifdef MapData {
+!if MapData >= C64Cartridge_Lo_8K {
+!if MapData < VIC2_Bank3 {
+!error "MapData cannot be in the cart ROM bank memory area"
+}
+}
+
+!if MapDataEnd >= C64Cartridge_Lo_8K {
+!if MapDataEnd < VIC2_Bank3 {
+!error "MapData cannot be in the cart ROM bank memory area"
+}
+}
+}
+}
+
+
+
+!ifdef Scroller_EnableBlockStripsSpeedCodeInCart {
+!if ScrollerSpecificCode_Start >= C64Cartridge_Lo_8K {
+!if ScrollerSpecificCode_Start < VIC2_Bank3 {
+!error "ScrollerSpecificCode_Start cannot be in the cart ROM bank memory area"
+}
+}
+!if ScrollerSpecificCode_End >= C64Cartridge_Lo_8K {
+!if ScrollerSpecificCode_End < VIC2_Bank3 {
+!error "ScrollerSpecificCode_End cannot be in the cart ROM bank memory area"
 }
 }
 }

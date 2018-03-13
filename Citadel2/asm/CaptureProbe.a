@@ -12,8 +12,9 @@ CaptureProbe_BreakLockDelayLimit		= 25
 CaptureProbe_LockedAnimIgnoreTimeDelay	= 4
 
 CaptureProbe_CapturedList_max = 3
-; List of captured enemy IDs
+; List of captured enemy IDs (-1 based)
 CaptureProbe_CapturedList				!fill CaptureProbe_CapturedList_max , -1
+; List of corresponding animation index values
 CaptureProbe_CapturedListAnimations		!fill CaptureProbe_CapturedList_max , -1
 
 !zn {
@@ -26,7 +27,9 @@ CaptureProbe_Init
 
 	ldx #CaptureProbe_CapturedList_max-1
 .l1
+	lda #0
 	sta CaptureProbe_CapturedList,x
+	lda #-1
 	sta CaptureProbe_CapturedListAnimations,x
 	dex
 	bpl .l1
@@ -111,10 +114,10 @@ CaptureProbe_GeneralTick
 	stx .smCount+1
 .l1
 	ldy CaptureProbe_CapturedList,x
-	bmi .l2b
+	beq .l2b
 	lda EnemyType-1,y
 	bpl .l2
-	lda #-1
+	lda #0
 	sta CaptureProbe_CapturedList,x
 	jmp .l2b
 .l2
@@ -150,10 +153,10 @@ CaptureProbe_GeneralTick
 	ldx #0
 .l3
 	lda CaptureProbe_CapturedList,x
-	bpl .l4
+	bne .l4
 	lda CaptureProbe_CapturedList+1,x
 	sta CaptureProbe_CapturedList,x
-	lda #-1
+	lda #0
 	sta CaptureProbe_CapturedList+1,x
 .l4
 	inx
@@ -165,7 +168,7 @@ CaptureProbe_GeneralTick
 	ldx #0
 .l5
 	ldy CaptureProbe_CapturedList,x
-	bmi .notActive
+	beq .notActive
 
 	lda EnemyToAnimationIndex-1,y
 	sta CaptureProbe_CapturedListAnimations,x

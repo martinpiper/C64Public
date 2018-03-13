@@ -36,9 +36,9 @@ Horizon_startChar = 60
 
 .dl1
 	tax
-	lda loscr,x
+	lda TrackDraw_tableLo,x
 	sta TrackDraw_ZP_ScreenLoHi
-	lda hiscr,x
+	lda TrackDraw_ScreenHi,x
 	sta TrackDraw_ZP_ScreenLoHi+1
 
 	ldy #0

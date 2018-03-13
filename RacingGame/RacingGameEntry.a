@@ -7,6 +7,10 @@
 !ct pet
 !initmem %10101010
 
+; Game constants
+kRoadRows			= 36
+kRoadSteeringSteps	= 50
+
 !source "../stdlib/stdlib.a"
 
 !source "../MakeCart/asm/EasyFlash_Macros.a"
@@ -92,6 +96,10 @@ GameStart
 	lda #100	; Left steer (road to the right)
 	lda #90
 	lda #50		; Middle
+;	lda #31
+;	lda #30
+	lda #$58
+	lda #$62
 	sta skd
 
 	lda #Debug_ForceTrackStateRender
@@ -102,12 +110,12 @@ GameStart
 	ldx #34
 .ts1
 	lda #$13
-	sta objhorizl,x
-	sta objhorizr,x
+	sta RoadObjects_left,x
+	sta RoadObjects_right,x
 	dex
 	lda #$1
-	sta objhorizl,x
-	sta objhorizr,x
+	sta RoadObjects_left,x
+	sta RoadObjects_right,x
 	dex
 	bne .ts1
 }
@@ -517,29 +525,37 @@ GameScreenBGCol2
 
 
 *=$4000
-Data_trackconfig2 = *
 !source "Data/RoadYPosByRows.a"
 
 *=$4800
 !source "Data/RoadWidthByRows.a"
 
 *=$5000
-Data_trackoft = *
-!bin "Original/trackoft.d.prg" ,,  2
+Data_steeringOffset = *
+!for .oft , kRoadSteeringSteps+1 {
+	!for .roadRow , kRoadRows {
+		!set .realOft = .oft - 1
+		!set .realRoadRow = .roadRow - 1
+		!by (.realRoadRow * .realOft) / 35
+	}
+}
+
+
 *=$5800
-Data_cornoft = *
-!bin "Original/cornoft.d.prg" ,,  2
-*=$7800
-Data_trckcornpos = *
-!bin "Original/trckcornpos.d.prg" ,,  2
-*=$7900
-Data_trckypos = *
-!bin "Original/trckypos.d.prg" ,,  2
-*=$7a00
-Data_sideobjtab2 = *
-!bin "Original/sideobjtab2.d.prg" ,,  2
-*=$7c00
-Data_blocktable = *
+!source "Data/CornerTable.a"
+
+!align 0xff,0
+!source "Data/Level1TrackCorner.a"
+!source "Data/Level1TrackYPos.a"
+!source "Data/Level1TrackObjects.a"
+
+RoadObjects_defs = *
+RoadObject_dataLo	= RoadObjects_defs + (RoadObject_Max * 0)
+RoadObject_dataHi	= RoadObjects_defs + (RoadObject_Max * 1)
+RoadObject_width	= RoadObjects_defs + (RoadObject_Max * 2)
+RoadObject_height	= RoadObjects_defs + (RoadObject_Max * 3)
+RoadObject_hotLeft	= RoadObjects_defs + (RoadObject_Max * 4)
+RoadObject_hotRight	= RoadObjects_defs + (RoadObject_Max * 5)
 !source "asm/RoadObject_Macro.a"
 !source "Data/Level1RoadObjects.a"
 

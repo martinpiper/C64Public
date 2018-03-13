@@ -18,8 +18,19 @@ DynamicMemory_HeapCorruptHook
 !source "asm/PlayerBullets.a"
 !source "asm/Maths.a"
 !source "asm/Camera.a"
-!source "asm/SubGame.a"
+
+SubGameSpecificCode_Start = *
+!source "asm/SubGameMacro.a"
+!source "asm/SubGameConstants.a"
+!source "asm/SubGameData.a"
+SubGameSpecificCode_End = *
+SubGameSpecificCode_Size = SubGameSpecificCode_End - SubGameSpecificCode_Start
+
+SubGameInputSpecificCode_Start = *
 !source "asm/SubGameInput.a"
+SubGameInputSpecificCode_End = *
+SubGameInputSpecificCode_Size = SubGameInputSpecificCode_End - SubGameInputSpecificCode_Start
+
 !source "asm/Teleport.a"
 !source "asm/CaptureProbe.a"
 !source "asm/Radar.a"
@@ -27,16 +38,13 @@ DynamicMemory_HeapCorruptHook
 
 !source "asm/MapAnimations.a"
 !source "asm/PlayerSweep.a"
-!source "asm/Charger.a"
 !ifdef Paralax_Enable {
 !source "asm/Paralax.a"
 }
-!source "asm/Score.a"
-!source "asm/AutoDoors.a"
-!source "asm/Fade.a"
+!source "asm/Battery.a"
 
-; Misc data at the end of the code
-!source "asm/EnemyData.a"
+
+; Note: Game code can also be in OtherCodeMemory as well
 
 GameSpecificCode_End = *
 GameSpecificCode_Size = * - GameSpecificCode_Start

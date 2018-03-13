@@ -18,6 +18,8 @@
 }
 
 *=$400
+	jmp $800
+*=$800
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
@@ -34,8 +36,95 @@
 	dex
 	bne .cl1
 
-
 !if 1 {
+	; Plots the SID waveform output into sprite X postion, which renders a nice line graph
+	lda #0
+	sta VIC2SpriteXMSB
+	lda #128
+	sta VIC2Sprite0X
+	lda #VIC2SpriteYBorderTop
+	sta VIC2Sprite0Y
+	lda #%1
+	sta VIC2SpriteEnable
+	lda #VIC2Colour_White
+	sta VIC2Sprite0Colour
+	lda #VIC2Colour_LightBlue
+	sta VIC2Sprite1Colour
+	lda #.theSprite / 64
+	sta SPRITEFRAME
+
+	+ClearScreenAt_AX COLOURRAM , 0
+	lda #15
+	sta SIDVolumeFilter
+	lda #$ff
+	lda #0
+	sta SIDVoice3FreqLo
+	lda #10
+	sta SIDVoice3FreqHi
+	lda #0
+	sta SIDVoice3AttackDecay
+	lda #$f0
+	sta SIDVoice3SustainRelease
+	lda #0
+	sta SIDVoice3PulseWidthLo
+	lda #10
+	sta SIDVoice3PulseWidthHi
+	lda #%10000001
+	lda #%01000001
+	lda #%00100001
+	lda #%00010001
+	sta SIDVoice3Control
+
+.l1
+	lda SIDVoice3WaveformOutput
+	lsr
+	ora #128
+	sta VIC2Sprite0X
+	lda VIC2ScreenControlV
+	bpl .l1
+
+.l2
+	lda VIC2ScreenControlV
+	bmi .l2
+
+	lda #0
+	sta VIC2BorderColour
+	lda #VIC2SpriteYBorderTop
+	sta VIC2Sprite0Y
+	lda #VIC2SpriteYBorderTop + VIC2SpriteSizeY
+	sta VIC2Sprite1Y
+
+;	+MACROWaitForRaster VIC2SpriteYBorderTop
+
+!for .j , 9 {
+!set .jj = .j-1
+
+!set .pos = VIC2SpriteYBorderTop + (.jj * VIC2SpriteSizeY) + VIC2SpriteSizeY
+	ldx #.pos-8
+-
+	lda SIDVoice3WaveformOutput
+	lsr
+	ora #128
+	sta VIC2Sprite0X
+	cpx VIC2Raster
+	bcs -
+
+	inc VIC2BorderColour
+	lda #.pos
+	sta VIC2Sprite0Y
+}
+
+	jmp .l1
+
+* = $2000
+.theSprite
+!for .i , 21 {
+	+SpriteLine 1
+}
+
+}
+
+!if 0 {
 .l1
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV

@@ -86,6 +86,7 @@ CheckCharger
 	; Note: Fall through
 PlayerAddHealthTick
 	lda PlayerHealth
+	bmi .exit3
 	cmp #PlayerHealthMax
 	bcs .exit2
 
@@ -94,6 +95,7 @@ PlayerAddHealthTick
 	lda ScorePanelColourLookup,y
 	sta COLOURRAM + (ScorePanelEnergy_YPos * VIC2ScreenCharsWidth) + ScorePanelEnergy_XPos , x
 
+.exit3
 	inc PlayerHealth
 
 .exit2

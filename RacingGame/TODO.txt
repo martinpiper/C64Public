@@ -1,3 +1,13 @@
+* To avoid jagged road edges when steering left/right, especially when seeing the far hill/valley, a track width/offset + edge calculation can calculate a minmimum clamp value
+	This is used for each subsequent line until a larger value is calculated
+	The last value to then be added in a separate pas would be any corner offset
+	Observed when:
+		Debug_ForceTrackStateRender
+		skd = 31
+		Debug_ForceTrackStateRender=$ec
+
+
+
 * Figure out why Multiplex_SortStore isn't working correctly, in a way that doesn't break all the other multiplexor code use
 
 

@@ -1291,32 +1291,50 @@ ScreenScrollerCodeStart = *
 !source "ScrollersNoColour.a"
 }
 ScreenScrollerCodeEnd = *
+ScreenScrollerCodeSize = ScreenScrollerCodeEnd - ScreenScrollerCodeStart
+
+ScrollerStripsCodeStart = *
 !source "ScrollerStripsMacros.a"
-!source "ScrollerStrips.a"
+!source "ScrollerStripsCommon.a"
 
-!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
-!ifndef CartFile1_Bank_ColouriseTop_bin {
-!warn "Re-assemble"
-CartFile1_Bank_ColouriseTop_bin = 0
-CartFile1_Start_ColouriseTop_bin = $3fff
-}
-!ifndef CartFile1_Bank_ColouriseBottom_bin {
-!warn "Re-assemble"
-CartFile1_Bank_ColouriseBottom_bin = 0
-CartFile1_Start_ColouriseBottom_bin = $3fff
-}
-!ifndef CartFile1_Bank_ColouriseLeft_bin {
-!warn "Re-assemble"
-CartFile1_Bank_ColouriseLeft_bin = 0
-CartFile1_Start_ColouriseLeft_bin = $3fff
-}
-!ifndef CartFile1_Bank_ColouriseRight_bin {
-!warn "Re-assemble"
-CartFile1_Bank_ColouriseRight_bin = 0
-CartFile1_Start_ColouriseRight_bin = $3fff
-}
-}
 
+!ifndef Scroller_EnableBlockStripsSpeedCodeInCart {
+!source "ScrollerStripsTop.a"
+!source "ScrollerStripsBottom.a"
+!source "ScrollerStripsLeft.a"
+!source "ScrollerStripsRight.a"
+} else {
+
+!source "bin/StripOffsets.a"
+
+ScrollerDrawStripTopBank0
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripTopBank0
+	rts
+ScrollerDrawStripTopBank1
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripTopBank1
+	rts
+
+ScrollerDrawStripBottomBank0
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripBottomBank0
+	rts
+ScrollerDrawStripBottomBank1
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripBottomBank1
+	rts
+
+ScrollerDrawStripLeftBank0
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripLeftBank0
+	rts
+ScrollerDrawStripLeftBank1
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripLeftBank1
+	rts
+
+ScrollerDrawStripRightBank0
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripRightBank0
+	rts
+ScrollerDrawStripRightBank1
+	+Scroller_ScrollExecCartBank CartFile1_Bank_BlockStrips_bin , CartFile1_Start_BlockStrips_bin + kCartOffset_ScrollerDrawStripRightBank1
+	rts
+}
 
 !ifndef Scroller_EnableBlockColourSpeedCodeInCart {
 !source "ScrollerStripsColouriseTop.a"
@@ -1339,6 +1357,9 @@ ScrollerDrawStripRightColour
 	rts
 
 }
+
+ScrollerStripsCodeEnd = *
+ScrollerStripsCodeSize = ScrollerStripsCodeEnd - ScrollerStripsCodeStart
 
 !source "ScrollerAnimation.a"
 

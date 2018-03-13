@@ -1,0 +1,27 @@
+!zn {
+ScrollerDrawStripLeftBank0
+	lda #0
+	sta tempWork0
+	lda #$c8
+	sta tempWork1
+
+	bne ScrollerDrawStripLeftCommon
+
+
+ScrollerDrawStripLeftBank1
+	lda #0
+	sta tempWork0
+	lda #$cc
+	sta tempWork1
+
+ScrollerDrawStripLeftCommon
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawVStripUnrolled scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawVStrip scrollMapLX , scrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
+	}
+}

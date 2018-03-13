@@ -1,0 +1,31 @@
+!zn {
+.lscrollMapLX	= tempWork11
+.lscrollMapHX	= tempWork10
+
+ScrollerDrawStripRightBank0
+	lda #$27
+	sta tempWork0
+	lda #$c8
+	sta tempWork1
+
+	bne ScrollerDrawStripRightCommon
+
+
+ScrollerDrawStripRightBank1
+	lda #$27
+	sta tempWork0
+	lda #$cc
+	sta tempWork1
+
+ScrollerDrawStripRightCommon
+!ifdef Scroller_DebugScreenScrollTimings {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROScrollerRightAdjust .lscrollMapLX, .lscrollMapHX
+	!ifdef Scroller_EnableBlockStripsSpeedCode {
+		+MACROScrollerDrawVStripUnrolled .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
+	} else {
+		+MACROScrollerDrawVStrip .lscrollMapLX , .lscrollMapHX, scrollMapLY , scrollMapHY , BlockTabL , BlockTabH
+	}
+}

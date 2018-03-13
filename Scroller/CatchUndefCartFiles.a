@@ -119,3 +119,36 @@ CartFile1_Start_Colour_m41_bin = $3fff
 }
 }
 }
+
+
+!ifdef Scroller_EnableBlockColourSpeedCodeInCart {
+!ifndef CartFile1_Bank_ColouriseTop_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseTop_bin = 0
+CartFile1_Start_ColouriseTop_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseBottom_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseBottom_bin = 0
+CartFile1_Start_ColouriseBottom_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseLeft_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseLeft_bin = 0
+CartFile1_Start_ColouriseLeft_bin = $3fff
+}
+!ifndef CartFile1_Bank_ColouriseRight_bin {
+!warn "Re-assemble"
+CartFile1_Bank_ColouriseRight_bin = 0
+CartFile1_Start_ColouriseRight_bin = $3fff
+}
+}
+
+
+!ifdef Scroller_EnableBlockStripsSpeedCodeInCart {
+!ifndef CartFile1_Bank_BlockStrips_bin {
+!warn "Re-assemble"
+CartFile1_Bank_BlockStrips_bin = 0
+CartFile1_Start_BlockStrips_bin = $3fff
+}
+}

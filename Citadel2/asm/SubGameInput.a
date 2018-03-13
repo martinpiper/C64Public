@@ -1,3 +1,4 @@
+!zn
 ; Exit:
 ; EQ = Entered sub-game
 ; NE = No sub-game entry yet
@@ -45,7 +46,7 @@ CheckForSubGameEntry
 	beq .lgotSwitch
 	cmp #MapTile_DoorSwitchOnFacingDown
 	beq .lgotSwitch
-	jsr SubGame_ResetEnterTimer
+	jsr CartSubGame_ResetEnterTimer
 .notUp
 
 	lda #JoystickBits_Down
@@ -77,10 +78,10 @@ CheckForSubGameEntry
 	beq .lgotSwitch
 	cmp #MapTile_DoorSwitchOnFacingUp
 	beq .lgotSwitch
-	jsr SubGame_ResetEnterTimer
+	jsr CartSubGame_ResetEnterTimer
 .notDown
 
-	jsr SubGame_ResetEnterTimer
+	jsr CartSubGame_ResetEnterTimer
 
 	jmp .o1
 
@@ -105,7 +106,9 @@ CheckForSubGameEntry
 	lda #$6
 	jsr SFXInit
 
-	jsr SubGameEnter
+	jsr BackupSprites
+	jsr CartSubGameEnter
+	jsr SubGameInventoryPopulate
 
 	lda #0
 	; EQ set, so enter sub-game
@@ -183,6 +186,9 @@ BackupSprites
 
 !zn
 RestoreSprites
+!ifdef Scroller_UseKernal {
+	jsr CartKillBank
+}
 	ldx #BackupAnimationMemPartsSize
 .l3
 	lda BackupAnimationMemParts-1,x
@@ -203,6 +209,10 @@ RestoreSprites
 	sta Animation_StartMem+256-1,x
 	dex
 	bne .l2
+!ifdef Scroller_UseKernal {
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+}
 	rts
 
 !zn
@@ -314,6 +324,9 @@ SubGameAllocateExplosionSprite
 
 !zn
 SubGameAddWinSprites
+!ifdef Scroller_UseKernal {
+	jsr CartKillBank
+}
 ;	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
 	lda SubGame_ScreenTop
 	asl
@@ -351,10 +364,17 @@ SubGameAddWinSprites
 	bcc .l1
 
 .noFree
+!ifdef Scroller_UseKernal {
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+}
 	rts
 
 !zn
 SubGameAddLoseSprites
+!ifdef Scroller_UseKernal {
+	jsr CartKillBank
+}
 ;	lda #(SubGame_ScreenTop*8)+VIC2SpriteYBorderTop-10
 	lda SubGame_ScreenTop
 	asl
@@ -393,12 +413,19 @@ SubGameAddLoseSprites
 	bcc .l1
 
 .noFree
+!ifdef Scroller_UseKernal {
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+}
 	rts
 
 
 !zn
 .timerSpace !by 0
 SubGameAddWaitingSprite
+!ifdef Scroller_UseKernal {
+	jsr CartKillBank
+}
 	dec .timerSpace
 	bpl .noFree
 	lda #1
@@ -430,6 +457,10 @@ SubGameAddWaitingSprite
 	sta AnimationSimpleMoveX,x
 
 .noFree
+!ifdef Scroller_UseKernal {
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+}
 	rts
 
 
@@ -498,14 +529,19 @@ SubGameInventoryPopulate
 	rts
 
 !zn
-.dirLatch			!by 0
 SubGamePickPos		!by 0
 SubGameGotFireFlag	!by 1	; Likely to be true since fire is held down when entering the sub-game
 SubGameMaxDisplayed	!by 0
 
 .bouncePos			!by 0
 
+; Exit:
+; A = Option
+; CS/CC = Exit state
 SubGameHandleInventory
+!ifdef Scroller_UseKernal {
+	jsr CartKillBank
+}
 	lda #JoystickBits_Left
 	bit JoystickA_Processed
 	beq .gotLeft
@@ -513,11 +549,11 @@ SubGameHandleInventory
 	bit JoystickA_Processed
 	beq .gotRight
 	lda #0
-	sta .dirLatch
+	sta lSubGame_dirLatch
 	jmp .sgu1
 
 .gotLeft
-	+SubGame_DirLatch .dirLatch , .sgu1
+	+SubGame_DirLatch .sgu1
 	dec SubGamePickPos
 	bpl .sgu1
 	lda #0
@@ -525,7 +561,7 @@ SubGameHandleInventory
 	jmp .sgu1
 
 .gotRight
-	+SubGame_DirLatch .dirLatch , .sgu1
+	+SubGame_DirLatch .sgu1
 	inc SubGamePickPos
 	lda SubGamePickPos
 	cmp SubGameMaxDisplayed
@@ -607,6 +643,12 @@ SubGameHandleInventory
 	lda #0
 	sta SubGameGotFireFlag
 .debounceFailed
+!ifdef Scroller_UseKernal {
+	pha
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+	pla
+}
 	sec
 	rts
 
@@ -635,6 +677,12 @@ SubGameHandleInventory
 	lda #$ff
 	sta PlayerInventory,x
 
+!ifdef Scroller_UseKernal {
+	pha
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+	pla
+}
 	; Note, don't exit with -2
 	clc
 	rts
@@ -644,6 +692,10 @@ SubGameHandleInventory
 	bpl .l2
 
 .itsADoorOrExit
+!ifdef Scroller_UseKernal {
+	lda #CartFile1_Bank_SubGame_bin
+	jsr CartSelectBank_8K_NoSEI
+}
 	lda SubGamePickPos
 	clc
 	rts

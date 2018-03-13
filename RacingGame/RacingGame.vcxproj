@@ -84,7 +84,10 @@
     <Text Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\MakeCart\asm\EasyFlash.a" />
+    <None Include="..\MakeCart\asm\EasyFlash_Code.a" />
     <None Include="..\MakeCart\asm\EasyFlash_Macros.a" />
+    <None Include="..\MakeCart\asm\GMod2_Code.a" />
     <None Include="..\MakeCart\asm\GMod2_Macros.a" />
     <None Include="..\Scroller\ScrollerAnimation.a" />
     <None Include="..\Scroller\ScrollerAnimationMemory.a" />
@@ -106,7 +109,11 @@
     <None Include="asm\TrackDraw_EdgeLeft.a" />
     <None Include="asm\TrackDraw_EdgeRight.a" />
     <None Include="BuildIt.bat" />
+    <None Include="Data\CornerTable.a" />
     <None Include="Data\Level1RoadObjects.a" />
+    <None Include="Data\Level1TrackCorner.a" />
+    <None Include="Data\Level1TrackObjects.a" />
+    <None Include="Data\Level1TrackYPos.a" />
     <None Include="Data\RoadWidthByRows.a" />
     <None Include="Data\RoadYPosByRows.a" />
     <None Include="RacingGameEntry.a" />

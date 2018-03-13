@@ -1,0 +1,19 @@
+!macro SubGame_DirLatch .sgu1 {
+	cmp lSubGame_dirLatch
+	beq .sgu1
+	sta lSubGame_dirLatch
+}
+
+!if 0 {
+tWaitForFire_A
+	inc VIC2BorderColour
+	+WaitForFire_A
+	inc VIC2BorderColour
+	rts
+!macro WaitDebug {
+	jsr tWaitForFire_A
+}
+} else {
+!macro WaitDebug {
+}
+}

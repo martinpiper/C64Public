@@ -44,6 +44,8 @@ MusicPlayerPlaySFX
 ; The note table processing functions that are triggered once per command
 .startNoteTableCommands
 NoteTableCommand01
+	lda .ltnt,x
+	sta .tableNoteLastNote,x
 	lda TableValueLNNote-1,y
 	; MPi: TODO: When setting a note consider changing it to update ZeroPageStart instead so the note
 	; change code optimisation can be enabled again.
@@ -54,8 +56,16 @@ NoteTableCommand01
 
 	jmp .tableNoteProcessOver
 
-	; MPi: TODO: Other commands 2,3,4 needed here
 NoteTableCommand02
+	lda .tableNoteLastNote,x
+	sta .ltnt,x
+
+	lda #<.ltableNoteProcessOver
+	sta .noteTablePerFrameJumpLo,x
+
+	jmp .tableNoteProcessOver
+
+	; MPi: TODO: Other commands 2,3,4 needed here
 NoteTableCommand03
 NoteTableCommand04
 NoteTableCommand05
@@ -306,6 +316,7 @@ HighestBlockCommand
 .tableNoteResult2 !by 0,0,0
 .tableNoteCounter !by 0,0,0
 .tableNoteCounterReset !by 0,0,0
+.tableNoteLastNote !by 0,0,0
 }
 
 !ifdef TableCodeActivatePulse {
@@ -491,6 +502,7 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	lda #15
 	sta .playflag
 	sta .volu
+	sta SIDVolumeFilter
 
 	rts
 

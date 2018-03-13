@@ -50,7 +50,7 @@ UpdateScreenScrollCamera
 	stx tempWork1
 	ldy #Node_isBlocked
 	lda (tempWork0),y
-	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	and #!Node_isBlocked_Player
 	sta (tempWork0),y
 
 !ifdef MapBlockAlignedMovement { } else {
@@ -62,7 +62,7 @@ UpdateScreenScrollCamera
 	stx tempWork1
 	ldy #Node_isBlocked
 	lda (tempWork0),y
-	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	and #!Node_isBlocked_Player
 	sta (tempWork0),y
 
 	ldx .oldMapBlockX
@@ -73,7 +73,7 @@ UpdateScreenScrollCamera
 	stx tempWork1
 	ldy #Node_isBlocked
 	lda (tempWork0),y
-	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	and #!Node_isBlocked_Player
 	sta (tempWork0),y
 
 	ldx .oldMapBlockX
@@ -85,7 +85,7 @@ UpdateScreenScrollCamera
 	stx tempWork1
 	ldy #Node_isBlocked
 	lda (tempWork0),y
-	and #(Node_isBlocked_Wall | Node_isBlocked_Enemy)
+	and #!Node_isBlocked_Player
 	sta (tempWork0),y
 }
 }

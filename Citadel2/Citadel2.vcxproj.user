@@ -6,8 +6,13 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SolveRunner|Win32'">
-    <LocalDebuggerCommand>C:\Downloads\WinVICE-2.4.6-x86-r28113\WinVICE-2.4.6-x86-r28113\x64sc.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>-remotemonitor $(ProjectDir)\SolveRunner.prg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-warp -remotemonitor $(ProjectDir)\SolveRunner.prg</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SubGame|Win32'">
+    <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-warp -remotemonitor $(ProjectDir)\SubGameStub.prg</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Citadel2|Win32'">
