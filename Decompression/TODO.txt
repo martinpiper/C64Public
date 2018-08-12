@@ -1,3 +1,32 @@
 -- TODO
 
+* in this code:
+	.workLen = $fd
+	.tempLoopVal = $ff
+	.workLen should be 16 bits, and .tempLoopVal is not referenced by label, but its memory is used as part of .workLen+1
+	So tidy up the code and make sure the ambiguity is resolved and the correct 16 bit size is reserved for workLen
+
+
+
+
+* Strange case where with -c64mr when the ending address is not aligned to a page the decompression end check is not triggering correctly.
+	* .smRLEByte is correctly encountered, however it looks like the last RLE for the last byte if it's not page aligned is one too many?
+	* Maybe a problem in the output data?
+
+
+
 * Implement -c64mrb as -c64mr works
+
+
+
+
+* No need for this code in C64\Decompression\DecompressRLE.a
+		jsr RNXPCompressionDecompress_GetByte
+		clc
+		adc RNXPCompressionDecompress_WriteByte+1
+		sta .smEndTestL+1
+		jsr RNXPCompressionDecompress_GetByte
+		adc RNXPCompressionDecompress_WriteByte+2
+		sta .smEndTestH+1
+	The values can be pre-calculated and just stored by the self extracting code
+

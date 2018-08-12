@@ -1,0 +1,7 @@
+; These variable declarations are to setup the storage used for this stub.
+
+CompressedDataStore		= $0800
+CompressedDataExecute	= $c000
+CompressedDataStart
+!bin "../AnimationBitmap/AnimationBitmap.cmp",,2
+CompressedDataEnd

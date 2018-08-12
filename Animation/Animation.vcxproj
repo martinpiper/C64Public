@@ -72,8 +72,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\MakeCart\asm\EasyFlash.a" />
+    <None Include="..\MakeCart\asm\EasyFlash_Code.a" />
+    <None Include="..\MakeCart\asm\EasyFlash_Macros.a" />
+    <None Include="..\MakeCart\asm\GMod2_Code.a" />
+    <None Include="..\MakeCart\asm\GMod2_Macros.a" />
+    <None Include="ConvDelta.bat" />
     <None Include="DeltaDecompression.a" />
     <None Include="DeltaDecompressionMacros.a" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

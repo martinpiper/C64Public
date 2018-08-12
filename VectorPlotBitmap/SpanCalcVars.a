@@ -1,0 +1,17 @@
+; ZPSpanCalc_VarBase must be defined with a *zero page* base address for the SpanCalc internal variables.
+; For example: ZPSpanCalc_VarBase	= $02
+
+; Define various zeropage working variables
+ZPSpanCalc_currentSegmentLo					= ZPSpanCalc_VarBase + $00
+ZPSpanCalc_currentSegmentHi					= ZPSpanCalc_VarBase + $01
+
+ZPSpanCalc_endVars							= ZPSpanCalc_VarBase + $02
+
+
+!if ZPSpanCalc_endVars >= $100 {
+!error "ZPSpanCalc_endVars is out of zeropage"
+}
+
+
+; Constants
+kSpanCalc_backgroundColour = 0

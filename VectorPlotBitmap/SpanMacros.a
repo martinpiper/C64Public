@@ -1,0 +1,20 @@
+!macro Span_end {
+	clc
+	adc ZPBitmap_CurrentPos
+	sta ZPBitmap_CurrentPos
+	bcc .nc1 
+	inc ZPBitmap_CurrentPos+1
+.nc1
+}
+
+
+!macro Span_mask .mask {
+	; Handle the beginning
+	and #.mask
+	sta ZPBitmap_ColourMasked
+	lda (ZPBitmap_CurrentPos),y
+!ifndef SpanPlot_MaskEnds {
+	and #!.mask
+}
+	ora ZPBitmap_ColourMasked
+}

@@ -208,8 +208,37 @@ RealCodeStart
 	; Stop the cartridge from selecting the bank by selecting an invalid bank
 	+MACRO_CartKillBank
 
+	jsr VideoMode_DetectVideoType
+	lda VideoMode_Type
+	sta $3fd
+
+	; Store the joysticks xor with $ff to $3fe and $3ff so we can test communication of external configuration information to the booted code
+	lda CIA1KeyboardColumnJoystickA
+	eor #$ff
+	and #JoystickBits_AllDirections | JoystickBits_Fire
+	tax
+	lda .joystickToChoice,x
+	sta $3fe
+	lda CIA1KeyboardRowsJoystickB
+	eor #$ff
+	and #JoystickBits_AllDirections | JoystickBits_Fire
+	tax
+	lda .joystickToChoice,x
+	sta $3ff
+
 	; Start the compressed game code
 	jmp 2061
+
+; Maps joystick direction to these choices:
+;010
+;304
+;020
+.joystickToChoice
+	!by 0 , 1 , 2 , 0	; 0
+	!by 3 , 0 , 0 , 0	; 4
+	!by 4 , 0 , 0 , 0	; 8
+	!by 0 , 0 , 0 , 0	; 12
+	!by 5 , 0 , 0 , 0	; 16
 
 
 .loading !scr "  loading  "	; The extra spaces are important to give these blank spaces some colour for the later decompressed data that used << and >>
@@ -219,6 +248,8 @@ RealCodeStart
 .HWFailEnd
 
 !source "../stdlib/Initialise.a"
+!source "../stdlib/VideoModes_Macros.a"
+!source "../stdlib/VideoModes.a"
 
 }
 CodeMoveEnd

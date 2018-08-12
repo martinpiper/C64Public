@@ -16,15 +16,37 @@ Also BuildIt*.bat will produce C64 ready prg files suitable for the normal BASIC
 
 The CRT file will need to be mounted as a cartridge in a suitable emulator or written to a compatible GMod2 ROM.
 
+## Title screen
+
+Press down on the joystick to choose between Aracade or Strategy. By default Arcade mode is selected.
+Press left/right/up to choose between  SFX/SFX+Music/Music.
+
+### Arcade mode
+
+The player moves around the map with eight-way control not aligned to the map blocks.
+Pickups are automatically added instead of waiting to be installed by accessing a terminal.
+
+### Strategy mode
+
+The player moves around the map aligned to the map blocks and with four-way movement.
+Pickups are stored in the inventory and can be installed when accessing a terminal.
+A terminal sub-game needs to be completed before an inventory item is installed or door is activated.
+
+
 ## Computer terminals and switches
 
 To access a computer terminal in a wall, stop the player, hold down fire while pushing the joystick in the direction of the terminal until the screen changes.
-The first default option for the terminal sub-game is: Exit back to the game.
-The next option is: Open/close (toggle) the associated door.
-The next options are any collected powerups.
-Choose the option with left/right and use fire to select it.
-
 A switch in a wall looks a bit like a computer terminal, using it is the same as a computer terminal except that it will just toggle its associated door.
+
+### In Arcade mode
+	Terminals are like switches, there is no sub-game.
+
+### In Strategy mode
+	The first default option for the terminal sub-game is: Exit back to the game.
+	The next option is: Open/close (toggle) the associated door.
+	The next options are any collected powerups.
+	Choose the option with left/right and use fire to select it. The sub-game will start.
+
 
 ## Teleporters
 
@@ -375,7 +397,22 @@ Captured enemies are immune to the player's bullets, but can still be destroyed 
 
 
 
-# Day 20 -
+# Day 20 - Demo
 
 Captured enemies can now be told to use Destroy mode, where they will shoot at other enemies.
 Installable batteries, slowly recharge as the player moves.
+
+The title screen can be used to change the game mode and sound configuration.
+	Press down on the joystick to choose between Aracade or Strategy. By default Arcade mode is selected.
+	Press left/right/up to choose between  SFX/SFX+Music/Music.
+
+### Arcade mode
+
+The player moves around the map with eight-way control not aligned to the map blocks.
+Pickups are automatically added instead of waiting to be installed by accessing a terminal.
+
+### Strategy mode
+
+The player moves around the map aligned to the map blocks and with four-way movement.
+Pickups are stored in the inventory and can be installed when accessing a terminal.
+A terminal sub-game needs to be completed before an inventory item is installed or door is activated.

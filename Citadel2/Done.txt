@@ -1109,7 +1109,7 @@ Also tweaked the enemy start positions
 
 * Door open/close switch. Like the computer terminal but does not require a sub-game to toggle the door(s)
 	* CheckForSubGameEntry
-		Could check for the switch map tiles (in addition to MapTile_ComputerTerminalFacingDown) and just set these instead of entering the sub-game switch:
+		Could check for the switch map tiles (in addition to MapTile_ComputerTerminalOffFacingDown) and just set these instead of entering the sub-game switch:
 			SubGame_ExitState = SubGameExit_Success
 			SubGamePickPos = -1
 		Instead of going to .lgotTerminal create a new function to to do above.
@@ -1618,3 +1618,62 @@ Also tweaked the enemy start positions
 	* ScorePanelCharBatteryBar ScorePanelCharBatteryArrow
 	* ScorePanelBattery* : ScorePanelBattery1_XPos ScorePanelBattery1_YPos ScorePanelBattery_Size etc
 	* Added: Battery_Init Battery_Install Battery_AddTick Battery_Drain
+
+
+
+* Add a software switch MapBlockAlignedMovement mode
+	* Add a title screen choice between strategy (aligned movement) and arcade mode
+	* Or consider creating GameStrategy and GameArcade builds since the align/non-aligned code does not need to switch during the game
+		Not really that easy since the Scroller code references code and data inside Game so the code offsets cannot change
+
+	* Will also need code tests for these two configs:
+		CameraNotPushX = 1
+		CameraNotPushY = 1
+		CameraFollowWiggleX = 0
+		CameraFollowWiggleY = 0
+	And:
+		CameraFollowWiggleX = 32
+		CameraFollowWiggleY = 32
+
+	Before:
+		GameSpecificCode_Start  =$3403
+		GameSpecificCode_End  =$6bf9; unused
+		GameSpecificCode_Size  =$37f6; unused
+	After:
+		GameSpecificCode_Start  =$340a
+		GameSpecificCode_End  =$6d8e; unused
+		GameSpecificCode_Size  =$3984; unused
+
+
+
+
+* Other game play tweaks:
+	Arcade mode:
+		There is no circuit solving sub-game, doors open and close when the terminal is activated
+			CheckForSubGameEntry renamed to CheckForTerminalsAndSwitches
+				.lgotTerminal could test for MapBlockAlignedMovement and then goto .enterS instead of .enter
+		Pickups are automatically used when collected
+			SubGame_ExitState = SubGameExit_Success
+			Goes to .subGameStateSuccess
+			Checks SubGamePickPos
+				-1 = Door
+				Otherwise it's the type of the pickup that was used for PlayerInventory_Add
+				So instead of "jsr PlayerInventory_Add" just set the type into SubGamePickPos and SubGame_ExitState = SubGameExit_Success
+
+		Free range movement like paradroid
+
+	Strategy mode:
+		Adds the circuit sub-game along with the installation of pickups from the inventory
+		Block axis aligned movement (edited)
+
+
+
+* Need some kind of indication a terminal has been used. Red or green screen?
+
+
+
+* Add a separate score table for tactical and arcade mode
+
+
+
+* Arcade mode: When the player is right against a wall, the player bullets are right on the egde of the block. Not one char in.

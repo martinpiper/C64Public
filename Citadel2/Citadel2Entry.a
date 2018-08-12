@@ -55,17 +55,6 @@ EnemyBulletBusy_Add = 30
 ;Paralax_Enable = 1
 Paralax_Enable_More = 1
 
-; Define this to enable the player map block alignement tests
-;MapBlockAlignedMovement = 1
-
-; Define these to make the player movement alter the camera scroll directly, instead of using a push
-;CameraNotPushX = 1
-;CameraNotPushY = 1
-;CameraFollowWiggleX = 0
-;CameraFollowWiggleY = 0
-CameraFollowWiggleX = 32
-CameraFollowWiggleY = 32
-
 ScrollerPreGameCalcuation_Enable = 1
 
 DynamicMemory_ZP_lo = tempWork7
@@ -132,7 +121,7 @@ DisableUpdateMultiplexorToAnimation = 1
 ;MazeSolve_DebugBorder = 1
 
 ; The debug fine timings should only be enabled once, since the increment the border a lot
-;HandleUserInput_DebugFineTimings = 1
+HandleUserInput_DebugFineTimings = 1
 
 
 Scroller_PlaySoundEffectsDuringGame = 1
@@ -250,6 +239,16 @@ BackgroundFixedColours
 !by 0,0,0
 
 AnimationStopMusic !by 0
+
+; This switches between map block alignement tests
+MapBlockAlignedMovement !by 0
+; These alter the camera movement to make the player movement alter the camera scroll directly, instead of using a push
+CameraNotPushX !by 1
+CameraNotPushY !by 1
+CameraFollowWiggleXMin !by 85 - 32
+CameraFollowWiggleXMax !by 84 + 32
+CameraFollowWiggleYMin !by 122 - 32
+CameraFollowWiggleYMax !by 120 + 32
 
 GenericSpecificCode_End = *
 GenericSpecificCode_Size = * - GenericSpecificCode_Start

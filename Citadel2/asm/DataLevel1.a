@@ -72,16 +72,17 @@ InterestingPlacesZone !fill MaxInterestingPlaces , 0xff
 ;	Zone index 1
 ;	Zone index 2
 MapTerminalToDoor
-	!by 1 , 1 ,			4 , 8 ,		MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		-1 , -1,		-1 , -1
-	!by 1 , 7 ,			4 , 14 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		-1 , -1,		-1 , -1
+	!by 1 , 1 ,			4 , 8 ,		MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_TerminalOffFacingDown , MapAnim_TerminalOnFacingDown,		-1 , -1
+	!by 1 , 7 ,			4 , 14 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_TerminalOffFacingDown , MapAnim_TerminalOnFacingDown,		-1 , -1
 	!by 3 , 11 ,		5 , 13 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, MapAnim_VerticalDoorClose		, MapAnim_VerticalOpenDoor ,		MapAnim_DoorSwitchOffFacingDown , MapAnim_DoorSwitchOnFacingDown,	-1 , -1
 
 	!by 6 , 24 ,		6 , 22 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_DoorSwitchOffFacingUp , MapAnim_DoorSwitchOnFacingUp,		-1 , -1
 
-	!by 14 , 0 ,		20 , 2 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, MapAnim_VerticalDoorClose		, MapAnim_VerticalOpenDoor ,		-1 , -1,		-1 , -1
+	; Both doors
+	!by 14 , 0 ,		20 , 2 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, MapAnim_VerticalDoorClose		, MapAnim_VerticalOpenDoor ,		MapAnim_TerminalOffFacingDown , MapAnim_TerminalOnFacingDown,		-1 , -1
 	!by 14 , 0 ,		26 , 2 ,	MapTile_VerticalDoor ,		MapTile_VerticalOpenDoor	, MapAnim_VerticalDoorClose		, MapAnim_VerticalOpenDoor ,		-1 , -1,		-1 , -1
 
-	!by 28 , 6 ,		30 , 17 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		-1 , -1,		-1 , -1
+	!by 28 , 6 ,		30 , 17 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_TerminalOffFacingDown , MapAnim_TerminalOnFacingDown,		-1 , -1
 	!by 30 , 19 ,		26 , 9 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_DoorSwitchOffFacingUp , MapAnim_DoorSwitchOnFacingUp,		-1 , -1
 	!by 26 , 11 ,		34 , 17 ,	MapTile_HorizontalDoor ,	MapTile_HorizontalOpenDoor	, MapAnim_HorizontalDoorClose	, MapAnim_HorizontalOpenDoor ,		MapAnim_DoorSwitchOffFacingUp , MapAnim_DoorSwitchOnFacingUp,		-1 , -1
 
@@ -282,9 +283,11 @@ AnimationTypeTableHi
 MapAnimationTypeTableLo
 !by <MapAnimationData_0 , <MapAnimationData_1 , <MapAnimationData_2 , <MapAnimationData_3 , <MapAnimationData_4 , <MapAnimationData_5 , <MapAnimationData_6 , <MapAnimationData_7
 !by <MapAnimationData_8 , <MapAnimationData_9 , <MapAnimationData_10, <MapAnimationData_11, <MapAnimationData_12, <MapAnimationData_13, <MapAnimationData_14, <MapAnimationData_15
+!by <MapAnimationData_16
 MapAnimationTypeTableHi
 !by >MapAnimationData_0 , >MapAnimationData_1 , >MapAnimationData_2 , >MapAnimationData_3 , >MapAnimationData_4 , >MapAnimationData_5 , >MapAnimationData_6 , >MapAnimationData_7
 !by >MapAnimationData_8 , >MapAnimationData_9 , >MapAnimationData_10, >MapAnimationData_11, >MapAnimationData_12, >MapAnimationData_13, >MapAnimationData_14, >MapAnimationData_15
+!by >MapAnimationData_16
 
 
 ; Data after this point can be dynamic in length and referenced by updates to previous tables
@@ -433,9 +436,18 @@ MapAnimationData_11
 MapAnimationData_12
 	!by MapTile_DoorSwitchOnFacingUp , MapTile_DoorSwitchOnFacingUp , MapTile_DoorSwitchOnFacingUp , MapTile_DoorSwitchOnFacingUp , -1
 
-MapAnimationData_13	= *
-MapAnimationData_14	= *
-MapAnimationData_15	= *
+; Terminals off/on facing down/up
+MapAnimationData_13
+	!by MapTile_ComputerTerminalOffFacingDown , MapTile_ComputerTerminalOffFacingDown , MapTile_ComputerTerminalOffFacingDown , MapTile_ComputerTerminalOffFacingDown , -1
+
+MapAnimationData_14
+	!by MapTile_ComputerTerminalOffFacingUp , MapTile_ComputerTerminalOffFacingUp , MapTile_ComputerTerminalOffFacingUp , MapTile_ComputerTerminalOffFacingUp , -1
+
+MapAnimationData_15
+	!by MapTile_ComputerTerminalOnFacingDown , MapTile_ComputerTerminalOnFacingDown , MapTile_ComputerTerminalOnFacingDown , MapTile_ComputerTerminalOnFacingDown , -1
+
+MapAnimationData_16
+	!by MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , -1
 
 
 LevelDataEnd = *

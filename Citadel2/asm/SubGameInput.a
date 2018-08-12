@@ -3,8 +3,8 @@
 ; EQ = Entered sub-game
 ; NE = No sub-game entry yet
 .llo1 jmp .o1
-CheckForSubGameEntry
-	; MPi: TODO: Here would be a good place to start testing for accessing a computer terminal
+CheckForTerminalsAndSwitches
+	; Contains code that tests for accessing a computer terminal and switches
 
 	; Only consider entering the sub-game if the screen is not scrolling
 	; This is because the off-screen bank is used for the sub-game
@@ -40,7 +40,9 @@ CheckForSubGameEntry
 
 	jsr GetMapTileFromPosition
 
-	cmp #MapTile_ComputerTerminalFacingDown
+	cmp #MapTile_ComputerTerminalOffFacingDown
+	beq .lgotTerminal
+	cmp #MapTile_ComputerTerminalOnFacingDown
 	beq .lgotTerminal
 	cmp #MapTile_DoorSwitchOffFacingDown
 	beq .lgotSwitch
@@ -72,7 +74,9 @@ CheckForSubGameEntry
 
 	jsr GetMapTileFromPosition
 
-	cmp #MapTile_ComputerTerminalFacingUp
+	cmp #MapTile_ComputerTerminalOffFacingUp
+	beq .lgotTerminal
+	cmp #MapTile_ComputerTerminalOnFacingUp
 	beq .lgotTerminal
 	cmp #MapTile_DoorSwitchOffFacingUp
 	beq .lgotSwitch
@@ -86,6 +90,9 @@ CheckForSubGameEntry
 	jmp .o1
 
 .lgotTerminal
+	lda MapBlockAlignedMovement
+	beq .lgotSwitch
+
 	lda hackSubGameCounter
 	beq .o1
 

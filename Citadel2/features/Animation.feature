@@ -1,4 +1,4 @@
-@c64
+@ignore @c64
 Feature: Animation tests
 
   Execute this with: java -jar ..\..\BDD6502\target\BDD6502-1.0.3-SNAPSHOT-jar-with-dependencies.jar

@@ -1,6 +1,30 @@
-* https://keepvid.com/sites/download-youtube-video.html
+// cls && Conv.bat && ConvDelta.bat && cls && ConvPrint.bat
+// cls && Conv.bat && ConvDelta.bat && BuildIt.bat && cls && ConvPrint.bat
+// cls && ConvDeltaOpt.bat && cls && ConvPrint.bat
 
-* Import a video from something like https://www.youtube.com/watch?v=vKnU_68CApI
-	or https://www.youtube.com/watch?v=65weTx0haog
-	See how well it compresses
-	C:\Downloads\Thunder Blade Longplay (Arcade) [60 FPS].mp4
+* .notSpecialEscape could actually be one 0, not two 0 since the first 0 is impossible as an escape due to the bmi/bpl being used
+
+
+* Try to vertically center the outro video without killing memory
+
+
+
+* Try various compression options for CharPack on a per frame basis
+	This means the DeltaCompression tool will drive conversion of input BMPs via CharPack and cycle through the various options.
+	For example try combinations of:
+		* -forceordering -reducebitmapchange t.scr t.col
+
+
+
+
+* Or create a decision point list, and iterate over the decision points until the more optimal dictionary choice is used?
+
+
+
+
+* I really need to put a frame counter display in there that shows the time and number of frames displayed when it loops at the end :smile:
+	and then calculate the average FPS
+
+
+
+* Add an option to become increasingly lossy for compression...

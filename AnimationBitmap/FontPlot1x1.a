@@ -1,0 +1,72 @@
+!zn
+
+; Entry:
+; A/X = lo/hi screen address to start drawing to
+FontPlot1x1_SetScreen
+	sta .scrAddr+1
+	stx .scrAddr+2
+	rts
+
+; Entry:
+; A/X = lo/hi string address to draw
+FontPlot1x1_EntryCentered
+	jsr DoLookupLanguage_AX
+FontPlot1x1_EntryCenteredNoLanguage
+	sta .stringAddr1+1
+	stx .stringAddr1+2
+	sta .stringAddr2+1
+	stx .stringAddr2+2
+
+	ldy #0
+.cl1
+.stringAddr1	lda $1234,y
+	beq .endString
+
+	iny
+	bne .cl1
+.endString
+	sty .smLen1+1
+
+	; Align centered
+	lda #VIC2ScreenCharsWidth
+	sec
+.smLen1	sbc #0
+	clc
+	adc #1
+	lsr
+	clc
+	adc .scrAddr+1
+	sta .scrAddr+1
+	bcc .lc2
+	inc .scrAddr+2
+.lc2
+	jmp .draw
+
+; Entry:
+; A/X = lo/hi string address to draw
+FontPlot1x1_Entry
+	jsr DoLookupLanguage_AX
+FontPlot1x1_EntryNoLanguage
+	sta .stringAddr2+1
+	stx .stringAddr2+2
+
+.draw
+	ldy #$00
+.stringAddr2	lda $1234,y
+	bne .doDraw1
+	rts
+
+.doDraw1
+	cmp #$20
+	beq .isSpace
+
+	and #$3f
+.scrAddr	sta $1234,y
+.isSpace
+	iny
+	bne .stringAddr2
+	rts
+
+.isSomething
+	lda #0
+	jmp .scrAddr

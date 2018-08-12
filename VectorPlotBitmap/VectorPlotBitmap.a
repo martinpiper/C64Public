@@ -1,0 +1,343 @@
+;VectorPlotBitmap test code
+!source "../stdlib/stdlib.a"
+!to "VectorPlotBitmap.prg", cbm
+!sal
+!sl "VectorPlotBitmap.map"
+!svl "VectorPlotBitmap.lbl"
+!pdb "VectorPlotBitmap.pdb"
+!cpu 6510
+!ct pet
+!initmem 0
+
+SpanTable_IsInCart	= 1
+SpanPlot_MaskEnds	= 1
+;EnableInterlace		= 1
+
+
+!ifdef SpanTable_IsInCart {
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortDefault
+} else {
+CartSelectBank_ProcessorPort	= ProcessorPortAllRAMWithIO
+CartKillBank_ProcessorPort		= ProcessorPortAllRAMWithIO
+}
+
+Bitmap0Memory = $2000
+;Bitmap1Memory = $6000
+
+ZPBitmap_VarBase			= $02
+!source "BitmapPlotVars.a"
+ZPSpanCalc_VarBase			= ZPBitmap_endVars
+!source "SpanCalcVars.a"
+
+!ifdef SpanTable_IsInCart {
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+;!source "../MakeCart/asm/GMod2_Macros.a"
+}
+
+!source "BitmapPlotMacros.a"
+!source "SpanCalcMacros.a"
+
+* = $4000
+	lda #CartSelectBank_ProcessorPort
+	jsr InitialiseMachine
+
+!ifdef SpanTable_IsInCart {
+	; Any old bank will do, as long as it's enabled
+	lda #0
+	jsr CartSelectBank_8K_NoSEI
+}
+
+	lda #%111011
+	sta VIC2ScreenControlV
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+
+	+MVIC2MemorySetup_ScreenBitmap_A SCREENRAM , Bitmap0Memory
+	sta VIC2MemorySetup
+
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
+
+	+ClearScreenAt_AX SCREENRAM , VIC2Colour_DarkGrey | (VIC2Colour_Grey << 4)
+
+	lda #>Bitmap0Memory
+	ldy #%10000100
+	jsr BitmapPlot_clear
+
+	lda #>Bitmap_paletteStart
+	sta ZPBitmap_Palette+1
+
+.l1
+
+	dec .expireCount
+	bne .noExpire
+	lda #2
+	sta .expireCount
+	jsr SpanCalc_expireCleared
+.noExpire
+	jsr SpanCalc_dirtyClear
+
+!ifdef SpanTable_IsInCart {
+	jsr PolyTestMove
+}
+
+	; Test the SpanCalc_scanPoly routine
+	inc .drawTestIndex
+	lda .drawTestIndex
+	and #%11
+	bne .o1
+	inc .drawTestIndex2
+.o1
+	lda .drawTestIndex
+	lsr
+	lsr
+	and #%111
+	sta .sma
+
+	lda .drawTestIndex2
+	lsr
+	lsr
+	lsr
+	lsr
+	and #15
+	tax
+	lda .drawTestUpper,x
+	sta .smx
+	lda .drawTestLower,x
+	sta .smy
+
+.sma = *+1
+	lda #2
+.smx = *+1
+	ldx #50
+.smy = *+1
+	ldy #100
+
+	jsr SpanCalc_scanPoly
+
+
+	lda .drawTestIndex
+	lsr
+	lsr
+	lsr
+	and #%111
+	sta .sma2
+
+	lda .drawTestIndex2
+	lsr
+	lsr
+	lsr
+	and #15
+	tax
+	lda .drawTestUpper2,x
+	sta .smx2
+	lda .drawTestLower2,x
+	sta .smy2
+
+.sma2 = *+1
+	lda #2
+.smx2 = *+1
+	ldx #50
+.smy2 = *+1
+	ldy #100
+
+	jsr SpanCalc_scanPoly
+
+	+MWordValueToAddress_A Bitmap0Memory , ZPBitmap_CurrentPos
+	inc VIC2BorderColour
+
+	jsr BitmapPlot_drawSpans
+
+;	+WaitForFire_A
+
+	jmp .l1
+
+.expireCount !by 2
+
+.drawTestIndex !by 0
+
+.drawTestIndex2 !by 0
+
+.drawTestUpper
+	!by  0 , 75 , 80 , 70
+	!by 50 , 75 , 80 , 70
+	!by 10 , 75 , 80 , 70
+	!by 50 , 75 , 80 , 70
+.drawTestLower
+	!by 60 , 100 , 98 , 98
+	!by 90 , 85 , 86 , 90
+	!by 50 , 100 , 98 , 98
+	!by 90 , 85 , 86 , 90
+
+.drawTestUpper2
+	!by 100 , 175 , 180 , 170
+	!by 150 , 175 , 180 , 170
+	!by 150 , 175 , 180 , 170
+	!by 150 , 175 , 180 , 170
+.drawTestLower2
+	!by 200 , 200 , 198 , 198
+	!by 190 , 185 , 186 , 190
+	!by 200 , 200 , 198 , 198
+	!by 190 , 185 , 186 , 190
+
+!source "BitmapPlot.a"
+!source "SpanCalcMem.a"
+
+!source "SpanCalc.a"
+
+!ifdef SpanTable_IsInCart {
+
+!source "_f_index1.a"
+!ifndef CartFile1_Bank_SpanDraw_p0_0_bin {
+	CartFile1_Bank_SpanDraw_p0_0_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p0_1_bin {
+	CartFile1_Bank_SpanDraw_p0_1_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p0_2_bin {
+	CartFile1_Bank_SpanDraw_p0_2_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p1_0_bin {
+	CartFile1_Bank_SpanDraw_p1_0_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p1_1_bin {
+	CartFile1_Bank_SpanDraw_p1_1_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p1_2_bin {
+	CartFile1_Bank_SpanDraw_p1_2_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p2_0_bin {
+	CartFile1_Bank_SpanDraw_p2_0_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p2_1_bin {
+	CartFile1_Bank_SpanDraw_p2_1_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p2_2_bin {
+	CartFile1_Bank_SpanDraw_p2_2_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p3_0_bin {
+	CartFile1_Bank_SpanDraw_p3_0_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p3_1_bin {
+	CartFile1_Bank_SpanDraw_p3_1_bin = 0
+}
+!ifndef CartFile1_Bank_SpanDraw_p3_2_bin {
+	CartFile1_Bank_SpanDraw_p3_2_bin = 0
+}
+
+SpanBanks_p0
+	!fill SpanConfigSize_0 , CartFile1_Bank_SpanDraw_p0_0_bin
+	!fill SpanConfigSize_1 , CartFile1_Bank_SpanDraw_p0_1_bin
+	!fill SpanConfigSize_2 , CartFile1_Bank_SpanDraw_p0_2_bin
+SpanBanks_p1
+	!fill SpanConfigSize_0 , CartFile1_Bank_SpanDraw_p1_0_bin
+	!fill SpanConfigSize_1 , CartFile1_Bank_SpanDraw_p1_1_bin
+	!fill SpanConfigSize_2 , CartFile1_Bank_SpanDraw_p1_2_bin
+SpanBanks_p2
+	!fill SpanConfigSize_0 , CartFile1_Bank_SpanDraw_p2_0_bin
+	!fill SpanConfigSize_1 , CartFile1_Bank_SpanDraw_p2_1_bin
+	!fill SpanConfigSize_2 , CartFile1_Bank_SpanDraw_p2_2_bin
+SpanBanks_p3
+	!fill SpanConfigSize_0 , CartFile1_Bank_SpanDraw_p3_0_bin
+	!fill SpanConfigSize_1 , CartFile1_Bank_SpanDraw_p3_1_bin
+	!fill SpanConfigSize_2 , CartFile1_Bank_SpanDraw_p3_2_bin
+} else {
+SpanBanks_p0
+SpanBanks_p1
+SpanBanks_p2
+SpanBanks_p3
+}
+
+
+!source "../stdlib/Initialise.a"
+!source "FingerPrint.a"
+!ifdef SpanTable_IsInCart {
+!source "../MakeCart/asm/BankSelect8K.a"
+}
+
+!zn
+.dir !by 0
+PolyTestMove
+
+	ldx #50
+
+	lda .dir
+	inc .dir
+	cmp #20
+	bcc .moveRight
+	cmp #39
+	bcc .moveLeft
+
+	lda #0
+	sta .dir
+
+.moveLeft
+.l0
+	dec Poly_linesLeft-1+50,x
+	dec Poly_linesRight-1+50,x
+	dex
+	bne .l0
+	rts
+
+.moveRight
+.l1
+	inc Poly_linesLeft-1+50,x
+	inc Poly_linesRight-1+50,x
+	dex
+	bne .l1
+	rts
+
+Poly_linesLeft
+!ifdef SpanTable_IsInCart {
+	!for .i , 50 {
+		!by .i
+	}
+	!for .i , 50 {
+		!by 50 - .i
+	}
+	!for .i , 100 {
+		!by .i
+	}
+} else {
+	!for .i , 50 {
+		!by .i
+	}
+	!for .i , 50 {
+		!by .i
+	}
+	!for .i , 50 {
+		!by .i
+	}
+	!for .i , 50 {
+		!by .i
+	}
+}
+Poly_linesLeftEnd
+
+Poly_linesRight
+!ifdef SpanTable_IsInCart {
+	!for .i , 50 {
+		!by 100 - .i
+	}
+	!for .i , 25 {
+		!by 80 + (.i * 2)
+	}
+	!for .i , 25 {
+		!by 80 + 50 - (.i * 4)
+	}
+	!for .i , 100 {
+		!by 159 - (.i / 6)
+	}
+} else {
+	!for .i , 200 {
+		!by 63 - (.i / 20)
+	}
+}
+Poly_linesRightEnd
+
+
+!ifdef SpanTable_IsInCart {
+!source "SpanTableInCart.a"
+} else {
+!source "SpanTable.a"
+}

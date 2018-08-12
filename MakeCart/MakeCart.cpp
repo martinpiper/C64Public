@@ -5,6 +5,10 @@
 // -te -n -a $8000 -b 4 -m C:\work\c64\AnimationBitmap\data\frm0*.del 16384 -o c:\temp\t.crt
 // -te -n -a $8000 -b 4 -f 16384 18 C:\work\c64\AnimationBitmap\data\frm00000.del+47 C:\work\c64\AnimationBitmap\data\frm00001.del C:\work\c64\AnimationBitmap\data\frm00002.del C:\work\c64\AnimationBitmap\data\frm00003.del C:\work\c64\AnimationBitmap\data\frm00004.del C:\work\c64\AnimationBitmap\data\frm00005.del C:\work\c64\AnimationBitmap\data\frm00006.del C:\work\c64\AnimationBitmap\data\frm00007.del C:\work\c64\AnimationBitmap\data\frm00008.del C:\work\c64\AnimationBitmap\data\frm00009.del C:\work\c64\AnimationBitmap\data\frm00010.del C:\work\c64\AnimationBitmap\data\frm00011.del C:\work\c64\AnimationBitmap\data\frm00012.del C:\work\c64\AnimationBitmap\data\frm00013.del C:\work\c64\AnimationBitmap\data\frm00014.del C:\work\c64\AnimationBitmap\data\frm00015.del C:\work\c64\AnimationBitmap\data\frm00016.del C:\work\c64\AnimationBitmap\data\frm00017.del -o c:\temp\t.crt
 // -tg -n -a $8000 -r c:\Downloads\ItsMagic2.bin -b 00 -c 0 $00000 $100000 -w -b 01 -c 0 $02000 $100000 -w -b 02 -c 0 $04000 $100000 -w -b 03 -c 0 $06000 $100000 -w -b 04 -c 0 $08000 $100000 -w -b 05 -c 0 $0a000 $100000 -w -b 06 -c 0 $0c000 $100000 -w -b 07 -c 0 $0e000 $100000 -w -b 08 -c 0 $10000 $100000 -w -b 09 -c 0 $12000 $100000 -w -b 10 -c 0 $14000 $100000 -w -b 11 -c 0 $16000 $100000 -w -b 12 -c 0 $18000 $100000 -w -b 13 -c 0 $1a000 $100000 -w -b 14 -c 0 $1c000 $100000 -w -b 15 -c 0 $1e000 $100000 -w -b 16 -c 0 $20000 $100000 -w -b 17 -c 0 $22000 $100000 -w -b 18 -c 0 $24000 $100000 -w -b 19 -c 0 $26000 $100000 -w -b 20 -c 0 $28000 $100000 -w -b 21 -c 0 $2a000 $100000 -w -b 22 -c 0 $2c000 $100000 -w -b 23 -c 0 $2e000 $100000 -w -b 24 -c 0 $30000 $100000 -w -b 25 -c 0 $32000 $100000 -w -b 26 -c 0 $34000 $100000 -w -b 27 -c 0 $36000 $100000 -w -b 28 -c 0 $38000 $100000 -w -b 29 -c 0 $3a000 $100000 -w -b 30 -c 0 $3c000 $100000 -w -b 31 -c 0 $3e000 $100000 -w -b 32 -c 0 $40000 $100000 -w -b 33 -c 0 $42000 $100000 -w -b 34 -c 0 $44000 $100000 -w -b 35 -c 0 $46000 $100000 -w -b 36 -c 0 $48000 $100000 -w -b 37 -c 0 $4a000 $100000 -w -b 38 -c 0 $4c000 $100000 -w -b 39 -c 0 $4e000 $100000 -w -b 40 -c 0 $50000 $100000 -w -b 41 -c 0 $52000 $100000 -w -b 42 -c 0 $54000 $100000 -w -b 43 -c 0 $56000 $100000 -w -b 44 -c 0 $58000 $100000 -w -b 45 -c 0 $5a000 $100000 -w -b 46 -c 0 $5c000 $100000 -w -b 47 -c 0 $5e000 $100000 -w -b 48 -c 0 $60000 $100000 -w -b 49 -c 0 $62000 $100000 -w -b 50 -c 0 $64000 $100000 -w -b 51 -c 0 $66000 $100000 -w -b 52 -c 0 $68000 $100000 -w -b 53 -c 0 $6a000 $100000 -w -b 54 -c 0 $6c000 $100000 -w -b 55 -c 0 $6e000 $100000 -w -b 56 -c 0 $70000 $100000 -w -b 57 -c 0 $72000 $100000 -w -b 58 -c 0 $74000 $100000 -w -b 59 -c 0 $76000 $100000 -w -b 60 -c 0 $78000 $100000 -w -b 61 -c 0 $7a000 $100000 -w -b 62 -c 0 $7c000 $100000 -w -b 63 -c 0 $7e000 $100000 -w -o c:\temp\t.crt
+// In C:\work\c64\AnimationBitmap\
+// -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt
+// -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -m data\frm0*.del $2000 -o AnimationBitmap.crt
+
 
 // Reference:
 // https://ist.uwaterloo.ca/~schepers/formats/CRT.TXT
@@ -173,6 +177,109 @@ int WriteChunkToBanks( int startBankNum, int maxSize, DynamicMessageHelper &chun
 	sChipData[ 0x0b ] = (unsigned char) startBankNum;
 	sChipData[ 0x0c ] = (unsigned char) (startAddress >> 8);
 	sChipData[ 0x0d ] = (unsigned char) startAddress;	return startBankNum;
+}
+
+int MultiWriteBlock(int startBankNum, std::vector<int> &offsets, int startAddress, int maxSize, DynamicMessageHelper &chunkData, DynamicMessageHelper &output)
+{
+	sChipData[ 0x0a ] = (unsigned char) (startBankNum >> 8);
+	sChipData[ 0x0b ] = (unsigned char) startBankNum;
+	printf( "New bank $%x\n" , startBankNum );
+
+	memset( sBankData , startBankNum , sizeof( sBankData ) );
+	int tableTweak = 2 + (offsets.size() * 2);
+	int i;
+	for (i = 0 ; i < (int)offsets.size() ; i++)
+	{
+		int offset = offsets[i];
+		offset += startAddress + tableTweak;
+		sBankData[(i*2)] = (unsigned char) offset;
+		sBankData[(i*2)+1] = (unsigned char) (offset >> 8);
+	}
+	sBankData[(i*2)] = 0;
+	sBankData[(i*2)+1] = 0;
+	i++;
+
+	int currentSize = 0;
+	int theDataPos = 0;
+	while (currentSize < maxSize)
+	{
+		int remain = chunkData.GetSize() - theDataPos;
+		if (remain > 0)
+		{
+			int thisBankSize = sizeof(sBankData) - tableTweak;
+			if (remain > thisBankSize)
+			{
+				remain = thisBankSize;
+			}
+
+			memcpy( sBankData + tableTweak , ( (char *)chunkData.GetBuffer() ) + theDataPos , remain );
+			theDataPos += remain;
+		}
+
+		int newAddress = startAddress + currentSize;
+		sChipData[ 0x0c ] = (unsigned char) (newAddress >> 8);
+		sChipData[ 0x0d ] = (unsigned char) newAddress;
+
+		output.AddData( sChipData , sizeof( sChipData ) );
+		output.AddData( sBankData , sizeof( sBankData ) );
+		printf( " Write multi-bank %d $%x\n" , startBankNum , newAddress );
+
+		currentSize += sizeof(sBankData);
+		tableTweak = 0;
+		memset( sBankData , startBankNum , sizeof( sBankData ) );
+	}
+
+	offsets.clear();
+	chunkData.FreeBuffer();
+	startBankNum++;
+
+	// Set new values for the next potential multi-bank operation
+	sChipData[ 0x0a ] = (unsigned char) (startBankNum >> 8);
+	sChipData[ 0x0b ] = (unsigned char) startBankNum;
+	sChipData[ 0x0c ] = (unsigned char) (startAddress >> 8);
+	sChipData[ 0x0d ] = (unsigned char) startAddress;
+	return startBankNum;
+}
+
+unsigned char * AddDynamicBlockToBins(std::list<DynamicMessageHelper *> &blocks, int startBankNum, DynamicMessageHelper &workBuffer, int maxSize, int startAddress, unsigned char * lastBlockPos)
+{
+	DynamicMessageHelper *foundBlock = 0;
+	std::list<DynamicMessageHelper *>::iterator st3 = blocks.begin();
+	int theBank = startBankNum;
+	while (st3 != blocks.end())
+	{
+		DynamicMessageHelper *checkBlock = *st3++;
+		if ((checkBlock->GetSize() + 3 + workBuffer.GetBufferSize()) <= maxSize)
+		{
+			foundBlock = checkBlock;
+			break;
+		}
+		theBank++;
+	}
+
+	if (!foundBlock)
+	{
+		foundBlock = new DynamicMessageHelper();
+		foundBlock->SetBufferSize(maxSize);
+		foundBlock->EnsureBufferAllocated();
+		foundBlock->SetGuardSize(maxSize);
+		theBank = startBankNum + blocks.size();
+		blocks.push_back(foundBlock);
+	}
+
+	int realAddress = startAddress + foundBlock->GetSize();
+	if (lastBlockPos)
+	{
+		lastBlockPos[0] = (unsigned char) theBank;
+		lastBlockPos[1] = (unsigned char) realAddress;
+		lastBlockPos[2] = (unsigned char) (realAddress >> 8);
+	}
+	lastBlockPos = (unsigned char *) foundBlock->GetCurrentPosition();
+	printf("   Saving to bank $%x at $%x\n" , theBank , realAddress);
+	int zero = 0;
+	foundBlock->AddData(&zero , 3);
+	foundBlock->AddData(workBuffer.GetBuffer() , workBuffer.GetBufferSize());
+	return lastBlockPos;
 }
 
 int main( int argc , char **argv )
@@ -361,109 +468,48 @@ int main( int argc , char **argv )
 							sorted.insert(entry.mName);
 						}
 
+						std::list<DynamicMessageHelper *> blocks;
+						std::set<std::string>::iterator st2 = sorted.begin();
+
 						int startAddress = (((int)sChipData[ 0x0c ]) << 8) | sChipData[ 0x0d ];
 						int startBankNum = (((int)sChipData[ 0x0a ]) << 8) | sChipData[ 0x0b ];
 
-						std::set<std::string>::iterator st2 = sorted.begin();
+						unsigned char *lastBlockPos = 0;
 
-						DynamicMessageHelper chunkData;
-						chunkData.FreeBuffer();
-
-						std::vector<int> offsets;
-						
-						while (st2 != sorted.end() || !offsets.empty())
+						while (st2 != sorted.end())
 						{
-							bool readOne = false;
-							if (sorted.end() != st2)
+							std::string filename = *st2++;
+
+
+							workBuffer.FreeBuffer();
+							if ( workBuffer.Read( filename.c_str() , true ) )
 							{
-								std::string filename = *st2++;
-
-								workBuffer.FreeBuffer();
-								if ( workBuffer.Read( filename.c_str() , true ) )
-								{
-									printf("File '%s' read $%x\n" , filename.c_str() , workBuffer.GetBufferSize() );
-									readOne = true;
-								}
-								else
-								{
-									printf("Problem reading file '%s'\n" , filename.c_str() );
-								}
-							}
-														
-							// Decide when to flush the current buffer
-							if ( (sorted.end() == st2) || (2 + ((int)offsets.size()*2) + chunkData.GetSize() + workBuffer.GetBufferSize()) >= maxSize )
-							{
-								sChipData[ 0x0a ] = (unsigned char) (startBankNum >> 8);
-								sChipData[ 0x0b ] = (unsigned char) startBankNum;
-								printf( "New bank $%x\n" , startBankNum );
-
-								memset( sBankData , startBankNum , sizeof( sBankData ) );
-								int tableTweak = 2 + (offsets.size() * 2);
-								int i;
-								for (i = 0 ; i < (int)offsets.size() ; i++)
-								{
-									int offset = offsets[i];
-									offset += startAddress + tableTweak;
-									sBankData[(i*2)] = (unsigned char) offset;
-									sBankData[(i*2)+1] = (unsigned char) (offset >> 8);
-								}
-								sBankData[(i*2)] = 0;
-								sBankData[(i*2)+1] = 0;
-								i++;
-
-								int currentSize = 0;
-								int theDataPos = 0;
-								while (currentSize < maxSize)
-								{
-									int remain = chunkData.GetSize() - theDataPos;
-									if (remain > 0)
-									{
-										int thisBankSize = sizeof(sBankData) - tableTweak;
-										if (remain > thisBankSize)
-										{
-											remain = thisBankSize;
-										}
-
-										memcpy( sBankData + tableTweak , ( (char *)chunkData.GetBuffer() ) + theDataPos , remain );
-										theDataPos += remain;
-									}
-
-									int newAddress = startAddress + currentSize;
-									sChipData[ 0x0c ] = (unsigned char) (newAddress >> 8);
-									sChipData[ 0x0d ] = (unsigned char) newAddress;
-
-									output.AddData( sChipData , sizeof( sChipData ) );
-									output.AddData( sBankData , sizeof( sBankData ) );
-									printf( " Write multi-bank %d $%x\n" , startBankNum , newAddress );
-
-									currentSize += sizeof(sBankData);
-									tableTweak = 0;
-									memset( sBankData , startBankNum , sizeof( sBankData ) );
-								}
-
-								offsets.clear();
-								chunkData.FreeBuffer();
-								startBankNum++;
-
-								// Set new values for the next potential multi-bank operation
-								sChipData[ 0x0a ] = (unsigned char) (startBankNum >> 8);
-								sChipData[ 0x0b ] = (unsigned char) startBankNum;
-								sChipData[ 0x0c ] = (unsigned char) (startAddress >> 8);
-								sChipData[ 0x0d ] = (unsigned char) startAddress;
-							}
-
-							if (readOne)
-							{
-								offsets.push_back(chunkData.GetSize());
-								chunkData.AddData(workBuffer.GetBuffer() , workBuffer.GetBufferSize());
+								printf("File '%s' read $%x" , filename.c_str() , workBuffer.GetBufferSize() );
 							}
 							else
 							{
-								break;
+								printf("Problem reading file '%s'\n" , filename.c_str() );
 							}
+														
+							lastBlockPos = AddDynamicBlockToBins(blocks, startBankNum, workBuffer, maxSize, startAddress, lastBlockPos);
+
 						}
 
-						printf("Finished adding chunks\n");
+						std::list<DynamicMessageHelper *>::iterator st3 = blocks.begin();
+						int wasteage = 0 , wasteage2 = 0;
+						while (st3 != blocks.end())
+						{
+							DynamicMessageHelper *checkBlock = *st3++;
+							if (st3 != blocks.end())
+							{
+								wasteage += maxSize - checkBlock->GetSize();
+							}
+							wasteage2 += maxSize - checkBlock->GetSize();
+							startBankNum = WriteChunkToBanks(startBankNum, maxSize , *checkBlock , startAddress, output);
+							delete checkBlock;
+						}
+
+						printf("Finished adding chunks wasteage=%d wasteage2=%d\n" , wasteage , wasteage2);
 					}
 					break;
 				}

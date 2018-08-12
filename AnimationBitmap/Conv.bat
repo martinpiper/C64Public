@@ -1,21 +1,82 @@
 @echo off
 
+mkdir Data
 del Data\* /q
 
 setlocal EnableDelayedExpansion
 
-rem for /l %%x in (0,10,8260) do (
-rem for /l %%x in (0,1,99) do (
-rem for /l %%x in (0,1,729) do (
-rem for /l %%x in (0,2,300) do (
-for /l %%x in (0,2,290) do (
+..\bin\CharPack.exe Animation8\ThalamusLogo.bmp 15 11 12 Data\ThalamusLogo.chr Data\ThalamusLogo.scr Data\ThalamusLogo.col
+
+
+rem Hunter's moon logo. No sprite overlay allowed.
+for /l %%x in (0,1,1) do (
 set "formattedValue=000000%%x"
 	echo !formattedValue:~-5!
-	call ConvFrame.bat frm!formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 6 11 12 64
 )
 
-rem ..\Animation\DeltaCompression\Release\DeltaCompression.exe -bitmap Data\frm*05d.sch 0 0 10 8260 2 $4000 $7c00 Data\frm*05d.del
-rem ..\Animation\DeltaCompression\Release\DeltaCompression.exe -bitmap Data\frm*05d.sch 0 0 1 99 2 $4000 $7c00 Data\frm*05d.del
-rem ..\Animation\DeltaCompression\Release\DeltaCompression.exe -bitmap Data\frm*05d.sch 0 0 1 729 2 $4000 $7c00 Data\frm*05d.del
-rem ..\Animation\DeltaCompression\Release\DeltaCompression.exe -bitmap Data\frm*05d.sch 0 0 2 300 2 $4000 $7c00 Data\frm*05d.del
-..\Animation\DeltaCompression\Release\DeltaCompression.exe -bitmap Data\frm*05d.sch 0 0 2 290 2 $4000 $7c00 Data\frm*05d.del
+del /q Data\t.scr
+del /q Data\t.col
+
+rem Scene 1
+for /l %%x in (2,1,151) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 15 2
+)
+
+rem Scene 2
+for /l %%x in (152,1,301) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 07 15 2
+)
+
+rem Scene 3
+for /l %%x in (302,1,451) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 12 2
+)
+
+rem Scene 4
+for /l %%x in (452,1,601) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 12 2
+)
+
+rem Scene 5
+for /l %%x in (602,1,751) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 12 2
+)
+
+rem Scene 6
+for /l %%x in (752,1,901) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 12 2
+)
+
+del /q Data\t.scr
+del /q Data\t.col
+rem Loading screen. No sprite overlay allowed.
+for /l %%x in (902,1,903) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 12 64
+)
+
+
+rem Outro scene
+del /q Data\t.scr
+del /q Data\t.col
+
+rem Scene 1
+for /l %%x in (904,1,1383) do (
+set "formattedValue=000000%%x"
+	echo !formattedValue:~-5!
+	call ConvFrame.bat frm!formattedValue:~-5! Animation8 0 11 15 2
+)

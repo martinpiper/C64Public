@@ -1,0 +1,38 @@
+	; Intro simply displays a bitmap screen
+	jsr AnimationGetTwoFrames
+	jsr AnimationFullScreenFadeUp
+.wf1
+kIntroMusic_FramesLength = $4b45
+.ft1
+	lda IRQScreenTop_frames
+	cmp #<kIntroMusic_FramesLength
+	bne .wf2
+	lda IRQScreenTop_frames+1
+	cmp #>kIntroMusic_FramesLength
+	bne .wf2
+
+	jmp .doFadeOut
+
+.wf2
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .ft1
+
+
+.ft2
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	beq .ft2
+
+.doFadeOut
+	inc TriggerVolumeFadeOut
+
+	jsr AnimationFullScreenFadeDown
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+
+	ldy #15
+	jsr AnimationWaitForFramesNoEarlyOut
+	jmp .exitToGame

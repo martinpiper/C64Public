@@ -19,6 +19,9 @@
 
 *=$400
 	jmp $800
+	
+!source "FingerPrint.a"
+
 *=$800
 	sei
 	lda #ProcessorPortAllRAMWithIO

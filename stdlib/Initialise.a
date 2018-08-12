@@ -21,16 +21,8 @@ InitialiseMachine
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
 	; Clear all CIA to known state, interrupts off.
-	lda #$7f
-	sta CIA1InterruptControl
-	sta CIA2InterruptControl
-	lda #0
-	sta VIC2InteruptControl
-	sta CIA1TimerAControl
-	sta CIA1TimerBControl
-	sta CIA2TimerAControl
-	sta CIA2TimerBControl
-
+	+MACROCIAIRQControlDisable_A
+	+MACROVICIRQCIATimerControlDisable_A
 	+MACROAckAllIRQs_A
 
 	; Setup kernal and user mode IRQ vectors to point to a blank routine

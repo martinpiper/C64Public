@@ -29,8 +29,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
-    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3RLE.a</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3RLE.a </NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a</NMakeReBuildCommandLine>
     <NMakeOutput>Decompression.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -53,9 +53,13 @@
     <CustomBuild Include="..\DoBackup.bat" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AnimationBitmapDefines.a" />
     <None Include="DecompressRLE.a" />
     <None Include="DecompressRLEVars.a" />
+    <None Include="HMOrigBoot.a" />
+    <None Include="HMOrigDefines.a" />
     <None Include="TestDecompression3.a" />
+    <None Include="TestDecompression3CyberLoad.a" />
     <None Include="TestDecompression3RLE.a" />
   </ItemGroup>
   <ItemGroup>

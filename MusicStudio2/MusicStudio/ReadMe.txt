@@ -5,9 +5,11 @@
 
 Music Studio 2.2 is a Windows-based SID music creator software. For an accurate C64 sound, it utilises the newest RESID-FP emulation available, both old (6581) and new (8580) SID chips. MS2 is capable of creating 1x speed tunes and alternate many SID chip parameters directly with various commands. Classic and new C64 sounds can be created with envelope parameters that can be set up in few simple steps. 
 
-For proper initialization, run MusicStudio2\MusicStudio\MusicStudio.exe
+For proper initialization, run MusicStudio2.2\MusicStudioLauncher.exe
 
 Video demonstration: https://www.youtube.com/watch?v=3ApqDIbYPec
+
+Any errors regarding Visual Studio runtime can be foxed by installing the redistributable from Microsoft: http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU3/vcredist_x86.exe
 
 
 
@@ -519,6 +521,34 @@ In addition to the standard Windows MFC command line options the following are r
 All hex values are zero based.
 These options can be concatenated together and are executed in sequence. For example:
 	/openFile ..\MeanStreak.msmus /saveEnvelope 1 "c:\temp\t.msenv" /insertEnvelope 1 /loadEnvelope 1 "Sounds\Tom tom1.msenv" /deleteTrackPos 0 3 3 /exportToC64 $400 y c:\temp\t2.prg /exit
+
+
+
+
+
+New in this release
+-------------------
+
+* The ability to insert instrument positions has been added.
+
+
+* Fixed an issue where sometimes acme and the supporting sources cannot be found by the tool when starting from a msmus file in Explorer.
+
+
+* Command line conversion and play mode. This allows the tool to be used during an automated build, for example load a msmus file, add extra source effect files and export as prg.
+
+
+* When ripping a SID, the AD/SR and first few wav table entries are captured.
+
+
+* Fixed an issue with desktop zoom level and high resolution displays
+
+
+* A moving average calculation for raster time as been added to the standalone player
+
+
+* A a millis/seconds/minutes timer has been added to the standalone prg player
+
 
 
 Credits:

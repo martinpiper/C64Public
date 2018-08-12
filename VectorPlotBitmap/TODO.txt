@@ -1,0 +1,96 @@
+TODO
+
+* If the polys are sorted from front to back then using a c-buffer, which is simpler than an s-buffer as it effectively stores clipping information. might be better
+	* Since the polys are going to be sorted anyway, it doesn't matter which order they are sorted
+	* If the cbuffer is used then the entire span list can be reset for every frame
+	* Then if there is a completely empty span it is easier to detect
+	* This also means the routine that builds the plottable span for the screen can maintain the dirty line draw test
+	* It also means there is a potential to optimised the dirty line draw/clear based on a segment of the scan. Therefore saving horizontal clear time.
+	* An early out is when the span is completely full, it can be flagged as such for subsequent poly insertion tests
+	* Colours are stored as before of course
+	* Clip spans are inserted left to right as before, however the background is empty, so the span is stored with sparse information instead
+		* Sparse storage makes it much easier to clear the c-buffer list
+
+
+
+
+** features/SegmentClip.feature in progress
+	Need adding segment to the end of existing due to the end matching the end
+	Need inserting segment in the middle of existing
+	Need replacing due to the segment being longer
+	Need span duplicate colour check and merge
+
+* Perhaps a link list of Segments with start/end/colour information is the best way to do this after all...
+	Input is the poly start/end
+	Then looping from the first segment, basically clip/split/replace/insert the poly input and update the segments until there is no more poly length left
+	This means the code can then do a simpler adjacent colour tidy pass to reduce the linklist complexity as and when it's needed
+	* It also makes a potential Z buffer check much easier later on :D
+	* ; MPi: TODO: Starting segment needs a length check
+
+* For Segments similar functionality for SpanCalc_dirtyClear and SpanCalc_expireCleared would be needed
+	* Also !macro ScanCalc_GetSegment would need to be made link list aware
+	* Or perhaps better would be a conversion from the accumulated active Segments_linesLo/Hi into SpanCalc_screenNumSegments and SpanCalc_screenSegmentsLen/SpanCalc_screenSegmentsColour
+		* Split out the SpanCalc_scanPoly, or disable the code
+
+
+
+
+
+
+* SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account the number of screen banks
+
+
+
+* Need right side span cases, they can mirror the left case
+* Also need middle span cases
+
+
+
+* Added SpanCalc_ tables and quick conversion into the current scan
+	Need to efficiently scan generic polys into SpanCalc_
+	* Add a polygon scan conversion into spans.
+		Make it so that multiple calls add more spans into the existing buffer.
+		Spans for each scanline can be maintained, they can be chopped/merged as the polygon plotter wants to insert spans
+	* At the moment SpanCalc_screenSegments* are kSpanPlot_maxHeight*kSpanCalc_maxSegments in size.
+	Added SpanCalc_scanPoly
+		* Need to handle;
+			; MPi: TODO: Going to have to make this a macro and generify it, or have optimised code for each SpanCalc_screenNumSegments
+		* The generic routine can process segments repeatedly from the left. When one segment has been processed then change the input span points Poly_linesLeft/Poly_linesRight as necessary
+			* Check for the same colours next to each other and adjust sizes as necessary
+			* Also if there is a 0 length then remove as necessary
+			* Can unroll this routine to spot length or colour optimisations and adjust SpanCalc_screenNumSegments
+			* Then if there is still span data, i.e. Poly_linesRight-Poly_linesLeft > 0, then keep on processing by jumping back into .notFullWidth
+
+
+
+* For the number of screen buffers, if the scan is changed reset a counter.
+	Or increment if unchanged.
+	After the number of screen buffers passes, then change it it to empty, zero segments by setting the high byte if the segment link list to 0.
+	Optimisation to skip the cmp is to use the -ve to +ve switch check. Set a newly plotted scan to 127 - frames. Then when -ve skip entirely.
+
+	* Start with zero segments, meaning don't draw that scan.
+
+		When adding into zero then init with the clear line colour.
+		This is a dirty line optimisation, like dirty rectangle.
+
+	* After rendering the "clear screen" pass will just set any used scanlines just rendered to a full clear line colour that is then retired after the number of screen buffer passes, or further rendering passes
+
+
+
+* Colour 0 can be a special case for the plot, the ends can effectively be clears instead
+	Have an option to mask or just round the end to the nearest 4 pixels
+
+
+
+* Add 3D calculation to create spans
+	Poly_linesLeft and Poly_linesRight
+
+
+* If EnableInterlace is enabled can we use half of kSpanPlot_maxHeight?
+	The "; Setup the current scan from the scans table" would need to use half of x into the SpanCalc_ tables
+
+
+
+* There is an optmisation for the cart bank packing where the code, because it's position independant, can be put anywhere.
+	The MakeCart option can be optimised to use the same space packing technique as the streaming cartridge link list output, but without the link list header.
+	If each raw chunk of code saved to a 00 or x00 aligned filename and MakCart also saved to _f_index.a file it would be easier to create the lookup table from the CartFile1_Bank_X and CartFile1_Start_X labels

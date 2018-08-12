@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\MakeCart\asm\BankSelect8K.a" />
+    <None Include="..\MakeCart\asm\EasyFlash.a" />
+    <None Include="..\MakeCart\asm\EasyFlash_Code.a" />
+    <None Include="..\MakeCart\asm\EasyFlash_Macros.a" />
+    <None Include="..\MakeCart\asm\GMod2_Code.a" />
+    <None Include="..\MakeCart\asm\GMod2_Macros.a" />
+    <None Include="..\stdlib\BASICEntry80d.a" />
+    <None Include="..\stdlib\BASICEntry900.a" />
+    <None Include="..\stdlib\Initialise.a" />
+    <None Include="..\stdlib\PETSCII.a" />
+    <None Include="..\stdlib\stdlib.a" />
+    <None Include="AutoDefs_Span.a" />
+    <None Include="BitmapPlot.a" />
+    <None Include="BitmapPlotMacros.a" />
+    <None Include="BitmapPlotVars.a" />
+    <None Include="FeatureEditor.bat" />
+    <None Include="features\assemble.feature" />
+    <None Include="features\BitmapPlot.feature" />
+    <None Include="features\SegmentAllocation.feature" />
+    <None Include="features\SegmentClip.feature" />
+    <None Include="features\SegmentInsert.feature" />
+    <None Include="features\SpanCalc.feature" />
+    <None Include="features\SpanCalc2.feature" />
+    <None Include="features\SpanCalcClear.feature" />
+    <None Include="features\SpanCalcFilled.feature" />
+    <None Include="features\SpanCalcFilled2.feature" />
+    <None Include="GenericSpan.a" />
+    <None Include="Segments.a" />
+    <None Include="SegmentsMacros.a" />
+    <None Include="SegmentsTest1.a" />
+    <None Include="SegmentsVars.a" />
+    <None Include="SpanCalc.a" />
+    <None Include="SpanCalcMacros.a" />
+    <None Include="SpanCalcMem.a" />
+    <None Include="SpanCalcTest1.a" />
+    <None Include="SpanCalcVars.a" />
+    <None Include="SpanConfig_1.a" />
+    <None Include="SpanConfig_2.a" />
+    <None Include="SpanConfig_p0.a" />
+    <None Include="SpanConfig_0.a" />
+    <None Include="SpanConfig_p1.a" />
+    <None Include="SpanConfig_p2.a" />
+    <None Include="SpanConfig_p3.a" />
+    <None Include="SpanDrawGenerate.a" />
+    <None Include="SpanMacros.a" />
+    <None Include="SpanTable.a" />
+    <None Include="SpanTableInCart.a" />
+    <None Include="VectorPlotBitmap.a" />
+    <None Include="BuildIt.bat" />
+    <None Include="_f_index1.a" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{74571111-EF48-45E5-AE0F-4F819F638E3D}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)\VectorPlotBitmap.prg</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <OutDir>$(ProjectDir)</OutDir>
+    <IntDir>$(ProjectDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PreBuildEvent>
+      <Command>BuildIt.bat</Command>
+    </PreBuildEvent>
+    <BuildLog>
+      <Path>$(ProjectDir)\temp.log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

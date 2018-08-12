@@ -8,50 +8,100 @@ HighScores_ZeroCharacter = 48
 HighScores_NumNameChars = 9
 HighScores_NumEntries = 5
 
-HighScores_Text
-	!by -12
-	!scr "hi scores"
+HighScoresArcade_Text
+	!by -7
+	!scr "hi scores arcade"
 	!by -1
 	!by -1
 	!by -1
-HighScore_entry0
+HighScoreArcade_entry0
 	!scr "0000100000"
 	!scr " "
 	!scr "martin   "
 	!by -1
 	!by -1
 
-HighScore_entry1
+HighScoreArcade_entry1
 	!scr "0000020000"
 	!scr " "
 	!scr "bethany  "
 	!by -1
 	!by -1
 
-HighScore_entry2
+HighScoreArcade_entry2
 	!scr "0000003000"
 	!scr " "
 	!scr "kexin    "
 	!by -1
 	!by -1
 
-HighScore_entry3
+HighScoreArcade_entry3
 	!scr "0000000400"
 	!scr " "
 	!scr "yoda     "
 	!by -1
 	!by -1
 
-HighScore_entry4
+HighScoreArcade_entry4
 	!scr "0000000050"
 	!scr " "
 	!scr "porgs    "
 	!by 0
 
 
-HighScores_Table
-	!by <HighScore_entry0 , >HighScore_entry0
-	!by <HighScore_entry1 , >HighScore_entry1
-	!by <HighScore_entry2 , >HighScore_entry2
-	!by <HighScore_entry3 , >HighScore_entry3
-	!by <HighScore_entry4 , >HighScore_entry4
+HighScoresArcade_Table
+	!by <HighScoreArcade_entry0 , >HighScoreArcade_entry0
+	!by <HighScoreArcade_entry1 , >HighScoreArcade_entry1
+	!by <HighScoreArcade_entry2 , >HighScoreArcade_entry2
+	!by <HighScoreArcade_entry3 , >HighScoreArcade_entry3
+	!by <HighScoreArcade_entry4 , >HighScoreArcade_entry4
+
+
+
+HighScoresStrategy_Text
+	!by -5
+	!scr "hi scores strategy"
+	!by -1
+	!by -1
+	!by -1
+HighScoreStrategy_entry0
+	!scr "0000100000"
+	!scr " "
+	!scr "martin   "
+	!by -1
+	!by -1
+
+HighScoreStrategy_entry1
+	!scr "0000020000"
+	!scr " "
+	!scr "bethany  "
+	!by -1
+	!by -1
+
+HighScoreStrategy_entry2
+	!scr "0000003000"
+	!scr " "
+	!scr "kexin    "
+	!by -1
+	!by -1
+
+HighScoreStrategy_entry3
+	!scr "0000000400"
+	!scr " "
+	!scr "yoda     "
+	!by -1
+	!by -1
+
+HighScoreStrategy_entry4
+	!scr "0000000050"
+	!scr " "
+	!scr "porgs    "
+	!by 0
+
+
+HighScoresStrategy_Table
+	!by <HighScoreStrategy_entry0 , >HighScoreStrategy_entry0
+	!by <HighScoreStrategy_entry1 , >HighScoreStrategy_entry1
+	!by <HighScoreStrategy_entry2 , >HighScoreStrategy_entry2
+	!by <HighScoreStrategy_entry3 , >HighScoreStrategy_entry3
+	!by <HighScoreStrategy_entry4 , >HighScoreStrategy_entry4

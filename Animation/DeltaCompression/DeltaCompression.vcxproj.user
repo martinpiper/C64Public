@@ -1,11 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>..\Data\frm*05d.sch 0 1 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-savedictionary $f00 Data\dictionary6_1.bin -savedictionary $f00 Data\dictionary6_2.bin -maxframesize 6000 -emptyframebuffer -bitmap -fragment 0 Data\frm*05d.col -fragment $400 Data\frm*05d.scr -fragment $800 Data\frm*05d.spr -fragment $c00 Data\frm*05d.sno -fragment $1c00 Data\frm*05d.chr 752 1 901 2 $4000 $7c00 Data\frm*05d.del 32</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>C:\Work\C64\AnimationBitmap</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>..\Data\frm*05d.sch 0 1 1 12 2 $1000 $1ff8 ..\Data\frm*05d.del</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-excludebitmaprect $1c00 0 10 0 12 -excludebitmaprect $1c00 30 40 0 12 -savedictionary $f00 Data\dictionary1_1.bin -savedictionary $f00 Data\dictionary1_2.bin -maxframesize 6000 -emptyframebuffer -bitmap -fragment 0 Data\frm*05d.col -fragment $400 Data\frm*05d.scr -fragment $800 Data\frm*05d.spr -fragment $c00 Data\frm*05d.sno -fragment $1c00 Data\frm*05d.chr   2 1 151 2 $4000 $7c00 Data\frm*05d.del</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>C:\Work\C64\AnimationBitmap</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

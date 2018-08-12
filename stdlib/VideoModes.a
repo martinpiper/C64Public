@@ -1,0 +1,20 @@
+!zn
+; Must include !source "VideoModes_Macros.a" when including this source file
+
+VideoMode_Type !by kVideoMode_Type_PAL
+
+VideoMode_DetectVideoType
+	; Detect NTSC
+.w0  lda $D012
+.w1  cmp $D012
+    beq .w1
+    bmi .w0
+    and #$03
+    cmp #3
+	beq .isPAL
+
+	lda #kVideoMode_Type_NTSC
+	sta VideoMode_Type
+
+.isPAL
+	rts

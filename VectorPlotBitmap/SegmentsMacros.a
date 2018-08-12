@@ -1,0 +1,143 @@
+; Check the structure will allow iny to be used instead of ldy #kSegment_offset_*
+; Yes I should use MLA here
+!if kSegment_offset_nextHi != kSegment_offset_nextLo+1 {
+	!error "kSegment_offset_nextHi != kSegment_offset_nextLo+1"
+}
+!if kSegment_offset_end != kSegment_offset_start+1 {
+	!error "kSegment_offset_end != kSegment_offset_start+1"
+}
+!if kSegment_offset_colour != kSegment_offset_end+1 {
+	!error "kSegment_offset_colour != kSegment_offset_end+1"
+}
+
+!macro Segments_setLineHead {
+	lda ZPSegments_currentSegmentLo
+	sta Segments_linesLo,x
+	lda ZPSegments_currentSegmentHi
+	sta Segments_linesHi,x
+}
+
+!macro Segments_setLast {
+	lda ZPSegments_currentSegmentLo
+	sta ZPSegments_lastSegmentLo
+	lda ZPSegments_currentSegmentHi
+	sta ZPSegments_lastSegmentHi
+}
+
+!macro Segments_forgetLast {
+	lda #0
+	sta ZPSegments_lastSegmentLo
+	sta ZPSegments_lastSegmentHi
+}
+
+!macro Segments_clearNextSegment {
+	ldy #kSegment_offset_nextHi
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+}
+
+!macro Segments_getNextSegment {
+	ldy #kSegment_offset_nextLo
+	lda (ZPSegments_currentSegmentLo),y
+	pha
+	iny
+	lda (ZPSegments_currentSegmentLo),y
+	sta ZPSegments_currentSegmentHi
+	pla
+	sta ZPSegments_currentSegmentLo
+}
+
+!macro Segments_addToLastSegmentNoNext {
+	ldy #kSegment_offset_nextLo
+	lda ZPSegments_currentSegmentLo
+	sta (ZPSegments_lastSegmentLo),y
+	; No next segment, but init last segment next pointer, hi only to save time
+	iny
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+	lda ZPSegments_currentSegmentHi
+	sta (ZPSegments_lastSegmentLo),y
+}
+
+!macro Segments_setLastSegmentToCurrentNext {
+	ldy #kSegment_offset_nextLo
+	lda ZPSegments_lastSegmentLo
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda ZPSegments_lastSegmentHi
+	sta (ZPSegments_currentSegmentLo),y
+}
+
+!macro Segments_addToLastSegment {
+	ldy #kSegment_offset_nextLo
+	lda ZPSegments_currentSegmentLo
+	sta (ZPSegments_lastSegmentLo),y
+	iny
+	lda ZPSegments_currentSegmentHi
+	sta (ZPSegments_lastSegmentLo),y
+}
+
+!macro Segments_copyPolyStartEndColour .smCurrentColour {
+	ldy #kSegment_offset_start
+	lda Poly_linesLeft,x
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda Poly_linesRight,x
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda .smCurrentColour
+	sta (ZPSegments_currentSegmentLo),y
+}
+
+!macro Segments_copyEndSetBackgroundColour {
+	ldy #kSegment_offset_start
+	lda Poly_linesRight,x
+	sta (ZPSegments_currentSegmentLo),y
+
+	iny
+	lda #kSpanPlot_maxLen
+	sta (ZPSegments_currentSegmentLo),y
+
+	iny
+	lda Segments_backgroundColour
+	sta (ZPSegments_currentSegmentLo),y
+}
+
+!macro Segments_copyStartSetBackgroundColour {
+	ldy #kSegment_offset_start
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+
+	iny
+	lda Poly_linesLeft,x
+	sta (ZPSegments_currentSegmentLo),y
+
+	iny
+	lda Segments_backgroundColour
+	sta (ZPSegments_currentSegmentLo),y
+}
+
+!Macro Segments_copyPolyStartEndSetupColourInY {
+	ldy #kSegment_offset_start
+	lda Poly_linesLeft,x
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda Poly_linesRight,x
+	sta (ZPSegments_currentSegmentLo),y
+
+	iny
+}
+
+!macro Segments_testLastSegmentInsertHeadCurrent {
+	lda Segments_linesLo,x
+	cmp ZPSegments_lastSegmentLo
+	bne .notHead1
+	lda Segments_linesHi,x
+	cmp ZPSegments_lastSegmentHi
+	bne .notHead1
+	lda ZPSegments_currentSegmentLo
+	sta Segments_linesLo,x
+	lda ZPSegments_currentSegmentHi
+	sta Segments_linesHi,x
+.notHead1
+}

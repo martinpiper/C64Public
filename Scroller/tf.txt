@@ -8,8 +8,8 @@ Input length = $fb00 output length = $2ce7
 Setting EasyFlash mode
 New address $8000
 New bank $0
-File '..\Citadel2\Citadel2Cart_8K.prg' read $247
- Copy from $2 len $245 to $0
+File '..\Citadel2\Citadel2Cart_8K.prg' read $297
+ Copy from $2 len $295 to $0
  Write bank
 New address $a000
 New bank $0
@@ -38,35 +38,35 @@ New bank $6
  Write bank
 New address $8000
 New bank $7
-File 'bin\ColouriseTop.bin' offset $0 xor $2df len $e0f2b60f
-File 'bin\Char0To1_1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char1To0_1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\ColouriseBottom.bin' offset $0 xor $2df len $e0f2b60f
-File 'bin\Char0To1_m1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char1To0_m1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\ColouriseLeft.bin' offset $0 xor $177 len $e0f2b60f
-File 'bin\Char0To1_40.bin' offset $0 xor $12f1 len $e0f2b60f
-File 'bin\Char1To0_40.bin' offset $0 xor $12f1 len $e0f2b60f
-File 'bin\ColouriseRight.bin' offset $0 xor $177 len $e0f2b60f
-File 'bin\Char0To1_m40.bin' offset $0 xor $13e1 len $e0f2b60f
-File 'bin\Char1To0_m40.bin' offset $0 xor $13e1 len $e0f2b60f
-File 'bin\Char0To1_41.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char1To0_41.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char0To1_39.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char1To0_39.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Char0To1_m41.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Char1To0_m41.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Char0To1_m39.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Char1To0_m39.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Colour_1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Colour_m1.bin' offset $0 xor $12bb len $e0f2b60f
-File 'bin\Colour_40.bin' offset $0 xor $13e1 len $e0f2b60f
-File 'bin\Colour_m40.bin' offset $0 xor $13e1 len $e0f2b60f
-File 'bin\Colour_39.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Colour_m39.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Colour_41.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\Colour_m41.bin' offset $0 xor $13a5 len $e0f2b60f
-File 'bin\BlockStrips.bin' offset $0 xor $b86 len $e0f2b60f
+File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2df
+File 'bin\Char0To1_1.bin' offset $0 xor $0 len $12bb
+File 'bin\Char1To0_1.bin' offset $0 xor $0 len $12bb
+File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2df
+File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $12bb
+File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $12bb
+File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $177
+File 'bin\Char0To1_40.bin' offset $0 xor $0 len $12f1
+File 'bin\Char1To0_40.bin' offset $0 xor $0 len $12f1
+File 'bin\ColouriseRight.bin' offset $0 xor $0 len $177
+File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $13e1
+File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $13e1
+File 'bin\Char0To1_41.bin' offset $0 xor $0 len $12bb
+File 'bin\Char1To0_41.bin' offset $0 xor $0 len $12bb
+File 'bin\Char0To1_39.bin' offset $0 xor $0 len $12bb
+File 'bin\Char1To0_39.bin' offset $0 xor $0 len $12bb
+File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $13a5
+File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $13a5
+File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $13a5
+File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $13a5
+File 'bin\Colour_1.bin' offset $0 xor $0 len $12bb
+File 'bin\Colour_m1.bin' offset $0 xor $0 len $12bb
+File 'bin\Colour_40.bin' offset $0 xor $0 len $13e1
+File 'bin\Colour_m40.bin' offset $0 xor $0 len $13e1
+File 'bin\Colour_39.bin' offset $0 xor $0 len $13a5
+File 'bin\Colour_m39.bin' offset $0 xor $0 len $13a5
+File 'bin\Colour_41.bin' offset $0 xor $0 len $13a5
+File 'bin\Colour_m41.bin' offset $0 xor $0 len $13a5
+File 'bin\BlockStrips.bin' offset $0 xor $0 len $b86
 File 'bin\ColouriseTop.bin' read $2df to use $2df
 File 'bin\Char0To1_1.bin' read $12bb to use $12bb
 File 'bin\Char1To0_1.bin' read $12bb to use $12bb

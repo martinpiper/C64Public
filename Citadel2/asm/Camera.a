@@ -1,20 +1,17 @@
 !zn
-!ifdef CameraNotPushX {
-!ifdef CameraNotPushY {
 .oldPlayerPosXLo !by 0
 ;.oldPlayerPosXHi !by 0
 .oldPlayerPosYLo !by 0
 ;.oldPlayerPosYHi !by 0
-}
-}
 
 .exitQuick rts
 UpdateScreenScrollCamera
 	lda Teleport_TimeToSwitchMap
 	bne .exitQuick
 
-!ifdef CameraNotPushX {
-!ifdef CameraNotPushY {
+	lda CameraNotPushX
+	ora CameraNotPushY
+	beq .skipPush1
 	lda .oldPlayerPosXLo
 	cmp EnemyPositionsXLo
 	bne .different
@@ -38,8 +35,7 @@ UpdateScreenScrollCamera
 	sta .oldPlayerPosYLo
 ;	lda EnemyPositionsYHi
 ;	sta .oldPlayerPosYHi
-}
-}
+.skipPush1
 
 !if 1 {
 	; Clear any player maze blocked flag
@@ -53,7 +49,9 @@ UpdateScreenScrollCamera
 	and #!Node_isBlocked_Player
 	sta (tempWork0),y
 
-!ifdef MapBlockAlignedMovement { } else {
+	lda MapBlockAlignedMovement
+	bne .skip1
+
 	ldx .oldMapBlockX
 	inx
 	ldy .oldMapBlockY
@@ -87,7 +85,8 @@ UpdateScreenScrollCamera
 	lda (tempWork0),y
 	and #!Node_isBlocked_Player
 	sta (tempWork0),y
-}
+
+.skip1
 }
 
 !if 1 {
@@ -129,7 +128,8 @@ UpdateScreenScrollCamera
 	sta EnemyPositionsY
 }
 
-!ifdef CameraNotPushX { } else {
+	lda CameraNotPushX
+	bne .skipPush2
 ;	lda frameTargetVelX
 ;	bne .o1
 
@@ -148,9 +148,10 @@ UpdateScreenScrollCamera
 	adc frameTargetVelX
 	sta frameTargetVelX
 .o1
-}
+.skipPush2
 
-!ifdef CameraNotPushY { } else {
+	lda CameraNotPushY
+	bne .skipPush3
 ;	lda frameTargetVelY
 ;	bne .o2
 
@@ -166,7 +167,7 @@ UpdateScreenScrollCamera
 	adc frameTargetVelY
 	sta frameTargetVelY
 .o2
-}
+.skipPush3
 
 !if 1 {
 	; Now set the real player postions for map push scrolling
@@ -230,7 +231,9 @@ UpdateScreenScrollCamera
 	sta tempWork5
 	sta .oldMapBlockY
 
-!ifdef MapBlockAlignedMovement { } else {
+	lda MapBlockAlignedMovement
+	bne .skip2
+
 	; Adjust for other potential player positions for map node blocking
 	lda EnemyPositionsXLo
 	sta tempWork0
@@ -265,7 +268,8 @@ UpdateScreenScrollCamera
 	jsr DivideBy32
 	lda tempWork0
 	sta tempWork7
-}
+
+.skip2
 
 !if 1 {
 	; Set player maze blocked flag
@@ -279,7 +283,9 @@ UpdateScreenScrollCamera
 	ora #Node_isBlocked_Player
 	sta (tempWork0),y
 
-!ifdef MapBlockAlignedMovement { } else {
+	lda MapBlockAlignedMovement
+	bne .skip3
+
 	ldx tempWork6
 	ldy tempWork7
 	jsr GetMazeNodesIndex
@@ -309,7 +315,8 @@ UpdateScreenScrollCamera
 	lda (tempWork0),y
 	ora #Node_isBlocked_Player
 	sta (tempWork0),y
-}
+
+.skip3
 }
 }
 
@@ -321,26 +328,28 @@ UpdateScreenScrollCamera
 CameraClampMapBox
 
 
-!ifdef CameraNotPushY {
+	lda CameraNotPushY
+	beq .skipPush4
 	lda frameTargetVelY
 	beq .lo1
 	bpl .lo2
 	lda AnimationYPos
-	cmp #120+CameraFollowWiggleY
+	cmp CameraFollowWiggleYMax
 	bcs .lo1
 	lda #0
 	sta frameTargetVelY
 	jmp .lo1
 .lo2
 	lda AnimationYPos
-	cmp #122-CameraFollowWiggleY
+	cmp CameraFollowWiggleYMin
 	bcc .lo1
 	lda #0
 	sta frameTargetVelY
 .lo1
-}
+.skipPush4
 
-!ifdef CameraNotPushX {
+	lda CameraNotPushX
+	beq .skipPush5
 	lda frameTargetVelX
 	beq .lo1b
 	bpl .lo2b
@@ -348,7 +357,7 @@ CameraClampMapBox
 	ror
 	lda AnimationXPosLo
 	ror
-	cmp #84+CameraFollowWiggleX
+	cmp CameraFollowWiggleXMax
 	bcs .lo1b
 	lda #0
 	sta frameTargetVelX
@@ -358,12 +367,12 @@ CameraClampMapBox
 	ror
 	lda AnimationXPosLo
 	ror
-	cmp #85-CameraFollowWiggleX
+	cmp CameraFollowWiggleXMin
 	bcc .lo1b
 	lda #0
 	sta frameTargetVelX
 .lo1b
-}
+.skipPush5
 
 
 !if 1 {
@@ -446,13 +455,13 @@ CameraClampVelocity
 
 
 Camera_Init
-!ifdef CameraNotPushX {
-!ifdef CameraNotPushY {
+	lda CameraNotPushX
+	ora CameraNotPushY
+	beq .skipPush6
 	lda #-1
 	sta .oldPlayerPosXLo
 ;	sta .oldPlayerPosXHi
 	sta .oldPlayerPosYLo
 ;	sta .oldPlayerPosYHi
-}
-}
+.skipPush6
 	rts

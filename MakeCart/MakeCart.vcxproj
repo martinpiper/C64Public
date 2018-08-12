@@ -44,6 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <CustomBuildAfterTargets>Link</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -77,6 +78,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>copy /Y Release\MakeCart.exe ..\bin\</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Copying release EXE</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\bin\MakeCart.exe</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>Release\MakeCart.exe</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\ReplicaNet\ReplicaNetPublic\AmalgamatedReplicaNet.cpp" />

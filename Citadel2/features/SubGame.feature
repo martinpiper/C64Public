@@ -10,6 +10,6 @@ Feature: Test the sub-game code
     And I load labels "test.lbl"
 
     When I execute the procedure at SubGameEnter for no more than 7000 instructions
-    When I execute the procedure at SubGameUpdate for no more than 1200 instructions
-    When I execute the procedure at SubGameUpdate for no more than 1200 instructions
+    When I execute the procedure at SubGameUpdate for no more than 2200 instructions
+    When I execute the procedure at SubGameUpdate for no more than 2200 instructions
 #    Then I expect register a equal $ea

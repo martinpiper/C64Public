@@ -1,0 +1,160 @@
+; Bitmap animation test code
+
+!source "../stdlib/stdlib.a"
+!to "AnimationBitmap.prg", cbm
+!sal
+!sl "AnimationBitmap.map"
+!svl "AnimationBitmap.lbl"
+!pdb "AnimationBitmap.pdb"
+!cpu 6510
+!ct pet
+!initmem %10100101
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortDefault
+
+DeltaDecompression_ZP_DeltaFrameLoHi = $10
+
+;!source "../MakeCart/asm/GMod2_Macros.a"
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+!source "../Animation/DeltaDecompressionMacros.a"
+
+UseCartBanks = 1
+StartCartBank = 4
+
+; Define this if \CharPack.exe uses -sheetframes and -sheetinfo
+SpriteSheetInfoBankOffset = $1000
+;SpriteSheetFadeScreenPointers = 1
+
+; MaxCartBank should equal the bank number after the last bank displayed by MakeCart for the animation delta data
+;MaxCartBank = 57
+MaxCartBank = 64
+;MaxCartBank = 9
+!macro DeltaDecompression_AddressTweak {
+	clc
+	adc #4
+}
+ScreenColour = VIC2Colour_Black
+
+*=$c000
+	sei
+	lda #CartSelectBank_ProcessorPort
+	jsr InitialiseMachine
+
+;	+WaitForFire_A
+
+	lda #ScreenColour
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	lda #%00101000
+	sta VIC2MemorySetup
+	lda #VIC2ScreenControlHDefault
+;	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+
+	jsr DeltaDecompression_InitZP
+
+.startDisplayingData
+
+!ifdef UseCartBanks {
+	jsr DeltaDecompression_ResetFrame
+	jsr AnimationRestoreCartBank
+}
+
+.fr1
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda #%11
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta VIC2ScreenControlV
+	lda $be8
+	sta VIC2ScreenColour
+	lda #%00101000
+	sta VIC2MemorySetup
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<SpriteSheetInfoBankOffset
+	sta $02
+	lda #>SpriteSheetInfoBankOffset
+	sta $03
+	jsr ProcessSpriteSheetInfo
+	jsr DebugSpriteDisplayTest
+}
+
+	+MDeltaDecompression_CopyColours $400
+
+;	+WaitForFire_A
+
+.nextFrame
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda #%10
+	sta CIA2PortASerialBusVICBank
+	lda $4be8
+	sta VIC2ScreenColour
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<($4000 + SpriteSheetInfoBankOffset)
+	sta $02
+	lda #>($4000 + SpriteSheetInfoBankOffset)
+	sta $03
+	jsr ProcessSpriteSheetInfo
+	jsr DebugSpriteDisplayTest
+}
+
+	+MDeltaDecompression_CopyColours $4400
+
+;	+WaitForFire_A
+
+	jmp .fr1
+
+!source "../stdlib/Initialise.a"
+
+!source "../Animation/DeltaDecompression.a"
+
+!ifdef SpriteSheetInfoBankOffset {
+!source "SpriteSheet.a"
+}
+
+DeltaDecompression_UnpackFrameEx
+	jsr AnimationRestoreCartBank
+	jsr DeltaDecompression_UnpackFrame
+	jsr AnimationKillCartBank
+	rts
+
+AnimationKillCartBank
+;	sei
+	+MACRO_CartKillBank
+;	cli
+	rts
+
+AnimationRestoreCartBank
+;	sei
+	jsr DeltaDecompression_GetBank
+	+MACRO_CartSelectBank_16K_NoSEI_A
+;	cli
+	rts
+
+AnimationCode_End = *
+!if * >= $d000 {
+!error "Code is too large!"
+}
+
+*=$400
+!bin "Data/frm-0001.del"

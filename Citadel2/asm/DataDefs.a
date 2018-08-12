@@ -25,7 +25,7 @@ TitleScreen_TopLogoWid	= 40
 TitleScreen_TopLogoHei	= 7
 
 numMapUsedChars			= 256
-numMapUsedTiles			= 44
+numMapUsedTiles			= 46
 SolidMapBlockIndex		= 20
 
 numMaxEnemySlotsToOnScreenCheck = 64			; Must be power of 2
@@ -102,8 +102,10 @@ MapTile_Charger2					= 17
 MapTile_Charger1					= 18
 MapTile_Charger0					= 19
 
-MapTile_ComputerTerminalFacingDown	= 20
-MapTile_ComputerTerminalFacingUp	= 21
+MapTile_ComputerTerminalOffFacingDown	= 20
+MapTile_ComputerTerminalOffFacingUp	= 21
+MapTile_ComputerTerminalOnFacingDown	= 44
+MapTile_ComputerTerminalOnFacingUp	= 45
 MapTile_ComputerTerminalDistance	= 10
 
 MapTile_VerticalDoor				= 22
@@ -206,3 +208,9 @@ MapAnim_DoorSwitchOffFacingDown		= 9
 MapAnim_DoorSwitchOffFacingUp		= 10
 MapAnim_DoorSwitchOnFacingDown		= 11
 MapAnim_DoorSwitchOnFacingUp		= 12
+
+
+MapAnim_TerminalOffFacingDown		= 13
+MapAnim_TerminalOffFacingUp			= 14
+MapAnim_TerminalOnFacingDown		= 15
+MapAnim_TerminalOnFacingUp			= 16

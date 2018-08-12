@@ -1,0 +1,112 @@
+kDoCreditTextSize = 5
+!macro DoCreditText .time , .fontType , .text {
+	!word .time
+	!by .fontType
+	!word .text
+}
+kCreditFont1x1		= 1
+kCreditFont1x1Blob	= 2
+kCreditFont2x2		= 3
+kCreditFontRaw1x1	= 4
+kCreditEnd			= 5
+
+
+.holdLastFrame
+	jsr AnimationBlankScreen
+	jsr ClearAnimationMemory
+
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Outro
+	beq .exitOutro
+
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+!source "EndLogic_Intro.a"
+
+.exitOutro
+!source "EndLogic_Outro.a"
+
+
+ExitToGame_AlreadyBlackVolumeFadeOutCheck
+	lda IRQScreenTop_EarlyExit
+	bne ExitToGame_AlreadyBlackVolumeFadeOut
+	rts
+
+ExitToGame_AlreadyBlackVolumeFadeOut
+	inc TriggerVolumeFadeOut
+
+	ldy #15
+	jsr AnimationWaitForFramesNoEarlyOut
+	jmp ExitToGame_Simple
+
+
+EarlyOutVolumeFadeOutCheck
+	lda IRQScreenTop_EarlyExit
+	beq .noEarly1
+	lda #1
+	sta TriggerVolumeFadeOut
+.noEarly1
+	rts
+
+
+
+!if 0 {
+ExitToGame_VolumeFadeOutCheckFromWhiteFullScreen
+	lda IRQScreenTop_EarlyExit
+	bne ExitToGame_VolumeFadeOutFromWhiteFullScreen
+	rts
+
+ExitToGame_VolumeFadeOutFromWhiteFullScreen
+	inc TriggerVolumeFadeOut
+
+	lda #VIC2Colour_LightGrey
+	jsr AnimationClearCOLOURRAM
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_Grey
+	jsr AnimationClearCOLOURRAM
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_DarkGrey
+	jsr AnimationClearCOLOURRAM
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+
+	ldy #10
+	jsr AnimationWaitForFramesNoEarlyOut
+	jmp ExitToGame_Simple
+}
+
+ExitToGame_VolumeFadeOutCheckFromWhiteSplitTextScreen
+	lda IRQScreenTop_EarlyExit
+	bne ExitToGame_VolumeFadeOutFromWhiteSplitTextScreen
+	rts
+
+ExitToGame_VolumeFadeOutFromWhiteSplitTextScreen
+	inc TriggerVolumeFadeOut
+
+	lda #VIC2Colour_LightGrey
+	jsr AnimationSetLowerTextAreaColour
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_Grey
+	jsr AnimationSetLowerTextAreaColour
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_DarkGrey
+	jsr AnimationSetLowerTextAreaColour
+	ldy #2
+	jsr AnimationWaitForFramesNoEarlyOut
+
+	lda #VIC2Colour_Black
+	jsr AnimationSetLowerTextAreaColour
+
+	ldy #10
+	jsr AnimationWaitForFramesNoEarlyOut
+	jmp ExitToGame_Simple

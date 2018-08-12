@@ -1,0 +1,356 @@
+; Outro credits scroller code
+	lda #0
+	sta IRQScreenTop_EarlyExit
+
+	jsr AnimationWaitForFrame
+	jsr AnimationClearFullTextScreen
+	jsr AnimationWaitForFrame
+	jsr EnableFullScreenText
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+
+	ldy #15
+	jsr AnimationWaitForFrames
+
+	; No more interrupts, we want the ROMs off
+	sei
+	lda #0
+	sta SIDVolumeFilter
+	sta VIC2SpriteEnable
+	sta TriggerVolumeFadeOut
+	lda #15
+	sta TriggerVolumeValue
+
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+	+MWordValueTo_XY HuntersIntroMusic
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY RealMusicStart
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY HuntersIntroMusicSize
+	jsr MemoryCopy_ForSize
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	jsr $b000
+
+	+MACROAckAllIRQs_A
+	lda #0
+	sta VIC2Raster
+	+MWordValueToAddress_A OutroIRQScreenTop , KERNALIRQServiceRoutineLo
+	lda #1
+	sta VIC2InteruptControl
+	cli
+
+	jsr DeltaDecompression_ResetFrameCount
+
+!set .testScreenPlotPos = TextScreen2 + (9 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX OutroSequence5a
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (13 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX OutroSequence5c
+	jsr FontPlot2x2_EntryCentered
+
+	jsr AnimationFadeUpFullTextScreenJustFade
+	ldy #OutroBigTextHoldDelay
+	jsr AnimationWaitForFrames
+	jsr AnimationFadeDownFullTextScreenJustFade
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	ldy #OutroBigTextBlackHoldDelay1
+	jsr AnimationWaitForFrames
+
+	jsr AnimationClearFullTextScreen
+!set .testScreenPlotPos = TextScreen2 + (7 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX OutroSequence7a
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (11 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX OutroSequence7b
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (15 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX OutroSequence7c
+	jsr FontPlot2x2_EntryCentered
+
+	jsr AnimationFadeUpFullTextScreenJustFade
+	ldy #OutroBigTextHoldDelay
+	jsr AnimationWaitForFrames
+	jsr AnimationFadeDownFullTextScreenJustFade
+
+	ldy #OutroBigTextBlackHoldDelay2
+	jsr AnimationWaitForFrames
+
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	jsr AnimationClearFullTextScreen
+	lda #VIC2Colour_White
+	jsr AnimationClearCOLOURRAM
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+!if 0 {
+	ldx #VIC2ScreenCharsWidth-1
+.tbl1
+	lda #VIC2Colour_DarkGrey
+	sta COLOURRAM + (24 * VIC2ScreenCharsWidth) ,x
+	lda #VIC2Colour_Grey
+	sta COLOURRAM + (23 * VIC2ScreenCharsWidth) ,x
+	lda #VIC2Colour_LightGrey
+	sta COLOURRAM + (22 * VIC2ScreenCharsWidth) ,x
+	dex
+	bpl .tbl1
+}
+
+.cl1
+	jsr AnimationWaitForFrame
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	ldy #0
+
+.smAlternate lda #0
+	eor #1
+	sta .smAlternate+1
+	beq .lnoNewLine
+
+	dec .smvscr+1
+	bpl .isSmooth
+	lda #7
+	sta .smvscr+1
+	ldy #1
+.isSmooth
+	lda VIC2ScreenControlV
+	and #%11110000
+.smvscr	ora #0
+	sta VIC2ScreenControlV
+
+	cpy #1
+	beq .gotNewLine
+.lnoNewLine	jmp .noNewLine
+.gotNewLine
+	jsr ScrollTextScreenUp
+
+	; Clear the bottom lines so we can plot new text
+	ldx #VIC2ScreenCharsWidth-1
+	lda #0
+.tblc1
+	sta TextScreen2 + (24 * VIC2ScreenCharsWidth) ,x
+	dex
+	bpl .tblc1
+	
+	jsr DeltaDecompression_AdvanceFrameCount
+
+	lda CreditsPos
+	sta $02
+	lda CreditsPos+1
+	sta $03
+
+	ldy #0
+	lda ($02),y
+	cmp DeltaDecompression_Displaying
+	beq .got1
+	jmp .noNewLine
+.got1
+	iny
+	lda ($02),y
+	cmp DeltaDecompression_Displaying+1
+	beq .got2
+	jmp .noNewLine
+.got2
+
+	iny
+	lda ($02),y
+	cmp #kCreditFont1x1
+	beq .iskCreditFont1x1
+	cmp #kCreditFont1x1Blob
+	beq .iskCreditFont1x1Blob
+	cmp #kCreditFont2x2
+	beq .iskCreditFont2x2
+	cmp #kCreditFontRaw1x1
+	beq .iskCreditFontRaw1x1
+	cmp #kCreditEnd
+	beq .iskCreditEnd
+
+.iskCreditEnd
+	jmp .gotFire
+
+.iskCreditFontRaw1x1
+	+MWordValueTo_AX TextScreen2 + (24 * VIC2ScreenCharsWidth) + 1
+	jsr FontPlot1x1_SetScreen
+
+	jsr .getTextLoHi
+	sta $04
+	stx $05
+	jsr FontPlot1x1_EntryNoLanguage
+	iny
+	lda ($04),y
+	bne .gotMoreText
+	jmp .advanceToNextLine
+.gotMoreText
+	tya
+	clc
+	adc $04
+	sta $04
+	bcc .o3
+	inc $05
+.o3
+	; Self modify this event
+	; New text address
+	ldy #3
+	lda $04
+	sta ($02),y
+	iny
+	lda $05
+	sta ($02),y
+
+	; Rewind the frame counter
+	dec DeltaDecompression_Displaying
+	lda DeltaDecompression_Displaying
+	cmp #$ff
+	beq .t1
+	jmp .noNewLine
+.t1
+	dec DeltaDecompression_Displaying+1
+	jmp .noNewLine
+
+
+.iskCreditFont1x1Blob
+	lda #61
+	sta TextScreen2 + (24 * VIC2ScreenCharsWidth)
+
+.iskCreditFont1x1
+	+MWordValueTo_AX TextScreen2 + (24 * VIC2ScreenCharsWidth) + 1
+	jsr FontPlot1x1_SetScreen
+
+.iskCreditFont1x1Plot
+
+	jsr .getTextLoHi
+	jsr FontPlot1x1_Entry
+	jmp .advanceToNextLine
+
+.iskCreditFont2x2
+	+MWordValueTo_AX TextScreen2 + (23 * VIC2ScreenCharsWidth)
+	jsr FontPlot2x2_SetScreen
+
+	jsr .getTextLoHi
+	jsr FontPlot2x2_EntryCentered
+	jmp .advanceToNextLine
+
+.advanceToNextLine
+	lda $02
+	clc
+	adc #kDoCreditTextSize
+	sta $02
+	bcc .o1
+	inc $03
+.o1
+	lda $02
+	sta CreditsPos
+	lda $03
+	sta CreditsPos+1
+
+.noNewLine
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	beq .gotFire
+	jmp .cl1
+.gotFire
+
+	inc TriggerVolumeFadeOut
+	jsr AnimationFadeDownFullTextScreenJustFade
+
+	ldy #15
+	jsr AnimationWaitForFrames
+
+
+ExitToGame_Simple
+	sei
+	lda #CartSelectBank_ProcessorPort
+	sta ZPProcessorPort
+	lda #0
+	sta SIDVolumeFilter
+	sta VIC2SpriteEnable
+
+.exitToGame
+	sei
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #0
+	sta VIC2ScreenControlV
+
+	; Start the game code by calling the warm start vector
+	lda #0
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jmp ($8002)
+
+.getTextLoHi
+	iny
+	lda ($02),y
+	pha
+	iny
+	lda ($02),y
+	tax
+	pla
+	rts
+
+
+
+OutroIRQScreenTop
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	+MACROAckRasterIRQ_A
+
+	jsr DoEarlyOutCheck
+
+	jsr VideoTypeNeedSkipFrameIRQ
+	beq .skipFrame
+
+	lda $fb
+	sta .smfb+1
+	lda $fc
+	sta .smfc+1
+	lda $fd
+	sta .smfd+1
+	lda $fe
+	sta .smfe+1
+	lda $ff
+	sta .smff+1
+
+	jsr $b005
+
+	jsr TriggerVolumeCheck
+
+.smfb	lda #0
+	sta $fb
+.smfc	lda #0
+	sta $fc
+.smfd	lda #0
+	sta $fd
+.smfe	lda #0
+	sta $fe
+.smff	lda #0
+	sta $ff
+
+.skipFrame
+	pla
+	tay
+	pla
+	tax
+	pla
+
+	rti

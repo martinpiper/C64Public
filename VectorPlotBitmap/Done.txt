@@ -1,0 +1,65 @@
+Done
+
+* Produce several tests of code for different lengths and starting pixel offsets
+	0-3 pixel input and 0-3 pixel output based on the input and span length then jumps to the relevant 0-3 pixel aligned routine for next span
+	This might mean that X is preserved for the current span
+		Which means the span buffer could be byte pairs of:
+			0 - Length
+			1 - Colour
+		And length 0 means end of the span buffer, no colour
+
+
+
+* Produce all the various lengths speed code with inout 0-3 pixel alignment.
+	Add four lookup tables, based on 0-3 pixel alignment, containing all the lengths
+
+
+
+* The first few 1 pixel wide scans are not quite displaying correctly. Probably some input offset plus output state problem.
+
+
+
+* Continue SpanConfig work to pick good values to maximally fill the banks
+	* Then create a span length to cart bank lookup table and use that to then access the jump table SpanTable
+	* Then bundle this into a cartridge (switchable between EF in 8K mode and Gmod2)
+* Add speed code to cart
+	* Long and short spans across the boundaries for the banks tested
+
+
+* Segments linklist probably not quicker, abandon for now. Segment*.a/feature
+		Is it quicker to keep this arrangement when inserting new spans? Or should a linklist with len/colour pairs be used instead?
+		Then each scanline span can be long or short with the kSpanCalc_maxSegments limitation.
+		A linklist would need to be fast to initialise to an unallocated list:
+			* A contiguous chunk of memory for the free pairs plus unitialised next pointer
+			* New blocks are sequentially taken from this list and initialised, the next pointer is then initalised for the span
+			* A large enough potential span list might not need a free block reuse mechanism, depending on complexity
+			* So this is a nice to have:
+			* Free blocks are added to a singly linked list, its next pointer updated with the head, the new head is the just freed block
+			* When the contiguous chunk of memory is exhausted then the routine starts taking the first free block from the free list and advances the free list head from the next pointer
+
+
+* Vector span calc colour can keep index.
+	Done - Zero is always background. (kSpanCalc_backgroundColour)
+	The only when plotting convert index into bitmap pattern.
+	i.e. Move the SpanCalc_rotatedColour lookup in SpanCalc_scanPoly to MacroScanCalc_GetSegment or MacroGetSpan
+	However in MacroScanCalc_GetSegment we are register limited.
+	Maybe MacroGetSpan has enough space after it does lda .scanColours,x ? But it does not have easy access to the current line for the dithering test
+		Unless a line palette lo/hi in ZP is setup? This would then allow the below to be done:
+		* Don't need to double the colour index number.
+			Use separate tables for alternate lines?
+		Done - Bitmap_lineToPaletteLo , the high address is always dsetup into ZPBitmap_Palette+1
+
+
+
+* Tidy the bitmap plotting code around: SpanCalc_screenNumSegments
+	Separate file etc
+	Then create some expected plot memory comparison tests.
+	kSpanPlot_maxLen will need to be reduced since BDD6502 does not support cartridge yet
+		Added SpanTable_IsInCart which can choose between cartridge and RAM mode
+		Created BitmapPlot.feature
+
+
+
+* SpanCalcFilled2.feature need more cases where the inserting segment is shorter than the first segment
+	.differentColour2_0
+	; Insert segment

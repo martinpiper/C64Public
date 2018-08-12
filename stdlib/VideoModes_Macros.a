@@ -1,0 +1,26 @@
+!zn
+kVideoMode_Type_PAL		= 0
+kVideoMode_Type_NTSC	= 1
+
+; Entry:
+; Usually .typeAddress = VideoMode_Type
+; Macro rts return:
+; NE for PAL
+; EQ for NTSC
+!macro MVideoMode_NeedSkipFrame .typeAddress {
+	lda .typeAddress
+	cmp #kVideoMode_Type_PAL
+	beq .isPAL1
+
+	inc .speedTweak
+.speedTweak = *+1
+	lda #0
+	cmp #6
+	bcc .isPAL1
+	lda #0
+	sta .speedTweak
+	rts
+.isPAL1
+	lda #1
+	rts
+}

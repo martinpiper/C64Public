@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="AnimationBitmap">
+      <UniqueIdentifier>{56fbfb32-25cd-47ee-9757-bbc461f7cb11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -25,6 +28,12 @@
   <ItemGroup>
     <Text Include="Done.txt" />
     <Text Include="TODO.txt" />
+    <Text Include="..\AnimationBitmap\Done.txt">
+      <Filter>AnimationBitmap</Filter>
+    </Text>
+    <Text Include="..\AnimationBitmap\TODO.txt">
+      <Filter>AnimationBitmap</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\stdlib\stdlib.a" />

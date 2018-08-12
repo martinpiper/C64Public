@@ -1,8 +1,12 @@
-; The memory map for this title screen displays graphics data in bank 0
-; $0400-$07ff - Screen
-; $0800-$0fff - Char data
-; $1000-$bfff - Code and data
-; $c000-$ffff - Unused by the title screen and contains graphics data for the game.
+; The memory map for this title screen displays graphics data in bank 2
+; $0000-$3fff	- Variables and code
+; $0400-$0fff	- Unused
+; $1000-$7fff	- Code and data
+; $8000-$8dff	- Sprites
+; $8e00			- Music
+; $a000-$a7ff	- Charset
+; $a800-$abff	- Screen
+; $c000-$ffff	- Unused by the title screen and contains graphics data for the game.
 
 TitleScreen_spritePerStroke = (Multiplex_items / 2)-2
 
@@ -166,13 +170,25 @@ TitleScreen_State_ResetCounter
 
 	jmp .state_FadeUpText
 
-.state_RenderHiScores
+.state_RenderHiScoresArcade
 	jsr .clearTextArea
 
 	jsr TitleScreen_SetProportionalTextTop
 
-	lda #<HighScores_Text
-	ldx #>HighScores_Text
+	lda #<HighScoresArcade_Text
+	ldx #>HighScoresArcade_Text
+	ldy #0
+	jsr TitleScreen_RenderProportionalText
+
+	jmp .state_FadeUpText
+
+.state_RenderHiScoresStrategy
+	jsr .clearTextArea
+
+	jsr TitleScreen_SetProportionalTextTop
+
+	lda #<HighScoresStrategy_Text
+	ldx #>HighScoresStrategy_Text
 	ldy #0
 	jsr TitleScreen_RenderProportionalText
 
@@ -213,7 +229,13 @@ TitleScreen_State_Loop
 	+TitleScreen_AddState .state_FadeDown
 	+TitleScreen_AddState TitleScreen_State_FadeText
 
-	+TitleScreen_AddState .state_RenderHiScores
+	+TitleScreen_AddState .state_RenderHiScoresArcade
+	+TitleScreen_AddState TitleScreen_State_FadeText
+	+TitleScreen_AddState .state_Pause
+	+TitleScreen_AddState .state_FadeDown
+	+TitleScreen_AddState TitleScreen_State_FadeText
+
+	+TitleScreen_AddState .state_RenderHiScoresStrategy
 	+TitleScreen_AddState TitleScreen_State_FadeText
 	+TitleScreen_AddState .state_Pause
 	+TitleScreen_AddState .state_FadeDown
@@ -221,6 +243,7 @@ TitleScreen_State_Loop
 
 	+TitleScreen_AddState TitleScreen_State_Loop
 
+.joystickCentered	!by 0
 lDisplayTitleScreen
 	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
 
@@ -326,6 +349,7 @@ lDisplayTitleScreen
 
 
 	jsr TitleScreenWaitForOffScreenFromRaster
+	jsr TitleScreen_DisplayMode
 
 	; Display the data just copied.
 	lda #%00011011
@@ -463,12 +487,29 @@ lDisplayTitleScreen
 	; Wait for fire
 	lda #JoystickBits_Fire
 	bit JoystickA_Processed
-	beq .joystick0start
+	beq .ljoystick0start
 
+	; Debounce joystick direction input
+	lda JoystickA_Processed
+	and #JoystickBits_AllDirections
+	cmp #JoystickBits_AllDirections
+	bne .notCentered
+	lda #0
+	sta .joystickCentered
+	jmp .l3
+.notCentered
+
+	lda .joystickCentered
+	beq .doDirectionTest
+	jmp .l3
+.ljoystick0start jmp .joystick0start
+
+.doDirectionTest
 	lda #JoystickBits_Left
 	bit JoystickA_Processed
 	bne .notLeft
 
+	inc .joystickCentered
 	lda #1
 	sta AnimationStopMusic
 	lda #3
@@ -485,6 +526,7 @@ lDisplayTitleScreen
 	bit JoystickA_Processed
 	bne .notRight
 
+	inc .joystickCentered
 	lda #0
 	sta AnimationStopMusic
 	lda #2
@@ -501,6 +543,7 @@ lDisplayTitleScreen
 	bit JoystickA_Processed
 	bne .notUp
 
+	inc .joystickCentered
 	lda #0
 	sta AnimationStopMusic
 	lda #0
@@ -509,8 +552,54 @@ lDisplayTitleScreen
 	+DisplayColourTextAt_AX .textMusic_Start , .textMusic_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
 
 .notUp
+	lda #JoystickBits_Down
+	bit JoystickA_Processed
+	bne .notDown
 
+	inc .joystickCentered
+	lda MapBlockAlignedMovement
+	eor #1
+	sta MapBlockAlignedMovement
+	jsr TitleScreen_DisplayMode
+
+.notDown
 	jmp .l3
+
+TitleScreen_DisplayMode
+	lda MapBlockAlignedMovement
+	beq .isArcade
+	+DisplayColourTextAt_AX .textStrategy_Start , .textStrategy_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
+
+	lda #1
+	sta CameraNotPushX
+	sta CameraNotPushY
+	lda #85
+	sta CameraFollowWiggleXMin
+	lda #84
+	sta CameraFollowWiggleXMax
+	lda #122
+	sta CameraFollowWiggleYMin
+	lda #120
+	sta CameraFollowWiggleYMax
+
+	rts
+
+.isArcade
+	+DisplayColourTextAt_AX .textArcade_Start , .textArcade_End , TitleScreen_ScreenAddress + 24*40 , VIC2Colour_White
+
+	lda #0
+	sta CameraNotPushX
+	sta CameraNotPushY
+	lda #85 - 32
+	sta CameraFollowWiggleXMin
+	lda #84 + 32
+	sta CameraFollowWiggleXMax
+	lda #122 - 32
+	sta CameraFollowWiggleYMin
+	lda #120 + 32
+	sta CameraFollowWiggleYMax
+
+	rts
 
 .joystick0start
 	jsr TitleScreen_All_FadeDown
@@ -542,6 +631,13 @@ lDisplayTitleScreen
 .textMusic_Start
 !scr "music        "
 .textMusic_End
+
+.textArcade_Start
+!scr "arcade        "
+.textArcade_End
+.textStrategy_Start
+!scr "strategy      "
+.textStrategy_End
 
 TitleScreen_SpriteAnimateCount !by 0
 
@@ -989,9 +1085,12 @@ TitleScreen_CreditsText
 !scr "sound   bayliss"
 !by -1
 !by -1
-!by -13
-!scr "art  me"
+;!by -13
+;!scr "art  me"
+;!by -1
 !by -1
+!by -1
+!scr "exclusive for c64 users"
 !by -1
 !by -1
 !by -1

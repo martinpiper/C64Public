@@ -1,0 +1,32 @@
+!macro GetSpan .el1 , .scanLengths , .scanColours , .bankSelect , .spanTab_lo , .spanTab_hi {
+	ldy .scanLengths,x
+	bne .got
+	jmp .el1
+.got
+!ifdef SpanTable_IsInCart {
+	lda .bankSelect - 1,y
+	sta CART_SELECT_BANK
+}
+	lda .spanTab_lo - 1,y
+	sta .smp0j+1
+	lda .spanTab_hi - 1,y
+	sta .smp0j+2
+	ldy .scanColours,x
+	lda (ZPBitmap_Palette),y
+	inx
+	ldy #0
+.smp0j	jmp $1234
+}
+
+!macro ScanCalc_GetSegment .index , .doScanDraw , .scanLengths , .scanColours {
+	lda SpanCalc_screenSegmentsLen + (.index * kSpanPlot_maxHeight) , x
+	sta .scanLengths + .index
+	lda SpanCalc_screenSegmentsColour + (.index * kSpanPlot_maxHeight) , x
+	sta .scanColours + .index
+	dey
+	bne +
+	lda #0
+	sta .scanLengths + .index + 1
+	jmp .doScanDraw
++
+}

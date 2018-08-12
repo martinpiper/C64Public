@@ -524,8 +524,18 @@ UpdateSprites
 
 .removePickup
 	; Store the parameter, which is the type of the item picked up
+	lda MapBlockAlignedMovement
+	beq .isArcade1
+
 	lda AnimationParam1,x
 	jsr PlayerInventory_Add
+	jmp .removePickup2
+
+.isArcade1
+	lda AnimationParam1,x
+	sta SubGamePickPos
+	lda #SubGameExit_Success
+	sta SubGame_ExitState
 
 .removePickup2
 	lda #$ff

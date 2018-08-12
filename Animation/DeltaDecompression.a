@@ -54,6 +54,12 @@ RNXPCompressionDecompressDeltaRLE
 	sta+1 .smopcode1+1
 	+RNXPCompressionDecompressDelta_GetByte
 	sta+1 .smopcode2+1
+	bne .notSpecialEscape
+	lda+1 .smopcode1+1
+	bne .notSpecialEscape
+	; Optimisation for a completely empty delta frame by using two 0 bytes instead of something like: 8F B1 B6 8F 00
+	rts
+.notSpecialEscape
 	+RNXPCompressionDecompressDelta_GetByte
 	sta+1 .smopcode3+1
 
@@ -139,38 +145,86 @@ RNXPCompressionDecompressDeltaRLECodeEnd
 
 
 
-DeltaDecompression_Displaying !by 0
+DeltaDecompression_Displaying !by 0 , 0	; lo/hi
+DeltaDecompression_End	!by 0
 
-DeltaDecompression_UnpackFrame
 !ifdef UseCartBanks {
-.sm1	ldx $8000
-.sm2	ldy $8001
-	bne .l1
-
-	; Next bank please
+DeltaDecompression_ResetFrame
 	lda #0
-	sta .sm1+1
-	lda #1
-	sta .sm2+1
+	sta DeltaDecompression_ZP_DeltaFrameLoHi
 	lda #$80
-	sta .sm1+2
-	sta .sm2+2
-
-	inc .sm3+1
-.sm3	lda #StartCartBank
-	cmp #MaxCartBank
-	bne .l2
+	sta DeltaDecompression_ZP_DeltaFrameLoHi+1
 	lda #StartCartBank
 	sta .sm3+1
-.l2
-	sta EASYFLASH_BANK
-	jmp .sm1
-.l1
-	inc .sm1+1
-	inc .sm1+1
-	inc .sm2+1
-	inc .sm2+1
+	rts
+
+
+DeltaDecompression_GetBank
+.sm3	lda #0
+	rts
+}
+
+DeltaDecompression_ResetFrameCount
+	lda #0
+	sta DeltaDecompression_Displaying
+	sta DeltaDecompression_Displaying+1
+	rts
+
+DeltaDecompression_AdvanceFrameCount
+	inc DeltaDecompression_Displaying
+	bne .ofc1
+	inc DeltaDecompression_Displaying+1
+.ofc1
+	rts
+
+DeltaDecompression_UnpackFrame
+
+!ifdef UseCartBanks {
+	lda .sm3+1
+	bne .notSequenceEnd
+!ifdef NoLoopAnimation {
+	rts
+}
+	jsr DeltaDecompression_ResetFrame
+	lda .sm3+1
+
+.notSequenceEnd
+	sta CART_SELECT_BANK
+
+	jsr DeltaDecompression_AdvanceFrameAddr
 	jmp RNXPCompressionDecompressDeltaRLE
+
+
+DeltaDecompression_AdvanceFrameAddr
+	ldy #0
+	lda (DeltaDecompression_ZP_DeltaFrameLoHi),y
+	sta .sm3+1
+	bne .notSequenceEnd2
+!ifdef NoLoopAnimation {
+	inc DeltaDecompression_End
+}
+.notSequenceEnd2
+	iny
+	lda (DeltaDecompression_ZP_DeltaFrameLoHi),y
+	pha
+	iny
+	lda (DeltaDecompression_ZP_DeltaFrameLoHi),y
+	pha
+	
+	lda DeltaDecompression_ZP_DeltaFrameLoHi
+	clc
+	adc #3
+	tax
+	lda DeltaDecompression_ZP_DeltaFrameLoHi+1
+	adc #0
+	tay
+
+	pla
+	sta DeltaDecompression_ZP_DeltaFrameLoHi+1
+	pla
+	sta DeltaDecompression_ZP_DeltaFrameLoHi
+
+	rts
 
 } else {
 	ldx DeltaDecompression_Displaying

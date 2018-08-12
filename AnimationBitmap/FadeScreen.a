@@ -1,0 +1,116 @@
+FadeScreen_LastCalc	!by 0
+FadeScreen_Table !fill 256 , 0
+
+!zn
+.fadeSelectLo !fill 16 , 0
+.fadeSelectHi !fill 16 , 0
+; Entry:
+; X = fade step, 0 to 7
+FadeScreen_CalculateStep
+	cpx FadeScreen_LastCalc
+	bne .needNew
+	rts
+.needNew
+	stx FadeScreen_LastCalc
+
+	; First select the fade step from the larger table
+!for .ln , 16 {
+!set .lln = .ln-1
+	lda FadeScreen_TableColours + (.lln*8),x
+	sta .fadeSelectLo + .lln
+	asl
+	asl
+	asl
+	asl
+	sta .fadeSelectHi + .lln
+}
+
+	ldy #0
+.l1
+	tya
+	and #15
+	tax
+	lda .fadeSelectLo,x
+	sta FadeScreen_Table,y
+
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	and #15
+	tax
+	lda .fadeSelectHi,x
+	ora FadeScreen_Table,y
+	sta FadeScreen_Table,y
+
+	dey
+	bne .l1
+
+	rts
+
+!zn
+!macro MFadeScreen_DrawSmall .col1 , .col2 , .col3 , .col4 {
+!for .y , 12 {
+!set .yy = .y-1
+ 	ldx #20
+!set .l1 = *
+	ldy .col1 + (.yy * VIC2ScreenCharsWidth) + 10,x
+	lda FadeScreen_Table,y
+	sta .col3 + (.yy * VIC2ScreenCharsWidth) + 10,x
+	ldy .col2 + (.yy * VIC2ScreenCharsWidth) + 10,x
+	lda FadeScreen_Table,y
+	sta .col4 + (.yy * VIC2ScreenCharsWidth) + 10,x
+	dex
+	bpl .l1
+}
+}
+
+!zn
+!macro MFadeScreen_Draw .col1 , .col2 , .col3 , .col4 {
+ 	ldy #0
+!for .page , 3 {
+!set .ppage = .page-1
+!set .l1 = *
+	ldx .col1 + (.ppage*$100),y
+	lda FadeScreen_Table,x
+	sta .col3 + (.ppage*$100),y
+	ldx .col2 + (.ppage*$100),y
+	lda FadeScreen_Table,x
+	sta .col4 + (.ppage*$100),y
+	dey
+	bne .l1
+}
+
+
+!set .ppage = 3
+	ldy #$eb	; To additionally calculate up to 3 extra background + MC registers
+.l2
+	ldx .col1 + (.ppage*$100) -1,y
+	lda FadeScreen_Table,x
+	sta .col3 + (.ppage*$100) -1,y
+
+	ldx .col2 + (.ppage*$100) -1,y
+	lda FadeScreen_Table,x
+	sta .col4 + (.ppage*$100) -1,y
+	dey
+	bne .l2
+}
+
+FadeScreen_Draw
+	+MFadeScreen_DrawSmall $0400 , $0800 , $3400 , $3800
+	rts
+
+
+FadeScreen_Draw2
+	+MFadeScreen_DrawSmall $4400 , $4800 , $7400 , $7800
+	rts
+
+
+FadeScreen_Full
+	+MFadeScreen_Draw $0400 , $0800 , $1000 , $0c00
+	rts
+
+FadeScreen_Full2
+	+MFadeScreen_Draw $4400 , $4800 , $5000 , $4c00
+	rts

@@ -1,0 +1,185 @@
+!zn
+Segments_backgroundColour	!by 0
+
+!zn
+Segments_initStorage
+	+MWordValueToAddress_A Segments_array , ZPSegments_primaryAllocatorAddrLo
+	rts
+
+
+!zn
+Segments_allocate
+	lda ZPSegments_primaryAllocatorAddrHi
+	; MPi: TODO: Detect a null hi value and redirect to popping segments from the head of a link list
+	sta ZPSegments_currentSegmentHi
+	lda ZPSegments_primaryAllocatorAddrLo
+	sta ZPSegments_currentSegmentLo
+	clc
+	adc #kSegment_length
+	sta ZPSegments_primaryAllocatorAddrLo
+	bcc .ret
+	inc ZPSegments_primaryAllocatorAddrHi
+.ret
+	rts
+
+!zn
+Segments_free
+	; MPi: TODO: Push freed segments into a link list
+	rts
+
+!zn
+	; Scenario: Simple maximum length insertion test into empty line
+.setEntireSpan
+
+	jsr Segments_allocate
+	+Segments_clearNextSegment
+	+Segments_setLineHead
+
+
+	+Segments_copyPolyStartEndSetupColourInY
+.smCurrentColour = *+1
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+
+
+	jmp .endLine
+
+.emptyLineNoStartSegment
+	lda Poly_linesRight,x
+	cmp #kSpanPlot_maxLen
+	beq .setEntireSpan
+
+	; Scenario: Simple half length insertion test into empty line at start
+	; Segment needs empty span after length
+
+	jsr Segments_allocate
+	+Segments_setLineHead
+
+	; Since the span starts on the left there is no need to calculate the length per se
+	+Segments_copyPolyStartEndColour .smCurrentColour
+
+.doEndSegmentBackground
+	+Segments_setLast
+
+	jsr Segments_allocate
+	+Segments_addToLastSegmentNoNext
+	+Segments_copyEndSetBackgroundColour
+
+	jmp .endLine
+
+.isEmptyLine
+	lda Poly_linesLeft,x
+	beq .emptyLineNoStartSegment
+
+	lda Poly_linesRight,x
+	cmp #kSpanPlot_maxLen
+	beq .emptyLineNoEndSegment
+
+	; Scenario: Simple half length insertion test into empty line at middle
+	jsr Segments_allocate
+	+Segments_setLineHead
+	+Segments_copyStartSetBackgroundColour
+
+	+Segments_setLast
+
+	jsr Segments_allocate
+	+Segments_addToLastSegment
+	+Segments_copyPolyStartEndColour .smCurrentColour
+
+	jmp .doEndSegmentBackground
+
+.emptyLineNoEndSegment
+	; Scenario: Simple half length insertion test into empty line at end
+	jsr Segments_allocate
+	+Segments_setLineHead
+	+Segments_copyStartSetBackgroundColour
+
+	+Segments_setLast
+
+	jsr Segments_allocate
+	+Segments_addToLastSegmentNoNext
+	+Segments_copyPolyStartEndColour .smCurrentColour
+
+
+	rts
+
+.lisEmptyLine jmp .isEmptyLine
+; Entry:
+; A = colour
+; X = start line index
+; Y = end line index (+ 1)
+Segments_scanPoly
+	sta .smCurrentColour
+	sty .smEndLine
+.l1
+	lda Segments_linesHi,x
+	beq .lisEmptyLine
+
+	; A line with at least one segment allocated in it
+	; MPi: TODO: Plenty of cases here
+
+	sta ZPSegments_currentSegmentHi
+	lda Segments_linesLo,x
+	sta ZPSegments_currentSegmentLo
+
+	+Segments_forgetLast
+
+.cl1
+	ldy #kSegment_offset_start
+	lda (ZPSegments_currentSegmentLo),y
+	cmp Poly_linesRight,x
+	bcs .cl2
+
+	cmp Poly_linesLeft,x
+	bne .insertAfter
+
+	; MPi: TODO: Test for replacing the whole segment if the inserting line is longer
+
+	; Scenario: Simple clip insertion test, one existing segment, left side
+	; The new segment is shorter and start is the same so insert new segment before
+	+Segments_setLast
+	jsr Segments_allocate
+	+Segments_setLastSegmentToCurrentNext
+	+Segments_testLastSegmentInsertHeadCurrent
+
+	ldy #kSegment_offset_start
+	lda Poly_linesLeft,x
+	sta (ZPSegments_currentSegmentLo),y
+	; Shift the previous segment start
+	lda Poly_linesRight,x
+	sta (ZPSegments_lastSegmentLo),y
+	; end
+	iny
+	lda Poly_linesRight,x
+	sta (ZPSegments_currentSegmentLo),y
+	; colour
+	iny
+	lda .smCurrentColour
+	sta (ZPSegments_currentSegmentLo),y
+
+	jmp .endLine
+
+.insertAfter
+	; MPi: TODO: ...
+	brk
+
+.cl2
+	; Is there anything else left to process?
+	lda Poly_linesRight,x
+	cmp Poly_linesLeft,x
+	; Nothing left
+	beq .endLine
+
+	+Segments_setLast
+	+Segments_getNextSegment
+	bne .cl1
+
+.endLine
+	inx
+.smEndLine = *+1
+	cpx #0
+	beq .ol1
+	jmp .l1
+.ol1
+
+	rts

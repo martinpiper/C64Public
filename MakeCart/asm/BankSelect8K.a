@@ -1,0 +1,14 @@
+!zn
+CartKillBank
+	+MACRO_CartKillBank
+	rts
+
+
+!zn
+; Entry
+; A = Cart bank number
+CartSelectBank_8K
+	sei
+CartSelectBank_8K_NoSEI
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	rts

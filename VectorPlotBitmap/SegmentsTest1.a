@@ -1,0 +1,43 @@
+!sal
+ZPSegments_VarBase	= $02
+kSpanPlot_maxLen = 160
+
+!source "SegmentsVars.a"
+!source "../stdlib/stdlib.a"
+
+!source "SegmentsMacros.a"
+
+*=$400
+!source "Segments.a"
+
+; Does not need to be aligned, but it makes the dump easier to parse
+!align 255 , 0
+Segments_array
+	!fill 256 , $ff
+Segments_arrayEnd
+
+Segments_linesLo
+	!fill kSpanPlot_maxHeight , 0
+Segments_linesLoEnd
+Segments_linesHi
+	!fill kSpanPlot_maxHeight , 0
+Segments_linesHiEnd
+
+
+
+SetupTest
+	jsr Segments_allocate
+	+Segments_clearNextSegment
+	+Segments_setLineHead
+
+	ldy #kSegment_offset_start
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda #kSpanPlot_maxLen
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+
+	rts

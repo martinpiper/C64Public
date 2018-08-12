@@ -1,0 +1,14 @@
+* = C64Cartridge_Lo_8K
+
+; These are all identical since the cartridge bank is used to choose the correct table
+SpanTab_lo_p0
+SpanTab_lo_p1
+SpanTab_lo_p2
+SpanTab_lo_p3
+	* = * + kSpanPlot_maxLen
+
+SpanTab_hi_p0
+SpanTab_hi_p1
+SpanTab_hi_p2
+SpanTab_hi_p3
+	* = * + kSpanPlot_maxLen

@@ -8,7 +8,7 @@
 !cpu 6510
 !ct pet
 
-!source "../MakeCart/asm/EasyFlash.a"
+!source "../MakeCart/asm/EasyFlash_Macros.a"
 !source "DeltaDecompressionMacros.a"
 
 ;Comment out this to not use the speed testing code
@@ -79,7 +79,7 @@ MaxFrames = 24
 }
 
 ; Vector ball rotate
-!if 1 {
+!if 0 {
 ScreenColour = 1
 BGColour = 2
 BGColour1Start = 0
@@ -89,8 +89,24 @@ BGColour1During = 0
 BGColour2During = 0
 MaxFrames = 128
 UseCartBanks = 1
+IsBouncingBall = 1
 StartCartBank = 4
 MaxCartBank = 14
+}
+
+; Video
+!if 1 {
+ScreenColour = 0
+BGColour = 1
+BGColour1Start = 0
+BGColour2Start = 0
+BGColourChangeIters = 0
+BGColour1During = 0
+BGColour2During = 0
+MaxFrames = 255
+UseCartBanks = 1
+StartCartBank = 4
+MaxCartBank = 64
 }
 
 !ifdef UseCartBanks {
@@ -292,7 +308,7 @@ Multiplex_items	= 24
 	+MACROWaitForTheLastScanPlus1_A
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
-!ifdef UseCartBanks {
+!ifdef IsBouncingBall {
 	lda #%00001010		; Screen at $c000 char data at $e800
 } else {
 	lda #%10011010		; Screen at $e400 char data at $e800
@@ -304,7 +320,7 @@ Multiplex_items	= 24
 	jsr Multiplex_SetSpritePointer
 }
 
-!ifdef UseCartBanks {
+!ifdef IsBouncingBall {
 	lda #$64
 	ldx BouncePosX
 	ldy BouncePosY
@@ -334,7 +350,7 @@ Multiplex_items	= 24
 	jsr DeltaDecompression_UnpackFrame
 
 	+MACROWaitForTheLastScanPlus1_A
-!ifdef UseCartBanks {
+!ifdef IsBouncingBall {
 	lda #%00001110		; Screen at $c000 char data at $f800
 }else {
 	lda #%11011110		; Screen at $f400 char data at $f800
@@ -346,7 +362,7 @@ Multiplex_items	= 24
 	jsr Multiplex_SetSpritePointer
 }
 
-!ifdef UseCartBanks {
+!ifdef IsBouncingBall {
 	lda #$74
 	ldx BouncePosX
 	ldy BouncePosY
@@ -857,7 +873,7 @@ Message
 !scr "so the credits  necro polo did this version of mean streak  the sprites are from monty mole  the coding was by martin piper     "
 }
 
-!ifdef UseCartBanks {
+!ifdef IsBouncingBall {
 !zn
 BounceVelX !by 1
 BounceVelY !by 1

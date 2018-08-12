@@ -78,9 +78,9 @@ InitBank0Data
 	lda #20
 	ldx #7
 .spr2
-	sta SPRITEFRAME,x
-	sta SPRITEFRAME+$400,x
-	sta SPRITEFRAME+$800,x
+	sta SCREENRAM + SPRITEFRAMESCROFF,x
+	sta $800 + SPRITEFRAMESCROFF,x
+	sta $c00 + SPRITEFRAMESCROFF,x
 	dex
 	bpl .spr2
 

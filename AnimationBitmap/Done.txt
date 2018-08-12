@@ -1,1 +1,537 @@
-*
+* https://keepvid.com/sites/download-youtube-video.html
+
+* Import a video from something like https://www.youtube.com/watch?v=vKnU_68CApI
+	or https://www.youtube.com/watch?v=65weTx0haog
+	See how well it compresses
+	C:\Downloads\Thunder Blade Longplay (Arcade) [60 FPS].mp4
+
+
+
+* Bitmap screen sprite pointers need to be excluded in the compressor
+
+
+
+
+* In HM Animation6 the right hand side of the bitmap should be using a skip code, not a copy.
+	But if data is drawn into the empty area in bitmap $2000-$3fff then it can be seen to be copied into bitmap at $6000-$7fff
+	* A potential solution, which can take more delta bytes, is to shorten the length of the copy run test from 255 bytes to something like 32
+	For example: in DeltaCompression : main.cpp : for (size = 5 ; (size < 255) && ((pos+size) < inputLength) && ((i+size) < inputLength) ; size++)
+		Change the 255 above to 32
+	* Make it a configurable option passed in on the command line. Default is for maximum compression but slower decompress, which is 255
+		Using 32 makes it faster to decompress because the skip code is more often used.
+	* Hmm, try to detect identical target memory and trim the copy length instead?
+	* Or clamp to a max of 32, or a value, but track the last used copy code position and optionally extend that instead of creating a new one immediately next to it
+
+
+
+* These should use size not 256
+	if (i >= (inputLength-256))
+	...
+	if (pos >= (inputLength-256))
+
+
+
+* Fade whilst displaying the animation
+	Whilst fading the displayed colour screen (usually at $800 or $4800) can be calculated to somewhere near the bottom of the bitmap at $3800 etc
+	This removes the need to have a temporary copy of the current coloursat $cc00 as well
+
+
+
+
+* Try using brightness in the animation frames and noting any change in compression size
+	Fades over ~9 frames do save memory. Fade over ~5 frames average out to be the same.
+
+
+
+
+* Need to optionally store the background (+multicolours in char mode) and sprite multicolours in the output animation data so they can be read for each frame
+	Potentially store these at the end of screen memory at offset $3e8 onwards
+	The ConvFrame.bat process copies in 24Bytes.bin to align the data.
+	An extra option to save the background + multicolours for chars and sprites as a data file would allow me to pick where that data is stored.
+		-addscreeninfo
+		-addsheetinfo
+
+
+
+
+* Limited to 15 fps playback
+	WaitForIRQFrameTarget
+	.skipTab
+
+
+
+
+* Add the option to make the animation not loop, so the sequence is played one off. The initial frame data could therefore be the first two frames, not the last two...
+	Then the first two delta frames are tiny entire skip codes...
+	* Or start from entirely blank memory and let the video deltas create the frames from nothing!
+	With Animation 8:
+		-nofirstframe = 145086
+		-emptyframebuffer = 144932
+
+
+
+* Add event triggers for fade, make it scalable to handle other potential effects later on
+
+
+
+* Fading the smaller screen animation only needs to update the top few rows of the screen data and only the specific section, not the whole screen.
+	FadeScreen_Draw
+	FadeScreen_Draw2
+
+
+
+
+* The full screen static bitmap screens and their fades will need some special handling. They don't need sprites and can be maximum compressed.
+
+
+
+* Split with a text screen
+
+
+
+* Add music and move code under the ROM
+
+
+
+* Convert the Thalamus logo to chars, put it in memory at the beginning, no need to include separate decompression code.
+	Create a special grey only fade in code.
+
+
+
+* Check that GMod2 carts execute correctly as well as EasyFlash
+
+
+
+* Include 2x2 font data and plotting to the text screen for the "text only" screens
+
+
+
+* Render lower panel text on demand
+
+
+
+* Unify the text plot for the credit sequence.
+	Done - Make the end of text string by 0 not $ff
+	Done - Move the text strings from FontPlot2x2.a to AnimationBitmap.a
+	Done - Remove write2x2_vector_table_*
+	Done - Make the A/X screen address store to w2x2ScrnOutLo/Hi a separate function
+	Done - Make the string to plot input function take A/X directly
+	Done - Create a FontPlot1x1_EntryCentered and FontPlot1x1_Entry
+
+
+
+* One frame after the "cinematic sequences" credit on frame 3864 there are a couple of grey pixels at the split on the left of the screen near the border
+
+
+
+* If EnableSplitScreen is active and we are fading out then use GreyFadeColourWhite for the colour RAM to black for the lower text area
+
+
+
+* For the other loading screen, distribute the compression over two frames as the key frame goes over 8188 (8192-4) bytes
+	Automatically detect this, passed in parameter, in the delta compression and make it fixup the previous frame with extra data
+	* Added -maxframesize <bytes>
+
+
+
+
+* There is a delta animation optimisation for sprite sheet data where instead of compressing a huge pre-prepared *.scr blob that contains large zeroed areas of memory,
+	instead the compressor can take numerous file inputs of variable lengths into the exiting buffer,
+	so the skip code can correctly identify sheet data of variable sizes that does not need to be zeroed out between frames.
+	At the moment each frame will zero out sprite sheet information that isn't actually displayed, wasting valuable decompression time.
+	Standard pattern: copy /y %1.col /b + ..\24Bytes.bin /b + %1.scr /b + ..\23Bytes.bin /b + %1.spr /b + %1.sno /b + ..\1024Bytes.bin /b + ..\1024Bytes.bin /b + ..\1024Bytes.bin /b + %1.chr /b %1.sch
+	* Need to remove the padding option in ConvFrame*.bat for -sheetframes and -sheetinfo
+	* It would be useful to also have a way to specify that data is only relative to the start of the entire buffer, or relative to the current frame buffer
+		By default a positive number is relative to the frame buffer
+		A negative number forces from the start of the entire buffer
+
+
+
+* Standalone animation conversion tool for Robin
+
+
+
+* ConvFrame.bat needs dynamic sheetcolours passed in. Then read this from the animation delta frame in memory when playing back each frame.
+
+
+
+* Block entropy, if it would be more efficient to use a literal and a run then use that instead. Measure the state changes in the block.
+
+
+
+* When using the dictionary: Try comparing previous delta frame size with new frame size and not saving the result if it's larger
+
+
+
+* For sprite colour fading load colours from FadeScreen_Table
+
+
+
+* If the sprite sheet frame is too large (>8/16 etc) then for that frame gradually increase threshhold (-sheetthresholdbase +++) until the number of sprites reduces to <16
+	Then reset back to the supplied values for other frames
+* Also have an auto sheet mode that starts at 0 and increases until the sprite frames are < 16 or < 8 or some other value
+
+
+
+* A min/max sprite x/y configuration could be useful for CharPack, avoid any sprites appearing over the split.
+	Especially when Conv.bat is using 0 instead of 2 for the sheet threshold in the first panel, where a small flicker is observed
+	* At position VIC2SpriteYBorderTop + 98 = 148
+
+
+
+* Add an option to define unused display memory, it can have all black colours, that is used as for multi-frame cache data.
+	Data that is commonly pulled in as new across multiple frames, the literal store run sequences, can be saved into these cache based on how many times it's used.
+	* Using: -maxframesize 6000 -emptyframebuffer -bitmap -fragment 0 Data\frm*05d.col -fragment $400 Data\frm*05d.scr -fragment $800 Data\frm*05d.spr -fragment $c00 Data\frm*05d.sno -fragment $1c00 Data\frm*05d.chr 2 1 901 2 $4000 $7c00 Data\frm*05d.del 32
+		Observed: Dictionary size 7665 potential savings 52370
+	* Done - Need an option to save dictionary buffers: -savedictionary <len> <filename>
+		* Need potentialy more than one entry as well, so the dictionary can be split easily for under the CHARROM
+	* Need a "-prime <offset> <filename>" option that primes the buffer after "-emptyframebuffer" once only. This data does not get stored in deltas.
+	Note: //#define ENABLE_DICTIONARY
+	// Produce dictionary:
+	// -savedictionary $f00 Data\dictionary1.bin -savedictionary $f00 Data\dictionary2.bin -maxframesize 6000 -emptyframebuffer -bitmap -fragment 0 Data\frm*05d.col -fragment $400 Data\frm*05d.scr -fragment $800 Data\frm*05d.spr -fragment $c00 Data\frm*05d.sno -fragment $1c00 Data\frm*05d.chr 2 1 901 2 $4000 $7c00 Data\frm*05d.del 32
+	// Use dictionary:
+	// -maxframesize 6000 -emptyframebuffer -bitmap -fragment f$d00 Data\Dictionary1.bin -fragment f$4d00 Data\Dictionary2.bin -fragment 0 Data\frm*05d.col -fragment $400 Data\frm*05d.scr -fragment $800 Data\frm*05d.spr -fragment $c00 Data\frm*05d.sno -fragment $1c00 Data\frm*05d.chr 2 1 901 2 $4000 $7c00 Data\frm*05d.del 32
+	Note: //			sDebugSpew_Encoding = true;
+	Before:
+		Total bytes in 9058391 and out 284188
+		Written dictionary size 3854 potential savings 18980
+	After:
+		Total bytes in 9062245 and out 283348
+	There are some gains, however it seems as though the saved dictionary contains a lot of wasted space, in terms of runs of bytes.
+	Which means when using the dictionary it sometimes seems to use more memory as a literal and run/skip could be more efficient than a copy?
+
+	* New test: Swirling vortex with ship
+	Animation6\conv.bat
+	Conv2_6.bat
+	ConvDelta2.bat
+		Total bytes in 1512261 and out 93741
+		Written dictionary size 3865 potential savings 13874
+		Total bytes in 1516126 and out 80319
+		before and after dictionary
+		Dictionary itself = 3,865 bytes
+		Saving 13,422 bytes of delta frames
+
+
+
+
+* For -bitmap -r  ..\AnimationBitmap\Animation10\frm00060.bmp 0 0 0 c:\temp\t.chr c:\temp\t.scr c:\temp\t.col
+	Add an option to force the second colour into the whole screen, therefore making the bitmap data itself the only thing that changes
+
+
+
+* For Animation8 (HM intro): Conv.bat && ConvDelta.bat
+	Total bytes in 9138226 and out 332272 saved 0
+	Total bytes in 9138226 and out 327022 saved 0 -forceordering
+	Total bytes in 9138226 and out 317808 saved 0 -reducebitmapchange t.scr t.col
+	Total bytes in 9138226 and out 315500 saved 0 -forceordering -reducebitmapchange t.scr t.col <<<<<<<
+	Best saving: 16772
+
+
+* For Animation3 (After Burner): Conv2.bat && ConvDelta2.bat
+	Total bytes in 2999994 and out 793087 saved 3075
+	Total bytes in 3000009 and out 782375 saved 2915 -forceordering <<<<<<<
+	Total bytes in 2999989 and out 825715 saved 2672 -reducebitmapchange t.scr t.col
+	Total bytes in 3000000 and out 820098 saved 2896 -forceordering -reducebitmapchange t.scr t.col
+	Best saving: 10712
+
+
+
+
+* During the panels there is a block of memory available after the sprite info and before the bitmap data which is $f00 long
+	With -emptyframebuffer enabled the primed first frame dictionary data should appear in the delta, probably over two frames if the delta is too large
+	This way it might be possible to have separate dictionaries defined for each panel since the panel start can clear the entire animation work data
+	Using: dir Data\frm0*.del
+	Before: 329,392
+	After: 331,761
+
+
+
+* HM Intro:
+	Panel 1
+				 150 File(s)         81,233 bytes
+	Panel 2
+				 150 File(s)         62,468 bytes
+	Panel 3
+				 150 File(s)         41,399 bytes
+	Panel 4
+				 150 File(s)         64,474 bytes
+	Panel 5
+				 150 File(s)         32,648 bytes
+	Panel 6
+				 150 File(s)         33,278 bytes
+	Static screens
+				   4 File(s)         13,892 bytes
+	Total
+				 904 File(s)        329,392 bytes
+
+
+
+
+* Optimise the dictionary files, pull out the data not referenced in the second pass?
+	Third pass needed? :D
+	Although it helps reduce the dictionary overhead it still does not approach the without dictionary size for the whole animation or for each panel in the intro
+
+
+
+* If a smaller fragment of a reusable block is already located within a larger block then do not output the smaller block. Instead add the total to the larger block.
+	Helps somewhat, if the dictionary is used
+
+
+
+* HM Intro - BuildIt.bat - Needs a version without fades/waits so that we can easily see the panels without waiting for all of the other stuff
+	Add an assembly option to make the pauses really short, remove fades and remove credit text
+
+
+
+* Maybe have another pass during compression where fixed start frame data areas are not considered for block copy?
+	No saving at all
+
+
+
+
+* DeltaCompression algorithm can include extra optional exclusion ranges in a list from the command line
+	-excludebitmaprect
+	Works by definitely excluding the screen borders but does not reduce delta size, slight increase instead. Probably as large size copies are forced to use skip codes.
+
+
+
+
+* @Robin Levy I will check the landing pad looping reuse and see why it's apparently not saving anything. Sprites also potentially take advantage of looping data reuse because the dictionary used just works on the raw data in memory, regardless of the source.
+	Dropbox\rob_levy_shared\GameArt\Intro\loopingtest
+	* There needs to be an initial frame scan that looks for the same areas separated by at least "banks" different frames and inserts those areas into the potential dictionary blocks
+	* Or maybe output the block that combines the set of literals and runs, i.e. the areas between block copies?
+		updateLiterals is wrong, it should only output the spaces between blocks
+	Panel 1 - I know why you're not getting much saving with the 50 frame loop horizontal ships. The second iteration of the loop is not the same as the first iteration due to lens flare from the rockets on the landing ship. The third iteration then has differing colour ram information (and hence pixel data). This is because the compression carries forward colour ram from previous frames, making the cumulative changes per frame less.
+	So visually loop 1 doesn't loop the same as loop 2
+	And even though visually it looks like the between loop 1 and loop 3 the underlying binary data in memory is very different
+
+C64\AnimationBitmap\Animation8\conv.bat
+Panel 1
+             150 File(s)         81,241 bytes
+Panel 2
+             150 File(s)         62,397 bytes
+Panel 3
+             150 File(s)         41,281 bytes
+Panel 4
+             150 File(s)         64,471 bytes
+Panel 5
+             150 File(s)         32,520 bytes
+Panel 6
+             150 File(s)         33,271 bytes
+Static screens
+               4 File(s)         13,892 bytes
+Total
+             904 File(s)        329,073 bytes
+
+
+
+* Added multi-core compression with ConvDeltaWait.bat
+
+
+
+* Added thalamus_logo_v2.png, intromusic.prg and intro_font_v00.ctm
+
+
+
+* Added more intro logo tweak options: ThalamusPresentsYPosX/MartinWalkerGameYposX
+
+
+
+
+* Instead of storing delta frames sequentially in the cartridge with a table at the start of the bank, store the files optimised for space usage as a link list
+	This will reduce wastage at the end of the cart banks
+		Byte: next bank
+		Word: next address lo/hi
+		Word: optional size lo/hi
+		Data...
+		if address hi == 0 then that's the end of the animation
+
+
+
+* Add HuntersGameCompleteMusic.prg
+	HuntersNewIntroMusic+LoadingMG.prg
+	Note the Intro tune is now 
+	Init $b000
+	Play $b005
+	The Outro Tune
+	No Init
+	Play $b002
+
+
+
+* Compress with maximum LZMPi mode and link in a custom decompression screen display, base it on the self-extracting code but with...
+	* Re-create the CYBERLOAD animation bars, like: https://www.youtube.com/watch?v=pl_32Wr20Wk
+	* This will be able to use code in the black area of the default screen at $400
+	* Whilst the main LZMPi decompression in zeropage happens with full RAM switched on...
+	* Use a timed NMI/IRQ to update the squares, try to re-recreate the pauses/stutters of the squares, perhaps base it on the position of the decompressed pointer in memory?
+
+
+
+*	e) I split "design, code, graphics, and SFX" across 2 lines - some of the foreign translations were too long otherwise.
+	f) I split "remastering and additional code" across 2 lines - some of the foreign translations were too long otherwise.
+
+
+
+* Big font apostrophe
+
+
+* Outro, long video, credits etc
+	Use same code, but like the language select read a byte at the start of memory to make the switch
+	$3fe = 0 = Intro
+	$3fe = 1 = Outro
+	$3ff = 0 = English
+	$3ff = 1 = French
+	$3ff = 2 = Italian
+	$3ff = 3 = German
+	$3ff = 4 = Spanish
+	; Maps joystick direction to these choices:
+	;010
+	;304
+	;020
+	These locations survive from the pre-boot, through the decompression and code start at $c000
+	* Created DeltaDecompression_AdvanceFrameAddr
+	* Added code to detect kPreBoot_AnimationSelect_Intro and working placeholder for kPreBoot_AnimationSelect_Outro
+	* Added longer placeholder animation after the intro anim
+		Animation8\conv.bat : rem Placeholder outro animation
+	* Remove accents for languages - Says Andy
+	* Move AnimationProcess1x1Text to a separate source file
+
+	* Current outro plan:
+		* No text underneath the video panel
+		* Hold end for fire, fade out
+			.exitOutro
+		* Mixture of 2x2 and 1x1 text smooth scrolls with all the outro text
+		* Fire (or end of text) fade down
+		* Exit to game
+	CreditsEvents.a added
+		Needs a "end reached so exit to game" command :)
+		* Add char 61 as the solid box before outro section headers
+	Andy says:
+		1. Outro animation sequences play, then fade to black.
+		2. We fade in "Hunter's Moon Remastered" - Big Font, split across 3 lines (lines 7, 11, and 15) - Hold for 175 frames, fade out
+		3. We fade in "A Thalamus Digital Production" - Big Font, split across 3 lines (lines 7, 11, and 15) - Hold for 175 frames, fade out
+		4. Credits text begins to scroll up from the bottom of the screen - Small Font, each "title" prefaced with the square character (char 0). LEFT JUSTIFIED.
+
+
+
+* Try to fade the music during the final transitions from the end of the intro and also the outro anim to the credits scroll
+
+
+* I think holding the outro for a couple of seconds is feasible
+
+
+
+* Cyberload localization should be doable too
+
+
+
+* Intro music during credits roll
+
+
+
+* Intro music end detection
+
+
+
+* Added intro_font_v01_apost_round.ctm
+
+
+
+* NTSC timings adjustment - Div/conv tab
+
+
+* Use PreBoot_VideoMode and move the detection code into the boot loader
+	* Move DetectVideoType to a library
+	* Move MVideoTypeNeedSkipFrame
+	* Rename VideoTypeIsPAL to VideoMode_IsPAL
+
+
+* Video mode spec set in the boot code
+
+
+
+* Fire exit early to back game during the intro/outro (except during the Thalamus logo)
+
+
+
+* Added the option to ignore the early out fire test until EarlyOutCheckEnable is set
+	* Intro - After the Thalamus logo
+	* Outro - After the panel text starts displaying
+
+
+* Added newline pause for the outro panel text
+
+
+
+* Delay fade up the lines of text for the outro final panel
+
+
+
+* Added new loading screen
+
+
+* Added ExitToGame_VolumeFadeOutCheckFromWhiteFullScreen for the outro scroll click
+
+
+
+* Optimisation for completely empty delta frame, output two 0 escape bytes instead of 8F B1 B6 8F 00:
+	Update the decompression code to spot this special case.
+
+	Before:
+		C:\Work\C64\AnimationBitmap>ConvPrint.bat
+		Panel 1
+					 150 File(s)         64,220 bytes
+		Panel 2
+					 150 File(s)         40,120 bytes
+		Panel 3
+					 150 File(s)         26,981 bytes
+		Panel 4
+					 150 File(s)         43,112 bytes
+		Panel 5
+					 150 File(s)         33,710 bytes
+		Panel 6
+					 150 File(s)         34,895 bytes
+		Static screens
+					   4 File(s)         14,415 bytes
+		Outro
+					 480 File(s)         82,139 bytes
+		Total
+					1384 File(s)        339,592 bytes
+	After:
+		Panel 1
+					 150 File(s)         64,220 bytes
+		Panel 2
+					 150 File(s)         40,120 bytes
+		Panel 3
+					 150 File(s)         26,801 bytes
+		Panel 4
+					 150 File(s)         43,007 bytes
+		Panel 5
+					 150 File(s)         33,674 bytes
+		Panel 6
+					 150 File(s)         34,856 bytes
+		Static screens
+					   4 File(s)         14,415 bytes
+		Outro
+					 480 File(s)         81,668 bytes
+		Total
+					1384 File(s)        338,761 bytes
+	Saved: 831 bytes
+
+
+
+* Yeah, that Thalamus non-skip was intentional for some reason - probably pre-cyberload. You could remove it, if you like.
+
+
+
+* Intro:
+	Typo in “Looks like I spoke to soon.”
+	Correct: “Looks like I spoke too soon.”
+
+
+
+* Small bug in the intro. Pressing fire on the "code, design and graphics Martin Walker" text screen results in the next animation fading up and down quickly before it goes to the game
+
+
+
+* Incidentally, if I skip while the intro text is being rolled out (before the animation appears), the animation fades up then the whole screen fades out. Is that the only way it can be done?

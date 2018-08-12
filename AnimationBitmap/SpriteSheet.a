@@ -1,0 +1,115 @@
+!zn
+.spriteMSB !by %1 , %10 , %100 , %1000 , %10000 , %100000 , %1000000 , %10000000
+.spriteEnable !by 0 , %1 , %11 , %111 , %1111 , %11111 , %111111 , %1111111 , %11111111
+
+ProcessSpriteSheetInfo
+	ldx #0	; Sprite index
+	stx VIC2SpriteXMSB
+	stx VIC2SpriteEnable
+
+	; Read the header for the sprte colours
+	ldy #0
+	lda ($02),y
+;	lda #VIC2Colour_Purple
+	sta VIC2ExtraSpriteColour1
+	iny
+	lda ($02),y
+;	lda #VIC2Colour_Purple
+	sta VIC2ExtraSpriteColour2
+
+	; Skip the header
+	lda $02
+	clc
+	adc #2
+	sta $02
+	bcc .dl1
+	inc $03
+
+.dl1
+	ldy #0
+	lda ($02),y
+	bpl .dl2
+
+.enableSprites
+	lda .spriteEnable,x
+	sta VIC2SpriteEnable
+
+;	jsr DebugSpriteDisplayTest
+	rts
+
+.dl2
+;	lda #VIC2Colour_Purple
+	sta VIC2Sprite0Colour,x
+	iny
+	lda ($02),y
+	sta $bf8,x
+	sta $4bf8,x
+	; Also the fading colour screens
+!ifdef SpriteSheetFadeScreenPointers {
+	sta .sma+1
+	lda EnableSplitScreen
+	beq .noSplit
+.sma lda #0
+	sta $3bf8,x
+	sta $7bf8,x
+.noSplit
+}
+	iny
+	lda ($02),y
+	sta $04
+	iny
+	lda ($02),y
+	sta $05
+	iny
+	lda ($02),y
+	sta $06
+
+	stx .smx+1
+
+	txa
+	asl
+	tax
+	lda $04
+	sta VIC2Sprite0X,x
+	lda $06
+	sta VIC2Sprite0Y,x
+
+.smx	ldx #0
+
+	lda $05
+	beq .noMSB
+	lda .spriteMSB,x
+	ora VIC2SpriteXMSB
+	sta VIC2SpriteXMSB
+.noMSB
+
+	inx
+	cpx #8
+	bcs .enableSprites
+
+	lda $02
+	clc
+	adc #5
+	sta $02
+	bcc .dl1
+	inc $03
+	jmp .dl1
+
+!zn
+DebugSpriteDisplayTest
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .noFire
+
+	lda #VIC2Colour_Purple
+	sta VIC2ExtraSpriteColour1
+	sta VIC2ExtraSpriteColour2
+
+	ldx #7
+.l1
+	sta VIC2Sprite0Colour,x
+	dex
+	bpl .l1
+
+.noFire
+	rts

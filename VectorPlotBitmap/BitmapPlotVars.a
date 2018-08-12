@@ -1,0 +1,39 @@
+; ZPBitmap_VarBase must be defined with a *zero page* base address for the Segments internal variables.
+; For example: ZPBitmap_VarBase	= $02
+
+; SpanTable_IsInCart must be defined before including this file is cartridge mode is to be used
+; Define SpanPlot_MaskEnds to cause the bitmap line plot mode to mask out any unaligned line ends
+
+ZPBitmap_CurrentPos			= ZPBitmap_VarBase + $00
+ZPBitmap_CurrentYPos		= ZPBitmap_VarBase + $02
+ZPBitmap_Colour				= ZPBitmap_VarBase + $03
+ZPBitmap_ColourMasked		= ZPBitmap_VarBase + $04
+ZPBitmap_SegmentsThisScan	= ZPBitmap_VarBase + $05
+ZPBitmap_Palette			= ZPBitmap_VarBase + $06
+
+ZPBitmap_endVars			= ZPBitmap_VarBase + $08
+
+!ifndef kSpanPlot_maxLen {
+!ifdef SpanTable_IsInCart {
+kSpanPlot_maxLen	= VIC2ScreenCharsWidth*4
+} else {
+kSpanPlot_maxLen	= 64
+}
+}
+
+!ifndef kSpanPlot_maxHeight {
+kSpanPlot_maxHeight	= VIC2ScreenCharsHeight*8
+}
+
+!ifndef kSpanCalc_maxSegments {
+kSpanCalc_maxSegments	= 8
+}
+
+!ifdef SpanTable_IsInCart {
+SpanConfigOffset_0	= 0
+SpanConfigSize_0	= 99
+SpanConfigOffset_1	= SpanConfigSize_0
+SpanConfigSize_1	= 50
+SpanConfigOffset_2	= SpanConfigOffset_1 + SpanConfigSize_1
+SpanConfigSize_2	= kSpanPlot_maxLen - SpanConfigOffset_2
+}

@@ -1,0 +1,20 @@
+!if .chunkOffset + .chunkSize > (kSpanPlot_maxLen+1) {
+	!error "Cannot generate more than kSpanPlot_maxLen spans"
+}
+
+!for .tlen , .chunkSize {
+	!set .len = .tlen + .chunkOffset
+	!set .t = *
+	* = .theSpanTab_lo + .len - 1
+	!by <.t
+	* = .theSpanTab_hi + .len - 1
+	!by >.t
+	* = .t
+	!source "GenericSpan.a"
+}
+
+!ifdef SpanTable_IsInCart {
+!if * >= C64Cartridge_Lo_8K + kSize_8K {
+	!error "Code too large"
+}
+}

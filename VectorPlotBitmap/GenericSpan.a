@@ -1,0 +1,131 @@
+!set .pix		= 0
+
+!if .pixIn = 1 {
+!set .mask		= %00111111
+!set .pix		= 3
+}
+!if .pixIn = 2 {
+!set .mask		= %00001111
+!set .pix		= 2
+}
+!if .pixIn = 3 {
+!set .mask		= %00000011
+!set .pix		= 1
+}
+
+!set .lastOffset = 0
+!set .nextOffset = 0
+!set .doAdvance = 0
+
+!set .remain = .len - .pix
+
+!if .pix > 0 {
+	!if .remain > 0 {
+		sta ZPBitmap_Colour
+	}
+	+Span_mask .mask
+	; This is a special case where the start of the line is also the end so any existing screen data needs to be removed
+	!ifdef SpanPlot_MaskEnds {
+		!if .remain = -1 {
+			and #%11111100
+		}
+		!if .remain = -2 {
+			and #%11110000
+		}
+		!if .remain = -3 {
+			and #%11000000
+		}
+	}
+	sta (ZPBitmap_CurrentPos),y
+
+	!set .nextOffset = 8
+	!set .doAdvance = 1
+}
+
+!if .remain < 0 {
+	!set .remain = 0
+}
+
+!if .remain > 0 {
+!if .pix > 0 {
+	lda ZPBitmap_Colour
+}
+}
+
+!if (.pixIn + .len) < 4 {
+	!set .nextOffset = 0
+	!set .doAdvance = 0
+}
+
+!set .fourPixelChunks = .remain / 4
+
+!if .fourPixelChunks > 0 {
+	!set .doAdvance = 1
+	!for .i , .fourPixelChunks {
+		!if .nextOffset < .lastOffset {
+			inc ZPBitmap_CurrentPos+1
+		}
+		!if .nextOffset != .lastOffset {
+			ldy #<.nextOffset
+		}
+		sta (ZPBitmap_CurrentPos),y
+		!set .lastOffset = .nextOffset
+		!set .nextOffset = <(.nextOffset + 8)
+		!set .remain = .remain - 4
+	}
+}
+
+!if .remain >= 4 {
+	!error ".remain is wrong"
+}
+
+!if .remain > 0 {
+	!ifdef SpanPlot_MaskEnds {
+		!if .remain = 1 {
+			and #%11000000
+		}
+		!if .remain = 2 {
+			and #%11110000
+		}
+		!if .remain = 3 {
+			and #%11111100
+		}
+	}
+	!if .nextOffset < .lastOffset {
+		inc ZPBitmap_CurrentPos+1
+	}
+	!if .nextOffset != .lastOffset {
+		ldy #.nextOffset
+	}
+	sta (ZPBitmap_CurrentPos),y
+	!set .lastOffset = .nextOffset
+}
+
+!if .doAdvance > 0 {
+!if .nextOffset > 0 {
+	!if .nextOffset < .lastOffset {
+		inc ZPBitmap_CurrentPos+1
+	}
+	!if .nextOffset = .lastOffset {
+		tya
+	} else {
+		lda #.nextOffset
+	}
+	+Span_end
+}
+}
+
+!set .alignment = (.pixIn + .len) & %11
+
+!if .alignment = 0 {
+	jmp Bitmap_SpanRet0
+}
+!if .alignment = 1 {
+	jmp Bitmap_SpanRet1
+}
+!if .alignment = 2 {
+	jmp Bitmap_SpanRet2
+}
+!if .alignment = 3 {
+	jmp Bitmap_SpanRet3
+}

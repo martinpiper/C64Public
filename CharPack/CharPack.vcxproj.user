@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-bitmap -m TestScreen.bmp 4 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-forceordering -reducebitmapchange c:\temp\t.scr c:\temp\t.col -spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2b.bin c:\temp\t2b.scr c:\temp\t2b.col</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-c64remap 7 15 -c64remap 3 11 -c64remap 9 11 -c64remap 15 12 ..\Animation\RawFrames5\frm00011.bmp 1 11 12 c:\temp\t.chr c:\temp\t.scr c:\temp\t.col</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-forceordering -reducebitmapchange c:\temp\t.scr c:\temp\t2.col -spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2b.bin c:\temp\t2b.scr c:\temp\t2b.col</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

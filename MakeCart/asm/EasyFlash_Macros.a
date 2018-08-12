@@ -1,6 +1,7 @@
 !source "../MakeCart/asm/EasyFlash.a"
 
 CART_SELECT_BANK	= EASYFLASH_BANK
+CART_SELECT_BANK_KILL	= $7f
 
 !macro MACRO_CartKillBank {
 	; On other cart types this control write is ignored or used as a bank select

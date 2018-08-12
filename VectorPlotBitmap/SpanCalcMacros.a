@@ -1,0 +1,6 @@
+!macro MakeBitcolour .col {
+	!by .col | (.col << 2) | (.col << 4) | (.col << 6)
+}
+!macro MakeBitcolour2 .col1 , .col2 {
+	!by .col1 | (.col2 << 2) | (.col1 << 4) | (.col2 << 6)
+}

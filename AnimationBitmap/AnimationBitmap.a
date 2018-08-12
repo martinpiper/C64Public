@@ -1,94 +1,1603 @@
 ; Bitmap animation test code
 
 !source "../stdlib/stdlib.a"
+!source "../stdlib/VideoModes_Macros.a"
+
 !to "AnimationBitmap.prg", cbm
 !sal
 !sl "AnimationBitmap.map"
 !svl "AnimationBitmap.lbl"
+!pdb "AnimationBitmap.pdb"
 !cpu 6510
 !ct pet
+!initmem %10100101
 
-!source "../MakeCart/asm/EasyFlash.a"
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortDefault
+
+DeltaDecompression_ZP_DeltaFrameLoHi = $10
+
+TextScreen1 = $a000
+TextScreen2 = $a400
+TextScreenChars	= $a800
+
+
+OutroFrameStart = 904
+
+!source "../MakeCart/asm/GMod2_Macros.a"
+;!source "../MakeCart/asm/EasyFlash_Macros.a"
 !source "../Animation/DeltaDecompressionMacros.a"
 
 BGColour = 0
 UseCartBanks = 1
-StartCartBank = 4
+StartCartBank = 22
+
+; Define this to clear memory before each panel is displayed
+ClearAnimationMemoryBeforePanels = 1
+
+; Define this if DeltaCompression uses -nofirstframe or -emptyframebuffer
+UseEmptyBuffers = 1
+
+; Define this if \CharPack.exe uses -sheetframes and -sheetinfo
+SpriteSheetInfoBankOffset = $1000
+SpriteSheetFadeScreenPointers = 1
+
+; Define this to stop looping the animation
+NoLoopAnimation = 1
+HoldLastFrame = 1
+
+
+; MaxCartBank should equal the bank number after the last bank displayed by MakeCart for the animation delta data
 ;MaxCartBank = 63
 ;MaxCartBank = 14
 ;MaxCartBank = 53
-MaxCartBank = 33
+;MaxCartBank = 33
+;MaxCartBank = $b
+;MaxCartBank = 6
+;MaxCartBank = 7
+;MaxCartBank = 11
+;MaxCartBank = 8
+;MaxCartBank = 35
+;MaxCartBank = 21
+;MaxCartBank = 17
+;MaxCartBank = 15
+;MaxCartBank = 14
+MaxCartBank = 63
 !macro DeltaDecompression_AddressTweak {
 	clc
 	adc #4
 }
 ScreenColour = VIC2Colour_Black
 
+FadeCodeActive = 1
 
-*=$c000
+!source "GameToAnimationDefines.a"
+
+* = $c000
 	sei
-	lda #ProcessorPortDefault
+	lda #CartSelectBank_ProcessorPort
 	jsr InitialiseMachine
 
 ;	+WaitForFire_A
+	ldx PreBoot_LanguageSelect
+	beq .itIsEnglishYippee
 
-	lda #EASYFLASH_CONTROL_16K
-	sta EASYFLASH_CONTROL
-	lda #4
-	sta EASYFLASH_BANK
+	lda TextLookupTableLo-1,x
+	ldy TextLookupTableHi-1,x
+	tax
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY TotalTextStart
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY TotalTextEndMax - TotalTextStart
+	jsr MemoryCopy_ForSize
+
+.itIsEnglishYippee
 
 	lda #ScreenColour
 	sta VIC2ScreenColour
 	sta VIC2BorderColour
-	lda #VIC2ScreenControlHDefault | %10000
-	sta VIC2ScreenControlH
 	lda #%00101000
 	sta VIC2MemorySetup
 ;	lda #VIC2ScreenControlVDefault | %100000
 ;	sta VIC2ScreenControlV
+	lda #VIC2ScreenControlHDefault | %10000
+	sta IRQVIC2ScreenControlH
 
-	lda #%10
-	sta CIA2PortASerialBusVICBank
+	lda #$ff
+	sta VIC2SpriteMulticolour
 
-	+MDeltaDecompression_CopyColours $4400
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+	+MWordValueTo_XY HuntersIntroMusic
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY RealMusicStart
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY HuntersIntroMusicSize
+	jsr MemoryCopy_ForSize
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Intro
+	bne .notIntro2
+	jsr $b000
+	jmp .skipCopy
+.notIntro2
+	+MWordValueTo_XY HuntersGameCompleteMusic
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY RealMusicStart
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY HuntersGameCompleteMusicSize
+	jsr MemoryCopy_ForSize
+.skipCopy
+	lda #CartSelectBank_ProcessorPort
+	sta ZPProcessorPort
 
 	jsr DeltaDecompression_InitZP
 
-	; Sync the start of IRQs and the mainline
+	+MACROAckAllIRQs_A
+	lda #0
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQScreenTop , IRQServiceRoutineLo
+	lda #1
+	sta VIC2InteruptControl
+	cli
+
+.cleanLoopFromStart
 	+MACROWaitForTheLastScanPlus1_A
-	lda #VIC2ScreenControlVDefault | %100000
-	sta VIC2ScreenControlV
+	lda #0
+	sta EnableSplitScreen
+	sta IRQVIC2ScreenControlV
+
+!ifdef FadeCodeActive {
+	lda #7
+	sta FadeValue
+	ldx #<Timeline_Events
+	ldy #>Timeline_Events
+	jsr Timeline_Init
+}
+
+!ifdef NoLoopAnimation {
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+}
+
+.startDisplayingData
+
+!ifdef UseCartBanks {
+	jsr DeltaDecompression_ResetFrame
+	jsr AnimationRestoreCartBank
+}
+
+	jsr AnimationKillCartBank
+
+	lda #0
+	sta DeltaDecompression_End
+	sta IRQ_targetFrame
+	sta IRQ_targetFrame+1
+	jsr DeltaDecompression_ResetFrameCount
+
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Intro
+	beq .isIntro
+	jmp .notIntro
+.isIntro
+	inc EarlyOutCheckEnable
+
+!ifndef RemoveFadesAndWaits {
+	ldy #BeforeThalamusLogoDelay
+	jsr AnimationWaitForFrames
+}
+
+	lda #1
+	sta IRQFlagAlsoBorderColour
+	; Display the Logo char screen, it is one time usage since the same memory is used for the animation playback
+
+	+MWordValueTo_XY ThalamusLogoScreen
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY $400
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY VIC2ScreenCharsWidth * VIC2ScreenCharsHeight
+	jsr MemoryCopy_ForSize
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #CIA2PortASerialBusVICBank_Bank0
+	sta IRQCIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault
+	sta IRQVIC2ScreenControlV
+	lda #VIC2Colour_Black
+	sta IRQVIC2ScreenColour
+	sta IRQVIC2ExtraBackgroundColour1
+	sta IRQVIC2ExtraBackgroundColour2
+	+MVIC2MemorySetup_ScreenChar_A $400 , $800
+	sta IRQVIC2MemorySetup
+	+MDeltaDecompression_CopyColours ThalamusLogoColours
+
+	jsr AnimationKillCartBank
+	ldx #0
+.tlf1
+	jsr AnimationWaitForFrame
+	jsr AnimationWaitForFrame
+	jsr AnimationDoGreyFadeStep
+	inx
+	cpx #6
+	bne .tlf1
+
+!ifndef RemoveFadesAndWaits {
+	ldy #ThalamusLogoDelay
+	jsr AnimationWaitForFrames
+}
+
+	ldx #5
+.tlf2
+	jsr AnimationWaitForFrame
+	jsr AnimationWaitForFrame
+	jsr EarlyOutVolumeFadeOutCheck
+	jsr AnimationDoGreyFadeStep
+	dex
+	bpl .tlf2
+
+!ifdef NoLoopAnimation {
+	jsr ClearAnimationMemory
+}
+
+	lda #0
+	sta IRQFlagAlsoBorderColour
+
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	; Thalamus presents
+!ifndef RemoveFadesAndWaits {
+	ldy #BeforeThalamusPresentsDelay
+	jsr AnimationWaitForFrames
+}
+	jsr AnimationClearFullTextScreen
+!set .testScreenPlotPos = TextScreen2 + (ThalamusPresentsYPos1 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX CreditsText_textTest0
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (ThalamusPresentsYPos2 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX CreditsText_textTest1
+	jsr FontPlot2x2_EntryCentered
+	jsr AnimationFadeUpFullTextScreen
+!ifndef RemoveFadesAndWaits {
+	ldy #ThalamusPresentsDelay
+	jsr AnimationWaitForFrames
+}
+	jsr AnimationFadeDownFullTextScreen
+
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	; A Martin Walker game
+!ifndef RemoveFadesAndWaits {
+	ldy #BeforeMartinWalkerGameDelay
+	jsr AnimationWaitForFrames
+}
+	jsr AnimationClearFullTextScreen
+!set .testScreenPlotPos = TextScreen2 + (MartinWalkerGameYpos1 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX CreditsText_textTest2
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (MartinWalkerGameYpos2 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX CreditsText_textTest3
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (MartinWalkerGameYpos3 * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX CreditsText_textTest4
+	jsr FontPlot2x2_EntryCentered
+	jsr AnimationFadeUpFullTextScreen
+!ifndef RemoveFadesAndWaits {
+	ldy #MartinWalkerGameDelay
+	jsr AnimationWaitForFrames
+}
+	jsr AnimationFadeDownFullTextScreen
+
+!ifndef RemoveFadesAndWaits {
+	ldy #BeforeHuntersMoonLogoDelay
+	jsr AnimationWaitForFrames
+}
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	jsr AnimationDisplayFullScreenLogoWithFadeUp
+
+	; Try some twinkling stars
+!if 0 {
+	; Backup
+	+MWordValueTo_XY $440
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY $1000
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY StarFrames_Size
+	jsr MemoryCopy_ForSize
+
+	+MWordValueTo_XY StarFrames_Start
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY $440
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY StarFrames_Size
+	jsr MemoryCopy_ForSize
+
+	lda #%11111111
+	sta VIC2SpriteEnable
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_Blue
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_LightBlue
+	sta VIC2ExtraSpriteColour2
+	lda #VIC2Colour_White
+	sta VIC2Sprite0Colour
+	sta VIC2Sprite1Colour
+	sta VIC2Sprite2Colour
+	sta VIC2Sprite3Colour
+	sta VIC2Sprite4Colour
+	sta VIC2Sprite5Colour
+	sta VIC2Sprite6Colour
+	sta VIC2Sprite7Colour
+
+	lda #64
+	sta VIC2Sprite0X
+	lda #64
+	sta VIC2Sprite0Y
+
+	lda #128
+	sta VIC2Sprite1X
+	lda #100
+	sta VIC2Sprite1Y
+
+	lda #128
+	sta VIC2Sprite2X
+	lda #100
+	sta VIC2Sprite2Y
+
+	lda #148
+	sta VIC2Sprite3X
+	lda #200
+	sta VIC2Sprite3Y
+
+	lda #198
+	sta VIC2Sprite4X
+	lda #80
+	sta VIC2Sprite4Y
+
+	lda #48
+	sta VIC2Sprite5X
+	lda #64
+	sta VIC2Sprite5Y
+
+	lda #245
+	sta VIC2Sprite6X
+	lda #180
+	sta VIC2Sprite6Y
+
+	lda #190
+	sta VIC2Sprite7X
+	lda #140
+	sta VIC2Sprite7Y
+
+	lda #0
+	sta VIC2SpriteXMSB
+
+	+MVIC2SpriteIndex_A $400
+	sta $c00 + SPRITEFRAMESCROFF
+	sta $c00 + SPRITEFRAMESCROFF + 1
+	sta $c00 + SPRITEFRAMESCROFF + 2
+	sta $c00 + SPRITEFRAMESCROFF + 3
+	sta $c00 + SPRITEFRAMESCROFF + 4
+	sta $c00 + SPRITEFRAMESCROFF + 5
+	sta $c00 + SPRITEFRAMESCROFF + 6
+	sta $c00 + SPRITEFRAMESCROFF + 7
+}
+
+!ifndef RemoveFadesAndWaits {
+	ldy #128
+;	jsr AnimationWaitForFramesWithTwinke
+	jsr AnimationWaitForFrames
+	ldy #HuntersMoonLogoDelay-128
+;	jsr AnimationWaitForFramesWithTwinke
+	jsr AnimationWaitForFrames
+}
+
+!if 0 {
+	lda #0
+	sta VIC2SpriteEnable
+	; Restore
+	+MWordValueTo_XY $1000
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY $440
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY StarFrames_Size
+	jsr MemoryCopy_ForSize
+}
+
+	jsr AnimationDisplayFullScreenLogoWithFadeDown
+
+	jsr AnimationClearLowerTextArea
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+.notIntro
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Outro
+	bne .notOutro
+
+	jsr ClearAnimationMemory
+	jsr AnimationBlankScreen
+	jsr AnimationClearLowerTextArea
+
+.advanceLoop1
+
+	jsr AnimationRestoreCartBank
+	jsr DeltaDecompression_AdvanceFrameAddr
+	jsr DeltaDecompression_AdvanceFrameCount
+	jsr AnimationKillCartBank
+
+	lda DeltaDecompression_Displaying
+	cmp #<OutroFrameStart
+	bne .advanceLoop1
+
+	lda DeltaDecompression_Displaying+1
+	cmp #>OutroFrameStart
+	bne .advanceLoop1
+
+	ldx #<Timeline_EventsOutro
+	ldy #>Timeline_EventsOutro
+	jsr Timeline_Init
+
+.notOutro
+
+	; Now sync the timings
+	jsr AnimationSyncTimings
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
 
 .fr1
+	lda IRQScreenTop_EarlyExit
+	beq .noEarlyOut1
+	lda #1
+	sta TriggerVolumeFadeOut
+	dec FadeValue
+	bpl .noEarlyOut1
+	lda #0
+	sta FadeValue
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Outro
+	beq .doNextPart
+	jmp ExitToGame_AlreadyBlackVolumeFadeOut
+.doNextPart
+	jmp .holdLastFrame
+.noEarlyOut1
+	jsr Timeline_Check
+	jsr AnimationProcess1x1Text
+
+!ifdef NoLoopAnimation {
+	lda DeltaDecompression_End
+!ifdef HoldLastFrame {
+	beq .oholdLastFrame
+	jmp .holdLastFrame
+.oholdLastFrame
+} else {
+	bne .startDisplayingData
+}
+}
+
 	ldx #<$400
 	ldy #>$400
 	jsr RNXPCompressionDecompressDeltaRLE_InitStore
-	jsr DeltaDecompression_UnpackFrame
+	jsr DeltaDecompression_UnpackFrameEx
+!ifdef NoLoopAnimation {
+!ifdef HoldLastFrame {
+	lda DeltaDecompression_End
+	beq .oholdLastFrame1
+	jmp .holdLastFrame
+.oholdLastFrame1
+}
+}
+	jsr DeltaDecompression_AdvanceFrameCount
 
-	+MACROWaitForTheLastScanPlus1_A
-	lda #%11
-	sta CIA2PortASerialBusVICBank
-	lda #VIC2ScreenControlVDefault | %100000
-	sta VIC2ScreenControlV
+!ifdef FadeCodeActive {
+	ldx FadeValue
+	cpx #7
+	beq .noFade1
+	jsr FadeScreen_CalculateStep
+	jsr FadeScreen_Draw
+.noFade1
+}
 
-	+MDeltaDecompression_CopyColours $400
+	jsr WaitForIRQFrameTarget
+	jsr EnableSplitScreenUpperScreen0
+
+!ifdef FadeCodeActive {
+	ldx FadeValue
+	cpx #7
+	beq .noFade2
+	lda #%11101000
+	sta IRQVIC2MemorySetup
+.noFade2
+}
+
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<SpriteSheetInfoBankOffset
+	sta $02
+	lda #>SpriteSheetInfoBankOffset
+	sta $03
+	jsr ProcessSpriteSheetInfo
+}
+
+!ifdef FadeCodeActive {
+	ldx FadeValue
+	cpx #7
+	beq .noFade3
+	jsr FadeSprites
+	jsr DeltaDecompression_CopyColoursSmall_3400
+	jsr AnimationSetLowerTextAreaColourDuringFade
+	jmp .doneFadeUp1
+.noFade3
+}
+
+	jsr DeltaDecompression_CopyColoursSmall_400
+.doneFadeUp1
+
+
+;	+WaitForFire_A
+
+.nextFrame
+	jsr Timeline_Check
+	jsr AnimationProcess1x1Text
 
 	ldx #<$400
 	ldy #>$400
 	jsr RNXPCompressionDecompressDeltaRLE_InitStore
-	jsr DeltaDecompression_UnpackFrame
+	jsr DeltaDecompression_UnpackFrameEx
+!ifdef NoLoopAnimation {
+!ifdef HoldLastFrame {
+	lda DeltaDecompression_End
+	beq .oholdLastFrame2
+	jmp .holdLastFrame
+.oholdLastFrame2
+}
+}
+	jsr DeltaDecompression_AdvanceFrameCount
 
-	+MACROWaitForTheLastScanPlus1_A
+!ifdef FadeCodeActive {
+	ldx FadeValue
+	cpx #7
+	beq .noFade4
+	jsr FadeScreen_CalculateStep
+	jsr FadeScreen_Draw2
+.noFade4
+}
+
+	jsr WaitForIRQFrameTarget
 	lda #%10
-	sta CIA2PortASerialBusVICBank
+	sta IRQCIA2PortASerialBusVICBank
+	lda $4be8
+	sta IRQVIC2ScreenColour
 
-	+MDeltaDecompression_CopyColours $4400
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<($4000 + SpriteSheetInfoBankOffset)
+	sta $02
+	lda #>($4000 + SpriteSheetInfoBankOffset)
+	sta $03
+	jsr ProcessSpriteSheetInfo
+}
+
+!ifdef FadeCodeActive {
+	ldx FadeValue
+	cpx #7
+	beq .noFade5
+	jsr FadeSprites
+	jsr DeltaDecompression_CopyColoursSmall_7400
+	jsr AnimationSetLowerTextAreaColourDuringFade
+	jmp .doneFadeUp2
+.noFade5
+}
+
+	jsr DeltaDecompression_CopyColoursSmall_4400
+.doneFadeUp2
+
+
+;	+WaitForFire_A
 
 	jmp .fr1
+
+EnableSplitScreenUpperScreen0
+	lda #1
+	sta EnableSplitScreen
+
+EnableScreenOnly
+	lda #%11
+	sta IRQCIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta IRQVIC2ScreenControlV
+	lda $be8
+	sta IRQVIC2ScreenColour
+
+
+	lda #%00101000
+	sta IRQVIC2MemorySetup
+	rts
+
+
+!ifdef HoldLastFrame {
+!source "EndLogic.a"
+}
+
+
+
 
 !source "../stdlib/Initialise.a"
 
 !source "../Animation/DeltaDecompression.a"
 
-*=$400
+!ifdef SpriteSheetInfoBankOffset {
+!source "SpriteSheet.a"
+}
+
+!zn
+.wl1
+;	inc VIC2BorderColour
+WaitForIRQFrameTarget
+	+MACROWaitForTheLastScanPlus1_A
+	jsr AnimationProcess1x1Text
+	lda IRQ_targetFrame+1
+	cmp DeltaDecompression_Displaying+1
+	bcc .wl1	; Far ahead, so wait
+	beq.wl2
+	; Far behind
+	rts
+.wl2
+	lda IRQ_targetFrame
+	cmp DeltaDecompression_Displaying
+	bcc .wl1
+	rts
+
+
+; 15 fps for PAL
+.skipTabPAL !by 3,3,4
+; 20 fps for PAL
+;.skipTab !by 2,3,2,3
+.skipTabLenPAL = *-.skipTabPAL
+
+; 15 fps for NTSC
+.skipTabNTSC !by 4
+; 20 fps for PAL
+;.skipTab !by 3
+
+.skipTabLenNTSC = *-.skipTabNTSC
+
+.skipTabPos !by 0
+.skipCount !by 2
+IRQ_targetFrame !by 0,0
+
+EnableSplitScreen				!by 0
+IRQCIA2PortASerialBusVICBank	!by 0
+IRQVIC2ScreenControlH			!by 0
+IRQVIC2ScreenControlV			!by 0
+IRQVIC2ScreenColour				!by 0
+IRQVIC2ExtraBackgroundColour1	!by 0
+IRQVIC2ExtraBackgroundColour2	!by 0
+IRQFlagAlsoBorderColour			!by 0
+IRQVIC2MemorySetup				!by 0
+
+TriggerVolumeFadeOut	!by 0
+TriggerVolumeValue		!by 15
+
+TriggerVolumeCheck
+	lda TriggerVolumeFadeOut
+	bne .vol1
+	rts
+.vol1
+	lda TriggerVolumeValue
+	bpl .vol2
+	lda #0
+	sta SIDVolumeFilter
+	rts
+.vol2
+	lda TriggerVolumeValue
+	sta SIDVolumeFilter
+	dec TriggerVolumeValue
+	rts
+
+IRQScreenTop_frames !word 0
+IRQScreenTop_EarlyExit	!by 0
+IRQScreenTop
+	+MACROAckRasterIRQ_A
+;	inc VIC2BorderColour
+
+	lda IRQVIC2ScreenControlH
+	sta VIC2ScreenControlH
+	lda IRQCIA2PortASerialBusVICBank
+	sta CIA2PortASerialBusVICBank
+	lda IRQVIC2ScreenControlV
+	sta VIC2ScreenControlV
+
+	lda IRQVIC2ExtraBackgroundColour1
+	sta VIC2ExtraBackgroundColour1
+	lda IRQVIC2ExtraBackgroundColour2
+	sta VIC2ExtraBackgroundColour2
+
+	lda IRQVIC2ScreenColour
+	sta VIC2ScreenColour
+	ldx IRQFlagAlsoBorderColour
+	beq .noBorder
+	sta VIC2BorderColour
+.noBorder
+	lda IRQVIC2MemorySetup
+	sta VIC2MemorySetup
+
+	jsr DoEarlyOutCheck
+
+	dec .skipCount
+	bne .of1
+
+	lda PreBoot_VideoMode
+	cmp #kPreBoot_VideoMode_NTSC
+	beq .isNTSC1
+
+	ldx .skipTabPos
+	lda .skipTabPAL,x
+	sta .skipCount
+	inx
+	cpx #.skipTabLenPAL
+	bne .of2PAL
+	ldx #0
+.of2PAL
+	stx .skipTabPos
+	jmp .oisNTSC1
+
+.isNTSC1
+	ldx .skipTabPos
+	lda .skipTabNTSC,x
+	sta .skipCount
+	inx
+	cpx #.skipTabLenNTSC
+	bne .of2NTSC
+	ldx #0
+.of2NTSC
+	stx .skipTabPos
+
+.oisNTSC1
+
+
+	inc IRQ_targetFrame
+	bne .of1
+	inc IRQ_targetFrame+1
+.of1
+
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	jsr VideoTypeNeedSkipFrameIRQ
+	beq .skipFrame
+
+	inc IRQScreenTop_frames
+	bne .of3
+	inc IRQScreenTop_frames+1
+.of3
+
+	lda $fb
+	sta .smfb+1
+	lda $fc
+	sta .smfc+1
+	lda $fd
+	sta .smfd+1
+	lda $fe
+	sta .smfe+1
+	lda $ff
+	sta .smff+1
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Intro
+	beq .isIntro2
+	; outro music entry
+	jsr $b002
+	jmp .smfb
+.isIntro2
+	jsr $b005
+.smfb	lda #0
+	sta $fb
+.smfc	lda #0
+	sta $fc
+.smfd	lda #0
+	sta $fd
+.smfe	lda #0
+	sta $fe
+.smff	lda #0
+	sta $ff
+
+.skipFrame
+	jsr TriggerVolumeCheck
+	lda #CartSelectBank_ProcessorPort
+	sta ZPProcessorPort
+
+	lda EnableSplitScreen
+	beq .retIRQ
+
+	lda #VIC2SpriteYBorderTop + 98
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQScreenSplit , IRQServiceRoutineLo
+;	dec VIC2BorderColour
+
+.retIRQ
+	jmp MinimalIRQServiceRoutine
+
+EarlyOutCheckEnable !by 0
+DoEarlyOutCheck
+	lda EarlyOutCheckEnable
+	beq .noFire1
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .noFire1
+	lda #1
+	sta IRQScreenTop_EarlyExit
+.noFire1
+	rts
+
+VideoTypeNeedSkipFrameMainline
+	+MVideoMode_NeedSkipFrame PreBoot_VideoMode
+VideoTypeNeedSkipFrameIRQ
+	+MVideoMode_NeedSkipFrame PreBoot_VideoMode
+
+IRQScreenSplit
+	+MACROAckRasterIRQ_A
+;	inc VIC2BorderColour
+
+	lda #VIC2ScreenControlVDefault | %1100000
+	sta VIC2ScreenControlV
+
+;	lda #VIC2Colour_Black
+;	sta VIC2ScreenColour
+	lda #VIC2ScreenControlHDefault	; Note hires char mode
+	sta VIC2ScreenControlH
+	lda #%01
+	sta CIA2PortASerialBusVICBank
+	+MVIC2MemorySetup_ScreenChar_A TextScreen1 , TextScreenChars
+	sta VIC2MemorySetup
+
+	lda #VIC2SpriteYBorderTop + 98 + 8
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQScreenSplit2 , IRQServiceRoutineLo
+
+;	dec VIC2BorderColour
+
+	jmp MinimalIRQServiceRoutine
+
+IRQScreenSplit2
+	+MACROAckRasterIRQ_A
+;	inc VIC2BorderColour
+
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	lda #0
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQScreenTop , IRQServiceRoutineLo
+
+;	dec VIC2BorderColour
+
+	jmp MinimalIRQServiceRoutine
+
+!zn
+ClearAnimationMemory
+	ldx #0
+	txa
+	sta VIC2SpriteEnable
+	; Clear the whole memory area to prepare for the next animation run
+	ldy #>$0400
+	sty .smcb1+2
+.cl3
+.smcb1	sta $0400,x
+	dex
+	bne .cl3
+	inc .smcb1+2
+	bmi .ret		; (up to $8000)
+;	ldy .smcb1+2
+;	cpy #4+$d
+;	beq .cl4
+;	cpy #4+$4d
+;	beq .cl5
+	jmp .cl3
+.cl4
+	ldy #4+$1c
+	sty .smcb1+2
+	jmp .cl3
+.cl5
+	ldy #4+$5c
+	sty .smcb1+2
+	jmp .cl3
+.ret
+	rts
+
+!zn
+AnimationClearCOLOURRAM
+	; Last frame is always black, so just clear it :)
+	ldy #0
+	sty VIC2SpriteEnable
+.cl2
+	sta COLOURRAM,y
+	sta COLOURRAM+$100,y
+	sta COLOURRAM+$200,y
+	sta COLOURRAM+$300,y
+	dey
+	bne .cl2
+	rts
+
+!zn
+AnimationClearFullTextScreen
+	ldy #0
+	tya
+	sty VIC2SpriteEnable
+.cl2
+	sta TextScreen2,y
+	sta TextScreen2+$100,y
+	sta TextScreen2+$200,y
+	sta TextScreen2+$300,y
+	dey
+	bne .cl2
+	rts
+
+AnimationGetTwoFrames
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+	rts
+
+AnimationFadeAndWait0
+	jsr FadeScreen_CalculateStep
+	jsr FadeScreen_Full
+	+MACROWaitForTheLastScanPlus1_A
+	lda #%11
+	sta IRQCIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta IRQVIC2ScreenControlV
+	lda $fe8
+	sta IRQVIC2ScreenColour
+	+MVIC2MemorySetup_ScreenBitmap_A $c00 , $2000
+	sta IRQVIC2MemorySetup
+	+MDeltaDecompression_CopyColours $1000
+	rts
+
+AnimationFadeAndWait1
+	jsr FadeScreen_CalculateStep
+	jsr FadeScreen_Full2
+	+MACROWaitForTheLastScanPlus1_A
+	lda #%10
+	sta IRQCIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta IRQVIC2ScreenControlV
+	lda $4fe8
+	sta IRQVIC2ScreenColour
+	+MVIC2MemorySetup_ScreenBitmap_A $4c00 , $6000
+	sta IRQVIC2MemorySetup
+	+MDeltaDecompression_CopyColours $5000
+	rts
+
+AnimationFullScreenFadeUp
+	ldx #1
+	jsr AnimationFadeAndWait0
+	ldx #2
+	jsr AnimationFadeAndWait1
+	ldx #3
+	jsr AnimationFadeAndWait0
+	ldx #4
+	jsr AnimationFadeAndWait1
+	ldx #5
+	jsr AnimationFadeAndWait0
+	ldx #6
+	jsr AnimationFadeAndWait1
+	ldx #7
+	jsr AnimationFadeAndWait0
+	rts
+
+AnimationFullScreenFadeDown
+	jsr EarlyOutVolumeFadeOutCheck
+	ldx #6
+	jsr AnimationFadeAndWait1
+	ldx #5
+	jsr AnimationFadeAndWait0
+	ldx #4
+	jsr AnimationFadeAndWait1
+	ldx #3
+	jsr AnimationFadeAndWait0
+	ldx #2
+	jsr AnimationFadeAndWait1
+	ldx #1
+	jsr AnimationFadeAndWait0
+	ldx #0
+	jsr AnimationFadeAndWait1
+	ldx #0
+	jsr AnimationFadeAndWait0
+	rts
+
+AnimationBlankScreen
+	+MACROWaitForTheLastScanPlus1_A
+	lda #0
+	sta VIC2SpriteEnable
+	sta EnableSplitScreen
+	sta IRQVIC2ScreenControlV
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+
+	rts
+
+AnimationDisplayFullScreenLogoWithFadeUp
+	jsr AnimationBlankScreen
+	jsr AnimationGetTwoFrames
+	jmp AnimationFullScreenFadeUp
+
+
+AnimationDisplayFullScreenLogoWithFadeDown
+	jsr AnimationFullScreenFadeDown
+	+MACROWaitForTheLastScanPlus1_A
+	jsr ClearAnimationMemory
+	jmp AnimationBlankScreen
+
+
+!zn
+; Entry:
+; Y = Number of frames to wait for
+AnimationWaitForFramesNoEarlyOut
+.l2
+	+MACROWaitForTheLastScanPlus1_A
+	+MACROWaitForTheLastScan_A
+
+	jsr VideoTypeNeedSkipFrameMainline
+	beq .l2
+
+	dey
+	bne .l2
+	rts
+
+; Entry:
+; Y = Number of frames to wait for
+AnimationWaitForFrames
+.l1
+	+MACROWaitForTheLastScanPlus1_A
+	+MACROWaitForTheLastScan_A
+
+	lda IRQScreenTop_EarlyExit
+	bne .earlyOut1
+
+	jsr VideoTypeNeedSkipFrameMainline
+	beq .l1
+
+	dey
+	bne .l1
+.earlyOut1
+	rts
+
+AnimationWaitForFrame
+	ldy #1
+	jmp AnimationWaitForFrames
+
+
+!zn
+; Entry:
+; X = Grey fade step to use
+AnimationDoGreyFadeStep
+	lda GreyFadeColour1,x
+	sta IRQVIC2ExtraBackgroundColour1
+	lda GreyFadeColour2,x
+	sta IRQVIC2ExtraBackgroundColour2
+	lda GreyFadeScreenColour,x
+	sta IRQVIC2ScreenColour
+	rts
+
+FadeValue !by 7
+
+
+DeltaDecompression_UnpackFrameEx
+	jsr AnimationRestoreCartBank
+	jsr DeltaDecompression_UnpackFrame
+	jsr AnimationKillCartBank
+	rts
+
+AnimationKillCartBank
+	sei
+	+MACRO_CartKillBank
+	cli
+	rts
+
+AnimationRestoreCartBank
+	sei
+	jsr DeltaDecompression_GetBank
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	cli
+	rts
+
+AnimationCode_End = *
+
+
+!source "../stdlib/MemoryCopy.a"
+!source "FontPlot1x1.a"
+!source "FontPlot2x2.a"
+
+AnimationBitmapCode_End = *
+
+!if * >= $d000 {
+!error "Code is too large!"
+}
+
+!ifndef UseEmptyBuffers {
+* = $400
 !bin "Data/frm-0001.del"
+}
+
+
+* = $800
+!bin "Data\ThalamusLogo.chr"
+
+ThalamusLogoScreen
+!bin "Data\ThalamusLogo.scr"
+
+ThalamusLogoColours
+!bin "Data\ThalamusLogo.col"
+
+TextLookupTableLo
+	!by <TextFrenchStart , <TextGermanStart , <TextItalianStart , <TextSpanishStart
+TextLookupTableHi
+	!by >TextFrenchStart , >TextGermanStart , >TextItalianStart , >TextSpanishStart
+
+TextFrenchStart
+	!bin "Data\TextFrench.lng"
+TextFrenchEnd
+TextItalianStart
+	!bin "Data\TextItalian.lng"
+TextItalianEnd
+TextGermanStart
+	!bin "Data\TextGerman.lng"
+TextGermanEnd
+TextSpanishStart
+	!bin "Data\TextSpanish.lng"
+TextSpanishEnd
+
+
+; The text screen
+* = TextScreen1
+!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight, 0		; For the blank sprite and the rest of the screen
+
+* = TextScreen1 + SPRITEFRAMESCROFF
+!fill 8 , (TextScreen1 & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
+
+* = TextScreen2
+!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight, 0
+
+* = TextScreen2 + SPRITEFRAMESCROFF
+!fill 8 , (TextScreen1 & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
+
+
+* = TextScreenChars
+; 0 from the bitmap screen can be displayed as a transparent char
+; Easier than a completely stable split :)
+!fill 8 , 0
+!bin "intro_font_v01_apost_round.ctm" , $800-8 , $14+8
+
+* = $8000
+!zn
+!source "TextTableMacros.a"
+TotalTextStart
+!source "TextTable.a"
+!source "TextEnglish.a"
+TotalTextEnd
+TotalTextSize = TotalTextEnd - TotalTextStart
+
+
+* = $8800
+TotalTextEndMax
+!zn
+!source "TextTableNoTranslate.a"
+!source "TextEnglishNoTranslate.a"
+
+
+!if (TextFrenchEnd - TextFrenchStart) > (TotalTextEndMax - TotalTextStart) {
+	!error "French is too big, make TotalTextEndMax larger!"
+}
+!if (TextItalianEnd - TextItalianStart) > (TotalTextEndMax - TotalTextStart) {
+	!error "Italian is too big, make TotalTextEndMax larger!"
+}
+!if (TextGermanEnd - TextGermanStart) > (TotalTextEndMax - TotalTextStart) {
+	!error "German is too big, make TotalTextEndMax larger!"
+}
+!if (TextSpanishEnd - TextSpanishStart) > (TotalTextEndMax - TotalTextStart) {
+	!error "Spanish is too big, make TotalTextEndMax larger!"
+}
+
+
+!zn
+; Entry:
+; X = Fade value from 0-6
+.prevFadeValue !by 0
+AnimationSetLowerTextAreaColourDuringFade
+	lda EnableSplitScreen
+	beq .o1
+	lda FadeValue
+	tay
+	sec
+	sbc .prevFadeValue
+	sty .prevFadeValue
+	bpl .o1
+	ldx FadeValue
+	lda GreyFadeColourWhite-1,x
+	jsr AnimationSetLowerTextAreaColour
+.o1
+	rts
+
+DeltaDecompression_CopyColoursSmall_400
+	+MDeltaDecompression_CopyColoursSmall $400
+	rts
+
+DeltaDecompression_CopyColoursSmall_3400
+	+MDeltaDecompression_CopyColoursSmall $3400
+	rts
+
+DeltaDecompression_CopyColoursSmall_4400
+	+MDeltaDecompression_CopyColoursSmall $4400
+	rts
+
+DeltaDecompression_CopyColoursSmall_7400
+	+MDeltaDecompression_CopyColoursSmall $7400
+	rts
+
+FadeSprites
+	ldx VIC2ExtraSpriteColour1
+	lda FadeScreen_Table,x
+	sta VIC2ExtraSpriteColour1
+
+	ldx VIC2ExtraSpriteColour2
+	lda FadeScreen_Table,x
+	sta VIC2ExtraSpriteColour2
+
+!for .i , 8 {
+!set .ii = .i - 1
+	ldx VIC2Sprite0Colour + .ii
+	lda FadeScreen_Table,x
+	sta VIC2Sprite0Colour + .ii
+}
+	rts
+
+!source "Timeline.a"
+FadeScreen_TableColours
+!source "FadeTableColours.a"
+!source "FadeScreen.a"
+
+!zn
+AnimationSyncTimings
+	lda DeltaDecompression_Displaying
+	sta IRQ_targetFrame
+	lda DeltaDecompression_Displaying+1
+	sta IRQ_targetFrame+1
+	rts
+
+!zn
+.tempFullScreenFlag !by 0
+EnableFullScreenText
+	lda #0
+	sta EnableSplitScreen
+	+MACROWaitForTheLastScanPlus1_A
+	lda #VIC2ScreenControlHDefault		; Note hires char mode
+	sta IRQVIC2ScreenControlH
+	lda #CIA2PortASerialBusVICBank_Bank2
+	sta IRQCIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault
+	sta IRQVIC2ScreenControlV
+	+MVIC2MemorySetup_ScreenChar_A TextScreen2 , TextScreenChars
+	sta IRQVIC2MemorySetup
+	rts
+
+AnimationFadeUpFullTextScreen
+	lda EnableSplitScreen
+	sta .tempFullScreenFlag
+
+	jsr EnableFullScreenText
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+
+	jsr AnimationKillCartBank
+
+AnimationFadeUpFullTextScreenJustFade
+	ldx #0
+.tlf1
+	jsr AnimationWaitForFrame
+	jsr AnimationWaitForFrame
+	lda GreyFadeColourWhite,x
+	jsr AnimationClearCOLOURRAM
+	inx
+	cpx #6
+	bne .tlf1
+	rts
+
+
+AnimationFadeDownFullTextScreenJustFade
+	jsr EarlyOutVolumeFadeOutCheck
+	ldx #5
+.tlf2
+	jsr AnimationWaitForFrame
+	jsr AnimationWaitForFrame
+	lda GreyFadeColourWhite,x
+	jsr AnimationClearCOLOURRAM
+	dex
+	bpl .tlf2
+	rts
+
+AnimationFadeDownFullTextScreen
+	jsr AnimationFadeDownFullTextScreenJustFade
+	lda .tempFullScreenFlag
+	sta EnableSplitScreen
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #0
+	sta IRQVIC2ScreenControlV
+	lda #VIC2ScreenControlHDefault | %10000
+	sta IRQVIC2ScreenControlH
+	lda #VIC2Colour_Black
+	jsr AnimationClearCOLOURRAM
+	jsr AnimationSyncTimings
+	rts
+
+!zn
+ScrollTextScreenUp
+!for .y , VIC2ScreenCharsHeight-1 {
+	ldx #VIC2ScreenCharsWidth-1
+!set .l1 = *
+	lda TextScreen2 + (.y*VIC2ScreenCharsWidth),x
+	sta TextScreen2 + ((.y-1)*VIC2ScreenCharsWidth),x
+	dex
+	bpl .l1
+}
+	rts
+
+
+!zn
+kLowerTextAreaStartPos = (14 * VIC2ScreenCharsWidth)
+kLowerTextAreaStartPosForText = (15 * VIC2ScreenCharsWidth)
+AnimationClearLowerTextArea
+	; Initialise the white text area
+	ldx #VIC2ScreenCharsWidth-1
+	lda #0
+.cll1
+!for .row , 10 {
+	sta TextScreen1+kLowerTextAreaStartPos + ((.row-1) * VIC2ScreenCharsWidth),x
+}
+	dex
+	bpl .cll1
+
+	lda #VIC2Colour_White
+; Entry:
+; A = Colour to set to
+AnimationSetLowerTextAreaColour
+	ldx #VIC2ScreenCharsWidth-1
+.cll2
+!for .row , 10 {
+	sta COLOURRAM+kLowerTextAreaStartPos + ((.row-1) * VIC2ScreenCharsWidth),x
+}
+	dex
+	bpl .cll2
+
+	rts
+
+!zn
+; Entry:
+; A = Colour to set to
+; X/Y = lo/hi of COLOURRAM position
+ClearLineColourTo
+	stx .smc1+1
+	sty .smc1+2
+ClearLineColourToCachedAddress
+	ldx #VIC2ScreenCharsWidth-1
+.cll1
+.smc1	sta $1234,x
+	dex
+	bpl .cll1
+
+	rts
+
+FadeUpCachedLine
+	lda #VIC2Colour_DarkGrey
+	jsr ClearLineColourToCachedAddress
+	ldy #NewlineFadeUpDelay
+	jsr AnimationWaitForFrames
+	lda #VIC2Colour_Grey
+	jsr ClearLineColourToCachedAddress
+	ldy #NewlineFadeUpDelay
+	jsr AnimationWaitForFrames
+	lda #VIC2Colour_LightGrey
+	jsr ClearLineColourToCachedAddress
+	ldy #NewlineFadeUpDelay
+	jsr AnimationWaitForFrames
+	lda #VIC2Colour_White
+	jsr ClearLineColourToCachedAddress
+	ldy #NewlineDelayFor1x1Text
+	jsr AnimationWaitForFrames
+	rts
+
+!zn
+; Entry: A/X lo/hi of table start
+; Exit: A/X lo/hi of actual text string
+DoLookupLanguage_AX
+	sta .sm1+1
+	stx .sm1+2
+	sta .sm2+1
+	stx .sm2+2
+	ldy #0
+.sm1 lda $1234,y
+	iny
+.sm2 ldx $1234,y
+	rts
+
+
+!zn
+Animation1x1TextAddr	!word 0
+Animation1x1ScreenAddr	!word TextScreen1 + kLowerTextAreaStartPosForText
+.backupLineAddr			!word 0
+.delayCounter			!by 0
+AnimationProcess1x1Text
+	lda Animation1x1TextAddr+1
+	bne .gotSome1
+
+.ret
+	lda #0
+	sta Animation1x1TextAddr
+	sta Animation1x1TextAddr+1
+	sta .backupLineAddr
+	sta .backupLineAddr+1
+	sta .delayCounter
+	+MWordValueToAddress_A TextScreen1 + kLowerTextAreaStartPosForText , Animation1x1ScreenAddr
+	rts
+
+.gotSome1
+	sta .smTextChar+2
+	lda Animation1x1TextAddr
+	sta .smTextChar+1
+
+	lda .delayCounter
+	beq .noDelay1
+
+	dec .delayCounter
+	rts
+
+.noDelay1
+	lda Animation1x1ScreenAddr
+	sta .smScr+1
+	lda Animation1x1ScreenAddr+1
+	sta .smScr+2
+	ldx .backupLineAddr+1
+	bne .smTextChar
+	sta .backupLineAddr+1
+	lda Animation1x1ScreenAddr
+	sta .backupLineAddr
+
+.smTextChar lda $1234
+	cmp #$ff
+	beq .newline
+	cmp #$fe
+	beq .newlineWithDelay
+	cmp #0
+	beq .ret
+	cmp #$20	; Space
+	beq .skipSpace
+;	cmp #','
+;	beq .isComma
+	and #$3f
+
+.smScr	sta $1234
+.skipSpace
+	inc Animation1x1ScreenAddr
+	bne .o1
+	inc Animation1x1ScreenAddr+1
+.o1
+.advanceInputChar
+	inc Animation1x1TextAddr
+	bne .o2
+	inc Animation1x1TextAddr+1
+.o2
+	rts
+.newlineWithDelay
+	lda #NewlineDelayFor1x1Text
+	sta .delayCounter
+.newline
+	lda .backupLineAddr
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta .backupLineAddr
+	sta Animation1x1ScreenAddr
+	bcc .advanceInputChar
+	inc .backupLineAddr+1
+	lda .backupLineAddr+1
+	sta Animation1x1ScreenAddr+1
+	jmp .advanceInputChar
+
+;.isSomething
+;	lda #143+27
+;	jmp .smScr
+
+!source "TimelineEvents.a"
+
+!if 0 {
+StarFrames_Start
+!bin "StarFrames.spd" , 3*64 , $9
+StarFrames_Size = * - StarFrames_Start
+
+!zn
+; Entry:
+; Y = Number of frames to wait for
+.twinkleDelays	!by 10 , 40 , 100 , 96 , 150 , 200 , 240 , 220
+.twinkleCounter !fill 8 , 0
+.twinkleFrames !by $10 , $11 , $12 , $13 , $12 , $11 , $10
+AnimationWaitForFramesWithTwinke
+.l1
+	+MACROWaitForTheLastScanPlus1_A
+	+MACROWaitForTheLastScan_A
+
+	lda IRQScreenTop_EarlyExit
+	bne .earlyOut1
+
+	jsr VideoTypeNeedSkipFrameMainline
+	beq .l1
+
+	tya
+	pha
+
+	ldx #7
+.l2
+	lda .twinkleDelays,x
+	bne .l3
+
+	ldy .twinkleCounter,x
+	cpy #7
+	bcs .l3
+
+	lda .twinkleFrames,y
+	sta $c00 + SPRITEFRAMESCROFF,x
+
+	inc .twinkleCounter,x
+	jmp .l4
+.l3
+	dec .twinkleDelays,x
+.l4
+	dex
+	bpl .l2
+
+	pla
+	tay
+
+	dey
+	bne .l1
+.earlyOut1
+	rts
+}
+
+
+AnimationCodeUnderROM_End = *
+
+* = $b000
+RealMusicStart
+
+* = $e000
+!source "CreditsEvents.a"
+
+
+* = $4000
+!source "FingerPrint.a"
+HuntersGameCompleteMusic
+!bin "HuntersGameCompleteMusic.prg",,2
+HuntersGameCompleteMusicSize = *-HuntersGameCompleteMusic
+
+
+*= $d000
+HuntersIntroMusic
+!bin "HuntersNewIntroMusic+LoadingMG.prg",,2
+HuntersIntroMusicSize = *-HuntersIntroMusic

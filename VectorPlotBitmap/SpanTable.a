@@ -1,0 +1,51 @@
+SpanTab_lo_p0
+	* = * + kSpanPlot_maxLen
+SpanTab_lo_p1
+	* = * + kSpanPlot_maxLen
+SpanTab_lo_p2
+	* = * + kSpanPlot_maxLen
+SpanTab_lo_p3
+	* = * + kSpanPlot_maxLen
+
+SpanTab_hi_p0
+	* = * + kSpanPlot_maxLen
+SpanTab_hi_p1
+	* = * + kSpanPlot_maxLen
+SpanTab_hi_p2
+	* = * + kSpanPlot_maxLen
+SpanTab_hi_p3
+	* = * + kSpanPlot_maxLen
+
+!source "SpanMacros.a"
+
+!zn
+!set .pixIn			= 0
+!set .theSpanTab_lo	= SpanTab_lo_p0
+!set .theSpanTab_hi	= SpanTab_hi_p0
+!set .chunkOffset	= 0
+!set .chunkSize		= kSpanPlot_maxLen
+!source "SpanDrawGenerate.a"
+
+!zn
+!set .pixIn			= 1
+!set .theSpanTab_lo	= SpanTab_lo_p1
+!set .theSpanTab_hi	= SpanTab_hi_p1
+!set .chunkOffset	= 0
+!set .chunkSize		= kSpanPlot_maxLen
+!source "SpanDrawGenerate.a"
+
+!zn
+!set .pixIn			= 2
+!set .theSpanTab_lo	= SpanTab_lo_p2
+!set .theSpanTab_hi	= SpanTab_hi_p2
+!set .chunkOffset	= 0
+!set .chunkSize		= kSpanPlot_maxLen
+!source "SpanDrawGenerate.a"
+
+!zn
+!set .pixIn			= 3
+!set .theSpanTab_lo	= SpanTab_lo_p3
+!set .theSpanTab_hi	= SpanTab_hi_p3
+!set .chunkOffset	= 0
+!set .chunkSize		= kSpanPlot_maxLen
+!source "SpanDrawGenerate.a"

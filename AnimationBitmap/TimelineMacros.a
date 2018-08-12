@@ -1,0 +1,418 @@
+; For all these macros the <frame> value corresponds to the displayed animation frame.
+; Any pauses will not alter the displayed animation frame, the animation will effectively be paused during this time.
+; The <frame> numbers must be in ascending order.
+
+
+; Usually used to insert a terminating black event at the end of the events
+;	+Timeline_AddEvent_Blank 0
+!macro Timeline_AddEvent_Blank .frame {
+	!word .frame
+	!by 0
+}
+
+; At <frame> stores the byte <value> into <label>
+;	+Timeline_AddEvent_StoreData <frame> , <label> , <value>
+!macro Timeline_AddEvent_StoreData .frame , .addr , .value {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	lda #.value
+	sta .addr
+	rts
+
+!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> stores the word <value> into <label>
+;	+Timeline_AddEvent_StoreDataWord <frame> , <label> , <value>
+!macro Timeline_AddEvent_StoreDataWord .frame , .addr , .value {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	+MWordValueToAddress_A .value , .addr
+	rts
+
+!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; At <frame> trigger a screen fade up
+;	+DoFadeUpStart <frame>
+!macro DoFadeUpStart .start {
+!ifdef RemoveFadesAndWaits {
+	+Timeline_AddEvent_StoreData .start , FadeValue , 7
+} else {
+	+Timeline_AddEvent_StoreData .start , FadeValue , 1
+	+Timeline_AddEvent_StoreData .start+1 , FadeValue , 2
+	+Timeline_AddEvent_StoreData .start+2 , FadeValue , 3
+	+Timeline_AddEvent_StoreData .start+3 , FadeValue , 4
+	+Timeline_AddEvent_StoreData .start+4 , FadeValue , 5
+	+Timeline_AddEvent_StoreData .start+5 , FadeValue , 6
+	+Timeline_AddEvent_StoreData .start+6 , FadeValue , 7
+}
+}
+
+; For target end <frame> trigger a fade down, the fade down end at this frame time so starts earlier
+;	+DoFadeDownEnd <frame>
+!macro DoFadeDownEnd .end {
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_StoreData .end-6 , FadeValue , 6
+	+Timeline_AddEvent_StoreData .end-5 , FadeValue , 5
+	+Timeline_AddEvent_StoreData .end-4 , FadeValue , 4
+	+Timeline_AddEvent_StoreData .end-3 , FadeValue , 3
+	+Timeline_AddEvent_StoreData .end-2 , FadeValue , 2
+	+Timeline_AddEvent_StoreData .end-1 , FadeValue , 1
+	+Timeline_AddEvent_StoreData .end , FadeValue , 0
+}
+}
+
+
+; At <frame> trigger a text screen fade up, then delay for <number> of frames then fade down
+;	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown <frame> , <number>
+!macro Timeline_AddEvent_FullTextScreenFadeUpDelayDown .frame , .number {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	jsr ExitToGame_AlreadyBlackVolumeFadeOutCheck
+	jsr AnimationFadeUpFullTextScreen
+!ifndef RemoveFadesAndWaits {
+	ldy #.number
+	jsr AnimationWaitForFrames
+}
+	jsr AnimationFadeDownFullTextScreen
+	jmp ExitToGame_AlreadyBlackVolumeFadeOutCheck
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; At <frame> trigger a delay for <number> of frames
+;	+Timeline_AddEvent_Delay <frame> , <number>
+!macro Timeline_AddEvent_Delay .frame , .number {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!ifndef RemoveFadesAndWaits {
+	ldy #.number
+	jsr AnimationWaitForFrames
+}
+	jmp AnimationSyncTimings
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; Clears the full screen text screen at <frame>
+;	+Timeline_AddEvent_FullTextScreenClear <frame>
+!macro Timeline_AddEvent_FullTextScreenClear .frame {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	jmp AnimationClearFullTextScreen
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> and <y position> displays 1x1 font for the <text> label
+;	+Timeline_AddEvent_FullText1x1Screen1PosLine <frame> , <y position> , <text>
+!macro Timeline_AddEvent_FullText1x1Screen1PosLine .frame , .line1Pos , .line1 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!set .testScreenPlotPos = TextScreen2 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot1x1_SetScreen
+	+MWordValueTo_AX .line1
+	jmp FontPlot1x1_EntryCentered
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> and <y position> displays 2x2 font for the <text> label
+;	+Timeline_AddEvent_FullText2x2Screen1PosLine <frame> , <y position> , <text>
+!macro Timeline_AddEvent_FullText2x2Screen1PosLine .frame , .line1Pos , .line1 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!set .testScreenPlotPos = TextScreen2 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line1
+	jmp FontPlot2x2_EntryCentered
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> displays two 1x1 font lines at <y position1> for the <text1> and <y position2> for the <text2> label
+;	+Timeline_AddEvent_FullText1x1Screen2PosLine <frame> , <y position1> , <text1> , <y position2> , <text2>
+!macro Timeline_AddEvent_FullText1x1Screen2PosLine .frame , .line1Pos , .line1 , .line2Pos  , .line2 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!set .testScreenPlotPos = TextScreen2 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot1x1_SetScreen
+	+MWordValueTo_AX .line1
+	jsr FontPlot1x1_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (.line2Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot1x1_SetScreen
+	+MWordValueTo_AX .line2
+	jmp FontPlot1x1_EntryCentered
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> displays two 2x2 font lines at <y position1> for the <text1> and <y position2> for the <text2> label
+;	+Timeline_AddEvent_FullText2x2Screen2PosLine <frame> , <y position1> , <text1> , <y position2> , <text2>
+!macro Timeline_AddEvent_FullText2x2Screen2PosLine .frame , .line1Pos , .line1 , .line2Pos  , .line2 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!set .testScreenPlotPos = TextScreen2 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line1
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (.line2Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line2
+	jmp FontPlot2x2_EntryCentered
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+; At <frame> displays two 2x2 font lines at <y position1> for the <text1> and <y position2> for the <text2>  and <y position3> for the <text3> label
+;	+Timeline_AddEvent_FullText2x2Screen3PosLine <frame> , <y position1> , <text1> , <y position2> , <text2> , <y position3> , <text3>
+!macro Timeline_AddEvent_FullText2x2Screen3PosLine .frame , .line1Pos , .line1 , .line2Pos  , .line2 , .line3Pos  , .line3 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!set .testScreenPlotPos = TextScreen2 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line1
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (.line2Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line2
+	jsr FontPlot2x2_EntryCentered
+!set .testScreenPlotPos = TextScreen2 + (.line3Pos * VIC2ScreenCharsWidth)
+	jsr FontPlot2x2_SetScreen
+	+MWordValueTo_AX .line3
+	jmp FontPlot2x2_EntryCentered
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; Trigger lower screen split text to be displayed at <frame> with <text> label and clears the animation working memory
+;	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim <frame> , <text>
+!macro Timeline_AddEvent_TriggerLowerTextDisplayClearAnim .frame , .text {
+!set .a = *
+	!word .frame
+* = * + 1
+
+!ifdef ClearAnimationMemoryBeforePanels {
+	jsr ClearAnimationMemory
+}
+	+MWordValueTo_AX .text
+	jsr DoLookupLanguage_AX
+	sta Animation1x1TextAddr
+	stx Animation1x1TextAddr+1
+	jsr AnimationClearLowerTextArea
+	jmp AnimationSyncTimings
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; Trigger lower screen split text to be displayed at <frame> with <text> label
+;	+Timeline_AddEvent_TriggerLowerTextDisplay <frame> , <text>
+!macro Timeline_AddEvent_TriggerLowerTextDisplay .frame , .text {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	+MWordValueTo_AX .text
+	jsr DoLookupLanguage_AX
+	sta Animation1x1TextAddr
+	stx Animation1x1TextAddr+1
+	jmp AnimationClearLowerTextArea
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+; At <frame> pause while displaying just the lower panel text for <frames> count
+;	+Timeline_AddEvent_ProcessTextDisplayForFrames <frame> , <frames>
+!macro Timeline_AddEvent_ProcessTextDisplayForFrames .frame , .frames {
+!ifndef RemoveFadesAndWaits {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	jsr EnableSplitScreenUpperScreen0
+	; Empty fade colours for the top panel
+	lda #%11101000
+	sta IRQVIC2MemorySetup
+
+.pt1
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda IRQScreenTop_EarlyExit
+	bne .earlyOut1
+
+	jsr AnimationProcess1x1Text
+
+	jsr VideoTypeNeedSkipFrameMainline
+	beq .pt1
+
+	dec .framesRemaining
+	bne .pt1
+.earlyOut1
+	jsr ExitToGame_VolumeFadeOutCheckFromWhiteSplitTextScreen
+	jmp AnimationSyncTimings
+
+.framesRemaining !by .frames
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+}
+
+
+; At <frame> pause while displaying just the lower panel text for <frames> count
+;	+Timeline_AddEvent_ProcessTextDisplayForFramesNoInit <frame> , <frames>
+!macro Timeline_AddEvent_ProcessTextDisplayForFramesNoInit .frame , .frames {
+!ifndef RemoveFadesAndWaits {
+!set .a = *
+	!word .frame
+* = * + 1
+
+.pt1
+	+MACROWaitForTheLastScanPlus1_A
+	jsr AnimationProcess1x1Text
+
+	lda IRQScreenTop_EarlyExit
+	bne .earlyOut1
+
+	jsr VideoTypeNeedSkipFrameMainline
+	beq .pt1
+
+	dec .framesRemaining
+	bne .pt1
+
+.earlyOut1
+	jsr ExitToGame_VolumeFadeOutCheckFromWhiteSplitTextScreen
+	jmp AnimationSyncTimings
+
+.framesRemaining !by .frames
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+}
+
+; At <frame> trigger a wait for fire button to be pressed. Panel text is processed during this wait.
+;	+Timeline_AddEvent_WaitFire <frame>
+!macro Timeline_AddEvent_WaitFire .frame {
+!set .a = *
+	!word .frame
+* = * + 1
+
+.pt1
+	+MACROWaitForTheLastScanPlus1_A
+	jsr AnimationProcess1x1Text
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .pt1
+
+	jmp AnimationSyncTimings
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}
+
+
+
+; At <frame> and <y position> displays 1x1 font for the <text> label, with fade up effect
+;	+Timeline_AddEvent_PanelText1x1Screen1PosLineFadeUp <frame> , <y position> , <text>
+!macro Timeline_AddEvent_PanelText1x1Screen1PosLineFadeUp .frame , .line1Pos , .line1 {
+!set .a = *
+	!word .frame
+* = * + 1
+
+	+MWordValueTo_XY COLOURRAM + (.line1Pos * VIC2ScreenCharsWidth)
+	lda #VIC2Colour_Black
+	jsr ClearLineColourTo
+!set .testScreenPlotPos = TextScreen1 + (.line1Pos * VIC2ScreenCharsWidth)
+	+MWordValueTo_AX .testScreenPlotPos
+	jsr FontPlot1x1_SetScreen
+	+MWordValueTo_AX .line1
+	jsr FontPlot1x1_EntryCentered
+
+	jsr FadeUpCachedLine
+
+	jmp AnimationSyncTimings
+
+	!set .b = *
+* = .a+2
+	!by .b - .a
+* = .b
+}

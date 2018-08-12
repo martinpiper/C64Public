@@ -1,0 +1,7 @@
+; These variable declarations are to setup the storage used for this stub.
+
+CompressedDataStore		= $0800
+CompressedDataExecute	= $a000
+CompressedDataStart
+!bin "HMOrigBoot.cmp",,2
+CompressedDataEnd

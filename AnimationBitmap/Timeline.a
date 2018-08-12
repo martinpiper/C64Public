@@ -1,0 +1,58 @@
+!zn
+.currentTimeline !word 0
+; Entry:
+; X/Y = lo/hi timeline to execute
+Timeline_Init
+	stx .currentTimeline
+	sty .currentTimeline+1
+	rts
+
+; Entry:
+Timeline_Check
+	ldy .currentTimeline
+	sty $02
+	ldy .currentTimeline+1
+	sty $03
+
+.l1
+	ldy #0
+	lda ($02),y
+	cmp DeltaDecompression_Displaying
+	beq .maybeTime
+
+.ret
+	lda $02
+	sta .currentTimeline
+	lda $03
+	sta .currentTimeline+1
+
+	rts
+
+.maybeTime
+	iny
+	lda ($02),y
+	cmp DeltaDecompression_Displaying+1
+	beq .isTime
+	jmp .ret
+
+.isTime
+	iny
+	lda ($02),y
+	sta .smSize+1
+
+	lda $02
+	clc
+	adc #3
+	sta .smJsr+1
+	lda $03
+	adc #0
+	sta .smJsr+2
+.smJsr jsr $0000
+
+	lda $02
+	clc
+.smSize	adc #0
+	sta $02
+	bcc .l1
+	inc $03
+	jmp .l1

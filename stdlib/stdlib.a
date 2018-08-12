@@ -6,7 +6,7 @@ VIC2_Bank1	= $4000
 VIC2_Bank2	= $8000
 VIC2_Bank3	= $c000
 kSize_8K	= 8 * 1024
-kSize_16K	= 8 * 1024
+kSize_16K	= 16 * 1024
 
 
 ; Zero page
@@ -317,12 +317,22 @@ VIC2SpriteDoubleHeight			= $d017
 VIC2MemorySetupDefault			= %00010101
 VIC2MemorySetup					= $d018
 
+VIC2MemorySetup_BitmapSize		= $2000
 VIC2MemorySetup_CharsSize		= $800
 VIC2MemorySetup_ScreenSize		= $400
 VIC2MemorySetup_SpriteSize		= $40
 
+!macro MVIC2SpriteIndex_A .address {
+	lda #(.address & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
+}
+
+
 !macro MVIC2MemorySetup_ScreenChar_A .screen , .character {
 	lda #< (((.character & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_CharsSize )<<1) + (((.screen & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_ScreenSize) << 4)
+}
+
+!macro MVIC2MemorySetup_ScreenBitmap_A .screen , .bitmap {
+	lda #< (((.bitmap & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_BitmapSize )<<3) + (((.screen & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_ScreenSize) << 4)
 }
 
 ; Read:
@@ -651,8 +661,13 @@ CIA1TimerBControl				= $dc0f
 ; Bit 6: Serial bus CLOCK IN; 0 = High; 1 = Low.
 ; Bit 7: Serial bus DATA IN; 0 = High; 1 = Low.
 CIA2PortASerialBusVICBank		= $dd00
-CIA2PortASerialBusVICBankDefault= %11
+CIA2PortASerialBusVICBank_Bank0	= %11
+CIA2PortASerialBusVICBank_Bank1	= %10
+CIA2PortASerialBusVICBank_Bank2	= %01
+CIA2PortASerialBusVICBank_Bank3	= %00
+CIA2PortASerialBusVICBankDefault= CIA2PortASerialBusVICBank_Bank0
 CIA2PortASerialBusVICBankMask	= $3fff
+
 
 ; Read bits:
 ; Bit 0: RS232 RXD line, input bit.
@@ -761,6 +776,28 @@ CyclesPerSecondPALC64 = 985248
 	lda #$7f
 	sta CIA1InterruptControl
 	sta CIA2InterruptControl
+}
+
+!macro MACROVICIRQCIATimerControlDisable_A {
+	lda #0
+	sta VIC2InteruptControl
+	sta CIA1TimerAControl
+	sta CIA1TimerBControl
+	sta CIA2TimerAControl
+	sta CIA2TimerBControl
+}
+
+!macro MACROVICIRQControlDisable_A {
+	lda #0
+	sta VIC2InteruptControl
+}
+
+!macro MACROCIATimerControlDisable_A {
+	lda #0
+	sta CIA1TimerAControl
+	sta CIA1TimerBControl
+	sta CIA2TimerAControl
+	sta CIA2TimerBControl
 }
 
 !macro MACRODisableUpperLowerCaseChange_A {
@@ -1025,4 +1062,21 @@ CyclesPerSecondPALC64 = 985248
 !macro M_ASR {
 	cmp #$80
 	ror
+}
+
+!macro MWordValueToAddress_A .value , .addr {
+	lda #<.value
+	sta .addr
+	lda #>.value
+	sta .addr+1
+}
+
+!macro MWordValueTo_AX .value {
+	lda #<.value
+	ldx #>.value
+}
+
+!macro MWordValueTo_XY .value {
+	ldx #<.value
+	ldy #>.value
 }

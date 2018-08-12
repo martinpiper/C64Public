@@ -1,0 +1,487 @@
+!zn
+CreditsPos		!word .creditsStart
+.creditsStart
+	+DoCreditText 2		, kCreditFont1x1Blob	, Outro_textTest5
+	+DoCreditText 3		, kCreditFont1x1		, Outro_textTest5b
+	+DoCreditText 5		, kCreditFont1x1		, CreditsText_textTest3   ;mw
+
+	+DoCreditText 8		, kCreditFont1x1Blob	, CreditsText_textTest8
+	+DoCreditText 10	, kCreditFont1x1		, CreditsText_textTest9   ;mg
+
+	+DoCreditText 13	, kCreditFont1x1Blob	, Outro_textTest10
+	+DoCreditText 14	, kCreditFont1x1		, Outro_textTest10b
+	+DoCreditText 16	, kCreditFont1x1		, CreditsText_textTest11  ;dh
+
+	+DoCreditText 19	, kCreditFont1x1Blob	, CreditsText_textTest12
+	+DoCreditText 21	, kCreditFont1x1		, CreditsText_textTest13
+	+DoCreditText 22	, kCreditFont1x1		, CreditsText_textTest13b  ;mp
+
+	+DoCreditText 25	, kCreditFont1x1Blob	, CreditsText_textTest14
+	+DoCreditText 27	, kCreditFont1x1		, CreditsText_textTest15   ;ar
+
+	+DoCreditText 30	, kCreditFont1x1Blob	, OutroSequence25
+	+DoCreditText 32	, kCreditFontRaw1x1		, .text_OutroSequence26    ;sday
+	+DoCreditText 33	, kCreditFont1x1		, CreditsText_textTest15   ;ar
+
+	+DoCreditText 36	, kCreditFont1x1Blob	, OutroSequence32
+	+DoCreditText 38	, kCreditFont1x1		, CreditsText_textTest11   ;dh
+	+DoCreditText 39	, kCreditFont1x1		, CreditsText_textTest15   ;ar
+
+	+DoCreditText 42	, kCreditFont1x1Blob	, OutroSequence36
+	+DoCreditText 44	, kCreditFontRaw1x1		, .text_OutroSequence37    ;ma
+	+DoCreditText 45	, kCreditFontRaw1x1		, .text_OutroSequence38    ;bb
+	+DoCreditText 46	, kCreditFontRaw1x1		, .text_OutroSequence39    ;ah
+	+DoCreditText 47	, kCreditFont1x1		, CreditsText_textTest15   ;ar
+
+	+DoCreditText 50	, kCreditFont1x1Blob	, OutroSequence42
+	+DoCreditText 52	, kCreditFontRaw1x1		, .text_OutroSequence43   ;oli
+
+	+DoCreditText 55	, kCreditFont1x1Blob	, OutroSequence45
+	+DoCreditText 56	, kCreditFont1x1		, OutroSequence46
+	+DoCreditText 57	, kCreditFont1x1		, OutroSequence47
+	+DoCreditText 59	, kCreditFontRaw1x1		, .specialThanks
+
+	+DoCreditText 62	, kCreditFont1x1Blob	, OutroSequence91
+	+DoCreditText 64	, kCreditFontRaw1x1		, .betaBackers
+
+	+DoCreditText 67	, kCreditFont1x1Blob	, OutroSequence103
+	+DoCreditText 69	, kCreditFontRaw1x1		, .kickstarterBackers
+
+	+DoCreditText 72	, kCreditFont1x1Blob	, OutroSequence106
+	+DoCreditText 74	, kCreditFontRaw1x1		, .indiegogoBackers
+	
+	+DoCreditText 77	, kCreditFont1x1Blob	, OutroSequence118
+
+	+DoCreditText 110	, kCreditEnd			, 0
+	!word 0	; The end
+
+.text_OutroSequence43
+	!scr "OLI FREY"
+	!by 0
+	!by 0
+.text_OutroSequence39
+	!scr "ANDY HAYES"
+	!by 0
+	!by 0
+.text_OutroSequence37
+	!scr "MAT ALLEN"
+	!by 0
+	!by 0
+.text_OutroSequence38
+	!scr "BRUCE BROOKING"
+	!by 0
+	!by 0
+.text_OutroSequence26
+	!scr "STE DAY"
+	!by 0
+	!by 0
+
+
+.specialThanks
+	!scr "CHRIS ABBOTT" , 0
+	!scr "BILLY ALLISON" , 0
+	!scr "JIM BRAIN" , 0
+	!scr "SAM DYER" , 0
+	!scr "OLI FREY" , 0
+	!scr "NEIL GRAYSON" , 0
+	!scr "MARK HARDISTY" , 0
+	!scr "ROGER KEAN" , 0
+	!scr "JASON MACKENZIE" , 0
+	!scr "CARL MASON" , 0
+	!scr "MARTY MILLAR" , 0
+	!scr "JAMES MONKMAN" , 0
+	!scr "PHILIP MORRIS" , 0
+	!scr "PAUL MORRISON" , 0
+	!scr "DAN PHILLIPS" , 0
+	!scr "MAT RECARDO" , 0
+	!scr "JENNIFER ROBERTS" , 0
+	!scr "JENS SCHONFELD" , 0
+	!scr "TREVOR STOREY" , 0
+	!scr "STEPHEN THOMSON" , 0
+	!scr "JOHAN VINET" , 0
+	!scr "JAKOB VOOS" , 0
+	!scr "ZOI VITSENTZOU" , 0
+	!scr " " , 0
+	!scr "BITMAP BOOKS" , 0
+	!scr "C64AUDIO.COM" , 0
+	!scr "COMMODORE FORMAT ARCHIVE" , 0
+	!scr "THE FUTURE WAS 8BIT" , 0
+	!scr "INDIE RETRO NEWS" , 0
+	!scr "INDIVIDUAL COMPUTERS" , 0
+	!scr "MOGI GROUP INTERNATIONAL" , 0
+	!scr "OLIVERFREYART.COM" , 0
+	!scr "PROTOVISION" , 0
+	!scr "PSYTRONIK SOFTWARE" , 0
+	!scr "RETRO ASYLUM PODCAST" , 0
+	!scr "RETRO DOMINATION PODCAST" , 0
+	!scr "RETRO GAMER MAGAZINE" , 0
+	!scr "THE RETRO HOUR PODCAST" , 0
+	!scr "RETRO INNOVATIONS" , 0
+	!scr "RGCD" , 0
+	!scr "SLIPPYTEE CLOTHING" , 0
+	!by 0
+
+
+
+.betaBackers
+	!scr "MAT ALLEN" , 0
+	!scr "TONI BIANCHETTI" , 0
+	!scr "BRUCE BROOKING" , 0
+	!scr "SAM DYER" , 0
+	!scr "ANDY HAYES" , 0
+	!scr "TOBIAS HULTMAN" , 0
+	!scr "EROL ISMAEL" , 0
+	!scr "MARTIN PIPER" , 0
+	!scr "MICHAEL PLATE" , 0
+	!scr "SEPPO SEPPALA" , 0
+	!by 0
+
+
+.kickstarterBackers
+	!scr "LUCA ABIUSI" , 0
+	!scr "JUHA ALANIEMI" , 0
+	!scr "MATHIAS ALBERTSSON" , 0
+	!scr "DAVID ALMER" , 0
+	!scr "ANDREAS ALTENHEIMER" , 0
+	!scr "MARK AMBROSE" , 0
+	!scr "CRAIG ANDERSON" , 0
+	!scr "TOMMY KOBBERO ANDERSEN" , 0
+	!scr "MAGNUS ANDERSSON" , 0
+	!scr "TONY ANJO" , 0
+	!scr "GRAHAM AXTEN" , 0
+	!scr "FOLI AYIVOH" , 0
+	!scr "JAKOB BAKKE" , 0
+	!scr "JOHN BANKS" , 0
+	!scr "PAUL BARNETT" , 0
+	!scr "STEVE BARRETT" , 0
+	!scr "JOAO CARLOS BASTOS" , 0
+	!scr "NEIL BEADLE" , 0
+	!scr "THOMAS BECK" , 0
+	!scr "ANGELO BELMONTE" , 0
+	!scr "DANIEL BENETKA" , 0
+	!scr "JARLE BERNTSEN" , 0
+	!scr "CARLO LUCIANO BIANCO" , 0
+	!scr "FABRIZIO BINI" , 0
+	!scr "DEREK BIRT" , 0
+	!scr "MARTIN BLOM" , 0
+	!scr "CARL H. BLOMQVIST" , 0
+	!scr "JOHN BORNELAND" , 0
+	!scr "JON BOWEN" , 0
+	!scr "NEIL BRADLEY" , 0
+	!scr "ALEX BREM" , 0
+	!scr "JAMES BRENNAN" , 0
+	!scr "LAUST BROCK-NANNESTAD" , 0
+	!scr "ANNE JAN BROUWER" , 0
+	!scr "NIGEL BROWN" , 0
+	!scr "SCOTT BROWN" , 0
+	!scr "THOMAS BUHLER" , 0
+	!scr "ALESSANDRO BULGARELLI" , 0
+	!scr "GORDON BURKE" , 0
+	!scr "AL BUSBY" , 0
+	!scr "CARL BUSBY" , 0
+	!scr "MATTHEW BUXTON" , 0
+	!scr "GAVIN BYRNE" , 0
+	!scr "PAUL CAMPBELL" , 0
+	!scr "PHIL CAMPBELL" , 0
+	!scr "DOMINGO ALVAREZ CAMPOS" , 0
+	!scr "GARY CANNON" , 0
+	!scr "BRUCE CANU" , 0
+	!scr "ROBERT CAPORETTO" , 0
+	!scr "SANTIAGO CARDENAS" , 0
+	!scr "ARNAULD CARIDROIT" , 0
+	!scr "CARLOS CATANO" , 0
+	!scr "RYAN CHENERY" , 0
+	!scr "JEFFREY CICCONE" , 0
+	!scr "STEVEN CLARKSON" , 0
+	!scr "ROB CLAYTON" , 0
+	!scr "GAVIN COCHRANE" , 0
+	!scr "GARY COLE" , 0
+	!scr "MARCUS COMSTEDT" , 0
+	!scr "ROBERTO CONSOLI" , 0
+	!scr "NIGEL CRITTEN" , 0
+	!scr "TONY CRUISE" , 0
+	!scr "ANDREAS DANIELSSON" , 0
+	!scr "MARCO DAS" , 0
+	!scr "NACIKETA DATTA" , 0
+	!scr "CHRISTOPHER DAVIS" , 0
+	!scr "GRAHAM DAWES" , 0
+	!scr "BARTOSZ DEBSKI" , 0
+	!scr "HILTON DEVITT" , 0
+	!scr "RICHARD DONALDSON" , 0
+	!scr "JOSHUA DOVE" , 0
+	!scr "STIRRING DRAGON GAMES" , 0
+	!scr "JOERG DROEGE" , 0
+	!scr "FLEMMING DUPONT" , 0
+	!scr "LEIF EBELING" , 0
+	!scr "JOHN S. EDDIE" , 0
+	!scr "JASON EDMUNDS" , 0
+	!scr "ALFRED EENKHOORN" , 0
+	!scr "JERRY ELLIS" , 0
+	!scr "OLE MORTEN ERIKSEN" , 0
+	!scr "WINFRIED FALKENHAHN" , 0
+	!scr "ROGER FALTIN" , 0
+	!scr "MARK FELTON" , 0
+	!scr "LUCA FIANDRI" , 0
+	!scr "THOMAS FINNERUP" , 0
+	!scr "ANDREW FISHER" , 0
+	!scr "EDWARD FITZPATRICK" , 0
+	!scr "DOMINGO FIVOLI" , 0
+	!scr "HANNU FONSELIUS" , 0
+	!scr "JONATAN FORSBERG-GILLVING" , 0
+	!scr "OLIVER FORSTER" , 0
+	!scr "SAMUEL FREDERICK" , 0
+	!scr "FRANTISEK FRIS" , 0
+	!scr "RUPERT FULLER" , 0
+	!scr "TONI GALVEZ" , 0
+	!scr "FRANK GASKING" , 0
+	!scr "MARCUS GERARDS" , 0
+	!scr "DIMITRIS GIANNAKIS" , 0
+	!scr "MICHAEL GIBSON" , 0
+	!scr "RAJ GILL" , 0
+	!scr "BLAKE GODDARD" , 0
+	!scr "WOLFRAM GOESSL" , 0
+	!scr "TOBIAS GOHLKE" , 0
+	!scr "LAURENCE GONSALVES" , 0
+	!scr "KYLE GOOD" , 0
+	!scr "CHRIS VAN GRAAS" , 0
+	!scr "JEFFREY GRAY" , 0
+	!scr "STEVE GREEN" , 0
+	!scr "RAYMOND GREEN" , 0
+	!scr "JAMES GREENHALGH" , 0
+	!scr "SIMON HADLINGTON" , 0
+	!scr "ANGELA HAINES" , 0
+	!scr "STEFAN HAMMARSTEDT" , 0
+	!scr "JONNY HANSEN" , 0
+	!scr "MICHAEL HANSEN" , 0
+	!scr "CHRISTIAN HARDMEYER" , 0
+	!scr "TORBEN HARMS" , 0
+	!scr "A. A. HARRIS" , 0
+	!scr "CHRISTOPHER HARRIS" , 0
+	!scr "MICHAEL HARTIG" , 0
+	!scr "BEN HEATON" , 0
+	!scr "JOHN HENDERSON" , 0
+	!scr "MICHAEL L. HENDERSON" , 0
+	!scr "PHILIP HENNING" , 0
+	!scr "MARK HENNING" , 0
+	!scr "JAN HERING" , 0
+	!scr "MARKUS HILLER" , 0
+	!scr "JASON HISCOX" , 0
+	!scr "STIAN HODNEKVAM" , 0
+	!scr "TERJE HOIBACK" , 0
+	!scr "MARK HOLLAND-AVERY" , 0
+	!scr "ALEX HOPSON" , 0
+	!scr "RUSSELL HOWARD" , 0
+	!scr "MATTHEW HUDSON" , 0
+	!scr "GUNNAR HUNZELMANN" , 0
+	!scr "JONNY HURTIG" , 0
+	!scr "NAWEED IFTKHAR" , 0
+	!scr "STEVEN INNELL" , 0
+	!scr "MATTIAS IRVING" , 0
+	!scr "TERO JANHUNEN" , 0
+	!scr "RISTO JARVINEN" , 0
+	!scr "JAN JOHANSSON" , 0
+	!scr "JUHA-PEKKA JOKELA" , 0
+	!scr "JUHA JOKI" , 0
+	!scr "DAVID TAFULO JORGE" , 0
+	!scr "JARNO KAJOSTE" , 0
+	!scr "JUKKA O. KAUPPINEN" , 0
+	!scr "MICHAEL KEITH" , 0
+	!scr "JIM KELLNER" , 0
+	!scr "ALANNA KELLY" , 0
+	!scr "HOWARD KISTLER" , 0
+	!scr "DAVID KLCO" , 0
+	!scr "ROGER KLEIN" , 0
+	!scr "KURT KLEMM" , 0
+	!scr "ALEXANDER KLOCK" , 0
+	!scr "DAVID JAMES KNIPE" , 0
+	!scr "PEPA KOKES" , 0
+	!scr "JUSSI KOLLIN" , 0
+	!scr "PETRI KOPAKKALA" , 0
+	!scr "JAMES KOSTYSZYN" , 0
+	!scr "KIMMO KULOVESI" , 0
+	!scr "MICHAEL KUNERT" , 0
+	!scr "TORKILL LADEMOE" , 0
+	!scr "JOCHEN LAEMMEL" , 0
+	!scr "MATTHIAS LAMM" , 0
+	!scr "VICTOR LANCING" , 0
+	!scr "JAMES LANE" , 0
+	!scr "ALEXANDER LANG" , 0
+	!scr "ANDERS LARSEN" , 0
+	!scr "GLENN LARSSON" , 0
+	!scr "NATE LAWSON" , 0
+	!scr "BLAIR AND JEAN LEGGETT" , 0
+	!scr "BERND LINGNAU" , 0
+	!scr "PETER LIPP" , 0
+	!scr "ANDY LOCKETT" , 0
+	!scr "JOHN CHRISTIAN LONNINGDAL" , 0
+	!scr "JASON LUGG" , 0
+	!scr "SIMON LUNDSTROM" , 0
+	!scr "MIKE MADIGAN" , 0
+	!scr "DAVID A. MAJOR" , 0
+	!scr "DAMIAN MANNING" , 0
+	!scr "DIETER MARCHSREITER" , 0
+	!scr "TIZIANO MARCOZZI" , 0
+	!scr "BIENO MARTI" , 0
+	!scr "PAUL MARTIN" , 0
+	!scr "PAUL MASKELYNE" , 0
+	!scr "FABIO G. MASSA" , 0
+	!scr "PETER MATTSSON" , 0
+	!scr "TOMAS MATYS" , 0
+	!scr "SIMON MAXWELL" , 0
+	!scr "MICHAEL MCDERMOTT" , 0
+	!scr "JOHN MCDOWALL" , 0
+	!scr "GLEN MCNAMEE" , 0
+	!scr "TAMAS MECHLE" , 0
+	!scr "BARRY MEDLIN" , 0
+	!scr "DANIEL MELENDEZ" , 0
+	!scr "WAYNE MELLORS" , 0
+	!scr "ALLEN MONKS" , 0
+	!scr "NICOLAS LEON MONTES" , 0
+	!scr "ALEXANDER MOON" , 0
+	!scr "GILES MOORHOUSE" , 0
+	!scr "CHRIS MORRIS" , 0
+	!scr "STEPHEN MORTON" , 0
+	!scr "ANDRE MULLER" , 0
+	!scr "DANIEL K. MURPHY" , 0
+	!scr "MIKA MYLLYVAARA" , 0
+	!scr "TOMMASO NARDIN" , 0
+	!scr "MARC NAUSE" , 0
+	!scr "GIUSEPPE NAVARRIA" , 0
+	!scr "DARREN NEVELL" , 0
+	!scr "DAMON NEWMAN" , 0
+	!scr "PAUL NEWPORT" , 0
+	!scr "JON UTOFT NIELSEN" , 0
+	!scr "KARL-JOHAN NILSSON" , 0
+	!scr "DAVID NORMINGTON" , 0
+	!scr "BORGE NOST" , 0
+	!scr "ANTHONY OLVER" , 0
+	!scr "GABRIEL ORGAL" , 0
+	!scr "LUTZ OSTERKORN" , 0
+	!scr "JEFFREY OUELLETTE" , 0
+	!scr "CHRIS PAGE" , 0
+	!scr "ANDREW PALMER" , 0
+	!scr "MIKE PARTRIDGE" , 0
+	!scr "LEE PEARSON" , 0
+	!scr "ERIK PEDE" , 0
+	!scr "PATRICE PELISSIER" , 0
+	!scr "ATTILA PINTER" , 0
+	!scr "DENNIS PLOGER" , 0
+	!scr "ROBERT PODD" , 0
+	!scr "BRYAN POPE" , 0
+	!scr "MATT PORTER" , 0
+	!scr "DAVID POWELL" , 0
+	!scr "STEPHEN PRESTON" , 0
+	!scr "BRET PRITCHARD" , 0
+	!scr "CARLOS ELIDO RAMIREZ" , 0
+	!scr "ANTTI RASANEN" , 0
+	!scr "TOBIAS REICH" , 0
+	!scr "ANDREAS REIF" , 0
+	!scr "DANIEL RENNER" , 0
+	!scr "RALF REUPSCH" , 0
+	!scr "SCOTT ROBERTSON" , 0
+	!scr "ALEXANDER ROBINSON" , 0
+	!scr "IAIN ROCKLIFFE" , 0
+	!scr "ALI AL ROMAITHI" , 0
+	!scr "IAN ROMANICK" , 0
+	!scr "ALEXANDER ROSE" , 0
+	!scr "WERNER ROTT" , 0
+	!scr "ABHILASH SARHADI" , 0
+	!scr "ALEXANDRE MOTA SANTOS " , 0
+	!scr "STUART SCATTERGOOD" , 0
+	!scr "ROLF SCHEIMANN" , 0
+	!scr "ALEXANDRA SCHMIEDER" , 0
+	!scr "JURGEN SCHMITZ" , 0
+	!scr "ANDREAS SCHNEIDER" , 0
+	!scr "MARCEL SCHOEN" , 0
+	!scr "JAN SCHULZE" , 0
+	!scr "ANDREW SEEGER" , 0
+	!scr "FEDERICO SESLER" , 0
+	!scr "CLIVE SHARPE" , 0
+	!scr "MARK SHARPLES" , 0
+	!scr "PAUL SHAY" , 0
+	!scr "ROBEE SHEPHERD" , 0
+	!scr "MATT SHIVELY" , 0
+	!scr "CARL-HENRIK SKARSTEDT" , 0
+	!scr "SEBASTIAN SKARUPKE" , 0
+	!scr "DOMINIC SKILTON" , 0
+	!scr "GEIR SKJERET" , 0
+	!scr "RICHARD M. SMITH" , 0
+	!scr "SIMON SOANES" , 0
+	!scr "JAN SODERBERG" , 0
+	!scr "RUNE SPAANS" , 0
+	!scr "MICHAEL STEIL" , 0
+	!scr "SHAUN STEPHENSON" , 0
+	!scr "ANDREW STEWART" , 0
+	!scr "ANTHONY STILLER" , 0
+	!scr "SIMON STOKES" , 0
+	!scr "MARK STREET" , 0
+	!scr "MATTHEW STRINGER" , 0
+	!scr "STEPHEN STUTTARD" , 0
+	!scr "REIJO SUND" , 0
+	!scr "TOMMY SUND" , 0
+	!scr "JAN-ERIK SUNDH" , 0
+	!scr "MARIUSZ SWIERZY" , 0
+	!scr "SYLVAIN SWIMER" , 0
+	!scr "MAN-FA TANG" , 0
+	!scr "HOWARD TAYLOR" , 0
+	!scr "MATTHEW TAYLOR" , 0
+	!scr "ROB TAYLOR" , 0
+	!scr "LEE TAYLOR-JACK" , 0
+	!scr "RENZO THOENEN" , 0
+	!scr "JAN LUND THOMSEN" , 0
+	!scr "KEVIN TILLEY" , 0
+	!scr "KLAUS TIMMERMANN" , 0
+	!scr "FRANK TINDLE" , 0
+	!scr "KARL TODD" , 0
+	!scr "STEFANO TOGNON" , 0
+	!scr "KEITH TOLLFREE" , 0
+	!scr "JOHN TRAEHOLT" , 0
+	!scr "MADS TROEST" , 0
+	!scr "ROBERT TROUGHTON" , 0
+	!scr "YUEN YIN TSE" , 0
+	!scr "CHRIS TUCKWELL" , 0
+	!scr "VILLE TUOMINEN" , 0
+	!scr "MICHELE UGOLINI" , 0
+	!scr "STEFAN UHLMANN" , 0
+	!scr "EDUARDO URIBE" , 0
+	!scr "VANJA UTNE" , 0
+	!scr "JOUNI VEPSALAINEN" , 0
+	!scr "TONI VERTANEN" , 0
+	!scr "CHRISTIAN VOGELGSANG" , 0
+	!scr "JOHN WALKER" , 0
+	!scr "CHRIS WALTON" , 0
+	!scr "DARREN WARD" , 0
+	!scr "JOHN WATSON" , 0
+	!scr "ARVID WEBER" , 0
+	!scr "PHIL WHEATLEY" , 0
+	!scr "LEIGH WHITE" , 0
+	!scr "WADE WHITEMAN" , 0
+	!scr "DARREN WHITING" , 0
+	!scr "RICHARD WILKINSON" , 0
+	!scr "LUCAS WILLMS" , 0
+	!scr "MATT WILSHER" , 0
+	!scr "MARK WILSON" , 0
+	!scr "ANGIE WINTERBOTTOM" , 0
+	!scr "LEIGH WOOLLETT" , 0
+	!scr "THOMAS WURGLER" , 0
+	!scr "JAMES WYLD" , 0
+	!scr "ROBERT YAW" , 0
+	!scr "PASI YLINEN" , 0
+	!scr "MARCO ZONTA" , 0
+	!by 0
+
+
+.indiegogoBackers
+	!scr "GARY COLE" , 0
+	!scr "LAURENT GIROUD" , 0
+	!scr "SIMON JAMESON" , 0
+	!scr "RAMI KOIVISTO" , 0
+	!scr "STEVEN LYON" , 0
+	!scr "LOUIS NICHOLSON" , 0
+	!scr "PATRICK OBERWALDER" , 0
+	!scr "BART PELLENS" , 0
+	!scr "CHRISTOPHER PHILLIPS" , 0
+	!scr "CHRISTOPHER TEXTOR" , 0
+	!by 0
+
+.creditsEnd

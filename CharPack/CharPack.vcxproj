@@ -46,6 +46,9 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <CustomBuildAfterTargets>Link</CustomBuildAfterTargets>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -89,6 +92,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <CustomBuildStep>
+      <Command>copy /Y Release\CharPack.exe ..\bin\</Command>
+      <Message>Copying release EXE</Message>
+      <Outputs>..\bin\CharPack.exe</Outputs>
+      <Inputs>Release\CharPack.exe</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\ReplicaNet\ReplicaNetPublic\AmalgamatedReplicaNet.cpp">
@@ -98,6 +107,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\AnimationBitmap\Done.txt" />
+    <Text Include="..\AnimationBitmap\TODO.txt" />
     <Text Include="Done.txt" />
     <Text Include="TODO.txt" />
   </ItemGroup>

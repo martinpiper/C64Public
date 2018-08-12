@@ -1,0 +1,168 @@
+!source "TimelineMacros.a"
+
+; Timeline_Events is used for the intro events
+; Timeline_EventsOutro is used for the outro events
+
+; These Thalamus/HM logo delays/positions are not part of the timeline system
+
+BeforeThalamusLogoDelay = 50
+ThalamusLogoDelay = 225
+
+BeforeThalamusPresentsDelay = 50
+ThalamusPresentsDelay = 250
+ThalamusPresentsYPos1 = 9
+ThalamusPresentsYPos2 = 13
+
+BeforeMartinWalkerGameDelay = 50
+MartinWalkerGameDelay = 250
+MartinWalkerGameYpos1 = 7
+MartinWalkerGameYpos2 = 11
+MartinWalkerGameYpos3 = 15
+
+BeforeHuntersMoonLogoDelay = 50
+HuntersMoonLogoDelay = 275
+
+
+OutroBigTextHoldDelay = 175
+OutroBigTextBlackHoldDelay1 = 50
+OutroBigTextBlackHoldDelay2 = 50
+
+NewlineFadeUpDelay			= 4
+NewlineDelayFor1x1Text		= 75
+
+!zn
+Timeline_Events
+
+	+Timeline_AddEvent_Delay 2 , 50											; At <frame> trigger a delay for <number> of frames
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 2 , PanelText1
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 2 , 225 					; At <frame> pause while displaying just the lower panel text for <frames> count
+	+DoFadeUpStart 2
+	+DoFadeDownEnd 151
+
+	+Timeline_AddEvent_Delay 152 , 50										; At <frame> trigger a delay for <number> of frames
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 152
+	+Timeline_AddEvent_FullText1x1Screen1PosLine 152 , 10 , CreditsText_textTest5
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 152 , 12 , CreditsText_textTest3
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 152 , 175				; At <frame> trigger a text screen fade up, then delay for <number> of frames then fade down
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_Delay 152 , 50
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 152 , PanelText2
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 152 , 225
+	+DoFadeUpStart 152
+	+DoFadeDownEnd 301
+
+	+Timeline_AddEvent_Delay 302 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 302
+	+Timeline_AddEvent_FullText1x1Screen1PosLine 302 , 10 , CreditsText_textTest8
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 302 , 12 , CreditsText_textTest9
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 302 , 175
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_Delay 302 , 50
+
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 302 , PanelText3
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 302 , 225
+	+DoFadeUpStart 302
+	+DoFadeDownEnd 451
+
+	+Timeline_AddEvent_Delay 452 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 452
+	+Timeline_AddEvent_FullText1x1Screen1PosLine 452 , 10 , CreditsText_textTest10
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 452 , 12 , CreditsText_textTest11
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 452 , 175
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_Delay 452 , 50
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 452 , PanelText4
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 452 , 225
+	+DoFadeUpStart 452
+	+DoFadeDownEnd 601
+
+	+Timeline_AddEvent_Delay 602 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 602
+	+Timeline_AddEvent_FullText1x1Screen1PosLine 602 , 8 , CreditsText_textTest12
+	+Timeline_AddEvent_FullText2x2Screen2PosLine 602 , 10 , CreditsText_textTest13 , 14 , CreditsText_textTest13b
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 602 , 175
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_Delay 602 , 50
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 602 , PanelText5
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 602 , 225
+	+DoFadeUpStart 602
+	+DoFadeDownEnd 751
+
+	+Timeline_AddEvent_Delay 752 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 752
+	+Timeline_AddEvent_FullText1x1Screen1PosLine 752 , 10 , CreditsText_textTest14
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 752 , 12 , CreditsText_textTest15
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 752 , 175
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_Delay 752 , 50
+	+Timeline_AddEvent_TriggerLowerTextDisplayClearAnim 752 , PanelText6
+	+Timeline_AddEvent_ProcessTextDisplayForFrames 752 , 225
+	+DoFadeUpStart 752
+	+DoFadeDownEnd 901
+
+	+Timeline_AddEvent_Delay 902 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 902
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 902 , 11 , CreditsText_textTest16
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 902 , 100
+}
+	+Timeline_AddEvent_Delay 902 , 50
+!ifndef RemoveFadesAndWaits {
+	+Timeline_AddEvent_FullTextScreenClear 902
+	+Timeline_AddEvent_FullText2x2Screen1PosLine 902 , 11 , CreditsText_textTest17
+	+Timeline_AddEvent_FullTextScreenFadeUpDelayDown 902 , 100
+}
+
+;-------------------------------------------------------------------------------
+
+	+Timeline_AddEvent_StoreData 902 , DeltaDecompression_End , 1
+
+	+Timeline_AddEvent_Blank 0
+
+
+
+
+
+Timeline_EventsOutro
+	+DoFadeUpStart OutroFrameStart
+
+	; Debug short video
+;	+Timeline_AddEvent_WaitFire OutroFrameStart + 50
+;	+DoFadeDownEnd OutroFrameStart + 60
+;	+Timeline_AddEvent_StoreData OutroFrameStart + 60 , DeltaDecompression_End , 1
+;	+Timeline_AddEvent_Blank 0
+
+	+Timeline_AddEvent_StoreData OutroFrameStart + 480 - 10 , EarlyOutCheckEnable , 1
+	+Timeline_AddEvent_PanelText1x1Screen1PosLineFadeUp OutroFrameStart + 480 - 10 , 16 , PanelOutroText1
+	+Timeline_AddEvent_PanelText1x1Screen1PosLineFadeUp OutroFrameStart + 480 - 10 , 19 , PanelOutroText2
+	+Timeline_AddEvent_PanelText1x1Screen1PosLineFadeUp OutroFrameStart + 480 - 10 , 22 , PanelOutroText3
+	+Timeline_AddEvent_Delay OutroFrameStart + 480 - 10 , 250
+	+Timeline_AddEvent_Delay OutroFrameStart + 480 - 10 , 250
+	+Timeline_AddEvent_Delay OutroFrameStart + 480 - 10 , 250
+	+Timeline_AddEvent_Delay OutroFrameStart + 480 - 10 , 250
+	+Timeline_AddEvent_Delay OutroFrameStart + 480 - 10 , 250
+
+	+Timeline_AddEvent_StoreData OutroFrameStart + 480 - 8 , TriggerVolumeFadeOut , 1
+	+DoFadeDownEnd OutroFrameStart + 480
+	+Timeline_AddEvent_StoreData OutroFrameStart + 480 , DeltaDecompression_End , 1
+	+Timeline_AddEvent_Blank 0

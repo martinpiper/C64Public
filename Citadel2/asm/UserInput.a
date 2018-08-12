@@ -143,7 +143,7 @@ HandleUserInput
 
 
 	lda ScrollerExitMainLineCounter
-	bne .exitingGame
+	bne .lexitingGame
 
 	lda DisplayingSubGame
 	bne .lSubGameUpdate
@@ -152,18 +152,20 @@ HandleUserInput
 	lda SubGame_ExitState
 	cmp #SubGameExit_Null
 	beq .lnoSubGameState
-	lda SubGame_ExitState
+
 	; Reset it first
 	ldx #SubGameExit_Null
 	stx SubGame_ExitState
 
 	cmp #SubGameExit_Success
-	beq .lsubGameStateSuccess
+	beq .l2subGameStateSuccess
 
 	cmp #SubGameExit_Failure
 	beq .lsubGameStateFailure
 
 	jmp .noSubGameState
+.lexitingGame jmp .exitingGame
+.l2subGameStateSuccess jmp .subGameStateSuccess
 
 .runProbe
 	jsr CaptureProbe_HandleProbe
@@ -274,7 +276,11 @@ HandleUserInput
 	lda JoystickA_Processed
 	sta .lockedDirection
 
-!ifdef MapBlockAlignedMovement {
+	lda MapBlockAlignedMovement
+	bne .doAligned1
+	jmp .skipAligned1
+.doAligned1
+
 	lda EnemyPositionsYLo
 	and #31
 	cmp #6
@@ -346,7 +352,7 @@ HandleUserInput
 	jmp .gotFire
 .ok4
 }
-} ;<< !ifdef MapBlockAlignedMovement {
+.skipAligned1	;<< MapBlockAlignedMovement
 
 .gotFire
 
@@ -355,18 +361,28 @@ HandleUserInput
 	; Update the velocity at which we want to travel
 	lda #JoystickBits_Right
 	bit .lockedDirection
-	bne .o1
+	bne .lo1
 
 
 	jsr CaptureProbe_ResetEnterTimer
+
 	; Check the bounding chars in the direction of travel
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak1
+
 	lda EnemyPositionsXLo
 	clc
-!ifdef MapBlockAlignedMovement {
 	adc #28
-} else {
+	jmp .overAlignedTweak1
+.lo1 jmp .o1
+
+.noAlignedTweak1
+	lda EnemyPositionsXLo
+	clc
 	adc #24
-}
+
+.overAlignedTweak1
+
 	sta tempWork0
 	lda EnemyPositionsXHi
 	adc #0
@@ -396,13 +412,21 @@ HandleUserInput
 	bne .o1Stop
 }
 
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak2
+
 	lda EnemyPositionsYLo
 	clc
-!ifdef MapBlockAlignedMovement {
 	adc #24
-} else {
+	jmp .overAlignedTweak2
+
+.noAlignedTweak2
+	lda EnemyPositionsYLo
+	clc
 	adc #20
-}
+
+.overAlignedTweak2
+
 	sta tempWork2
 	lda EnemyPositionsYHi
 	adc #0
@@ -412,12 +436,13 @@ HandleUserInput
 	jsr .testPosition
 	bne .o1Stop
 
-!ifdef CameraNotPushX {
+	lda CameraNotPushX
+	beq .skipPush7
 	lda frameTargetVelX
 	sec
 	sbc .playerSpeed
 	sta frameTargetVelX
-}
+.skipPush7
 
 	; Set the follow pos based on the directional input
 ;	lda #1
@@ -433,11 +458,9 @@ HandleUserInput
 	bcc .oo1
 	inc EnemyPositionsXHi
 .oo1
-!ifdef MapBlockAlignedMovement {
+	lda MapBlockAlignedMovement
+	beq .o1
 	jmp .nowTestFire
-} else {
-	jmp .o1
-}
 .o1Stop
 	lda .lockedDirection
 	ora #JoystickBits_Right
@@ -445,18 +468,27 @@ HandleUserInput
 .o1
 	lda #JoystickBits_Left
 	bit .lockedDirection
-	bne .o2
+	bne .lo2
 
 
 	jsr CaptureProbe_ResetEnterTimer
 	; Check the bounding chars in the direction of travel
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak3
+
 	lda EnemyPositionsXLo
 	sec
-!ifdef MapBlockAlignedMovement {
 	sbc #6
-} else {
+	jmp .overAlignedTweak3
+.lo2 jmp .o2
+
+.noAlignedTweak3
+	lda EnemyPositionsXLo
+	sec
 	sbc #4
-}
+
+.overAlignedTweak3
+
 	sta tempWork0
 	lda EnemyPositionsXHi
 	sbc #0
@@ -486,13 +518,21 @@ HandleUserInput
 	bne .o2Stop
 }
 
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak4
+
 	lda EnemyPositionsYLo
 	clc
-!ifdef MapBlockAlignedMovement {
 	adc #24
-} else {
+	jmp .overAlignedTweak4
+
+.noAlignedTweak4
+	lda EnemyPositionsYLo
+	clc
 	adc #20
-}
+
+.overAlignedTweak4
+
 	sta tempWork2
 	lda EnemyPositionsYHi
 	adc #0
@@ -502,12 +542,13 @@ HandleUserInput
 	jsr .testPosition
 	bne .o2Stop
 
-!ifdef CameraNotPushX {
+	lda CameraNotPushX
+	beq .skipPush8
 	lda frameTargetVelX
 	clc
 	adc .playerSpeed
 	sta frameTargetVelX
-}
+.skipPush8
 
 	; Set the follow pos based on the directional input
 ;	lda #-1
@@ -523,11 +564,9 @@ HandleUserInput
 	bcs .oo2
 	dec EnemyPositionsXHi
 .oo2
-!ifdef MapBlockAlignedMovement {
+	lda MapBlockAlignedMovement
+	beq .o2
 	jmp .nowTestFire
-} else {
-	jmp .o2
-}
 .o2Stop
 	lda .lockedDirection
 	ora #JoystickBits_Left
@@ -549,13 +588,21 @@ HandleUserInput
 	sta tempWork1
 	jsr DivideBy32
 
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak5
+
 	lda EnemyPositionsYLo
 	clc
-!ifdef MapBlockAlignedMovement {
 	adc #26
-} else {
+	jmp .overAlignedTweak5
+
+.noAlignedTweak5
+	lda EnemyPositionsYLo
+	clc
 	adc #22
-}
+
+.overAlignedTweak5
+
 	sta tempWork2
 	lda EnemyPositionsYHi
 	adc #0
@@ -591,12 +638,13 @@ HandleUserInput
 	jsr .testPosition
 	bne .o3Stop
 
-!ifdef CameraNotPushY {
+	lda CameraNotPushY
+	beq .skipPush9
 	lda frameTargetVelY
 	sec
 	sbc .playerSpeed
 	sta frameTargetVelY
-}
+.skipPush9
 
 	; Set the follow pos based on the directional input
 ;	lda #0
@@ -612,11 +660,9 @@ HandleUserInput
 	bcc .oo3
 	inc EnemyPositionsYHi
 .oo3
-!ifdef MapBlockAlignedMovement {
+	lda MapBlockAlignedMovement
+	beq .o3
 	jmp .nowTestFire
-} else {
-	jmp .o3
-}
 .o3Stop
 	lda .lockedDirection
 	ora #JoystickBits_Down
@@ -638,13 +684,21 @@ HandleUserInput
 	sta tempWork1
 	jsr DivideBy32
 
+	lda MapBlockAlignedMovement
+	beq .noAlignedTweak6
+
 	lda EnemyPositionsYLo
 	sec
-!ifdef MapBlockAlignedMovement {
 	sbc #8
-} else {
+	jmp .overAlignedTweak6
+
+.noAlignedTweak6
+	lda EnemyPositionsYLo
+	sec
 	sbc #2
-}
+
+.overAlignedTweak6
+
 	sta tempWork2
 	lda EnemyPositionsYHi
 	sbc #0
@@ -680,12 +734,13 @@ HandleUserInput
 	jsr .testPosition
 	bne .o4Stop
 
-!ifdef CameraNotPushY {
+	lda CameraNotPushY
+	beq .skipPush10
 	lda frameTargetVelY
 	clc
 	adc .playerSpeed
 	sta frameTargetVelY
-}
+.skipPush10
 
 	; Set the follow pos based on the directional input
 ;	lda #0
@@ -701,11 +756,9 @@ HandleUserInput
 	bcs .oo4
 	dec EnemyPositionsYHi
 .oo4
-!ifdef MapBlockAlignedMovement {
+	lda MapBlockAlignedMovement
+	beq .o4
 	jmp .nowTestFire
-} else {
-	jmp .o4
-}
 .o4Stop
 	lda .lockedDirection
 	ora #JoystickBits_Up
@@ -726,7 +779,7 @@ HandleUserInput
 	and .lockedDirection
 	cmp #(JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right)
 	bne .notStationary
-	jsr CheckForSubGameEntry
+	jsr CheckForTerminalsAndSwitches
 	beq .lo5
 .notStationary
 
@@ -923,12 +976,12 @@ HandleUserInput
 
 
 PlayerSpriteYPosToScreenCharPos
-!fill VIC2SpriteYBorderTop-10 , -1
+!fill VIC2SpriteYBorderTop-10-4 , -1
 !for .num , 20 { !fill 8 , (.num-1) }
 !fill 256 - (* - PlayerSpriteYPosToScreenCharPos) , -1
 
 PlayerSpriteXPosToScreenCharPos
-!fill (VIC2SpriteXBorderLeft-10)/2 , -1
+!fill (VIC2SpriteXBorderLeft-10-2)/2 , -1
 !for .num , 40 { !fill 4 , (.num-1) }
 !fill 256 - (* - PlayerSpriteXPosToScreenCharPos) , -1
 

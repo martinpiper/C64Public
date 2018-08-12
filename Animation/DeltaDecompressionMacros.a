@@ -1,3 +1,16 @@
+!macro MDeltaDecompression_CopyColoursSmall .cols {
+!for .y , 12 {
+!set .yy = .y-1
+ 	ldx #20
+!set .l1 = *
+	lda .cols + (.yy * VIC2ScreenCharsWidth) + 10,x
+	sta COLOURRAM + (.yy * VIC2ScreenCharsWidth) + 10,x
+	dex
+	bpl .l1
+}
+}
+
+
 !macro MDeltaDecompression_CopyColours .cols {
 	ldx #0
 .clc1a

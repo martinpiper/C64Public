@@ -1,0 +1,365 @@
+;Decompression test code. Demonstrates how to create self extracting code.
+; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a AnimationBitmapDefines.a
+; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a
+
+; This decompression code will typically kill data in locations:
+; $2 to $1ff
+; $400-$7ff
+
+
+!source "../stdlib/stdlib.a"
+!to "TestDecompression.prg", cbm
+!sal
+!sl "TestDecompression.map"
+!svl "TestDecompression.lbl"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+
+!source "../MakeCart/asm/GMod2_Macros.a"
+;!source "../MakeCart/asm/EasyFlash_Macros.a"
+
+!source "../AnimationBitmap/GameToAnimationDefines.a"
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortDefault
+
+EndOfMemory = $ff00
+
+; The contents of this macro can be used to cause the border colour to change while decompressing.
+!macro RNXPCompressionIncBorder_A {
+}
+
+!macro DisplayColourTextBoundingAt_AX .start , .end , .scr , .col , .innerTop , .innerBottom , .outer , .outerCol {
+	ldx #.end-.start
+.dm1
+	lda .start-1,x
+	sta .scr-1,x
+	lda #.innerTop
+	sta .scr-1-VIC2ScreenCharsWidth,x
+	lda #.innerBottom
+	sta .scr-1+VIC2ScreenCharsWidth,x
+	lda #.outer
+	sta .scr-1-(VIC2ScreenCharsWidth*2),x
+	sta .scr-1+(VIC2ScreenCharsWidth*2),x
+	lda #.col
+	sta COLOURRAM -1 + (.scr & $3ff),x
+	sta COLOURRAM -1 + (.scr & $3ff)-VIC2ScreenCharsWidth,x
+	sta COLOURRAM -1 + (.scr & $3ff)+VIC2ScreenCharsWidth,x
+	lda #.outerCol
+	sta COLOURRAM -1 + (.scr & $3ff)-(VIC2ScreenCharsWidth*2),x
+	sta COLOURRAM -1 + (.scr & $3ff)+(VIC2ScreenCharsWidth*2),x
+	dex
+	bne .dm1
+}
+
+ScreenMessagePos = SCREENRAM + (10 * VIC2ScreenCharsWidth)
+ScreenMessagePosCOLOUR = (ScreenMessagePos & $3ff) | COLOURRAM
+!source "../AnimationBitmap/GameToAnimationDefines.a"
+
+*=BASICEntry
+	sei
+	; Due to being started with a BASIC SYS:
+	; Assume the DDR is correct
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	ldx #$ff
+	txs
+
+	+MACROWaitForTheLastScanPlus1_A
+	+BlankScreenBorderSpriteSound_A
+
+	+ClearScreenAt_AX SCREENRAM , ' '
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Intro
+	beq .drawTextIntro
+
+	lda PreBoot_LanguageSelect
+	cmp #kPreBoot_LanguageSelect_English
+	beq .ldoEnglish2
+	cmp #kPreBoot_LanguageSelect_French
+	beq .ldoFrench2
+	cmp #kPreBoot_LanguageSelect_Italian
+	beq .ldoItalian2
+	cmp #kPreBoot_LanguageSelect_German
+	beq .ldoGerman2
+	cmp #kPreBoot_LanguageSelect_Spanish
+	beq .ldoSpanish2
+
+.ldoEnglish2	jmp .doEnglish2
+.ldoFrench2		jmp .doFrench2
+.ldoItalian2	jmp .doItalian2
+.ldoGerman2		jmp .doGerman2
+.ldoSpanish2	jmp .doSpanish2
+
+	
+.drawTextIntro
+	lda PreBoot_LanguageSelect
+	cmp #kPreBoot_LanguageSelect_English
+	beq .ldoEnglish
+	cmp #kPreBoot_LanguageSelect_French
+	beq .ldoFrench
+	cmp #kPreBoot_LanguageSelect_Italian
+	beq .ldoItalian
+	cmp #kPreBoot_LanguageSelect_German
+	beq .ldoGerman
+	cmp #kPreBoot_LanguageSelect_Spanish
+	beq .ldoSpanish
+
+.ldoEnglish	jmp .doEnglish
+.ldoFrench	jmp .doFrench
+.ldoItalian	jmp .doItalian
+.ldoGerman	jmp .doGerman
+.ldoSpanish	jmp .doSpanish
+
+	
+.doEnglish
+;	+DisplayColourTextBoundingAt_AX Text2Start_English , Text2End_English , ScreenMessagePos + 3 - 200, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+;	+DisplayColourTextBoundingAt_AX Text2Start_French , Text2End_French , ScreenMessagePos + 0, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+;	+DisplayColourTextBoundingAt_AX Text2Start_Italian , Text2End_Italian , ScreenMessagePos + 3 + 200, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+;	+DisplayColourTextBoundingAt_AX Text2Start_German , Text2End_German , ScreenMessagePos + 2 + 400, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+;	+DisplayColourTextBoundingAt_AX Text2Start_Spanish , Text2End_Spanish , ScreenMessagePos + 1 + 600, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+
+
+	+DisplayColourTextBoundingAt_AX TextStart_English , TextEnd_English , ScreenMessagePos + 3, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doFrench
+	+DisplayColourTextBoundingAt_AX TextStart_French , TextEnd_French , ScreenMessagePos + 2, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doItalian
+	+DisplayColourTextBoundingAt_AX TextStart_Italian , TextEnd_Italian , ScreenMessagePos + 2, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doGerman
+	+DisplayColourTextBoundingAt_AX TextStart_German , TextEnd_German , ScreenMessagePos + 3, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doSpanish
+	+DisplayColourTextBoundingAt_AX TextStart_Spanish , TextEnd_Spanish , ScreenMessagePos + 4, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+
+
+.doEnglish2
+	+DisplayColourTextBoundingAt_AX Text2Start_English , Text2End_English , ScreenMessagePos + 3, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doFrench2
+	+DisplayColourTextBoundingAt_AX Text2Start_French , Text2End_French , ScreenMessagePos + 0, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doItalian2
+	+DisplayColourTextBoundingAt_AX Text2Start_Italian , Text2End_Italian , ScreenMessagePos + 3, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doGerman2
+	+DisplayColourTextBoundingAt_AX Text2Start_German , Text2End_German , ScreenMessagePos + 2, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+.doSpanish2
+	+DisplayColourTextBoundingAt_AX Text2Start_Spanish , Text2End_Spanish , ScreenMessagePos + 1, VIC2Colour_Yellow , $52 , $77 , $a0 , VIC2Colour_White
+	jmp .doneLanguage
+	
+
+.doneLanguage
+	+MACROWaitForTheLastScanPlus1_A
+	+SetDefaultScreen_A
+
+	; Copy the decompression code to lower memory. The size of the code varies depending on the
+	; features activated in the code.
+	ldx #0
+.cp1
+	; Copy the ZP code first
+	lda RNXPCompressionDecompress_ZPStart+$ff-RNXPCompressionDecompress_ZPStartReal,x
+	sta+2 $ff,x
+	lda RNXPCompressionDecompress_ZPStart,x
+	sta+2 RNXPCompressionDecompress_ZPStartReal,x
+	dex
+	bne .cp1
+
+.cp2
+	lda RelocIRQRoutineStart,x
+	sta RelocIRQRoutineReal,x
+	dex
+	bne .cp2
+
+	+MACROCIAIRQControlDisable_A
+	+MACROVICIRQCIATimerControlDisable_A
+	+MWordValueToAddress_A IRQRoutine , KERNALIRQServiceRoutineLo
+	+MWordValueToAddress_A $4000 , CIA1TimerALo
+	lda #%10000001
+	sta CIA1InterruptControl
+	lda #%10001
+	sta CIA1TimerAControl
+	+MACROAckAllIRQs_A
+
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	cli
+
+	jmp ContinueZPCode
+
+TextStart_English
+!scr "cyberload now loading hunter's moon"
+TextEnd_English
+TextStart_French
+!scr "cyberload chargement de hunter's moon"
+TextEnd_French
+TextStart_Italian
+!scr "cyberload sta caricando hunter's moon"
+TextEnd_Italian
+TextStart_German
+!scr "cyberload ladt jetzt hunter's moon"
+TextEnd_German
+TextStart_Spanish
+!scr "cyberload cargando hunter's moon"
+TextEnd_Spanish
+
+Text2Start_English
+!scr "cyberload now loading end sequence"
+Text2End_English
+Text2Start_French
+!scr "cyberload chargement de sequence finale"
+Text2End_French
+Text2Start_Italian
+!scr "cyberload sta caricando il finale"
+Text2End_Italian
+Text2Start_German
+!scr "cyberload ladt jetzt die endsequenz"
+Text2End_German
+Text2Start_Spanish
+!scr "cyberload cargando la secuencia final"
+Text2End_Spanish
+
+RelocIRQRoutineStart
+!pseudopc $400 {
+RelocIRQRoutineReal
+.count !by 62
+.alternate !by 0
+.xpos !by 0
+IRQRoutine
+	pha
+	txa
+	pha
+
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	lda CIA1InterruptControl
+
+
+!ifdef EnableFireCheck {
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .noFire
+
+	lda PreBoot_AnimationSelect
+	cmp #kPreBoot_AnimationSelect_Intro
+	bne .noFire
+
+	+MACROWaitForTheLastScanPlus1_A
+	lda #0
+	sta VIC2ScreenControlV
+
+	; Start the game code by calling the warm start vector
+	lda #0
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	jmp ($8002)
+
+.noFire
+}
+
+	inc .alternate
+	lda .alternate
+	and #3
+	bne .oc1
+	dec .count
+.oc1
+	lda .count
+	cmp #30
+	bcc .o1
+
+	ldx .xpos
+	inx
+	cpx #40
+	bcc .l1
+	ldx #0
+.l1
+	stx .xpos
+
+	lda #VIC2Colour_Black
+	sta ScreenMessagePosCOLOUR-(VIC2ScreenCharsWidth*2),x
+	sta ScreenMessagePosCOLOUR+(VIC2ScreenCharsWidth*2),x
+	lda #VIC2Colour_White
+	sta ScreenMessagePosCOLOUR-(VIC2ScreenCharsWidth*2)-1,x
+	sta ScreenMessagePosCOLOUR+(VIC2ScreenCharsWidth*2)-1,x
+
+.o1
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	pla
+	tax
+	pla
+	rti
+
+
+RelocIRQRoutineRealEnd
+}
+RelocIRQRoutineEnd	
+
+!if ScreenMessagePos-(VIC2ScreenCharsWidth*2) < RelocIRQRoutineRealEnd {
+	!error "ScreenMessagePos is killing the code at RelocIRQRoutineRealEnd"
+}
+
+Test1Len = RNXPCompressionDecompress_ZPEnd - RNXPCompressionDecompress_ZPStart
+
+Decompression_UseZPVars = 1
+RNXPCompressionDecompress_ExitCodeDefined = 1
+!macro RNXPCompressionDecompress_ExitCode {
+NOTE_CompressedDataExecute	jmp CompressedDataExecute
+}
+
+!set RNXPCompressionDecompress_WriteByteAddr = CompressedDataStore
+!set RNXPCompressionDecompress_GetByteAddr = EndOfMemory - CompressedDataEnd + CompressedDataStart
+CompressionStartOfHistoryBufferTables = $2
+
+!zn
+RNXPCompressionDecompress_ZPStart
+!pseudopc $42 {
+RNXPCompressionDecompress_ZPStartReal
+!source "DecompressionVars.a"
+
+ContinueZPCode
+	; Now copy the compressed data to the top of memory, backwards of course.
+
+.cp2
+NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
+NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
+	dex
+	bne .cp2
+	dec .cp2+2
+	dec .cp2+5
+	lda .cp2+2
+	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
+	cmp #(>CompressedDataStart)-2
+	bne .cp2
+
+	jmp RNXPCompressionDecompress
+
+	; Include the decompression code in the middle of this code to get the actual decompression
+	; code size for the copying phase below.
+Decompression_OptimiseForOneEscapeBit = 1
+Decompression_OptimiseNoChangingEscape = 1
+Decompression_OptimiseNoStoreStub = 1
+Decompression_TwoParts = 1
+
+!zn {
+!source "Decompression.a"
+
+!source "DecompressionP2.a"
+}
+
+!if * > $1f0 {
+!error "The ZP code has grown into the stack space, which is being used by the decompressor"
+}
+RNXPCompressionDecompress_ZPEndReal
+}
+RNXPCompressionDecompress_ZPEnd

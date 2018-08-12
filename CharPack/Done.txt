@@ -20,3 +20,69 @@ Bit pair = %01: Pixel color is determined by bits #4-#7 of the corresponding scr
 Bit pair = %10: Pixel color is determined by bits #0-#3 of the corresponding screen byte in Screen RAM.
 Bit pair = %11: Pixel color is determined by the corresponding color byte in Color RAM.
 Make it possible to convert large screens of data, either wide or high. Think about data orientation output in character strips.
+
+
+
+
+* Option to calculate the remaining image after the char/bitmap conversion and output the BMP as a new file
+	The remaining image can be calculated by doing a nearest match regardless of the char pick-list (but include colour remapping) and comparing with the nearest match
+	Option to set the base screen remaining pixels to black if they cannot be mapped and have to go into the remaining image
+	This is so the extra image can then be passed to a sprite sheet preparation stage
+		* If the sprites cannot map the pixels then they have to be merged back into the base image and the closest pixels picked as per normal
+		* This means it would ideally be a single process, not split into two. However it could also be an option to create a sprite sheet
+		* The sprite sheet would need to have optional hires/multicolour force, plus X/Y expansions and positions or grid aligned sprites
+		* And also an option for best fit for variable max sprite per line fitting
+		* Output data and/or optimised IRQ code?
+	* Added calculation of newScreenSpriteSheet oldScreenSpriteSheet
+	* MPi: TODO: Create a lower resolution sprite colour map and try to choose that colour by preference?
+	* MPi: TODO: Process newScreenSpriteSheet here if the spriteSheet option is enabled
+	* Algorithm for newScreenSpriteSheet processing:
+		* Starting from the top left of newScreenSpriteSheet, find the first row and column of used pixels
+		* Extract the sprite data into C64UDG
+	* Output the sprite sheet data, sprite frames, positions, colours etc
+		Negative colour can mean the end of the sprite display list info
+			colour
+			frame
+			x lo , x hi
+			y
+
+
+
+
+* Add sprite sheet threshold inclusion for all colours
+	Can also double as a whitelist by setting a very high threshold which effectively removes the colour
+
+
+
+
+* Document
+	-sheetframes
+	-sheetinfo
+	-sheetcolours 0 11 12
+	-sheetthresholdbase
+	-sheetthresholdmax
+
+
+
+* During bitmap conversion, sort UDG pixel values used by colour index
+	Animation8
+	Frame 901 in 10004 comp 5 bestSizeVarResultVal 4
+	Total bytes in 9138226 and out 332272 saved 0
+
+	// Try sorting the colour indexes to generate more consistent runs of colours
+	Using: -forceordering
+	Total bytes in 9138226 and out 327022 saved 0
+	delta = 5250
+
+
+
+* Hmm, or maybe retain the pixel colour map ordering when possible
+	-forceordering -spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00048.bmp 0 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
+	-forceordering -spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2a.bin c:\temp\t2a.scr c:\temp\t2a.col
+	-forceordering -reducebitmapchange c:\temp\t.scr c:\temp\t.col -spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2b.bin c:\temp\t2b.scr c:\temp\t2b.col
+	Animation8
+	Frame 901 in 10004 comp 5 bestSizeVarResultVal 4
+	Total bytes in 9138226 and out 332272 saved 0
+	After -forceordering and -reducebitmapchange
+	Total bytes in 9138226 and out 315500 saved 0
+	delta = 16772

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="AnimationBitmap">
+      <UniqueIdentifier>{58356edd-c0eb-4daf-838d-c15037548125}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -29,5 +32,13 @@
     <ClInclude Include="..\..\Common\ParamToNum.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\AnimationBitmap\Done.txt">
+      <Filter>AnimationBitmap</Filter>
+    </Text>
+    <Text Include="..\..\AnimationBitmap\TODO.txt">
+      <Filter>AnimationBitmap</Filter>
+    </Text>
   </ItemGroup>
 </Project>
