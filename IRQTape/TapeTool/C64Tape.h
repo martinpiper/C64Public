@@ -70,6 +70,7 @@ private:
 	unsigned char mTapeSyncCode;
 	unsigned char mTapeHeaderByteEx;
 	unsigned char mTapeHeaderByteEx2;
+	unsigned char mTapeHeaderByteEx2RLE;
 	unsigned char mTapeHeaderByteEx3;
 
 	int mTapeTurboSpeed;

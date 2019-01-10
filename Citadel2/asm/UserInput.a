@@ -204,12 +204,19 @@ HandleUserInput
 	lda #VIC2Colour_Brown
 	sta VIC2BorderColour
 }
+
+	; Don't run this code when busy in the frame
+	lda frameIsOrWasBusy
+	bne .noSweep2
+
 	jsr AutoDoor_Iterate
 
 !ifdef HandleUserInput_DebugFineTimings {
 	lda #VIC2Colour_LightRed
 	sta VIC2BorderColour
 }
+
+
 	; Don't run this sweep every frame, so use this counter instead
 	lda DynamicMemory_BlockSweepCount
 	and #1

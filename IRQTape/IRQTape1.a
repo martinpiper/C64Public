@@ -85,12 +85,12 @@ TinyHeader = 1
 ; This starts at $0801 so that doing a LOAD"*",8 will still work with the default $0801 BASIC start address.
 !source "../stdlib/BASICEntry900.a"
 
-TapePilotCode1		= %11111111
-TapePilotCode2		= %11000011
-TapeSyncCode		= %10101010
-TapeHeaderByteEx	= %11110000
-TapeHeaderByteEx2	= %10010110
-TapeHeaderByteEx3	= %01101001
+TapePilotCode1			= %11111111
+TapePilotCode2			= %11000011
+TapeSyncCode			= %10101010
+TapeHeaderByteEx		= %11110000
+TapeHeaderByteEx2		= %10010110
+TapeHeaderByteEx3		= %01101001
 
 !source "TurboTapeVars.a"
 

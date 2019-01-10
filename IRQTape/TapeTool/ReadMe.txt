@@ -11,14 +11,16 @@ TapeTool will most often be used with ACME to assemble the MartyLoad tape turbo 
 The ExampleBuild.bat file shows how to run the examples given below from a batch file.
 
 First make sure the "_config.a" file only has the following lines enabled:
-	OpenBorders = 1
-	NovaishLoad = 1
-	EnableBlockChecksum = 1
-	TapeTurboSpeed = $80
-	MainLoad_EnableScreen = 1
+	OpenBorders = 1 
+	MainLoad_EnableScreen = 1 
+	EnableBlockChecksum = 1 
+	EnableBlockCompression = 1 
+	TapeTurboSpeed = $80 
+	NovaishLoad = 1 
 This config file tells the tape turbo code how to build. It enables the border opening code in the Nova load style loader.
 It also enables extended error checksums for file data. It sets the tape turbo speed to be $80 and also defines the different
 turbo tape byte codes used. The turbo byte codes don't really need to be changed but they can be configured if required.
+The block compression is also enabled.
 
 Now assemble the code using:
 >	acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a
@@ -54,30 +56,30 @@ offset .RealCodeStart and ending at .RealCodeEnd. These values are read from the
 
 All tape data that follows is loaded by the real turbo loader. It is written with the block checksum method.
 The bottom border sprite data needs to be written.
->	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c
+>	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c
 Explanation:
 (w "test.tap" a m "Loaders.map") Open the tap file for writing, appends data, loads the symbol map file.
 (otl$c0) Another short leader for the tape motor to start.
-(otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200) Writes turbo data with checksum blocks using data from the
+(otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200) Writes turbo data with checksum blocks using data from the
 file "Loaders.bin". It saves using a filename byte of 0. The sata offset starts from .SpriteDataStart and ends at
 .SpriteDataEnd. The load address for the data is $200
 (c) Closes the file and sets the correct data length.
 
 Next write the music.
->	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "R.MUS8000.PRG" 1 c
+>	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "R.MUS8000.PRG" 1 c
 Explanation:
 (w "test.tap" a m "Loaders.map") As before, opens the tap file, appends data, loads the symbol map file.
 (otl$c0) Another short leader.
-(otfb "R.MUS8000.PRG" 1) Writes turbo data with checksum blocks using data from the "R.MUS8000.PRG" file.
+(otfbr "R.MUS8000.PRG" 1) Writes turbo data with checksum blocks using data from the "R.MUS8000.PRG" file.
 This time the filename byte is 1. The start/end offset and load address is optional and not included. In this case the
 information is calculated from the PRG format file.
 (c) As before, closes the file and sets the correct data length.
 
 Next write the multiplexor demo.
->	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "TestMultiplexor.prg" 2 otl$c0 c
+>	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "TestMultiplexor.prg" 2 otl$c0 c
 (w "test.tap" a m "Loaders.map") As before, opens the tap file, appends data, loads the symbol map file.
 (otl$c0) Another short leader.
-(otfb "TestMultiplexor.prg" 2) As before writes PRG format data, but this time it uses the "TestMultiplexor.prg" file.
+(otfbr "TestMultiplexor.prg" 2) As before writes PRG format data, but this time it uses the "TestMultiplexor.prg" file.
 (otl$c0 c) Because this is the last file on the tape it is a good idea to include a short amount of leadout. The file is
 also closed and the correct file length set with the 'c' parameter.
 
@@ -86,14 +88,14 @@ So in summary the following lines are executed:
 acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a
 TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin c
 TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd c
-TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c
-TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "R.MUS8000.PRG" 1 c
-TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfb "TestMultiplexor.prg" 2 otl$c0 c
+TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c
+TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "R.MUS8000.PRG" 1 c
+TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "TestMultiplexor.prg" 2 otl$c0 c
 
 
 TapeTape tool can also write multiple input files at the same time by including them on the same command line. So the
 above lines can become:
->	TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "R.MUS8000.PRG" 1 otl$c0 otfb "TestMultiplexor.prg" 2 otl$c0 c
+>	TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "R.MUS8000.PRG" 1 otl$c0 otfbr "TestMultiplexor.prg" 2 otl$c0 c
 The output TAP files would be identical regardless of the method used to write them since the same data is being written.
 
 
@@ -132,7 +134,7 @@ This gives 985248 / 384 = 2565 bits per second.
 
 
 If the configuration value "EnableBlockChecksum = 1" is not enabled then all tape data is loaded without checksum
-blocks. This means all TapeTool "otfb" parameters must be changed to be "otf". Generally though checksum blocks should be
+blocks. This means all TapeTool "otfbr" parameters must be changed to be "otf". Generally though checksum blocks should be
 enabled since they greatly improve loading reliability.
 
 
@@ -149,6 +151,10 @@ Each file must have a unique filename so the loader can skip blocks and only loa
 Note each file does not need a new leader because they share the leader before the interleaved blocks.
 This feature is especially useful for multiloaders where a game can load either level file without winding the tape to a different position.
 The interleaved files do not have to be the same length.
+
+
+*Using the option "otfbr" uses RLE compression for each block, if there is a significant saving for the block.
+EnableBlockCompression = 1 will need to be enabled (in _config.a) to handle this data block type
 
 
 *Using TapeTool to reverse engineer tape files.

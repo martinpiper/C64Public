@@ -24,6 +24,9 @@
     <ClCompile Include="C64Tape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Compression\CompressRLE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Loaders.a">
@@ -71,12 +74,18 @@
       <Filter>ASM</Filter>
     </None>
     <None Include="Done.txt" />
+    <None Include="ExampleBuild.bat" />
+    <None Include="..\..\Compression\RunTests.bat" />
+    <None Include="..\MakeRelease.bat" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C64Tape.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Compression\CompressRLE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

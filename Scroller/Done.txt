@@ -164,3 +164,25 @@
 		Add extra Scroller_EnableBlockStripsSpeedCodeInCart option that is activated with Scroller_EnableSpeedCode like that used for Scroller_EnableBlockColourSpeedCodeInCart
 	* When Scroller_EnableBlockStripsSpeedCodeInCart assemble the unrolled code separately
 		Make sure used variables/defines are extracted by sed in BuildIt.bat
+
+
+
+
+* When Scroller_LinkedPlayers
+	Then for player 2 direction consider using the player 1 veloxity to direction.
+		Around PlayerControl.a:.ignoreCollision
+			ldx .playerInformation+PlayerGameOffset_TargetVelX
+			ldy .playerInformation+PlayerGameOffset_TargetVelY
+		Read the above from +MACROPlayerControl Player2Information
+		Or perhaps just before:
+			ldx .playerInformation+PlayerGameOffset_AnimationIndex
+		Use: Player1Information+PlayerGameOffset_AnimationIndex
+			lda AnimationDirectionIn,x
+		instead of the jsr AnimationConvertXYToDirection
+	* Added Scroller_LinkedPlayersAnimations
+
+
+
+* Added support for sprite expansion options
+	Global_SpriteExpandX = 1
+	Global_SpriteExpandY = 1

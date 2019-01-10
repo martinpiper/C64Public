@@ -3,7 +3,7 @@
 ;!bin "../SEUCK/GAME1__I.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.size,.offset
-!bin "../SEUCK/GAME3__I.P00",.size,.offset
+;!bin "../SEUCK/GAME3__I.P00",.size,.offset
 ;!bin "../SEUCK/GAME4__I.P00",.size,.offset
 ;!bin "../SEUCK/demo4.bin",.size,.offset
 ;!bin "../SEUCK/VIOSGAME.P00",.size,.offset
@@ -56,6 +56,9 @@
 ;Disable TryOtherPlayerSafePositionForRespawn
 ;!bin "../SEUCK/WACKYV3I.P00",.size,.offset
 
+
+; Needs Scroller_SpriteExpandX and Scroller_SpriteExpandY to be set
+!bin "../SEUCK/gigaseuck.p00",.size,.offset
 }
 
 

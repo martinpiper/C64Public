@@ -7,12 +7,6 @@ A tool to provide a command line interface that enables C64 format TAP files to 
 	It directly calls the kernal tape loader that loads a block of data, even the tape header is a block of data and can be loaded to different addresses.
 
 
-Decompress while loading.
-Each block of compressed data will have to be fully read before decompression is allowed to happen.
-This is because each block will need to pass the checksum test before being used for decompression.
-
-
-
 Explain the label values used from the map file for ocb1, otft, otf, otfb
 
 

@@ -420,6 +420,15 @@ IrqTopOfScreen
 !ifdef IRQOpenBorders {
 	lda #%11
 	sta CIA2PortASerialBusVICBank
+
+!ifdef Global_SpriteExpandX {
+	lda #$ff
+	sta VIC2SpriteDoubleWidth
+}
+!ifdef Global_SpriteExpandY {
+	lda #$ff
+	sta VIC2SpriteDoubleHeight
+}
 }
 
 	; Calculate the any real scroll bits used for this screen frame from VIC
@@ -619,6 +628,12 @@ Multiplex_DiscardSpritesYPos=scorePanelPos1 - 1 - Scroller_SpriteDiscardAdjust
 	; Switch off sprites, as much as they can be switched off while the VIC draws them :)
 	lda #0
 	sta VIC2SpriteEnable
+!ifdef Global_SpriteExpandX {
+	sta VIC2SpriteDoubleWidth
+}
+!ifdef Global_SpriteExpandY {
+	sta VIC2SpriteDoubleHeight
+}
 
 	; Update the sprite y position first
 	lda #8

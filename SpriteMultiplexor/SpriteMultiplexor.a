@@ -1,6 +1,6 @@
 MarkMultiplexorBeginCode = *
 
-Multiplex_spriteHeightTweak = 21+2	; Add 2 because the carry is clear when we do "sbc VIC2Raster" and we want to start updating the sprite data on the next line after the sprite bottom.
+Multiplex_spriteHeightTweak = VIC2SpriteSizeY+2	; Add 2 because the carry is clear when we do "sbc VIC2Raster" and we want to start updating the sprite data on the next line after the sprite bottom.
 
 !ifdef Multiplex_rasterHeight { } else {
 !ifdef Multiplex_MaintainPriority {

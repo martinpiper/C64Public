@@ -426,8 +426,16 @@ VIC2Multicolour_Yellow	= 15
 
 ; Other constant values related to the VIC2
 ; Unexpanded sprite sizes
+!ifdef Global_SpriteExpandX {
+VIC2SpriteSizeX = 24*2
+} else {
 VIC2SpriteSizeX = 24
+}
+!ifdef Global_SpriteExpandY {
+VIC2SpriteSizeY = 21*2
+} else {
 VIC2SpriteSizeY = 21
+}
 ; The left most position for a 40 column wide screen where the sprite is completely visible
 VIC2SpriteXBorderLeft = 24
 ; The left most position for a 38 column wide screen where the sprite is completely visible

@@ -9,6 +9,12 @@
 !ct pet
 !initmem %10101010
 
+; Note: Sprite expansion options must be configured before including stdlib.a
+; Enable this enable X expanded sprites in game
+;Global_SpriteExpandX = 1
+; Enable this enable Y expanded sprites in game
+;Global_SpriteExpandY = 1
+
 !source "../stdlib/stdlib.a"
 
 ;Multiplex_items	= 32
@@ -22,19 +28,19 @@ Multiplex_items	= 24
 ;Scroller_DebugSplit = 1
 
 ; Define this to use the KERNAL, alters how IRQ/NMI vectors are used
-Scroller_UseKernal = 1
+;Scroller_UseKernal = 1
 
 ; Define Scroller_EnableSpeedCode to enable scroller speed code in cartridge banks. This number is the starting bank of the scroller speed code
 ; Each block of speed code in the bank is in fixed order defined by the colour and screen size requirement.
 ; Scroller_UseKernal must also be defined to use the speed code approach.
-Scroller_EnableSpeedCode = 1
+;Scroller_EnableSpeedCode = 1
 !source "_f_index1.a"
 
 ; Enable this to unroll block plotting speed code where possible
-Scroller_EnableBlockStripsSpeedCode = 1
+;Scroller_EnableBlockStripsSpeedCode = 1
 
 ; Enable this to unroll block colour plotting speed code where possible
-Scroller_EnableBlockColourSpeedCode = 1
+;Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page
@@ -88,13 +94,13 @@ Scroller_DebugMainlineBorder = 1
 
 ; Define this to demonstrate a multi-directional scroller.
 ; Undefine this to enable SEUCK data file compatibility.
-Scroller_MultiDirection = 1
+;Scroller_MultiDirection = 1
 
 ; Define this to reduce code size by not using diagonals. frameTargetVelX and frameTargetVelY will be tested for the largest value and that movement will take priority
 ;Scroller_MultiDirectionNoDiagonals = 1
 
 ;Enable full screen or use the lower screen split
-;Scroller_FullScreen = 1
+Scroller_FullScreen = 1
 
 ; For multi-directional example code (HandleJoystick) the speed is clamped to this number of pixels per frame
 Scroller_MaxScrollSpeed = 4
@@ -112,7 +118,7 @@ IRQOpenBorders = 1
 ;Scroller_LevelSkipDemoCode = 1
 
 ; Use the standard demo score panel graphics
-Scroller_UseDemoScorePanel = 1
+;Scroller_UseDemoScorePanel = 1
 
 ; Enables the colour scroll code, without this the colour screen is ignored
 Scroller_NeedFullColourScroll = 1
@@ -138,9 +144,9 @@ Scroller_ClearColour = 9
 } else {
 
 Scroller_DisplayTitleScreen = 1
-TitleScreenAnimationHook_Enable = 1
+;TitleScreenAnimationHook_Enable = 1
 
-Scroller_DisableUpdateSprites = 1
+;Scroller_DisableUpdateSprites = 1
 
 ; Pixel accurate collision enable
 ; Disabling this will disable all SEUCK collisions.
@@ -167,7 +173,7 @@ Scroller_PlaySoundEffectsDuringGame = 1
 
 
 ; Define this to cause animating sprites to be displayed on the title screen instead of raster bar text
-TitleScreen_AnimatingSprites = 1
+;TitleScreen_AnimatingSprites = 1
 
 ; Define this separately to Scroller_LOTD if you just want the linked enemy test enabled
 Scroller_LinkedEnemyTest = 1
@@ -175,9 +181,12 @@ Scroller_LinkedEnemyTest = 1
 ; Define this to link player 1 and 2 sprites together so that one joystick can control both players.
 ; The code will permanently offset the "player 2" sprite using Scroller_LinkedPlayersOffsetX and Scroller_LinkedPlayersOffsetY
 ; When one player animation explodes dies the other player animation explodes at the same time.
-;Scroller_LinkedPlayers = 1
+Scroller_LinkedPlayers = 1
 Scroller_LinkedPlayersOffsetX = 0
 Scroller_LinkedPlayersOffsetY = -21
+
+; Define this with Scroller_LinkedPlayers to cause the second linked player to copy the animation directional input from the first linked player
+;Scroller_LinkedPlayersAnimations = 1
 
 !ifdef Scroller_LinkedPlayers {
 Scroller_SingleScoreLives = 1	; This must be always enabled if Scroller_LinkedPlayers is enabled

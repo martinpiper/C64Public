@@ -101,3 +101,46 @@ Each stream would be a kernal file, or a whole (non blocked) turbo file or block
 *********************
 ** 1.0.0.3
 ** Released to http://noname.c64.org/csdb/
+
+
+
+Decompress while loading.
+Only in TapeTool otfb mode
+Each block of compressed data will have to be fully read before decompression is allowed to happen.
+This is because each block will need to pass the checksum test before being used for decompression.
+TapeTool can be updated to save compressed 256 byte blocks, using the RLE compression found in Compression\main.cpp TestRLEPack()
+The header byte can be used to signify if it's compressed or not. If it's not compressed then just write plain data. If it's compressed then store to a temporary buffer.
+If the block does not compress well then store the uncompressed version as before.
+After the checksum for the block passes it can flag to the mainline that a block is ready, or optionally just do the decompression in the IRQ.
+If the mainline does the decompression then it must rapidly and regularly check for the data and process it quickly.
+The Decompression:RNXPCompressionDecompressRLE code could be reused, but it is not very optimal and could be vastly improved with abs,x/y addressing assuming no more than 256 bytes are decompressed
+ScrollerMusicLoader.a can be used to test, as the music code is not initially compressed it will benefit from quicker compressed block loading.
+	Make sure IgnoreSecondLoader is not set in _config.a
+The place where TapeHeaderByteEx2 is checked for in TapeLoaderCIAIRQ.a and mTapeHeaderByteEx2 written in TapeTool\C64Tape.cpp for "if ( checksumBlocks )" will need tweaks
+	Perhaps the filename bit 7 would be a better test?
+	Or perhaps that would be too limiting, just have another header byte for compressed would better from a future expansion point of view?
+	Make .doingHeaderCheckEx2 optional code with a compressed blocks option defined in _config.a
+* Done:EnableBlockCompression* Add conditional code define to enable all the extra support for TapeHeaderByteEx2RLE into _config.a (Like EnableBlockChecksum)
+cd /d C:\Work\C64\IRQTape\TapeTool
+..\..\acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUS8000.PRG" 1 otl$c0 otfbr "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && C:\VICE\x64.exe test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUS8000.PRG" 1 otl$c0 otfbr "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor test.tap
+* First pass with the above command line, using otfbr, and BlockCompressionCheck_AfterBlock works
+* However the RLE decompress start at the first "jsr RNXPCompressionDecompress_GetByte" could do with being executed in the mainline finish loading detection loop instead.
+* This is because the raster split and open border routine do flicker due to the decompress being in the IRQ, which is to be expected.
+* Without RLE = 32 tape blocks
+* With RLE = 24 tape blocks
+* Done: savedBytes -= 8: Could do with a slightly wider threshold check for "savedBytes", adjust the savedBytes down by a few to take into account the WriteTurboLeader(8) when compressed blocks are being used
+	This slightly longer leader (lead out actually) is to allow time for the decompression to complete between blocks, since there is only one block for the temporary buffer
+* TapeLoaderCompressedBufferFull_Handle seems to be taking more than a frame sometimes
+
+
+
+*********************
+** 1.0.0.6
+** Released to http://noname.c64.org/csdb/
+
+
+
+* Split the decompression over two frames to avoid jerky scrolling message problems.
+
+* Compressed block status indicator to the left of the tape counter enabled with TapeLoaderCompressed_screenIndicator

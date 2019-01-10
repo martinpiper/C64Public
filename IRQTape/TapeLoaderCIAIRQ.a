@@ -60,6 +60,11 @@ TapeLoaderLoadNewFile
 	sta TapeLoaderExpectedLoadingBlocks
 	jsr .ResetLoaderStatus
 
+!ifdef EnableBlockCompression {
+	lda #0
+	sta TapeLoaderCompressedBufferFull
+}
+
 	pla
 	tax
 	rts
@@ -69,6 +74,7 @@ TapeLoaderLoadNewFile
 	sta .byte					; Safe to set 0 zero here since we will be getting a sync byte which resets to 1 for the carry 8 bit check later on
 	sta TurboTapeHeaderStatus
 	sta TurboTapeFinishedLoadingFile
+	sta intTurboTapeFinishedLoadingFile
 	sta .checksum
 	rts
 
@@ -93,18 +99,7 @@ TurboTapeBlockCounter !by 0
 	; Shift actual tape bit 0/1 into received byte
 	rol .byte					; If we are synced then this will cause carry to be set every eight bits. Else carry is undefined.
 
-	; Produces some sound during loading
-;	lda SIDVolumeFilter
-;	eor #15
-;	sta SIDVolumeFilter
-
-	lda VIC2BorderColour
-	eor #5						; Better border colours with one less byte than using the clc/adc method
-	sta VIC2BorderColour
-
-	; Produces some different sound during loading
-;	sta SIDVolumeFilter
-
+	+MTapeLoader_bitProcess_A
 
 	lda .byte
 	ldx TurboTapeHeaderStatus
@@ -128,6 +123,7 @@ TurboTapeBlockCounter !by 0
 ;	sta SIDVolumeFilter
 
 .processByte
+	+MTapeLoader_byteProcess
 	ldx #1						; Reset the byte to 1 so we will get carry set when we rotate into it and get 8 bits
 	stx .byte
 	; Parse header byte reading state
@@ -160,7 +156,8 @@ TurboTapeBlockCounter !by 0
 	; Loading bytes state break here
 
 	dex		; Test 11...
-	bne .doingChecksumByte	; ...  by doing a reverse check
+	beq .stateStoreByte
+	jmp .doingChecksumByte	; ...  by doing a reverse check
 	; Fall through here means we are in state 9, the most commonly used state for data bytes.
 	; x = 0
 .stateStoreByte
@@ -173,7 +170,7 @@ TurboTapeBlockCounter !by 0
 	sta .checksum
 	inc TapeLoaderStoringToLo
 	bne .over1
-	inc VIC2BorderColour
+	+MTapeLoader_blockProcess_A
 	inc TapeLoaderStoringToHi
 .over1
 	; Check for reaching the end of what we are loading
@@ -204,15 +201,22 @@ TurboTapeBlockCounter !by 0
 	jsr .ResetLoaderStatus
 	jmp .end
 .doingHeaderCheckEx2
+!ifdef EnableBlockCompression {
+	sta .lastHeaderEx2Type
+}
 	cmp #TapeHeaderByteEx2
-	beq .progressHeaderStatus			; Succeeded in reading the correct header byte ex
+	beq .progressHeaderStatus			; Succeeded in reading the correct header byte ex2
+!ifdef EnableBlockCompression {
+	cmp #TapeHeaderByteEx2RLE
+	beq .progressHeaderStatus			; Succeeded in reading the correct header byte ex2 RLE
+}
 	jmp .notValidSoReset
 .doingFileNameCheck
 FileNameByte = * + 1
 	cmp #0	; Self modifying byte for the filename
 	beq .progressHeaderStatus
 	; If the filename isn't correct then tweak the border colour once
-	inc VIC2BorderColour
+	+MTapeLoader_blockProcess_A
 	jmp .notValidSoReset
 .doingStartLoByte
 	sta TapeLoaderStoringToLo
@@ -235,6 +239,10 @@ FileNameByte = * + 1
 	cmp .checksum
 	bne .displayLoadError
 
+!ifdef EnableBlockCompression {
+	jsr BlockCompressionCheck_Header
+}
+
 !ifdef EnableBlockChecksum {
 	ldx .smZPStartBasicHi+1
 	lda BlocksLoadedTable,x
@@ -256,6 +264,12 @@ FileNameByte = * + 1
 	ldx .smZPStartBasicHi+1
 	inc BlocksLoadedTable,x
 }
+
+
+!ifdef EnableBlockCompression {
+	jsr BlockCompressionCheck_AfterBlock
+}
+
 
 	; If smZPStartBasicHi < ZPStartBasicHi
 .smZPStartBasicHi lda #0
@@ -289,8 +303,13 @@ FileNameByte = * + 1
 }
 
 	; Signal our user mode that we have done a complete file
+!ifdef EnableBlockCompression {
+	inc intTurboTapeFinishedLoadingFile
+	lda #0
+	sta TapeLoaderExpectedLoadingBlocks
+} else {
 	inc TurboTapeFinishedLoadingFile
-
+}
 .notLoadedYet
 	jmp .end
 
@@ -319,3 +338,219 @@ TapeLoaderGetBlocksLeftToLoad
 	sbc TapeLoaderStoringToHi
 }
 	rts
+
+
+!ifdef EnableBlockCompression {
+intTurboTapeFinishedLoadingFile !by 0
+
+TapeLoaderCompressedBuffer
+	!fill 256 , 0
+TapeLoaderCompressedBackup_smZPStartVariable
+	!by 0 , 0
+
+TapeLoaderCompressedBufferFull
+	!by 0
+
+BlockCompressionCheck_Header
+.lastHeaderEx2Type = *+1
+	lda #0
+	cmp #TapeHeaderByteEx2RLE
+	bne .notRLEHeader
+
+!ifdef TapeLoaderCompressed_screenIndicator {
+	lda #'*'
+	sta TapeLoaderCompressed_screenIndicator
+}
+
+	; Backup what the real intended values are
+	lda .smZPStartVariableLo+1
+	sta TapeLoaderCompressedBackup_smZPStartVariable
+	lda .smZPStartVariableHi+1
+	sta TapeLoaderCompressedBackup_smZPStartVariable+1
+
+	lda #<TapeLoaderCompressedBuffer
+	sta TapeLoaderStoringToLo
+	lda #>TapeLoaderCompressedBuffer
+	sta TapeLoaderStoringToHi
+
+	; Calculate a real write to address using the "compressed length"
+	lda TapeLoaderStoringToLo
+	clc
+	adc .smZPStartVariableLo+1
+	sta .smZPStartVariableLo+1
+	lda TapeLoaderStoringToHi
+	adc #0
+	sta .smZPStartVariableHi+1
+
+.notRLEHeader
+	rts
+
+
+BlockCompressionCheck_AfterBlock
+ 	lda .lastHeaderEx2Type
+	cmp #TapeHeaderByteEx2RLE
+	beq .isRLEHeader2
+	rts
+
+.isRLEHeader2
+	+MTapeLoader_blockProcess_A
+
+	; Restore what the real intended values are
+	; Calculate a real end write to address using the "original length"
+	lda .smZPStartBasicLo+1
+	sec
+	adc TapeLoaderCompressedBackup_smZPStartVariable+1
+	sta .smZPStartVariableLo+1
+	lda .smZPStartBasicHi+1
+	adc #0
+	sta .smZPStartVariableHi+1
+
+	lda #0
+	sta .smRLEDecompY
+	
+	inc TapeLoaderCompressedBufferFull
+	rts
+
+TapeLoaderCompressedBufferFull_Handle
+	lda TapeLoaderCompressedBufferFull
+	bne .gotCompressedBlock
+!ifdef TapeLoaderCompressed_screenIndicator {
+	lda #' '
+	sta TapeLoaderCompressed_screenIndicator
+}
+
+	; Check the last block flag and increment as needed
+	lda intTurboTapeFinishedLoadingFile
+	beq +
+	dec intTurboTapeFinishedLoadingFile
+	inc TurboTapeFinishedLoadingFile
++
+	rts
+
+.tooManyBlocks
+	sei
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+	jmp .tooManyBlocks
+
+.gotCompressedBlock
+;	inc VIC2ScreenColour
+
+	cmp #1
+	bne .tooManyBlocks
+
+	; RLE Decompress a buffer of up to 256 bytes
+.smRLEDecompY = * + 1
+	ldy #0
+	bne .rleSecond
+
+	; Setup RLE decompress
+	lda .smZPStartBasicLo+1
+	sta RNXPCompressionDecompress_WriteByte+1
+	lda .smZPStartBasicHi+1
+	sta RNXPCompressionDecompress_WriteByte+2
+
+!ifdef TapeLoaderCompressed_screenIndicator {
+	lda #'-'
+	sta TapeLoaderCompressed_screenIndicator
+}
+
+	lda TapeLoaderCompressedBuffer,y
+	iny
+	sta .smRLEByte
+
+.rle1
+	cpy #96
+	bcs .endRle1
+
+	lda RNXPCompressionDecompress_WriteByte+1
+	bmi .endRle1
+
+	lda TapeLoaderCompressedBuffer,y
+	iny
+.smRLEByte = * + 1
+	cmp #00
+	beq .rle3
+	jsr RNXPCompressionDecompress_WriteByte
+	jmp .rle1
+	; Handle a run
+.rle3
+	cpy TapeLoaderCompressedBackup_smZPStartVariable
+	beq .rleRet
+	ldx TapeLoaderCompressedBuffer,y
+	iny
+	lda TapeLoaderCompressedBuffer,y
+	iny
+.rle4
+	jsr RNXPCompressionDecompress_WriteByte
+	dex
+	bne .rle4
+	jmp .rle1
+
+.endRle1
+	sty .smRLEDecompY
+;	dec VIC2ScreenColour
+	rts
+
+.rleRet2
+;	dec VIC2ScreenColour
+.rleRet
+	dec TapeLoaderCompressedBufferFull
+	bne .blockOverflow
+
+;	dec VIC2ScreenColour
+
+	rts
+
+; The second version without Y check, write lo check or Y store, because the decompression is sometimes spread across two frames
+.rleSecond
+;	inc VIC2ScreenColour
+!ifdef TapeLoaderCompressed_screenIndicator {
+	lda #'!'
+	sta TapeLoaderCompressed_screenIndicator
+}
+
+.rle1b
+	lda TapeLoaderCompressedBuffer,y
+	iny
+	cmp .smRLEByte
+	beq .rle3b
+	jsr RNXPCompressionDecompress_WriteByte
+	jmp .rle1b
+	; Handle a run
+.rle3b
+	cpy TapeLoaderCompressedBackup_smZPStartVariable
+	beq .rleRet2
+	ldx TapeLoaderCompressedBuffer,y
+	iny
+	lda TapeLoaderCompressedBuffer,y
+	iny
+.rle4b
+	jsr RNXPCompressionDecompress_WriteByte
+	dex
+	bne .rle4b
+	jmp .rle1b
+
+
+.blockOverflow
+	sei
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+	jmp .blockOverflow
+
+
+RNXPCompressionDecompress_WriteByte	sta $1234
+	inc RNXPCompressionDecompress_WriteByte+1
+	bne .e1
+	inc RNXPCompressionDecompress_WriteByte+2
+.e1
+	rts
+}

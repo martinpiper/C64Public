@@ -44,6 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <CustomBuildAfterTargets>Link</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -76,15 +77,30 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>copy /Y Release\TapeTool.exe ..\..\bin\</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Copying release EXE</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\..\bin\TapeTool.exe</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>Release\TapeTool.exe</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Compression\CompressRLE.cpp" />
     <ClCompile Include="C64Tape.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Compression\RunTests.bat" />
     <None Include="..\..\stdlib\PETSCII.a" />
     <None Include="..\..\stdlib\stdlib.a" />
     <None Include="..\IRQTape1.a" />
+    <None Include="..\MakeRelease.bat" />
     <None Include="..\ScrollerMusicLoader.a" />
     <None Include="..\TapeLoaderCIA.a" />
     <None Include="..\TapeLoaderCIACommon.a" />
@@ -95,12 +111,14 @@
     <None Include="..\TurboTapeVars.a" />
     <None Include="..\TurboTapeWrite.a" />
     <None Include="Done.txt" />
+    <None Include="ExampleBuild.bat" />
     <None Include="Loaders.a" />
     <None Include="ReadMe.txt" />
     <None Include="TODO.txt" />
     <None Include="_config.a" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Compression\CompressRLE.h" />
     <ClInclude Include="C64Tape.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

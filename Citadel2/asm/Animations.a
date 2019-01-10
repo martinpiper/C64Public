@@ -54,7 +54,17 @@ frameIsOrWasBusy !by 0
 
 EnemiesOnScreenCount	!by 0
 
+Animation_alternateFrames !by 0 , 1
+
 UpdateSprites
+	; Update the alternate frames values
+	lda Animation_alternateFrames
+	eor #1
+	sta Animation_alternateFrames
+	eor #1
+	sta Animation_alternateFrames+1
+
+
 !if 0 {
 	; Display the overrun counter in the border colour
 	lda ScrollerDemo_OverrunCounter
@@ -123,6 +133,25 @@ UpdateSprites
 	lda #2
 	sta frameIsOrWasBusy
 .ob2
+
+!if 0 {
+	lda frameIsOrWasBusy
+	sta VIC2BorderColour
+}
+
+
+!if 0 {
+	; MPi: Debug for forcing the frame busy logic
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardRowsJoystickB
+	bne .notSpace
+	lda #50
+	sta frameIsOrWasBusy
+.notSpace
+	lda frameIsOrWasBusy
+	sta VIC2ScreenColour
+}
+
 !if 0 {
 	; MPi: TODO: Debug output the scroller movements per frame to known memory locations
 .sm1	ldx #0
@@ -331,6 +360,8 @@ UpdateSprites
 
 	; Stop collisions with the player when the game is exiting
 	lda ScrollerExitMainLineCounter
+	ora frameIsOrWasBusy
+	ora Animation_alternateFrames
 	bne .noPlayerSCollide
 
 .testEnemyBulletToPlayerCollide
@@ -638,6 +669,8 @@ UpdateSprites
 .testEnemyToPlayerCollide
 	; Stop collisions with the player when the game is exiting
 	lda ScrollerExitMainLineCounter
+;	ora frameIsOrWasBusy
+	; Do not use Animation_alternateFrames here since enemy hit tests are already made alternate frames based on their enemy DB index
 	bne .noPlayerSCollide2
 
 	lda AnimationYPos
@@ -876,11 +909,6 @@ EnemyBulletBusy !by 0
 	; Stop enemy firing at the player when the game is exiting
 	lda ScrollerExitMainLineCounter
 	bne .lenemyFireRet
-
-;	lda #0
-;	ora frameTotalScrScroll
-;	ora frameScrollMoveColours
-;	bne .lenemyFireRet
 
 	lda frameIsOrWasBusy
 	bne .lenemyFireRet

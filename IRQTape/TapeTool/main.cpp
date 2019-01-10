@@ -52,6 +52,15 @@ Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin .TapeRelocated
 Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 s otfb "..\R.MUS8000.PRG" 100 s otfb "HelloWorldBasic.prg" 101 otl$c0 c
 
 
+// Applying delta test
+m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c d "test.tap" -1
+
+
+// Using RLE compressed blocks, for the sprite data
+m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c
+..\..\acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && C:\VICE\x64.exe test.tap
+
+
 // With IgnoreSecondLoader and SmallLoader defined this will ignore the main second loader and just write the multiplexor demo.
 // The fastest (reliable) speed in this configuration is TapeTurboSpeed = $30
 // This results is about 985248 / 144 = 6842 bits per second, or 855 bytes per second.

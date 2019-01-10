@@ -50,6 +50,9 @@ MainSecondLoaderStart
 	sta COLOURRAM+(24*40),y
 	dey
 	bpl .l2
+!ifdef EnableBlockCompression {
+	sta COLOURRAM+TapeCounterOffset-2
+}
 	sta COLOURRAM+TapeCounterOffset
 	sta COLOURRAM+TapeCounterOffset+1
 	sta COLOURRAM+TapeCounterOffset+2
@@ -199,6 +202,11 @@ MainSecondLoaderStart
 	sta VIC2ScreenControlH
 
 	; Now it is safe to execute routines that can take some time
+!ifdef EnableBlockCompression {
+;	inc VIC2BorderColour
+	jsr TapeLoaderCompressedBufferFull_Handle
+;	dec VIC2BorderColour
+}
 
 	; Here is where this scroller routine will display some text while the music data loads, then plays and then the final application loads and runs.
 	lda TurboTapeFinishedLoadingFile
@@ -355,6 +363,9 @@ UnusedSpace = $0334
 	lda TableMod10,y
 	clc
 	adc #'0'
+!ifdef EnableBlockCompression {
+	TapeLoaderCompressed_screenIndicator = SCREENRAM+TapeCounterOffset-2
+}
 	sta SCREENRAM+TapeCounterOffset+2
 	ldx TableDiv10,y
 	lda TableMod10,x
@@ -444,6 +455,29 @@ UnusedSpace = $0334
 TableMod10 !for .t,256 {!by (.t-1) % 10}
 TableDiv10 !for .t,256 {!by (.t-1) / 10}
 TableDiv100 !for .t,256 {!by (.t-1) / 100}
+
+; Use this macro to define what happends during the bit processing from the tape loader
+!macro MTapeLoader_bitProcess_A {
+	; Produces some sound during loading
+;	lda SIDVolumeFilter
+;	eor #15
+;	sta SIDVolumeFilter
+
+	lda VIC2BorderColour
+	eor #5						; Better border colours with one less byte than using the clc/adc method
+	sta VIC2BorderColour
+}
+
+!macro MTapeLoader_byteProcess {
+	; Produces some different sound during loading
+;	sta SIDVolumeFilter
+
+;	sta VIC2BorderColour
+}
+
+!macro MTapeLoader_blockProcess_A {
+	inc VIC2BorderColour
+}
 
 !source "TapeLoaderCIAIRQ.a"
 

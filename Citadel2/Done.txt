@@ -1677,3 +1677,31 @@ Also tweaked the enemy start positions
 
 
 * Arcade mode: When the player is right against a wall, the player bullets are right on the egde of the block. Not one char in.
+
+
+
+
+* The Scroller demo comfortably handles scrollign with 24 sprites, however this does not, MaxEnemyOnScreenBeforeSpawn is quite low. Try to find out why:
+	* Check that frameIsOrWasBusy is being calculated correctly from values that are valid for the frame
+	* Disable all the associated background tasks - RunMazeSolveCalcs = rts
+		Check the scrolling
+		* HandleUserInput is huge even when there is no input?!
+			Using HandleUserInput_DebugFineTimings gives out of range errors
+				VIC2Colour_Green UpdateScreenScrollCamera is huge
+				Happens when MapBlockAlignedMovement = 0 for arcade mode
+				Hmm it's when it is clearing Node_isBlocked_Player and setting Node_isBlocked_Player and all the GetMazeNodesIndex
+				* Maybe the previous result for the (tempWork0) addressing should be cached and also only updated when there is a change
+				* Cycle around new Node_isBlocked_Player points to set across multiple frames instead of all at once, only unset if the new cached position changes?
+				* Would need a duplicate set check with the existing cached entries, don't double set something if it already has been set, to avoid weird clear logic?
+					* Or just set a reference count for the tile?
+	* Disable the enemy onscreen check. EnemyProcessActivation.
+		Force allocate a bunch of zero speed bullet sprites instead and check the scrolling
+	* Disable DynamicMemory_BlockSweep
+		Check the scrolling
+	* For debug, on space bar, use the flag to disable all the background processes when in the busy trap room with infinite energy.
+	* For the char screen scroll frame, plus colour scroll frame, plus one frame after consider turning off background process.
+* Optimisation targets while player moving and screen scrolling:
+		White		HandleUserInput
+		Green		UpdateSprites
+	If frameIsOrWasBusy is used by EnemyProcessActivation and AnimationCommonUpdate this seems to somewhat reduce the busy frame glitches
+	Reduce the collision detect code as well by going straight to .noCharCollide from .simpleUpdateSpriteCheck

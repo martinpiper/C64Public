@@ -18,6 +18,7 @@ TapeHeaderByteEx3	= %01101001	; Used for very short headers after the sync
 #include <string>
 #include <algorithm>
 #include "C64Tape.h"
+#include "../../Compression/CompressRLE.h"
 
 /*******************
 Useful links
@@ -59,6 +60,7 @@ void C64Tape::SetDefaultLabels(void)
 	mLabelToAddress["TapeSyncCode"]			= 0xaa;
 	mLabelToAddress["TapeHeaderByteEx"]		= 0xf0;
 	mLabelToAddress["TapeHeaderByteEx2"]	= 0x96;
+	mLabelToAddress["TapeHeaderByteEx2RLE"]	= 0xb7;
 	mLabelToAddress["TapeHeaderByteEx3"]	= 0x69;
 
 	mLabelToAddress["TapeTurboSpeed"]		= 0x80;
@@ -66,12 +68,13 @@ void C64Tape::SetDefaultLabels(void)
 
 void C64Tape::ReadTurboLabels(void)
 {
-	mTapePilotCode1		= mLabelToAddress["TapePilotCode1"];
-	mTapePilotCode2		= mLabelToAddress["TapePilotCode2"];
-	mTapeSyncCode		= mLabelToAddress["TapeSyncCode"];
-	mTapeHeaderByteEx	= mLabelToAddress["TapeHeaderByteEx"];
-	mTapeHeaderByteEx2	= mLabelToAddress["TapeHeaderByteEx2"];
-	mTapeHeaderByteEx3	= mLabelToAddress["TapeHeaderByteEx3"];
+	mTapePilotCode1			= mLabelToAddress["TapePilotCode1"];
+	mTapePilotCode2			= mLabelToAddress["TapePilotCode2"];
+	mTapeSyncCode			= mLabelToAddress["TapeSyncCode"];
+	mTapeHeaderByteEx		= mLabelToAddress["TapeHeaderByteEx"];
+	mTapeHeaderByteEx2		= mLabelToAddress["TapeHeaderByteEx2"];
+	mTapeHeaderByteEx2RLE	= mLabelToAddress["TapeHeaderByteEx2RLE"];
+	mTapeHeaderByteEx3		= mLabelToAddress["TapeHeaderByteEx3"];
 
 	mTapeTurboSpeed		= mLabelToAddress["TapeTurboSpeed"];
 	mTurboZeroPulse		= (mTapeTurboSpeed / 8) * 2;
@@ -506,6 +509,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				fseek( mTapeFile , 0 ,SEEK_END );
 				int len = ftell( mTapeFile );
 				len -= 20;
+				printf("Length $%x\n" , len);
 				fseek( mTapeFile , 16 ,SEEK_SET );
 				fflush( mTapeFile );
 				fputc( len & 255 , mTapeFile );
@@ -1199,10 +1203,15 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				else if ( argv[0][1] && argv[0][2] == 'f' )
 				{
 					bool checksumBlocks = false;
+					bool useRLE = false;
 					bool tinyHeader = false;
 					if ( argv[0][3] == 'b' )
 					{
 						checksumBlocks = true;
+						if ( argv[0][4] == 'r' )
+						{
+							useRLE = true;
+						}
 					}
 					else if ( argv[0][3] == 't' )
 					{
@@ -1299,9 +1308,35 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							}
 							int thisBlockEnd = thisBlock + thisBlockSize;
 
+							u8 inputFileData[256];
+							u8 outputCompressedFileData[1024];
+							u32 outCompressedLen = 512;
+							int savedBytes = 0;
+							if (useRLE)
+							{
+								long fpos = ftell(inFp);
+								fread(inputFileData , thisBlockSize , 1 , inFp);
+								TestRLEPack((u8*) inputFileData , thisBlockSize , outputCompressedFileData , &outCompressedLen);
+
+								savedBytes = thisBlockSize - outCompressedLen;
+								savedBytes -= 8;	// Tweak tolerance to allow for the extra lead out and cost benefit of using compression in general
+								if (savedBytes <= 0)
+								{
+									// If not enough data was saved then rewind the file read pointer
+									fseek(inFp , fpos , SEEK_SET);
+								}
+							}
+
 							TapeWriteByte( true , mTapeSyncCode );
 							TapeWriteByte( true , mTapeHeaderByteEx );
-							TapeWriteByte( true , mTapeHeaderByteEx2 );
+							if (savedBytes > 0)
+							{
+								TapeWriteByte( true , mTapeHeaderByteEx2RLE );
+							}
+							else
+							{
+								TapeWriteByte( true , mTapeHeaderByteEx2 );
+							}
 
 							TapeWriteByte( true , filenameByte );
 
@@ -1310,24 +1345,54 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 							TapeWriteByte( true , numBlocks );
 
-							TapeWriteByte( true , thisBlockEnd & 0xff );
-							TapeWriteByte( true , (thisBlockEnd >> 8) & 0xff );
-
-							TapeWriteByte( true , mChecksumRegister );
-
-							int tempSize = thisBlockSize;
-							while( ( tempSize > 0 ) && !feof( inFp ) )
+							if (savedBytes > 0)
 							{
-								int got = fgetc( inFp );
+								// The "end address" portion of the header is different in this mode
+								TapeWriteByte( true , (unsigned char) outCompressedLen );
+								// The "original size" -1 for the sec/adc in the code just after .isRLEHeader2
+								TapeWriteByte( true , (unsigned char) thisBlockSize-1 );
 
-								TapeWriteByte( true , got );
+								TapeWriteByte( true , mChecksumRegister );
 
-								tempSize--;
+								printf("Block $%x compressed saved %d bytes (%d to %d)\n" , thisBlock , savedBytes , thisBlockSize , outCompressedLen);
+								int tempSize = (int) outCompressedLen;
+								int i = 0;
+								while( tempSize > 0 )
+								{
+									TapeWriteByte( true , outputCompressedFileData[i] );
+
+									tempSize--;
+									i++;
+								}
+							}
+							else
+							{
+								TapeWriteByte( true , thisBlockEnd & 0xff );
+								TapeWriteByte( true , (thisBlockEnd >> 8) & 0xff );
+
+								TapeWriteByte( true , mChecksumRegister );
+
+								int tempSize = thisBlockSize;
+								while( ( tempSize > 0 ) && !feof( inFp ) )
+								{
+									int got = fgetc( inFp );
+
+									TapeWriteByte( true , got );
+
+									tempSize--;
+								}
 							}
 
 							TapeWriteByte( true , mChecksumRegister );
 
-							WriteTurboLeader();
+							if (savedBytes > 0)
+							{
+								WriteTurboLeader(8);
+							}
+							else
+							{
+								WriteTurboLeader();
+							}
 
 							AddStream(firstBlock);
 							firstBlock = false;
@@ -1605,7 +1670,7 @@ Turbo format writes:\n\
 otl[rep] : Write a turbo format leader. Typical values for rep are: $6a10 10 seconds for the start of the tape. $2 between blocks. $c0 before the file to account for the tape motor starting.\n\n\
 ote[rep] : Write a kernal format end-of-data marker. There usually needs to be only one.\n\n\
 otn[r] [bytes] : Write tape bytes in turbo format.  If 'r' is supplied the checksum will be reset.\n\n\
-otf[b] <file name> <file name byte> [start offset] [end offset] [load address] : Writes turbo data. If 'b' is added it will write checksum blocks rather than a whole file checksum. The checksum register is always reset. The start offset, end offset and load are optional and if the file is a PRG format file the load address is taken from the first two bytes.\n\n\
+otf[b][r] <file name> <file name byte> [start offset] [end offset] [load address] : Writes turbo data. If 'b' is added it will write checksum blocks rather than a whole file checksum. The checksum register is always reset. The start offset, end offset and load are optional and if the file is a PRG format file the load address is taken from the first two bytes. If 'r' is added after 'b' then the blocks will be compressed with RLE encoding.\n\n\
 otft <file name> [start offset] [end offset] : Writes turbo data with a tiny header without a filename or a load address. The checksum register is always reset. The start offset and end offset are optional, they are calculated assuming a PRG format file.\n\n\
 s : Interleave the next file with the previous file when using turbo checksum block method.\n\n\
 ");

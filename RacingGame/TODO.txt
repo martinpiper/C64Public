@@ -5,6 +5,13 @@
 		Debug_ForceTrackStateRender
 		skd = 31
 		Debug_ForceTrackStateRender=$ec
+	Actually the problem is due to a combination of the linear left/right offset and the non-linear width changing as a function of distance and the hill/valley table.
+	The fix is to have a linear width table, not change depending on the hill/valley. This will make the code simplet as well.
+
+
+
+	* Instead if we wanted to have several width tables to adjust the road width as we drive along then add another table, like the road side objects table, that has a width tweak.
+	This would basically be a lookup into an adjusted multiplier lookup table
 
 
 

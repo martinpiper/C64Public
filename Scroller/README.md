@@ -20,7 +20,7 @@ Thus to disable it or undefine it use a ';' character at the start of the line f
 
 
 ScrollerData.a contains lots of !bin commands near the top of the file.
-Enable one of the !bin to include one of the game data files from the SEUCK directory. 
+Enable one of the !bin to include one of the game data files from the SEUCK directory.
 
 
 To create your own p00 game data file use the Vice C64 emulator, detach all d64 files, in SEUCK choose storage and save all data.
@@ -30,3 +30,4 @@ Then reference the saved p00 data file on your PC by putting the path to the fil
 * Useful VICE options
 -remotemonitor $(ProjectDir)\Scroller.prg
 -remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt
+-warp -remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt

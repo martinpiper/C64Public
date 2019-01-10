@@ -19,10 +19,20 @@ ScrollerInitSpecificCode_Start = *
 	lda #>ScrollerNMI1
 	sta Scroller_NMIVectorHi
 	lda #0
-	sta VIC2SpriteDoubleWidth
-	sta VIC2SpriteDoubleHeight
 	sta VIC2SpritePriority
 	sta VIC2SpriteMulticolour
+
+!ifdef Global_SpriteExpandX {
+	lda #$ff
+}
+	sta VIC2SpriteDoubleWidth
+!ifdef Global_SpriteExpandY {
+	lda #$ff
+} else {
+	lda #0
+}
+	sta VIC2SpriteDoubleHeight
+
 	; One time initialisation like moving memory around to the correct places and pre-calculation.
 	jsr ScrollerDemoInitOneTimeData
 	jmp ScrollEntry

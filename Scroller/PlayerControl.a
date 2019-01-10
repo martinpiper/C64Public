@@ -255,14 +255,26 @@ DoPlayerPositionLinkCode
 	sta .playerInformation+PlayerGameOffset_LastSafePosY
 
 .ignoreCollision
+!set .needDirectionCalc = 1
+!ifdef Scroller_LinkedPlayers {
+!ifdef Scroller_LinkedPlayersAnimations {
+!if .playerInformation = Player2Information {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+	lda AnimationDirectionIn,x
+	!set .needDirectionCalc = 0
+}
+}
+}
+
+!if .needDirectionCalc = 1 {
 	; Convert our movement speed to a directional and store it for player 1
 	lda #0
 	ldx .playerInformation+PlayerGameOffset_TargetVelX
 	ldy .playerInformation+PlayerGameOffset_TargetVelY
 	jsr AnimationConvertXYToDirection
+}
 
 	ldx .playerInformation+PlayerGameOffset_AnimationIndex
-
 	cmp AnimationDirectionIn,x
 	beq .noChange
 	; If there is a change then force an animation frame fetch

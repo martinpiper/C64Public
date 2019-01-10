@@ -27,6 +27,9 @@
     <ClInclude Include="Decompress.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CompressRLE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Compress.cpp">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Common\ParamToNum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CompressRLE.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

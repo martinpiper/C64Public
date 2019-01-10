@@ -77,26 +77,6 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
-* The Scroller demo comfortably handles scrollign with 24 sprites, however this does not, MaxEnemyOnScreenBeforeSpawn is quite low. Try to find out why:
-	* Disable all the associated background tasks - RunMazeSolveCalcs = rts
-		Check the scrolling
-		* HandleUserInput is huge even when there is no input?!
-			Using HandleUserInput_DebugFineTimings gives out of range errors
-				VIC2Colour_Green UpdateScreenScrollCamera is huge
-				Happens when MapBlockAlignedMovement = 0 for arcade mode
-				Hmm it's when it is clearing Node_isBlocked_Player and setting Node_isBlocked_Player and all the GetMazeNodesIndex
-				* Maybe the previous result for the (tempWork0) addressing should be cached and also only updated when there is a change
-				* Cycle around new Node_isBlocked_Player points to set across multiple frames instead of all at once, only unset if the new cached position changes?
-				* Would need a duplicate set check with the existing cached entries, don't double set something if it already has been set, to avoid weird clear logic?
-					* Or just set a reference count for the tile?
-	* Disable the enemy onscreen check. EnemyProcessActivation.
-		Force allocate a bunch of zero speed bullet sprites instead and check the scrolling
-	* Disable DynamicMemory_BlockSweep
-		Check the scrolling
-
-
-
-
 * When firing up/down or left/right consider alternating the X or Y coordinate so that the characters are alternately chosen perpendicular to the firing direction
 	AllocatePlayerBullet
 
@@ -319,14 +299,6 @@ Suggestions:
 * Need to setup an enemy routing test, check the cycles, then optimise.
 	* Need the BDD code to track cycles, not just instructions.
 
-
-
-
-* Optimisation targets while player moving and screen scrolling:
-		White		HandleUserInput
-		Green		UpdateSprites
-	If frameIsOrWasBusy is used by EnemyProcessActivation and AnimationCommonUpdate this seems to somewhat reduce the busy frame glitches
-	Reduce the collision detect code as well by going straight to .noCharCollide from .simpleUpdateSpriteCheck
 
 
 
