@@ -7,9 +7,12 @@ TODO
 	* This also means the routine that builds the plottable span for the screen can maintain the dirty line draw test
 	* It also means there is a potential to optimised the dirty line draw/clear based on a segment of the scan. Therefore saving horizontal clear time.
 	* An early out is when the span is completely full, it can be flagged as such for subsequent poly insertion tests
+		* An early out count of pixels left in the span can be used for this
 	* Colours are stored as before of course
 	* Clip spans are inserted left to right as before, however the background is empty, so the span is stored with sparse information instead
 		* Sparse storage makes it much easier to clear the c-buffer list
+	* It also means that the span update code is simplified to only inserting newer segments (that might be shorter) into empty gaps, never removing old segments
+	* It also means the span allocation can be a simple linear allocate as spans are never returned to the free list during insertion since they won't be obscured. (Spans can be lengthened if they are the same colour.)
 
 
 

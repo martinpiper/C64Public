@@ -8,9 +8,10 @@ Segments_initStorage
 
 
 !zn
+; Exit:
+; ZPSegments_currentSegmentLo/Hi contains the newly allocated segment
 Segments_allocate
 	lda ZPSegments_primaryAllocatorAddrHi
-	; MPi: TODO: Detect a null hi value and redirect to popping segments from the head of a link list
 	sta ZPSegments_currentSegmentHi
 	lda ZPSegments_primaryAllocatorAddrLo
 	sta ZPSegments_currentSegmentLo
@@ -22,99 +23,33 @@ Segments_allocate
 .ret
 	rts
 
-!zn
-Segments_free
-	; MPi: TODO: Push freed segments into a link list
-	rts
 
 !zn
-	; Scenario: Simple maximum length insertion test into empty line
-.setEntireSpan
-
-	jsr Segments_allocate
-	+Segments_clearNextSegment
-	+Segments_setLineHead
-
-
-	+Segments_copyPolyStartEndSetupColourInY
-.smCurrentColour = *+1
-	lda #0
-	sta (ZPSegments_currentSegmentLo),y
-
-
-	jmp .endLine
-
-.emptyLineNoStartSegment
-	lda Poly_linesRight,x
-	cmp #kSpanPlot_maxLen
-	beq .setEntireSpan
-
-	; Scenario: Simple half length insertion test into empty line at start
-	; Segment needs empty span after length
-
-	jsr Segments_allocate
-	+Segments_setLineHead
-
-	; Since the span starts on the left there is no need to calculate the length per se
-	+Segments_copyPolyStartEndColour .smCurrentColour
-
-.doEndSegmentBackground
-	+Segments_setLast
-
-	jsr Segments_allocate
-	+Segments_addToLastSegmentNoNext
-	+Segments_copyEndSetBackgroundColour
-
-	jmp .endLine
-
-.isEmptyLine
-	lda Poly_linesLeft,x
-	beq .emptyLineNoStartSegment
-
-	lda Poly_linesRight,x
-	cmp #kSpanPlot_maxLen
-	beq .emptyLineNoEndSegment
-
-	; Scenario: Simple half length insertion test into empty line at middle
-	jsr Segments_allocate
-	+Segments_setLineHead
-	+Segments_copyStartSetBackgroundColour
-
-	+Segments_setLast
-
-	jsr Segments_allocate
-	+Segments_addToLastSegment
-	+Segments_copyPolyStartEndColour .smCurrentColour
-
-	jmp .doEndSegmentBackground
-
-.emptyLineNoEndSegment
-	; Scenario: Simple half length insertion test into empty line at end
-	jsr Segments_allocate
-	+Segments_setLineHead
-	+Segments_copyStartSetBackgroundColour
-
-	+Segments_setLast
-
-	jsr Segments_allocate
-	+Segments_addToLastSegmentNoNext
-	+Segments_copyPolyStartEndColour .smCurrentColour
-
-
-	rts
-
-.lisEmptyLine jmp .isEmptyLine
 ; Entry:
 ; A = colour
 ; X = start line index
 ; Y = end line index (+ 1)
 Segments_scanPoly
-	sta .smCurrentColour
+	sta ZPSegments_segmentColour
 	sty .smEndLine
 .l1
 	lda Segments_linesHi,x
-	beq .lisEmptyLine
+	bne .haveSegment
 
+	jsr Segments_allocate
+	+Segments_clearNextSegment
+	+Segments_setLineHead
+
+	+Segments_copyPolyStartEndColour
+
+.endLine
+	inx
+.smEndLine = *+1
+	cpx #0
+	bne .l1
+	rts
+
+.haveSegment
 	; A line with at least one segment allocated in it
 	; MPi: TODO: Plenty of cases here
 
@@ -122,64 +57,146 @@ Segments_scanPoly
 	lda Segments_linesLo,x
 	sta ZPSegments_currentSegmentLo
 
+	lda Poly_linesLeft,x
+	sta ZPSegments_segmentLeft
+	lda Poly_linesRight,x
+	sta ZPSegments_segmentRight
+
 	+Segments_forgetLast
 
+	jmp .someLength
+
 .cl1
-	ldy #kSegment_offset_start
-	lda (ZPSegments_currentSegmentLo),y
-	cmp Poly_linesRight,x
-	bcs .cl2
+	; At this point ZPSegments_lastSegmentLo/Hi is pointing to a valid previous span
+	; Make sure we have some length to process
+	lda ZPSegments_segmentLeft
+	cmp ZPSegments_segmentRight
+	bcs .endLine
 
-	cmp Poly_linesLeft,x
-	bne .insertAfter
+	; Add whatever remains to the end of the link list
+	lda ZPSegments_currentSegmentHi
+	bne .someLength
 
-	; MPi: TODO: Test for replacing the whole segment if the inserting line is longer
+	; Perform same colour check for extension of the last segment
+	ldy #kSegment_offset_colour
+	lda (ZPSegments_lastSegmentLo),y
+	cmp ZPSegments_segmentColour
+	bne .addNew
 
-	; Scenario: Simple clip insertion test, one existing segment, left side
-	; The new segment is shorter and start is the same so insert new segment before
-	+Segments_setLast
-	jsr Segments_allocate
-	+Segments_setLastSegmentToCurrentNext
-	+Segments_testLastSegmentInsertHeadCurrent
+	; Is the right of the last segment equal to the current new left?
+	ldy #kSegment_offset_right
+	lda ZPSegments_segmentLeft
+	cmp (ZPSegments_lastSegmentLo),y
+	bne .addNew
 
-	ldy #kSegment_offset_start
-	lda Poly_linesLeft,x
-	sta (ZPSegments_currentSegmentLo),y
-	; Shift the previous segment start
-	lda Poly_linesRight,x
+	; We can extend the right or the last segment then
+	lda ZPSegments_segmentRight
 	sta (ZPSegments_lastSegmentLo),y
-	; end
-	iny
-	lda Poly_linesRight,x
-	sta (ZPSegments_currentSegmentLo),y
-	; colour
-	iny
-	lda .smCurrentColour
-	sta (ZPSegments_currentSegmentLo),y
-
 	jmp .endLine
 
-.insertAfter
-	; MPi: TODO: ...
+.addNew
+	jsr Segments_allocate
+	+Segments_addToLastSegmentNoNext
+	+Segments_copySegmentStartEndColour
+	jmp .endLine
+
+.someLength
+	ldy #kSegment_offset_left
+	lda ZPSegments_segmentLeft
+	cmp (ZPSegments_currentSegmentLo),y
+	bcs .newLeftGESegmentLeft
+
+	; New left < current left
+
+	; Figure out where the end point finishes
+	lda ZPSegments_segmentRight
+	cmp (ZPSegments_currentSegmentLo),y
+	bcs .newRightGEExistingLeft
+
+	; New left and right are < current left
+	; Need to insert a new span before the current one
+	+Segments_currentToTemp
+	jsr Segments_allocate
+	+Segments_insertCurrentBeforeTemp
+	+Segments_copySegmentStartEndColour
+	jmp .endLine
+
+.newRightGEExistingLeft
+	; Something is potentially dangling off the left of the existing segment
+	ldy #kSegment_offset_colour
+	lda (ZPSegments_currentSegmentLo),y
+	cmp ZPSegments_segmentColour
+	beq .sameColourExtendLeft
+
+	; TODO
+	; Different colour to the left but the segment needs to be clipped
 	brk
 
-.cl2
-	; Is there anything else left to process?
-	lda Poly_linesRight,x
-	cmp Poly_linesLeft,x
-	; Nothing left
-	beq .endLine
+.sameColourExtendLeft
+	ldy #kSegment_offset_left
+	lda ZPSegments_segmentLeft
+	sta (ZPSegments_currentSegmentLo),y
 
+	ldy #kSegment_offset_right
+	jmp .advanceNextSegmentClip
+
+
+.newLeftGESegmentLeft
+	ldy #kSegment_offset_right
+	lda ZPSegments_segmentLeft
+	cmp (ZPSegments_currentSegmentLo),y
+	bcs .advanceNextSegmentNoClip
+
+
+	lda ZPSegments_segmentRight
+	cmp (ZPSegments_currentSegmentLo),y
+	beq .newRightLESegmentRight
+	bcc .newRightLESegmentRight
+
+.advanceNextSegmentClip
+	; Get the right position and clip the new segment to it
+	lda (ZPSegments_currentSegmentLo),y
+	sta ZPSegments_segmentLeft
+
+.advanceNextSegmentNoClip
+	lda ZPSegments_lastSegmentHi
+	beq .doNotUsePrevious
+
+	; Merge previous segment and current check
+	; Same colour?
+	ldy #kSegment_offset_colour
+	lda (ZPSegments_lastSegmentLo),y
+	cmp (ZPSegments_currentSegmentLo),y
+	bne .doNotUsePrevious
+
+	; Last right = current left?
+	ldy #kSegment_offset_right
+	lda (ZPSegments_lastSegmentLo),y
+	ldy #kSegment_offset_left
+	cmp (ZPSegments_currentSegmentLo),y
+	bne .doNotUsePrevious
+
+	; Merge current into last
+	ldy #kSegment_offset_right
+	lda (ZPSegments_currentSegmentLo),y
+	sta (ZPSegments_lastSegmentLo),y
+
+	ldy #kSegment_offset_nextLo
+	lda (ZPSegments_currentSegmentLo),y
+	sta (ZPSegments_lastSegmentLo),y
+	iny
+	lda (ZPSegments_currentSegmentLo),y
+	sta (ZPSegments_lastSegmentLo),y
+	jmp .justGetNext
+
+.doNotUsePrevious
 	+Segments_setLast
+.justGetNext
 	+Segments_getNextSegment
-	bne .cl1
 
-.endLine
-	inx
-.smEndLine = *+1
-	cpx #0
-	beq .ol1
-	jmp .l1
-.ol1
+	; Then loop around
+	jmp .cl1
 
-	rts
+.newRightLESegmentRight
+	; Nothing new to add since the new segment is completely obscured by the existing segment
+	jmp .endLine

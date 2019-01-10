@@ -24,20 +24,62 @@ Segments_linesHi
 Segments_linesHiEnd
 
 
-
-SetupTest
+!zn
+SetupTest_LeftRightHead
+	sta .smCol
+	stx .smLeft
+	sty .smRight
 	jsr Segments_allocate
+	ldx #0
 	+Segments_clearNextSegment
 	+Segments_setLineHead
 
-	ldy #kSegment_offset_start
+	ldy #kSegment_offset_left
+
+.smLeft=*+1
 	lda #0
 	sta (ZPSegments_currentSegmentLo),y
 	iny
+
+.smRight=*+1
 	lda #kSpanPlot_maxLen
 	sta (ZPSegments_currentSegmentLo),y
 	iny
+
+.smCol=*+1
 	lda #0
 	sta (ZPSegments_currentSegmentLo),y
+
+	+Segments_setLast
+
+	rts
+
+
+
+!zn
+SetupTest_LeftRightAddLast
+	sta .smCol
+	stx .smLeft
+	sty .smRight
+	jsr Segments_allocate
+	+Segments_addToLastSegmentNoNext
+
+	ldy #kSegment_offset_left
+
+.smLeft=*+1
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+
+.smRight=*+1
+	lda #kSpanPlot_maxLen
+	sta (ZPSegments_currentSegmentLo),y
+	iny
+
+.smCol=*+1
+	lda #0
+	sta (ZPSegments_currentSegmentLo),y
+
+	+Segments_setLast
 
 	rts

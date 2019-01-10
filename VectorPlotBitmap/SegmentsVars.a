@@ -8,8 +8,14 @@ ZPSegments_currentSegmentLo					= ZPSegments_VarBase + $02
 ZPSegments_currentSegmentHi					= ZPSegments_VarBase + $03
 ZPSegments_lastSegmentLo					= ZPSegments_VarBase + $04
 ZPSegments_lastSegmentHi					= ZPSegments_VarBase + $05
+ZPSegments_tempSegmentLo					= ZPSegments_VarBase + $06
+ZPSegments_tempSegmentHi					= ZPSegments_VarBase + $07
 
-ZPSegments_endVars							= ZPSegments_VarBase + $06
+ZPSegments_segmentColour					= ZPSegments_VarBase + $08
+ZPSegments_segmentLeft						= ZPSegments_VarBase + $09
+ZPSegments_segmentRight						= ZPSegments_VarBase + $0a
+
+ZPSegments_endVars							= ZPSegments_VarBase + $0b
 
 
 !if ZPSegments_endVars >= $100 {
@@ -19,8 +25,9 @@ ZPSegments_endVars							= ZPSegments_VarBase + $06
 
 ; Constants
 kSegment_length					= 5
+; Must be in this order
 kSegment_offset_nextLo			= 0
 kSegment_offset_nextHi			= 1
-kSegment_offset_start			= 2
-kSegment_offset_end				= 3
+kSegment_offset_left			= 2
+kSegment_offset_right			= 3
 kSegment_offset_colour			= 4
