@@ -12,21 +12,61 @@
 	lda .spanTab_hi - 1,y
 	sta .smp0j+2
 	ldy .scanColours,x
-	lda (ZPBitmap_Palette),y
+	lda (ZPBitmap_PaletteLo),y
 	inx
 	ldy #0
 .smp0j	jmp $1234
 }
 
 !macro ScanCalc_GetSegment .index , .doScanDraw , .scanLengths , .scanColours {
-	lda SpanCalc_screenSegmentsLen + (.index * kSpanPlot_maxHeight) , x
+	lda ZPSegments_currentSegmentHi
+	bne .gotSpan
+
+	; Handle filling until the end of the line
+	lda #kSpanPlot_maxLen
+	sec
+	sbc ZPBitmap_SegmentsPos
 	sta .scanLengths + .index
-	lda SpanCalc_screenSegmentsColour + (.index * kSpanPlot_maxHeight) , x
+	lda #kSpanCalc_backgroundColour
 	sta .scanColours + .index
-	dey
-	bne +
+
 	lda #0
 	sta .scanLengths + .index + 1
 	jmp .doScanDraw
-+
+
+.gotSpan
+	ldy #kSegment_offset_left
+	lda (ZPSegments_currentSegmentLo),y
+	sta ZPSegments_segmentLeft
+	cmp ZPBitmap_SegmentsPos
+	beq .inSync
+
+
+	; Handle filling in missing sparse spans
+	sec
+	sbc ZPBitmap_SegmentsPos
+	sta .scanLengths + .index
+
+	lda ZPSegments_segmentLeft
+	sta ZPBitmap_SegmentsPos
+
+	lda #kSpanCalc_backgroundColour
+	sta .scanColours + .index
+	jmp .end
+
+.inSync
+	ldy #kSegment_offset_right
+	lda (ZPSegments_currentSegmentLo),y
+	sta ZPBitmap_SegmentsPos
+	sec
+	sbc ZPSegments_segmentLeft
+	sta .scanLengths + .index
+
+	ldy #kSegment_offset_colour
+	lda (ZPSegments_currentSegmentLo),y
+	sta .scanColours + .index
+
+	+Segments_getNextSegment
+
+.end
 }

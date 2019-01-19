@@ -12,34 +12,29 @@ BitmapPlot_drawSpans
 	ldx ZPBitmap_CurrentYPos
 
 	; Setup the current scan from the scans table
-	ldy SpanCalc_screenNumSegments,x
+	lda Segments_linesHi,x
 	bne .gotSpans
 
 	jmp .el1
 
 .gotSpans
+	sta ZPSegments_currentSegmentHi
+	lda Segments_linesLo,x
+	sta ZPSegments_currentSegmentLo
+
 	lda Bitmap0YTabLo,x
 	sta ZPBitmap_CurrentPos
 	lda Bitmap0YTabHi,x
 	sta ZPBitmap_CurrentPos+1
 	lda Bitmap_lineToPaletteLo,x
-	sta ZPBitmap_Palette
+	sta ZPBitmap_PaletteLo
+
+	lda #0
+	sta ZPBitmap_SegmentsPos
 
 	!for .i , kSpanCalc_maxSegments {
 		+ScanCalc_GetSegment .i - 1 , .doScanDraw , .scanLengths , .scanColours
 	}
-
-.doScanDraw
-	ldx #0
-.l3
-Bitmap_SpanRet0
-	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p0 , SpanTab_lo_p0 , SpanTab_hi_p0
-Bitmap_SpanRet1
-	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p1 , SpanTab_lo_p1 , SpanTab_hi_p1
-Bitmap_SpanRet2
-	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p2 , SpanTab_lo_p2 , SpanTab_hi_p2
-Bitmap_SpanRet3
-	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p3 , SpanTab_lo_p3 , SpanTab_hi_p3
 
 .el1
 !ifdef EnableInterlace {
@@ -52,6 +47,18 @@ Bitmap_SpanRet3
 	jmp .l2
 .end
 	rts
+
+.doScanDraw
+	ldx #0
+.l3
+Bitmap_SpanRet0
+	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p0 , SpanTab_lo_p0 , SpanTab_hi_p0
+Bitmap_SpanRet1
+	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p1 , SpanTab_lo_p1 , SpanTab_hi_p1
+Bitmap_SpanRet2
+	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p2 , SpanTab_lo_p2 , SpanTab_hi_p2
+Bitmap_SpanRet3
+	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p3 , SpanTab_lo_p3 , SpanTab_hi_p3
 
 .scanLengths
 	!fill kSpanCalc_maxSegments + 1 , 0
