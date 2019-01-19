@@ -1,6 +1,7 @@
 !sal
 ZPSegments_VarBase	= $02
 kSpanPlot_maxLen = 160
+kSpanCalc_maxSegments = 8
 
 !source "SegmentsVars.a"
 !source "../stdlib/stdlib.a"
@@ -12,17 +13,7 @@ kSpanPlot_maxLen = 160
 
 ; Does not need to be aligned, but it makes the dump easier to parse
 !align 255 , 0
-Segments_array
-	!fill 256 , $ff
-Segments_arrayEnd
-
-Segments_linesLo
-	!fill kSpanPlot_maxHeight , 0
-Segments_linesLoEnd
-Segments_linesHi
-	!fill kSpanPlot_maxHeight , 0
-Segments_linesHiEnd
-
+!source "SegmentsMemory.a"
 
 !zn
 SetupTest_LeftRightHead

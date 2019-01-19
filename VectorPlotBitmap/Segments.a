@@ -6,6 +6,22 @@ Segments_initStorage
 	+MWordValueToAddress_A Segments_array , ZPSegments_primaryAllocatorAddrLo
 	rts
 
+!zn
+; X = start line index
+; Y = end line index (+ 1)
+Segments_initListHeaders
+	sty .smEndLine
+	lda #0
+.l1
+	sta Segments_linesHi,x
+	inx
+
+.smEndLine = *+1
+	cpx #0
+	bne .l1
+
+	rts
+
 
 !zn
 ; Exit:
@@ -104,8 +120,9 @@ Segments_scanPoly
 	ldy #kSegment_offset_left
 	lda ZPSegments_segmentLeft
 	cmp (ZPSegments_currentSegmentLo),y
-	bcs .newLeftGESegmentLeft
-
+	bcc .newLeftLTSegmentLeft
+	jmp .newLeftGESegmentLeft
+.newLeftLTSegmentLeft
 	; New left < current left
 
 	; Figure out where the end point finishes
@@ -128,9 +145,36 @@ Segments_scanPoly
 	cmp ZPSegments_segmentColour
 	beq .sameColourExtendLeft
 
-	; TODO
 	; Different colour to the left but the segment needs to be clipped
-	brk
+	+Segments_currentToTemp
+	jsr Segments_allocate
+	+Segments_insertCurrentBeforeTemp
+
+	ldy #kSegment_offset_left
+	lda ZPSegments_segmentLeft
+	sta (ZPSegments_currentSegmentLo),y
+	lda (ZPSegments_tempSegmentLo),y
+	iny
+	sta (ZPSegments_currentSegmentLo),y
+
+	lda (ZPSegments_tempSegmentLo),y
+	sta ZPSegments_segmentLeft	; Advance the left edge
+
+	iny
+	lda ZPSegments_segmentColour
+	sta (ZPSegments_currentSegmentLo),y
+
+	lda ZPSegments_currentSegmentLo
+	sta ZPSegments_lastSegmentLo
+	lda ZPSegments_currentSegmentHi
+	sta ZPSegments_lastSegmentHi
+
+	lda ZPSegments_tempSegmentLo
+	sta ZPSegments_currentSegmentLo
+	lda ZPSegments_tempSegmentHi
+	sta ZPSegments_currentSegmentHi
+
+	jmp .justGetNext
 
 .sameColourExtendLeft
 	ldy #kSegment_offset_left
