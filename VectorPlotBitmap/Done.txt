@@ -47,7 +47,7 @@ Done
 		Unless a line palette lo/hi in ZP is setup? This would then allow the below to be done:
 		* Don't need to double the colour index number.
 			Use separate tables for alternate lines?
-		Done - Bitmap_lineToPaletteLo , the high address is always dsetup into ZPBitmap_Palette+1
+		Done - Bitmap_lineToPaletteLo , the high address is always dsetup into ZPBitmap_PaletteLo/Hi
 
 
 
@@ -63,3 +63,57 @@ Done
 * SpanCalcFilled2.feature need more cases where the inserting segment is shorter than the first segment
 	.differentColour2_0
 	; Insert segment
+
+
+
+
+* If the polys are sorted from front to back then using a c-buffer, which is simpler than an s-buffer as it effectively stores clipping information. might be better
+	* Since the polys are going to be sorted anyway, it doesn't matter which order they are sorted
+	* If the cbuffer is used then the entire span list can be reset for every frame
+	* Then if there is a completely empty span it is easier to detect
+	* This also means the routine that builds the plottable span for the screen can maintain the dirty line draw test
+	* It also means there is a potential to optimised the dirty line draw/clear based on a segment of the scan. Therefore saving horizontal clear time.
+	* An early out is when the span is completely full, it can be flagged as such for subsequent poly insertion tests
+		* An early out count of pixels left in the span can be used for this
+	* Colours are stored as before of course
+	* Clip spans are inserted left to right as before, however the background is empty, so the span is stored with sparse information instead
+		* Sparse storage makes it much easier to clear the c-buffer list
+	* It also means that the span update code is simplified to only inserting newer segments (that might be shorter) into empty gaps, never removing old segments
+	* It also means the span allocation can be a simple linear allocate as spans are never returned to the free list during insertion since they won't be obscured. (Spans can be lengthened if they are the same colour.)
+
+
+
+
+* Perhaps a link list of Segments with start/end/colour information is the best way to do this after all...
+	Input is the poly start/end
+	Then looping from the first segment, basically clip/split/replace/insert the poly input and update the segments until there is no more poly length left
+	This means the code can then do a simpler adjacent colour tidy pass to reduce the linklist complexity as and when it's needed
+	* It also makes a potential Z buffer check much easier later on :D
+	* ; MPi: TODO: Starting segment needs a length check
+
+** features/SegmentClip.feature in progress
+	Need adding segment to the end of existing due to the end matching the end
+	Need inserting segment in the middle of existing
+	Need replacing due to the segment being longer
+	Need span duplicate colour check and merge
+
+
+* Added features\SegmentMultiLines.feature
+
+
+
+* For Segments similar functionality for SpanCalc_dirtyClear and SpanCalc_expireCleared would be needed
+	* Also !macro ScanCalc_GetSegment would need to be made link list aware
+	* Or perhaps better would be a conversion from the accumulated active Segments_linesLo/Hi into SpanCalc_screenNumSegments and SpanCalc_screenSegmentsLen/SpanCalc_screenSegmentsColour
+		* Split out the SpanCalc_scanPoly, or disable the code
+	* Making ScanCalc_GetSegment link-list aware is best, it can also perform the previous frames check for a changed line and skip the draw if there is no change
+		* A suitable hashing algorithm would be needed while parsing the link-list of spans into 
+		* Create a test for BitmapPlot_drawSpans, specifically the execution up until .doScanDraw where .scanLengths , .scanColours are tested for known linklist inputs
+			* Or unit test the conversion code/macro in a slightly more controlled scope
+		* BitmapPlot.feature will need to be updated to remove SpanCalc_scanPoly and change to Segments_scanPoly
+			* SpanCalc_screenNumSegments, SpanCalc_screenSegmentsLen, SpanCalc_screenSegmentsColour will all need to be removed since this methodology is deprecated
+
+
+
+* Need right side span cases, they can mirror the left case
+* Also need middle span cases

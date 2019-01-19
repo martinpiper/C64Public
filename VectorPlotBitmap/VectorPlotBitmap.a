@@ -13,6 +13,7 @@ SpanTable_IsInCart	= 1
 SpanPlot_MaskEnds	= 1
 ;EnableInterlace		= 1
 
+kSpanCalc_backgroundColour = 0
 
 !ifdef SpanTable_IsInCart {
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
@@ -27,8 +28,8 @@ Bitmap0Memory = $2000
 
 ZPBitmap_VarBase			= $02
 !source "BitmapPlotVars.a"
-ZPSpanCalc_VarBase			= ZPBitmap_endVars
-!source "SpanCalcVars.a"
+ZPSegments_VarBase	= ZPBitmap_endVars
+!source "SegmentsVars.a"
 
 !ifdef SpanTable_IsInCart {
 !source "../MakeCart/asm/EasyFlash_Macros.a"
@@ -36,6 +37,7 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 }
 
 !source "BitmapPlotMacros.a"
+!source "SegmentsMacros.a"
 !source "SpanCalcMacros.a"
 
 * = $4000
@@ -65,17 +67,21 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 	jsr BitmapPlot_clear
 
 	lda #>Bitmap_paletteStart
-	sta ZPBitmap_Palette+1
+	sta ZPBitmap_PaletteHi
 
 .l1
+	jsr Segments_initStorage
+	ldx #0
+	ldy #kSpanPlot_maxHeight
+	jsr Segments_initListHeaders
 
 	dec .expireCount
 	bne .noExpire
 	lda #2
 	sta .expireCount
-	jsr SpanCalc_expireCleared
+;	jsr SpanCalc_expireCleared
 .noExpire
-	jsr SpanCalc_dirtyClear
+;	jsr SpanCalc_dirtyClear
 
 !ifdef SpanTable_IsInCart {
 	jsr PolyTestMove
@@ -113,7 +119,7 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 .smy = *+1
 	ldy #100
 
-	jsr SpanCalc_scanPoly
+	jsr Segments_scanPoly
 
 
 	lda .drawTestIndex
@@ -141,7 +147,65 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 .smy2 = *+1
 	ldy #100
 
-	jsr SpanCalc_scanPoly
+	jsr Segments_scanPoly
+
+
+	jsr PolyTestFlip
+	lda .drawTestIndex
+	lsr
+	lsr
+	lsr
+	and #%111
+	sta .sma3
+
+	lda .drawTestIndex2
+	lsr
+	lsr
+	lsr
+	and #15
+	tax
+	lda .drawTestUpper,x
+	sta .smx3
+	lda .drawTestLower,x
+	sta .smy3
+
+.sma3 = *+1
+	lda #2
+.smx3 = *+1
+	ldx #50
+.smy3 = *+1
+	ldy #100
+
+	jsr Segments_scanPoly
+
+
+	lda .drawTestIndex
+	lsr
+	lsr
+	and #%111
+	sta .sma4
+
+	lda .drawTestIndex2
+	lsr
+	lsr
+	lsr
+	and #15
+	tax
+	lda .drawTestUpper2,x
+	sta .smx4
+	lda .drawTestLower2,x
+	sta .smy4
+
+.sma4 = *+1
+	lda #2
+.smx4 = *+1
+	ldx #50
+.smy4 = *+1
+	ldy #100
+
+	jsr Segments_scanPoly
+	jsr PolyTestFlip
+
 
 	+MWordValueToAddress_A Bitmap0Memory , ZPBitmap_CurrentPos
 	inc VIC2BorderColour
@@ -155,7 +219,6 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 .expireCount !by 2
 
 .drawTestIndex !by 0
-
 .drawTestIndex2 !by 0
 
 .drawTestUpper
@@ -180,10 +243,10 @@ ZPSpanCalc_VarBase			= ZPBitmap_endVars
 	!by 200 , 200 , 198 , 198
 	!by 190 , 185 , 186 , 190
 
-!source "BitmapPlot.a"
-!source "SpanCalcMem.a"
 
-!source "SpanCalc.a"
+!source "BitmapPlot.a"
+!source "SegmentsMemory.a"
+!source "Segments.a"
 
 !ifdef SpanTable_IsInCart {
 
@@ -286,6 +349,28 @@ PolyTestMove
 	dex
 	bne .l1
 	rts
+
+
+!zn
+PolyTestFlip
+	ldx #kSpanPlot_maxHeight
+.l1
+	lda #kSpanPlot_maxLen
+	sec
+	sbc Poly_linesLeft-1,x
+	pha
+	lda #kSpanPlot_maxLen
+	sec
+	sbc Poly_linesRight-1,x
+	sta Poly_linesLeft-1,x
+	pla
+	sta Poly_linesRight-1,x
+	dex
+	bne .l1
+	rts
+
+
+
 
 Poly_linesLeft
 !ifdef SpanTable_IsInCart {

@@ -1,51 +1,10 @@
 TODO
 
-* If the polys are sorted from front to back then using a c-buffer, which is simpler than an s-buffer as it effectively stores clipping information. might be better
-	* Since the polys are going to be sorted anyway, it doesn't matter which order they are sorted
-	* If the cbuffer is used then the entire span list can be reset for every frame
-	* Then if there is a completely empty span it is easier to detect
-	* This also means the routine that builds the plottable span for the screen can maintain the dirty line draw test
-	* It also means there is a potential to optimised the dirty line draw/clear based on a segment of the scan. Therefore saving horizontal clear time.
-	* An early out is when the span is completely full, it can be flagged as such for subsequent poly insertion tests
-		* An early out count of pixels left in the span can be used for this
-	* Colours are stored as before of course
-	* Clip spans are inserted left to right as before, however the background is empty, so the span is stored with sparse information instead
-		* Sparse storage makes it much easier to clear the c-buffer list
-	* It also means that the span update code is simplified to only inserting newer segments (that might be shorter) into empty gaps, never removing old segments
-	* It also means the span allocation can be a simple linear allocate as spans are never returned to the free list during insertion since they won't be obscured. (Spans can be lengthened if they are the same colour.)
+When SpanPlot_MaskEnds	= 1 is disabled the demo corrupts the screen and crashes?
 
 
 
-
-** features/SegmentClip.feature in progress
-	Need adding segment to the end of existing due to the end matching the end
-	Need inserting segment in the middle of existing
-	Need replacing due to the segment being longer
-	Need span duplicate colour check and merge
-
-* Perhaps a link list of Segments with start/end/colour information is the best way to do this after all...
-	Input is the poly start/end
-	Then looping from the first segment, basically clip/split/replace/insert the poly input and update the segments until there is no more poly length left
-	This means the code can then do a simpler adjacent colour tidy pass to reduce the linklist complexity as and when it's needed
-	* It also makes a potential Z buffer check much easier later on :D
-	* ; MPi: TODO: Starting segment needs a length check
-
-* For Segments similar functionality for SpanCalc_dirtyClear and SpanCalc_expireCleared would be needed
-	* Also !macro ScanCalc_GetSegment would need to be made link list aware
-	* Or perhaps better would be a conversion from the accumulated active Segments_linesLo/Hi into SpanCalc_screenNumSegments and SpanCalc_screenSegmentsLen/SpanCalc_screenSegmentsColour
-		* Split out the SpanCalc_scanPoly, or disable the code
-
-
-
-
-
-
-* SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account the number of screen banks
-
-
-
-* Need right side span cases, they can mirror the left case
-* Also need middle span cases
+* SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account for segments and the number of screen banks
 
 
 
