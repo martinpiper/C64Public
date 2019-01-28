@@ -1,0 +1,16 @@
+!source "../stdlib/stdlib.a"
+
+kSpanPlot_maxHeight = 16	; Limited size execution
+kPoly2D_vertexBufferInZP = 1
+
+ZPSegments_VarBase	= $02
+!source "SegmentsVars.a"
+!source "SegmentsMacros.a"
+!source "Poly2DMacros.a"
+
+ZPPoly2D_VarBase	= ZPSegments_endVars
+!source "Poly2DVars.a"
+
+* = $4000
+!source "Poly2D.a"
+!source "Poly2DMem.a"

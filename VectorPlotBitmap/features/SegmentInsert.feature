@@ -2,6 +2,41 @@ Feature: Segment insertion tests
 
   Test the segment insertion code
 
+  Scenario: Reject bad line lengths
+    Given I have a simple overclocked 6502 system
+    And I create file "t.a" with
+      """
+      kSpanPlot_maxHeight = 3
+      !source "SegmentsTest1.a"
+
+      Poly_linesLeft
+        !by 0 , 1 , 100
+      Poly_linesLeftEnd
+
+      Poly_linesRight
+        !by 0 , 1 , 90
+      Poly_linesRightEnd
+      """
+    And I run the command line: ..\acme.exe -o t.prg --labeldump t.lbl -f cbm t.a
+    And I load prg "t.prg"
+    And I load labels "t.lbl"
+
+    When I execute the procedure at Segments_initStorage for no more than 100 instructions
+
+    When I set register A to 1
+    When I set register X to 0
+    When I set register Y to kSpanPlot_maxHeight
+    
+    When I execute the procedure at Segments_processLines for no more than 300 instructions
+
+    Then I expect to see ZPSegments_primaryAllocatorAddrLo equal lo(Segments_array+(0*kSegment_length))
+    Then I expect to see ZPSegments_primaryAllocatorAddrHi equal hi(Segments_array+(0*kSegment_length))
+    
+    Then I expect to see Segments_linesLo equal 0
+    Then I expect to see Segments_linesHi equal 0
+
+
+
   Scenario Outline: Simple insertion tests into empty line
     Given I have a simple overclocked 6502 system
     And I create file "t.a" with
@@ -27,7 +62,7 @@ Feature: Segment insertion tests
     When I set register X to 0
     When I set register Y to kSpanPlot_maxHeight
     
-    When I execute the procedure at Segments_scanPoly for no more than 100 instructions
+    When I execute the procedure at Segments_processLines for no more than 100 instructions
 
     Then I expect to see ZPSegments_primaryAllocatorAddrLo equal lo(Segments_array+(1*kSegment_length))
     Then I expect to see ZPSegments_primaryAllocatorAddrHi equal hi(Segments_array+(1*kSegment_length))
@@ -44,7 +79,7 @@ Feature: Segment insertion tests
   Examples:
     | left               | right              |
 	| 0                  | kSpanPlot_maxLen   |
-	| kSpanPlot_maxLen   | kSpanPlot_maxLen/2 |
+	| kSpanPlot_maxLen/2 | kSpanPlot_maxLen   |
 	| kSpanPlot_maxLen/3 | kSpanPlot_maxLen/2 |
 	| kSpanPlot_maxLen/3 | kSpanPlot_maxLen   |
 
@@ -97,7 +132,7 @@ Feature: Segment insertion tests
     When I set register A to 1
     When I set register X to 0
     When I set register Y to kSpanPlot_maxHeight
-    When I execute the procedure at Segments_scanPoly for no more than 100 instructions
+    When I execute the procedure at Segments_processLines for no more than 100 instructions
     When I hex dump memory between Segments_array and Segments_arrayEnd
 
 	# Check no brk encountered
@@ -176,7 +211,7 @@ Feature: Segment insertion tests
     When I set register A to 1
     When I set register X to 0
     When I set register Y to kSpanPlot_maxHeight
-    When I execute the procedure at Segments_scanPoly for no more than 100 instructions
+    When I execute the procedure at Segments_processLines for no more than 100 instructions
     When I hex dump memory between Segments_array and Segments_arrayEnd
 
 	# Check no brk encountered

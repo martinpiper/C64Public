@@ -5,7 +5,12 @@ mkdir bin
 
 rem java -DZbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags ~@ignore --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features >t.txt
 rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags ~@ignore --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features >t.txt
-rem IF ERRORLEVEL 1 goto error
+rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags ~@ignore --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features/BitmapPlot.feature >t.txt
+rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features/BitmapPlot.feature:112 >t.txt
+rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags ~@ignore --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features/Poly2D.feature >t.txt
+rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features/Poly2D.feature:110 >t.txt
+rem java -Dbdd6502.trace=true -DZcom.replicanet.cukesplus.server.featureEditor -DZcom.replicanet.ACEServer.debug.requests= -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features/SegmentClip.feature:707 >t.txt
+IF ERRORLEVEL 1 goto error
 
 rem Enable this line to stop any main code build
 rem exit /B 0

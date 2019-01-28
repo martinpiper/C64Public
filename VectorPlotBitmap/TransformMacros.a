@@ -1,0 +1,299 @@
+!macro Transform_addAngle .a, .b {
+	adc .a
+	; Wrap around checks
+	bcs ++
+	cmp #kTransform_maxAngles
+	bcc +
+++
+	sbc #kTransform_maxAngles
+	clc
++
+	sta .b
+}
+
+!macro Transform_subAngle .a, .b {
+	sbc .a
+	bcs +
+	adc #kTransform_maxAngles
++
+	sta .b
+}
+
+!macro Transform_invAngle1 {
+	sta ZPTransform_mulTabAddr1
+	eor #$ff
+	sta ZPTransform_mulTabAddr2
+}
+
+!macro Transform_invAngle2 {
+	sta ZPTransform_mulTabAddr3
+	eor #$ff
+	sta ZPTransform_mulTabAddr4
+}
+
+!macro Transform_invAngle3 {
+	sta ZPTransform_mulTabAddr5
+	eor #$ff
+	sta ZPTransform_mulTabAddr6
+}
+
+!macro Transform_invAngle4 {
+	sta ZPTransform_mulTabAddr7
+	eor #$ff
+	sta ZPTransform_mulTabAddr8
+}
+
+!macro Transform_getSinCos {
+	ldx ZPTransform_rotX
+	cpx #kTransform_maxAngles
+	bcc +
+	ldx #$00
+	stx ZPTransform_rotX
++
+	lda ZPTransform_rotZ
+	cmp #kTransform_maxAngles
+	bcc +
+	lda #$00
+	sta ZPTransform_rotZ
++
+	ldy ZPTransform_rotY
+	cpy #kTransform_maxAngles
+	bcc +
+	ldy #$00
+	sty ZPTransform_rotY
+	clc
++
+	tya
+	+Transform_addAngle ZPTransform_rotZ, ZPTransform_angle2
+	sec
+	+Transform_subAngle ZPTransform_rotX, ZPTransform_angle8
+
+	tya
+	+Transform_subAngle ZPTransform_rotX, ZPTransform_angle9
+	tya
+	+Transform_subAngle ZPTransform_rotZ, ZPTransform_angle1
+
+	txa
+	+Transform_subAngle ZPTransform_rotZ, ZPTransform_angle4
+	txa
+	+Transform_subAngle ZPTransform_angle1, ZPTransform_angle6
+
+	clc
+	txa
+	+Transform_addAngle ZPTransform_rotZ, ZPTransform_angle3
+	txa
+	+Transform_addAngle ZPTransform_angle2, ZPTransform_angle5
+	txa
+	+Transform_addAngle ZPTransform_angle1, ZPTransform_angle7
+	txa
+	+Transform_addAngle ZPTransform_rotY, ZPTransform_angle10
+
+
+
+	; sin(y)
+	lda Transform_sinTab,y
+	clc
+	adc Transform_sinTab,y
+	sta ZPTransform_matrix3
+
+	ldx ZPTransform_angle1
+	ldy ZPTransform_angle2
+
+	; (cos(ZPTransform_angle1) + cos(ZPTransform_angle2)) / 2
+	lda Transform_cosTab,x
+	clc
+	adc Transform_cosTab,y
+	sta ZPTransform_matrix1
+
+	; (sin(ZPTransform_angle1) - sin(ZPTransform_angle2)) / 2
+	lda Transform_sinTab,x
+	sec
+	sbc Transform_sinTab,y
+	sta ZPTransform_matrix2
+
+	ldx ZPTransform_angle9
+	ldy ZPTransform_angle10
+
+	; (sin(ZPTransform_angle9) - sin(ZPTransform_angle10)) / 2
+	lda Transform_sinTab,x
+	sec
+	sbc Transform_sinTab,y
+	sta ZPTransform_matrix6
+
+	;(cos(ZPTransform_angle9) + cos(ZPTransform_angle10)) / 2
+	lda Transform_cosTab,x
+	clc
+	adc Transform_cosTab,y
+	sta ZPTransform_matrix9
+
+	ldx ZPTransform_angle3
+	ldy ZPTransform_angle4
+
+	; (sin(ZPTransform_angle3) - sin(ZPTransform_angle4)) / 2
+	lda Transform_sinTab,x
+	sec
+	sbc Transform_sinTab,y
+	sta ZPTransform_matrix4
+
+	; (sin(ZPTransform_angle3) + sin(ZPTransform_angle4)) / 2
+	lda Transform_sinTab,x
+	clc
+	adc Transform_sinTab,y
+	sta ZPTransform_matrix8
+
+	; (cos(ZPTransform_angle3) + cos(ZPTransform_angle4)) / 2
+	lda Transform_cosTab,x
+	clc
+	adc Transform_cosTab,y
+	sta ZPTransform_matrix5
+
+	; (cos(ZPTransform_angle4) - cos(ZPTransform_angle3)) / 2
+	lda Transform_cosTab,y
+	sec
+	sbc Transform_cosTab,x
+	sta ZPTransform_matrix7
+
+	ldx ZPTransform_angle5
+	ldy ZPTransform_angle6
+
+	; ZPTransform_temp2 = sin(ZPTransform_angle5) - sin(ZPTransform_angle6)
+	lda Transform_sinTab,x
+	sec
+	sbc Transform_sinTab,y
+	sta ZPTransform_temp2
+
+	; (cos(ZPTransform_angle6) - cos(ZPTransform_angle5) ...
+	lda Transform_cosTab,y
+	sec
+	sbc Transform_cosTab,x
+	sta ZPTransform_temp1
+
+	ldx ZPTransform_angle7
+	ldy ZPTransform_angle8
+
+	; ... -cos(ZPTransform_angle7) + cos(ZPTransform_angle8)) / 4 + Da
+	sec
+	sbc Transform_cosTab,x
+	clc
+	adc Transform_cosTab,y
+	+M_ASR
+	clc
+	adc ZPTransform_matrix4
+	sta ZPTransform_matrix4
+
+	; ... +cos(ZPTransform_angle7) - cos(ZPTransform_angle8)) / 4 + ZPTransform_matrix8
+	lda ZPTransform_temp1
+	clc
+	adc Transform_cosTab,x
+	sec
+	sbc Transform_cosTab,y
+	+M_ASR
+	clc
+	adc ZPTransform_matrix8
+	sta ZPTransform_matrix8
+;224
+	;sin(ZPTransform_angle7) + sin(ZPTransform_angle8)
+	lda Transform_sinTab,x
+	clc
+	adc Transform_sinTab,y
+	sta ZPTransform_temp1
+
+	; ... -ZPTransform_temp1 + (sin(ZPTransform_angle5) - sin(ZPTransform_angle6)) / 4 + ZPTransform_matrix5
+	eor #$ff
+	sec
+	adc ZPTransform_temp2
+	+M_ASR
+	clc
+	adc ZPTransform_matrix5
+	sta ZPTransform_matrix5
+
+	; (sin(ZPTransform_angle6) - sin(ZPTransform_angle5) - ZPTransform_temp1 / 4 + ZPTransform_matrix7
+	lda #$00
+	sec
+	sbc ZPTransform_temp2
+	sec
+	sbc ZPTransform_temp1
+	+M_ASR
+	clc
+	adc ZPTransform_matrix7
+	sta ZPTransform_matrix7
+}
+
+
+!macro Transform_project ~.vertx, ~.verty, ~.vertz {
+.vertx	lda $1000,x
+	+Transform_invAngle1
+.verty	lda $1000,x
+	+Transform_invAngle2
+.vertz	lda $1000,x
+	+Transform_invAngle3
+
+	; Multiply all for z
+	ldy ZPTransform_matrix7
+	lda (ZPTransform_mulTabAddr1),y
+	sec
+	sbc (ZPTransform_mulTabAddr2),y
+	ldy ZPTransform_matrix8
+	clc
+	adc (ZPTransform_mulTabAddr3),y
+	sec
+	sbc (ZPTransform_mulTabAddr4),y
+	ldy ZPTransform_matrix9
+	clc
+	adc (ZPTransform_mulTabAddr5),y
+	sec
+	sbc (ZPTransform_mulTabAddr6),y
+
+	; Using Z now
+	tay
+	lda Transform_invTab,y
+	+Transform_invAngle4
+
+	; Multiply for X
+	ldy ZPTransform_matrix1
+	lda (ZPTransform_mulTabAddr1),y
+	sec
+	sbc (ZPTransform_mulTabAddr2),y
+	ldy ZPTransform_matrix2
+	clc
+	adc (ZPTransform_mulTabAddr3),y
+	sec
+	sbc (ZPTransform_mulTabAddr4),y
+	ldy ZPTransform_matrix3
+	clc
+	adc (ZPTransform_mulTabAddr5),y
+	sec
+	sbc (ZPTransform_mulTabAddr6),y
+	tay
+	; Perspective X
+	lda (ZPTransform_mulTabAddr7),y
+	; Abs for screen
+	ora #$40
+	sec
+	sbc (ZPTransform_mulTabAddr8),y
+	sta Transform_transVertsX,x
+
+	; Multiply for Y
+	ldy ZPTransform_matrix4
+	lda (ZPTransform_mulTabAddr1),y
+	sec
+	sbc (ZPTransform_mulTabAddr2),y
+	ldy ZPTransform_matrix5
+	clc
+	adc (ZPTransform_mulTabAddr3),y
+	sec
+	sbc (ZPTransform_mulTabAddr4),y
+	ldy ZPTransform_matrix6
+	clc
+	adc (ZPTransform_mulTabAddr5),y
+	sec
+	sbc (ZPTransform_mulTabAddr6),y
+	tay
+	; Perspective Y
+	lda (ZPTransform_mulTabAddr7),y
+	; Abs for screen
+	ora #$40
+	sec
+	sbc (ZPTransform_mulTabAddr8),y
+	sta Transform_transVertsY,x
+}

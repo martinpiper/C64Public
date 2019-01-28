@@ -1,0 +1,78 @@
+!macro Poly2D_Line1 .target , .x , .y {
+	stx .directionOpcode
+	sty .dyVal+1
+	sta .dxVal+1
+
+	ldx .y
+	stx .targetLoAddr+1
+
+	lda .x
+	sta .target,x
+	tax
+
+	tya
+
+	sec
+	bcs .dyVal
+-
+.directionOpcode	inx
+.dyVal   sbc #$00
+	bcs -
+
+.dxVal   adc #$00
+
+	dec .targetLoAddr+1
+.targetLoAddr   stx .target
+
+	dey
+	bne -
+	rts
+}
+
+
+!macro Poly2D_Line2 .target , .x , .y , .d {
+	stx .directionOpcode
+	sty .dyVal+1
+	sta .dxVal+1
+
+	ldx .y
+	stx .targetLoAddr+1
+
+	lda .x
+	sta .target,x
+	tax
+
+	lda .d
+
+	sec
+-
+.dxVal   sbc #$00
+	bcs +
+
+.dyVal   adc #$00
+.directionOpcode	inx
++
+	dec .targetLoAddr+1
+.targetLoAddr   stx .target
+	dey
+	bne -
+	rts
+}
+
+
+
+!macro Poly2D_drawLine .target , .x , .y , .dx , .dy {
+	jsr Poly2D_loadVertsIntoRegs
+
+	ldy .dy
+	bne +
+	rts
++
+	cpy .dx
+	bcs .dygtdx
+
+	+Poly2D_Line1 .target , .x , .y
+
+.dygtdx
+	+Poly2D_Line2 .target , .x , .y , .dx
+}

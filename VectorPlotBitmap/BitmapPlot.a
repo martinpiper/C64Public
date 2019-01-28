@@ -99,26 +99,25 @@ Bitmap_lineToPaletteLo
 Bitmap_paletteStart
 Bitmap_palette0
 	+MakeBitcolour 0
+	+MakeBitcolour2 1 , 0
+	+MakeBitcolour2 2 , 0
 	+MakeBitcolour 1
-	+MakeBitcolour 2
-	+MakeBitcolour 3
-
-	+MakeBitcolour2 0 , 3
-	+MakeBitcolour2 1 , 2
 	+MakeBitcolour2 2 , 1
-	+MakeBitcolour2 3 , 0
+	+MakeBitcolour 2
+	+MakeBitcolour2 3 , 2
+	+MakeBitcolour 3
 
 
 Bitmap_palette1
 	+MakeBitcolour 0
+	+MakeBitcolour2 0 , 1
+	+MakeBitcolour2 0 , 2
 	+MakeBitcolour 1
+	+MakeBitcolour2 1 , 2
 	+MakeBitcolour 2
+	+MakeBitcolour2 2 , 3
 	+MakeBitcolour 3
 
-	+MakeBitcolour2 3 , 0
-	+MakeBitcolour2 2 , 1
-	+MakeBitcolour2 1 , 2
-	+MakeBitcolour2 0 , 3
 Bitmap_paletteEnd
 
 !if >Bitmap_paletteStart != >Bitmap_paletteEnd {

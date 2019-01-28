@@ -110,10 +110,48 @@ Done
 		* A suitable hashing algorithm would be needed while parsing the link-list of spans into 
 		* Create a test for BitmapPlot_drawSpans, specifically the execution up until .doScanDraw where .scanLengths , .scanColours are tested for known linklist inputs
 			* Or unit test the conversion code/macro in a slightly more controlled scope
-		* BitmapPlot.feature will need to be updated to remove SpanCalc_scanPoly and change to Segments_scanPoly
+		* BitmapPlot.feature will need to be updated to remove SpanCalc_scanPoly and change to Segments_processLines
 			* SpanCalc_screenNumSegments, SpanCalc_screenSegmentsLen, SpanCalc_screenSegmentsColour will all need to be removed since this methodology is deprecated
 
 
 
 * Need right side span cases, they can mirror the left case
 * Also need middle span cases
+
+
+
+* When SpanPlot_MaskEnds	= 1 is disabled the demo corrupts the screen and crashes?
+	Got "Code too large" error, so SpanConfigSize_0	= 98 now
+
+
+
+Removed SpanCalc_scanPoly related tests
+
+
+
+* For Scenario: Triangle scan, flat bottom, right angle
+	* This is unexpected given the x coord in $80 for the input: Then property "test.BDD6502.lastHexDump" must contain string ignoring whitespace "88 88 88 88 88 88 88 88  88 88 88 88 88 88 88 88"
+	Note ;????
+		* These adjustments could possible do with adding on half the gradient instead?
+
+
+
+
+* When adding the second triangle with Segments_processLines there seems to be a black segment inserted, with the correct length, instead of the correct colour?
+	Need a feature file replication test case and fix
+	features\BitmapPlot.feature
+	Scenario: Poly scans, edge trace and plot test
+	Line 12 (starting from 0)
+	Should contains spans from colour 1 and 2 but doesn't
+	Hmm doTrace1 gives single span in head:
+		4763: ff 00 18 25 01
+	DoTrace2 gives updated head and:
+		47cc: d1 47 13  18 02 ff 00 25 28 02
+	SegmentClip.feature
+	Scenario Outline: Segment extension test, existing segments, new segment has different colour and it clipped, new segments
+	It reproduces!
+
+
+
+* Add 3D calculation to create spans
+	Poly_linesLeft and Poly_linesRight

@@ -31,7 +31,7 @@ Feature: Segment insertion tests multiple lines
     When I set register X to 0
     When I set register Y to kSpanPlot_maxHeight
     
-    When I execute the procedure at Segments_scanPoly for no more than 100 instructions
+    When I execute the procedure at Segments_processLines for no more than 150 instructions
 
     When I hex dump memory between Segments_array and Segments_arrayEnd
 

@@ -1,0 +1,184 @@
+!zn
+Transform_meshTab
+	!word .mesh1 , .mesh3
+
+Transform_faces
+
+.face1
+	!byte 3, 2, 1, 0, 4
+	!byte 4, 5, 6, 7, 4
+	!byte 7, 3, 0, 4, 3
+	!byte 2, 6, 5, 1, 3
+	!byte 0, 1, 5, 4, 2
+	!byte 7, 6, 2, 3, 1
+.face2
+
+.face3
+	!byte  1,  3,  0,  1,  2
+	!byte  1,  0,  2,  1,  2
+	!byte  4,  1,  6,  5,  2
+	!byte  4,  3,  1,  4,  3
+	!byte  6,  1,  2,  6,  3
+	!byte  3,  7,  8,  3,  3
+	!byte  2,  10, 9,  2,  3
+	!byte  7,  3,  4,  7,  2
+	!byte  9,  6,  2,  9,  2
+	!byte  27, 4,  6,  28, 3
+	!byte  9,  10, 28, 6,  4
+	!byte  4,  27, 8,  7,  4
+	!byte  3,  8,  27, 0,  1
+	!byte  28, 2,  0,  27, 1
+	!byte  10, 29, 27, 28, 1
+	!byte  12, 11, 14, 13, 4
+	!byte  17, 18, 15, 16, 4
+	!byte  20, 19, 22, 21, 4
+	!byte  25, 26, 23, 24, 4
+.face4
+
+
+.meshes
+.mesh1
+	;cube
+	;num vertices
+	!byte 8
+	;backface culling
+	!byte 1
+	;shaded
+	!byte 0
+	;pointers to vertices
+	!word .vertx1
+	!word .verty1
+	!word .vertz1
+	;start pos of faces
+	!byte .face1-Transform_faces
+	;end pos of faces
+	!byte .face2-Transform_faces
+	.f1 = 37
+
+.mesh3
+	;elite spaceship
+	;num vertices
+	!byte 30
+	;backface culling
+	!byte 1
+	;shaded
+	!byte 0
+	;pointers to vertices
+	!word .vertx3
+	!word .verty3
+	!word .vertz3
+	;start pos of faces
+	!byte .face3-Transform_faces
+	;end pos of faces
+	!byte .face4-Transform_faces
+	.f3 = 59
+
+.vertices
+.vertx1
+	;Transform_transVertsX
+	!byte -.f1,  .f1,  .f1, -.f1, -.f1,  .f1,  .f1, -.f1
+.verty1
+	;Transform_transVertsY
+	!byte -.f1, -.f1,  .f1,  .f1, -.f1, -.f1,  .f1,  .f1
+.vertz1
+	;Transform_transVertsZ
+	!byte -.f1, -.f1, -.f1, -.f1,  .f1,  .f1,  .f1,  .f1
+
+.vertx3
+	;vertices_x
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     60 * .f3 / 100
+	!byte    -60 * .f3 / 100
+	!byte    -17 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     17 * .f3 / 100
+	!byte    -90 * .f3 / 100
+	!byte    -100 * .f3 / 100
+	!byte     90 * .f3 / 100
+	!byte     100 * .f3 / 100
+	!byte    -06 * .f3 / 100
+	!byte    -06 * .f3 / 100
+	!byte    -34 * .f3 / 100
+	!byte    -34 * .f3 / 100
+	!byte     06 * .f3 / 100
+	!byte     06 * .f3 / 100
+	!byte     34 * .f3 / 100
+	!byte     34 * .f3 / 100
+	!byte    -75 * .f3 / 100
+	!byte    -60 * .f3 / 100
+	!byte    -60 * .f3 / 100
+	!byte    -60 * .f3 / 100
+	!byte     75 * .f3 / 100
+	!byte     60 * .f3 / 100
+	!byte     60 * .f3 / 100
+	!byte     60 * .f3 / 100
+	!byte    -20 * .f3 / 100
+	!byte     20 * .f3 / 100
+	!byte     60 * .f3 / 100
+.verty3
+	;vertices_y
+	!byte    -22 * .f3 / 100
+	!byte    -18 * .f3 / 100
+	!byte    -15 * .f3 / 100
+	!byte    -15 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte     00 * .f3 / 100
+	!byte    -12 * .f3 / 100
+	!byte     09 * .f3 / 100
+	!byte     06 * .f3 / 100
+	!byte    -08 * .f3 / 100
+	!byte    -12 * .f3 / 100
+	!byte     09 * .f3 / 100
+	!byte     06 * .f3 / 100
+	!byte    -08 * .f3 / 100
+	!byte    -01 * .f3 / 100
+	!byte    -06 * .f3 / 100
+	!byte    -01 * .f3 / 100
+	!byte     04 * .f3 / 100
+	!byte    -01 * .f3 / 100
+	!byte    -06 * .f3 / 100
+	!byte    -01 * .f3 / 100
+	!byte     04 * .f3 / 100
+	!byte     18 * .f3 / 100
+	!byte     18 * .f3 / 100
+	!byte    -15 * .f3 / 100
+
+.vertz3
+	.of3 = 30
+	;vertices_z
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 +  10) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 +  40) * .f3 / 100
+	!byte    (.of3 +  40) * .f3 / 100
+	!byte    (.of3 +  40) * .f3 / 100
+	!byte    (.of3 + -40) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -40) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100
+	!byte    (.of3 + -70) * .f3 / 100

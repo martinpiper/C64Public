@@ -45,10 +45,15 @@ Segments_allocate
 ; A = colour
 ; X = start line index
 ; Y = end line index (+ 1)
-Segments_scanPoly
+Segments_processLines
 	sta ZPSegments_segmentColour
 	sty .smEndLine
 .l1
+	; Reject bad line lengths
+	lda Poly_linesLeft,x
+	cmp Poly_linesRight,x
+	bcs .endLine
+
 	lda Segments_linesHi,x
 	bne .haveSegment
 
@@ -67,8 +72,6 @@ Segments_scanPoly
 
 .haveSegment
 	; A line with at least one segment allocated in it
-	; MPi: TODO: Plenty of cases here
-
 	sta ZPSegments_currentSegmentHi
 	lda Segments_linesLo,x
 	sta ZPSegments_currentSegmentLo
@@ -164,14 +167,11 @@ Segments_scanPoly
 	lda ZPSegments_segmentColour
 	sta (ZPSegments_currentSegmentLo),y
 
-	lda ZPSegments_currentSegmentLo
-	sta ZPSegments_lastSegmentLo
-	lda ZPSegments_currentSegmentHi
-	sta ZPSegments_lastSegmentHi
-
 	lda ZPSegments_tempSegmentLo
+	sta ZPSegments_lastSegmentLo
 	sta ZPSegments_currentSegmentLo
 	lda ZPSegments_tempSegmentHi
+	sta ZPSegments_lastSegmentHi
 	sta ZPSegments_currentSegmentHi
 
 	jmp .justGetNext

@@ -1,0 +1,22 @@
+!macro lbmi .target {
+	bpl *+5
+	jmp .target
+}
+
+!macro lbpl .target {
+	bmi +
+	jmp .target
++
+}
+
+!macro lbeq .target {
+	bne +
+	jmp .target
++
+}
+
+!macro lbne .target {
+	beq +
+	jmp .target
++
+}

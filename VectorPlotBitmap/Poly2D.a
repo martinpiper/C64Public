@@ -1,0 +1,231 @@
+!zn
+; Exit
+; x/y - Return the min/max ypos
+Poly2D_scanTriangle
+	; Get min/max index from Y positions
+	ldx #$00
+	ldy #$00
+
+	lda Poly2D_vertexBufferY+0
+	cmp Poly2D_vertexBufferY+1
+	bcc +
+	ldx #$01
+	lda Poly2D_vertexBufferY+1
++
+	cmp Poly2D_vertexBufferY+2
+	bcc +
+	ldx #$02
++
+
+	lda Poly2D_vertexBufferY+0
+
+	cmp Poly2D_vertexBufferY+1
+	bcs +
+	ldy #$01
+	lda Poly2D_vertexBufferY+1
++
+	cmp Poly2D_vertexBufferY+2
+	bcs +
+	ldy #$02
++
+	stx ZPPoly2D_minY
+	sty ZPPoly2D_maxY
+
+	; Get the next index values
+	ldy .indexTabTri+1,x
+	sty ZPPoly2D_tmp2
+	lda .indexTabTri+2,x
+	sta ZPPoly2D_tmp3
+
+	jsr .drawLineRight
+
+	ldx ZPPoly2D_tmp2
+	cpx ZPPoly2D_maxY
+	beq .endRightDoLeft
+	ldy ZPPoly2D_tmp3
+	jsr .drawLineRight
+	jmp .endRightDoLeft2
+
+.endRightDoLeft
+	ldy ZPPoly2D_tmp2
+	ldx ZPPoly2D_tmp3
+	jsr .drawLineLeft
+.endRightDoLeft2
+	ldy ZPPoly2D_tmp3
+	ldx ZPPoly2D_minY
+	jsr .drawLineLeft
+	jmp .edgeTraceDone
+
+; Exit
+; x/y - Return the min/max ypos
+Poly2D_scanQuad
+	; Get min/max index from Y positions
+	ldx #$00
+	ldy #$00
+
+	lda Poly2D_vertexBufferY+0
+
+	cmp Poly2D_vertexBufferY+1
+	bcc +
+	ldx #$01
+	lda Poly2D_vertexBufferY+1
++
+	cmp Poly2D_vertexBufferY+2
+	bcc +
+	ldx #$02
+	lda Poly2D_vertexBufferY+2
++
+	cmp Poly2D_vertexBufferY+3
+	bcc +
+	ldx #$03
++
+
+	lda Poly2D_vertexBufferY+0
+
+	cmp Poly2D_vertexBufferY+1
+	bcs +
+	ldy #$01
+	lda Poly2D_vertexBufferY+1
++
+	cmp Poly2D_vertexBufferY+2
+	bcs +
+	ldy #$02
+	lda Poly2D_vertexBufferY+2
++
+	cmp Poly2D_vertexBufferY+3
+	bcs +
+	ldy #$03
++
+	stx ZPPoly2D_minY
+	sty ZPPoly2D_maxY
+
+
+
+	; Get the next index values
+	ldy .indexTabQuad+1,x
+	sty ZPPoly2D_tmp2
+	lda .indexTabQuad+2,x
+	sta ZPPoly2D_tmp3
+	lda .indexTabQuad+3,x
+	sta ZPPoly2D_tmp4
+
+	jsr .drawLineRight
+
+	; At this point we could have a quad with points in top to bottom order with various left/right edge configurations
+	; These maxY tests are to identify where the edge continues down to the bottom and when to switch to the other side
+	ldx ZPPoly2D_tmp2
+	cpx ZPPoly2D_maxY
+	beq .endLeftDoRight
+	ldy ZPPoly2D_tmp3
+	jsr .drawLineRight
+
+	ldx ZPPoly2D_tmp3
+	cpx ZPPoly2D_maxY
+	beq .endLeftDoRight2
+	ldy ZPPoly2D_tmp4
+	jsr .drawLineRight
+	jmp .endLeftDoRight3
+
+.endLeftDoRight
+	ldy ZPPoly2D_tmp2
+	ldx ZPPoly2D_tmp3
+	jsr .drawLineLeft
+.endLeftDoRight2
+	ldy ZPPoly2D_tmp3
+	ldx ZPPoly2D_tmp4
+	jsr .drawLineLeft
+.endLeftDoRight3
+	ldy ZPPoly2D_tmp4
+	ldx ZPPoly2D_minY
+	jsr .drawLineLeft
+
+.edgeTraceDone
+	; Return the min/max ypos
+	ldx ZPPoly2D_maxY
+	ldy Poly2D_vertexBufferY,x
+
+	ldx ZPPoly2D_minY
+	lda Poly2D_vertexBufferY,x
+	tax
+	rts
+
+.indexTabQuad
+	!byte $00,$01,$02,$03,$00,$01,$02
+.indexTabTri
+	!byte $00,$01,$02,$00,$01
+
+; Fixup coordinates to allow something to be rendered
+.isDisjoint
+	; abs(ZPPoly2D_dy)
+	eor #$ff
+	adc #$01
+	sta ZPPoly2D_dy
+
+	lda Poly2D_vertexBufferX, x
+	sta ZPPoly2D_x2
+
+	lda Poly2D_vertexBufferX, y
+
+	ldy ZPPoly2D_y2
+	ldx ZPPoly2D_y1
+	sty ZPPoly2D_y1
+	stx ZPPoly2D_y2
+
+	sec
+	bcs +
+
+Poly2D_loadVertsIntoRegs
+	lda Poly2D_vertexBufferY, x
+	sta ZPPoly2D_y1
+	lda Poly2D_vertexBufferY, y
+	sta ZPPoly2D_y2
+
+	; Calc ZPPoly2D_dy
+	sec
+	sbc ZPPoly2D_y1
+	bcc .isDisjoint
+
+	sta ZPPoly2D_dy
+
+	; Calc ZPPoly2D_dx
+	lda Poly2D_vertexBufferX, y
+	sta ZPPoly2D_x2
++
+	; Note carry
+	sbc Poly2D_vertexBufferX, x
+
+	; Used for self modifying decr direction
+	ldx #$ca ; dex
+
+	; ZPPoly2D_dx is negative?
+	bcs +
+
+	; abs(ZPPoly2D_dx)
+	eor #$ff
+	adc #$01
+
+	; Choose incr opcode
+	ldx #$e8 ; inx
++
+	sta ZPPoly2D_dx
+	rts
+
+
+!ifdef Poly_linesLeft {
+!if <Poly_linesLeft != 0 {
+	!error "Poly_linesLeft must be aligned"
+}
+}
+!ifdef Poly_linesRight {
+!if <Poly_linesRight != 0 {
+	!error "Poly_linesRight must be aligned"
+}
+}
+
+
+.drawLineLeft
+	+Poly2D_drawLine Poly_linesLeft , ZPPoly2D_x2 , ZPPoly2D_y2 , ZPPoly2D_dx , ZPPoly2D_dy
+
+
+.drawLineRight
+	+Poly2D_drawLine Poly_linesRight , ZPPoly2D_x2 , ZPPoly2D_y2 , ZPPoly2D_dx , ZPPoly2D_dy

@@ -1,5 +1,6 @@
 ;VectorPlotBitmap test code
 !source "../stdlib/stdlib.a"
+!source "../stdlib/LongBranches.a"
 !to "VectorPlotBitmap.prg", cbm
 !sal
 !sl "VectorPlotBitmap.map"
@@ -14,10 +15,11 @@ SpanPlot_MaskEnds	= 1
 ;EnableInterlace		= 1
 
 kSpanCalc_backgroundColour = 0
+kPoly2D_vertexBufferInZP = 1
 
 !ifdef SpanTable_IsInCart {
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
-CartKillBank_ProcessorPort		= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 } else {
 CartSelectBank_ProcessorPort	= ProcessorPortAllRAMWithIO
 CartKillBank_ProcessorPort		= ProcessorPortAllRAMWithIO
@@ -30,6 +32,10 @@ ZPBitmap_VarBase			= $02
 !source "BitmapPlotVars.a"
 ZPSegments_VarBase	= ZPBitmap_endVars
 !source "SegmentsVars.a"
+ZPPoly2D_VarBase	= ZPSegments_endVars
+!source "Poly2DVars.a"
+ZPTransform_VarBase	= ZPPoly2D_endVars
+!source "TransformVars.a"
 
 !ifdef SpanTable_IsInCart {
 !source "../MakeCart/asm/EasyFlash_Macros.a"
@@ -39,16 +45,25 @@ ZPSegments_VarBase	= ZPBitmap_endVars
 !source "BitmapPlotMacros.a"
 !source "SegmentsMacros.a"
 !source "SpanCalcMacros.a"
+!source "Poly2DMacros.a"
+!source "TransformMacros.a"
+
+* = $800
+!source "../stdlib/Initialise.a"
+!source "FingerPrint.a"
+!ifdef SpanTable_IsInCart {
+!source "../MakeCart/asm/BankSelect8K.a"
+} else {
+CartSelectBank_8K_NoSEI
+CartKillBank
+	rts
+}
+
 
 * = $4000
 	lda #CartSelectBank_ProcessorPort
 	jsr InitialiseMachine
-
-!ifdef SpanTable_IsInCart {
-	; Any old bank will do, as long as it's enabled
-	lda #0
-	jsr CartSelectBank_8K_NoSEI
-}
+	jsr CartKillBank
 
 	lda #%111011
 	sta VIC2ScreenControlV
@@ -60,7 +75,7 @@ ZPSegments_VarBase	= ZPBitmap_endVars
 
 	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
 
-	+ClearScreenAt_AX SCREENRAM , VIC2Colour_DarkGrey | (VIC2Colour_Grey << 4)
+	+ClearScreenAt_AX SCREENRAM , VIC2Colour_Grey | (VIC2Colour_DarkGrey << 4)
 
 	lda #>Bitmap0Memory
 	ldy #%10000100
@@ -69,7 +84,11 @@ ZPSegments_VarBase	= ZPBitmap_endVars
 	lda #>Bitmap_paletteStart
 	sta ZPBitmap_PaletteHi
 
+	jsr Transform_Init
+	lda #0
+	jsr Transform_loadMesh
 .l1
+	jsr CartKillBank
 	jsr Segments_initStorage
 	ldx #0
 	ldy #kSpanPlot_maxHeight
@@ -83,170 +102,148 @@ ZPSegments_VarBase	= ZPBitmap_endVars
 .noExpire
 ;	jsr SpanCalc_dirtyClear
 
-!ifdef SpanTable_IsInCart {
-	jsr PolyTestMove
+	; Test the render pipeline routines
+	inc .drawTestIndex
+
+!if 1 {
+	; Setup 2D coords
+	dec .sm1+1
+.sm1	lda #50
+	and #127
+	sta Poly2D_vertexBufferX
+	lda #0
+	sta Poly2D_vertexBufferY
+
+	lda #128
+	sta Poly2D_vertexBufferX+1
+	lda #32
+	sta Poly2D_vertexBufferY+1
+
+	lda #90
+	sta Poly2D_vertexBufferX+2
+	lda #64
+	sta Poly2D_vertexBufferY+2
+
+	jsr Poly2D_scanTriangle
+
+	lda .drawTestIndex
+	lsr
+	lsr
+	and #%111
+;	lda #1	; Fixed colour for debug purposes
+	jsr Segments_processLines
+
+
+	; Setup 2D coords
+	inc .sm2+1
+	inc .sm2+1
+.sm2	lda #50
+	and #127
+	sta Poly2D_vertexBufferX
+	lda #30
+	sta Poly2D_vertexBufferY
+
+	lda #150
+	sta Poly2D_vertexBufferX+1
+	lda #40
+	sta Poly2D_vertexBufferY+1
+
+	lda #0
+	sta Poly2D_vertexBufferX+2
+	lda #90
+	sta Poly2D_vertexBufferY+2
+
+	jsr Poly2D_scanTriangle
+
+	lda .drawTestIndex
+	lsr
+	lsr
+	clc
+	adc #1
+	and #%111
+;	lda #2	; Fixed colour for debug purposes
+	jsr Segments_processLines
+
+
+	; Setup 2D coords
+	lda #0
+	sta Poly2D_vertexBufferX
+	lda #90
+	sta Poly2D_vertexBufferY
+
+	lda #120
+	sta Poly2D_vertexBufferX+1
+	lda #130
+	sta Poly2D_vertexBufferY+1
+
+	dec .sm3+1
+.sm3	lda #90
+	and #63
+	sta Poly2D_vertexBufferX+2
+	lda #160
+	sta Poly2D_vertexBufferY+2
+
+	jsr Poly2D_scanTriangle
+
+	lda .drawTestIndex
+	lsr
+	lsr
+	clc
+	adc #2
+	and #%111
+;	lda #3	; Fixed colour for debug purposes
+	jsr Segments_processLines
 }
 
-	; Test the SpanCalc_scanPoly routine
-	inc .drawTestIndex
-	lda .drawTestIndex
-	and #%11
-	bne .o1
-	inc .drawTestIndex2
-.o1
-	lda .drawTestIndex
-	lsr
-	lsr
-	and #%111
-	sta .sma
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
 
-	lda .drawTestIndex2
-	lsr
-	lsr
-	lsr
-	lsr
-	and #15
-	tax
-	lda .drawTestUpper,x
-	sta .smx
-	lda .drawTestLower,x
-	sta .smy
-
-.sma = *+1
-	lda #2
-.smx = *+1
-	ldx #50
-.smy = *+1
-	ldy #100
-
-	jsr Segments_scanPoly
+	inc ZPTransform_rotX
+	inc ZPTransform_rotX
+	inc ZPTransform_rotX
+	inc ZPTransform_rotY
+	inc ZPTransform_rotY
+	inc ZPTransform_rotZ
 
 
-	lda .drawTestIndex
-	lsr
-	lsr
-	lsr
-	and #%111
-	sta .sma2
+	lda #0
+	jsr CartSelectBank_8K_NoSEI
 
-	lda .drawTestIndex2
-	lsr
-	lsr
-	lsr
-	and #15
-	tax
-	lda .drawTestUpper2,x
-	sta .smx2
-	lda .drawTestLower2,x
-	sta .smy2
-
-.sma2 = *+1
-	lda #2
-.smx2 = *+1
-	ldx #50
-.smy2 = *+1
-	ldy #100
-
-	jsr Segments_scanPoly
-
-
-	jsr PolyTestFlip
-	lda .drawTestIndex
-	lsr
-	lsr
-	lsr
-	and #%111
-	sta .sma3
-
-	lda .drawTestIndex2
-	lsr
-	lsr
-	lsr
-	and #15
-	tax
-	lda .drawTestUpper,x
-	sta .smx3
-	lda .drawTestLower,x
-	sta .smy3
-
-.sma3 = *+1
-	lda #2
-.smx3 = *+1
-	ldx #50
-.smy3 = *+1
-	ldy #100
-
-	jsr Segments_scanPoly
-
-
-	lda .drawTestIndex
-	lsr
-	lsr
-	and #%111
-	sta .sma4
-
-	lda .drawTestIndex2
-	lsr
-	lsr
-	lsr
-	and #15
-	tax
-	lda .drawTestUpper2,x
-	sta .smx4
-	lda .drawTestLower2,x
-	sta .smy4
-
-.sma4 = *+1
-	lda #2
-.smx4 = *+1
-	ldx #50
-.smy4 = *+1
-	ldy #100
-
-	jsr Segments_scanPoly
-	jsr PolyTestFlip
-
-
+	; Draw bitmap
 	+MWordValueToAddress_A Bitmap0Memory , ZPBitmap_CurrentPos
 	inc VIC2BorderColour
 
 	jsr BitmapPlot_drawSpans
 
+	dec .modelSwap
+	bpl .noSwap
+	lda #64
+	sta .modelSwap
+	lda .smModel+1
+	eor #1
+	sta .smModel+1
+.smModel lda #0
+	jsr Transform_loadMesh
+.noSwap
+
 ;	+WaitForFire_A
 
 	jmp .l1
 
+.modelSwap !by 64
 .expireCount !by 2
-
 .drawTestIndex !by 0
-.drawTestIndex2 !by 0
-
-.drawTestUpper
-	!by  0 , 75 , 80 , 70
-	!by 50 , 75 , 80 , 70
-	!by 10 , 75 , 80 , 70
-	!by 50 , 75 , 80 , 70
-.drawTestLower
-	!by 60 , 100 , 98 , 98
-	!by 90 , 85 , 86 , 90
-	!by 50 , 100 , 98 , 98
-	!by 90 , 85 , 86 , 90
-
-.drawTestUpper2
-	!by 100 , 175 , 180 , 170
-	!by 150 , 175 , 180 , 170
-	!by 150 , 175 , 180 , 170
-	!by 150 , 175 , 180 , 170
-.drawTestLower2
-	!by 200 , 200 , 198 , 198
-	!by 190 , 185 , 186 , 190
-	!by 200 , 200 , 198 , 198
-	!by 190 , 185 , 186 , 190
-
 
 !source "BitmapPlot.a"
 !source "SegmentsMemory.a"
 !source "Segments.a"
+!source "Poly2D.a"
+!source "Poly2DMem.a"
+!source "Transform.a"
+!source "TransformMem.a"
+!source "TransformTables.a"
+!source "3DModels.a"
 
 !ifdef SpanTable_IsInCart {
 
@@ -310,115 +307,6 @@ SpanBanks_p1
 SpanBanks_p2
 SpanBanks_p3
 }
-
-
-!source "../stdlib/Initialise.a"
-!source "FingerPrint.a"
-!ifdef SpanTable_IsInCart {
-!source "../MakeCart/asm/BankSelect8K.a"
-}
-
-!zn
-.dir !by 0
-PolyTestMove
-
-	ldx #50
-
-	lda .dir
-	inc .dir
-	cmp #20
-	bcc .moveRight
-	cmp #39
-	bcc .moveLeft
-
-	lda #0
-	sta .dir
-
-.moveLeft
-.l0
-	dec Poly_linesLeft-1+50,x
-	dec Poly_linesRight-1+50,x
-	dex
-	bne .l0
-	rts
-
-.moveRight
-.l1
-	inc Poly_linesLeft-1+50,x
-	inc Poly_linesRight-1+50,x
-	dex
-	bne .l1
-	rts
-
-
-!zn
-PolyTestFlip
-	ldx #kSpanPlot_maxHeight
-.l1
-	lda #kSpanPlot_maxLen
-	sec
-	sbc Poly_linesLeft-1,x
-	pha
-	lda #kSpanPlot_maxLen
-	sec
-	sbc Poly_linesRight-1,x
-	sta Poly_linesLeft-1,x
-	pla
-	sta Poly_linesRight-1,x
-	dex
-	bne .l1
-	rts
-
-
-
-
-Poly_linesLeft
-!ifdef SpanTable_IsInCart {
-	!for .i , 50 {
-		!by .i
-	}
-	!for .i , 50 {
-		!by 50 - .i
-	}
-	!for .i , 100 {
-		!by .i
-	}
-} else {
-	!for .i , 50 {
-		!by .i
-	}
-	!for .i , 50 {
-		!by .i
-	}
-	!for .i , 50 {
-		!by .i
-	}
-	!for .i , 50 {
-		!by .i
-	}
-}
-Poly_linesLeftEnd
-
-Poly_linesRight
-!ifdef SpanTable_IsInCart {
-	!for .i , 50 {
-		!by 100 - .i
-	}
-	!for .i , 25 {
-		!by 80 + (.i * 2)
-	}
-	!for .i , 25 {
-		!by 80 + 50 - (.i * 4)
-	}
-	!for .i , 100 {
-		!by 159 - (.i / 6)
-	}
-} else {
-	!for .i , 200 {
-		!by 63 - (.i / 20)
-	}
-}
-Poly_linesRightEnd
 
 
 !ifdef SpanTable_IsInCart {

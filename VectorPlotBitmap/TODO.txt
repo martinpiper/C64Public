@@ -1,27 +1,24 @@
 TODO
 
-When SpanPlot_MaskEnds	= 1 is disabled the demo corrupts the screen and crashes?
+* Some frames of the spinning cube/spaceship show weirdly inserted spans. Investigate, find the angles to get a repeatable test case
+
+
+
+* Transform.a is the start of the model->work->screen transformation pipeline
+	Obviously needs tests etc
+
+
+* Transform_renderFaces
+	Obviously will need to sort from front to back before "jsr Poly2D_scanQuad" and "jsr Segments_processLines"
+
+
+
+* Need some more robust Poly2D_scanTriangle features
+	Specifically testing the edge generation and quad edge detection
 
 
 
 * SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account for segments and the number of screen banks
-
-
-
-* Added SpanCalc_ tables and quick conversion into the current scan
-	Need to efficiently scan generic polys into SpanCalc_
-	* Add a polygon scan conversion into spans.
-		Make it so that multiple calls add more spans into the existing buffer.
-		Spans for each scanline can be maintained, they can be chopped/merged as the polygon plotter wants to insert spans
-	* At the moment SpanCalc_screenSegments* are kSpanPlot_maxHeight*kSpanCalc_maxSegments in size.
-	Added SpanCalc_scanPoly
-		* Need to handle;
-			; MPi: TODO: Going to have to make this a macro and generify it, or have optimised code for each SpanCalc_screenNumSegments
-		* The generic routine can process segments repeatedly from the left. When one segment has been processed then change the input span points Poly_linesLeft/Poly_linesRight as necessary
-			* Check for the same colours next to each other and adjust sizes as necessary
-			* Also if there is a 0 length then remove as necessary
-			* Can unroll this routine to spot length or colour optimisations and adjust SpanCalc_screenNumSegments
-			* Then if there is still span data, i.e. Poly_linesRight-Poly_linesLeft > 0, then keep on processing by jumping back into .notFullWidth
 
 
 
@@ -42,10 +39,6 @@ When SpanPlot_MaskEnds	= 1 is disabled the demo corrupts the screen and crashes?
 * Colour 0 can be a special case for the plot, the ends can effectively be clears instead
 	Have an option to mask or just round the end to the nearest 4 pixels
 
-
-
-* Add 3D calculation to create spans
-	Poly_linesLeft and Poly_linesRight
 
 
 * If EnableInterlace is enabled can we use half of kSpanPlot_maxHeight?

@@ -1,0 +1,17 @@
+!align 255 , 0
+Poly_linesLeft
+!fill kSpanPlot_maxHeight , 0
+Poly_linesLeftEnd
+
+; Might as well use this spare space due to alignment of the two sides
+!ifndef kPoly2D_vertexBufferInZP {
+Poly2D_vertexBufferX
+	!fill 4 , 0
+Poly2D_vertexBufferY
+	!fill 4 , 0
+}
+      
+!align 255 , 0
+Poly_linesRight
+!fill kSpanPlot_maxHeight , 0
+Poly_linesRightEnd

@@ -1,0 +1,57 @@
+ZPTransform_mulTabAddr1		= ZPTransform_VarBase + $00
+ZPTransform_mulTabAddr2		= ZPTransform_VarBase + $02
+ZPTransform_mulTabAddr3		= ZPTransform_VarBase + $04
+ZPTransform_mulTabAddr4		= ZPTransform_VarBase + $06
+ZPTransform_mulTabAddr5		= ZPTransform_VarBase + $08
+ZPTransform_mulTabAddr6		= ZPTransform_VarBase + $0a
+ZPTransform_mulTabAddr7		= ZPTransform_VarBase + $0c
+ZPTransform_mulTabAddr8		= ZPTransform_VarBase + $0e
+
+
+ZPTransform_temp1			= ZPTransform_VarBase + $10
+ZPTransform_temp2			= ZPTransform_VarBase + $11
+ZPTransform_temp3			= ZPTransform_VarBase + $12
+ZPTransform_modelAddr		= ZPTransform_temp1	; Note: Pointer aliasing
+
+ZPTransform_faceOffset		= ZPTransform_VarBase + $13
+
+
+ZPTransform_angle1			= ZPTransform_VarBase + $14
+ZPTransform_angle2			= ZPTransform_VarBase + $15
+ZPTransform_angle3			= ZPTransform_VarBase + $16
+ZPTransform_angle4			= ZPTransform_VarBase + $17
+ZPTransform_angle5			= ZPTransform_VarBase + $18
+ZPTransform_angle6			= ZPTransform_VarBase + $19
+ZPTransform_angle7			= ZPTransform_VarBase + $1a
+ZPTransform_angle8			= ZPTransform_VarBase + $1b
+ZPTransform_angle9			= ZPTransform_VarBase + $1c
+ZPTransform_angle10			= ZPTransform_VarBase + $1d
+
+ZPTransform_matrix1			= ZPTransform_VarBase + $1e
+ZPTransform_matrix2			= ZPTransform_VarBase + $1f
+ZPTransform_matrix3			= ZPTransform_VarBase + $20
+ZPTransform_matrix4			= ZPTransform_VarBase + $21
+ZPTransform_matrix5			= ZPTransform_VarBase + $22
+ZPTransform_matrix6			= ZPTransform_VarBase + $23
+ZPTransform_matrix7			= ZPTransform_VarBase + $24
+ZPTransform_matrix8			= ZPTransform_VarBase + $25
+ZPTransform_matrix9			= ZPTransform_VarBase + $26
+
+ZPTransform_rotX			= ZPTransform_VarBase + $27
+ZPTransform_rotY			= ZPTransform_VarBase + $28
+ZPTransform_rotZ			= ZPTransform_VarBase + $29
+
+
+
+ZPTransform_endVars			= ZPTransform_VarBase + $2a
+
+!if ZPTransform_endVars >= $100 {
+!error "ZPTransform_endVars is out of zeropage"
+}
+
+
+!ifndef kTransform_maxTransVerts {
+kTransform_maxTransVerts = $40
+}
+
+kTransform_maxAngles = 180

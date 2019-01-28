@@ -1,0 +1,34 @@
+; ZPBitmap_VarBase must be defined with a *zero page* base address for the Segments internal variables.
+; For example: ZPPoly2D_VarBase	= $02
+
+; "kPoly2D_vertexBufferInZP = 1" can be used before including this file to place the vertex buffer into zeropage
+
+ZPPoly2D_minY	= ZPPoly2D_VarBase + $00
+ZPPoly2D_maxY	= ZPPoly2D_VarBase + $01
+ZPPoly2D_tmp2	= ZPPoly2D_VarBase + $02
+ZPPoly2D_tmp3	= ZPPoly2D_VarBase + $03
+ZPPoly2D_tmp4	= ZPPoly2D_VarBase + $04
+ZPPoly2D_x1		= ZPPoly2D_VarBase + $05
+ZPPoly2D_x2		= ZPPoly2D_VarBase + $06
+ZPPoly2D_y1		= ZPPoly2D_VarBase + $07
+ZPPoly2D_y2		= ZPPoly2D_VarBase + $08
+ZPPoly2D_dx		= ZPPoly2D_VarBase + $09
+ZPPoly2D_dy		= ZPPoly2D_VarBase + $0a
+
+
+; For the potential vertex buffer to use
+_ZPPoly2D_endRegs = ZPPoly2D_VarBase + $0b
+
+!ifdef kPoly2D_vertexBufferInZP {
+Poly2D_vertexBufferX	= _ZPPoly2D_endRegs
+Poly2D_vertexBufferY	= _ZPPoly2D_endRegs + 4
+ZPPoly2D_endVars							= _ZPPoly2D_endRegs + 8
+} else {
+ZPPoly2D_endVars							= _ZPPoly2D_endRegs
+}
+
+
+
+!if ZPPoly2D_endVars >= $100 {
+!error "ZPPoly2D_endVars is out of zeropage"
+}

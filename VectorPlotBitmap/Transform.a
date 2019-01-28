@@ -1,0 +1,218 @@
+!zn
+; http://codebase64.org/doku.php?id=base:6502_6510_maths#the_art_of_3d
+; http://codebase64.org/doku.php?id=magazines:chacking8
+; http://codebase64.org/doku.php?id=magazines:chacking9
+; http://codebase64.org/doku.php?id=magazines:chacking10
+
+
+Transform_Init
+	; Set the table pointers
+	lda #>Transform_mulTab1
+	sta ZPTransform_mulTabAddr1+1
+	sta ZPTransform_mulTabAddr3+1
+	sta ZPTransform_mulTabAddr5+1
+	sta ZPTransform_mulTabAddr7+1
+	sta .smmulTab1+2
+	sta .smmulTab3+2
+	lda #>Transform_mulTab2
+	sta ZPTransform_mulTabAddr2+1
+	sta ZPTransform_mulTabAddr4+1
+	sta ZPTransform_mulTabAddr6+1
+	sta ZPTransform_mulTabAddr8+1
+	sta .smmulTab2+2
+	sta .smmulTab4+2
+
+
+	lda #$00
+	sta ZPTransform_rotX
+	sta ZPTransform_rotY
+	sta ZPTransform_rotZ
+
+	rts
+
+
+Transform_calcRotation
+	+Transform_getSinCos
+	rts
+
+Transform_transformProjectVerts
+
+.last_vert ldx #$00
+-
+	+Transform_project ~.ref_vertx, ~.ref_verty, ~.ref_vertz
+	dex
+	+lbpl -
+
+	rts
+
+
+
+
+Transform_renderFaces
+.face_first	ldy #0
+.l1
+	sty ZPTransform_faceOffset
+
+	; Load transformed verts and build the face
+	ldx Transform_faces+0,y
+	lda Transform_transVertsX,x
+	sta Poly2D_vertexBufferX+0
+	lda Transform_transVertsY,x
+	sta Poly2D_vertexBufferY+0
+
+	ldx Transform_faces+1,y
+	lda Transform_transVertsX,x
+	sta Poly2D_vertexBufferX+1
+	sec
+	sbc Poly2D_vertexBufferX+0
+
+	; Setup multab entries for the dot product
+	sta .smmulTab1+1
+	eor #$ff
+	sta .smmulTab2+1
+
+	lda Transform_transVertsY,x
+	sta Poly2D_vertexBufferY+1
+	sec
+	sbc Poly2D_vertexBufferY+0
+
+	; Setup multab entries for the dot product
+	sta .smmulTab3+1
+	eor #$ff
+	sta .smmulTab4+1
+
+	; Load next verts into the face
+	ldx Transform_faces+2,y
+	lda Transform_transVertsX,x
+	sta Poly2D_vertexBufferX+2
+	sec
+	sbc Poly2D_vertexBufferX+1
+
+	; Use index for the multab entries and dot product
+	tay
+
+	lda Transform_transVertsY,x
+	sta Poly2D_vertexBufferY+2
+	sec
+	sbc Poly2D_vertexBufferY+1
+
+	; Use index for the multab entries and dot product
+	tax
+
+	;multiply first and subtract second
+.smmulTab3	lda $1000,y
+	sec
+.smmulTab4	sbc $1000,y
+	sec
+.smmulTab1	sbc $1000,x
+	clc
+.smmulTab2	adc $1000,x
+
+	; Skip if the face is not visible
+	bpl .skipFace
+
+	; Face is visible
+	ldy ZPTransform_faceOffset
+	; Use the result to calculate lighting
+	eor #$ff
+	lsr
+	lsr
+	lsr
+	clc
+	adc Transform_faces+4,y	; Colour bias
+;	lda Transform_faces+4,y
+
+	bne +
+	lda #1
++
+	cmp #$08
+	bcc +
+	lda #7
++
+	sta .smTheColour+1
+
+
+	; Test for triangle or quad setup
+	lda Transform_faces+3,y
+	cmp Transform_faces+0,y
+	beq .doTri
+	tax
+	lda Transform_transVertsX,x
+	sta Poly2D_vertexBufferX+3
+	lda Transform_transVertsY,x
+	sta Poly2D_vertexBufferY+3
+
+	jsr Poly2D_scanQuad
+	jmp .smTheColour
+.doTri
+	jsr Poly2D_scanTriangle
+
+.smTheColour	lda #1
+	jsr Segments_processLines
+
+.skipFace
+	; Next face
+	lda ZPTransform_faceOffset
+	clc
+	adc #$05
+	tay
+.face_last	cmp #0
+	+lbne .l1
+	rts
+
+
+
+; Entry
+; A = Mesh index
+Transform_loadMesh
+	asl
+	tax
+	lda Transform_meshTab,x
+	sta ZPTransform_modelAddr
+	lda Transform_meshTab+1,x
+	sta ZPTransform_modelAddr+1
+
+	ldy #$00
+	lda (ZPTransform_modelAddr),y
+	sec
+	sbc #$01
+	sta .last_vert+1
+	iny
+
+	; Backface cull flag
+	lda (ZPTransform_modelAddr),y
+
+	iny
+	; Shaded face flag
+	lda (ZPTransform_modelAddr),y
+
+	iny
+	; Set the addresses
+	lda (ZPTransform_modelAddr),y
+	sta .ref_vertx+1
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .ref_vertx+2
+
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .ref_verty+1
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .ref_verty+2
+
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .ref_vertz+1
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .ref_vertz+2
+
+	; Get the face index values
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .face_first+1
+	iny
+	lda (ZPTransform_modelAddr),y
+	sta .face_last+1
+	rts
