@@ -30,6 +30,9 @@
     <ClInclude Include="CompressRLE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CompressE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Compress.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CompressRLE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CompressE.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,6 +77,33 @@
       <Filter>asm</Filter>
     </None>
     <None Include="..\Decompression\TestDecompression3.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression3RLE.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression3CyberLoad.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\stdlib\BASICEntry80d.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\LauncherAddressCalc.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\CommonDataCopy.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\BuildData.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\Decompression\BuildDataFragment.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\Decompression\DefineDoBorderEffect.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\BorderEffectCommon.a">
       <Filter>asm</Filter>
     </None>
   </ItemGroup>

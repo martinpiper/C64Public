@@ -190,8 +190,10 @@ InitialiseGameWithoutWait
 	;		map coords.
 	; This might be tricky because the map scroll position updates on a zero pixel boundary...
 !ifdef Scroller_MultiDirection {
+!ifndef Scroller_RunJumpDemo {
 	sta frameScrollX
 	sta frameScrollY
+}
 } else {
 	sta frameScrollPos
 	sta frameTotalScrScroll

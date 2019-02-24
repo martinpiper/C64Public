@@ -5,7 +5,7 @@
 !source "../stdlib/stdlib.a"
 
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
-CartKillBank_ProcessorPort		= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 
 !source "../MakeCart/asm/EasyFlash_Macros.a"
 ;!source "../MakeCart/asm/GMod2_Macros.a"

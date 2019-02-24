@@ -1,10 +1,8 @@
 CART_SELECT_BANK		= $DE00
-CART_SELECT_BANK_KILL	= $40	; 512KB cart, so it's always this bank number apparently
 
 !macro MACRO_CartKillBank {
-	; Stop the cartridge from selecting the bank by selecting an invalid bank
-	lda #CART_SELECT_BANK_KILL
-	sta CART_SELECT_BANK
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
 	lda #CartKillBank_ProcessorPort
 	sta ZPProcessorPort
 }

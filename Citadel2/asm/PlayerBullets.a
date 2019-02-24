@@ -23,9 +23,6 @@ PlayerBulletsScrH	!fill kNumPlayerBullets , -1
 
 
 
-CurrentBulletBank !by $c8
-
-
 !zn
 PlayerBullets_Init
 	ldx #kNumPlayerBullets-1
@@ -78,8 +75,7 @@ BeforeScrollers
 	beq .os1
 	rts
 .os1
-	ldx topScreenBank
-	lda BankToScreenAddr,x
+	lda ScrollerBankVisible
 	sta tempWork0
 	ldx #kNumPlayerBullets-1
 .l1
@@ -93,14 +89,13 @@ BeforeScrollers
 	ldy PlayerBulletsX,x
 
 	lda tempWork1
-	clc
-	adc tempWork0
+	ora tempWork0
 	sta tempWork3
 	lda PlayerBulletsBkChar,x
 	sta (tempWork2),y
 
 	lda tempWork1
-	adc #>COLOURRAM
+	ora #>COLOURRAM
 	sta tempWork3
 	lda PlayerBulletsBkCol,x
 	sta (tempWork2),y
@@ -120,10 +115,8 @@ AfterScrollers
 .os1
 	jsr RadarEnemyPlayerUpdate
 
-	ldx topScreenBank
-	lda BankToScreenAddr,x
+	lda ScrollerBankVisible
 	sta tempWork0
-	sta CurrentBulletBank
 
 	jsr MapAnimations_Render
 
@@ -165,8 +158,7 @@ AfterScrollers
 	ldy PlayerBulletsX,x
 
 	lda tempWork1
-	clc
-	adc tempWork0
+	ora tempWork0
 	sta tempWork3
 	lda (tempWork2),y
 	cmp #MapSolidChars
@@ -174,7 +166,7 @@ AfterScrollers
 	sta PlayerBulletsBkChar,x
 
 	lda tempWork1
-	adc #>COLOURRAM
+	ora #>COLOURRAM
 	sta tempWork3
 	lda (tempWork2),y
 	sta PlayerBulletsBkCol,x
@@ -196,8 +188,7 @@ AfterScrollers
 	ldy PlayerBulletsX,x
 
 	lda tempWork1
-	clc
-	adc tempWork0
+	ora tempWork0
 	sta tempWork3
 
 	; Now OR in the lookup
@@ -206,7 +197,7 @@ AfterScrollers
 	sta (tempWork2),y
 
 	lda tempWork1
-	adc #>COLOURRAM
+	ora #>COLOURRAM
 	sta tempWork3
 	lda PlayerBulletsCol,x
 	sta (tempWork2),y

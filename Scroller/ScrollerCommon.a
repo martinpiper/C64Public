@@ -62,17 +62,22 @@ ScrollerUpdateTopIRQ
 
 
 !zn
+ScrollerBankVisible		!by $c8
+ScrollerBankBackBuffer	!by $cc
+
 ScrollerFlipBank
 	; Do this first since the colour scroll can take some time
 	lda topScreenBank
 	eor #1
 ScrollerSetBank
 	sta topScreenBank
-	beq .m1
-	lda #$cf
-	bne .m2
-.m1
-	lda #$cb
-.m2
+	tax
+
+	lda BankToScreenAddrNext,x
+	sta ScrollerBankBackBuffer
+
+	lda BankToScreenAddr,x
+	sta ScrollerBankVisible
+	ora #3	; Create the $cb or $cf addresses
 	jsr Multiplex_SetSpritePointer
 	rts

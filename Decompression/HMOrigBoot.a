@@ -1,0 +1,144 @@
+; Gets original HM code running
+; ..\acme.exe -v3 --msvc HMOrigBoot.a
+; ..\bin\LZMPi.exe -c HMOrigBoot.prg HMOrigBoot.cmp 2
+; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a LauncherAddressCalc.a
+; TestDecompression.prg
+
+
+
+!source "../stdlib/stdlib.a"
+!to "HMOrigBoot.prg", cbm
+!sal
+!sl "HMOrigBoot.map"
+!svl "HMOrigBoot.lbl"
+!cpu 6510
+!ct pet
+!initmem 0
+
+* = $800
+!bin "C:\Users\Martin Piper\Downloads\hunter original 2.bin",$9800,$0402
+
+; Use the spare space at $a000 in HM memory for our preparation code
+* = $a000
+	sei
+	; Due to being started with a BASIC SYS:
+	; Assume the DDR is correct
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+
+	ldx #$ff
+	txs
+
+	+MACROWaitForTheLastScan_A
+	lda #0
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	sta VIC2ScreenControlV
+
+
+	ldx #0
+.cp1
+	; Copy the ZP code first
+	lda RelocBootStart,x
+	sta RelocBootReal,x
+;	lda RelocBootStart+$100,x
+;	sta RelocBootReal+$100,x
+	dex
+	bne .cp1
+	jmp RelocBootReal
+
+
+RelocBootStart
+!pseudopc $100 {
+RelocBootReal
+	ldx #0
+
+.cl0
+	lda Mem0400Start,x
+	sta $0400,x
+	lda Mem0400Start + $100,x
+	sta $0400 + $100,x
+	lda Mem0400Start + $200,x
+	sta $0400 + $200,x
+	lda Mem0400Start + $300,x
+	sta $0400 + $300,x
+
+	lda Memfe00Start,x
+	sta $fe00,x
+	lda Memfe00Start + $100,x
+	sta $fe00 + $100,x
+	dex
+	bne .cl0
+
+
+	txa
+	ldy #>(ZeroMemEnd-ZeroMemStart)
+.cl1
+.smcl1	sta ZeroMemStart,x
+	dex
+	bne .cl1
+	inc .smcl1+2
+	dey
+	bne .cl1
+
+	txa
+.cl2
+	sta $200,x
+	sta $300,x
+	sta+2 $0002,x
+	dex
+	bne .cl2
+
+	; Ozi HM boot code
+	lda #$36
+	sta $01
+	lda #$7f
+	sta $dc0d         ;turn off all types of cia irq/nmi.
+	sta $dd0d
+	lda $dc0d
+	lda $dd0d
+	lda #$ff
+	sta $D019
+	lda #$00
+	sta $D01a
+	sta $dc0e
+	sta $dc0f
+	sta $dd0e
+	sta $dd0f
+	lda $d01e
+	lda $d01f
+	lda #8
+	sta $dc0f ; stop the timmers from forcing a Q key Nice one Martin.
+	sei
+
+	lda $d01e
+	lda $d01f
+	ldx #0
+	stx $d01a ; disbale IRQs
+	dex
+	stx $dc02
+	lda $d019 ; ack any pending
+	sta $d019
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+MACROWaitForTheLastScan_A
+	jmp $190c ; start the game
+}
+RelocBootEnd	
+
+!if (RelocBootEnd - RelocBootStart) >= $100 {
+	!error "RelocBootReal is too large"
+}
+
+ZeroMemStart	= $a000
+ZeroMemEnd		= $c000
+
+Mem0400Start
+!bin "C:\Users\Martin Piper\Downloads\hunter original 2.bin",$400,$0002
+Mem0400End
+
+Memfe00Start
+!bin "C:\Users\Martin Piper\Downloads\hunter original 2.bin",,$fa02
+Memfe00End
+
+* = $c000
+!bin "C:\Users\Martin Piper\Downloads\hunter original 2.bin",$3e00,$bc02

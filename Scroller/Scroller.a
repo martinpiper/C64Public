@@ -8,18 +8,24 @@ frameScrollPreCalcX		!by 0
 frameScrollPreCalcY		!by 0
 frameScrollPreCalcXVel	!by 0	; The velocity used for this movement
 frameScrollPreCalcYVel	!by 0	; The velocity used for this movement
-frameScrollX			!by 0	; Pixels
-frameScrollY			!by 0	; Pixels
 frameScrollOldX			!by 0	; Pixels
 frameScrollOldY			!by 0	; Pixels
 
-;scrollerRealMovementXPixels !by 0
-;scrollerRealMovementYPixels !by 0
-
+!ifdef Scroller_RunJumpDemo {
+scrollMapHX	!by $00		; Block pos in map
+scrollMapLX	!by $00		; Char pos in block (0-3)
+scrollMapHY	!by $02		; Block pos in map
+scrollMapLY	!by $00		; Char pos in block (0-3)
+frameScrollX			!by 4	; Pixels
+frameScrollY			!by 4	; Pixels
+} else {
 scrollMapHX	!by $00		; Block pos in map
 scrollMapLX	!by $00		; Char pos in block (0-3)
 scrollMapHY	!by $00		; Block pos in map
 scrollMapLY	!by $00		; Char pos in block (0-3)
+frameScrollX			!by 0	; Pixels
+frameScrollY			!by 0	; Pixels
+}
 
 !zn {
 ScrollerInitVariables
@@ -1382,9 +1388,44 @@ UpdateMultiplexorToAnimation
 	sta AnimationXPosHi,x
 	lda Multiplex_YPos,x
 	sta AnimationYPos,x
+!ifdef Scroller_RunJumpDemo {
+	; Create some less tightly packed positions when in this demo mode
+	txa
+	and #1
+	bne .o1
+	lda Multiplex_YPos,x
+	rol
+	sta AnimationYPos,x
+.o1
+	txa
+	and #2
+	bne .o2
+	lda Multiplex_YPos,x
+	rol
+	sta AnimationYPos,x
+.o2
+}
 
 	dex
 	bpl .l1
+!ifdef Scroller_RunJumpDemo {
+	lda #128
+	sta AnimationXPosLo
+	lda #64
+	sta AnimationYPos
+	lda #0
+	sta AnimationXPosHi
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	lda #VIC2Colour_LightRed
+	sta AnimationSpriteColour+1
+}
 	rts
 
 !source "../SpriteMultiplexor/SpriteMultiplexorDefaultPattern.a"
@@ -1392,10 +1433,188 @@ UpdateMultiplexorToAnimation
 } ;< !ifdef Scroller_MultiDirection {
 
 
+!source "SpritePosToScreenPosMacros.a"
+!ifdef Scroller_RunJumpDemo {
+!source "SpritePosToScreenPosMem.a"
+!source "SpritePosToScreenPosMem2.a"
+
+ZP_SpriteYPosToScreenCharPosLolo	= tempWork6
+ZP_SpriteYPosToScreenCharPosLohi	= tempWork7
+ZP_SpriteYPosToScreenCharPosHilo	= tempWork8
+ZP_SpriteYPosToScreenCharPosHihi	= tempWork9
+ZP_SpriteXPosToScreenCharPoslo		= tempWork10
+ZP_SpriteXPosToScreenCharPoshi		= tempWork11
+}
+
+!ifdef Scroller_RunJumpDemo {
+
+AnimationFrames_MainCharTorsoRight
+	!by $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1 , 0
+AnimationFrames_MainCharLegsRight
+	!by $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5 , 0
+AnimationFrames_Bat
+	!by $5b , $5c , $5d , $5e , $5f , $60 , 0
+AnimationFrames_Explosion
+	!by $42 , $43 , $44 , $45 , $46 , $47 , $48 , 0
+AnimationFrames_Worm
+	!by $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50 , 0
+
+Animation_movePixels !by 0 , -1 , -2 , 1 , 2 , 0 , 0 , -1 , -2 , 1 , 2 , 0 , 0 , -1 , -2 , 1 , 2 , 0
+	!by 0 , -1 , -2 , 1 , 2 , 0 , 0 , -1 , -2 , 1 , 2 , 0 , 0 , -1 , -2 , 1 , 2 , 0
+
+Animation_FramesLo
+	!by <AnimationFrames_MainCharLegsRight
+	!by <AnimationFrames_MainCharTorsoRight
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat+1
+	!by <AnimationFrames_Explosion+1
+	!by <AnimationFrames_Worm+1
+	!by <AnimationFrames_Bat+2
+	!by <AnimationFrames_Explosion+2
+	!by <AnimationFrames_Worm+2
+	!by <AnimationFrames_Bat+3
+	!by <AnimationFrames_Explosion+3
+	!by <AnimationFrames_Worm+3
+	!by <AnimationFrames_Bat+4
+	!by <AnimationFrames_Explosion+4
+	!by <AnimationFrames_Worm+5
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+
+Animation_FramesHi
+	!by >AnimationFrames_MainCharLegsRight
+	!by >AnimationFrames_MainCharTorsoRight
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat+1
+	!by >AnimationFrames_Explosion+1
+	!by >AnimationFrames_Worm+1
+	!by >AnimationFrames_Bat+2
+	!by >AnimationFrames_Explosion+2
+	!by >AnimationFrames_Worm+2
+	!by >AnimationFrames_Bat+3
+	!by >AnimationFrames_Explosion+3
+	!by >AnimationFrames_Worm+3
+	!by >AnimationFrames_Bat+4
+	!by >AnimationFrames_Explosion+4
+	!by >AnimationFrames_Worm+5
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+
+Animation_Speed
+	!by 2 , 2 , 3 , 4 , 1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 , 1 , 2 , 3 , 4
+	!by 1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 , 1 , 2 , 3 , 4
+
+Animation_Counter
+	!fill 32 , -1
+
+Animation_Index
+	!fill 32 , 0
+}
 
 !ifdef Scroller_DisableUpdateSprites {} else {
 !zn
 UpdateSprites
+!ifdef Scroller_RunJumpDemo {
+	ldx Multiplex_MaxSpr
+	dex
+.an1
+	dec Animation_Counter,x
+	bpl .noFrameReset
+
+	lda Animation_Speed,x
+	sta Animation_Counter,x
+
+	lda Animation_FramesLo,x
+	sta tempWork0
+	lda Animation_FramesHi,x
+	sta tempWork1
+	ldy Animation_Index,x
+	lda (tempWork0),y
+	bne .gotFrame
+	ldy #0
+	sta Animation_Index,x
+	lda (tempWork0),y
+.gotFrame
+	sta AnimationSpriteFrame,x
+	iny
+	tya
+	sta Animation_Index,x
+
+.noFrameReset
+	dex
+	bpl .an1
+
+	; Process movement for everything else
+	ldx Multiplex_MaxSpr
+	dex
+.an2
+	ldy Animation_Index,x
+	lda Animation_movePixels,y
+	beq .noMoveX
+	bmi .negMoveX
+	clc
+	adc AnimationXPosLo,x
+	sta AnimationXPosLo,x
+	bcc .noMoveX
+	lda #1
+	sta AnimationXPosHi,x
+	jmp .noMoveX
+.negMoveX
+	clc
+	adc AnimationXPosLo,x
+	sta AnimationXPosLo,x
+	bcs .noMoveX
+	lda #0
+	sta AnimationXPosHi,x
+.noMoveX
+
+	lda Animation_movePixels+8,y
+	clc
+	adc AnimationYPos,x
+	sta AnimationYPos,x
+
+	dex
+	cpx #1
+	bne .an2
+}
+
+
 	; Update sprites here from the frame data. i.e. Copy them from the frame data to the interrupt data
 	; MPi: TODO: Optimisation. Don't copy the sprite data have double buffered sprite data. One for calc, one for draw.
 	lda scrollerRealMovementXPixels
@@ -1474,6 +1693,7 @@ UpdateSprites
 .sp3
 }
 
+!ifndef Scroller_RunJumpDemo {
 !if 1 {
 	; This code cycles sprite frames to test any screen or border split with the full range of sprite frames
 	; It alternates every other sprite to give the empty sprite rejection and sort time to handle the changes
@@ -1490,6 +1710,7 @@ UpdateSprites
 	dex
 	bpl .sp4
 }
+}
 
 	rts
 } ;< !ifdef Scroller_DisableUpdateSprites {} else {
@@ -1505,7 +1726,296 @@ HandleUserInput
 
 !zn
 .toggle !by 0
+.playerDeltaY !by 0
+.lastPushX !by 1
+.lastPushY !by 1
+.standing !by 0
+.upImpulse !by 0
+.jumpIndex !by -1
+; This allows the feel and height of the maximum jump with "sub-pixel" accuracy to be precisely defined
+.jumpVelocities !by 4 , 4 , 4 , 4 , 4 , 3 , 4 , 3 , 3 , 3 , 3 , 3 , 2 , 3 , 2 , 2 , 3 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 1 , 2 , 1 , 2 , 1 , 1 , 2 , 1 , 1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 1 , 0 , 0 , 0
+.jumpVelocitiesEnd
+;.fallingVelocities 1 , 1 , 2 , 1 , 2 , 2 , 2 , 2 , -1
 HandleJoystick
+
+!ifdef Scroller_RunJumpDemo {
+	lda AnimationYPos
+	sta .playerDeltaY
+
+	+MSpritePosToCharacterLookup_Setup SpriteXPosToScreenCharPos , SpriteYPosToScreenCharPosLo , SpriteYPosToScreenCharPosHi , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosLohi , ZP_SpriteYPosToScreenCharPosHilo , ZP_SpriteYPosToScreenCharPosHihi , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteXPosToScreenCharPoshi , topScreenScrollX , topScreenScrollY
+
+	; Assume not standing
+	lda #0
+	sta .standing
+
+	; No need for fall detection when we are moving upwards due to jumping
+	ldx .jumpIndex
+	bpl .rejectRoutine
+
+	; Falling or standing detection code
+
+	; Assume standing now
+	lda #1
+	sta .standing
+
+	ldx #0
+
+	+MSpritePosToCharacterLookupPosTweak 0 , -5 , .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	tya
+	clc
+	adc #40
+	tay
+	lda (tempWork0),y
+	beq .doFall
+	cmp #16	; The character that is solid
+	bcc .rejectRoutine
+	cmp #43	; The character that is solid
+	bcs .rejectRoutine
+.doFall
+	inc AnimationYPos
+	inc AnimationYPos
+	lda #0
+	sta .standing
+.rejectRoutine
+
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .o1
+	lda AnimationXPosLo
+	clc
+	adc #2
+	sta AnimationXPosLo
+	bcc .o1
+	lda #1
+	sta AnimationXPosHi
+.o1
+
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .o2
+	lda AnimationXPosLo
+	sec
+	sbc #2
+	sta AnimationXPosLo
+	bcs .o2
+	lda #0
+	sta AnimationXPosHi
+.o2
+
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	bne .o3
+	inc AnimationYPos
+.o3
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+
+	lda .upImpulse
+	bne .o4
+
+	lda #1
+	sta .upImpulse
+
+	; Already jumping?
+	lda .jumpIndex
+	bpl .o4
+
+	; Not standing?
+	lda .standing
+	beq .o4
+	; Start jumping then
+	lda #0
+	sta .jumpIndex
+	jmp .o4
+.notUp
+	lda #0
+	sta .upImpulse
+	; Stop jumping
+	lda #-1
+	sta .jumpIndex
+.o4
+
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .o5
+
+	; Fire
+	jsr AllocateCharacterEffect
+	bcs .o5
+
+	lda #1
+	sta CharEffectsXVel,x
+.smby	lda #-1
+	sta CharEffectsYVel,x
+	lda #VIC2Colour_White
+	sta CharEffectsCol,x
+	lda #20
+	sta CharEffectsTime,x
+	lda #177
+	sta CharEffectsChar,x
+
+
+	lda AnimationYPos
+	sec
+	sbc topScreenScrollY
+	sbc #20
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta CharEffectsY,x
+
+	lda topScreenScrollX
+	lsr
+	sta tempWork0
+
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sec
+	sbc tempWork0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta CharEffectsX,x
+
+	jmp .o5
+
+.lnoBulletSpawned
+	; Just kill it
+	lda #-1
+	sta CharEffectsY,x
+.o5
+	inc .smby+1
+	lda .smby+1
+	cmp #2
+	bne .osmby
+	lda #-1
+	sta .smby+1
+.osmby
+
+
+	; TODO: Probably should check the head positions for solid blocks here to stop jumping happening
+	ldx .jumpIndex
+	bmi .noJumping
+	lda AnimationYPos
+	sec
+	sbc .jumpVelocities,x
+	sta AnimationYPos
+	inx
+	cpx #.jumpVelocitiesEnd-.jumpVelocities
+	bne .noJumping
+	ldx #-1
+.noJumping
+	stx .jumpIndex
+
+
+	; Calculate any delta Y moved by the player
+	lda AnimationYPos
+	sec
+	sbc .playerDeltaY
+	sta .playerDeltaY
+
+	; Simple push camera calculations
+	lda #0
+	sta frameTargetVelX
+	sta frameTargetVelY
+
+	lda AnimationYPos
+	cmp #151	; Carefully selected to avoid any misaligned scrolling
+	bcc .no1
+	lda .playerDeltaY
+	bmi .endY
+	lda #-2
+	sta frameTargetVelY
+	lda #-1
+	sta .lastPushY
+	jmp .endY
+.no1
+
+	lda AnimationYPos
+	cmp #119	; Carefully selected to avoid any misaligned scrolling
+	bcs .no2
+	lda .playerDeltaY
+	beq .no2b
+	bpl .no2
+.no2b
+	lda #2
+	sta frameTargetVelY
+	lda #1
+	sta .lastPushY
+	jmp .endY
+.no2
+
+.endY
+
+	; Handle the X position now
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sta tempWork2
+
+	cmp #128
+	bcc .no3
+	lda #-2
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .endX
+.no3
+
+	cmp #48
+	bcs .no4
+	lda #2
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .endX
+.no4
+
+.endX
+
+	; When there is no target X velocity, attempt to center the X scroll until it is 4 pixels again
+	lda frameTargetVelX
+	bne .haveTargetX
+
+	lda topScreenScrollX
+	cmp #4
+	beq .haveTargetX
+
+	ldx .lastPushX
+	stx frameTargetVelX
+.haveTargetX
+
+
+
+	; When there is no target Y velocity, attempt to center the Y scroll until it is 4 pixels again
+	lda frameTargetVelY
+	bne .haveTargetY
+
+	lda topScreenScrollY
+	cmp #4
+	beq .haveTargetY
+
+	ldx .lastPushY
+	stx frameTargetVelY
+.haveTargetY
+
+	lda AnimationYPos
+	sec
+	sbc #VIC2SpriteSizeY
+	sta AnimationYPos+1
+	lda AnimationXPosLo
+	sta AnimationXPosLo+1
+	lda AnimationXPosHi
+	sta AnimationXPosHi+1
+
+} else {
+
+; <else !ifdef Scroller_RunJumpDemo
 	inc .toggle
 	lda .toggle
 	cmp #3
@@ -1543,6 +2053,9 @@ HandleJoystick
 	sta frameTargetVelX
 .o5
 
+; <end !ifdef Scroller_RunJumpDemo
+}
+
 	; Clamp the velocity
 	lda frameTargetVelX
 	cmp #-Scroller_MaxScrollSpeed
@@ -1565,5 +2078,6 @@ HandleJoystick
 	lda #Scroller_MaxScrollSpeed
 .c4
 	sta frameTargetVelY
+
 	rts
 } ;<!ifdef RedirectHandleUserInput { } else {

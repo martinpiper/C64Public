@@ -1,6 +1,6 @@
 ;Decompression test code. Demonstrates how to create self extracting code.
-; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a AnimationBitmapDefines.a
-; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a
+; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a AnimationBitmapDefines.a LauncherAddressCalc.a
+; ..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a LauncherAddressCalc.a
 
 ; This decompression code will typically kill data in locations:
 ; $2 to $1ff
@@ -23,7 +23,7 @@
 !source "../AnimationBitmap/GameToAnimationDefines.a"
 
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
-CartKillBank_ProcessorPort		= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 
 EndOfMemory = $ff00
 
@@ -323,24 +323,14 @@ CompressionStartOfHistoryBufferTables = $2
 
 !zn
 RNXPCompressionDecompress_ZPStart
+RNXPCompressionDecompress_Part1Start
 !pseudopc $42 {
 RNXPCompressionDecompress_ZPStartReal
+Decompression_Part1Addr
 !source "DecompressionVars.a"
 
 ContinueZPCode
-	; Now copy the compressed data to the top of memory, backwards of course.
-
-.cp2
-NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
-NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
-	dex
-	bne .cp2
-	dec .cp2+2
-	dec .cp2+5
-	lda .cp2+2
-	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
-	cmp #(>CompressedDataStart)-2
-	bne .cp2
+	!source "CommonDataCopy.a"
 
 	jmp RNXPCompressionDecompress
 

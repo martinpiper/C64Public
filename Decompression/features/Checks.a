@@ -1,0 +1,59 @@
+!source "../stdlib/stdlib.a"
+
+TheOutput = $02
+TheOutputSize = 8
+TheOutputEnd = TheOutput + TheOutputSize
+
+StartChecks
+	sei
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+	ldx #TheOutputSize-1
+	lda #0
+.l1
+	sta TheOutput,x
+	dex
+	bpl .l1
+
+	; Test all the memory contents
+.l2
+.sma	lda StartChecks
+	clc
+	ldx #TheOutputSize-1
+.l3
+	adc TheOutput,x
+	sta TheOutput,x
+	ror
+	ror
+	ror
+	dex
+	bpl .l3
+
+	inc .sma+1
+	bne .l4
+	inc .sma+2
+.l4
+
+	lda .sma+2
+	cmp #>EndMemory
+	bne .l2
+
+	lda .sma+1
+	cmp #<EndMemory
+	bne .l2
+
+EndChecks
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+.l5
+	inc VIC2BorderColour
+	jmp .l5
+
+
+!bin "../Compression/TestData/5.bin"
+!bin "../Compression/TestData/1.bin"
+
+* = $ffe0
+	!tx "Hello there foo!"
+EndMemory = *

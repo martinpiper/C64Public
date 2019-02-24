@@ -71,7 +71,7 @@ CheckCharger
 
 .addOneTick
 	; Update the map tile since the charger is being used for one tick
-	lda CurrentBulletBank
+	lda ScrollerBankVisible
 	sta tempWork0
 	inx
 	txa

@@ -1,0 +1,209 @@
+!zn
+kNumCharEffects = 8
+
+CharEffectsX		!fill kNumCharEffects , 0
+; Negative Y indicates no character effect active
+CharEffectsY		!fill kNumCharEffects , -1
+CharEffectsTime		!fill kNumCharEffects , 0
+CharEffectsCol		!fill kNumCharEffects , 0
+CharEffectsChar		!fill kNumCharEffects , 0
+
+CharEffectsXVel		!fill kNumCharEffects , 0
+CharEffectsYVel		!fill kNumCharEffects , 0
+
+; The colour and char to put back
+CharEffectsBkCol	!fill kNumCharEffects , 0
+CharEffectsBkChar	!fill kNumCharEffects , 0
+
+; These are updated from the y pos when the characters are drawn
+CharEffectsScrL	!fill kNumCharEffects , 0
+; Negative value indicates the bullet slot is empty, not drawn
+CharEffectsScrH	!fill kNumCharEffects , -1
+
+
+
+!zn
+CharEffects_Init
+	ldx #kNumCharEffects-1
+.l1
+	lda #-1
+	sta CharEffectsX,x
+	sta CharEffectsY,x
+	sta CharEffectsTime,x
+	sta CharEffectsScrL,x
+	sta CharEffectsScrH,x
+
+	dex
+	bpl .l1
+	rts
+
+!zn
+; Finds a free character effect slot and X contains the index with carry clear. If no index is free then carry is set.
+; Exit
+; A		Updated
+; X		Updated
+; Y		Preserved
+; CS	No slot
+; CC	Slot found, index in X
+AllocateCharacterEffect
+	ldx #kNumCharEffects-1
+.l1
+	lda CharEffectsY,x
+	bmi .o1
+
+	dex
+	bpl .l1
+	sec
+	rts
+	
+.o1
+	; Free slot!
+	lda #-1
+	sta CharEffectsScrH,x
+	clc
+	rts
+
+
+!zn
+; Restore screen data before characters movement
+BeforeScrollers
+	lda ScrollerBankVisible
+	sta tempWork0
+
+	ldx #kNumCharEffects-1
+.l1
+
+	lda CharEffectsScrH,x
+	bmi .o1
+	sta tempWork1
+	lda CharEffectsScrL,x
+	sta tempWork2
+
+	ldy CharEffectsX,x
+
+	lda tempWork1
+	ora tempWork0
+	sta tempWork3
+	lda CharEffectsBkChar,x
+	sta (tempWork2),y
+
+	lda tempWork1
+	ora #>COLOURRAM
+	sta tempWork3
+	lda CharEffectsBkCol,x
+	sta (tempWork2),y
+
+.o1
+	dex
+	bpl .l1
+	rts
+
+!zn
+.loffScreen jmp .offScreen
+; characters movement and render characters to screen
+AfterScrollers
+	lda ScrollerBankVisible
+	sta tempWork0
+	
+	; Draw player characters
+	ldx #kNumCharEffects-1
+.l1
+	lda CharEffectsY,x
+	bmi .o1
+
+	dec CharEffectsTime,x
+	bmi .loffScreen
+
+	clc
+	adc ScrollerScreenCharMovedY
+	clc
+	adc CharEffectsYVel,x
+	cmp #20
+	bcs .offScreen
+	sta CharEffectsY,x
+
+	lda CharEffectsX,x
+	clc
+	adc ScrollerScreenCharMovedX
+	clc
+	adc CharEffectsXVel,x
+	cmp #40
+	bcs .offScreen
+	sta CharEffectsX,x
+
+	ldy CharEffectsY,x
+	lda ScreenTabH,y
+	sta CharEffectsScrH,x
+	sta tempWork1
+	lda ScreenTabL,y
+	sta CharEffectsScrL,x
+	sta tempWork2
+
+	ldy CharEffectsX,x
+
+	lda tempWork1
+	ora tempWork0
+	sta tempWork3
+	lda (tempWork2),y
+	cmp #MapSolidChars
+	bcs .offScreen
+	sta CharEffectsBkChar,x
+
+	lda tempWork1
+	ora #>COLOURRAM
+	sta tempWork3
+	lda (tempWork2),y
+	sta CharEffectsBkCol,x
+
+.o1
+	dex
+	bpl .l1
+
+	ldx #kNumCharEffects-1
+.l2
+	lda CharEffectsY,x
+	bmi .o2
+
+	lda CharEffectsScrH,x
+	sta tempWork1
+	lda CharEffectsScrL,x
+	sta tempWork2
+
+	ldy CharEffectsX,x
+
+	lda tempWork1
+	ora tempWork0
+	sta tempWork3
+
+	lda CharEffectsChar,x
+	sta (tempWork2),y
+
+	lda tempWork1
+	ora #>COLOURRAM
+	sta tempWork3
+	lda CharEffectsCol,x
+	sta (tempWork2),y
+
+.o2
+	dex
+	bpl .l2
+
+	rts
+
+.offScreen
+	lda #-1
+	sta CharEffectsY,x
+	sta CharEffectsScrH,x
+	jmp .o1
+
+
+
+CharEffects_SpriteYPosToScreenCharPos
+!fill VIC2SpriteYBorderTop-10-4 , -1
+!for .num , 20 { !fill 8 , (.num-1) }
+!fill 256 - (* - CharEffects_SpriteYPosToScreenCharPos) , -1
+
+CharEffects_SpriteXPosToScreenCharPos
+!fill (VIC2SpriteXBorderLeft-10-2)/2 , -1
+!for .num , 40 { !fill 4 , (.num-1) }
+!fill 256 - (* - CharEffects_SpriteXPosToScreenCharPos) , -1

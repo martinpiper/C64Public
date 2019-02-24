@@ -69,17 +69,27 @@ ScrollEntry
 TitleScreen_Enable_ScrollerDemoWait_Hooks !by 1
 }
 
+!ifdef Scroller_RunJumpDemo {
+EnableBeforeScrollersHook = 1
+EnableAfterScrollersHook = 1
+}
+
 !source "SetupIRQs.a"
 !source "ScrollMain.a"
 ; The multiplexor uses the MultiplexExt_LastIRQ label defined in "SetupIRQs.a"
 !source "../SpriteMultiplexor/SpriteMultiplexor.a"
 
+!ifdef Scroller_RunJumpDemo {
+MapSolidChars = 43
+!source "CharEffects.a"
+}
+
 !ifdef Scroller_EnableSpeedCode {
 !ifndef Scroller_MultiDirection {
 !error "Scroller_EnableSpeedCode without Scroller_MultiDirection is not implemented"
 }
-CartSelectBank_ProcessorPort=ProcessorPortDefault
-CartKillBank_ProcessorPort=Scroller_ProcessorPort
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= Scroller_ProcessorPort
 !source "../MakeCart/asm/EasyFlash_Code.a"
 ;!source "../MakeCart/asm/GMod2_Code.a"
 !source "CatchUndefCartFiles.a"

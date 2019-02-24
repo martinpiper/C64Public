@@ -29,8 +29,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
-    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompression3CyberLoad.a HMOrigDefines.a</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompressionRNZip.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompressionRNZip.a</NMakeReBuildCommandLine>
     <NMakeOutput>Decompression.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -54,13 +54,23 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="AnimationBitmapDefines.a" />
+    <None Include="BuildData.bat" />
+    <None Include="BuildDataFragment.bat" />
     <None Include="DecompressRLE.a" />
     <None Include="DecompressRLEVars.a" />
+    <None Include="DefineDecompress_RNZip.a" />
+    <None Include="DefineDoBorderEffect.a" />
+    <None Include="FeatureEditor.bat" />
+    <None Include="features\CheckMemory.feature" />
+    <None Include="features\Checks.a" />
     <None Include="HMOrigBoot.a" />
     <None Include="HMOrigDefines.a" />
+    <None Include="RunTests.bat" />
     <None Include="TestDecompression3.a" />
     <None Include="TestDecompression3CyberLoad.a" />
     <None Include="TestDecompression3RLE.a" />
+    <None Include="TestDecompressionRNZip.a" />
+    <None Include="TestDecompressionRNZip2.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />

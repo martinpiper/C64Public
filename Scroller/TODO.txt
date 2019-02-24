@@ -1,3 +1,20 @@
+* For CharEffects.a BeforeScrollers and AfterScrollers optimise the transversal through the list by having two optimised link lists of indexes
+	* One used and one free linked list
+	* So when there are no bullets then there is virtually no time taken
+
+
+
+
+* Consider having an option to unroll ScrollerAnimation.a:AnimationUpdateMultiplexor, create Scroller_EnableUpdateMultiplexorSpeedCode, to remove all indexing
+	Also ScrollerAnimation.a:AnimationUpdateMultiplexorPre
+	Also Scroller.a:UpdateSprites
+	It would even be possible to have dedicated speed code for each variation of scrollerRealMovementXPixels and scrollerRealMovementYPixels
+	* Adding a AnimationSpriteType would mean unallocated sprites can be skipped instead of testing AnimationYPos with $ff
+
+
+
+
+
 * For Screen splits, especially the score panel split:
 	Calculate what sprites will be active on the target line and the expected y scroll and produce optimised routines for each combination
 	* Lees important now since the split now forces all sprites to be enabled on the scan line giving a stable split.

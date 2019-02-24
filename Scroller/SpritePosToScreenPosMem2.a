@@ -1,0 +1,10 @@
+; Since the Y coordinates are -1 base, these are +40 based to compensate
+!fill VIC2SpriteSizeX + 8, -1
+SpriteXPosToScreenCharPos
+!fill (VIC2SpriteXBorderLeft-16)/2 , -1
+!fill 8/2 , VIC2ScreenCharsWidth + 1
+!for .num , 37 { !fill 8/2 , VIC2ScreenCharsWidth + .num-1 }
+!fill 8/2 , VIC2ScreenCharsWidth + 37
+!fill 8/2 , VIC2ScreenCharsWidth + 37
+!fill 256 - (* - SpriteXPosToScreenCharPos) , -1
+!fill VIC2SpriteSizeX , -1

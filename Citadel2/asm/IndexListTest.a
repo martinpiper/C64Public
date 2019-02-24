@@ -1,0 +1,32 @@
+!macro IndexList_Init .head , .next , .size {
+	ldx #0
+	stx .head
+	lda #1
+.l1
+	sta .next,x
+	clc
+	adc #1
+	inx
+	cpx #.size-1
+	bne .l1
+
+	lda #-1
+	sta .next+.size-1
+	rts
+}
+!zn
+
+List1Index !by 10 , 11 , 12 , 13 , 14 , 15 , 16
+.listSize = * - List1Index
+List1Next !fill .listSize , -1
+List1Head !by -1
+
+List2Next !fill .listSize , -1
+List2Head !by -1
+
+InitList1
+	+IndexList_Init List1Head , List1Next , .listSize
+
+IndexListTest_Init
+	jsr InitList1
+	rts

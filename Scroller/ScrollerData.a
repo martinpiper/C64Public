@@ -321,7 +321,16 @@ CharData
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars * 8 , $14
 }
 
+!ifdef Scroller_RunJumpDemo {
+*=$d000
+SpriteData
+!bin "C:\CCS64\MyOldE114Software\TusariDevTusari\SPRS.PRG",,2
+!align 63,0
+!bin "C:\CCS64\MyOldE114Software\TusariDevTusari\SPRS2.PRG",$e00,2
+SpriteDataEnd
+}
 
+!ifndef Scroller_RunJumpDemo {
 *=$fe00
 SpriteData
 !by 255,255,255,255,255,255,255,255
@@ -401,6 +410,8 @@ SpriteData
 +SpriteLine %########################
 +SpriteLine %########################
 !byte 0
+}
+
 } else {
 ; $00 - $11	- Frames - If the hi bit is set then it is the end of the animation and it should loop.
 ; $12		- Animation speed

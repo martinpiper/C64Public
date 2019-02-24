@@ -28,19 +28,19 @@ Multiplex_items	= 24
 ;Scroller_DebugSplit = 1
 
 ; Define this to use the KERNAL, alters how IRQ/NMI vectors are used
-;Scroller_UseKernal = 1
+Scroller_UseKernal = 1
 
 ; Define Scroller_EnableSpeedCode to enable scroller speed code in cartridge banks. This number is the starting bank of the scroller speed code
 ; Each block of speed code in the bank is in fixed order defined by the colour and screen size requirement.
 ; Scroller_UseKernal must also be defined to use the speed code approach.
-;Scroller_EnableSpeedCode = 1
+Scroller_EnableSpeedCode = 1
 !source "_f_index1.a"
 
 ; Enable this to unroll block plotting speed code where possible
-;Scroller_EnableBlockStripsSpeedCode = 1
+Scroller_EnableBlockStripsSpeedCode = 1
 
 ; Enable this to unroll block colour plotting speed code where possible
-;Scroller_EnableBlockColourSpeedCode = 1
+Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page
@@ -94,13 +94,13 @@ Scroller_DebugMainlineBorder = 1
 
 ; Define this to demonstrate a multi-directional scroller.
 ; Undefine this to enable SEUCK data file compatibility.
-;Scroller_MultiDirection = 1
+Scroller_MultiDirection = 1
 
 ; Define this to reduce code size by not using diagonals. frameTargetVelX and frameTargetVelY will be tested for the largest value and that movement will take priority
 ;Scroller_MultiDirectionNoDiagonals = 1
 
 ;Enable full screen or use the lower screen split
-Scroller_FullScreen = 1
+;Scroller_FullScreen = 1
 
 ; For multi-directional example code (HandleJoystick) the speed is clamped to this number of pixels per frame
 Scroller_MaxScrollSpeed = 4
@@ -118,12 +118,15 @@ IRQOpenBorders = 1
 ;Scroller_LevelSkipDemoCode = 1
 
 ; Use the standard demo score panel graphics
-;Scroller_UseDemoScorePanel = 1
+Scroller_UseDemoScorePanel = 1
 
 ; Enables the colour scroll code, without this the colour screen is ignored
 Scroller_NeedFullColourScroll = 1
 
 !ifdef Scroller_MultiDirection {
+
+; Define this to enable code that demonstrates a typical run and jump style of game
+Scroller_RunJumpDemo = 1
 
 ; Enable this to make the block drawing code use colours for every character in a map tile rather than constant for each map tile. This is quite memory hungry.
 ;BlockColoursForEveryCharacter = 1

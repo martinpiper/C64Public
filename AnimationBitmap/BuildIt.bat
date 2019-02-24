@@ -35,7 +35,7 @@ if not exist AnimationBitmap.prg goto error
 IF EXIST AnimationBitmap.prg del /Q AnimationBitmap.prg
 pushd ..\Decompression
 IF EXIST TestDecompression.prg del /Q TestDecompression.prg
-..\acme.exe -v3 --msvc EnableFireCheck.a TestDecompression3CyberLoad.a AnimationBitmapDefines.a
+..\acme.exe -v3 --msvc EnableFireCheck.a TestDecompression3CyberLoad.a AnimationBitmapDefines.a LauncherAddressCalc.a
 copy /y TestDecompression.prg ..\AnimationBitmap\AnimationBitmap.prg
 popd
 if not exist AnimationBitmap.prg goto error

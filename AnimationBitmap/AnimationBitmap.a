@@ -13,7 +13,7 @@
 !initmem %10100101
 
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
-CartKillBank_ProcessorPort		= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 
 DeltaDecompression_ZP_DeltaFrameLoHi = $10
 
@@ -130,7 +130,7 @@ FadeCodeActive = 1
 	+MWordValueTo_XY HuntersGameCompleteMusicSize
 	jsr MemoryCopy_ForSize
 .skipCopy
-	lda #CartSelectBank_ProcessorPort
+	lda #CartKillBank_ProcessorPort
 	sta ZPProcessorPort
 
 	jsr DeltaDecompression_InitZP
@@ -164,11 +164,8 @@ FadeCodeActive = 1
 
 .startDisplayingData
 
-!ifdef UseCartBanks {
 	jsr DeltaDecompression_ResetFrame
 	jsr AnimationRestoreCartBank
-}
-
 	jsr AnimationKillCartBank
 
 	lda #0
@@ -771,7 +768,8 @@ IRQScreenTop
 	inc IRQ_targetFrame+1
 .of1
 
-
+	lda ZPProcessorPort
+	sta .smProcessorPort+1
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
 
@@ -814,7 +812,7 @@ IRQScreenTop
 
 .skipFrame
 	jsr TriggerVolumeCheck
-	lda #CartSelectBank_ProcessorPort
+.smProcessorPort	lda #00
 	sta ZPProcessorPort
 
 	lda EnableSplitScreen

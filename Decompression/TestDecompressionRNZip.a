@@ -1,0 +1,63 @@
+;Decompression test code
+
+;To compress
+;..\bin\LZMPi.exe -ce TestScreen.bin TestScreen.cmp2
+;..\acme.exe -v3 --msvc TestDecompressionRNZip.a
+
+
+
+!source "../stdlib/stdlib.a"
+!to "TestDecompression.prg", cbm
+!sl "TestDecompression.map"
+!svl "TestDecompression.lbl"
+!pdb "TestDecompression.pdb"
+!cpu 6510
+!ct pet
+
+
+!source "../stdlib/BASICEntry80d.a"
+
+*=BASICEntry
+	sei
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
+	lda #ProcessorPortAllRAM
+	sta ZPProcessorPort
+
+
+	ldx #<$0400
+	ldy #>$0400
+	jsr RNXPCompressionDecompress_InitStore
+	ldx #<CompressedData
+	ldy #>CompressedData
+	jsr RNXPCompressionDecompress
+
+
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	cli
+	rts
+
+.l1 inc COLOURRAM
+	jmp .l1
+
+!macro RNXPCompressionIncBorder_A {
+	lda ZPProcessorPort
+	pha
+	lda #ProcessorPortAllRAMWithIO
+	sta ZPProcessorPort
+	inc VIC2BorderColour
+	pla
+	sta ZPProcessorPort
+}
+
+Decompress_RNZip = 1
+!source "Decompression.a"
+!source "DecompressionP2.a"
+
+!source "DecompressionVars.a"
+
+* = * + $40
+CompressedData
+;Don't need the first two bytes (original length of the data in lo/hi format)
+!bin "TestScreen.cmp2",,2

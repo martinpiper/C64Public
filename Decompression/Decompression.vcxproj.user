@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>$(ProjectDir)\TestDecompression.prg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-remotemonitor $(ProjectDir)\TestDecompression.prg</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

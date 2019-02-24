@@ -15,23 +15,8 @@
 	sta .val2Hi
 }
 
-!macro SpritePosToCharacterLookup .rejectRoutine {
-	ldy AnimationYPos,x
-	lda (Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo),y
-	bmi .rejectRoutine
-	ora CurrentBulletBank
-	sta tempWork1
-	lda (Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo),y
-	sta tempWork0
-
-	lda AnimationXPosHi,x
-	lsr
-	lda AnimationXPosLo,x
-	ror
-	tay
-	lda (Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo),y
-	bmi .rejectRoutine
-	tay
+!macro EnemySpritePosToCharacterLookup .rejectRoutine {
+	+MSpritePosToCharacterLookup .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo
 }
 
 !zn
@@ -168,33 +153,7 @@ UpdateSprites
 }
 
 
-	; Pre-calculate lookup tables
-	lda #<EnemySpriteYPosToScreenCharPosLo
-	sec
-	sbc topScreenScrollY
-	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo
-	lda #>EnemySpriteYPosToScreenCharPosLo
-	sbc #0
-	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosLohi
-
-	lda #<EnemySpriteYPosToScreenCharPosHi
-	sec
-	sbc topScreenScrollY
-	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo
-	lda #>EnemySpriteYPosToScreenCharPosHi
-	sbc #0
-	sta Citadel2_ZP_EnemySpriteYPosToScreenCharPosHihi
-
-	lda topScreenScrollX
-	lsr
-	sta .sm1p+1
-	lda #<EnemySpriteXPosToScreenCharPos
-	sec
-.sm1p	sbc #0
-	sta Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo
-	lda #>EnemySpriteXPosToScreenCharPos
-	sbc #0
-	sta Citadel2_ZP_EnemySpriteXPosToScreenCharPoshi
+	+MSpritePosToCharacterLookup_Setup EnemySpriteXPosToScreenCharPos , EnemySpriteYPosToScreenCharPosLo , EnemySpriteYPosToScreenCharPosHi , Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosLohi , Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosHihi , Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo , Citadel2_ZP_EnemySpriteXPosToScreenCharPoshi , topScreenScrollX , topScreenScrollY
 
 	; Calculate the enemy bullet busy value this frame
 	lda EnemyBulletBusy
@@ -463,7 +422,7 @@ UpdateSprites
 .spriteToScreenCharsCollideTest
 
 	; Checks for animated sprites hitting solid character blocks
-	+SpritePosToCharacterLookup .noCharCollide
+	+EnemySpritePosToCharacterLookup .noCharCollide
 
 	lda (tempWork0),y
 ;	adc #1
@@ -588,7 +547,7 @@ UpdateSprites
 	bmi .lenemyHitBySolidBlocks
 
 
-	+SpritePosToCharacterLookup .lskipEnemyBulletTest
+	+EnemySpritePosToCharacterLookup .lskipEnemyBulletTest
 
 	lda (tempWork0),y
 	; Detect with solid wall characters
@@ -605,7 +564,7 @@ UpdateSprites
 	; Debug skip code
 ;	jmp .skipEnemyBulletTest
 
-	+SpritePosToCharacterLookup .lskipEnemyBulletTest
+	+EnemySpritePosToCharacterLookup .lskipEnemyBulletTest
 
 	lda (tempWork0),y
 ;	adc #1
@@ -1328,16 +1287,8 @@ AnimationCommonUpdate
 
 
 
-; Since the Y coordinates are -1 base, these are +40 based to compensate
-!fill VIC2SpriteSizeX + 8, -1
-EnemySpriteXPosToScreenCharPos
-!fill (VIC2SpriteXBorderLeft-16)/2 , -1
-!fill 8/2 , VIC2ScreenCharsWidth + 1
-!for .num , 37 { !fill 8/2 , VIC2ScreenCharsWidth + .num-1 }
-!fill 8/2 , VIC2ScreenCharsWidth + 37
-!fill 8/2 , VIC2ScreenCharsWidth + 37
-!fill 256 - (* - EnemySpriteXPosToScreenCharPos) , -1
-!fill VIC2SpriteSizeX , -1
+!source "SpritePosToScreenPosMem2.a"
+EnemySpriteXPosToScreenCharPos = SpriteXPosToScreenCharPos
 
 !zn
 ScrollerPreGameCalcuation
@@ -1870,7 +1821,7 @@ DetectPlayer_AutoDoorChars
 
 	ldx EnemyToAnimationIndex
 	bmi .retNoDoor
-	+SpritePosToCharacterLookup .retNoDoor
+	+EnemySpritePosToCharacterLookup .retNoDoor
 	lda (tempWork0),y
 	cmp #MapSolidChars
 	bcs .lethalDoor
@@ -1923,7 +1874,7 @@ CheckGeneratorDamage
 	adc #1
 	sta (tempWork1),y
 
-	ldx CurrentBulletBank
+	ldx ScrollerBankVisible
 	stx tempWork0
 .smEX ldx #0
 .smEY ldy #0

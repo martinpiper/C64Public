@@ -10,3 +10,44 @@
 		It can be used for non-max and max mode since the code is tiny and sits just before the stack and partially into the stack
 	* Not done - Add border effect, use of RNXPCompressionIncBorder_A, to DecompressRLE.a
 	* Done for -c64mr, nor -c64mrb - Then import those binary blobs into the LZMPi (Compression) project
+
+
+
+
+* Automate the creation of the sC64Decomp* data blocks from the C64\Decompression code
+	* Include automatic detection of the theC64Code[0x offsets by reading the labels from the automated assembly output
+	* This assembles and outputs the prefix TestDecompression2 for all LauncherAddress labels:
+		..\acme.exe -v3 --msvc TestDecompression2.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression2/p" TestDecompression.map
+		..\acme.exe -v3 --msvc TestDecompression3.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3/p" TestDecompression.map
+		..\acme.exe -v3 --msvc TestDecompression3RLE.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3RLE/p" TestDecompression.map
+		* Checked all the 0x addresses with the assembled output, they match perfectly
+		..\ExternalTools\dump.exe TestDecompression.prg /noascii /address n /head /lower | ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/^/0x/" -e "s/ /, 0x/g" -e "s/$/,/p" | ..\ExternalTools\Gnu\bin\sed.exe "$ s/.$//"
+
+		C64\Decompression\BuildData.bat
+			Mostly works to create the data, the variable names needs to match sC64DecompNoEffect etc
+
+
+
+
+* Implement -c64mrb as -c64mr works
+
+
+
+* Test file 5 with -c = 20362
+	With RNZip -c = 20529
+	RNZip uses only 1 bit escape, no changing escape and simplified escaped length offset encoding in Compression::EncodeMatch
+		There may be a case for having an extra option for optimised 6502 decompression code since it would be a lot faster, especially the optimised literal fetch and store
+		Potentially a use for the RNCompression code from the library, just make it possible to use a final PackValue(FORCE_UNSIGNED(0x100000)); and skip the BitBufferPutByte(0xff);
+	Seems to work with TestDecompressionRNZip.a
+	* Done - There seems to be a superfluous lda #0? Check the code output in the visual debugger
+	* Need to create TestDecompressionRNZip2.a which is auto extracting
+	* Then create tests
+	* LZMPi timings for Scroller.bin (54,034 bytes) and TestDecompression2.a:
+		3361960		12321343			8959383		480 frames
+		Compressed output 18,274 bytes
+	* LZMPie (RNZip) timings with TestDecompressionRNZip2.a:
+		3053034		8076243				5023209		269 frames
+		Compressed output 18,499 bytes
+	* So LZMPie decompression a lot faster, and not much difference in size :)
+	* Think about the code for TestDecompression2.a and TestDecompressionRNZip2.a
+		They are almost identical, it would seem to be easier to keep TestDecompression2.a and assemble time switch it with a predefinition of "Decompress_RNZip = 1" instead

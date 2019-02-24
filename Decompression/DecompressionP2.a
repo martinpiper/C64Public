@@ -1,4 +1,5 @@
 RNXPCompressionDecompress_SecondPart
+!ifndef Decompress_RNZip {
 .doLengthCheck
 	;	if (workLen == 0x10000003)
 	;	{
@@ -110,8 +111,10 @@ RNXPCompressionDecompress_SecondPart
 	sta .lastWorkOffset
 	lda .workOffset+1
 	sta .lastWorkOffset+1
+} ;< !ifndef Decompress_RNZip {
 
 
+.checkForEndingOffset
 	;if (workOffset > LONG_OFFSET_THRESHOLD) : (0xd00)
 	cmp #$d
 	bcc .afterThresholdCheck

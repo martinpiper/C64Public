@@ -44,6 +44,7 @@ RNXPCompressionDecompressRLE
 	rts
 }
 .rle2
+	+RNXPCompressionIncBorder_A
 	jsr RNXPCompressionDecompress_GetByte
 	tax
 	jsr RNXPCompressionDecompress_GetByte

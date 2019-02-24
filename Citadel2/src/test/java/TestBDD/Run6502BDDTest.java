@@ -5,7 +5,7 @@ import cucumber.api.CucumberOptions;
 import org.junit.runner.RunWith;
 
 @RunWith(CucumberPlus.class)
-@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/"})
+//@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/"})
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge" , "@MazeSolving"}, features = {"features/"})
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/Memory.feature"})
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/MazeSolving4.feature"})
@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/FIFO.feature"})
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/Animation.feature"})
 //@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/Score.feature"})
+@CucumberOptions(monochrome = true , glue = {"TestGlue", "MazeGlue6502"} , format = {"pretty" , "html:target/cucumber"} , tags = {"~@ignore" , "@c64" , "~@tooLarge"}, features = {"features/IndexList.feature"})
 public class Run6502BDDTest
 {
 }

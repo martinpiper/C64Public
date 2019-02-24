@@ -77,6 +77,12 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
+* Unroll the animation and enemy movement code in Animations.a in .sp1 loop
+	Convert to a macro, unroll the indrected calculations for AnimationXPosLo,x AnimationXPosHi,x and AnimationYPos,x and store in a cart bank
+	Also .simpleUpdateSpriteCheck
+
+
+
 * When firing up/down or left/right consider alternating the X or Y coordinate so that the characters are alternately chosen perpendicular to the firing direction
 	AllocatePlayerBullet
 

@@ -1,20 +1,6 @@
-; Before and after these tables are -1 so we can modify the sprite lookup coordinates to be up/down from the point calculated
-!fill VIC2SpriteSizeY + 8 , -1
-EnemySpriteYPosToScreenCharPosLo
-!fill VIC2SpriteYBorderTop-16 , -1
-!fill 8 , 0
-!for .num , 18 { !fill 8 , <((.num-1)*VIC2ScreenCharsWidth) }
-!fill 8 , <(17*VIC2ScreenCharsWidth)
-!fill 256 - (* - EnemySpriteYPosToScreenCharPosLo) , -1
-!fill VIC2SpriteSizeY + 8, -1
+!source "SpritePosToScreenPosMem.a"
 
-!fill VIC2SpriteSizeY + 8 , -1
-EnemySpriteYPosToScreenCharPosHi
-!fill VIC2SpriteYBorderTop-16 , -1
-!fill 8 , 0
-!for .num , 18 { !fill 8 , >((.num-1)*VIC2ScreenCharsWidth) }
-!fill 8 , >(17*VIC2ScreenCharsWidth)
-!fill 256 - (* - EnemySpriteYPosToScreenCharPosHi) , -1
-!fill VIC2SpriteSizeY + 8 , -1
+EnemySpriteYPosToScreenCharPosLo = SpriteYPosToScreenCharPosLo
+EnemySpriteYPosToScreenCharPosHi = SpriteYPosToScreenCharPosHi
 
 SpriteEmptyLookupTab		!fill 256 , 0

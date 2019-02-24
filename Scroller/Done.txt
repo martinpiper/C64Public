@@ -186,3 +186,17 @@
 * Added support for sprite expansion options
 	Global_SpriteExpandX = 1
 	Global_SpriteExpandY = 1
+
+
+
+
+* Done - Consider making EnemySpriteYPosToScreenCharPosLo/EnemySpriteYPosToScreenCharPosHi from Citadel2 a common set of data and supprting routines/macros to aid sprite to background collision detection
+		* SpritePosToScreenPosMacros.a SpritePosToScreenPosMem.a SpritePosToScreenPosMem2.a
+	* Add some simple player fall/run/jump control tests with the multi-directional example
+		* Use Scroller_RunJumpDemo = 1
+	* Add suitable camera movement which is push scroll based, but tries to align diagonal scrolling with the center of chars.
+		* The scroll will favour re-centering/aligning the scroll to a middle of a char. So for example if the scroll is to the left/right and no vertical scroll then align the Y scroll to the middle.
+			Keep the idle axis in the middle of the char
+	* MSpritePosToCharacterLookup could do with a passed in adjustment for xpos/ypos that uses some slightly different code if the values are != 0
+	* Figure out some non-magic values for the box edges for "Simple push camera calculations"
+	* Added CharEffects.a for player character bullet example code

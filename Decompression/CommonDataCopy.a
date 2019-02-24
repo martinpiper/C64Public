@@ -1,0 +1,16 @@
+	; Even with SEI by changing to ProcessorPortAllRAM and moving data right to the end of memory it does mean pressing restore will cause a crash
+	; because the end of RAM contains the NMI vector. After checking a few other decrunchers which move to the end of memory they also suffer the same problem.
+
+	; Now copy the compressed data to the top of memory, backwards of course.
+
+.cp2
+NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
+NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
+	dex
+	bne .cp2
+	dec .cp2+2
+	dec .cp2+5
+	lda .cp2+2
+	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
+	cmp #(>CompressedDataStart)-2
+	bne .cp2

@@ -897,7 +897,7 @@ Also tweaked the enemy start positions
 	* Done Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo/hi lookup
 	* Done Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo/hi lookup
 	* Saves some decent time, reduced code space, removed one lookup table from code and moved into unused data space
-	* +SpritePosToCharacterLookup
+	* +EnemySpritePosToCharacterLookup
 
 
 
@@ -1226,7 +1226,7 @@ Also tweaked the enemy start positions
 
 
 
-* The code snippets below are repeated several times for enemy, pickup and bullet to player and in SpritePosToCharacterLookup:
+* The code snippets below are repeated several times for enemy, pickup and bullet to player and in EnemySpritePosToCharacterLookup:
 	lda AnimationXPosHi,x
 	lsr
 	lda AnimationXPosLo,x

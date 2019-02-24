@@ -1,0 +1,72 @@
+!macro MSpritePosToCharacterLookup .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .tempWork0 , .tempWork1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
+	ldy .AnimationYPos,x
+	lda (.ZP_SpriteYPosToScreenCharPosHilo),y
+	bmi .rejectRoutine
+	ora .drawnBank
+	sta .tempWork1
+	lda (.ZP_SpriteYPosToScreenCharPosLolo),y
+	sta .tempWork0
+
+	lda .AnimationXPosHi,x
+	lsr
+	lda .AnimationXPosLo,x
+	ror
+	tay
+	lda (.ZP_SpriteXPosToScreenCharPoslo),y
+	bmi .rejectRoutine
+	tay
+}
+
+!macro MSpritePosToCharacterLookupPosTweak .tweakX , .tweakY , .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .tempWork0 , .tempWork1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
+	lda .AnimationYPos,x
+	clc
+	adc #.tweakY
+	tay
+	lda (.ZP_SpriteYPosToScreenCharPosHilo),y
+	bmi .rejectRoutine
+	ora .drawnBank
+	sta .tempWork1
+	lda (.ZP_SpriteYPosToScreenCharPosLolo),y
+	sta .tempWork0
+
+	lda .AnimationXPosHi,x
+	lsr
+	lda .AnimationXPosLo,x
+	ror
+	clc
+	adc #.tweakX/2
+	tay
+	lda (.ZP_SpriteXPosToScreenCharPoslo),y
+	bmi .rejectRoutine
+	tay
+}
+
+!macro MSpritePosToCharacterLookup_Setup .SpriteXPosToScreenCharPos , .SpriteYPosToScreenCharPosLo , .SpriteYPosToScreenCharPosHi , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosLohi , .ZP_SpriteYPosToScreenCharPosHilo , .ZP_SpriteYPosToScreenCharPosHihi , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteXPosToScreenCharPoshi , .topScreenScrollX , .topScreenScrollY  {
+	; Pre-calculate lookup tables
+	lda #<.SpriteYPosToScreenCharPosLo
+	sec
+	sbc .topScreenScrollY
+	sta .ZP_SpriteYPosToScreenCharPosLolo
+	lda #>.SpriteYPosToScreenCharPosLo
+	sbc #0
+	sta .ZP_SpriteYPosToScreenCharPosLohi
+
+	lda #<.SpriteYPosToScreenCharPosHi
+	sec
+	sbc .topScreenScrollY
+	sta .ZP_SpriteYPosToScreenCharPosHilo
+	lda #>.SpriteYPosToScreenCharPosHi
+	sbc #0
+	sta .ZP_SpriteYPosToScreenCharPosHihi
+
+	lda .topScreenScrollX
+	lsr
+	sta .ZP_SpriteXPosToScreenCharPoslo
+	lda #<.SpriteXPosToScreenCharPos
+	sec
+	sbc .ZP_SpriteXPosToScreenCharPoslo
+	sta .ZP_SpriteXPosToScreenCharPoslo
+	lda #>.SpriteXPosToScreenCharPos
+	sbc #0
+	sta .ZP_SpriteXPosToScreenCharPoshi
+}

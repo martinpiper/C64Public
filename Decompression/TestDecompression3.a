@@ -27,12 +27,8 @@ EndOfMemory = $10000
 
 ; The contents of this macro can be used to cause the border colour to change while decompressing.
 !macro RNXPCompressionIncBorder_A {
-!if 1 {
-	lda #ProcessorPortAllRAMWithIO
-	sta ZPProcessorPort
-	inc VIC2BorderColour
-	lda #ProcessorPortAllRAM
-	sta ZPProcessorPort
+!ifdef DoBorderEffect {
+	!source "BorderEffectCommon.a"
 }
 }
 
@@ -85,27 +81,14 @@ CompressionStartOfHistoryBufferTables = $2
 
 !zn
 RNXPCompressionDecompress_ZPStart
+RNXPCompressionDecompress_Part1Start
 !pseudopc $42 {
 RNXPCompressionDecompress_ZPStartReal
+Decompression_Part1Addr
 !source "DecompressionVars.a"
 
 ContinueZPCode
-	; Even with SEI by changing to ProcessorPortAllRAM and moving data right to the end of memory it does mean pressing restore will cause a crash
-	; because the end of RAM contains the NMI vector. After checking a few other decrunchers which move to the end of memory they also suffer the same problem.
-
-	; Now copy the compressed data to the top of memory, backwards of course.
-
-.cp2
-NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
-NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
-	dex
-	bne .cp2
-	dec .cp2+2
-	dec .cp2+5
-	lda .cp2+2
-	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
-	cmp #(>CompressedDataStart)-2
-	bne .cp2
+	!source "CommonDataCopy.a"
 
 	jmp RNXPCompressionDecompress
 
@@ -114,7 +97,6 @@ NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
 Decompression_OptimiseForOneEscapeBit = 1
 Decompression_OptimiseNoChangingEscape = 1
 Decompression_OptimiseNoStoreStub = 1
-Decompression_TwoParts = 1
 
 !zn {
 !source "Decompression.a"
@@ -136,7 +118,15 @@ RNXPCompressionDecompress_ZPEnd
 ; with "SM_") for the start, length and execute lo/hi.
 ; This means it would be very simple to use the stub with any compressed data saved by LZMPi.exe
 
-!if 0 {
+!ifdef Decompress_RNZip {
+CompressedDataStore		= $0801
+CompressedDataExecute	= 2304
+CompressedDataStart
+; Don't need the first two bytes (original length of the data in lo/hi format)
+!bin "Scroller.cmp2",,2
+CompressedDataEnd
+} else {
+!if 1 {
 CompressedDataStore		= $0801
 CompressedDataExecute	= 2304
 CompressedDataStart
@@ -147,10 +137,14 @@ CompressedDataEnd
 
 ; Test code
 
-!if 1 {
+!if 0 {
 CompressedDataStore		= $0801
 CompressedDataExecute	= 2304
 CompressedDataStart
 !bin "../Scroller/Scroller.cmp",,2
 CompressedDataEnd
 }
+} ;< !ifdef Decompress_RNZip {
+
+
+!source "LauncherAddressCalc.a"

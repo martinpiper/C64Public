@@ -1,5 +1,8 @@
 ;Decompression test code. Demonstrates how to create self extracting code.
-;..\acme.exe -v3 --msvc TestDecompression2.a
+;..\acme.exe -v3 --msvc TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v3 --msvc DefineDecompress_RNZip.a TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v3 --msvc DefineDecompress_RNZip.a DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
 
 ; This decompression code will typically kill data in locations:
 ; $10 to ZPSTVariable-1
@@ -8,6 +11,7 @@
 
 ;To compress
 ;..\bin\LZMPi.exe -c Scroller.bin Scroller.cmp
+;..\bin\LZMPi.exe -ce Scroller.bin Scroller.cmp2
 ;..\bin\LZMPi.exe -c ..\Scroller\Scroller.prg ..\Scroller\Scroller.cmp 2
 ;..\bin\LZMPi.exe -c ..\CityGame\OriginalData.prg ..\CityGame\OriginalData.cmp 2
 ;..\bin\LZMPi.exe -c ..\RacingGame\OriginalData.prg ..\RacingGame\OriginalData.cmp 2
@@ -29,12 +33,8 @@ EndOfMemory = $10000
 
 ; The contents of this macro can be used to cause the border colour to change while decompressing.
 !macro RNXPCompressionIncBorder_A {
-!if 1 {
-	lda #ProcessorPortAllRAMWithIO
-	sta ZPProcessorPort
-	inc VIC2BorderColour
-	lda #ProcessorPortAllRAM
-	sta ZPProcessorPort
+!ifdef DoBorderEffect {
+	!source "BorderEffectCommon.a"
 }
 }
 
@@ -108,22 +108,7 @@ RNXPCompressionDecompress_ZPStartReal
 !source "DecompressionVars.a"
 
 ContinueZPCode
-	; Even with SEI by changing to ProcessorPortAllRAM and moving data right to the end of memory it does mean pressing restore will cause a crash
-	; because the end of RAM contains the NMI vector. After checking a few other decrunchers which move to the end of memory they also suffer the same problem.
-
-	; Now copy the compressed data to the top of memory, backwards of course.
-
-.cp2
-NOTE_CompressedDataEndMinus256	lda CompressedDataEnd-$100,x
-NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
-	dex
-	bne .cp2
-	dec .cp2+2
-	dec .cp2+5
-	lda .cp2+2
-	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
-	cmp #(>CompressedDataStart)-2
-	bne .cp2
+	!source "CommonDataCopy.a"
 
 	jmp RNXPCompressionDecompress
 
@@ -181,7 +166,15 @@ RNXPCompressionDecompress_Part2Size = RNXPCompressionDecompress_Part2End - RNXPC
 ; with "SM_") for the start, length and execute lo/hi.
 ; This means it would be very simple to use the stub with any compressed data saved by LZMPi.exe
 
-!if 0 {
+!ifdef Decompress_RNZip {
+CompressedDataStore		= $0801
+CompressedDataExecute	= 2304
+CompressedDataStart
+; Don't need the first two bytes (original length of the data in lo/hi format)
+!bin "Scroller.cmp2",,2
+CompressedDataEnd
+} else {
+!if 1 {
 CompressedDataStore		= $0801
 CompressedDataExecute	= 2304
 CompressedDataStart
@@ -216,10 +209,13 @@ CompressedDataStart
 CompressedDataEnd
 }
 
-!if 1 {
+!if 0 {
 CompressedDataStore		= $0801
 CompressedDataExecute	= 2304
 CompressedDataStart
 !bin "../Scroller/Scroller.cmp",,2
 CompressedDataEnd
 }
+} ;< !ifdef Decompress_RNZip {
+
+!source "LauncherAddressCalc.a"
