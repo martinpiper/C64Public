@@ -15,7 +15,10 @@ if not exist AnimationBitmap.prg goto error
 ..\bin\LZMPi.exe -c64mr AnimationBitmap.prg AnimationBitmap.prg $c000 >t.txt
 if not exist AnimationBitmap.prg goto error
 
+rem No compression
 ..\bin\MakeCart.exe %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt
+rem Uses -l for compression pass "TestingExtraCompression"
+..\bin\MakeCart.exe %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -l 32 $800 2 ..\bin\LZMPi.exe "-ce " " " -m data\frm0*.del $4000 -lc -o AnimationBitmapCompressed.crt
 
 rem >>t.txt
 

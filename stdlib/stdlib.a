@@ -292,6 +292,11 @@ VIC2LightPenX					= $d013
 VIC2LightPenY					= $d014
 VIC2SpriteEnable				= $d015
 
+!macro MVIC2SpriteEnableAll_A {
+	lda #$ff
+	sta VIC2SpriteEnable
+}
+
 ; Bits 0-2 Horizontal scroll.
 ; 3 Screen width 0 = 38 columns 1 = 40 columns
 ; 4 1 = Multicolour on
@@ -442,6 +447,8 @@ VIC2SpriteXBorderLeft = 24
 VIC2SpriteXBorderLeft38 = 31
 ; The right most sprite position for a 40 column wide screen where it is completely hidden by the border
 VIC2SpriteXBorderRight = 256+88
+; The right most sprite position for a 38 column wide screen where it is completely hidden by the border
+VIC2SpriteXBorderRight38 = VIC2SpriteXBorderRight-8
 ; The top most position for a 25 row screen where the sprite is completely visible
 VIC2SpriteYBorderTop = 50
 ; The top most position for a 24 row screen where the sprite is completely visible
@@ -755,7 +762,10 @@ MemoryMappedIOArea1					= $de00
 MemoryMappedIOArea2					= $df00
 
 ; Constants
-CyclesPerSecondPALC64 = 985248
+CyclesPerSecondPALC64	= 985248
+CyclesPerRasterPALC64	= 63
+RasterLinesPALC64		= 312
+
 
 
 
@@ -840,6 +850,13 @@ CyclesPerSecondPALC64 = 985248
 .w1
 	cmp VIC2Raster
 	bne .w1
+}
+
+!macro MACROWaitForRasterChange_A {
+	lda VIC2Raster
+.w1
+	cmp VIC2Raster
+	beq .w1
 }
 
 ; Can only be used for small chunks <= 256 bytes. Inclusive!
@@ -1087,4 +1104,26 @@ CyclesPerSecondPALC64 = 985248
 !macro MWordValueTo_XY .value {
 	ldx #<.value
 	ldy #>.value
+}
+
+!macro MSetSpriteXYColFrame_A .i , .x , .y , .col , .frame , .gameScreen {
+	lda #<.x
+	sta VIC2Sprite0X + (.i*2)
+	lda #.y
+	sta VIC2Sprite0Y + (.i*2)
+
+	lda #.col
+	sta VIC2Sprite0Colour + .i
+	lda #.frame
+	sta .gameScreen+SPRITEFRAMESCROFF + .i
+
+	!if .x >= 256 {
+		lda #(1 << .i)
+		ora VIC2SpriteXMSB
+		sta VIC2SpriteXMSB
+	} else {
+		lda #<(!(1 << .i))
+		and VIC2SpriteXMSB
+		sta VIC2SpriteXMSB
+	}
 }

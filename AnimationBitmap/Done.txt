@@ -535,3 +535,54 @@ Total
 
 
 * Incidentally, if I skip while the intro text is being rolled out (before the animation appears), the animation fades up then the whole screen fades out. Is that the only way it can be done?
+
+
+
+
+* For Dragon's Lair demo - CheckForDecisionState needs to detect branch points for frames and end of scenes
+	* Done - When making the switch, the current bitmap from the displayed bank, can be copied to the bank underneath the cart ROM and displayed from there
+	* Done - For ffmpeg consider using -frames:v <number> to reduce the number of automatically extract frames
+	Done - Noise reduction and sharpening https://www.google.com/search?q=mogrify+noise+reduction+sharpening&rlz=1C1CHZL_enSG779SG779&oq=mog&aqs=chrome.1.69i57j69i59l2j0l3.2830j0j4&sourceid=chrome&ie=UTF-8
+		http://www.fmwconcepts.com/imagemagick/denoise/index.php
+		https://imagemagick.org/script/command-line-options.php#wavelet
+		https://www.imagemagick.org/script/command-line-options.php#kuwahara
+		Options tested in Animation11\conv.bat
+	* VTS_06_1.VOB is 4065 frames and 189,749,248 bytes. Compressing them all, with the expected frame skip and resolution options, gives 1357 files and 4,028,091 bytes
+		A compression ratio of 0.0212284951980416
+		VTS_02_1.VOB to VTS_09_1.VOB gives original 1,818,374,144 bytes and results in approximately 38,601,346 bytes compressed C64 video data
+		
+	
+
+
+* Sample compression
+	Samples played using a timed NMI, it needs to be very fast to avoid interrupting the decompression too much
+		This means minimal register usage, preferably just accumulator
+		Chunks of sample data, possibly chained like the video data, to avoid changing bank too often and also allowing the chunks to fit into remaining cart bank space efficiently
+		If the code is in zeropage it makes sense to inc the lda $abs (sample) and switch bank when needed at the end of the sample data chunks
+	Low nybble used for sample volume
+	Hi nybble (into a sparse lookup table of 256 bytes) used to set the next sample timer value
+		This would allow up to 16 values to be chosen that compress identical runs of sample data using the timer
+		The 256 byte (256 byte aligned) sparse table allows the code to self modify the lda $table without using an index register
+		To avoid timer  skew, due to timer values being reset and the timer being restarted by variable code (badlines, sprites etc),
+			the value for the timer iis pre-loaded into the reset value but not actually reset. The next time underflow then loads the new value.
+
+	Exploring formats:
+		C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\Martin Piper\Downloads\Digital Leisure\Dragon's Lair\VIDEO_TS\VTS_06_1.VOB" -acodec pcm_s24le t.wav
+		C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -codecs
+		ffmpeg -formats
+		pcm_s8
+		Mono, unsigned 8 bits 22050 Hz: C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\Martin Piper\Downloads\Digital Leisure\Dragon's Lair\VIDEO_TS\VTS_06_1.VOB" -y -acodec pcm_u8 -ar 22050 -ac 1 t.wav
+
+	Done - Need to chop the sample conversion result in ConvDelta2_11.bat:
+		Done - Best place would be to output segments of files in: ConvDelta2_11_segment.bat
+			Using the frame start/end values and converting them to byte offset from within the raw sample file
+			..\BerzerkRedux\MashSamples\Release\MashSamples.exe -r 2.0f -h $4e -v -s 22050 Animation11\t.wav 5000 Data\smp.raw
+			MashSamples could so with some optional extra parameters for video start frame, end frame and fps to calcluate the sample offsets from the Hz
+			Done - Name them with the starting frame number.
+
+		Done - MakeCart can then have an option to produce a link list of segments that fill any remaining space in banks. This does mean that sound data might not be in the same bank as the video data.
+		These would have next bank/lo/hi and current segment ends (lo/hi (in the current bank)).
+			A hi start of 0 means it's the last block of the link list.
+			Added: s:data\smp_*.raw to build2_11.bat
+
+	Done - Long samples played with video. The video is obviously too slow to keep up with the sample so it goes out of sync.

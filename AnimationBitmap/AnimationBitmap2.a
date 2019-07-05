@@ -10,10 +10,16 @@
 !ct pet
 !initmem %10100101
 
+; Note in TODO
+TestingExtraCompression = 1
+
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
 CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 
 DeltaDecompression_ZP_DeltaFrameLoHi = $10
+!ifdef TestingExtraCompression {
+DeltaDecompression_ZP_DeltaFrameCompressed = $12
+}
 
 ;!source "../MakeCart/asm/GMod2_Macros.a"
 !source "../MakeCart/asm/EasyFlash_Macros.a"
@@ -30,6 +36,7 @@ SpriteSheetInfoBankOffset = $1000
 ;MaxCartBank = 57
 MaxCartBank = 64
 ;MaxCartBank = 9
+;NoLoopAnimation=1
 !macro DeltaDecompression_AddressTweak {
 	clc
 	adc #4
@@ -48,8 +55,8 @@ ScreenColour = VIC2Colour_Black
 	sta VIC2BorderColour
 	lda #%00101000
 	sta VIC2MemorySetup
-	lda #VIC2ScreenControlHDefault
-;	lda #VIC2ScreenControlHDefault | %10000
+;	lda #VIC2ScreenControlHDefault
+	lda #VIC2ScreenControlHDefault | %10000
 	sta VIC2ScreenControlH
 
 	lda #$ff
@@ -94,6 +101,7 @@ ScreenColour = VIC2Colour_Black
 	+MDeltaDecompression_CopyColours $400
 
 ;	+WaitForFire_A
+	jsr TestEndReached
 
 .nextFrame
 	ldx #<$400
@@ -121,8 +129,21 @@ ScreenColour = VIC2Colour_Black
 	+MDeltaDecompression_CopyColours $4400
 
 ;	+WaitForFire_A
+	jsr TestEndReached
 
 	jmp .fr1
+
+TestEndReached
+!ifdef NoLoopAnimation {
+	lda DeltaDecompression_End
+	bne .fin
+}
+	rts
+!ifdef NoLoopAnimation {
+.fin
+	inc VIC2BorderColour
+	jmp .fin
+}
 
 !source "../stdlib/Initialise.a"
 

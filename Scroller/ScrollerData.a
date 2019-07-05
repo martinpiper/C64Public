@@ -152,7 +152,12 @@ SpriteFixedColours
 
 ; Replace this !bin to include whatever music player you want
 ; This file was exported with "Include sound effect code" option selected.
+!ifdef Scroller_RunJumpDemo {
+!bin "MusicAndSFX_TusariLevel1.prg",,2
+} else {
 !bin "MusicAndSFX.prg",,$2	; Remember to skip any lo/hi file information by using $2
+}
+
 
 ; Define these to point the entry points of the included music routine.
 MusicPlayerInit = $8000

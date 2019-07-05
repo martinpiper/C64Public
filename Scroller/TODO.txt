@@ -1,7 +1,5 @@
-* For CharEffects.a BeforeScrollers and AfterScrollers optimise the transversal through the list by having two optimised link lists of indexes
-	* One used and one free linked list
-	* So when there are no bullets then there is virtually no time taken
-
+* With Scroller_RunJumpDemo_RunJumpTest
+	Override the player jumps, and instead directly input long scroll requests in a "hexagon" shape (r,dr,d,dl,l,ul,u,ur...), to make it easier to trigger the scroll mitigation code
 
 
 

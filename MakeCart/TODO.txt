@@ -1,3 +1,19 @@
+* Add the option for option "-m" to include optional RNZip or LZMPi compression and use the output hi-byte to flag if the data is compressed or not.
+	This can work since the hi-byte is usually >=$80 due to the cart layout, so an address <$80 could mean it is compressed without any overhead.
+	* In C:\work\c64\AnimationBitmap\
+	* -tg -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w -a $8000 -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 22 -m data\frm0*.del $2000 -o AnimationBitmap.crt
+	* Before: totalbyteSize=339841 compressionSavedBytes=0
+	* After compression with -ce: totalbyteSize=217032 compressionSavedBytes=122809
+	* With -c: totalbyteSize=204834 compressionSavedBytes=135007
+	** Note: if(false && origLen > 32)
+	In AnimationBitmap2.a note: TestingExtraCompression
+		Well the new compression method works, but it's currently too slow to reach 15 fps
+		Might need to try to find some extra zeropage for speed
+	
+
+
+
+
 Add verbose levels. Default, no progress messages. Then final output size. Then all stages verbosity.
 
 

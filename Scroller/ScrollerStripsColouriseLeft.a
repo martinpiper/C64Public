@@ -47,7 +47,7 @@ ScrollerDrawStripLeftColour
 }
 
 !ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Blue
+	lda #VIC2Colour_LightBlue
 	sta VIC2BorderColour
 }
 !ifdef CharColoursForEveryCharacter {

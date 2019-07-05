@@ -4,6 +4,7 @@ frameWantScrX			!by 0
 frameWantScrY			!by 0
 frameTotalScrScroll		!by 0
 frameScrollMoveColours	!by 0
+frameIsBusyScrolling	!by 0
 frameScrollPreCalcX		!by 0
 frameScrollPreCalcY		!by 0
 frameScrollPreCalcXVel	!by 0	; The velocity used for this movement
@@ -33,6 +34,7 @@ ScrollerInitVariables
 	sta frameWantScrX
 	sta frameWantScrY
 	sta frameTotalScrScroll
+	sta frameIsBusyScrolling
 	sta frameScrollMoveColours
 	sta frameScrollPreCalcX
 	sta frameScrollPreCalcY
@@ -286,6 +288,9 @@ ScrollerCalculate
 	stx frameWantScrX
 	sty frameWantScrY
 
+	lda #0
+	sta frameIsBusyScrolling
+
 	; Is there a char screen scroll due?
 	lda frameWantScrX
 	clc
@@ -295,6 +300,7 @@ ScrollerCalculate
 	rts
 
 .goingToScroll
+	inc frameIsBusyScrolling
 	; Going to scroll so clamp the fine scrolling values just to make sure.
 	; This doesn't always trigger a clamp but sometimes a sharp change in direction or a weird wrap will cause a clamp.
 	lda frameScrollX
@@ -428,6 +434,8 @@ ScrollerScreen
 	lda frameScrollMoveColours
 	beq .scrollScreen
 
+	inc frameIsBusyScrolling
+
 JNotWantingScroll
 	jmp NotWantingScroll
 
@@ -436,6 +444,7 @@ JNotWantingScroll
 	lda frameTotalScrScroll
 	beq JNotWantingScroll
 
+	inc frameIsBusyScrolling
 	inc frameScrollMoveColours
 
 	cmp #1
@@ -529,6 +538,7 @@ ScrollerOffScreen
 	cmp #2	; Signifies we just did a character scroll
 	bcc .lNotWantingColourScroll
 
+	inc frameIsBusyScrolling
 	jsr ScrollerFlipBank
 
 	; Find the correct scroll routine to call
@@ -730,6 +740,7 @@ NotWantingColourScroll
 	cmp #1
 	bne .s1
 	inc frameScrollMoveColours
+	inc frameIsBusyScrolling
 .s1
 	rts
 }
@@ -1727,8 +1738,8 @@ HandleUserInput
 !zn
 .toggle !by 0
 .playerDeltaY !by 0
-.lastPushX !by 1
-.lastPushY !by 1
+.lastPushX !by 2
+.lastPushY !by 2
 .standing !by 0
 .upImpulse !by 0
 .jumpIndex !by -1
@@ -1736,9 +1747,84 @@ HandleUserInput
 .jumpVelocities !by 4 , 4 , 4 , 4 , 4 , 3 , 4 , 3 , 3 , 3 , 3 , 3 , 2 , 3 , 2 , 2 , 3 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 1 , 2 , 1 , 2 , 1 , 1 , 2 , 1 , 1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 1 , 0 , 0 , 0
 .jumpVelocitiesEnd
 ;.fallingVelocities 1 , 1 , 2 , 1 , 2 , 2 , 2 , 2 , -1
+
+!ifdef Scroller_RunJumpDemo_RunJumpTest {
+.automatedJoystickState !by $ff
+.automatedIndex !by 0
+.automatedTime !by 100
+.automatedStates
+	!by 150	, JoystickBits_Right
+	!by 75 , JoystickBits_Right | JoystickBits_Up
+	!by 10 , JoystickBits_Right
+
+	!by 25 , JoystickBits_Left
+	!by 75 , JoystickBits_Left | JoystickBits_Up
+	!by 25 , JoystickBits_Left
+
+	!by 25	, JoystickBits_Right
+	!by 50 , JoystickBits_Right | JoystickBits_Up
+	!by 45 , JoystickBits_Right
+
+	!by 25 , JoystickBits_Left
+	!by 25 , JoystickBits_Left | JoystickBits_Up
+	!by 25 , JoystickBits_Left
+
+	!by 25	, JoystickBits_Right
+	!by 50 , JoystickBits_Right | JoystickBits_Up
+	!by 45 , JoystickBits_Right
+
+	!by 25 , JoystickBits_Left
+	!by 25 , JoystickBits_Left | JoystickBits_Up
+	!by 25 , JoystickBits_Left
+
+	!by 0
+}
+
 HandleJoystick
 
 !ifdef Scroller_RunJumpDemo {
+
+!set RunJumpDemo_Joystick = CIA1KeyboardColumnJoystickA
+!ifdef Scroller_RunJumpDemo_RunJumpTest {
+!set RunJumpDemo_Joystick = .automatedJoystickState
+
+	dec .automatedTime
+	bne .aj1
+	; Get the new automated joystick state
+	ldx .automatedIndex
+	lda .automatedStates,x
+	bne .aj2
+	; 0 time = reset index
+	ldx #0
+	lda .automatedStates,x
+.aj2
+	sta .automatedTime
+	inx
+	lda .automatedStates,x
+	ora #JoystickBits_Fire
+	eor #$ff
+	sta .automatedJoystickState
+
+	inx
+	stx .automatedIndex
+.aj1
+} ;< !ifdef Scroller_RunJumpDemo_RunJumpTest {
+
+
+	lda #Scroller_RunJumpDemo_timerZero
+	ldx #Scroller_RunJumpDemo_timerLen
+.cll1
+	inc Scroller_RunJumpDemo_timerPos,x
+	lda Scroller_RunJumpDemo_timerPos,x
+	cmp #Scroller_RunJumpDemo_timerZero+10
+	bne .cll2
+	lda #Scroller_RunJumpDemo_timerZero
+	sta Scroller_RunJumpDemo_timerPos,x
+	dex
+	bpl .cll1
+.cll2
+
+
 	lda AnimationYPos
 	sta .playerDeltaY
 
@@ -1779,7 +1865,7 @@ HandleJoystick
 .rejectRoutine
 
 	lda #JoystickBits_Right
-	bit CIA1KeyboardColumnJoystickA
+	bit RunJumpDemo_Joystick
 	bne .o1
 	lda AnimationXPosLo
 	clc
@@ -1791,7 +1877,7 @@ HandleJoystick
 .o1
 
 	lda #JoystickBits_Left
-	bit CIA1KeyboardColumnJoystickA
+	bit RunJumpDemo_Joystick
 	bne .o2
 	lda AnimationXPosLo
 	sec
@@ -1803,13 +1889,13 @@ HandleJoystick
 .o2
 
 	lda #JoystickBits_Down
-	bit CIA1KeyboardColumnJoystickA
+	bit RunJumpDemo_Joystick
 	bne .o3
 	inc AnimationYPos
 .o3
 
 	lda #JoystickBits_Up
-	bit CIA1KeyboardColumnJoystickA
+	bit RunJumpDemo_Joystick
 	bne .notUp
 
 	lda .upImpulse
@@ -1838,7 +1924,7 @@ HandleJoystick
 .o4
 
 	lda #JoystickBits_Fire
-	bit CIA1KeyboardColumnJoystickA
+	bit RunJumpDemo_Joystick
 	bne .o5
 
 	; Fire
@@ -1880,6 +1966,11 @@ HandleJoystick
 	lda CharEffects_SpriteXPosToScreenCharPos,y
 	bmi .lnoBulletSpawned
 	sta CharEffectsX,x
+
+	lda #48
+	ldx #1
+	ldy #2
+	jsr MusicPlayerPlaySFX
 
 	jmp .o5
 
@@ -1930,7 +2021,7 @@ HandleJoystick
 	bmi .endY
 	lda #-2
 	sta frameTargetVelY
-	lda #-1
+;	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
 	sta .lastPushY
 	jmp .endY
 .no1
@@ -1944,7 +2035,7 @@ HandleJoystick
 .no2b
 	lda #2
 	sta frameTargetVelY
-	lda #1
+;	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
 	sta .lastPushY
 	jmp .endY
 .no2
@@ -1962,7 +2053,7 @@ HandleJoystick
 	bcc .no3
 	lda #-2
 	sta frameTargetVelX
-	lda #-1
+;	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
 	sta .lastPushX
 	jmp .endX
 .no3
@@ -1971,7 +2062,7 @@ HandleJoystick
 	bcs .no4
 	lda #2
 	sta frameTargetVelX
-	lda #1
+;	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
 	sta .lastPushX
 	jmp .endX
 .no4
@@ -2012,6 +2103,80 @@ HandleJoystick
 	sta AnimationXPosLo+1
 	lda AnimationXPosHi
 	sta AnimationXPosHi+1
+
+
+	; Double check we are not going to cause bad screen scrolls with certain alignments
+	lda frameTargetVelX
+	beq .noXScr1
+	bpl .isPosX1
+
+	; Player moving to the right, screen scrolling to the left
+
+	; If it's not close enough to the edge then ignore the velocity
+	lda frameScrollX
+	cmp #3
+	bcs .noXScr1
+
+	lda frameTargetVelY
+	beq .noXScr1
+	bmi .isNegY1
+
+	; Player at the top of the screen, screen moving downwards
+	; -x , y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #3
+	bcs .noXScr1
+
+	; Stop X velocity
+.stopXVel
+;	inc $d020
+	lda #0
+	sta frameTargetVelX
+	jmp .noXScr1
+
+
+.isNegY1
+	; Player at the bottom of the screen, screen moving upwards
+	; -x , -y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcs .stopXVel
+
+	jmp .noXScr1
+
+.isPosX1
+	; Player moving to the left, screen scrolling to the right
+	; If it's not close enough to the edge then ignore the velocity
+	lda frameScrollX
+	cmp #4
+	bcc .noXScr1
+
+	lda frameTargetVelY
+	beq .noXScr1
+	bmi .isNegY2
+
+	; Player at the top of the screen, screen moving downwards
+	; x , y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcc .stopXVel
+	jmp .noXScr1
+
+.isNegY2
+	; Player at the bottom of the screen, screen moving upwards
+	; x , -y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcs .stopXVel
+
+	jmp .noXScr1
+
+.noXScr1
+
 
 } else {
 

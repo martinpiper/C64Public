@@ -29,7 +29,9 @@
 
 !source "../stdlib/BASICEntry80d.a"
 
+!ifndef EndOfMemory {
 EndOfMemory = $10000
+}
 
 ; The contents of this macro can be used to cause the border colour to change while decompressing.
 !macro RNXPCompressionIncBorder_A {
@@ -166,6 +168,15 @@ RNXPCompressionDecompress_Part2Size = RNXPCompressionDecompress_Part2End - RNXPC
 ; with "SM_") for the start, length and execute lo/hi.
 ; This means it would be very simple to use the stub with any compressed data saved by LZMPi.exe
 
+!ifdef DoCheckMemory {
+CompressedDataStore		= $400
+CompressedDataExecute	= $400
+CompressedDataStart
+; Don't need the first two bytes (original length of the data in lo/hi format)
+!bin "target\CheckMemory.cmp",,2
+CompressedDataEnd
+} else {
+
 !ifdef Decompress_RNZip {
 CompressedDataStore		= $0801
 CompressedDataExecute	= 2304
@@ -217,5 +228,6 @@ CompressedDataStart
 CompressedDataEnd
 }
 } ;< !ifdef Decompress_RNZip {
+}
 
 !source "LauncherAddressCalc.a"

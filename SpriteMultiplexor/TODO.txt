@@ -7,14 +7,24 @@
 	* It would be possible to have an array for the currently used hardware sprites that contains the size from the Y expansion flag.
 		Similar to how the collision code maintains the active hardware sprites to multiplexor index lookups.
 
+	Maintain an array of eight height values.
+	Map this to the next physical sprite choice code. Double the value for y expansion.
+
+	Make it a large value to reserve the sprite
+
+
 
 
 * MACROMultiplex_SpriteChunk might be more optimal if the MSB and potentially other flags are not calculated all at the same time.
 
 
 
+
 * For very busy sprite displays have a mode where sprites are automatically alternated between frames to display as many of them as possible.
 	Potentially useful for shooters and explosion effects. Flag certain sprites as being allowed to do this or not.
+
+	If not rendered, increase a value. Then prioritise that sprite next submission and 0xff out the previous .
+
 
 
 

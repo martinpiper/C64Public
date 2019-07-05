@@ -1,8 +1,53 @@
 // cls && Conv.bat && ConvDelta.bat && cls && ConvPrint.bat
 // cls && Conv.bat && ConvDelta.bat && BuildIt.bat && cls && ConvPrint.bat
 // cls && ConvDeltaOpt.bat && cls && ConvPrint.bat
+// cls && Conv.bat && ConvDeltaHMSequence.bat
+// cls && Conv2.bat && ConvDelta2.bat && BuildIt2.bat
+// cls && Conv2_11.bat && ConvDelta2_11.bat && BuildIt2_11.bat
+
+
+* Dragon's Lair - Needs a better way to read the video and audio start lo/hi/bank information
+	An indexed table of animation chunks would do
+	This would replace all the references to address/bank in GameState_null and all GameState_* sections
+
+
+* Video could be made smaller, leaving more time for samples and the colour RAM update
+	Done
+
+
+
+* Dragon's Lair colour update could do with only copying the smaller section of screen updated, not the whole screen
+
+
+
+* Perhaps the image quality for Dragon's Lair can be improved by telling ffmpeg/mogrify to use the target C64 palette first?
+
+
+
+* Document DeltaCompression.exe options. Especially those like "-fragment $c00 Data\frm*05d.sno" and how it iteracts with "-fragment f$d00 Data\Dictionary1.bin"
+
+
+
+* Note TestingExtraCompression from the extra compression pass in MakeCart
+	* It works, but it is slower and doesn't maintain 15 fps
+	* For now it's disabled
+		BuildIt2.bat outputs...
+		AnimationBitmap.crt
+		AnimationBitmapCompressed.crt
+		totalbyteSize=317780
+		totalbyteSize=200712
+		for the compressed data size (edited) 
+		so it's about 30% smaller extra compressed
+		but notice how the extra compression is slower
+		Still just about usable though
+	* Done - !source "../Decompression/DecompressionVars.a" could be moved into ZP?
+	* Done - Trim the 2 bytes of the LZMPi output file in MakeCart
+		totalbyteSize=196555
+
+
 
 * .notSpecialEscape could actually be one 0, not two 0 since the first 0 is impossible as an escape due to the bmi/bpl being used
+
 
 
 * Try to vertically center the outro video without killing memory

@@ -1,10 +1,12 @@
-Making the border flash.
+Using max mode
+Using RLE mode
 Using run address $0400
 Opening 'ScrollerOrig.prg' for reading...
 Read load address as $0400
+End address = $fe00
 Opening 'Scroller.prg' for writing...
 Working...
-Input length = $fb00 output length = $2ce7
+Input length = $fa00 output length = $70d6
 Setting EasyFlash mode
 New address $8000
 New bank $0
@@ -15,20 +17,22 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'Scroller.prg' read $2ce7
+File 'Scroller.prg' read $70d6
 New address $8000
 New bank $1
  Copy from $1 len $2000 to $0
  Write bank
 New address $8000
 New bank $2
- Copy from $2001 len $ce6 to $0
+ Copy from $2001 len $2000 to $0
  Write bank
 New address $8000
 New bank $3
+ Copy from $4001 len $2000 to $0
  Write bank
 New address $8000
 New bank $4
+ Copy from $6001 len $10d5 to $0
  Write bank
 New address $8000
 New bank $5

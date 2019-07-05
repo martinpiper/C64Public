@@ -1,0 +1,13 @@
+!macro SetSpriteXYColFrame .i , .x , .y , .col , .frame {
+	lda #<.x
+	sta Sprites_XLo + .i
+	lda #>.x
+	sta Sprites_XHi + .i
+	lda #.y
+	sta Sprites_Y + .i
+
+	lda #.col
+	sta Sprites_Colour + .i
+	lda #.frame
+	sta Sprites_Frame + .i
+}

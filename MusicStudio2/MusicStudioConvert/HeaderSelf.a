@@ -251,9 +251,9 @@ TheIRQ
 	bne .i1
 
 	ldx #10
-.l2
+.l2a
 	dex
-	bne .l2
+	bne .l2a
 	nop
 
 	lda #VIC2Colour_Grey

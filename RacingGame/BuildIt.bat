@@ -25,7 +25,7 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>FingerPrint.a
 rem If the files are missing then they are simply not included in the cart
 set RacingGame_FILES_NUM=4
 set RacingGame_FILES=bin\Colourise_c000.bin bin\Colourise_c400.bin bin\Colourise_c000_2.bin bin\Colourise_c400_2.bin
-..\bin\MakeCart.exe -tg -n -a $8000 -b 7 -f $2000 %RacingGame_FILES_NUM% %RacingGame_FILES% -o RacingGame.crt >t.txt
+..\bin\MakeCart.exe -i _f_index1.a -tg -n -a $8000 -b 7 -f $2000 %RacingGame_FILES_NUM% %RacingGame_FILES% -o RacingGame.crt >t.txt
 
 rem Use the offsets from the data build to make the code
 ..\acme.exe -v3 --msvc RacingGameEntry.a
@@ -37,7 +37,7 @@ if not exist RacingGame.prg goto error
 
 
 rem Make the final cart
-..\bin\MakeCart.exe %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r RacingGame.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %RacingGame_FILES_NUM% %RacingGame_FILES% -o RacingGame.crt >>tf.txt
+..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r RacingGame.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %RacingGame_FILES_NUM% %RacingGame_FILES% -o RacingGame.crt >>tf.txt
 
 
 goto end

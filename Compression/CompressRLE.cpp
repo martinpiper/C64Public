@@ -46,7 +46,7 @@ void TestRLEPack(u8 *input,const u32 inputLength, u8 *output, u32 *outLen)
 		if ( (input[i] == leastIndex) || match)
 		{
 			u32 j = 0;
-			while ((input[i+j] == input[i]) && (j < 256))
+			while ((input[i+j] == input[i]) && (j < 256) && ((i+j) < inputLength))
 			{
 				j++;
 			}

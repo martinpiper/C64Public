@@ -1,0 +1,13 @@
+* FLD Paralax mainline timing to use CIA2+NMI instead
+	Added IRQ_Bottom, FLDSize* DoWaitRasterForcePlus_A
+	NMI_FLDSize1, NMI_FLDSize2, NMI_FLDSize2b
+
+
+; MPi: TODO: This could use the calculated ideal raster position for the test. There are other exampels of this MACROWaitForRasterChange_A usage too
+
+; NMI_FLDSize4_Timing_Lo etc are all the same delays, consolidate
+
+* +DoFLD
+	Instead of counting changing in rasters, it can just be the end target raster line
+	This should make it easier to split 1 raster line instead of the minimum being 2
+	* Did a quick test, while it works just about, the timings involved to avoid 0xff artifacts around the bad line timing is tight

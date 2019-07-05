@@ -131,9 +131,17 @@ RNXPCompressionDecompress_InitStore
 .historyIndex = $09
 }
 
+!ifdef RNXPCompressionDecompress_LowZP {
+.workOffset = $0b
+.workLen = $0d
+.tempLoopVal = $0f
+}
+!ifndef RNXPCompressionDecompress_LowZP {
 .workOffset = $fb
 .workLen = $fd
 .tempLoopVal = $ff
+}
+
 }
 
 RNXPCompressionDecompress

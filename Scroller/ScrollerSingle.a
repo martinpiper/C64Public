@@ -1046,7 +1046,7 @@ ScrollSingle2Bank1To0_40
 
 !macro MACROScrollerDrawHStripColour .colours, .mapLY, .mapHY, .mapHY2 {
 !ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Blue
+	lda #VIC2Colour_LightBlue
 	sta VIC2BorderColour
 }
 	; Set screen lohi
@@ -1110,7 +1110,7 @@ ScrollSingle2Bank1To0_40
 
 ScrollSingleColour_40
 !ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Red
+	lda #VIC2Colour_Green
 	sta VIC2BorderColour
 }
 !ifdef Scroller_NeedFullColourScroll {
@@ -1152,7 +1152,7 @@ ScrollSingleColour_40
 
 .over
 !ifdef Scroller_DebugColourScrollTimings {
-	lda #VIC2Colour_Cyan
+	lda #VIC2Colour_LightGreen
 	sta VIC2BorderColour
 }
 	lda scrollMapLPos

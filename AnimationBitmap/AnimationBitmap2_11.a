@@ -1,0 +1,550 @@
+; Bitmap animation test code
+
+!source "../stdlib/stdlib.a"
+!to "AnimationBitmap.prg", cbm
+!sal
+!sl "AnimationBitmap.map"
+!svl "AnimationBitmap.lbl"
+!pdb "AnimationBitmap.pdb"
+!cpu 6510
+!ct pet
+!initmem %10100101
+
+!source "_f_index1.a"
+
+WantDeltaDecompression_ResetFrameEx = 1
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+
+DeltaDecompression_ZP_DeltaFrameLoHi = $10
+
+;!source "../MakeCart/asm/GMod2_Macros.a"
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+!source "../Animation/DeltaDecompressionMacros.a"
+
+UseCartBanks = 1
+StartCartBank = 4
+
+; Define this if \CharPack.exe uses -sheetframes and -sheetinfo
+SpriteSheetInfoBankOffset = $1000
+;SpriteSheetFadeScreenPointers = 1
+
+; MaxCartBank should equal the bank number after the last bank displayed by MakeCart for the animation delta data
+;MaxCartBank = 57
+MaxCartBank = 64
+;MaxCartBank = 9
+;NoLoopAnimation=1
+!macro DeltaDecompression_AddressTweak {
+	clc
+	adc #4
+}
+ScreenColour = VIC2Colour_Black
+
+*=$c000
+	sei
+	lda #CartSelectBank_ProcessorPort
+	jsr InitialiseMachine
+
+;	+WaitForFire_A
+
+	lda #ScreenColour
+	sta VIC2ScreenColour
+	sta VIC2BorderColour
+	lda #%00101000
+	sta VIC2MemorySetup
+;	lda #VIC2ScreenControlHDefault
+	lda #VIC2ScreenControlHDefault | %10000
+	sta VIC2ScreenControlH
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+
+	jsr DeltaDecompression_InitZP
+	jsr NMISamples_Init
+
+
+.startDisplayingData
+
+!ifdef UseCartBanks {
+	jsr DeltaDecompression_ResetFrame
+	jsr AnimationRestoreCartBank
+}
+
+	jsr NMISamples_StopTimer
+
+	+MWordValueTo_AX CartFile1_Start_frm00061_del
+	ldy #CartFile1_Bank_frm00061_del
+	jsr DeltaDecompression_ResetFrameEx
+	jsr ClearAnimationMemory
+
+	+MWordValueTo_AX CartFile1_Start_smp_61_raw_fragment0
+	ldy #CartFile1_Bank_smp_61_raw_fragment0
+	jsr NMISamples_StartSample
+
+.fr1
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda #%11
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | %100000
+	sta VIC2ScreenControlV
+	lda $be8
+	sta VIC2ScreenColour
+	lda #%00101000
+	sta VIC2MemorySetup
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<SpriteSheetInfoBankOffset
+	sta $02
+	lda #>SpriteSheetInfoBankOffset
+	sta $03
+	jsr ProcessSpriteSheetInfo
+;	jsr DebugSpriteDisplayTest
+}
+
+	+MDeltaDecompression_CopyColours $400
+;	+WaitForFire_A
+	jsr CheckForDecisionState
+
+.nextFrame
+	ldx #<$400
+	ldy #>$400
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	jsr DeltaDecompression_UnpackFrameEx
+	jsr DeltaDecompression_AdvanceFrameCount
+
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda #%10
+	sta CIA2PortASerialBusVICBank
+	lda $4be8
+	sta VIC2ScreenColour
+
+!ifdef SpriteSheetInfoBankOffset {
+	lda #<($4000 + SpriteSheetInfoBankOffset)
+	sta $02
+	lda #>($4000 + SpriteSheetInfoBankOffset)
+	sta $03
+	jsr ProcessSpriteSheetInfo
+;	jsr DebugSpriteDisplayTest
+}
+
+	+MDeltaDecompression_CopyColours $4400
+;	+WaitForFire_A
+	jsr CheckForDecisionState
+
+	jmp .fr1
+
+
+CheckForDecisionState
+smCheckForDecisionStateAddress=*+1
+	jmp GameState_DrawBridgeHackTentacles
+
+SetDecisionState
+	jsr DeltaDecompression_ResetFrameEx
+
+;	inc VIC2BorderColour
+;	+WaitForFire_A
+
+	lda #$04
+	sta .smCopy+1
+	lda CIA2PortASerialBusVICBank
+	and #%11
+	cmp #%11
+	beq .isBank0
+	lda #$44
+	sta .smCopy+1
+.isBank0
+	lda #$84
+	sta .smCopyDestination+1
+
+	; Backup the displayed screen to bank %01
+	ldx #0
+.cl1
+.smCopy = *+1
+	lda $0400,x
+.smCopyDestination = *+1
+	sta $8400,x
+	inx
+	bne .cl1
+
+	inc .smCopy+1
+	inc .smCopyDestination+1
+
+	lda .smCopyDestination+1
+	cmp #$c0
+	bne .cl1
+
+	+MACROWaitForTheLastScanPlus1_A
+
+	lda #%01
+	sta CIA2PortASerialBusVICBank
+
+;	inc VIC2BorderColour
+;	+WaitForFire_A
+
+	jsr ClearAnimationMemoryEx
+
+;	inc VIC2BorderColour
+;	+WaitForFire_A
+
+	pla
+	pla
+	jmp .fr1
+
+!macro StateGoto .goto {
+	+MWordValueToAddress_A .goto , smCheckForDecisionStateAddress
+	rts
+}
+
+!macro StateFrameGoto .bank , .frame , .goto {
+	+MWordValueToAddress_A .goto , smCheckForDecisionStateAddress
+	ldy #.bank
+	+MWordValueTo_AX .frame
+
+	jmp SetDecisionState
+}
+
+!macro StateOnFrame_notOver .bank , .frame , .o1 {
+	jsr DeltaDecompression_GetBank
+	cmp #.bank
+	bne .o1
+	+MWordValueTo_AX .frame
+	cmp DeltaDecompression_ZP_DeltaFrameLoHi
+	bne .o1
+	cpx DeltaDecompression_ZP_DeltaFrameLoHi+1
+	bne .o1
+}
+
+
+!macro StateOnFrameThenGoto .bank , .frame , .goto {
+	+StateOnFrame_notOver .bank , .frame , .o1
+	+StateGoto .goto
+.o1
+}
+
+!macro StateOnFrameIfNotJoystickThenGotoFrame .bank , .frame , .joystick , .goto , .gotoBank , .gotoFrame {
+	+StateOnFrame_notOver .bank , .frame , .o1
+	lda #.joystick
+	bit CIA1KeyboardColumnJoystickA
+	beq .o1
+	+StateFrameGoto .gotoBank , .gotoFrame , .goto
+.o1
+}
+
+!macro StateOnFrameIfJoystickThenGotoFrame .bank , .frame , .joystick , .goto , .gotoBank , .gotoFrame {
+	+StateOnFrame_notOver .bank , .frame , .o1
+	lda #.joystick
+	bit CIA1KeyboardColumnJoystickA
+	bne .o1
+	+StateFrameGoto .gotoBank , .gotoFrame , .goto
+.o1
+}
+
+!macro StateOnFrameThenGotoFrame .bank , .frame , .goto , .gotoBank , .gotoFrame {
+	+StateOnFrame_notOver .bank , .frame , .o1
+	+StateFrameGoto .gotoBank , .gotoFrame , .goto
+.o1
+}
+
+!macro StateOnFrameIfFireThenGotoElseGotoFrame .bank , .frame , .goto , .elseGoto , .elseBank , .elseFrame {
+	+StateOnFrame_notOver .bank , .frame , .o1
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	bne .o2
+	+StateGoto .goto
+.o2
+	+StateFrameGoto .elseBank , .elseFrame , .elseGoto
+.o1
+}
+
+GameState_null
+
+GameState_Respawn
+	+StateOnFrameThenGotoFrame					CartFile1_Bank_frm00991_del , CartFile1_Start_frm00991_del ,			GameState_Respawn2 ,					CartFile1_Bank_frm00001_del , CartFile1_Start_frm00001_del
+	rts
+
+GameState_Respawn2
+	+StateOnFrameThenGotoFrame					CartFile1_Bank_frm00058_del , CartFile1_Start_frm00058_del ,			GameState_DrawBridgeHackTentacles ,		CartFile1_Bank_frm00061_del , CartFile1_Start_frm00061_del
+	rts
+
+GameState_DrawBridgeHackTentacles
+	+StateOnFrameIfFireThenGotoElseGotoFrame	CartFile1_Bank_frm00358_del , CartFile1_Start_frm00358_del ,			GameState_DrawBridgeSuccess ,			GameState_DrawBridgeGrabDeath ,			CartFile1_Bank_frm00725_del , CartFile1_Start_frm00725_del
+	rts
+
+GameState_DrawBridgeGrabDeath
+	+StateOnFrameThenGotoFrame					CartFile1_Bank_frm00764_del , CartFile1_Start_frm00764_del ,			GameState_Respawn ,						CartFile1_Bank_frm00901_del , CartFile1_Start_frm00901_del
+	rts
+
+GameState_DrawBridgeSuccess
+	+StateOnFrameIfJoystickThenGotoFrame		CartFile1_Bank_frm00610_del , CartFile1_Start_frm00610_del ,			JoystickBits_Up ,						GameState_FallingPitDeath ,				CartFile1_Bank_frm00765_del , CartFile1_Start_frm00765_del
+	+StateOnFrameIfJoystickThenGotoFrame		CartFile1_Bank_frm00622_del , CartFile1_Start_frm00622_del ,			JoystickBits_Left ,						GameState_FallingPitDeath ,				CartFile1_Bank_frm00765_del , CartFile1_Start_frm00765_del
+	+StateOnFrameIfNotJoystickThenGotoFrame		CartFile1_Bank_frm00658_del , CartFile1_Start_frm00658_del ,			JoystickBits_Right ,					GameState_CrushedBricksDeath ,			CartFile1_Bank_frm00817_del , CartFile1_Start_frm00817_del
+	+StateOnFrameThenGoto						CartFile1_Bank_frm00724_del , CartFile1_Start_frm00724_del ,			GameState_stop
+	rts
+
+
+GameState_FallingPitDeath
+	+StateOnFrameThenGotoFrame					CartFile1_Bank_frm00816_del , CartFile1_Start_frm00816_del ,			GameState_Respawn ,						CartFile1_Bank_frm00901_del , CartFile1_Start_frm00901_del
+	rts
+
+GameState_CrushedBricksDeath
+	+StateOnFrameThenGotoFrame					CartFile1_Bank_frm00898_del , CartFile1_Start_frm00898_del ,			GameState_Respawn ,						CartFile1_Bank_frm00901_del , CartFile1_Start_frm00901_del
+	rts
+
+GameState_stop
+	inc VIC2BorderColour
+	jmp GameState_stop
+
+
+!source "ClearAnimationMemory.a"
+
+!source "../stdlib/Initialise.a"
+
+!source "../Animation/DeltaDecompression.a"
+
+!ifdef SpriteSheetInfoBankOffset {
+!source "SpriteSheet.a"
+}
+
+DeltaDecompression_UnpackFrameEx
+	jsr AnimationRestoreCartBank
+	jsr DeltaDecompression_UnpackFrame
+	jsr AnimationKillCartBank
+	rts
+
+AnimationKillCartBank
+;	sei
+;	+MACRO_CartKillBank
+;	cli
+	rts
+
+AnimationRestoreCartBank
+;	sei
+	jsr DeltaDecompression_GetBank
+	sta+1 DeltaDecompression_TheBankToRestore
+	+MACRO_CartSelectBank_16K_NoSEI_A
+;	cli
+	rts
+
+
+
+!zn
+NMIEntryStart
+!pseudopc $12 {
+	; NMI Entry
+NMIEntry
+	inc VIC2BorderColour
+	sta+1 .sma
+	sty+1 .smy
+
+.nextSample = *+1
+	lda #0
+	and #$0f
+	sta SIDVolumeFilter
+
+NMIEntry_SampleBank = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+.smAddr = *+1
+NMIEntry_SampleDataLoHi = *+1
+	lda $1234
+	sta .nextSample
+	tay
+	lda SampleTimerLo,y
+	sta CIA2TimerALo
+
+	lda SampleTimerHi,y
+	sta CIA2TimerAHi
+
+	inc .smAddr
+	bne .o2
+	inc .smAddr+1
+.o2
+	lda .smAddr
+NMIEntry_SampleDataEndLo = *+1
+	cmp #0
+	bne .o1
+	lda .smAddr+1
+NMIEntry_SampleDataEndHi = *+1
+	cmp #0
+	bne .o1
+
+	jsr NMISamples_HandleNextChunk
+	bcs .itStopped
+.o1
+
+	; Exit the NMI
+	lda CIA2InterruptControl
+.itStopped
+DeltaDecompression_TheBankToRestore = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+.sma = *+1
+	lda #0
+.smy = *+1
+	ldy #0
+	dec VIC2BorderColour
+	rti
+!if * > $80 {
+	!error "code too big"
+}
+}
+NMIEntryEnd
+
+NMISamples_Init
+	; RLE Sample playing
+	jsr NMISamples_StopTimer
+
+	ldx #NMIEntryEnd-NMIEntryStart
+.cl2
+	lda NMIEntryStart-1,x
+	sta+2 NMIEntry-1,x
+	dex
+	bne .cl2
+
+	rts
+
+; Exit: A Preserved
+NMISamples_StopTimer
+	pha
+
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+
+	pla
+	rts
+
+NMISamples_StartTimer
+	+MWordValueToAddress_A NMIEntryFirst , NMIServiceRoutineLo
+
+	; Start after some small amount of time
+	lda #1
+	sta CIA2TimerALo
+	sta CIA2TimerAHi
+
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+	rts
+
+
+NMISamples_StartSample
+	jsr NMISamples_StopTimer
+	sta NMIEntry_SampleDataLoHi
+	stx NMIEntry_SampleDataLoHi+1
+	sty NMIEntry_SampleBank
+	jsr NMISamples_StartTimer
+	rts
+
+NMISamples_AdjustAddress
+	ldy #0
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMISamples_NextSampleBank
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMISamples_NextSampleLoHi
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	; Ignore any compressed flag for now
+	ora #>C64Cartridge_Lo_8K
+	sta NMISamples_NextSampleLoHi+1
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMIEntry_SampleDataEndLo
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMIEntry_SampleDataEndHi
+	; Adjust for the real sample data start
+	lda NMIEntry_SampleDataLoHi
+	clc
+	adc #5
+	sta NMIEntry_SampleDataLoHi
+	bcc .sl1
+	inc NMIEntry_SampleDataLoHi+1
+.sl1
+	rts
+
+NMISamples_NextSampleLoHi
+	!by 0,0
+NMISamples_NextSampleBank
+	!by 0
+
+NMISamples_HandleNextChunk
+	lda NMISamples_NextSampleBank
+	bne .moreChunks
+	jsr NMISamples_StopTimer
+	sec
+	rts
+.moreChunks
+	sta NMIEntry_SampleBank
+	sta CART_SELECT_BANK
+	lda NMISamples_NextSampleLoHi
+	sta NMIEntry_SampleDataLoHi
+	lda NMISamples_NextSampleLoHi+1
+	sta NMIEntry_SampleDataLoHi+1
+	jsr NMISamples_AdjustAddress
+	clc
+	rts
+
+; This is the first entry point for the NMI sample player. It reads the sample header data using NMISamples_AdjustAddress within the NMI to ensure the NMI has consistent access to the correct bank.
+; This avoids issues with trying to read the bank during the mainline which might be using the other bank
+NMIEntryFirst
+	pha
+	tya
+	pha
+	txa
+	pha
+
+	lda NMIEntry_SampleBank
+	sta CART_SELECT_BANK
+
+	jsr NMISamples_AdjustAddress
+
+	+MWordValueToAddress_A NMIEntry , NMIServiceRoutineLo
+	lda CIA2InterruptControl
+
+	lda DeltaDecompression_TheBankToRestore
+	sta CART_SELECT_BANK
+
+	pla
+	tax
+	pla
+	tay
+	pla
+	rti
+
+
+!align 255,0
+SampleRateHz = 5000
+SampleTimerLo
+!for .i , 256 {
+	!by <(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+}
+SampleTimerHi
+!for .i , 256 {
+	!by >(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+}
+
+
+AnimationCode_End = *
+!if * >= $d000 {
+!error "Code is too large!"
+}
+

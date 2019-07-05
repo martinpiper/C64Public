@@ -1,13 +1,6 @@
-!zn {
-DeltaDecompression_InitZP
-	; Lastly update zeropage with our zeropage RLE decompressor
-	ldx #RNXPCompressionDecompressDeltaRLECodeEnd-RNXPCompressionDecompressDeltaRLECodeStart
-.cz1
-	lda RNXPCompressionDecompressDeltaRLECodeStart-1,x
-	sta+2 RNXPCompressionDecompressDeltaRLE-1,x
-	dex
-	bne .cz1
-	rts
+!ifdef TestingExtraCompression {
+Decompress_RNZip = 1
+RNXPCompressionDecompress_LowZP = 1
 }
 
 !macro RNXPCompressionDecompressDelta_WriteByte {
@@ -36,9 +29,9 @@ RNXPCompressionDecompressDeltaRLE_InitStore
 	sty+1 RNXPCompressionDecompressDelta_WriteByteAddr+1
 	rts
 
-
 RNXPCompressionDecompressDeltaRLECodeStart
 !pseudopc $80 {
+RNXPCompressionDecompressDeltaRLECodeStartReal
 RNXPCompressionDecompressDeltaRLE
 	stx+1 RNXPCompressionDecompressDelta_GetByteAddr
 	sty+1 RNXPCompressionDecompressDelta_GetByteAddr+1
@@ -152,11 +145,26 @@ DeltaDecompression_End	!by 0
 DeltaDecompression_ResetFrame
 	lda #0
 	sta DeltaDecompression_ZP_DeltaFrameLoHi
-	lda #$80
+!ifdef TestingExtraCompression {
+	sta DeltaDecompression_ZP_DeltaFrameCompressed
+}
+	lda #>C64Cartridge_Lo_8K
 	sta DeltaDecompression_ZP_DeltaFrameLoHi+1
 	lda #StartCartBank
 	sta .sm3+1
 	rts
+
+!ifdef WantDeltaDecompression_ResetFrameEx {
+DeltaDecompression_ResetFrameEx
+	sta DeltaDecompression_ZP_DeltaFrameLoHi
+!ifdef TestingExtraCompression {
+	lda #0
+	sta DeltaDecompression_ZP_DeltaFrameCompressed
+}
+	stx DeltaDecompression_ZP_DeltaFrameLoHi+1
+	sty .sm3+1
+	rts
+}
 
 
 DeltaDecompression_GetBank
@@ -192,7 +200,40 @@ DeltaDecompression_UnpackFrame
 	sta CART_SELECT_BANK
 
 	jsr DeltaDecompression_AdvanceFrameAddr
+!ifdef TestingExtraCompression {
+;	inc $d020
+;	+WaitForFire_A
+
+	; Ensures the hi byte is in cartridge RAM regardless of any compression flag
+	; "first delta must not be compressed" references in MakeCart
+	lda DeltaDecompression_ZP_DeltaFrameCompressed
+	bpl .notCompressed
+
+;	inc $d020
+;	+WaitForFire_A
+
+	txa
+	pha
+	tya
+	pha
+	ldx #<CompressedDataTemp
+	ldy #>CompressedDataTemp
+	jsr RNXPCompressionDecompress_InitStore
+	pla
+	tay
+	pla
+	tax
+	jsr RNXPCompressionDecompress
+
+;	inc $d020
+;	+WaitForFire_A
+
+	ldx #<CompressedDataTemp
+	ldy #>CompressedDataTemp
+.notCompressed
+}
 	jmp RNXPCompressionDecompressDeltaRLE
+
 
 
 DeltaDecompression_AdvanceFrameAddr
@@ -209,6 +250,10 @@ DeltaDecompression_AdvanceFrameAddr
 	pha
 	iny
 	lda (DeltaDecompression_ZP_DeltaFrameLoHi),y
+!ifdef TestingExtraCompression {
+	; Current frame compression flag
+	sta DeltaDecompression_ZP_DeltaFrameCompressed
+}
 	pha
 	
 	lda DeltaDecompression_ZP_DeltaFrameLoHi
@@ -220,6 +265,8 @@ DeltaDecompression_AdvanceFrameAddr
 	tay
 
 	pla
+	; Adjust the compressed data address to take into account any compressed flag
+	ora #>C64Cartridge_Lo_8K
 	sta DeltaDecompression_ZP_DeltaFrameLoHi+1
 	pla
 	sta DeltaDecompression_ZP_DeltaFrameLoHi
@@ -232,4 +279,53 @@ DeltaDecompression_AdvanceFrameAddr
 	ldy .framesHi,x
 	tax
 	jmp RNXPCompressionDecompressDeltaRLE
+}
+
+
+
+
+!ifdef TestingExtraCompression {
+CompressedDataTemp = $7800
+!macro RNXPCompressionIncBorder_A {
+}
+
+RNXPCompressionDecompress_WriteByteAddr = $400
+RNXPCompressionDecompress_GetByteAddr = $401
+
+
+DecompressionVars_CodeStart
+!pseudopc $60 {
+DecompressionVars_CodeStartReal
+!source "../Decompression/DecompressionVars.a"
+!if * > $80 {
+	!error "code too big"
+}
+}
+DecompressionVars_CodeEnd
+
+!source "../Decompression/Decompression.a"
+!source "../Decompression/DecompressionP2.a"
+}
+
+!zn {
+DeltaDecompression_InitZP
+!ifdef TestingExtraCompression {
+	; Update zeropage with our zeropage RLE and RNZip address code
+	ldx #DecompressionVars_CodeEnd - DecompressionVars_CodeStart
+.cz2
+	lda DecompressionVars_CodeStart-1,x
+	sta DecompressionVars_CodeStartReal-1,x
+	dex
+	bne .cz2
+}
+
+	ldx #RNXPCompressionDecompressDeltaRLECodeEnd-RNXPCompressionDecompressDeltaRLECodeStart
+.cz1
+	lda RNXPCompressionDecompressDeltaRLECodeStart-1,x
+	sta+2 RNXPCompressionDecompressDeltaRLECodeStartReal-1,x
+	dex
+	bne .cz1
+
+
+	rts
 }

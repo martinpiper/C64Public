@@ -34,8 +34,12 @@ using namespace RNReplicaNet::RNXPCompression;
 //c:\ReplicaNet\ReplicaNetPublic\RNZip\RNZip.exe -c C:\work\C64\MusicEditorHelp\MusicEditorHelp.prg c:\temp\t.rnzip
 //Input length = 24372 output length = 14107
 
+//34760
+//19516 : c:\temp\exomizer.exe raw TestData\5.bin -o c:\temp\t.out
+//20362 : ..\bin\LZMPi.exe -c TestData\5.bin c:\temp\t.bin
+//846
 
-// TODP: Add an option to compress and run BASIC code.
+// TODO: Add an option to compress and run BASIC code.
 // Related^^ TODO: Update $2d and $2e properly so that other applications that expect them will work.
 //-c64b SEUCK.prg SEUCKComp.prg 2064
 //>Actually what can be done is to add to the loaded input data some code at some out of the way address (like $f000 or $c000)
@@ -49,6 +53,8 @@ const u32 sStartOfBASIC = 0x801;
 
 int main(int argc,char **argv)
 {
+	int machineMemoryTop = 0x10000;
+
 	if (argc < 4)
 	{
 		printf("LZMPi : A very simple file compressor or decompressor suitable for C64 files.\n\n"
@@ -58,6 +64,8 @@ int main(int argc,char **argv)
 			" -d <input file> <outfile file>\n"
 			"To use LZMPiE mode (RNZip with simpler but faster compression) then use:"
 			" -ce <input file> <outfile file> [offset from the start of the file]\n"
+			"To use RLE mode then use:"
+			" -cr <input file> <outfile file> [offset from the start of the file]\n"
 			"To create a C64 self extracting binary use:\n"
 			" -c64[m][b][r][e] <input file> <outfile file> <run address> [start address]\n\n"
 			"-c64 will compress a C64 prg file with the start address being the first two\n"
@@ -72,6 +80,8 @@ int main(int argc,char **argv)
 			" -c <input file> <outfile file> <offset> [length]\n\n"
 			" -cut <input file> <outfile file> <offset> [length]\n"
 			"-cut will not compress the file, meaning data is just effectively cut and written to the output file.\n"
+			"-t <address>\n"
+			" The default value is $10000. Must be first in the parameter list. This will set the top most memory address used by the decompression code when using the -c64 self extracting code. This is useful to segregate the top pages of memory so they can be used for saved data between file loads.\n"
 		);
 		exit(-1);
 	}
@@ -87,6 +97,16 @@ int main(int argc,char **argv)
 	bool flashBorder = false;
 	bool maxMode = false;
 	bool useRNZipMode = false;
+
+
+	if (argv[1][1] == 't')
+	{
+		machineMemoryTop = ParamToNum(argv[2]);
+		argc-=2;
+		argv+=2;
+	}
+
+	int machineMemoryTopMinus256 = machineMemoryTop - 0x100;
 
 
 	if ((argv[1][1] == 'c') && (argv[1][2] == 'r'))
@@ -409,6 +429,9 @@ int main(int argc,char **argv)
 #if sC64DecompNoEffect_LauncherAddress_endMinusOutSize != sC64DecompBorderEffect_LauncherAddress_endMinusOutSize
 #error sC64DecompNoEffect_LauncherAddress_endMinusOutSize
 #endif
+#if sC64DecompNoEffect_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffect_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffect_LauncherAddress_compressedDataEndMinus256
+#endif
 #if sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffect_LauncherAddress_endOfMemoryMinus256
 #error sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256
 #endif
@@ -421,6 +444,9 @@ int main(int argc,char **argv)
 #endif
 #if sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMax_LauncherAddress_endMinusOutSize
 #error sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMax_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMax_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMax_LauncherAddress_compressedDataEndMinus256
 #endif
 #if sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMax_LauncherAddress_endOfMemoryMinus256
 #error sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256
@@ -435,6 +461,9 @@ int main(int argc,char **argv)
 #if sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectRNZip_LauncherAddress_endMinusOutSize
 #error sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize
 #endif
+#if sC64DecompNoEffectRNZip_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectRNZip_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectRNZip_LauncherAddress_compressedDataEndMinus256
+#endif
 #if sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectRNZip_LauncherAddress_endOfMemoryMinus256
 #error sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256
 #endif
@@ -448,6 +477,9 @@ int main(int argc,char **argv)
 #if sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZip_LauncherAddress_endMinusOutSize
 #error sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize
 #endif
+#if sC64DecompNoEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256
+#endif
 #if sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256
 #error sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256
 #endif
@@ -460,6 +492,9 @@ int main(int argc,char **argv)
 #endif
 #if sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRLE_LauncherAddress_endMinusOutSize
 #error sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRLE_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRLE_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRLE_LauncherAddress_compressedDataEndMinus256
 #endif
 #if sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRLE_LauncherAddress_endOfMemoryMinus256
 #error sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256
@@ -488,11 +523,14 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
-				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
-				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
 
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
@@ -512,11 +550,14 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
-				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
-				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
 
 				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
@@ -536,11 +577,14 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectMax_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMax_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
-				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
-				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
 
 				theC64Code[sC64DecompNoEffectMax_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMax_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
@@ -560,11 +604,14 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
-				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
-				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
 
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
@@ -584,11 +631,14 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffect_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffect_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
-				theC64Code[sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffect_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffect_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
 
-				theC64Code[sC64DecompNoEffect_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((0x10000 - outSize) & 0xff);
-				theC64Code[sC64DecompNoEffect_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((0x10000 - outSize)>>8) & 0xff);
+				theC64Code[sC64DecompNoEffect_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffect_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
 
 				theC64Code[sC64DecompNoEffect_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffect_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
@@ -608,7 +658,7 @@ int main(int argc,char **argv)
 		fclose(fp);
 
 		// Enable the following code to paranoia check the compression is OK
-#if 1
+#if 0
 		if (!useRLE && !useRNZipMode)
 		{
 			u8 temp[65536];

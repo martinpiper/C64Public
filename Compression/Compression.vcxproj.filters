@@ -16,6 +16,9 @@
     <Filter Include="asm">
       <UniqueIdentifier>{0d5d97cb-ed05-4235-8880-3da8bb63d849}</UniqueIdentifier>
     </Filter>
+    <Filter Include="features">
+      <UniqueIdentifier>{d086787b-efad-4af0-ba65-dc9956a6ca39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
@@ -104,6 +107,21 @@
       <Filter>asm</Filter>
     </None>
     <None Include="..\Decompression\BorderEffectCommon.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\features\CheckMemory.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="..\Decompression\features\Checks.a">
+      <Filter>features</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressRLEVars.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DefineDecompress_RNZip.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DefineDoCheckMemory.a">
       <Filter>asm</Filter>
     </None>
   </ItemGroup>

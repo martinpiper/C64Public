@@ -1,0 +1,4 @@
+; Used by RunTests.bat and CheckMemory.feature
+; The point of this is to force different data to be pulled in when BDD testing the self extraction code, so that different lengths and execution addresses are used.
+DoCheckMemory = 1
+EndOfMemory = $ff00

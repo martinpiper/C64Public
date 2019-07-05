@@ -73,10 +73,10 @@ SET OTHER_FILES=bin\SpanDraw_p0_0.bin+! bin\SpanDraw_p0_1.bin+! bin\SpanDraw_p0_
 SET NUM_FILES=12
 
 rem Get the final cart data offsets and link them in to the base code
-..\bin\MakeCart.exe -tg -n -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES%
+..\bin\MakeCart.exe -i _f_index1.a -tg -n -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES%
 
 del VectorPlotBitmap.prg
 ..\acme.exe -v3 --msvc VectorPlotBitmap.a
 if not exist VectorPlotBitmap.prg goto error
 ..\bin\LZMPi.exe -c64b VectorPlotBitmap.prg VectorPlotBitmap.prg $4000 >tf.txt
-..\bin\MakeCart.exe %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r VectorPlotBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% -o VectorPlotBitmap.crt >>tf.txt
+..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r VectorPlotBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% -o VectorPlotBitmap.crt >>tf.txt

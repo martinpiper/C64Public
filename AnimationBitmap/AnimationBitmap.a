@@ -882,36 +882,7 @@ IRQScreenSplit2
 
 	jmp MinimalIRQServiceRoutine
 
-!zn
-ClearAnimationMemory
-	ldx #0
-	txa
-	sta VIC2SpriteEnable
-	; Clear the whole memory area to prepare for the next animation run
-	ldy #>$0400
-	sty .smcb1+2
-.cl3
-.smcb1	sta $0400,x
-	dex
-	bne .cl3
-	inc .smcb1+2
-	bmi .ret		; (up to $8000)
-;	ldy .smcb1+2
-;	cpy #4+$d
-;	beq .cl4
-;	cpy #4+$4d
-;	beq .cl5
-	jmp .cl3
-.cl4
-	ldy #4+$1c
-	sty .smcb1+2
-	jmp .cl3
-.cl5
-	ldy #4+$5c
-	sty .smcb1+2
-	jmp .cl3
-.ret
-	rts
+!source "ClearAnimationMemory.a"
 
 !zn
 AnimationClearCOLOURRAM

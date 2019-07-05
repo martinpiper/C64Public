@@ -253,19 +253,7 @@ SamplePlaySequence
 	lda #>(CyclesPerSecondPALC64/SampleRateHz)
 	sta CIA2TimerAHi
 
-	; This solves the missing speech problem with 8580 SID chips at the expense of one voice.
-	; The SFXPlay above needs to be made aware of this, perhaps optionally limit the SFX player
-	; to two voices? Have a toggle flag similar to SFXCall, but use a voice bitfield instead?
-	lda #$00
-	sta SIDVoice3AttackDecay
-	sta SIDVoice3FreqLo
-	sta SIDVoice3FreqHi
-	sta SIDVoice3PulseWidthLo
-	sta SIDVoice3PulseWidthHi
-	lda #$f0
-	sta SIDVoice3SustainRelease
-	lda #$41
-	sta SIDVoice3Control
+!source "stdlib/SampleInit.a"
 
 	lda #1
 	sta SampleStartNewSequence

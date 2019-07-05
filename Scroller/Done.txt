@@ -200,3 +200,33 @@
 	* MSpritePosToCharacterLookup could do with a passed in adjustment for xpos/ypos that uses some slightly different code if the values are != 0
 	* Figure out some non-magic values for the box edges for "Simple push camera calculations"
 	* Added CharEffects.a for player character bullet example code
+
+
+
+* For CharEffects.a BeforeScrollers and AfterScrollers optimise the transversal through the list by having two optimised link lists of indexes
+	* One used and one free linked list
+	* So when there are no bullets then there is virtually no time taken
+	** Done - Create automated jotstick inputs that run to the right and then jump over the gap
+		Tweak it until the frame overruns
+		Identify the expensive operations
+		Optimise, most probably by tweaking the camera movement to avoid the situation where every frame is doing a full screen/colour scroll
+		See timings with Scroller_RunJumpDemo_RunJumpTest and Scroller_DebugColourScrollTimings and Scroller_DebugScreenScrollTimings
+
+	Note define: Scroller_RunJumpDemo_RunJumpTest
+	** Done - Will need an on-screen frame display, utilising the characters for the score. This is so that Vice breakspoints and single step frame in pause mode can be tracked
+	* Frame:
+		259		Start of screen diagonal movement. Note how char/col scrolls occur every frame without any free time
+		283		Indicates visible screen corruption as the chars and the colour copy overruns, so the colours are one frame behind the chars
+				Note how the green/lightgreen portion is within the visible area of the screen timing
+	frameScrollX	frameScrollY
+	frameTargetVelX	frameTargetVelY
+
+	Testing the first jump right at frame 259-
+		Note new code around: ; Double check we are not going to cause bad screen scrolls with certain alignments
+		Success! This delays the diagnoal scroll, by removing the frameTargetVelX (due to frameScrollY==0 indicating the Y scroll just happened), until the next frame
+		This aligns the diagonal movement for -2,2 until the chars scroll is synchronised!
+	** This needs to be made more generic, perhaps a table of velocities and scroll values?
+		* Investigate using a "just scrolled character or colour" flag, this then simplifies the "does the current X/Y movement cause a char scroll within 2 frames" test.
+			Added frameIsBusyScrolling
+	* Added more tests for "Double check we are not going to cause bad screen scrolls with certain alignments"
+	* When scrolling down right or up left the alignment is different, so different checks will be needed

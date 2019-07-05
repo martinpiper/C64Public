@@ -1,0 +1,655 @@
+; FLD Paralax reverse engineering from Tusari LV2C
+
+!source "stdlib/stdlib.a"
+!to "FLDParalax.prg", cbm
+!sl "FLDParalax.map"
+!svl "FLDParalax.lbl"
+!pdb "FLDParalax.pdb"
+!cpu 6510
+!ct pet
+!initmem $f2	; JAM
+
+!source "Display_Macros.a"
+!source "Sprites_Macros.a"
+
+Sprites__size = 8
+	
+*=$400
+	jmp GameStart
+!source "FingerPrint.a"
+!source "stdlib/Initialise.a"
+GameStart
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	ldx #0
+.cgs1
+	lda GameColours,x
+	sta COLOURRAM,x
+	lda GameColours+$100,x
+	sta COLOURRAM+$100,x
+	lda GameColours+$200,x
+	sta COLOURRAM+$200,x
+	lda GameColours+$300,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .cgs1
+
+
+!if 1 {
+	lda #0
+	jsr MusicBinary
+
+GameTimerPos = (1*40)+31
+	; Remove daggers and make it a timer
+	lda #VIC2Colour_Black
+	sta COLOURRAM+(1*40)+29
+	sta COLOURRAM+(1*40)+30
+	lda #'0'
+	sta PanelScreen+GameTimerPos
+	sta PanelScreen+GameTimerPos+1
+	sta PanelScreen+GameTimerPos+2
+
+
+;	+DisplayPanelScreen
+;	+WaitForFire_A
+
+;	+DisplayGameScreenTop
+
+;	+DisplayGameScreenMiddle
+
+;	+DisplayGameScreenBottom
+
+	+MVIC2SpriteEnableAll_A
+
+	lda #%11
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
+	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
+
+	+SetSpriteXYColFrame 2 , 0 , 90 ,  VIC2Colour_Grey , $fe
+	+SetSpriteXYColFrame 3 , 0 , 110 , VIC2Colour_Grey , $fe
+	+SetSpriteXYColFrame 4 , 0 , 130 , VIC2Colour_LightGrey , $fe
+	+SetSpriteXYColFrame 5 , 0 , 150 , VIC2Colour_LightGrey , $fe
+	+SetSpriteXYColFrame 6 , 0 , 170 , VIC2Colour_White , $fe
+	+SetSpriteXYColFrame 7 , 0 , 190 , VIC2Colour_White , $fe
+
+	jsr Sprites_UpdateToVIC
+;	+WaitForFire_A
+
+	lda #VIC2SpriteYBorderBottom
+	sta VIC2Raster
+	lda #1
+	sta VIC2InteruptControl
+	+MWordValueToAddress_A IRQ_Bottom , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+	cli
+
+.l1
+.noRaster1
+	lda IRQ_BottomStarted
+	beq .noRaster1
+	lda #0
+	sta IRQ_BottomStarted
+
+	lda .introCount
+	beq .humanMove
+
+	dec .introCount
+	jsr PlayerMoveLeft
+	dec .animCount2+0
+	bpl .noa0
+	lda #2
+	sta .animCount2+0
+
+	inc .animCount+0
+	ldx .animCount+0
+	cpx #.bodyAnimSize
+	bcc .noa0
+	ldx #0
+	stx .animCount+0
+.noa0
+
+	inc .animCount+1
+	ldx .animCount+1
+	cpx #.legsAnimSize
+	bcc .noa1
+	ldx #0
+	stx .animCount+1
+.noa1
+
+	ldx .animCount+0
+	lda .bodyAnim,x
+	sta Sprites_Frame + 0
+	ldx .animCount+1
+	lda .legsAnim,x
+	sta Sprites_Frame + 1
+
+	jmp .noHuman
+
+.humanMove
+	lda Game_playerTimer
+	bne .doHuman
+
+	inc Sprites_Y
+	inc Sprites_Y
+	lda #180
+	cmp Sprites_Y
+	bcs .notDownYet
+	sta Sprites_Y
+
+.complete
+	sei
+	lda #0
+	sta VIC2ScreenControlV
+	sta SIDVolumeFilter
+	inc VIC2BorderColour
+	jmp .complete
+
+.notDownYet
+
+	jmp .noHuman
+.doHuman
+	lda #$ca
+	sta Sprites_Frame + 0
+	lda #$d1
+	sta Sprites_Frame + 1
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+	dec Sprites_Y
+	dec Sprites_Y
+	lda #VIC2SpriteYBorderTop + (5*8)
+	cmp Sprites_Y
+	bcc .notUp
+	sta Sprites_Y
+.notUp
+
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+	inc Sprites_Y
+	inc Sprites_Y
+	lda #180
+	cmp Sprites_Y
+	bcs .notDown
+	sta Sprites_Y
+.notDown
+
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	jsr PlayerMoveLeft
+.notLeft
+
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	lda Sprites_XLo
+	clc
+	adc #2
+	sta Sprites_XLo
+	bcc .notRight
+	lda #1
+	sta Sprites_XHi
+.notRight
+	lda Sprites_XHi
+	beq .onLeft
+	lda #<(VIC2SpriteXBorderRight38-VIC2SpriteSizeX)
+	cmp Sprites_XLo
+	bcs .onLeft
+	sta Sprites_XLo
+.onLeft
+
+.noHuman
+	lda Sprites_Y
+	clc
+	adc #VIC2SpriteSizeY
+	sta Sprites_Y+1
+
+	lda Sprites_XLo
+	sta Sprites_XLo+1
+	lda Sprites_XHi
+	sta Sprites_XHi+1
+
+
+	ldx #2
+.csl1
+	lda .spriteSpeed,x
+	bne .gotVel
+	jsr GetRandomNumber
+	and #3
+	clc
+	adc #2
+	sta .spriteSpeed,x
+.gotVel
+	clc
+	adc Sprites_XLo,x
+	sta Sprites_XLo,x
+	bcc .csl2
+.csl3
+	lda #1
+	sta Sprites_XHi,x
+.csl2
+
+	; Check for the right screen pos
+	lda Sprites_XHi,x
+	beq .csl4
+	lda Sprites_XLo,x
+	cmp #<VIC2SpriteXBorderRight
+	bcc .csl4
+	jsr Sprite_Free
+.csl4
+
+	inx
+	cpx #Sprites__size
+	bne .csl1
+
+	; Collision detection
+	lda Sprites_XHi
+	lsr
+	lda Sprites_XLo
+	ror
+	sta .smplx+1
+	; To find a sprite
+	ldx #2
+.col1
+	lda Sprites_Y
+	sec
+	sbc Sprites_Y,x
+	cmp #-24
+	bcs .mightHit
+	cmp #8
+	bcc .mightHit
+	jmp .col2
+.mightHit
+	; Get MSB
+	lda Sprites_XHi,x
+	lsr
+	lda Sprites_XLo,x
+	ror
+.smplx	sbc #0
+	cmp #8
+	bcc .itHit
+	cmp #-8
+	bcs .itHit
+
+	jmp .col2
+.itHit
+	lda .spriteSpeed,x
+	jsr GameAddScore
+	jsr Sprite_Free
+.col2
+	inx
+	cpx #Sprites__size
+	bne .col1
+
+	jsr Sprites_UpdateToVIC
+
+	inc FLDSize2b_smx1
+	lda FLDSize2b_smx1
+	and #7
+	sta FLDSize2b_smx1
+	bne .nox1
+
+;	inc VIC2BorderColour
+
+	; This update is for the first char rows of the far background below the mountains
+	lda GameScreen2 + (9*40) + 39
+	pha
+	lda GameScreen2 + (10*40) + 39
+	pha
+	lda GameScreen2 + (11*40) + 39
+	pha
+	lda GameScreen2 + (12*40) + 39
+	pha
+	lda GameScreen2 + (13*40) + 39
+	pha
+	ldx #39
+.scrx1
+!for .y , 5 {
+!set .yy = 9 +.y-1
+	lda GameScreen2 + (.yy*40) -1 ,x
+	sta GameScreen2 + (.yy*40) ,x
+}
+	dex
+	bne .scrx1
+	pla
+	sta GameScreen2 + (13*40)
+	pla
+	sta GameScreen2 + (12*40)
+	pla
+	sta GameScreen2 + (11*40)
+	pla
+	sta GameScreen2 + (10*40)
+	pla
+	sta GameScreen2 + (9*40)
+
+;	dec VIC2BorderColour
+
+.nox1
+
+
+
+	inc FLDSize3_smx2
+	inc FLDSize3_smx2
+	lda FLDSize3_smx2
+	and #7
+	sta FLDSize3_smx2
+
+	ldx Sprites_Y
+	lda PlayerYToPerspective,x
+	sta FLDSize4
+	lsr
+	sta FLDSize3
+	lsr
+	sta FLDSize2
+	lsr
+	sta FLDSize1
+
+
+!if 1 {
+	inc FLDSize1
+	inc FLDSize2
+	inc FLDSize3
+	inc FLDSize4
+}
+
+!if 0 {
+	lda #1
+	sta FLDSize1
+	sta FLDSize2
+	sta FLDSize3
+	sta FLDSize4
+}
+
+!if 1 {
+;	inc VIC2BorderColour
+
+	; This update is for the last three char rows of the far background, the near plane
+.smxscr1	lda #0
+	beq .nox2
+	lda GameScreen2 + (18*40) + 39
+	pha
+	ldx #39
+.scrx3
+	lda GameScreen2 + (18*40) -1 ,x
+	sta GameScreen2 + (18*40) ,x
+	dex
+	bne .scrx3
+	pla
+	sta GameScreen2 + (18*40)
+.nox2
+	lda .smxscr1+1
+	eor #1
+	sta .smxscr1+1
+
+	; The bottom bricks
+	lda GameScreen2 + (19*40) + 39
+	pha
+	lda GameScreen2 + (20*40) + 39
+	pha
+	ldx #39
+.scrx2
+!for .y , 2 {
+!set .yy = 19 +.y-1
+	lda GameScreen2 + (.yy*40) -1 ,x
+	sta GameScreen2 + (.yy*40) ,x
+}
+	dex
+	bne .scrx2
+	pla
+	sta GameScreen2 + (20*40)
+	pla
+	sta GameScreen2 + (19*40)
+
+	jsr .another3Lines
+	jsr .another3Lines
+
+;	dec VIC2BorderColour
+}
+
+	jsr MusicBinary+6
+
+	jsr RenderPlayerTimer
+
+
+
+	lda #VIC2SpriteYBorderTop + (21*8) - 1
+.w1
+	cmp VIC2Raster
+	bcs .w1
+	; Turn the screen off with illegal mode
+;	lda #$ff
+;	sta VIC2ScreenControlV
+
+	; Update the sprites the create the radar effect at the bottom of the screen
+	ldx #4
+	ldy #2
+.cls1
+	lda #243
+	sta VIC2Sprite0Y,x
+	lda #$ff
+	sta GameScreen2+SPRITEFRAMESCROFF,y
+	iny
+	inx
+	inx
+	cpx #16
+	bne .cls1
+
+;	inc VIC2BorderColour
+	jsr ScorePanelColourCycle
+;	dec VIC2BorderColour
+
+
+
+	jmp .l1
+
+.another3Lines
+	; The bottom bricks
+	lda GameScreen2 + (21*40) + 39
+	pha
+	lda GameScreen2 + (22*40) + 39
+	pha
+	lda GameScreen2 + (23*40) + 39
+	pha
+	ldx #39
+.scrx4
+!for .y , 3 {
+!set .yy = 21 +.y-1
+	lda GameScreen2 + (.yy*40) -1 ,x
+	sta GameScreen2 + (.yy*40) ,x
+}
+	dex
+	bne .scrx4
+	pla
+	sta GameScreen2 + (23*40)
+	pla
+	sta GameScreen2 + (22*40)
+	pla
+	sta GameScreen2 + (21*40)
+	rts
+
+.introCount !by 80
+
+.animCount !fill 8 , 0
+.animCount2 !fill 8 , 0
+
+.bodyAnim !by $40+131 , $40+132 , $40+133 , $40+134 , $40+135 , $40+136 , $40+137 , $40+138 , $40+137 , $40+136 , $40+135 , $40+134 , $40+133 , $40+132
+.bodyAnimSize = * - .bodyAnim
+.legsAnim !by $40+139 , $40+140 , $40+141 , $40+142 , $40+143 , $40+144 , $40+145 , $40+146 , $40+147 , $40+148 , $40+149 , $40+150 , $40+151 , $40+152
+.legsAnimSize = * - .legsAnim
+
+.nextSpriteDelay !by 60
+.spriteSpeed
+	!fill Sprites__size , 0
+
+Sprite_Free
+	lda #0
+	sta Sprites_XLo,x
+	sta Sprites_XHi,x
+	sta .spriteSpeed,x
+	rts
+
+GetRandomNumber
+	ldy .randomTabIndex
+	lda .randomTab,y
+	iny
+	cpy #.randomTabSize
+	bcc .or1
+	ldy #0
+.or1
+	sty .randomTabIndex
+	rts
+.randomTabIndex !by 0
+.randomTab
+	!by 0 , 5 , 2 , 1 , 3 , 6 , 4 , 1 , 4 , 3 , 2 , 0 , 5 , 6 , 1 , 4 , 3 , 6 , 5 , 4 , 3 , 2 , 1 , 0
+	!by 4 , 3 , 2 , 1 , 0 , 3 , 6 , 4 , 1 , 0 , 5 , 2 , 1 , 4 , 3 , 2 , 0 , 5 , 6 , 1 , 4 , 3 , 6 , 5
+	!by 4 , 3 , 2 , 1 , 0 , 3 , 5 , 2 , 1 , 4 , 3 , 2 , 0 , 5 , 6 , 4 , 1 , 0 , 6 , 1 , 4 , 3 , 6 , 5
+	!by 0 , 5 , 2 , 1 , 3 , 6 , 2 , 0 , 5 , 6 , 1 , 4 , 3 , 6 , 4 , 1 , 4 , 3 , 5 , 4 , 3 , 2 , 1 , 0
+.randomTabSize = * - .randomTab
+
+.maxPerspective = $17
+PlayerYToPerspective
+!fill VIC2SpriteYBorderTop + (5*8) , .maxPerspective
+!for .y , 70 {
+	!by (.maxPerspective*(70-.y))/70
+}
+!fill 256 - (*-PlayerYToPerspective) , 0
+
+!zn
+GameScorePos = (3*40) + 3
+GameAddScore
+	stx .smx1
+
+	ldx #4
+.asl1
+	clc
+	adc PanelScreen+GameScorePos,x
+	cmp #'9'
+	beq .noCarry
+	bcc .noCarry
+	sbc #10
+	inc PanelScreen+GameScorePos-1,x
+.noCarry
+	sta PanelScreen+GameScorePos,x
+	lda #0
+	dex
+	bpl .asl1
+
+.smx1 = *+1
+	ldx #0
+	rts
+
+!zn
+ScorePanelColourCycle
+	inc .scCount
+	ldy #7
+	ldx .scCount
+	cpx #13
+	bcc .o1
+	ldx #0
+	stx .scCount
+.o1
+	lda .scCols,x
+	sta COLOURRAM + GameScorePos -1 , y
+	inx
+	dey
+	bpl .o1
+	rts
+
+.scCount !by 0
+.scCols
+	!by 1,7,3,5,4,2,6,2,4,5,3,7,1,1,1,1
+	!by 1,7,3,5,4,2,6,2,4,5,3,7,1,1,1,1
+
+!zn
+PlayerMoveLeft
+	lda Sprites_XLo
+	sec
+	sbc #2
+	sta Sprites_XLo
+	bcs .o1
+	lda #0
+	sta Sprites_XHi
+.o1
+	lda Sprites_XHi
+	bne .onRight
+	lda #VIC2SpriteXBorderLeft38
+	cmp Sprites_XLo
+	bcc .onRight
+	sta Sprites_XLo
+.onRight
+	rts
+
+
+!zn
+Game_playerTimer !by 200
+.countDown !by 70
+RenderPlayerTimer
+	lda Game_playerTimer
+	beq .noTime
+	dec .countDown
+	bpl .noTime
+	lda #8
+	sta .countDown
+	dec Game_playerTimer
+.noTime
+	ldx Game_playerTimer
+	lda TableDiv100,x
+	clc
+	adc #'0'
+	sta PanelScreen+GameTimerPos
+	lda TableDiv10,x
+	clc
+	adc #'0'
+	sta PanelScreen+GameTimerPos+1
+	lda TableMod10,x
+	clc
+	adc #'0'
+	sta PanelScreen+GameTimerPos+2
+	rts
+TableMod10 !for .t,256 {!by (.t-1) % 10}
+TableDiv10 !for .t,256 {!by ((.t-1) / 10)%10}
+TableDiv100 !for .t,256 {!by ((.t-1) / 100)%10}
+}
+
+!zn
+Sprites_XLo
+	!fill Sprites__size , 0
+Sprites_XHi
+	!fill Sprites__size , 0
+Sprites_Y
+	!fill Sprites__size , 0
+Sprites_Frame
+	!fill Sprites__size , 0
+Sprites_Colour
+	!fill Sprites__size , 0
+
+Sprites_UpdateToVIC
+!macro MSprite_update .i {
+	lda Sprites_XLo + .i
+	sta VIC2Sprite0X + (.i * 2)
+	lda Sprites_Y + .i
+	sta VIC2Sprite0Y + (.i * 2)
+	lda Sprites_Colour + .i
+	sta VIC2Sprite0Colour + .i
+	lda Sprites_Frame + .i
+	sta GameScreen2 + SPRITEFRAMESCROFF + .i
+	lda Sprites_XHi + .i
+	lsr
+	ror VIC2SpriteXMSB
+}
+!for .i , 8 {
+	+MSprite_update .i-1
+}
+	rts
+
+!source "IRQ.a"
+!source "Data.a"

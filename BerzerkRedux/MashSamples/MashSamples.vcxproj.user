@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-fps 25 -sf 0 -ef 60 -r 2.0f -h $4e -v -s 22050 ..\..\AnimationBitmap\Animation11\t.wav 5000 ..\..\AnimationBitmap\Data\smp.raw</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommandArguments>-fps 25 -sf 0 -ef 60 -r 2.0f -h $4e -v -s 22050 ..\..\AnimationBitmap\Animation11\t.wav 5000 ..\..\AnimationBitmap\Data\smp.raw</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <LocalDebuggerCommandArguments>-fps 25 -sf 0 -ef 60 -r 2.0f -h $4e -v -s 22050 ..\..\AnimationBitmap\Animation11\t.wav 5000 ..\..\AnimationBitmap\Data\smp.raw</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>

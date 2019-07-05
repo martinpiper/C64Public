@@ -1,7 +1,8 @@
 // Built automatically by BuildData.bat
 static int sC64DecompNoEffect_LauncherAddress_startC64Code  = 0x8e9;
+static int sC64DecompNoEffect_LauncherAddress_compressedDataEndMinus256  = 0x84e;
 static int sC64DecompNoEffect_LauncherAddress_endMinusOutSize  = 0x844;
-static int sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256  = 0x84e;
+static int sC64DecompNoEffect_LauncherAddress_endOfMemoryMinus256  = 0x851;
 static int sC64DecompNoEffect_LauncherAddress_loadC64Code  = 0x83a;
 static u8 sC64DecompNoEffect_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa9, 0x20, 0x85,
@@ -34,8 +35,9 @@ static u8 sC64DecompNoEffect_Data[] = {
 	0x4c, 0x30, 0x01
 };
 static int sC64DecompBorderEffect_LauncherAddress_startC64Code  = 0x8e9;
+static int sC64DecompBorderEffect_LauncherAddress_compressedDataEndMinus256  = 0x84e;
 static int sC64DecompBorderEffect_LauncherAddress_endMinusOutSize  = 0x844;
-static int sC64DecompBorderEffect_LauncherAddress_endOfMemoryMinus256  = 0x84e;
+static int sC64DecompBorderEffect_LauncherAddress_endOfMemoryMinus256  = 0x851;
 static int sC64DecompBorderEffect_LauncherAddress_loadC64Code  = 0x83a;
 static u8 sC64DecompBorderEffect_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa9, 0x20, 0x85,
@@ -68,8 +70,9 @@ static u8 sC64DecompBorderEffect_Data[] = {
 	0x0a, 0x20, 0x50, 0x00, 0x88, 0xd0, 0xfa, 0xc6, 0xfe, 0xd0, 0xf6, 0x4c, 0x30, 0x01
 };
 static int sC64DecompNoEffectMax_LauncherAddress_startC64Code  = 0x8e8;
+static int sC64DecompNoEffectMax_LauncherAddress_compressedDataEndMinus256  = 0x847;
 static int sC64DecompNoEffectMax_LauncherAddress_endMinusOutSize  = 0x83d;
-static int sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256  = 0x847;
+static int sC64DecompNoEffectMax_LauncherAddress_endOfMemoryMinus256  = 0x84a;
 static int sC64DecompNoEffectMax_LauncherAddress_loadC64Code  = 0x833;
 static u8 sC64DecompNoEffectMax_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,
@@ -101,8 +104,9 @@ static u8 sC64DecompNoEffectMax_Data[] = {
 	0xf0, 0x0a, 0x20, 0x42, 0x00, 0x88, 0xd0, 0xfa, 0xc6, 0x8e, 0xd0, 0xf6, 0x4c, 0xab, 0x00
 };
 static int sC64DecompBorderEffectMax_LauncherAddress_startC64Code  = 0x8e8;
+static int sC64DecompBorderEffectMax_LauncherAddress_compressedDataEndMinus256  = 0x847;
 static int sC64DecompBorderEffectMax_LauncherAddress_endMinusOutSize  = 0x83d;
-static int sC64DecompBorderEffectMax_LauncherAddress_endOfMemoryMinus256  = 0x847;
+static int sC64DecompBorderEffectMax_LauncherAddress_endOfMemoryMinus256  = 0x84a;
 static int sC64DecompBorderEffectMax_LauncherAddress_loadC64Code  = 0x833;
 static u8 sC64DecompBorderEffectMax_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,
@@ -135,8 +139,9 @@ static u8 sC64DecompBorderEffectMax_Data[] = {
 	0x88, 0xd0, 0xfa, 0xc6, 0x8e, 0xd0, 0xf6, 0x4c, 0xab, 0x00
 };
 static int sC64DecompNoEffectRNZip_LauncherAddress_startC64Code  = 0x920;
+static int sC64DecompNoEffectRNZip_LauncherAddress_compressedDataEndMinus256  = 0x84e;
 static int sC64DecompNoEffectRNZip_LauncherAddress_endMinusOutSize  = 0x844;
-static int sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256  = 0x84e;
+static int sC64DecompNoEffectRNZip_LauncherAddress_endOfMemoryMinus256  = 0x851;
 static int sC64DecompNoEffectRNZip_LauncherAddress_loadC64Code  = 0x83a;
 static u8 sC64DecompNoEffectRNZip_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa9, 0x20, 0x85,
@@ -164,8 +169,9 @@ static u8 sC64DecompNoEffectRNZip_Data[] = {
 	0x01
 };
 static int sC64DecompBorderEffectRNZip_LauncherAddress_startC64Code  = 0x920;
+static int sC64DecompBorderEffectRNZip_LauncherAddress_compressedDataEndMinus256  = 0x84e;
 static int sC64DecompBorderEffectRNZip_LauncherAddress_endMinusOutSize  = 0x844;
-static int sC64DecompBorderEffectRNZip_LauncherAddress_endOfMemoryMinus256  = 0x84e;
+static int sC64DecompBorderEffectRNZip_LauncherAddress_endOfMemoryMinus256  = 0x851;
 static int sC64DecompBorderEffectRNZip_LauncherAddress_loadC64Code  = 0x83a;
 static u8 sC64DecompBorderEffectRNZip_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa9, 0x20, 0x85,
@@ -193,8 +199,9 @@ static u8 sC64DecompBorderEffectRNZip_Data[] = {
 	0x50, 0x00, 0x88, 0xd0, 0xfa, 0xc6, 0xfe, 0xd0, 0xf6, 0x4c, 0x2b, 0x01
 };
 static int sC64DecompNoEffectMaxRNZip_LauncherAddress_startC64Code  = 0x920;
+static int sC64DecompNoEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256  = 0x847;
 static int sC64DecompNoEffectMaxRNZip_LauncherAddress_endMinusOutSize  = 0x83d;
-static int sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256  = 0x847;
+static int sC64DecompNoEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256  = 0x84a;
 static int sC64DecompNoEffectMaxRNZip_LauncherAddress_loadC64Code  = 0x833;
 static u8 sC64DecompNoEffectMaxRNZip_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,
@@ -221,8 +228,9 @@ static u8 sC64DecompNoEffectMaxRNZip_Data[] = {
 	0x0a, 0x20, 0x42, 0x00, 0x88, 0xd0, 0xfa, 0xc6, 0x9c, 0xd0, 0xf6, 0x4c, 0xa7, 0x00
 };
 static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_startC64Code  = 0x920;
+static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256  = 0x847;
 static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_endMinusOutSize  = 0x83d;
-static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256  = 0x847;
+static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256  = 0x84a;
 static int sC64DecompBorderEffectMaxRNZip_LauncherAddress_loadC64Code  = 0x833;
 static u8 sC64DecompBorderEffectMaxRNZip_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,
@@ -250,8 +258,9 @@ static u8 sC64DecompBorderEffectMaxRNZip_Data[] = {
 	0xd0, 0xfa, 0xc6, 0x9c, 0xd0, 0xf6, 0x4c, 0xa7, 0x00
 };
 static int sC64DecompNoEffectMaxRLE_LauncherAddress_startC64Code  = 0x87e;
+static int sC64DecompNoEffectMaxRLE_LauncherAddress_compressedDataEndMinus256  = 0x838;
 static int sC64DecompNoEffectMaxRLE_LauncherAddress_endMinusOutSize  = 0x82e;
-static int sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256  = 0x838;
+static int sC64DecompNoEffectMaxRLE_LauncherAddress_endOfMemoryMinus256  = 0x83b;
 static int sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code  = 0x824;
 static u8 sC64DecompNoEffectMaxRLE_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,
@@ -265,8 +274,9 @@ static u8 sC64DecompNoEffectMaxRLE_Data[] = {
 	0xda, 0x00, 0xaa, 0x20, 0xda, 0x00, 0x20, 0xd0, 0x00, 0xca, 0xd0, 0xfa, 0x4c, 0x11, 0x01
 };
 static int sC64DecompBorderEffectMaxRLE_LauncherAddress_startC64Code  = 0x87e;
+static int sC64DecompBorderEffectMaxRLE_LauncherAddress_compressedDataEndMinus256  = 0x838;
 static int sC64DecompBorderEffectMaxRLE_LauncherAddress_endMinusOutSize  = 0x82e;
-static int sC64DecompBorderEffectMaxRLE_LauncherAddress_endOfMemoryMinus256  = 0x838;
+static int sC64DecompBorderEffectMaxRLE_LauncherAddress_endOfMemoryMinus256  = 0x83b;
 static int sC64DecompBorderEffectMaxRLE_LauncherAddress_loadC64Code  = 0x824;
 static u8 sC64DecompBorderEffectMaxRLE_Data[] = {
 	0x0b, 0x08, 0x01, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x31, 0x00, 0x00, 0x00, 0x78, 0xa2, 0xff, 0x9a,

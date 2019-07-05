@@ -1,0 +1,361 @@
+!zn
+IRQ_BottomStarted !by 0
+IRQ_Bottom
+	sta .smA
+
+	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
+	lda #$7f
+	sta CIA2InterruptControl
+	lda CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+	+MWordValueToAddress_A 1 + (CyclesPerRasterPALC64 * (4 + <RasterLinesPALC64 + VIC2SpriteYBorderTop + (5*8) + 1)) - 4, CIA2TimerALo
+	lda #%00011001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	inc IRQ_BottomStarted
+
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	+DisplayPanelScreen
+
+	+MACROAckRasterIRQ_A
+
+.smA=*+1
+	lda #0
+
+	rti
+
+!align 255,0
+!zn
+NMI_FLDSize1
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+
+	+DisplayGameScreenTop
+
+;	+MACROWaitForRasterChange_A
+FLDSize1 = *+1
+	ldx #0
+	+DoFLD
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize2 , KERNALNMIServiceRoutineLo
+
+	lda #VIC2SpriteYBorderTop + (8*8) + 1
+	clc
+	adc FLDSize1
+	sec
+	sbc VIC2Raster
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2BorderColour
+
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+
+!zn
+NMI_FLDSize2_Timing_tweak = 0
+NMI_FLDSize2_Timing_Lo
+!for .i , 256 {
+	!by <(((.i-1)*CyclesPerRasterPALC64) + NMI_FLDSize2_Timing_tweak)
+}
+NMI_FLDSize2_Timing_Hi
+!for .i , 256 {
+	!by >(((.i-1)*CyclesPerRasterPALC64) + NMI_FLDSize2_Timing_tweak)
+}
+
+NMI_FLDSize2
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+	+MACROWaitForRasterChange_A
+FLDSize2 = *+1
+	ldx #0
+	+DoFLD
+}
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize2b , KERNALNMIServiceRoutineLo
+
+	lda #VIC2SpriteYBorderTop + (9*8) - 1
+	clc
+	adc FLDSize1
+	adc FLDSize2
+	sec
+	sbc VIC2Raster
+
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+
+!if 1 {
+!zn
+NMI_FLDSize2b
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+	+MACROWaitForRasterChange_A
+	+DisplayGameScreenMiddle
+FLDSize2b_smx1 = * + 1
+	lda #0
+	ora #%10000
+	sta VIC2ScreenControlH
+}
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize3 , KERNALNMIServiceRoutineLo
+	
+	lda #VIC2SpriteYBorderTop + (13*8) + 4
+	clc
+	adc FLDSize1
+	adc FLDSize2
+	sta FLDSize3_targetRaster
+
+	sec
+	sbc VIC2Raster
+
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+}
+
+
+!if 1 {
+!zn
+NMI_FLDSize3
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+FLDSize3_targetRaster = * + 1
+	lda #0
+	+DoWaitNoC_A
+FLDSize3 = *+1
+	ldx #0
+	+DoFLD
+}
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize3b , KERNALNMIServiceRoutineLo
+
+	lda #VIC2SpriteYBorderTop + (14*8) + 1
+	clc
+	adc FLDSize1
+	adc FLDSize2
+	adc FLDSize3
+	sec
+	sbc VIC2Raster
+
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+}
+
+!if 1 {
+!zn
+NMI_FLDSize3b
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+	; MPi: TODO: This could use the calculated ideal raster position for the test. There are other exampels of this MACROWaitForRasterChange_A usage too
+	+MACROWaitForRasterChange_A
+	+DisplayGameScreenMiddle
+FLDSize3_smx2 = * + 1
+	lda #0
+	ora #%10000
+	sta VIC2ScreenControlH
+}
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize4 , KERNALNMIServiceRoutineLo
+	
+	lda #VIC2SpriteYBorderTop + (17*8) + 5
+	clc
+	adc FLDSize1
+	adc FLDSize2
+	adc FLDSize3
+	sta FLDSize4_targetRaster
+
+	sec
+	sbc VIC2Raster
+
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+}
+
+
+!zn
+NMI_FLDSize4
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+FLDSize4_targetRaster = * + 1
+	lda #0
+	+DoWaitNoC_A
+FLDSize4 = *+1
+	ldx #0
+	+DoFLD
+}
+
+!if 1 {
+	lda CIA2InterruptControl
+	+MWordValueToAddress_A NMI_FLDSize4b , KERNALNMIServiceRoutineLo
+
+	lda #VIC2SpriteYBorderTop + (18*8) + 3
+	clc
+	adc FLDSize1
+	adc FLDSize2
+	adc FLDSize3
+	adc FLDSize4
+	sec
+	sbc VIC2Raster
+
+	tax
+
+	lda NMI_FLDSize2_Timing_Lo,x
+	sta CIA2TimerALo
+	lda NMI_FLDSize2_Timing_Hi,x
+	sta CIA2TimerAHi
+
+	lda #%00011001
+	sta CIA2TimerAControl
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+
+
+!if 1 {
+!zn
+NMI_FLDSize4b
+	sta .smA
+	stx .smX
+
+;	inc VIC2BorderColour
+;	inc VIC2ScreenColour
+
+!if 1 {
+	; MPi: TODO: This could use the calculated ideal raster position for the test. There are other exampels of this MACROWaitForRasterChange_A usage too
+	+MACROWaitForRasterChange_A
+	+DisplayGameScreenBottom
+	lda #0
+	ora #%10000
+	sta VIC2ScreenControlH
+}
+
+;	dec VIC2ScreenColour
+;	dec VIC2BorderColour
+.smA=*+1
+	lda #0
+.smX=*+1
+	ldx #0
+	rti
+}

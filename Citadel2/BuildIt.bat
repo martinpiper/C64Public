@@ -325,7 +325,7 @@ SET /A NUM_FILES = SCROLLER_SPEED_CODE_FILES_NUM + 9
 echo NUM_FILES=%NUM_FILES%
 
 rem Get the final cart data offsets and link them in to the base code
-..\bin\MakeCart.exe -tg -n -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES%
+..\bin\MakeCart.exe -i _f_index1.a -tg -n -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES%
 ..\acme.exe -f cbm -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a >tf.txt
 
 copy Citadel2.lbl Citadel2_Game.lbl
@@ -334,7 +334,7 @@ copy Citadel2.pdb Citadel2_Game.pdb
 
 ..\bin\LZMPi.exe -c64mr Citadel2.prg Citadel2.prg $200 >>tf.txt
 
-..\bin\MakeCart.exe %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r Citadel2.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES% -o Citadel2.crt >>tf.txt
+..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r Citadel2.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES% -o Citadel2.crt >>tf.txt
 
 C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\cartconv.exe -i Citadel2.crt -t bin -o Citadel2.bin
 

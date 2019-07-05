@@ -1,0 +1,31 @@
+GameColours
+!bin "data/game.col",,2
+
+* = $4400
+GameScreen2
+!bin "data/game.scr",,2
+
+* = $4800
+GameChars
+!bin "data/game.chr",8*256,2
+
+* = $7000
+GameSprites
+!bin "data/game.spr",$640,$2000
+
+* = $7f80
+GameSprites2
+!bin "data/gems.spr",$80
+
+* = $8400
+PanelScreen
+!bin "data/status.scr",40*5,2
+!fill 40 , 0
+
+* = $8800
+PanelChars
+!bin "data/status.chr",8*256,2
+
+* = $b000
+MusicBinary
+!bin "data/game.mus",,2

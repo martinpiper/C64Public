@@ -74,6 +74,19 @@ InitBank0Data
 	bpl .colf1
 } ;< !ifdef Scroller_FullScreen
 
+!ifdef Scroller_RunJumpDemo {
+Scroller_RunJumpDemo_timerPos = SCREENRAM + (22 * VIC2ScreenCharsWidth) + 2
+Scroller_RunJumpDemo_timerLen = 9
+Scroller_RunJumpDemo_timerZero = 7
+	lda #Scroller_RunJumpDemo_timerZero
+	ldx #Scroller_RunJumpDemo_timerLen
+.cll1
+	sta Scroller_RunJumpDemo_timerPos,x
+	dex
+	bpl .cll1
+}
+
+
 	; Blank sprites frames in the unused area of the score panel screen
 	lda #20
 	ldx #7
@@ -900,7 +913,7 @@ ScrollerDemoMainline
 	lda topScreenBank
 	bne .skipLevelSkipDemo
 
-.smOnceOnly	lda #1			; Only trigger this code once when fire is pressed
+.smOnceOnly	lda #1			; Only trigger this code once when CIA1KeyboardRowsJoystickB JoystickBits_Up is pressed
 	beq .skipLevelSkipDemo
 
 	lda #JoystickBits_Up

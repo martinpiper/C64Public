@@ -8,7 +8,11 @@
 // In C:\work\c64\AnimationBitmap\
 // -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt
 // -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -m data\frm0*.del $2000 -o AnimationBitmap.crt
-
+// -tg -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w -a $8000 -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 22 -m data\frm0*.del $2000 -o AnimationBitmap.crt
+// -tg -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w -a $8000 -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 22 -l 32 $800 2 ..\bin\LZMPi.exe "-ce " " " -m data\frm0*.del $2000 -lc -o AnimationBitmap.crt
+// Dragon's lair (Build2_11.bat)
+// -i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt
+// -i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 s:data\smp_*.raw -o AnimationBitmap.crt
 
 // Reference:
 // https://ist.uwaterloo.ca/~schepers/formats/CRT.TXT
@@ -41,6 +45,9 @@ static unsigned char sChipData[] = {
 };
 
 static unsigned char sBankData[0x2000];
+
+static FILE *indexFP = 0;
+static int outNameIndex = 0;
 
 void ReplaceAll(std::string &str, const std::string& from, const std::string& to)
 {
@@ -130,6 +137,30 @@ bool FilenameResetOffset(const char *filename)
 	}
 
 	return false;
+}
+
+void WriteFileIndex(const char * filename, int theBank, int theAddress, int fileLen, int fileXOR)
+{
+	if (!indexFP)
+	{
+		return;
+	}
+
+	std::string safeName = filename;
+	size_t pos = safeName.rfind("\\");
+	if (std::string::npos != pos)
+	{
+		safeName = safeName.substr(pos+1);
+	}
+	ReplaceAllFirstOf(safeName , "\\/ .:" , "_");
+
+	fprintf(indexFP , "; %s\n" , filename);
+	fprintf(indexFP , "CartFile%d_Bank_%s = $%x\n" , outNameIndex, safeName.c_str() , theBank);
+	fprintf(indexFP , "CartFile%d_Start_%s = $%x\n" , outNameIndex, safeName.c_str() , theAddress);
+	fprintf(indexFP , "CartFile%d_Size_%s = $%x\n" , outNameIndex, safeName.c_str() , fileLen);
+	fprintf(indexFP , "CartFile%d_XOR_%s = $%x\n" , outNameIndex, safeName.c_str() , fileXOR);
+
+	fprintf(indexFP , "\n");
 }
 
 int WriteChunkToBanks( int startBankNum, int maxSize, DynamicMessageHelper &chunkData, int startAddress, DynamicMessageHelper &output )
@@ -241,15 +272,20 @@ int MultiWriteBlock(int startBankNum, std::vector<int> &offsets, int startAddres
 	return startBankNum;
 }
 
-unsigned char * AddDynamicBlockToBins(std::list<DynamicMessageHelper *> &blocks, int startBankNum, DynamicMessageHelper &workBuffer, int maxSize, int startAddress, unsigned char * lastBlockPos)
+unsigned char * AddDynamicBlockToBins(const char *filename, std::list<DynamicMessageHelper *> &blocks, int startBankNum, MessageHelper *workBuffer, int maxSize, int startAddress, unsigned char * lastBlockPos , const bool isCompressed , const bool addEndAddress)
 {
+	int sizeTweak = 0;
+	if (addEndAddress)
+	{
+		sizeTweak = 2;
+	}
 	DynamicMessageHelper *foundBlock = 0;
 	std::list<DynamicMessageHelper *>::iterator st3 = blocks.begin();
 	int theBank = startBankNum;
 	while (st3 != blocks.end())
 	{
 		DynamicMessageHelper *checkBlock = *st3++;
-		if ((checkBlock->GetSize() + 3 + workBuffer.GetBufferSize()) <= maxSize)
+		if ((checkBlock->GetSize() + 3 + sizeTweak + workBuffer->GetSize()) <= maxSize)
 		{
 			foundBlock = checkBlock;
 			break;
@@ -272,18 +308,85 @@ unsigned char * AddDynamicBlockToBins(std::list<DynamicMessageHelper *> &blocks,
 	{
 		lastBlockPos[0] = (unsigned char) theBank;
 		lastBlockPos[1] = (unsigned char) realAddress;
-		lastBlockPos[2] = (unsigned char) (realAddress >> 8);
+		// Retain the compressed flag from the previous block
+		lastBlockPos[2] = (unsigned char) ((realAddress >> 8) & 0x7f) | (lastBlockPos[2] & 0x80);
 	}
 	lastBlockPos = (unsigned char *) foundBlock->GetCurrentPosition();
-	printf("   Saving to bank $%x at $%x\n" , theBank , realAddress);
+	printf("   Saving $%x to bank $%x at $%x\n" , workBuffer->GetSize() , theBank , realAddress);
 	int zero = 0;
-	foundBlock->AddData(&zero , 3);
-	foundBlock->AddData(workBuffer.GetBuffer() , workBuffer.GetBufferSize());
+	foundBlock->AddData(&zero , 2);
+	if (isCompressed)
+	{
+		// Flag for current block compression
+		zero = -1;
+		foundBlock->AddData(&zero , 1);
+	}
+	else
+	{
+		foundBlock->AddData(&zero , 1);
+	}
+
+	if (addEndAddress)
+	{
+		int endAddress = realAddress + 5 + workBuffer->GetSize();
+		
+		unsigned char theValue = (unsigned char) endAddress;
+		foundBlock->AddData(&theValue , 1);
+		theValue = (unsigned char) (endAddress >> 8);
+		foundBlock->AddData(&theValue , 1);
+	}
+	foundBlock->AddData(workBuffer->GetBuffer() , workBuffer->GetSize());
+
+
+	WriteFileIndex(filename, theBank, realAddress, workBuffer->GetSize(), 0);
+
 	return lastBlockPos;
+}
+
+int GetFileLength(std::string &filename)
+{
+	FILE *fp = fopen(filename.c_str() , "rb");
+	if (!fp)
+	{
+		return -1;
+	}
+	fseek(fp,0,SEEK_END);
+	int size = ftell(fp);
+	fseek(fp,0,SEEK_SET);
+	fclose(fp);
+	return size;
+}
+
+void UpdateSortedList(std::set<std::string> &sortedSection, std::list<std::string> &sorted, std::string &prefix)
+{
+	std::set<std::string>::iterator sts = sortedSection.begin();
+	while (sts != sortedSection.end())
+	{
+		std::string entry = *sts++;
+		sorted.push_back(prefix + entry);
+	}
+}
+
+void SortSectionFromResult(std::set<std::string> &sortedSection, std::list<ScanPath::Entry> &result)
+{
+	sortedSection.clear();
+	std::list<ScanPath::Entry>::iterator st = result.begin();
+	while (st != result.end())
+	{
+		ScanPath::Entry &entry = *st++;
+		sortedSection.insert(entry.mName);
+	}
 }
 
 int main( int argc , char **argv )
 {
+	int compressionLowerThreshold = -1;
+	int compressionUpperThreshold = -1;
+	int compressionTrimStart = 0;
+	std::string theCompressionToolPath = "..\\bin\\LZMPi.exe";
+	std::string theCompressionPreCommand = "-ce ";
+	std::string theCompressionPostCommand = " ";
+
 	DynamicMessageHelper output;
 	bool displayHelp = false;
 	if ( argc <= 1 )
@@ -384,6 +487,26 @@ int main( int argc , char **argv )
 					break;
 				}
 
+				case 'i':
+				{
+					argc--;
+					argv++;
+					if ( argc  >= 1 )
+					{
+						if (indexFP)
+						{
+							fclose(indexFP);
+						}
+						indexFP = fopen(argv[0] , "w");
+						outNameIndex++;
+						if (!indexFP)
+						{
+							printf("Problem writing file '%s'\n" , argv[0] );
+						}
+					}
+					break;
+				}
+
 				case 'r':
 				{
 					// Read data from a file into a work buffer
@@ -449,50 +572,235 @@ int main( int argc , char **argv )
 					break;
 				}
 
+				case 'l':
+				{
+					if (argv[0][2] == 'c')
+					{
+						compressionLowerThreshold = -1;
+						compressionTrimStart = 0;
+					}
+					else
+					{
+						// enable compression tool
+						compressionLowerThreshold = ParamToNum( argv[1] );
+						compressionUpperThreshold = ParamToNum( argv[2] );
+						compressionTrimStart = ParamToNum( argv[3] );
+						theCompressionToolPath = argv[4];
+						theCompressionPreCommand = argv[5];
+						theCompressionPostCommand = argv[6];
+						argc -= 6;
+						argv += 6;
+					}
+					break;
+				}
+
 				case 'm':
 				{
+					int compressionSavedBytes = 0;
+					int totalbyteSize = 0;
 					argc--;
 					argv++;
 					if ( argc  > 2 )
 					{
 						int maxSize = ParamToNum( argv[1] );
+
 						ScanPath scanner;
 						std::list<ScanPath::Entry> result;
 						scanner.Start(argv[0] , result , true , true);
-						
-						std::set<std::string> sorted;
-						std::list<ScanPath::Entry>::iterator st = result.begin();
-						while (st != result.end())
-						{
-							ScanPath::Entry &entry = *st++;
-							sorted.insert(entry.mName);
-						}
+
+						std::list<std::string> sorted;
+
+						std::set<std::string> sortedSection;
+						SortSectionFromResult(sortedSection, result);
+						UpdateSortedList(sortedSection, sorted , std::string("n:"));
+
 
 						std::list<DynamicMessageHelper *> blocks;
-						std::set<std::string>::iterator st2 = sorted.begin();
+						std::list<std::string>::iterator st2 = sorted.begin();
 
 						int startAddress = (((int)sChipData[ 0x0c ]) << 8) | sChipData[ 0x0d ];
 						int startBankNum = (((int)sChipData[ 0x0a ]) << 8) | sChipData[ 0x0b ];
 
 						unsigned char *lastBlockPos = 0;
 
+						while (argv[2] != 0 && argv[2][1] == ':')
+						{
+							// Extension list of filenames
+							std::string thePrefix;
+							thePrefix += argv[2][0];
+							thePrefix += argv[2][1];
+
+							ScanPath scanner;
+							std::list<ScanPath::Entry> result;
+							scanner.Start(argv[2]+2 , result , true , true);
+
+							SortSectionFromResult(sortedSection, result);
+							UpdateSortedList(sortedSection, sorted , thePrefix);
+
+							argv++;
+							argc--;
+						}
+
 						while (st2 != sorted.end())
 						{
 							std::string filename = *st2++;
+							bool spanMode = false;
+							if (filename.c_str()[1] != ':')
+							{
+								printf("Internal error: I'm expecting : here\n");
+								exit(-1);
+							}
+							if (filename.c_str()[0] == 's')
+							{
+								spanMode = true;
+								lastBlockPos = 0;
+							}
 
+							filename = filename.substr(2);
 
 							workBuffer.FreeBuffer();
-							if ( workBuffer.Read( filename.c_str() , true ) )
+
+							// Get the length
+							int origLen = GetFileLength(filename);
+							int newLen = origLen;
+
+							// Try compression
+							std::string newCompressedFile = filename + "_t.tcmp";
+							if(compressionLowerThreshold > 0 && origLen > compressionLowerThreshold && origLen < compressionUpperThreshold)
 							{
-								printf("File '%s' read $%x" , filename.c_str() , workBuffer.GetBufferSize() );
+								newLen = GetFileLength(newCompressedFile);
+
+								if (newLen <= 0)
+								{
+									STARTUPINFOA			si;
+									PROCESS_INFORMATION		pi;
+
+									memset( &si, 0, sizeof(si) );
+									si.cb = sizeof(si);
+
+									std::string path = theCompressionToolPath;
+									path += " ";
+									path += theCompressionPreCommand;
+									path += filename;
+									path += theCompressionPostCommand;
+									path += newCompressedFile;
+
+									// We create the new process
+									BOOL ret2;
+									DWORD theLastError = 0;
+									if ( !(ret2 = CreateProcessA(NULL,(LPSTR) path.c_str(),NULL,NULL,FALSE,CREATE_NO_WINDOW,NULL,NULL,&si,&pi )) )
+									{
+										theLastError= GetLastError();
+									}
+									else
+									{
+										WaitForSingleObject(pi.hProcess,INFINITE);
+
+										CloseHandle( pi.hProcess );
+										CloseHandle( pi.hThread );
+									}
+								}
+
+
+								newLen = GetFileLength(newCompressedFile);
+							}
+
+							bool isCompressed = false;
+							bool gotData = false;
+
+							if (newLen < origLen)
+							{
+								compressionSavedBytes += origLen - newLen;
+								printf("Replacing '%s' with compressed version saving %d bytes\n" , filename.c_str() , origLen - newLen);
+								filename = newCompressedFile;
+								isCompressed = true;
+
+								if (compressionTrimStart > 0)
+								{
+									DynamicMessageHelper workBuffer2;
+									if ( workBuffer2.Read( filename.c_str() , true ) )
+									{
+										printf("File '%s' read $%x adjusting..." , filename.c_str() , workBuffer2.GetBufferSize() );
+									}
+									else
+									{
+										printf("Problem reading file '%s'\n" , filename.c_str() );
+									}
+
+									int size = workBuffer2.GetBufferSize() - compressionTrimStart;
+
+									workBuffer.SetBufferSize(size);
+									workBuffer.EnsureBufferAllocated();
+									workBuffer.AddData(((char *)workBuffer2.GetBuffer()) + compressionTrimStart , size);
+									workBuffer.SetSize(0);
+									gotData = true;
+								}
+							}
+							if (!gotData)
+							{
+								if ( workBuffer.Read( filename.c_str() , true ) )
+								{
+									printf("File '%s' read $%x" , filename.c_str() , workBuffer.GetBufferSize() );
+								}
+								else
+								{
+									printf("Problem reading file '%s'\n" , filename.c_str() );
+								}
+							}
+
+							totalbyteSize += workBuffer.GetBufferSize();
+
+							if (spanMode)
+							{
+								int startPos = 0;
+								int fragmentNum = 0;
+								while (startPos < workBuffer.GetBufferSize())
+								{
+									std::string filenameFragment = filename;
+									char ending[64];
+									sprintf(ending , "_fragment%d" , fragmentNum++);
+									filenameFragment += ending;
+									
+									MessageHelper thisFragment;
+
+									int detectedFree = 0;
+
+									std::list<DynamicMessageHelper *>::iterator st3 = blocks.begin();
+									while (st3 != blocks.end())
+									{
+										DynamicMessageHelper *checkBlock = *st3++;
+										int thisSize = maxSize - checkBlock->GetSize() - 5;
+										if (thisSize > detectedFree)
+										{
+											detectedFree = thisSize;
+										}
+									}
+
+									if (detectedFree <= 64)	// 64 bytes is the smallest amount of memory we want to squeeze data in to
+									{
+										detectedFree = maxSize - 5;	// bank/lo next/hi next/end lo/end hi
+									}
+
+									int theBestSize = min(workBuffer.GetBufferSize() - startPos,detectedFree);
+
+									thisFragment.SetBuffer(((char*)workBuffer.GetBuffer())+startPos);
+									thisFragment.SetSize(theBestSize);
+
+									lastBlockPos = AddDynamicBlockToBins(filenameFragment.c_str(), blocks, startBankNum, &thisFragment, maxSize, startAddress, lastBlockPos , isCompressed , true);
+
+									startPos += theBestSize;
+								}
+
+								lastBlockPos = 0;
 							}
 							else
 							{
-								printf("Problem reading file '%s'\n" , filename.c_str() );
-							}
-														
-							lastBlockPos = AddDynamicBlockToBins(blocks, startBankNum, workBuffer, maxSize, startAddress, lastBlockPos);
+								MessageHelper thisFragment;
+								thisFragment.SetBuffer(workBuffer.GetBuffer());
+								thisFragment.SetSize(workBuffer.GetBufferSize());
 
+								lastBlockPos = AddDynamicBlockToBins(filename.c_str(), blocks, startBankNum, &thisFragment, maxSize, startAddress, lastBlockPos , isCompressed , false);
+							}
 						}
 
 						std::list<DynamicMessageHelper *>::iterator st3 = blocks.begin();
@@ -509,7 +817,7 @@ int main( int argc , char **argv )
 							delete checkBlock;
 						}
 
-						printf("Finished adding chunks wasteage=%d wasteage2=%d\n" , wasteage , wasteage2);
+						printf("Finished adding chunks wasteage=%d wasteage2=%d totalbyteSize=%d compressionSavedBytes=%d\n" , wasteage , wasteage2 , totalbyteSize , compressionSavedBytes);
 					}
 					break;
 				}
@@ -520,12 +828,6 @@ int main( int argc , char **argv )
 					argv++;
 					if ( argc  > 3 )
 					{
-						char outName[32];
-						static int outNameIndex = 0;
-						outNameIndex++;
-						sprintf(outName , "_f_index%d.a" , outNameIndex);
-						FILE *indexFP = fopen(outName , "w");
-
 						int maxSize = ParamToNum( argv[0] );
 						int numEntries = ParamToNum( argv[1] );
 
@@ -580,21 +882,7 @@ int main( int argc , char **argv )
 								bankSize = 0;
 							}
 
-							std::string safeName = filename;
-							size_t pos = safeName.rfind("\\");
-							if (std::string::npos != pos)
-							{
-								safeName = safeName.substr(pos+1);
-							}
-							ReplaceAllFirstOf(safeName , "\\/ .:" , "_");
-
-							fprintf(indexFP , "; %s\n" , filename);
-							fprintf(indexFP , "CartFile%d_Bank_%s = $%x\n" , outNameIndex, safeName.c_str() , theBank);
-							fprintf(indexFP , "CartFile%d_Start_%s = $%x\n" , outNameIndex, safeName.c_str() , startAddress + bankSize);
-							fprintf(indexFP , "CartFile%d_Size_%s = $%x\n" , outNameIndex, safeName.c_str() , fileLen);
-							fprintf(indexFP , "CartFile%d_XOR_%s = $%x\n" , outNameIndex, safeName.c_str() , fileXOR);
-
-							fprintf(indexFP , "\n");
+							WriteFileIndex(filename, theBank, startAddress + bankSize, fileLen, fileXOR);
 
 							bankSize += fileLen;
 						}
@@ -659,8 +947,6 @@ int main( int argc , char **argv )
 						argc-=numEntries;
 						argv+=numEntries;
 
-						fclose(indexFP);
-
 						continue;
 					}
 					break;
@@ -692,6 +978,12 @@ int main( int argc , char **argv )
 		argv++;
 	}
 
+	if (indexFP)
+	{
+		fclose(indexFP);
+		indexFP = 0;
+	}
+
 	if ( displayHelp )
 	{
 		printf("MakeCart V1.2 help\n\
@@ -699,12 +991,15 @@ int main( int argc , char **argv )
 -tg : Change the cartridge type to GMod2.\n\
 -n : Output new cartridge header into the cartridge data buffer. This has to be before -b is used.\n\
 -b <bank> : Clear the temporary 8K bank data with the current bank number.\n\
+-i <file> : Start writing a file index to the file.\n\
 -r <file> : Read data file to the internal work buffer.\n\
 -c <bank offset> <start work buffer> <end work buffer> : Copy Data from start to end work buffer offsets into the temporary bank data with the bank offset. If the data is over the end of the temporary bank size of 8K then it is truncated. Any data from any file can be written to any offset in the temporary bank data\n\
 -a <address> : Sets the bank load address.\n\
 -w : Write the 8K temporary bank data with the chip/bank number from the preceding -b <bank> to the cartridge data buffer\n\
 -m <file path wildcard> <max size> : Imports multiple files across banks using the file wildcard and max size per chunk.\n\
 -f <max size> <num entries> <file name entries> : Imports multiple files across banks using the max size per chunk and file entries.\n\
+-l <compression lower threshold> <compression upper threshold> <path to compression tool> <compression tool command line options before input file> <compression tool command line options before output file>\n\
+-lc Cancels any optional compression configuration\n\
 -o : Output the whole cartridge data buffer to the file.\n\
 " );
 

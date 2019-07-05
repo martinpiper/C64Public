@@ -39,7 +39,204 @@
 	dex
 	bne .cl1
 
+!if 0 {
+	inc $d020
+	jmp *-3
+}
+
 !if 1 {
+.l1
+
+.r1
+	lda VIC2ScreenControlV
+	bpl .r1
+
+.r0
+	lda VIC2ScreenControlV
+	bmi .r0
+
+	lda #0
+	sta VIC2BorderColour
+
+	lda #30
+.l2
+	cmp VIC2Raster
+	bcs .l2
+
+	inc VIC2BorderColour
+
+	lda #90
+.l3
+	cmp VIC2Raster
+	bcs .l3
+
+	inc VIC2BorderColour
+
+	lda #150
+.l4
+	cmp VIC2Raster
+	bcs .l4
+
+	inc VIC2BorderColour
+
+	jmp .l1
+}
+
+!if 0 {
+	; RLE Sample playing
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+
+	+MACROWaitForTheLastScan_A
+	lda #0
+	sta VIC2ScreenControlV
+
+	ldx #NMIEntryEnd-NMIEntryStart
+.cl2
+	lda NMIEntryStart-1,x
+	sta+2 NMIEntry-1,x
+	dex
+	bne .cl2
+
+	lda #<NMIEntry
+	sta KERNALNMIServiceRoutineLo
+	lda #>NMIEntry
+	sta KERNALNMIServiceRoutineHi
+
+	; Start after some small amount of time
+	lda #1
+	sta CIA2TimerALo
+	sta CIA2TimerAHi
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+	cli
+
+.l1
+	jmp .l1
+
+NMIEntryStart
+!pseudopc $10 {
+	; NMI Entry
+NMIEntry
+!if 0 {
+	; 68 Cycles
+	inc VIC2BorderColour
+	sta+1 .sma
+
+.nextSample = *+1
+	lda #0
+	and #$0f
+	sta SIDVolumeFilter
+
+.smAddr = *+1
+	lda SampleStart
+	sta .nextSample
+	sta .smai1
+	sta .smai2
+
+.smai1 = *+1
+	lda SampleTimerLo
+	sta CIA2TimerALo
+.smai2 = *+1
+	lda SampleTimerHi
+	sta CIA2TimerAHi
+
+	inc .smAddr
+	bne .o1
+	inc .smAddr+1
+
+	lda .smAddr
+	cmp #<SampleEnd
+	bne .o1
+	lda .smAddr+1
+	cmp #>SampleEnd
+	bne .o1
+
+	+MWordValueToAddress_A SampleStart , .smAddr
+.o1
+	; Exit the NMI
+	dec VIC2BorderColour
+	lda CIA2InterruptControl
+
+.sma = *+1
+	lda #0
+	rti
+}
+
+!if 1 {
+	; 67 Cycles
+	inc VIC2BorderColour
+	sta+1 .sma
+	sty+1 .smy
+
+.nextSample = *+1
+	lda #0
+	and #$0f
+	sta SIDVolumeFilter
+
+.smAddr = *+1
+	lda SampleStart
+	sta .nextSample
+	tay
+	lda SampleTimerLo,y
+	sta CIA2TimerALo
+
+	lda SampleTimerHi,y
+	sta CIA2TimerAHi
+
+	inc .smAddr
+	bne .o1
+	inc .smAddr+1
+
+	lda .smAddr
+	cmp #<SampleEnd
+	bne .o1
+	lda .smAddr+1
+	cmp #>SampleEnd
+	bne .o1
+
+	+MWordValueToAddress_A SampleStart , .smAddr
+.o1
+	; Exit the NMI
+	lda CIA2InterruptControl
+
+.sma = *+1
+	lda #0
+.smy = *+1
+	ldy #0
+	dec VIC2BorderColour
+	rti
+}
+
+
+}
+NMIEntryEnd
+
+!align 255,0
+SampleRateHz = 5000
+SampleTimerLo
+!for .i , 256 {
+	!by <(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+}
+SampleTimerHi
+!for .i , 256 {
+	!by >(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+}
+
+SampleStart
+	!bin "..\AnimationBitmap\Data\smp_61.raw", $c000
+SampleEnd
+}
+
+!if 0 {
 	; Plots the SID waveform output into sprite X postion, which renders a nice line graph
 	lda #0
 	sta VIC2SpriteXMSB

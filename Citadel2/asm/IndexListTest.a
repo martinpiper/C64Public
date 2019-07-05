@@ -12,21 +12,88 @@
 
 	lda #-1
 	sta .next+.size-1
-	rts
 }
+
+kIndexList_Iterator_size = 2
+kIndexList_Iterator_current = 0
+kIndexList_Iterator_previous = 1
+
+!macro IndexList_Start .head , .iterator {
+	lda #-1
+	sta .iterator + kIndexList_Iterator_previous
+	ldx .head
+	stx .iterator + kIndexList_Iterator_current
+}
+
+!macro IndexList_Next .head , .next , .iterator {
+	ldx .iterator + kIndexList_Iterator_current
+	bmi .end
+	stx .iterator + kIndexList_Iterator_previous
+	lda .next,x
+	sta .iterator + kIndexList_Iterator_current
+	tax
+.end
+}
+
+!macro IndexList_Pop .head , .next , .iterator {
+    ldy .iterator + kIndexList_Iterator_previous
+    bpl .notHead
+
+    ; It's the head so...
+	ldx .iterator + kIndexList_Iterator_current
+	lda .next,x
+	sta .iterator + kIndexList_Iterator_current
+	sta .head
+	tax
+	jmp .end
+
+.notHead
+    ; Update the previous forward index
+    ldx .iterator + kIndexList_Iterator_current
+	lda .next,x
+	sta .next,y
+	sta .iterator + kIndexList_Iterator_current
+	tax
+.end
+}
+
 !zn
 
-List1Index !by 10 , 11 , 12 , 13 , 14 , 15 , 16
-.listSize = * - List1Index
+List1Items !by 10 , 11 , 12 , 13 , 14 , 15 , 16
+.listSize = * - List1Items
+
 List1Next !fill .listSize , -1
 List1Head !by -1
+List1HeadIterator !fill kIndexList_Iterator_size , 0
+
+List1_Init
+	+IndexList_Init List1Head , List1Next , .listSize
+	rts
+
+List1_Start
+	+IndexList_Start List1Head , List1HeadIterator
+	rts
+
+List1_Get
+	lda List1Items,x
+	rts
+
+List1_Next
+	+IndexList_Next List1Head , List1Next, List1HeadIterator
+	rts
+
+List1_Pop
+	+IndexList_Pop List1Head , List1Next, List1HeadIterator
+	rts
+
+
 
 List2Next !fill .listSize , -1
 List2Head !by -1
+List2HeadIterator !fill kIndexList_Iterator_size , 0
 
-InitList1
-	+IndexList_Init List1Head , List1Next , .listSize
 
 IndexListTest_Init
-	jsr InitList1
+	jsr List1_Init
 	rts
+

@@ -51,3 +51,41 @@
 	* So LZMPie decompression a lot faster, and not much difference in size :)
 	* Think about the code for TestDecompression2.a and TestDecompressionRNZip2.a
 		They are almost identical, it would seem to be easier to keep TestDecompression2.a and assemble time switch it with a predefinition of "Decompress_RNZip = 1" instead
+
+
+
+
+* To aid in debugging, add a test to the: Scenario Outline: Execute LZMPi self extracting compressed output using <option>
+	This will compile the various options used in BuildData.bat and test the self extracting code works before using the self extracting tool
+
+	
+	
+	
+* Strange case where with -c64mr when the ending address is not aligned to a page the decompression end check is not triggering correctly.
+	* .smRLEByte is correctly encountered, however it looks like the last RLE for the last byte if it's not page aligned is one too many?
+	* Maybe a problem in the output data?
+	Reproduction: c:\work\C64\bin\LZMPi.exe -c64mrb c:\Temp\BlankProjectOrig.prg c:\Temp\BlankProjectComp.prg $400 && c:\Temp\BlankProjectComp.prg
+	Fix: c:\work\C64\bin\LZMPi.exe -c64mrb c:\Temp\BlankProjectOrig2.prg c:\Temp\BlankProjectComp.prg $400 && c:\Temp\BlankProjectComp.prg
+	* So, why does adding uncompressed data at the end of the file cure the problem?
+		Is it because the end of file output check needs uncompressed data to trigger inside the RLE check properly?
+		Decompressed memory is being stored after rthe end address, the final RLE length seems to be bad?
+		Use "w store bfff" to trace
+		After the store routine (at $d0 currently) the X register contains a non-zero value, but it should be zero?
+		The next read, shown by $da, is $ffff
+		$fffc shows e3 00 00 *e3*
+		The final e3 is the end marker at $ffff
+		So when the $e3 is read at $fffc is read is the output counter wrong?
+		Is the compression not accounting for the end of the data correctly?
+			The decompressed file, when saved at the point of writing to $bfff, is identical
+			Which indicates the compression is outputting the wrong ending byte when it's RLE?!
+				c:\work\C64\bin\LZMPi.exe -cr c:\Temp\BlankProjectOrig.prg c:\Temp\t.rle
+			** Argh!! The debug build outputs the correct RLE ending length, the release build does not!
+				* Arghh! x 2 the RLE check was missing the end of file check:  && ((i+j) < inputLength)
+
+
+
+* Include an option to set an end of memory for the memory copy end address for the compressed data. This will allow addresses like $ff00-$ffff to be reserved for data transfer between various linekd sections.
+	* Include an option to enable or disable interrupts during decompression
+		Use LauncherAddress_endOfMemoryMinus256 as it is valid now
+		Construct tests to check that the end of memory is not corrupted
+	Done: Added -t <address>
