@@ -970,9 +970,12 @@ SkipLevelFrameLogic
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	jsr SFXPlay
 } else {
+!ifndef Scroller_DoMusicUpdateInIRQ {
 	jsr MusicPlayerPlay
+} ;<< !ifndef Scroller_DoMusicUpdateInIRQ {
 }
 } ;<< !ifdef DisableSound {} else {
+
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Cyan

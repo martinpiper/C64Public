@@ -230,3 +230,9 @@
 			Added frameIsBusyScrolling
 	* Added more tests for "Double check we are not going to cause bad screen scrolls with certain alignments"
 	* When scrolling down right or up left the alignment is different, so different checks will be needed
+
+
+
+* Re: Scroller_DoMusicUpdateInIRQ
+	* ; DO NOT USE UNTIL split timing and cart bank selection issues are sorted out
+		BottomBorder3 and ScorePanel2 need extra sty/ldy irqYStore which could scren with the nicely tweaked horizontal splits

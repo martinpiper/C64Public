@@ -1,3 +1,14 @@
+* Option of playing soundFX/music from interrupt instead of mainline. This will mean that any SFX play request will need to be queued and executed inside the interrupt.
+	* Added Scroller_DoMusicUpdateInIRQ - The test works well, no music slowdown as expected
+	Still need a way to queue sound effect play requests into the IRQ. Basically when Scroller_DoMusicUpdateInIRQ is defined then MusicPlayerPlaySFX and MusicPlayerPlay can be redirected.
+	Perhaps MusicPlayerPlaySFX can be a small routine that takes the sound effect number, increments it by 1, then stores it in a suitable small 3 entry buffer.
+	Then MusicPlayerPlay takes the small 3 entry buffer, any non-zero value is then decremented and used.
+	* Observation: Due to the timing of MusicPlayerPlay in the IRQ, after the panelIRQDone is flagged, then it should be rare that MusicPlayerPlaySFX is called inside the MusicPlayerPlay IRQ anyway. So is it needed?
+		Instead perhaps make MusicPlayerPlaySFX a little bit more IRQ aware and robust?
+
+
+
+
 * With Scroller_RunJumpDemo_RunJumpTest
 	Override the player jumps, and instead directly input long scroll requests in a "hexagon" shape (r,dr,d,dl,l,ul,u,ur...), to make it easier to trigger the scroll mitigation code
 

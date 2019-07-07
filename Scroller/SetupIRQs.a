@@ -444,6 +444,27 @@ IrqTopOfScreen
 }
 
 
+!ifdef Scroller_DoMusicUpdateInIRQ {
+!ifdef Scroller_EnableSpeedCode {
+	lda ZPProcessorPort
+	pha
+	lda #CartKillBank_ProcessorPort
+	sta ZPProcessorPort
+}
+!ifdef Scroller_DebugIRQBorder {
+	inc VIC2BorderColour
+}
+	jsr MusicPlayerPlay
+!ifdef Scroller_DebugIRQBorder {
+	dec VIC2BorderColour
+}
+!ifdef Scroller_EnableSpeedCode {
+	pla
+	sta ZPProcessorPort
+}
+}
+
+
 !ifdef Scroller_DebugIRQBorder {
 	dec VIC2BorderColour
 }
@@ -837,7 +858,7 @@ BottomBorder3
 
 	+MACROAckRasterIRQ_A
 	lda irqAStore
-	ldX irqXStore
+	ldx irqXStore
 
 !ifdef Scroller_DebugIRQBorder {
 	dec VIC2BorderColour
