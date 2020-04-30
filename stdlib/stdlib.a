@@ -1127,3 +1127,7 @@ RasterLinesPALC64		= 312
 		sta VIC2SpriteXMSB
 	}
 }
+
+!macro MLittleEndian24Bit .a {
+	!by .a & $ff , (.a >> 8)  & $ff , (.a >> 16)  & $ff
+	}

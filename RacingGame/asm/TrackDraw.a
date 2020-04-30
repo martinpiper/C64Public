@@ -269,8 +269,6 @@ TrackDraw_SmoothEdgeFixup
 
 !zn
 
-; MPi: TODO: This takes more than a frame
-; This is an exceptionally good candidate for speed code in cart banks
 TrackDraw_colours
 	lda topScreenBank
 	beq .displaying_c0

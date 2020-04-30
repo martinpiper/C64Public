@@ -1,0 +1,139 @@
+; A self running demo for the Oric
+
+!source "stdlib/stdlib.a"
+!to "t.tap", plain
+!sal
+!sl "t.map"
+!svl "t.lbl"
+!cpu 6510
+!ct pet
+
+* = $4f2
+	!by $16 , $16 , $16
+	!by $24
+	!by $00 , $00 , $80 , $c7
+	!by >FileEnd , <FileEnd
+	!by >FileStart , <FileStart
+	!by $00 , $00
+	
+FileStart = $500
+!if * != FileStart {
+	!error "File header is the wrong size?"
+}
+
+	sei
+
+	lda #0
+	jsr MusicPlayerInit
+
+	lda $245
+	sta .old_irq
+	lda $246
+	sta .old_irq+1
+	+MWordValueToAddress_A .irq , $245
+
+	cli
+
+.l1
+	jmp .l1
+
+.hundredHz !by 0
+
+.irq
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	lda .hundredHz
+	eor #1
+	sta .hundredHz
+	bne .do50Hz
+
+	inc $BB80 + 39
+
+	jsr MusicPlayerPlay
+
+.do50Hz
+
+	pla
+	tay
+	pla
+	tax
+	pla
+
+.old_irq = *+1
+	jmp $1234
+
+Oric_commonSend
+	jmp $f590
+
+MusicPlayer_TargetOric = 1
+
+!source "stdlib/PETSCII.a"
+!source "t2.a"
+!source "t3.a"
+
+!source "t.a"
+
+OricTemp_A !by 0
+OricTemp_X !by 0
+OricTemp_Y !by 0
+!macro MOricRegister_A .reg {
+	sta OricTemp_A
+	stx OricTemp_X
+	sty OricTemp_Y
+
+	ldx OricTemp_A
+	cpx lastOricTable + .reg
+	beq .noChange
+	stx lastOricTable + .reg
+	lda #.reg
+	jsr Oric_commonSend
+.noChange
+	lda OricTemp_A
+	ldx OricTemp_X
+	ldy OricTemp_Y
+	rts
+}
+
+lastOricTable
+	!by 0 , 0 , 0 , 0 , 0 , 0
+	!by 0
+	!by %000 | %111000
+	!by $0 , $0 , $0
+	!by $10 , $10
+	!by $f
+
+
+Oric_SetRegister_ChanA_PitchLo
+	+MOricRegister_A 0
+
+Oric_SetRegister_ChanA_PitchHi
+	+MOricRegister_A 1
+
+Oric_SetRegister_ChanA_Volume
+	+MOricRegister_A 8
+
+Oric_SetRegister_ChanB_PitchLo
+	+MOricRegister_A 2
+
+Oric_SetRegister_ChanB_PitchHi
+	+MOricRegister_A 3
+
+Oric_SetRegister_ChanB_Volume
+	+MOricRegister_A 9
+
+Oric_SetRegister_ChanC_PitchLo
+	+MOricRegister_A 4
+
+Oric_SetRegister_ChanC_PitchHi
+	+MOricRegister_A 5
+
+Oric_SetRegister_ChanC_Volume
+	+MOricRegister_A $a
+
+	rts
+
+FileEnd = *

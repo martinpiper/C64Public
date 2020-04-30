@@ -42,6 +42,7 @@ Multiplex_Default_SpriteFrame
 
 !zn {
 Multiplex_Default_Init
+	stx .smMultiplex_items+1
 	ldx #0
 .l1
 	lda Multiplex_Default_YPos,x
@@ -63,7 +64,7 @@ Multiplex_Default_Init
 	lda Multiplex_Default_SpriteFrame,x
 	sta Multiplex_SpriteFrame,x
 	inx
-	cpx #Multiplex_items
+.smMultiplex_items	cpx #Multiplex_items
 	bne .l1
 	rts
 }

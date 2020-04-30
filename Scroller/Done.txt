@@ -236,3 +236,44 @@
 * Re: Scroller_DoMusicUpdateInIRQ
 	* ; DO NOT USE UNTIL split timing and cart bank selection issues are sorted out
 		BottomBorder3 and ScorePanel2 need extra sty/ldy irqYStore which could scren with the nicely tweaked horizontal splits
+
+
+
+
+* Flag when the score panel wait did not actually wait. Then use that to delay the forced colour scroll by a frame. This will produce a stop of the scroll until the timing is conducive to a flicker free update with synchronisation to the raster.
+	But ScrollerCalculate will calculate frameScrollX (or Y), especially if frameScrollMoveColours and use frameScrollPreCalcX, before the overrun problem is detected for the colour scroll
+	So to be absolutely sure of the colour update happening is hard
+	* Thoughts for Citadel2: Check that ScrollerCalculate will flag to the other routines, like the memory defrag, that they should not happen when busy.
+		Checks the busy flags are only reset when the next ScrollerCalculate is called and after the char/colour scrolls are definitely done
+		Check if the "Wait for the top interrupt to happen" is late. If this is late and a char/colour scroll has not happened, perhaps this implies a frame overrun better and then the intended scroll can be blocked by ScrollerCalculate?
+	* Added ScrollerDemo_OverrunTopIRQFlag
+	* Added frameMovedScreenOrColours
+	* Another thought:
+		In ScrollerCalculate
+		Where: ; Use whatever values were calculated the previous frame
+		If ScrollerDemo_OverrunPanelIRQFlag is added and detected then can we effectively delay the colour scroll there, to avoid the situation where the colour scroll doesn't have enough time?
+		* Hmm, ScrollerDemo_OverrunPanelIRQFlag seems to trigger quite often even without a scroll, probably because the bottom IRQ and sort it taking quite some time
+			So it's not going to be useful
+	* After some experimentation with "; Debug profiling raster position for colour scroll trigger"
+		Without shooting lots of player bullets, the scroll colour behaves itself even when triggered VIC2Raster <= $84
+		But VIC2Raster ~> $b0 the scroll will definitely flicker
+		* Added Scroller_ColourScrollRasterAbortLevel, this seems to fix the issue really well!
+			Also fixes the trap spawn room stress test in Citadel 2
+
+
+
+
+
+; Enemy aimed fire to target both players when they are active. Alternate fire, or nearest enemy to player fire mode.
+Player1Information or Player2Information is used depending on the active players
+
+
+
+* Created ScrollEntry_SEUCK.a and ScrollEntry_MultiDirection.a that are included by ScrollEntry.a
+	This avoids me needing to continuously tweak all the options for each build type
+
+
+
+* Potential bug in the static level redraw back in the map, test case using a modified Transputerman (SEUCK game 3) in C64\SEUCK\tstlvlrwedraw .i
+	The later levels jump backwards through the map with a redraw, in SEUCK the same enemies should respawn, this code should do the same
+	* Done see "; Test for still (static) level redraw tweak"

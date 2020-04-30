@@ -1,0 +1,55 @@
+How did the multi-load work? Obvious break points: $ffbd $ffd5 for file setup and disk load.
+There is disk turbo code at $c8xx 816=215/817=200
+
+The tape turbo version replaced the disk code at $c800 and used the hooked vectors?
+	LOL The first tape file is a dummy flashing border effect that hooks the kernal after copying it to RAM.
+	It then kernal loads the next file.
+	This installs a real tape turbo, the main game code uses all the disk IO calls but redirects them to turbo tape code instead.
+	This handles the logic of when to display the "reset tape counter" or "rewind tape" messages on screen based on if it wants the main game menu or not.
+	The unlink/decomp code actually tried not to overwrite the "turbo" routines at $cxxx-$cfff
+	
+
+
+TusariGameSide1.d64
+Boot prog: ##
+Displays: Loading tusari ....
+Code entry $343
+Loads basic: VIRUS
+Starts basic prog
+
+Prog: VIRUS
+Displays: 10x Loading...
+with white-grey char effect
+Loads: TUS
+Which seems to be turbo loader
+Loads: INTRO
+Which starts the intro loads
+
+Prog: INTRO
+Displays bitmap logo
+Plays sample and the music
+Loads: MENU
+
+Prog: MENU
+Simple demo effects
+Loads: GAME
+
+Prog: GAME
+Game menu intro
+Loads: LV1B
+
+etc
+
+
+
+
+break ff81
+Eventually runs down to a routine at $334 which does the final load and jmp $810
+
+
+
+Hi-score entry
+Cheat: BALTHAZAR!!
+> fffa 1
+$c527 = cheat check code
+$c5cc prints the cheat message

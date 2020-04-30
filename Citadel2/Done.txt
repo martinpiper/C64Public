@@ -1705,3 +1705,10 @@ Also tweaked the enemy start positions
 		Green		UpdateSprites
 	If frameIsOrWasBusy is used by EnemyProcessActivation and AnimationCommonUpdate this seems to somewhat reduce the busy frame glitches
 	Reduce the collision detect code as well by going straight to .noCharCollide from .simpleUpdateSpriteCheck
+
+
+
+* Added Scroller_ColourScrollRasterAbortLevel
+	This fixes the flickering even in the teleport trap room :)
+	Maximum number of enemies has almost been doubled as well :)
+	Oh happy happy joy joy

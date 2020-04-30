@@ -38,6 +38,13 @@
 
 ;!bin "../SEUCK/EXPARMY1.P00",.size,.offset
 
+; Use this to debug/demonstrate "static level" and "redraw" options
+; Three "disc capacitor" enemies (and other types) should spawn on the left and walk to the right during the game level until it loops
+;!bin "../SEUCK/tstlvlrwedraw .i",.size,.offset-$1a
+
+!bin "../SEUCK/tank2         .i",.size,.offset-$1a
+
+
 ; Horizontal SEUCK files
 ; Enable Scroller_IsHorizontal when using these
 ; Enable Scroller_LOTD for game file LOTD___I to add all the extra super weapon spells and tweaks
@@ -57,8 +64,10 @@
 ;!bin "../SEUCK/WACKYV3I.P00",.size,.offset
 
 
-; Needs Scroller_SpriteExpandX and Scroller_SpriteExpandY to be set
-!bin "../SEUCK/gigaseuck.p00",.size,.offset
+; Needs Global_SpriteExpandX and Global_SpriteExpandY to be set
+;!bin "../SEUCK/gigaseuck.p00",.size,.offset
+; Just needs Global_SpriteExpandY
+;!bin "../SEUCK/zapfight3work1.p00",.size,.offset
 }
 
 

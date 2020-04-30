@@ -1240,7 +1240,9 @@ frameTargetVelX		!by 0
 frameTargetVelY		!by 0
 
 
-ScrollerDemo_OverrunCounter !by 0
+ScrollerDemo_OverrunCounter			!by 0
+ScrollerDemo_OverrunTopIRQFlag		!by 0
+ScrollerDemo_OverrunPanelIRQFlag	!by 0
 
 !zn
 ScrollerDemoWaitTopIRQWithReSync
@@ -1249,15 +1251,18 @@ ScrollerDemoWaitTopIRQWithReSync
 	sta bottomMultiplexIRQDone
 	sta panelIRQDone
 	sta ScrollerDemo_OverrunCounter
+	sta ScrollerDemo_OverrunTopIRQFlag
 	; Fall through
 ScrollerDemoWaitTopIRQ
 	lda #0
 	sta panelIRQDone
 
 	inc ScrollerDemo_OverrunCounter
+	inc ScrollerDemo_OverrunTopIRQFlag
 	lda topIRQDone
 	bne .l1
 	sta ScrollerDemo_OverrunCounter
+	sta ScrollerDemo_OverrunTopIRQFlag
 
 	; Wait for the top IRQ (at raster 0) to be done
 .l1
@@ -1274,6 +1279,11 @@ ScrollerDemoWaitTopIRQ
 	beq .l1
 	lda #0
 	sta topIRQDone
+
+	; Debug
+;	lda ScrollerDemo_OverrunTopIRQFlag
+;	sta VIC2BorderColour
+
 	rts
 
 !zn
@@ -1309,9 +1319,11 @@ ScrollerDemoWaitScorePanel
 	sta bottomMultiplexIRQDone
 
 	inc ScrollerDemo_OverrunCounter
+	inc ScrollerDemo_OverrunPanelIRQFlag
 	lda panelIRQDone
 	bne .l1
 	sta ScrollerDemo_OverrunCounter
+	sta ScrollerDemo_OverrunPanelIRQFlag
 
 	; Wait for the panel IRQ to be done
 .l1
@@ -1328,6 +1340,11 @@ ScrollerDemoWaitScorePanel
 	beq .l1
 	lda #0
 	sta panelIRQDone
+
+	; Debug
+;	lda ScrollerDemo_OverrunPanelIRQFlag
+;	sta VIC2BorderColour
+
 	rts
 
 

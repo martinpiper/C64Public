@@ -28,6 +28,8 @@ frameScrollX			!by 0	; Pixels
 frameScrollY			!by 0	; Pixels
 }
 
+frameMovedScreenOrColours	!by 0
+
 !zn {
 ScrollerInitVariables
 	lda #0
@@ -131,6 +133,36 @@ ScrollerCalculate
 	; Reset the internal scroll registers
 	lda frameScrollMoveColours
 	beq .normalScroll
+
+!ifdef Scroller_ColourScrollRasterAbortLevel {
+	lda VIC2Raster
+	cmp #Scroller_ColourScrollRasterAbortLevel
+	bcc .doColourScroll
+	; DEBUG: Disable the check, always do the colour scroll
+;	jmp .doColourScroll
+
+	; Flag that actually we want to delay the colour scroll by a frame because the frame appears to be severely running out of time
+	inc framePauseMoveColours
+
+	; Debug
+;	inc VIC2BorderColour
+
+	lda #0
+	sta scrollerRealMovementXPixels
+	sta scrollerRealMovementYPixels
+!ifdef Paralax_Enable {
+	sta paralaxScrollXPixels
+	sta paralaxScrollYPixels
+}
+
+	rts
+
+.doColourScroll
+} ;< !ifdef Scroller_ColourScrollRasterAbortLevel
+
+	lda #0
+	sta framePauseMoveColours
+
 	; Use whatever values were calculated the previous frame
 	lda frameScrollPreCalcX
 	sta frameScrollX
@@ -146,7 +178,16 @@ ScrollerCalculate
 !ifdef Paralax_Enable {
 	sta paralaxScrollYPixels
 }
+!if 0 {
+	; Debug profiling raster position for colour scroll trigger
+	ldx $400
+	lda VIC2Raster
+	sta $401,x
+	inc $400
+}
 	rts
+
+framePauseMoveColours !by 0
 
 .normalScroll
 	; Reset the moved velocity here. If it is a colour scroll then we naturally use whatever was cached.
@@ -430,11 +471,11 @@ ScrollerCalculate
 !zn {
 ; To be called after ScrollerCalculate. Can be called even if the screen is being displayed.
 ScrollerScreen
+	lda #0
+	sta frameMovedScreenOrColours
 	; Test to see if we might do a colour scroll this frame and if so then update the displaying screen bank for the IRQ since our colour update is likely to be running by the time the IRQ happens.
 	lda frameScrollMoveColours
 	beq .scrollScreen
-
-	inc frameIsBusyScrolling
 
 JNotWantingScroll
 	jmp NotWantingScroll
@@ -446,6 +487,8 @@ JNotWantingScroll
 
 	inc frameIsBusyScrolling
 	inc frameScrollMoveColours
+	inc frameMovedScreenOrColours
+
 
 	cmp #1
 	bne .scrTestNext1
@@ -533,12 +576,20 @@ NotWantingScroll
 ; Must be called after ScrollerScreen. Must not be called while the scrolling screen is being displayed.
 .lNotWantingColourScroll jmp NotWantingColourScroll
 ScrollerOffScreen
+	lda framePauseMoveColours
+	beq .doColourScroll
+	rts
+.doColourScroll
+	lda #0
+	sta frameMovedScreenOrColours
+
 	; Now update the colour memory if required by the scroll
 	lda frameScrollMoveColours
 	cmp #2	; Signifies we just did a character scroll
 	bcc .lNotWantingColourScroll
 
 	inc frameIsBusyScrolling
+	inc frameMovedScreenOrColours
 	jsr ScrollerFlipBank
 
 	; Find the correct scroll routine to call
@@ -1384,6 +1435,7 @@ ScrollerStripsCodeSize = ScrollerStripsCodeEnd - ScrollerStripsCodeStart
 !ifndef DisableUpdateMultiplexorToAnimation {
 !zn
 UpdateMultiplexorToAnimation
+	ldx #Multiplex_items
 	jsr Multiplex_Default_Init
 	ldx #Multiplex_items-1
 .l1
@@ -1931,17 +1983,27 @@ HandleJoystick
 	jsr AllocateCharacterEffect
 	bcs .o5
 
-	lda #1
+.smbx	lda #1
 	sta CharEffectsXVel,x
 .smby	lda #-1
 	sta CharEffectsYVel,x
-	lda #VIC2Colour_White
+.smc1	lda #VIC2Colour_White
 	sta CharEffectsCol,x
-	lda #20
+	lda #30
 	sta CharEffectsTime,x
-	lda #177
+.smc2	lda #177
 	sta CharEffectsChar,x
 
+	inc .smc1+1
+	lda .smc1+1
+	and #7
+	sta .smc1+1
+
+	inc .smc2+1
+	lda .smc2+1
+	and #7
+	ora #$a8
+	sta .smc2+1
 
 	lda AnimationYPos
 	sec
@@ -1979,13 +2041,24 @@ HandleJoystick
 	lda #-1
 	sta CharEffectsY,x
 .o5
+
 	inc .smby+1
 	lda .smby+1
-	cmp #2
+	cmp #3
 	bne .osmby
-	lda #-1
+	lda #-2
 	sta .smby+1
+
+	inc .smbx+1
+	lda .smbx+1
+	cmp #3
+	bne .osmbx
+	lda #-2
+	sta .smbx+1
+.osmbx
+
 .osmby
+
 
 
 	; TODO: Probably should check the head positions for solid blocks here to stop jumping happening

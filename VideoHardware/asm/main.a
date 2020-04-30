@@ -1,0 +1,137 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr Bus24Bit_DisableDisplay
+
+	; Do various video data init here
+
+	; No large sprites
+	jsr Bus24Bit_SetAddressSpritesControl
+	lda #$10
+	sta CIA2PortBRS232
+	lda #$00
+	sta CIA2PortBRS232
+
+	; Enable screen, tiles, border shrink
+	lda #$f0
+	jsr Bus24Bit_EnableDisplay
+	jsr Bus24Bit_WaitVSync
+	
+mainLoop
+.l1
+	jsr setupFrame
+	inc VIC2BorderColour
+	jmp .l1
+
+setupFrame
+	jsr Bus24Bit_WaitVSync
+	jsr copyMode7Regs
+	jsr copySprites
+	rts
+
+!zn
+copySprites
+	+MWordValueTo_AX SpriteFrame0
+	ldy #SpriteFrame0Size
+	jmp Bus24Bit_SpriteDataCopy
+
+!zn
+copyMode7Regs
+	lda #$01
+	+MWordValueTo_XY $a000
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX Mode7Regs0
+	ldy #Mode7Regs0Size
+	jmp Bus24Bit_CopySmallData
+
+
+
+Initialise_NoMACROWaitForTheLastScan = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+
+
+!zn	
+Mode7Regs0
+	+MLittleEndian24Bit $100
+	+MLittleEndian24Bit 0
+	+MLittleEndian24Bit $100
+	+MLittleEndian24Bit 0
+
+	+MLittleEndian24Bit 0
+	+MLittleEndian24Bit 0
+Mode7Regs0Size = * - Mode7Regs0
+
+; Sprite positions
+; From tmp/spriteSheet.txt
+SpriteFrame0
+	!by 0,7,208,0
+	!by 1,8,208,0
+	!by 2,7,208,16
+	!by 3,8,208,16
+	!by 4,7,208,32
+	!by 5,8,208,32
+	!by 6,7,208,48
+	!by 7,9,208,48
+	!by 8,8,208,48
+	!by 9,7,208,64
+
+
+	!by 10,8,208,64
+
+
+	!by 11,9,208,64
+
+	!by 12,7,208,80
+
+
+	!by 13,9,208,80
+
+
+	!by 14,8,208,80
+
+	!by 15,7,192,0
+
+
+	!by 16,8,192,0
+
+	!by 17,7,192,16
+
+
+	!by 18,8,192,16
+
+	!by 19,7,192,32
+
+
+	!by 20,8,192,32
+
+	!by 21,10,192,48
+
+
+	!by 22,11,192,48
+
+
+SpriteFrame0Size = * - SpriteFrame0

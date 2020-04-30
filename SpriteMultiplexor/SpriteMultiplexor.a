@@ -347,7 +347,7 @@ Multiplex_maininterEx
 	lda #$08
 	sta Multiplex_counter
 
-	; Selg modifying code setup
+	; Self modifying code setup
 	lda #$2c							; Set bit $xxxx
 	sta .switch
 	lda #$00
@@ -773,6 +773,7 @@ MACROMultiplex_SortBlockByteLength = .over2 - .over1
 	+MACROMultiplex_SortBlock  20 , .back19	, ~.back20
 	+MACROMultiplex_SortBlock  21 , .back20 , ~.back21
 	+MACROMultiplex_SortBlock  22 , .back21 , ~.back22
+!if Multiplex_items > 24 {
 	+MACROMultiplex_SortBlock  23 , .back22 , ~.back23
 	+MACROMultiplex_SortBlock  24 , .back23 , ~.back24
 	+MACROMultiplex_SortBlock  25 , .back24 , ~.back25
@@ -781,6 +782,8 @@ MACROMultiplex_SortBlockByteLength = .over2 - .over1
 	+MACROMultiplex_SortBlock  28 , .back27 , ~.back28
 	+MACROMultiplex_SortBlock  29 , .back28 , ~.back29
 	+MACROMultiplex_SortBlock  30 , .back29	, ~.back30
+}
+!if Multiplex_items > 32 {
 	+MACROMultiplex_SortBlock  31 , .back30 , ~.back31
 	+MACROMultiplex_SortBlock  32 , .back31 , ~.back32
 	+MACROMultiplex_SortBlock  33 , .back32 , ~.back33
@@ -789,6 +792,8 @@ MACROMultiplex_SortBlockByteLength = .over2 - .over1
 	+MACROMultiplex_SortBlock  36 , .back35 , ~.back36
 	+MACROMultiplex_SortBlock  37 , .back36 , ~.back37
 	+MACROMultiplex_SortBlock  38 , .back37 , ~.back38
+}
+!if Multiplex_items > 40 {
 	+MACROMultiplex_SortBlock  39 , .back38 , ~.back39
 	+MACROMultiplex_SortBlock  40 , .back39	, ~.back40
 	+MACROMultiplex_SortBlock  41 , .back40 , ~.back41
@@ -797,6 +802,26 @@ MACROMultiplex_SortBlockByteLength = .over2 - .over1
 	+MACROMultiplex_SortBlock  44 , .back43 , ~.back44
 	+MACROMultiplex_SortBlock  45 , .back44 , ~.back45
 	+MACROMultiplex_SortBlock  46 , .back45 , ~.back46
+}
+!if Multiplex_items > 48 {
+	+MACROMultiplex_SortBlock  47 , .back46	, ~.back47
+	+MACROMultiplex_SortBlock  48 , .back47 , ~.back48
+	+MACROMultiplex_SortBlock  49 , .back48 , ~.back49
+	+MACROMultiplex_SortBlock  50 , .back49 , ~.back50
+	+MACROMultiplex_SortBlock  51 , .back50 , ~.back51
+	+MACROMultiplex_SortBlock  52 , .back51 , ~.back52
+	+MACROMultiplex_SortBlock  53 , .back52 , ~.back53
+	+MACROMultiplex_SortBlock  54 , .back53 , ~.back54
+}
+!if Multiplex_items > 56 {
+	+MACROMultiplex_SortBlock  55 , .back54	, ~.back55
+	+MACROMultiplex_SortBlock  56 , .back55 , ~.back56
+	+MACROMultiplex_SortBlock  57 , .back56 , ~.back57
+	+MACROMultiplex_SortBlock  58 , .back57 , ~.back58
+	+MACROMultiplex_SortBlock  59 , .back58 , ~.back59
+	+MACROMultiplex_SortBlock  60 , .back59 , ~.back60
+	+MACROMultiplex_SortBlock  61 , .back60 , ~.back61
+}
 .over47	ldy Multiplex_indextable
 	rts
 }

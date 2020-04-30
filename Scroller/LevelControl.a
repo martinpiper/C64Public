@@ -8,6 +8,7 @@ LevelStaticCountFrames !by 0
 LevelScrollToggle !by 0
 LevelWantPushScroll !by 0
 LevelIsPushScrolled !by 0
+Level_PreviousScrollTypeAndSpeed !by 0
 
 !ifdef Scroller_IsHorizontal {
 LevelPositionAdjustment = 8
@@ -40,6 +41,7 @@ LevelInit
 	lda #0
 	sta oldScrollMapHY
 	sta oldScrollMapHY2
+	sta Level_PreviousScrollTypeAndSpeed
 	jsr LevelSetupNextLevel
 	rts
 
@@ -153,7 +155,22 @@ LevelDoSkipNow
 	; Must be redraw
 	jsr LevelProgress
 
+	; Test for still (static) level redraw tweak
+	lda Level_PreviousScrollTypeAndSpeed
+	and #%11000000
+	bne .notPreviousStill
+	ldy #5
+	lda (tempWork0),y
+	and #%11000000
+	bne .stillNotStill
+
+	; Previous level was still, this level is still, force an enemy redraw by forcing a changed level pointer
+	jsr .changed
+	jmp .skipStillTest
+.notPreviousStill
+.stillNotStill
 	jsr .doDislocationTest
+.skipStillTest
 
 	; If the next type is scroll then we delete the enemies.
 	; If it is still or push we do not. (This supports the SEUCK demo game files)
@@ -181,6 +198,7 @@ LevelDoSkipNow
 	sta LevelSwitchOverride
 	lda #0
 	sta LevelNum
+	sta Level_PreviousScrollTypeAndSpeed
 	lda #<LevelProperties
 	sta tempWork0
 	sta LevelPointer
@@ -384,6 +402,10 @@ LevelSwitchOverride !by -1
 
 !zn
 LevelProgress
+	ldy #5
+	lda (tempWork0),y
+	sta Level_PreviousScrollTypeAndSpeed
+
 	ldx LevelSwitchOverride
 	bmi .noOverride1
 

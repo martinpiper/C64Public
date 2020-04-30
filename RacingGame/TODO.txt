@@ -1,3 +1,16 @@
+* Would be potentially possible by doing a sheer of vertical strips. Plotting to a bigger buffer and then drawing the section.
+	Optimised speed code for the screen data copy?
+	Colour lookup could use the screen index.
+	It would mean the main draw would always render to a fixed address screen, that is slightly larger, it does not need to be position independant code.
+	This would have optimisation benefits, especially for speed code plotting.
+	The larger buffer to real screen buffer draw can then be optimised for rotation around a defined point, this can be all speed code with easy colour table lookup.
+		TrackDraw_colours would need changing significantly
+	Several angles can be included as speed code to fill cartridge banks. The real screen draw and its colour plot can be draw order optimised from top to bottom to chase the raster.
+
+
+
+
+
 * To avoid jagged road edges when steering left/right, especially when seeing the far hill/valley, a track width/offset + edge calculation can calculate a minmimum clamp value
 	This is used for each subsequent line until a larger value is calculated
 	The last value to then be added in a separate pas would be any corner offset

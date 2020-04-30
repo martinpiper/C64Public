@@ -54,7 +54,7 @@ To use a teleporter stop the player and hold down fire.
 
 ## Capturing enemies
 
-While stationary double free and hold the fire button to activate the capture probe. Move the probe over an enemy to capture it, if you have enough energy to do so. Once captured, the enemy status will be displayed on the status panel.
+While stationary double click and hold the fire button to activate the capture probe. Move the probe over an enemy to capture it, if you have enough energy to do so. Once captured, the enemy status will be displayed on the status panel.
 
 It is possible to capture and control up to three enemies at once. The currently active captured enemy will quickly pulse grey, other captured enemies will slowly pulse grey. Cycle through the captured enemies with by pressing the "space bar".
 

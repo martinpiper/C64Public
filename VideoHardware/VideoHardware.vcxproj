@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{27D29CFF-98DE-4C02-861B-692C3A70E92E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="BuildIt.bat" />
+    <None Include="features\smoke test.feature" />
+    <None Include="README.md" />
+    <None Include="tmp\main.map" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\..\BombJack\stdlib\Bus24Bit.a" />
+    <Library Include="..\..\BombJack\stdlib\Video.a" />
+    <Library Include="..\stdlib\BASICEntry80d.a" />
+    <Library Include="..\stdlib\BASICEntry810.a" />
+    <Library Include="..\stdlib\BASICEntry900.a" />
+    <Library Include="..\stdlib\Initialise.a" />
+    <Library Include="..\stdlib\LongBranches.a" />
+    <Library Include="..\stdlib\MemoryCopy.a" />
+    <Library Include="..\stdlib\PETSCII.a" />
+    <Library Include="..\stdlib\SampleInit.a" />
+    <Library Include="..\stdlib\stdlib.a" />
+    <Library Include="..\stdlib\VideoModes.a" />
+    <Library Include="..\stdlib\VideoModes_Macros.a" />
+    <Library Include="asm\main.a" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="tmp\map.log" />
+    <Text Include="tmp\spriteSheet.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

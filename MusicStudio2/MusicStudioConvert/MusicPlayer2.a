@@ -24,14 +24,14 @@ NoteTableCommand00	; So this command < comes out as 0
 }
 
 MusicPlayerInit
-	jmp .start					; 0
+	jmp .start
 MusicPlayerPlay
-	jmp .play					; 3
+	jmp .play
 MusicPlayerStop
-	jmp .stopplay				; 6
+	jmp .stopplay
 !ifdef SoundEffectsActive {
 MusicPlayerPlaySFX
-	jmp .playSFX				; 9
+	jmp .playSFX
 }
 
 !raw "MS22"
@@ -420,6 +420,211 @@ TrackPosHi !by >Track0,>Track1,>Track2
 .noteTablePerFrameJumpLo !by <.ltableNoteProcessOver,<.ltableNoteProcessOver,<.ltableNoteProcessOver
 }
 
+; 96 notes, from C-0 to H-7
+!ifdef MusicPlayer_TargetOric {
+!macro MOricFreqToValLo .val {
+	!by <(1000000/(16 * .val))
+}
+!macro MOricFreqToValHi .val {
+	!by >(1000000/(16 * .val))
+}
+.lonote
+	+MOricFreqToValLo 16.4
+	+MOricFreqToValLo 17.3
+	+MOricFreqToValLo 18.4
+	+MOricFreqToValLo 19.4
+	+MOricFreqToValLo 20.6
+	+MOricFreqToValLo 21.8
+	+MOricFreqToValLo 23.1
+	+MOricFreqToValLo 24.5
+	+MOricFreqToValLo 26.0
+	+MOricFreqToValLo 27.5
+	+MOricFreqToValLo 29.1
+	+MOricFreqToValLo 30.9
+	+MOricFreqToValLo 32.7
+	+MOricFreqToValLo 34.6
+	+MOricFreqToValLo 36.7
+	+MOricFreqToValLo 38.9
+	+MOricFreqToValLo 41.2
+	+MOricFreqToValLo 43.7
+	+MOricFreqToValLo 46.3
+	+MOricFreqToValLo 49.0
+	+MOricFreqToValLo 51.9
+	+MOricFreqToValLo 55.0
+	+MOricFreqToValLo 58.3
+	+MOricFreqToValLo 61.7
+	+MOricFreqToValLo 65.4
+	+MOricFreqToValLo 69.3
+	+MOricFreqToValLo 73.4
+	+MOricFreqToValLo 77.8
+	+MOricFreqToValLo 82.4
+	+MOricFreqToValLo 87.3
+	+MOricFreqToValLo 92.5
+	+MOricFreqToValLo 98.0
+	+MOricFreqToValLo 103.8
+	+MOricFreqToValLo 110.0
+	+MOricFreqToValLo 116.5
+	+MOricFreqToValLo 123.5
+	+MOricFreqToValLo 130.8
+	+MOricFreqToValLo 138.6
+	+MOricFreqToValLo 146.8
+	+MOricFreqToValLo 155.6
+	+MOricFreqToValLo 164.8
+	+MOricFreqToValLo 174.6
+	+MOricFreqToValLo 185.0
+	+MOricFreqToValLo 196.0
+	+MOricFreqToValLo 207.7
+	+MOricFreqToValLo 220.0
+	+MOricFreqToValLo 233.1
+	+MOricFreqToValLo 246.9
+	+MOricFreqToValLo 261.6
+	+MOricFreqToValLo 277.2
+	+MOricFreqToValLo 293.7
+	+MOricFreqToValLo 311.1
+	+MOricFreqToValLo 329.6
+	+MOricFreqToValLo 349.2
+	+MOricFreqToValLo 370.0
+	+MOricFreqToValLo 392.0
+	+MOricFreqToValLo 415.3
+	+MOricFreqToValLo 440.0
+	+MOricFreqToValLo 466.2
+	+MOricFreqToValLo 493.9
+	+MOricFreqToValLo 523.3
+	+MOricFreqToValLo 554.4
+	+MOricFreqToValLo 587.3
+	+MOricFreqToValLo 622.3
+	+MOricFreqToValLo 659.3
+	+MOricFreqToValLo 698.5
+	+MOricFreqToValLo 740.0
+	+MOricFreqToValLo 784.0
+	+MOricFreqToValLo 830.6
+	+MOricFreqToValLo 880.0
+	+MOricFreqToValLo 932.3
+	+MOricFreqToValLo 987.8
+	+MOricFreqToValLo 1046.5
+	+MOricFreqToValLo 1108.8
+	+MOricFreqToValLo 1174.7
+	+MOricFreqToValLo 1244.5
+	+MOricFreqToValLo 1318.5
+	+MOricFreqToValLo 1396.9
+	+MOricFreqToValLo 1480.0
+	+MOricFreqToValLo 1568.0
+	+MOricFreqToValLo 1661.2
+	+MOricFreqToValLo 1760.0
+	+MOricFreqToValLo 1864.7
+	+MOricFreqToValLo 1975.5
+	+MOricFreqToValLo 2093.0
+	+MOricFreqToValLo 2217.5
+	+MOricFreqToValLo 2349.3
+	+MOricFreqToValLo 2489.0
+	+MOricFreqToValLo 2637.0
+	+MOricFreqToValLo 2793.8
+	+MOricFreqToValLo 2960.0
+	+MOricFreqToValLo 3136.0
+	+MOricFreqToValLo 3322.4
+	+MOricFreqToValLo 3520.0
+	+MOricFreqToValLo 3729.3
+	+MOricFreqToValLo 3951.0
+
+.hinote
+	+MOricFreqToValHi 16.4
+	+MOricFreqToValHi 17.3
+	+MOricFreqToValHi 18.4
+	+MOricFreqToValHi 19.4
+	+MOricFreqToValHi 20.6
+	+MOricFreqToValHi 21.8
+	+MOricFreqToValHi 23.1
+	+MOricFreqToValHi 24.5
+	+MOricFreqToValHi 26.0
+	+MOricFreqToValHi 27.5
+	+MOricFreqToValHi 29.1
+	+MOricFreqToValHi 30.9
+	+MOricFreqToValHi 32.7
+	+MOricFreqToValHi 34.6
+	+MOricFreqToValHi 36.7
+	+MOricFreqToValHi 38.9
+	+MOricFreqToValHi 41.2
+	+MOricFreqToValHi 43.7
+	+MOricFreqToValHi 46.3
+	+MOricFreqToValHi 49.0
+	+MOricFreqToValHi 51.9
+	+MOricFreqToValHi 55.0
+	+MOricFreqToValHi 58.3
+	+MOricFreqToValHi 61.7
+	+MOricFreqToValHi 65.4
+	+MOricFreqToValHi 69.3
+	+MOricFreqToValHi 73.4
+	+MOricFreqToValHi 77.8
+	+MOricFreqToValHi 82.4
+	+MOricFreqToValHi 87.3
+	+MOricFreqToValHi 92.5
+	+MOricFreqToValHi 98.0
+	+MOricFreqToValHi 103.8
+	+MOricFreqToValHi 110.0
+	+MOricFreqToValHi 116.5
+	+MOricFreqToValHi 123.5
+	+MOricFreqToValHi 130.8
+	+MOricFreqToValHi 138.6
+	+MOricFreqToValHi 146.8
+	+MOricFreqToValHi 155.6
+	+MOricFreqToValHi 164.8
+	+MOricFreqToValHi 174.6
+	+MOricFreqToValHi 185.0
+	+MOricFreqToValHi 196.0
+	+MOricFreqToValHi 207.7
+	+MOricFreqToValHi 220.0
+	+MOricFreqToValHi 233.1
+	+MOricFreqToValHi 246.9
+	+MOricFreqToValHi 261.6
+	+MOricFreqToValHi 277.2
+	+MOricFreqToValHi 293.7
+	+MOricFreqToValHi 311.1
+	+MOricFreqToValHi 329.6
+	+MOricFreqToValHi 349.2
+	+MOricFreqToValHi 370.0
+	+MOricFreqToValHi 392.0
+	+MOricFreqToValHi 415.3
+	+MOricFreqToValHi 440.0
+	+MOricFreqToValHi 466.2
+	+MOricFreqToValHi 493.9
+	+MOricFreqToValHi 523.3
+	+MOricFreqToValHi 554.4
+	+MOricFreqToValHi 587.3
+	+MOricFreqToValHi 622.3
+	+MOricFreqToValHi 659.3
+	+MOricFreqToValHi 698.5
+	+MOricFreqToValHi 740.0
+	+MOricFreqToValHi 784.0
+	+MOricFreqToValHi 830.6
+	+MOricFreqToValHi 880.0
+	+MOricFreqToValHi 932.3
+	+MOricFreqToValHi 987.8
+	+MOricFreqToValHi 1046.5
+	+MOricFreqToValHi 1108.8
+	+MOricFreqToValHi 1174.7
+	+MOricFreqToValHi 1244.5
+	+MOricFreqToValHi 1318.5
+	+MOricFreqToValHi 1396.9
+	+MOricFreqToValHi 1480.0
+	+MOricFreqToValHi 1568.0
+	+MOricFreqToValHi 1661.2
+	+MOricFreqToValHi 1760.0
+	+MOricFreqToValHi 1864.7
+	+MOricFreqToValHi 1975.5
+	+MOricFreqToValHi 2093.0
+	+MOricFreqToValHi 2217.5
+	+MOricFreqToValHi 2349.3
+	+MOricFreqToValHi 2489.0
+	+MOricFreqToValHi 2637.0
+	+MOricFreqToValHi 2793.8
+	+MOricFreqToValHi 2960.0
+	+MOricFreqToValHi 3136.0
+	+MOricFreqToValHi 3322.4
+	+MOricFreqToValHi 3520.0
+	+MOricFreqToValHi 3729.3
+	+MOricFreqToValHi 3951.0
+
+} else {
 .lonote
 	!by 12,28,45,62,81,102,123,145,169,195,221,250,24,56,90,125,163,204,246
 	!by 35,83,134,187,244,48,112,180,251,71,152,237,71,167,12,119,233,97
@@ -431,6 +636,7 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	!by 8,8,9,9,10,11,11,12,13,14,14,15,16,17,18,19,21,22,23,25,26,28,29
 	!by 31,33,35,37,39,42,44,47,50,53,56,59,63,67,71,75,79,84,89,94,100,106
 	!by 112,119,126,134,142,150,159,168,179,189,200,212,225,238,253
+}
 
 .start
 	tax
@@ -441,11 +647,22 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	dey
 	bne .s1
 
+!ifdef MusicPlayer_TargetOric {
+	stx .smx1
+
+	+MWordValueTo_XY lastOricTable
+	jsr $fa86
+
+.smx1 = *+1
+	ldx #0
+
+} else {
 	ldy #$1c
 .s2
 	sta SID,y
 	dey
 	bpl .s2
+}
 
 	; Helps ensure a nice clean start to the music by delaying the SID start by three frames.
 	lda #2
@@ -502,9 +719,12 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	lda #15
 	sta .playflag
 	sta .volu
+!ifndef MusicPlayer_TargetOric {
 	sta SIDVolumeFilter
+}
 
 	rts
+
 
 .endplay
 .smZeroPageStart0 lda #0
@@ -545,7 +765,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 
 	ldx #2
 	lda .volu
+!ifndef MusicPlayer_TargetOric {
 	sta SIDVolumeFilter
+}
 	lda .playflag
 	beq .endplay
 
@@ -733,7 +955,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 .tableFilterSetHiCommand
 	lda TableValueFilter-1,y
 	sta .filterParams
+!ifndef MusicPlayer_TargetOric {
 	sta SIDFilterCutoffFreqHi
+}
 	iny
 	lda TableControlFilter-1,y
 	cmp #$7f
@@ -753,7 +977,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	jmp .tableEndProcessStoreY
 .tableFilterSetLoCommand
 	lda TableValueFilter-1,y
+!ifndef MusicPlayer_TargetOric {
 	sta SIDFilterCutoffFreqLo
+}
 	iny
 	jmp .tableEndProcessStoreY
 .tableFilterBandPassCommand
@@ -770,7 +996,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	sta .lSIDFilterControl
 	and .fxFiltBitMask
 }
+!ifndef MusicPlayer_TargetOric {
 	sta SIDFilterControl
+}
 
 	iny
 	lda TableControlFilter-1,y
@@ -794,7 +1022,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	clc
 	adc .filterParams
 	sta .filterParams
+!ifndef MusicPlayer_TargetOric {
 	sta SIDFilterCutoffFreqHi
+}
 
 .tableEndProcessStoreY
 	sty .tablePosFilter
@@ -833,7 +1063,9 @@ TrackPosHi !by >Track0,>Track1,>Track2
 .plotFilt
 	; These SID registers are write only so we cannot read them. *Sigh*
 	lda .filterParams
+!ifndef MusicPlayer_TargetOric {
 	sta SIDFilterCutoffFreqHi
+}
 }
 .noFilterGlide
 
@@ -857,19 +1089,40 @@ TrackPosHi !by >Track0,>Track1,>Track2
 .isFXSoStore
 	ldy .voft,x
 	lda .atde,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1AttackDecay,y
+}
 	lda .sure,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1SustainRelease,y
+}
 	lda .ntlo,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1FreqLo,y
+}
 	lda .nthi,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1FreqHi,y
+}
 	lda .pwlo,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1PulseWidthLo,y
+}
 	lda .pwhi,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1PulseWidthHi,y
+}
 	lda .core,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1Control,y
+}
 .noteoff2
 	dex
 	bpl .ns1
@@ -883,22 +1136,74 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	bne .noteoff2
 .isFXSoStore
 	lda .pwlo+.offset
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1PulseWidthLo+.offset2
+}
 	lda .pwhi+.offset
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1PulseWidthHi+.offset2
+}
 
 	lda .atde+.offset
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1AttackDecay+.offset2
+}
 	lda .sure+.offset
+!ifdef MusicPlayer_TargetOric {
+	lsr
+	lsr
+	lsr
+	lsr
+	!if .offset = 0 {
+		jsr Oric_SetRegister_ChanA_Volume
+	}
+	!if .offset = 1 {
+		jsr Oric_SetRegister_ChanB_Volume
+	}
+	!if .offset = 2 {
+		jsr Oric_SetRegister_ChanC_Volume
+	}
+} else {
 	sta SIDVoice1SustainRelease+.offset2
+}
 
 	lda .ntlo+.offset
+!ifdef MusicPlayer_TargetOric {
+	!if .offset = 0 {
+		jsr Oric_SetRegister_ChanA_PitchLo
+	}
+	!if .offset = 1 {
+		jsr Oric_SetRegister_ChanB_PitchLo
+	}
+	!if .offset = 2 {
+		jsr Oric_SetRegister_ChanC_PitchLo
+	}
+} else {
 	sta SIDVoice1FreqLo+.offset2
+}
 	lda .nthi+.offset
+!ifdef MusicPlayer_TargetOric {
+	!if .offset = 0 {
+		jsr Oric_SetRegister_ChanA_PitchHi
+	}
+	!if .offset = 1 {
+		jsr Oric_SetRegister_ChanB_PitchHi
+	}
+	!if .offset = 2 {
+		jsr Oric_SetRegister_ChanC_PitchHi
+	}
+} else {
 	sta SIDVoice1FreqHi+.offset2
+}
 
 	lda .core+.offset
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1Control+.offset2
+}
 .noteoff2
 }
 
@@ -1004,7 +1309,24 @@ TrackPosHi !by >Track0,>Track1,>Track2
 ;	sta .playflag
 	ldy .voft,x
 	lda #0				; MPi: TODO: Shouldn't this be eight to disable the voice? Maybe it just sets the note to release?
+!ifdef MusicPlayer_TargetOric {
+	cpx #0
+	bne .notV0
+	jsr Oric_SetRegister_ChanA_Volume
+	jmp .notV2
+.notV0
+	cpx #1
+	bne .notV1
+	jsr Oric_SetRegister_ChanB_Volume
+	jmp .notV2
+.notV1
+	cpx #2
+	bne .notV2
+	jsr Oric_SetRegister_ChanC_Volume
+.notV2
+} else {
 	sta SIDVoice1Control,y
+}
 	jmp .handleseqRet
 
 .voft !by 0,7,14
@@ -1038,7 +1360,10 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	iny
 	lda (ZeroPageStart),y
 	; MPi: TODO: Instead of updating the SID register directly might need to buffer it
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDFilterCutoffFreqHi
+}
 	sta .filterParams
 	iny
 	jmp .loop
@@ -1049,7 +1374,10 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	iny
 	lda (ZeroPageStart),y
 	; MPi: TODO: Instead of updating the SID register directly might need to buffer it
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDFilterCutoffFreqLo
+}
 	iny
 	jmp .loop
 }
@@ -1064,7 +1392,10 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	sta .lSIDFilterControl
 	and .fxFiltBitMask
 }
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDFilterControl
+}
 	iny
 	jmp .loop
 }
@@ -1571,27 +1902,42 @@ TrackPosHi !by >Track0,>Track1,>Track2
 	and .lSIDFilterControl
 	; No need to update .lSIDFilterControl, we want the filter to come back after the channel
 	; switches back to music
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDFilterControl
+}
 
 
 	; Hard restart the SID channel before an effect is played. Also init the voice table processing so it doesn't
 	; override the hard restart.
 	ldy .voft,x
 	lda #0
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1Control,y
+}
 	sta .tablePosWave,x
 	sta .fxNextNotePlay2,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1AttackDecay,y
+}
 	sta .atde,x
 	lda #$f0
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1SustainRelease,y
+}
 	sta .sure,x
 	; Disable with gate next frame
 	lda #$09
 	sta .tableWaveResult,x
 	; Disable into the SID voice now.
 	and .gate,x
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1Control,y
+}
 
 	; Make sure the player is enabled to actually play :)
 	lda .volu
@@ -2280,9 +2626,12 @@ TrackPosHi !by >Track0,>Track1,>Track2
  	sta .nextNotePlay
 	sta .nextNotePlay+1
 	sta .nextNotePlay+2
+!ifdef MusicPlayer_TargetOric {
+} else {
 	sta SIDVoice1Control
 	sta SIDVoice2Control
 	sta SIDVoice3Control
+}
 	lda #1
 	sta .trkp
 	sta .trkp+1

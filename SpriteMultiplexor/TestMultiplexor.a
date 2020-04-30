@@ -26,19 +26,29 @@ Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
 ;Multiplex_MaintainPriority = 1
 !ifdef Multiplex_LogCollisions {
 	!ifdef Multiplex_MaintainPriority {
-	Multiplex_items	= 16
+	Multiplex_itemsSecondPart	= 16
 	} else {
-	Multiplex_items	= 24
+	Multiplex_itemsSecondPart	= 24
 	}
 } else {
 	!ifdef Multiplex_MaintainPriority {
-	Multiplex_items	= 16
+	Multiplex_itemsSecondPart	= 16
 	} else {
-	Multiplex_items	= 48
-;	Multiplex_items	= 20
+	Multiplex_itemsSecondPart	= 48
+;	Multiplex_itemsSecondPart	= 20
 	}
 }
 
+;TestMultiplexorOpenBorders = 1
+!ifdef TestMultiplexorOpenBorders {
+	Multiplex_items = 64
+
+defined_Multiplex_YPos			= 1
+Multiplex_YPos+1			= $02
+Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
+
+} else {
+	Multiplex_items = Multiplex_itemsSecondPart
 
 !if 1 {
 ; This will move the sprite information into zeropage. With the maximum number of sprites there won't be enough space in zeropage for all of them
@@ -54,12 +64,16 @@ Multiplex_XPosHi+1		= Multiplex_XPosLo + Multiplex_items
 ;Multiplex_SpriteFrame	= Multiplex_Colour + Multiplex_items
 
 
-;Multiplex_VarBase	= Multiplex_SpriteFrame + Multiplex_items
+;Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
 Multiplex_VarBase	= Multiplex_XPosHi + Multiplex_items
+;Multiplex_VarBase	= Multiplex_SpriteFrame + Multiplex_items
 
 } else {
 Multiplex_VarBase	= $02
 }
+
+}
+
 
 !source "SpriteMultiplexorVars.a"
 
@@ -199,10 +213,28 @@ Start
 	lda #>Multiplex_maininter
 	sta KERNALIRQServiceRoutineHi
 
+	lda #%00011011
+	sta VIC2ScreenControlV
+
+!ifdef TestMultiplexorOpenBorders {
 	lda #<NMIRet
 	sta KERNALNMIServiceRoutineLo
 	lda #>NMIRet
 	sta KERNALNMIServiceRoutineHi
+
+	; For open borders NMI timing
+	+MACROWaitForRaster VIC2SpriteYBorderBottom-3
+	lda #$7f
+	sta CIA2InterruptControl
+	lda CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+	+MWordValueToAddress_A (CyclesPerRasterPALC64 * RasterLinesPALC64)-1, CIA2TimerALo
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+}
 
 	; Some frames worth of static 48 sprites
 !ifdef Multiplex_MaintainPriority { } else {
@@ -221,10 +253,60 @@ Start
 	inx
 	bne .3
 
+!ifdef TestMultiplexorOpenBorders {
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
 	jsr Multiplex_Default_Init
+	ldx #0
+	lda #8
+.spf1
+	sta Multiplex_YPos,x
+	clc
+	adc #4
+	inx
+	cpx #Multiplex_items
+	bne .spf1
 
-	lda #Multiplex_items					; MPi: Increase to 48 sprites from the original 24 sprite demo
-	sta Multiplex_MaxSpr
+	ldx #0
+.spf2
+.smxl1	lda #VIC2SpriteXBorderLeft
+	sta Multiplex_XPosLo,x
+.smxh1	lda #0
+	sta Multiplex_XPosHi,x
+	lda .smxl1+1
+	clc
+	adc #16
+	sta .smxl1+1
+	lda .smxh1+1
+	adc #0
+	and #1
+	sta .smxh1+1
+	beq .notMSB1
+	lda .smxl1+1
+	cmp #<(VIC2SpriteXBorderRight-VIC2SpriteSizeX)
+	bcc .notMSB1
+	lda #VIC2SpriteXBorderLeft
+	sta .smxl1+1
+	lda #0
+	sta .smxh1+1
+.notMSB1
+	txa
+	and #$f
+	tay
+	lda Multiplex_Default_Colour,y
+	sta Multiplex_Colour,x
+
+	lda Multiplex_Default_SpriteFrame,y
+	sta Multiplex_SpriteFrame,x
+	inx
+	cpx #Multiplex_items
+	bne .spf2
+	
+} else {
+	ldx #Multiplex_itemsSecondPart
+	stx Multiplex_MaxSpr
+	jsr Multiplex_Default_Init
+}
 
 	lda #$40
 	sta xoffset
@@ -247,8 +329,6 @@ Start
 
 	lda #1
 	sta VIC2InteruptControl
-	lda #%00011011
-	sta VIC2ScreenControlV
 	lda #0
 	sta VIC2Raster
 	; Ack any interrupts that might have happened so we get a clean start
@@ -322,6 +402,30 @@ Start
 
 !zn {
 NMIRet
+!if 1 {
+	sta .smna+1
+	inc VIC2BorderColour
+	; Step 1 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	and #$7f
+	sta VIC2ScreenControlV
+
+	lda #%10000000
+.notYet2
+	bit VIC2ScreenControlV
+	beq .notYet2
+
+	; Step 2 of opening the bottom borders
+	lda VIC2ScreenControlV
+	eor #%1000
+	and #$7f
+	sta VIC2ScreenControlV
+
+;	dec VIC2BorderColour
+	lda CIA2InterruptControl
+.smna	lda #0
+}
 	rti
 }
 
@@ -330,7 +434,7 @@ NMIRet
 ; This function is defined before including "SpriteMultiplexor.a" which then causes the last IRQ to call this
 !zn {
 MultiplexExt_LastIRQ
-!if Multiplex_items <= 24 {
+!if Multiplex_itemsSecondPart <= 24 {
 	lda #255
 	sta VIC2Raster
 	lda #<MultiplexExt_LastIRQ2
@@ -368,7 +472,7 @@ MultiplexExt_LastIRQ2
 	stx countDown2
 	bne .notYet
 	; Switch to animating a maximum of 44 sprites with sin tables
-!if Multiplex_items >= 44 {
+!if Multiplex_itemsSecondPart >= 44 {
 	lda #44
 	sta Multiplex_MaxSpr
 }
@@ -378,6 +482,12 @@ MultiplexExt_LastIRQ2
 	ldx Multiplex_MaxSpr
 	dex
 	bmi .over
+
+	; Turn off any open borders
+!ifdef TestMultiplexorOpenBorders {
+	lda #$7f
+	sta CIA2InterruptControl
+}
 
 .off1
 	lda Multiplex_YPos,x

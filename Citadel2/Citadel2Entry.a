@@ -30,7 +30,7 @@ Multiplex_ReverseOrder = 1
 ;Multiplex_items	= 32
 ;Multiplex_items	= 24
 ;Multiplex_items	= 20
-; This is the maximum with all the zerpage optimisations enabled
+; This is the maximum with all the zeropage optimisations enabled
 ;Multiplex_items	= 19
 ;Multiplex_items	= 18
 Multiplex_items	= 16
@@ -76,11 +76,12 @@ UseAnimationInit2 = 1
 kRammingEnemy = 1
 
 ; Limit the number of enemies spawned with those already on screen
-MaxEnemyOnScreenBeforeSpawn = 7
+MaxEnemyOnScreenBeforeSpawn = 12
 
 ; When the frame gets busier than this threshold then start to not execute certain functions to save time and recover the frame
 ; Compares with ScrollerDemo_OverrunCounter
 OverrunCounter_EnemyProcessing = 5
+
 
 
 UseEnemyProcessActivation = 1
@@ -106,6 +107,8 @@ Multiplex_OverflowRasterCheck1 = 1
 Multiplex_OverflowRasterCheck2 = 1
 Multiplex_BunchingCheck = 1
 DisableUpdateMultiplexorToAnimation = 1
+
+Scroller_ColourScrollRasterAbortLevel = $80
 
 ; Debug colour changes for the border
 ;Multiplexor_DebugBorder = 1

@@ -73,7 +73,7 @@ MainLoaderEntry
 
 	; Now follows is an LAX $02 at $0302
 
-	; However "!initmem $ea" is used before including this fuile so that if there is any unused space then it is padded to $302 anyway.
+	; However "!initmem $ea" is used before including this file so that if there is any unused space then it is padded to $302 anyway.
 }
 endBlock
 ; Just to introduce a warning if the above code oversteps its boundary

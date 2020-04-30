@@ -711,8 +711,32 @@ AnimationUpdateEnemyFire
 	rts
 
 !ifdef EnemyAimTest {
+.lastPlayerOffsetShotAt !by 0
 .doAimedFire
-	; MPi: TODO: Only Player1Information is used, expand so it alternates between Player1Information and Player2Information depending on the active players
+	; Player1Information or Player2Information is used depending on the active players
+	ldy #0
+
+	lda Player1Information+PlayerGameOffset_AnimationIndex
+	bmi .noPlayer1
+
+	lda Player2Information+PlayerGameOffset_AnimationIndex
+	bmi .noPlayer2
+
+	; Have both players, so...
+	lda .lastPlayerOffsetShotAt
+	bne .noPlayer2
+
+.noPlayer1
+	ldy #Player2Information-Player1Information
+	bne .useThePlayerInY
+
+.noPlayer2
+	ldy #0
+;	jmp .useThePlayerInY
+
+.useThePlayerInY
+	sty .lastPlayerOffsetShotAt
+
 	; Using the enemy position for the player to bullet difference calculation
 	lda .smxh+1
 	lsr
@@ -722,9 +746,9 @@ AnimationUpdateEnemyFire
 	sta .velCache
 
 	; Diff X
-	lda Player1Information + PlayerGameOffset_LastSafePosXHi
+	lda Player1Information + PlayerGameOffset_LastSafePosXHi,y
 	lsr
-	lda Player1Information + PlayerGameOffset_LastSafePosXLo
+	lda Player1Information + PlayerGameOffset_LastSafePosXLo,y
 	ror
 	lsr
 
@@ -743,7 +767,7 @@ AnimationUpdateEnemyFire
 	lsr
 	lsr
 	sta .velCache+1
-	lda Player1Information + PlayerGameOffset_LastSafePosY
+	lda Player1Information + PlayerGameOffset_LastSafePosY,y
 	lsr
 	lsr
 	sec

@@ -1,5 +1,5 @@
 !zn
-kNumCharEffects = 8
+kNumCharEffects = 12
 
 CharEffectsX		!fill kNumCharEffects , 0
 ; Negative Y indicates no character effect active
@@ -53,6 +53,10 @@ AllocateCharacterEffect
 
 	dex
 	bpl .l1
+
+	; Debug
+	inc VIC2BorderColour
+
 	sec
 	rts
 	

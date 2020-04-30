@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\asm">
+      <UniqueIdentifier>{9392b39d-3b5d-47fe-a777-fc5234b23f55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\C64">
+      <UniqueIdentifier>{6981ec96-8556-4a61-a510-a2e0fdabab38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\C64\stdlib">
+      <UniqueIdentifier>{68e299af-1ee4-4520-a037-01406d6ce394}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BombJack">
+      <UniqueIdentifier>{e00c80c9-5415-4da3-bd80-37d4a6fa8e93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BombJack\stdlib">
+      <UniqueIdentifier>{ce71931b-cb42-4f5b-9e4d-11543db323a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\features">
+      <UniqueIdentifier>{3222046c-deb9-418a-a490-165adf788942}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tmp">
+      <UniqueIdentifier>{f5906e07-6162-4659-a85b-90a84d4fc1ce}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="BuildIt.bat" />
+    <None Include="features\smoke test.feature">
+      <Filter>Resource Files\features</Filter>
+    </None>
+    <None Include="tmp\main.map">
+      <Filter>tmp</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="asm\main.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\stdlib\BASICEntry80d.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\BASICEntry810.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\BASICEntry900.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\Initialise.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\LongBranches.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\MemoryCopy.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\PETSCII.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\SampleInit.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\stdlib.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\VideoModes.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\VideoModes_Macros.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus24Bit.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Video.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="tmp\map.log">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\spriteSheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

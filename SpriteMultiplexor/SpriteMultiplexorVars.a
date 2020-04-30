@@ -47,7 +47,7 @@
 ; If your sprite patterns are crafted to avoid bunches then this option is best left disabled.
 ;Multiplex_BunchingCheck = 1
 
-; Must be <= 48 otherwise Multiplex_indextable goes splat
+; Can be any number < 128, preferably in multiples of 8 but not mandatory
 ;Multiplex_items	= 48
 
 ; Define this to maintain sprite priority based on the Y coordinate whenever possible

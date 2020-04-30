@@ -36,3 +36,7 @@
 
 
 * In Multiplex_intNextSpr0Reset for "lda Multiplex_XPosLo,y" if Multiplex_XPosLo is in ZP then this would benefit from swapping X and Y for the ZP instead of absolute addressing mode
+
+
+
+* Added a demo TestMultiplexorOpenBorders define, which enables (currently) 64 sprites with the Y border open and a different tightly packed formation

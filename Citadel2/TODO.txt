@@ -77,6 +77,26 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
+* Level loading, extra levels
+	* TODO - Exit level code goes here
+	* Any fancy between levels code could use the same cart bank based code execution model as demonstrated by SubGame_Init etc
+		This would be similar to DisplayingSubGame but named to something like DisplayingInterLevel
+		Need new small first level, very simple layout.
+			Just to teach what the various terminals do etc.
+			Slow not very strong enemies.
+		Second level can be comprised of data from the current first.
+			This will need to take data labels as input, not define them.
+			Remember: ; Data after this point can be dynamic in length and referenced by updates to previous tables
+			Also maximum data sizes will need to be clarified to take into account various animations still needed.
+		Third level can take the current level 2 file
+
+
+
+* InterestingPlacesZone could be moved to somewhere else before the loaded level data, since it's not actually forming part of the level data
+	So also update BuildIt.bat to remove InterestingPlacesZone extraction
+
+
+
 * Unroll the animation and enemy movement code in Animations.a in .sp1 loop
 	Convert to a macro, unroll the indrected calculations for AnimationXPosLo,x AnimationXPosHi,x and AnimationYPos,x and store in a cart bank
 	Also .simpleUpdateSpriteCheck
@@ -447,5 +467,3 @@ Suggestions:
 ** Bigger/more weapons
 ** Circuit hacking addition
 
-
-* TODO - Exit level code goes here

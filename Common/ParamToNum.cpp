@@ -21,3 +21,24 @@ int ParamToNum(const char *arg)
 
 	return num;
 }
+
+
+unsigned int ParamToUNum(const char *arg)
+{
+	unsigned int num;
+
+	if (arg[0] == '$')
+	{
+		num = strtoul(arg + 1, NULL, 16);
+	}
+	else if ((arg[0] == '0') && ((arg[1] & 0xdf) == 'X'))
+	{
+		num = strtol(arg + 2, NULL, 16);
+	}
+	else
+	{
+		num = strtol(arg, NULL, 10);
+	}
+
+	return num;
+}

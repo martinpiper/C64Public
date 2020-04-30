@@ -8,6 +8,7 @@ InitialiseMachine
 	sei
 	cld
 	tay	; Save
+!ifdef Initialise_NoPreserveStack {} else {
 	pla
 	sta .smpreviousStack2+1
 	pla
@@ -15,6 +16,7 @@ InitialiseMachine
 	; Grab everything on the stack
 	ldx #$ff
 	txs
+}
 	; Init the processor port
 	ldx #ProcessorPortDDRDefault
 	stx ZPProcessorPortDDR
@@ -48,17 +50,21 @@ InitialiseMachine
 }
 	sta KERNALNMIServiceRoutineHi
 
+!ifndef Initialise_NoMACROWaitForTheLastScan {
 	+MACROWaitForTheLastScan_A
+}
 	+BlankScreenBorderSpriteSound_A
 
 	; Set the user requested ROM state
 	sty ZPProcessorPort
 
 	; Restore what was on our stack so we can return
+!ifdef Initialise_NoPreserveStack {} else {
 .smpreviousStack1	lda #$00
 	pha
 .smpreviousStack2	lda #$00
 	pha
+}
 
 	rts
 
