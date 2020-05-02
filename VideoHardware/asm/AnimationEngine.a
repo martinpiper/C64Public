@@ -1,0 +1,166 @@
+!zn
+kAnimationEngine_maxSlots = 8
+
+kAnimationEngine_flipX = %01000000
+kAnimationEngine_flipY = %10000000
+
+!macro MAnimationFrame_Display .address {
+	!by >.address , <.address
+	; Setup next address (a variant of goto)
+!set .t = *
+	!by >(.t+2) , <(.t+2)
+}
+
+!macro MAnimationFrame_DisplayStop .address {
+	!by >.address , <.address
+	!by 0
+}
+
+!macro MAnimationFrame_Delete .address {
+	!by 0
+}
+
+!macro MAnimationFrame_DisplayGoto .address , .then {
+	!by >.address , <.address
+	!by >.then , <.then
+}
+
+AnimationEngine_frameLo					!fill kAnimationEngine_maxSlots , 0
+; Also used as an "active" slot flag
+AnimationEngine_frameHi					!fill kAnimationEngine_maxSlots , 0
+
+AnimationEngine_posX					!fill kAnimationEngine_maxSlots , 0
+AnimationEngine_posY					!fill kAnimationEngine_maxSlots , 0
+
+AnimationEngine_framesPositionLo		!fill kAnimationEngine_maxSlots , 0
+AnimationEngine_framesPositionHi		!fill kAnimationEngine_maxSlots , 0
+
+AnimationEngine_flips					!fill kAnimationEngine_maxSlots , 0
+AnimationEngine_thisType				!fill kAnimationEngine_maxSlots , 0
+
+
+
+AnimationEngine_Init
+	lda #0
+	ldx #kAnimationEngine_maxSlots-1
+.l1
+	sta AnimationEngine_frameHi,x
+	sta AnimationEngine_framesPositionHi,x
+	sta AnimationEngine_flips,x
+	dex
+	bpl .l1
+	rts
+
+
+!zn
+; Entry:
+; Y = One of the (kAnimationType_*) constants in AnimationType_tableLoHi
+; Exit
+; CS = Not slot found
+; CC = Slot found, index in X
+; Y = Not preserved
+AnimationEngine_Allocate
+	ldx #kAnimationEngine_maxSlots-1
+.l1
+	lda AnimationEngine_frameHi,x
+	beq .isFree
+	dex
+	bpl .l1
+	sec
+	rts
+.isFree
+; Entry: Note this a sub-function
+; X = Animation index
+; Y = One of the (kAnimationType_*) constants in AnimationType_tableLoHi
+AnimationEngine_MutateToType
+	lda AnimationType_tableLoHi,y
+	sta zeroPage_Temp0
+	lda AnimationType_tableLoHi+1,y
+	sta zeroPage_Temp1
+
+	tya
+	sta AnimationEngine_thisType,x
+	; Assume the first frame is not "MAnimationFrame_Delete"
+	ldy #0
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_frameHi,x
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_frameLo,x
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_framesPositionHi,x
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_framesPositionLo,x
+
+	lda #0
+	sta AnimationEngine_flips,x
+
+	clc
+	rts
+
+; Entry:
+; X = Animation index
+; Y = One of the (kAnimationType_*) constants in AnimationType_tableLoHi
+AnimationEngine_MutateToTypeIfDifferent
+	tya
+	cmp AnimationEngine_thisType,x
+	bne AnimationEngine_MutateToType
+	; No change, so exit
+	rts
+
+
+!zn
+AnimationEngine_RenderSprites
+	ldy #kAnimationEngine_maxSlots-1
+.l1
+	lda AnimationEngine_frameHi,y
+	beq .noEntry
+	sta .smJSR1+2
+	lda AnimationEngine_frameLo,y
+	sta .smJSR1+1
+	lda AnimationEngine_flips,y
+	sta EmitSpriteFrame_flips
+	lda AnimationEngine_posY,y
+	ldx AnimationEngine_posX,y
+.smJSR1 jsr $1234
+.noEntry
+	dey
+	bpl .l1
+	rts
+
+
+
+!zn
+AnimationEngine_Update
+	ldx #kAnimationEngine_maxSlots-1
+.l1
+	lda AnimationEngine_framesPositionHi,x
+	beq .noEntry
+	sta zeroPage_Temp1
+	lda AnimationEngine_framesPositionLo,x
+	sta zeroPage_Temp0
+.processBlock
+	ldy #0
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_frameHi,x
+	beq .isDelete
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_frameLo,x
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_framesPositionHi,x
+	iny
+	lda (zeroPage_Temp0),y
+	sta AnimationEngine_framesPositionLo,x
+
+.noEntry
+	dex
+	bpl .l1
+	rts
+
+.isDelete
+	sta AnimationEngine_framesPositionHi,x
+	jmp .noEntry

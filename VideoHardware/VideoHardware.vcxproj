@@ -35,6 +35,11 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="assets\clouds.tmx" />
+    <None Include="assets\clouds.tsx" />
+    <None Include="assets\convert.bat" />
+    <None Include="assets\map.tmx" />
+    <None Include="assets\RPG.tsx" />
     <None Include="BuildIt.bat" />
     <None Include="features\smoke test.feature" />
     <None Include="README.md" />
@@ -54,13 +59,22 @@
     <Library Include="..\stdlib\stdlib.a" />
     <Library Include="..\stdlib\VideoModes.a" />
     <Library Include="..\stdlib\VideoModes_Macros.a" />
+    <Library Include="asm\AnimationEngine.a" />
     <Library Include="asm\main.a" />
+    <Library Include="tmp\spriteSheet.txt.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
     <Text Include="tmp\map.log" />
     <Text Include="tmp\spriteSheet.txt" />
     <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\cloud tiles.png" />
+    <Image Include="assets\clouds.png" />
+    <Image Include="assets\map tiles.png" />
+    <Image Include="assets\map.png" />
+    <Image Include="assets\sprites.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

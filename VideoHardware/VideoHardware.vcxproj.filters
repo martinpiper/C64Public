@@ -34,6 +34,9 @@
     <Filter Include="tmp">
       <UniqueIdentifier>{f5906e07-6162-4659-a85b-90a84d4fc1ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\assets">
+      <UniqueIdentifier>{b8f965b9-2c3a-438e-95b1-3ca2a10d3891}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -43,6 +46,21 @@
     </None>
     <None Include="tmp\main.map">
       <Filter>tmp</Filter>
+    </None>
+    <None Include="assets\clouds.tmx">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\clouds.tsx">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\map.tmx">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\RPG.tsx">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\convert.bat">
+      <Filter>Resource Files\assets</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +106,12 @@
     <Library Include="..\..\BombJack\stdlib\Video.a">
       <Filter>Header Files\BombJack\stdlib</Filter>
     </Library>
+    <Library Include="tmp\spriteSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="asm\AnimationEngine.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -98,5 +122,22 @@
     <Text Include="tmp\spriteSheet.txt">
       <Filter>tmp</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\cloud tiles.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\clouds.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\map tiles.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\map.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\sprites.png">
+      <Filter>Resource Files\assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>
