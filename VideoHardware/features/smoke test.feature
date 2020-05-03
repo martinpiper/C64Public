@@ -1,16 +1,19 @@
+@smoketest
 Feature: Smoke test
 
   Quickly load the output and check various simple aspects of the code
 
   Scenario: Smoke test for video
     Given a new video display
-	Given video display processes 8 pixels per instruction
+    Given video display processes 8 pixels per instruction
     Given video display refresh window every 256 instructions
-	Given video display add joystick to port 1
+    Given video display add joystick to port 1
     Given video display saves debug BMP images to leaf filename "tmp/frames/TC-1-"
     Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
     Given I have a simple overclocked 6502 system
-	* That does fail on BRK
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
     Given a user port to 24 bit bus is installed
     Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
     Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'

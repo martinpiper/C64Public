@@ -41,12 +41,14 @@ AnimationEngine_thisType				!fill kAnimationEngine_maxSlots , 0
 
 
 AnimationEngine_Init
-	lda #0
 	ldx #kAnimationEngine_maxSlots-1
 .l1
+	lda #0
 	sta AnimationEngine_frameHi,x
 	sta AnimationEngine_framesPositionHi,x
 	sta AnimationEngine_flips,x
+	lda #$ff
+	sta AnimationEngine_thisType,x
 	dex
 	bpl .l1
 	rts
