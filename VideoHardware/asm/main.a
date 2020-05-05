@@ -20,6 +20,13 @@ zeroPage_Temp1	= $03
 	
 !source "tmp/FingerPrint.a"
 
+Initialise_NoMACROWaitForTheLastScan = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
 start
 	sei
 	lda #ProcessorPortAllRAMWithIO
@@ -43,7 +50,7 @@ start
 	jsr Bus24Bit_EnableDisplay
 	jsr Bus24Bit_WaitVSync
 
-
+	; Allocate and remember the player index
 	ldy #kAnimationType_playerRunLeft
 	jsr AnimationEngine_Allocate
 	lda #120
@@ -115,282 +122,15 @@ setupFrame
 	jsr copySprites
 	jsr HandleJoystick
 	jsr AnimationEngine_Update
+	jsr CharacterLogic_Update
 	jsr Mode7_Update
 	rts
 
-!zn
-copySprites
-	lda #0
-	sta EmitSpriteFrame_count
-	jsr Bus24Bit_SetAddressSprites
-	jsr AnimationEngine_RenderSprites
-	rts
-
-!zn
-copyMode7Regs
-	lda #$01
-	+MWordValueTo_XY $a000
-	jsr Bus24Bit_SetAddressBus
-
-	+MWordValueTo_AX Mode7Regs0
-	ldy #Mode7Regs0Size
-	jmp Bus24Bit_CopySmallData
-
-!zn
-TileScreen_xpos !by 0,0
-TileScreen_ypos !by 0,0
-copyTilesScrolls
-	lda #$01
-	+MWordValueTo_XY $9e01
-	jsr Bus24Bit_SetAddressBus
-	lda TileScreen_xpos
-	sta CIA2PortBRS232
-	lda TileScreen_xpos+1
-	sta CIA2PortBRS232
-	lda TileScreen_ypos
-	sta CIA2PortBRS232
-	lda TileScreen_ypos+1
-	sta CIA2PortBRS232
-	rts
-
-!zn
-playerAnimationIndex !by 0
-HandleJoystick
-	lda #JoystickBits_Up
-	bit CIA1KeyboardColumnJoystickA
-	bne .notUp
-
-	ldx playerAnimationIndex
-	ldy #kAnimationType_playerRunUp
-	jsr AnimationEngine_MutateToTypeIfDifferent
-
-	lda Mode7Regs0_ypos+1
-	sec
-	sbc #2
-	sta Mode7Regs0_ypos+1
-	lda Mode7Regs0_ypos+2
-	sbc #0
-	sta Mode7Regs0_ypos+2
-
-	dec TileScreen_ypos
-	lda TileScreen_ypos
-	cmp #$ff
-	bne .notUp
-	dec TileScreen_ypos+1
-.notUp
-
-	lda #JoystickBits_Down
-	bit CIA1KeyboardColumnJoystickA
-	bne .notDown
-
-	ldx playerAnimationIndex
-	ldy #kAnimationType_playerRunDown
-	jsr AnimationEngine_MutateToTypeIfDifferent
-
-	lda Mode7Regs0_ypos+1
-	clc
-	adc #2
-	sta Mode7Regs0_ypos+1
-	lda Mode7Regs0_ypos+2
-	adc #0
-	sta Mode7Regs0_ypos+2
-
-	inc TileScreen_ypos
-	bne .notDown
-	inc TileScreen_ypos+1
-.notDown
-
-	lda #JoystickBits_Left
-	bit CIA1KeyboardColumnJoystickA
-	bne .notLeft
-
-	ldx playerAnimationIndex
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_MutateToTypeIfDifferent
-	lda #0
-	sta AnimationEngine_flips,x
-
-	lda Mode7Regs0_xpos+1
-	sec
-	sbc #2
-	sta Mode7Regs0_xpos+1
-	lda Mode7Regs0_xpos+2
-	sbc #0
-	sta Mode7Regs0_xpos+2
-
-	dec TileScreen_xpos
-	lda TileScreen_xpos
-	cmp #$ff
-	bne .notLeft
-	dec TileScreen_xpos+1
-.notLeft
-
-	lda #JoystickBits_Right
-	bit CIA1KeyboardColumnJoystickA
-	bne .notRight
-
-	ldx playerAnimationIndex
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_MutateToTypeIfDifferent
-	lda #kAnimationEngine_flipX
-	sta AnimationEngine_flips,x
-
-	lda Mode7Regs0_xpos+1
-	clc
-	adc #2
-	sta Mode7Regs0_xpos+1
-	lda Mode7Regs0_xpos+2
-	adc #0
-	sta Mode7Regs0_xpos+2
-
-	inc TileScreen_xpos
-	bne .notRight
-	inc TileScreen_xpos+1
-.notRight
-	rts
-
-
-Initialise_NoMACROWaitForTheLastScan = 1
-Initialise_NoIRQServiceRoutine = 1
-!source "stdlib/Initialise.a"
-!source "BombJack/stdlib/Bus24Bit.a"
-!source "BombJack/stdlib/Video.a"
-
-!zn
-.cnt1 !by $50
-.velTab !by 8,16,32,64,60,55,50,45,40,35,30,25,20,16,8,4
-Mode7_Update
-	inc .cnt1
-	lda .cnt1
-	lsr
-	lsr
-	lsr
-	lsr
-	tax
-	clc
-	lda .velTab,x
-	adc Mode7Regs0_xpos
-	sta Mode7Regs0_xpos
-	bcc .l1
-	inc Mode7Regs0_xpos+1
-	bne .l1
-	inc Mode7Regs0_xpos+2
-.l1
-
-	lda .cnt1
-	lsr
-	lsr
-	and #15
-	tax
-	clc
-	lda .velTab,x
-	adc Mode7Regs0_ypos
-	sta Mode7Regs0_ypos
-	bcc .l2
-	inc Mode7Regs0_ypos+1
-	bne .l2
-	inc Mode7Regs0_ypos+2
-.l2
-	rts
-
-!zn	
-Mode7Regs0
-	+MLittleEndian24Bit $100
-	+MLittleEndian24Bit 0
-	+MLittleEndian24Bit $100
-	+MLittleEndian24Bit 0
-
-Mode7Regs0_xpos
-	+MLittleEndian24Bit 0
-Mode7Regs0_ypos
-	+MLittleEndian24Bit 0
-Mode7Regs0Size = * - Mode7Regs0
-
-
-; Sprite emit macros, customised for this application allow the ImageToBitplane tool to output optimised sprite drawing
-; A = Y pos
-; X = X pos
-; Y = Preserved
-EmitSpriteFrame_temp	!by 0
-EmitSpriteFrame_count	!by 0
-EmitSpriteFrame_flips	!by 0
-!macro MEmitSpriteFrame frame,palette {
-	ldy #frame
-	sty CIA2PortBRS232
-	pha
-	lda #palette
-	ora EmitSpriteFrame_flips
-	sta CIA2PortBRS232
-	pla
-	sta CIA2PortBRS232
-	stx CIA2PortBRS232
-	inc EmitSpriteFrame_count
-}
-!macro MEmitSpriteFrame_Preserve {
-	sty EmitSpriteFrame_temp
-}
-!macro MEmitSpriteFrame_RestoreExit {
-	ldy EmitSpriteFrame_temp
-	rts
-}
-
+!source "asm/TileScreen.a"
 !source "asm/AnimationEngine.a"
-
-!source "tmp/spriteSheet.txt.a"
-
-!macro MAnimationType_Create ~.kAnimationTypeEnum , .address {
-	.kAnimationTypeEnum = * - AnimationType_tableLoHi
-	!by <.address , >.address
-}
-
-!macro MAnimationType_End {
-	!by 0
-}
-
-
-AnimationType_tableLoHi
-	+MAnimationType_Create ~kAnimationType_playerRunLeft , AnimationFrames_playerRunLeft
-	+MAnimationType_Create ~kAnimationType_playerRunUp , AnimationFrames_playerRunUp
-	+MAnimationType_Create ~kAnimationType_playerRunDown , AnimationFrames_playerRunDown
-
-AnimationFrames_playerRunLeft
-	+MAnimationFrame_Display		EmitSpriteFrame0_0
-	+MAnimationFrame_Display		EmitSpriteFrame0_0
-	+MAnimationFrame_Display		EmitSpriteFrame0_0
-	+MAnimationFrame_Display		EmitSpriteFrame0_0
-	+MAnimationFrame_Display		EmitSpriteFrame16_0
-	+MAnimationFrame_Display		EmitSpriteFrame16_0
-	+MAnimationFrame_Display		EmitSpriteFrame16_0
-	+MAnimationFrame_Display		EmitSpriteFrame16_0
-	+MAnimationFrame_Display		EmitSpriteFrame32_0
-	+MAnimationFrame_Display		EmitSpriteFrame32_0
-	+MAnimationFrame_Display		EmitSpriteFrame32_0
-	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_0 , AnimationFrames_playerRunLeft
-
-AnimationFrames_playerRunUp
-	+MAnimationFrame_Display		EmitSpriteFrame0_16
-	+MAnimationFrame_Display		EmitSpriteFrame0_16
-	+MAnimationFrame_Display		EmitSpriteFrame0_16
-	+MAnimationFrame_Display		EmitSpriteFrame0_16
-	+MAnimationFrame_Display		EmitSpriteFrame16_16
-	+MAnimationFrame_Display		EmitSpriteFrame16_16
-	+MAnimationFrame_Display		EmitSpriteFrame16_16
-	+MAnimationFrame_Display		EmitSpriteFrame16_16
-	+MAnimationFrame_Display		EmitSpriteFrame32_16
-	+MAnimationFrame_Display		EmitSpriteFrame32_16
-	+MAnimationFrame_Display		EmitSpriteFrame32_16
-	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_16 , AnimationFrames_playerRunUp
-
-AnimationFrames_playerRunDown
-	+MAnimationFrame_Display		EmitSpriteFrame0_32
-	+MAnimationFrame_Display		EmitSpriteFrame0_32
-	+MAnimationFrame_Display		EmitSpriteFrame0_32
-	+MAnimationFrame_Display		EmitSpriteFrame0_32
-	+MAnimationFrame_Display		EmitSpriteFrame16_32
-	+MAnimationFrame_Display		EmitSpriteFrame16_32
-	+MAnimationFrame_Display		EmitSpriteFrame16_32
-	+MAnimationFrame_Display		EmitSpriteFrame16_32
-	+MAnimationFrame_Display		EmitSpriteFrame32_32
-	+MAnimationFrame_Display		EmitSpriteFrame32_32
-	+MAnimationFrame_Display		EmitSpriteFrame32_32
-	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_32 , AnimationFrames_playerRunDown
+!source "asm/PlayerInput.a"
+!source "asm/Mode7.a"
+!source "asm/StackedSprites.a"
+!source "asm/AnimationData.a"
+!source "../BerzerkRedux/Rand.a"
+!source "asm/CharacterLogic.a"

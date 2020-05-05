@@ -1,0 +1,131 @@
+!zn
+.cnt1 !by $50
+.cnt2 !by $80
+.cnt3 !by $80
+.velTab !by 8,16,32,64,60,55,50,45,40,35,30,25,20,16,8,4
+
+.scaleTab !by 0,1,2,3,4,5,6,7,8,9,8,7,6,5,4,3,2,1
+	; Padding for .cnt2 scaling
+	!by 0,0,0,0,0,0,0,0
+	!by 0,0,0,0,0,0,0,0
+	!by 0,0,0,0,0,0,0,0
+	!by 0,0,0,0,0,0,0,0
+Mode7_Update
+	inc .cnt1
+	lda .cnt1
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	clc
+	lda .velTab,x
+	adc Mode7Regs0_xpos
+	sta Mode7Regs0_xpos
+	bcc .l1
+	inc Mode7Regs0_xpos+1
+	bne .l1
+	inc Mode7Regs0_xpos+2
+.l1
+
+	lda .cnt1
+	lsr
+	lsr
+	and #15
+	tax
+	clc
+	lda .velTab,x
+	adc Mode7Regs0_ypos
+	sta Mode7Regs0_ypos
+	bcc .l2
+	inc Mode7Regs0_ypos+1
+	bne .l2
+	inc Mode7Regs0_ypos+2
+.l2
+
+	; A differently timed value for scale
+	lda .cnt1
+	and #%11
+	cmp #%11
+	bne .o1
+
+	inc .cnt2
+
+	lda .cnt2
+	lsr
+	lsr
+	lsr
+	and #31
+	tax
+	lda .scaleTab,x
+	sta Mode7Regs0_scale_dX
+
+	lda .cnt2
+	lsr
+	lsr
+	and #31
+	tax
+	lda .scaleTab,x
+	sta Mode7Regs0_scale_dY
+
+.o1
+
+	; A differently timed value for sheer
+	lda .cnt1
+	and #%111
+	cmp #%111
+	bne .o2
+
+	inc .cnt3
+
+	lda .cnt3
+	lsr
+	lsr
+	lsr
+	and #31
+	tax
+	lda .scaleTab,x
+	sta Mode7Regs0_scale_dXY
+
+	lda .cnt3
+	lsr
+	lsr
+	and #31
+	tax
+	lda .scaleTab,x
+	sta Mode7Regs0_scale_dYX
+
+.o2
+
+
+	rts
+
+!zn	
+Mode7Regs0
+
+Mode7Regs0_scale_dX
+	+MLittleEndian24Bit $100
+Mode7Regs0_scale_dXY
+	+MLittleEndian24Bit 0
+Mode7Regs0_scale_dY
+	+MLittleEndian24Bit $100
+Mode7Regs0_scale_dYX
+	+MLittleEndian24Bit 0
+
+Mode7Regs0_xpos
+	+MLittleEndian24Bit 0
+Mode7Regs0_ypos
+	+MLittleEndian24Bit 0
+
+Mode7Regs0Size = * - Mode7Regs0
+
+
+!zn
+copyMode7Regs
+	lda #$01
+	+MWordValueTo_XY $a000
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX Mode7Regs0
+	ldy #Mode7Regs0Size
+	jmp Bus24Bit_CopySmallData

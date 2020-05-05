@@ -37,6 +37,9 @@
     <Filter Include="Resource Files\assets">
       <UniqueIdentifier>{b8f965b9-2c3a-438e-95b1-3ca2a10d3891}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\BerzerkRedux">
+      <UniqueIdentifier>{59135770-4aa3-4dca-969c-2c70d463faa9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -65,6 +68,8 @@
     <None Include="features\AnimationEngine.feature">
       <Filter>Resource Files\features</Filter>
     </None>
+    <None Include="FeatureEditor.bat" />
+    <None Include="MakeRelease.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -114,6 +119,24 @@
     </Library>
     <Library Include="asm\AnimationEngine.a">
       <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\AnimationData.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\Mode7.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\PlayerInput.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\StackedSprites.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\TileScreen.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\BerzerkRedux\Rand.a">
+      <Filter>Source Files\BerzerkRedux</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

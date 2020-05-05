@@ -115,6 +115,8 @@ AnimationEngine_MutateToTypeIfDifferent
 
 !zn
 AnimationEngine_RenderSprites
+	lda #0
+	sta EmitSpriteFrame_count
 	ldy #kAnimationEngine_maxSlots-1
 .l1
 	lda AnimationEngine_frameHi,y
@@ -130,6 +132,22 @@ AnimationEngine_RenderSprites
 .noEntry
 	dey
 	bpl .l1
+
+	; Clear any remaining hardware sprites, since we do not want them hanging around on the screen after the animation is deleted
+	ldx EmitSpriteFrame_count
+	lda #0
+.cl1
+	cpx #24	; max 24 hardware sprites
+	bcs .cl2
+	; Store frame/palette/x/y
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+	inx
+	jmp .cl1
+.cl2
+
 	rts
 
 

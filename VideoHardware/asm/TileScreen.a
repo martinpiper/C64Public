@@ -1,0 +1,16 @@
+!zn
+TileScreen_xpos !by 0,0
+TileScreen_ypos !by 0,0
+copyTilesScrolls
+	lda #$01
+	+MWordValueTo_XY $9e01
+	jsr Bus24Bit_SetAddressBus
+	lda TileScreen_xpos
+	sta CIA2PortBRS232
+	lda TileScreen_xpos+1
+	sta CIA2PortBRS232
+	lda TileScreen_ypos
+	sta CIA2PortBRS232
+	lda TileScreen_ypos+1
+	sta CIA2PortBRS232
+	rts

@@ -72,3 +72,6 @@ Feature: Testing the AnimationEngine
 
     And I expect to see AnimationEngine_framesPositionHi+kAnimationEngine_maxSlots-1 equal hi(AnimationFrames_playerRunUp+4)
     And I expect to see AnimationEngine_framesPositionLo+kAnimationEngine_maxSlots-1 equal lo(AnimationFrames_playerRunUp+4)
+
+
+	# TODO: .isDelete test

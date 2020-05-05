@@ -1,0 +1,54 @@
+!zn
+AnimationType_tableLoHi
+	+MAnimationType_Create ~kAnimationType_playerRunLeft , AnimationFrames_playerRunLeft
+	+MAnimationType_Create ~kAnimationType_playerRunUp , AnimationFrames_playerRunUp
+	+MAnimationType_Create ~kAnimationType_playerRunDown , AnimationFrames_playerRunDown
+	+MAnimationType_Create ~kAnimationType_oldManFaceDown , AnimationFrames_oldManFaceDown
+
+
+
+AnimationFrames_playerRunLeft
+	+MAnimationFrame_Display		EmitSpriteFrame0_0
+	+MAnimationFrame_Display		EmitSpriteFrame0_0
+	+MAnimationFrame_Display		EmitSpriteFrame0_0
+	+MAnimationFrame_Display		EmitSpriteFrame0_0
+	+MAnimationFrame_Display		EmitSpriteFrame16_0
+	+MAnimationFrame_Display		EmitSpriteFrame16_0
+	+MAnimationFrame_Display		EmitSpriteFrame16_0
+	+MAnimationFrame_Display		EmitSpriteFrame16_0
+	+MAnimationFrame_Display		EmitSpriteFrame32_0
+	+MAnimationFrame_Display		EmitSpriteFrame32_0
+	+MAnimationFrame_Display		EmitSpriteFrame32_0
+	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_0 , AnimationFrames_playerRunLeft
+
+AnimationFrames_playerRunUp
+	+MAnimationFrame_Display		EmitSpriteFrame0_16
+	+MAnimationFrame_Display		EmitSpriteFrame0_16
+	+MAnimationFrame_Display		EmitSpriteFrame0_16
+	+MAnimationFrame_Display		EmitSpriteFrame0_16
+	+MAnimationFrame_Display		EmitSpriteFrame16_16
+	+MAnimationFrame_Display		EmitSpriteFrame16_16
+	+MAnimationFrame_Display		EmitSpriteFrame16_16
+	+MAnimationFrame_Display		EmitSpriteFrame16_16
+	+MAnimationFrame_Display		EmitSpriteFrame32_16
+	+MAnimationFrame_Display		EmitSpriteFrame32_16
+	+MAnimationFrame_Display		EmitSpriteFrame32_16
+	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_16 , AnimationFrames_playerRunUp
+
+AnimationFrames_playerRunDown
+	+MAnimationFrame_Display		EmitSpriteFrame0_32
+	+MAnimationFrame_Display		EmitSpriteFrame0_32
+	+MAnimationFrame_Display		EmitSpriteFrame0_32
+	+MAnimationFrame_Display		EmitSpriteFrame0_32
+	+MAnimationFrame_Display		EmitSpriteFrame16_32
+	+MAnimationFrame_Display		EmitSpriteFrame16_32
+	+MAnimationFrame_Display		EmitSpriteFrame16_32
+	+MAnimationFrame_Display		EmitSpriteFrame16_32
+	+MAnimationFrame_Display		EmitSpriteFrame32_32
+	+MAnimationFrame_Display		EmitSpriteFrame32_32
+	+MAnimationFrame_Display		EmitSpriteFrame32_32
+	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_32 , AnimationFrames_playerRunDown
+
+
+AnimationFrames_oldManFaceDown
+	+MAnimationFrame_DisplayGoto	EmitSpriteFrame48_0 , AnimationFrames_oldManFaceDown

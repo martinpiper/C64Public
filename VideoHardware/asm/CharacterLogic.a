@@ -1,0 +1,71 @@
+!zn
+CharacterLogic_Update
+	lda EmitSpriteFrame_count
+	cmp #(24-3)
+	bcc .potentiallyAdd
+	rts
+
+.potentiallyAdd
+
+	jsr Rand
+	and #3
+	asl	; Remember all the animation index values are * 2
+	tay
+
+	jsr AnimationEngine_Allocate
+	bcc .slotFound
+
+	rts
+
+.slotFound
+	; Decide on the screen edge to add to
+	jsr Rand
+
+	; All the edge positions are inside the screen by one pixel, hence the +/- 1 being used below
+	and #3
+	beq .addLeft
+	cmp #1
+	beq .addRight
+	cmp #2
+	beq .addTop
+
+.addBottom
+	jsr Rand
+	and #127
+	adc #64
+	sta AnimationEngine_posX,x
+
+	lda #1
+	sta AnimationEngine_posY,x
+	rts
+
+.addTop
+	jsr Rand
+	and #127
+	adc #64
+	sta AnimationEngine_posX,x
+
+	lda #254
+	sta AnimationEngine_posY,x
+	rts
+
+.addLeft
+	lda #kScreenSpriteOffScreen_left+1
+	sta AnimationEngine_posX,x
+
+	jsr Rand
+	and #127
+	adc #64
+	sta AnimationEngine_posY,x
+	rts
+
+.addRight
+	lda #kScreenSpriteOffScreen_right-1
+	sta AnimationEngine_posX,x
+
+	jsr Rand
+	and #127
+	adc #64
+	sta AnimationEngine_posY,x
+	rts
+

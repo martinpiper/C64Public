@@ -1,0 +1,47 @@
+!zn
+; Sprite emit macros, customised for this application allow the ImageToBitplane tool to output optimised sprite drawing
+; A = Y pos
+; X = X pos
+; Y = Preserved
+EmitSpriteFrame_temp	!by 0
+EmitSpriteFrame_count	!by 0
+EmitSpriteFrame_flips	!by 0
+!macro MEmitSpriteFrame frame,palette {
+	ldy #frame
+	sty CIA2PortBRS232
+	pha
+	lda #palette
+	ora EmitSpriteFrame_flips
+	sta CIA2PortBRS232
+	pla
+	sta CIA2PortBRS232
+	stx CIA2PortBRS232
+	inc EmitSpriteFrame_count
+}
+!macro MEmitSpriteFrame_Preserve {
+	sty EmitSpriteFrame_temp
+}
+!macro MEmitSpriteFrame_RestoreExit {
+	ldy EmitSpriteFrame_temp
+	rts
+}
+
+!source "tmp/spriteSheet.txt.a"
+
+!macro MAnimationType_Create ~.kAnimationTypeEnum , .address {
+	.kAnimationTypeEnum = * - AnimationType_tableLoHi
+	!by <.address , >.address
+}
+
+!macro MAnimationType_End {
+	!by 0
+}
+
+
+!zn
+copySprites
+	lda #0
+	sta EmitSpriteFrame_count
+	jsr Bus24Bit_SetAddressSprites
+	jsr AnimationEngine_RenderSprites
+	rts

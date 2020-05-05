@@ -41,14 +41,17 @@
     <None Include="assets\map.tmx" />
     <None Include="assets\RPG.tsx" />
     <None Include="BuildIt.bat" />
+    <None Include="FeatureEditor.bat" />
     <None Include="features\AnimationEngine.feature" />
     <None Include="features\smoke test.feature" />
+    <None Include="MakeRelease.bat" />
     <None Include="README.md" />
     <None Include="tmp\main.map" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\BombJack\stdlib\Bus24Bit.a" />
     <Library Include="..\..\BombJack\stdlib\Video.a" />
+    <Library Include="..\BerzerkRedux\Rand.a" />
     <Library Include="..\stdlib\BASICEntry80d.a" />
     <Library Include="..\stdlib\BASICEntry810.a" />
     <Library Include="..\stdlib\BASICEntry900.a" />
@@ -60,8 +63,13 @@
     <Library Include="..\stdlib\stdlib.a" />
     <Library Include="..\stdlib\VideoModes.a" />
     <Library Include="..\stdlib\VideoModes_Macros.a" />
+    <Library Include="asm\AnimationData.a" />
     <Library Include="asm\AnimationEngine.a" />
     <Library Include="asm\main.a" />
+    <Library Include="asm\Mode7.a" />
+    <Library Include="asm\PlayerInput.a" />
+    <Library Include="asm\StackedSprites.a" />
+    <Library Include="asm\TileScreen.a" />
     <Library Include="tmp\spriteSheet.txt.a" />
   </ItemGroup>
   <ItemGroup>

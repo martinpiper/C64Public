@@ -1,0 +1,142 @@
+!zn
+
+; For wrap around screen position testing, these numbers may look a bit odd, but they are the result of a 256 wide sprite scan line
+kScreenSpriteOffScreen_right	= 243
+kScreenSpriteOffScreen_left		= 244
+
+!macro MoveAnimationsForBy .animationPos , .by {
+	; Update position for all other sprites except the player
+	ldx #kAnimationEngine_maxSlots-1
+.l1
+	cpx playerAnimationIndex
+	beq .nl1
+	lda AnimationEngine_frameHi,x
+	beq .nl1
+	lda .animationPos,x
+!if .by < 0 {
+	sec
+	sbc #1
+	!if .animationPos = AnimationEngine_posX {
+		cmp #kScreenSpriteOffScreen_left
+		bne .il1
+	} else {
+		bcs .il1
+	}
+} else {
+	clc
+	adc #1
+	!if .animationPos = AnimationEngine_posX {
+		cmp #kScreenSpriteOffScreen_right
+		bne .il1
+	} else {
+		bcc .il1
+	}
+}
+	; Delete it
+	lda #0
+	sta AnimationEngine_frameHi,x
+	sta AnimationEngine_framesPositionHi,x
+	jmp .nl1
+.il1
+	sta .animationPos,x
+.nl1
+	dex
+	bpl .l1
+}
+
+!macro TilesCloudsDec .mode7 , .tiles {
+	lda .mode7+1
+	sec
+	sbc #2
+	sta .mode7+1
+	lda .mode7+2
+	sbc #0
+	sta .mode7+2
+
+	dec .tiles
+	lda .tiles
+	cmp #$ff
+	bne .o1
+	dec .tiles+1
+.o1
+}
+
+!macro TilesCloudsInc .mode7 , .tiles {
+	lda .mode7+1
+	clc
+	adc #2
+	sta .mode7+1
+	lda .mode7+2
+	adc #0
+	sta .mode7+2
+
+	inc .tiles
+	bne .o1
+	inc .tiles+1
+.o1
+}
+
+!zn
+playerAnimationIndex !by 0
+HandleJoystick
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+
+	+MoveAnimationsForBy AnimationEngine_posY , -1
+
+	ldx playerAnimationIndex
+	ldy #kAnimationType_playerRunUp
+	jsr AnimationEngine_MutateToTypeIfDifferent
+
+	+TilesCloudsDec Mode7Regs0_ypos , TileScreen_ypos
+
+.notUp
+
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+
+	+MoveAnimationsForBy AnimationEngine_posY , 1
+
+	ldx playerAnimationIndex
+	ldy #kAnimationType_playerRunDown
+	jsr AnimationEngine_MutateToTypeIfDifferent
+
+	+TilesCloudsInc Mode7Regs0_ypos , TileScreen_ypos
+
+.notDown
+
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+
+	+MoveAnimationsForBy AnimationEngine_posX , 1
+
+	ldx playerAnimationIndex
+	ldy #kAnimationType_playerRunLeft
+	jsr AnimationEngine_MutateToTypeIfDifferent
+	lda #0
+	sta AnimationEngine_flips,x
+
+	+TilesCloudsDec Mode7Regs0_xpos , TileScreen_xpos
+
+.notLeft
+
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+
+	+MoveAnimationsForBy AnimationEngine_posX , -1
+
+	ldx playerAnimationIndex
+	ldy #kAnimationType_playerRunLeft
+	jsr AnimationEngine_MutateToTypeIfDifferent
+	lda #kAnimationEngine_flipX
+	sta AnimationEngine_flips,x
+
+	+TilesCloudsInc Mode7Regs0_xpos , TileScreen_xpos
+
+.notRight
+	rts

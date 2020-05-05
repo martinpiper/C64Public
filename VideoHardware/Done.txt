@@ -80,3 +80,22 @@
 	stop = hi 0
 	delete = hi 1
 	otherwise goto = hi/lo address (then no need for any addition code, just store)
+
+
+* Make SDK bat
+
+
+
+* When the screen scrolls the other animations are moved
+	Include an off screen check
+
+
+
+* Add subtle cloud scaling/sheer/rotate
+
+
+
+* When EmitSpriteFrame_count < (24-3) (3 being the most complex stacked sprite in spriteSheet.a)
+	Then consider spawning a new sprite on one of the screen edges
+	Can use the random number generator in Citadel
+		Which would need adding to the SDK build
