@@ -35,6 +35,7 @@ start
 	jsr Bus24Bit_DisableDisplay
 
 	jsr AnimationEngine_Init
+	jsr AllocatePlayer
 
 	; Do various video data init here
 
@@ -50,65 +51,6 @@ start
 	jsr Bus24Bit_EnableDisplay
 	jsr Bus24Bit_WaitVSync
 
-	; Allocate and remember the player index
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_Allocate
-	lda #120
-	sta AnimationEngine_posX,x
-	lda #128
-	sta AnimationEngine_posY,x
-	lda #kAnimationEngine_flipX
-	sta AnimationEngine_flips,x
-	stx playerAnimationIndex
-
-
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_Allocate
-	lda #32
-	sta AnimationEngine_posX,x
-	lda #96
-	sta AnimationEngine_posY,x
-
-
-	ldy #kAnimationType_playerRunUp
-	jsr AnimationEngine_Allocate
-	lda #192
-	sta AnimationEngine_posX,x
-	lda #160
-	sta AnimationEngine_posY,x
-
-
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_Allocate
-	lda #48
-	sta AnimationEngine_posX,x
-	lda #220
-	sta AnimationEngine_posY,x
-
-
-	ldy #kAnimationType_playerRunDown
-	jsr AnimationEngine_Allocate
-	lda #96
-	sta AnimationEngine_posX,x
-	lda #64
-	sta AnimationEngine_posY,x
-
-
-	ldy #kAnimationType_playerRunUp
-	jsr AnimationEngine_Allocate
-	lda #196
-	sta AnimationEngine_posX,x
-	lda #100
-	sta AnimationEngine_posY,x
-
-
-	ldy #kAnimationType_playerRunLeft
-	jsr AnimationEngine_Allocate
-	lda #150
-	sta AnimationEngine_posX,x
-	lda #132
-	sta AnimationEngine_posY,x
-
 mainLoop
 .l1
 	jsr setupFrame
@@ -121,16 +63,20 @@ setupFrame
 	jsr copyTilesScrolls
 	jsr copySprites
 	jsr HandleJoystick
+	jsr TileScreen_calculateFine
 	jsr AnimationEngine_Update
 	jsr CharacterLogic_Update
+	; Potentially can do this less often if time is tight
+	jsr CharacterLogic_CheckSpawn
 	jsr Mode7_Update
 	rts
 
+!source "../BerzerkRedux/Rand.a"
 !source "asm/TileScreen.a"
 !source "asm/AnimationEngine.a"
 !source "asm/PlayerInput.a"
 !source "asm/Mode7.a"
 !source "asm/StackedSprites.a"
 !source "asm/AnimationData.a"
-!source "../BerzerkRedux/Rand.a"
 !source "asm/CharacterLogic.a"
+!source "asm/CharacterLogicData.a"

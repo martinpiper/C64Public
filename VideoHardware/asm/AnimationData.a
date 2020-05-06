@@ -1,10 +1,24 @@
 !zn
 AnimationType_tableLoHi
-	+MAnimationType_Create ~kAnimationType_playerRunLeft , AnimationFrames_playerRunLeft
-	+MAnimationType_Create ~kAnimationType_playerRunUp , AnimationFrames_playerRunUp
-	+MAnimationType_Create ~kAnimationType_playerRunDown , AnimationFrames_playerRunDown
-	+MAnimationType_Create ~kAnimationType_oldManFaceDown , AnimationFrames_oldManFaceDown
+	+MAnimationType_Create ~kAnimationType_playerRunLeft	, AnimationFrames_playerRunLeft
+	+MAnimationType_Create ~kAnimationType_playerRunUp		, AnimationFrames_playerRunUp
+	+MAnimationType_Create ~kAnimationType_playerRunDown	, AnimationFrames_playerRunDown
 
+	+MAnimationType_Create ~kAnimationType_manFaceLeft		, AnimationFrames_manFaceLeft
+	+MAnimationType_Create ~kAnimationType_manFaceUp		, AnimationFrames_manFaceUp
+	+MAnimationType_Create ~kAnimationType_manFaceDown		, AnimationFrames_manFaceDown
+
+	+MAnimationType_Create ~kAnimationType_womanFaceLeft	, AnimationFrames_womanFaceLeft
+	+MAnimationType_Create ~kAnimationType_womanFaceUp		, AnimationFrames_womanFaceUp
+	+MAnimationType_Create ~kAnimationType_womanFaceDown	, AnimationFrames_womanFaceDown
+
+	+MAnimationType_Create ~kAnimationType_girlFaceLeft		, AnimationFrames_girlFaceLeft
+	+MAnimationType_Create ~kAnimationType_girlFaceUp		, AnimationFrames_girlFaceUp
+	+MAnimationType_Create ~kAnimationType_girlFaceDown		, AnimationFrames_girlFaceDown
+
+	+MAnimationType_Create ~kAnimationType_boyFaceLeft		, AnimationFrames_boyFaceLeft
+	+MAnimationType_Create ~kAnimationType_boyFaceUp		, AnimationFrames_boyFaceUp
+	+MAnimationType_Create ~kAnimationType_boyFaceDown		, AnimationFrames_boyFaceDown
 
 
 AnimationFrames_playerRunLeft
@@ -50,5 +64,41 @@ AnimationFrames_playerRunDown
 	+MAnimationFrame_DisplayGoto	EmitSpriteFrame32_32 , AnimationFrames_playerRunDown
 
 
-AnimationFrames_oldManFaceDown
-	+MAnimationFrame_DisplayGoto	EmitSpriteFrame48_0 , AnimationFrames_oldManFaceDown
+AnimationFrames_manFaceLeft
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame64_0
+
+AnimationFrames_manFaceUp
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame80_0
+
+AnimationFrames_manFaceDown
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame48_0
+
+
+AnimationFrames_womanFaceLeft
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame64_16
+
+AnimationFrames_womanFaceUp
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame80_16
+
+AnimationFrames_womanFaceDown
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame48_16
+
+
+AnimationFrames_girlFaceLeft
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame64_32
+
+AnimationFrames_girlFaceUp
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame80_32
+
+AnimationFrames_girlFaceDown
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame48_32
+
+
+AnimationFrames_boyFaceLeft
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame64_48
+
+AnimationFrames_boyFaceUp
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame80_48
+
+AnimationFrames_boyFaceDown
+	+MAnimationFrame_DisplayStop	EmitSpriteFrame48_48

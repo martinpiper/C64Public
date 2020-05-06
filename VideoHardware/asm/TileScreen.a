@@ -1,6 +1,8 @@
 !zn
 TileScreen_xpos !by 0,0
 TileScreen_ypos !by 0,0
+TileScreen_invXFine !by 0
+TileScreen_invYFine !by 0
 copyTilesScrolls
 	lda #$01
 	+MWordValueTo_XY $9e01
@@ -13,4 +15,16 @@ copyTilesScrolls
 	sta CIA2PortBRS232
 	lda TileScreen_ypos+1
 	sta CIA2PortBRS232
+	rts
+
+
+TileScreen_calculateFine
+	lda TileScreen_xpos
+	and #$f
+	eor #$f
+	sta TileScreen_invXFine
+	lda TileScreen_ypos
+	and #$f
+;	eor #$f
+	sta TileScreen_invYFine
 	rts

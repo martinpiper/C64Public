@@ -57,7 +57,7 @@ AnimationEngine_Init
 !zn
 ; Entry:
 ; Y = One of the (kAnimationType_*) constants in AnimationType_tableLoHi
-; Exit
+; Exit:
 ; CS = Not slot found
 ; CC = Slot found, index in X
 ; Y = Not preserved
@@ -74,6 +74,8 @@ AnimationEngine_Allocate
 ; Entry: Note this a sub-function
 ; X = Animation index
 ; Y = One of the (kAnimationType_*) constants in AnimationType_tableLoHi
+; Exit:
+; Y = Not preserved
 AnimationEngine_MutateToType
 	lda AnimationType_tableLoHi,y
 	sta zeroPage_Temp0
@@ -184,3 +186,13 @@ AnimationEngine_Update
 .isDelete
 	sta AnimationEngine_framesPositionHi,x
 	jmp .noEntry
+
+
+!zn
+; Entry:
+; X = Index to delete
+AnimationEngine_Delete
+	lda #0
+	sta AnimationEngine_frameHi,x
+	sta AnimationEngine_framesPositionHi,x
+	rts

@@ -1,5 +1,18 @@
 !zn
 
+AllocatePlayer
+	; Allocate and remember the player index
+	ldy #kAnimationType_playerRunLeft
+	jsr AnimationEngine_Allocate
+	lda #120
+	sta AnimationEngine_posX,x
+	lda #128
+	sta AnimationEngine_posY,x
+	lda #kAnimationEngine_flipX
+	sta AnimationEngine_flips,x
+	stx playerAnimationIndex
+	rts
+
 ; For wrap around screen position testing, these numbers may look a bit odd, but they are the result of a 256 wide sprite scan line
 kScreenSpriteOffScreen_right	= 243
 kScreenSpriteOffScreen_left		= 244

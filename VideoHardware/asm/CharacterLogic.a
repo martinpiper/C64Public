@@ -1,23 +1,87 @@
 !zn
-CharacterLogic_Update
+
+kCharacterLogic_directionUp		= 1
+kCharacterLogic_directionDown	= 2
+kCharacterLogic_directionLeft	= 3
+kCharacterLogic_directionRight	= 4
+
+; Used to index into CharacterLogic_typeTo*
+CharacterLogic_type			!fill kAnimationEngine_maxSlots , -1
+; Used to index into CharacterLogic_typeTo[direction] using kCharacterLogic_direction
+CharacterLogic_direction	!fill kAnimationEngine_maxSlots , -1
+CharacterLogic_moveCounter	!fill kAnimationEngine_maxSlots , 0
+
+
+; Checks to see if a new characters can be spawned this  frame
+CharacterLogic_CheckSpawn
 	lda EmitSpriteFrame_count
 	cmp #(24-3)
 	bcc .potentiallyAdd
 	rts
 
-.potentiallyAdd
-
-	jsr Rand
-	and #3
-	asl	; Remember all the animation index values are * 2
-	tay
-
+CharacterLogic_addingType !by 0
+!macro MCharacterLogic_allocateAnimation .directionTable {
+	stx CharacterLogic_addingType
+	ldy .directionTable,x
 	jsr AnimationEngine_Allocate
-	bcc .slotFound
-
+	bcc .allocated
+	rts
+.allocated
+}
+addForcedMovementTime
+	jsr Rand
+	and #$1f
+	clc
+	adc #16
+	sta CharacterLogic_moveCounter,x
 	rts
 
-.slotFound
+!macro MCharacterLogic_completeAllocation .direction , .directionTableFlips {
+	lda CharacterLogic_addingType
+	sta CharacterLogic_type,x
+	tay
+	lda .directionTableFlips,y
+	sta AnimationEngine_flips,x
+	lda #.direction
+	sta CharacterLogic_direction,x
+	jsr addForcedMovementTime
+}
+
+!macro MCharacterLogic_changeDirection .direction , .directionTable , .directionTableFlips {
+	tya
+	pha
+	ldy CharacterLogic_type,x
+	lda .directionTable,y
+	tay
+	jsr AnimationEngine_MutateToType
+	pla
+	tay
+	ldy CharacterLogic_type,x
+	lda .directionTableFlips,y
+	sta AnimationEngine_flips,x
+	lda #.direction
+	sta CharacterLogic_direction,x
+
+	jsr addForcedMovementTime
+}
+
+.getRandomTilePosition
+	jsr Rand
+	and #7
+	asl
+	asl
+	asl
+	asl
+	; Carry always clear
+	adc #64
+	rts
+
+.potentiallyAdd
+	; Character type to try to add
+	jsr Rand
+	and #3
+	tax
+
 	; Decide on the screen edge to add to
 	jsr Rand
 
@@ -25,24 +89,30 @@ CharacterLogic_Update
 	and #3
 	beq .addLeft
 	cmp #1
-	beq .addRight
+	beq .laddRight
 	cmp #2
 	beq .addTop
 
 .addBottom
-	jsr Rand
-	and #127
-	adc #64
+	+MCharacterLogic_allocateAnimation CharacterLogic_typeToUp
+	+MCharacterLogic_completeAllocation kCharacterLogic_directionUp , CharacterLogic_typeToUpFlips
+
+	jsr .getRandomTilePosition
+	adc TileScreen_invXFine
 	sta AnimationEngine_posX,x
 
 	lda #1
 	sta AnimationEngine_posY,x
 	rts
 
+.laddRight jmp .addRight
+
 .addTop
-	jsr Rand
-	and #127
-	adc #64
+	+MCharacterLogic_allocateAnimation CharacterLogic_typeToDown
+	+MCharacterLogic_completeAllocation kCharacterLogic_directionDown , CharacterLogic_typeToDownFlips
+
+	jsr .getRandomTilePosition
+	adc TileScreen_invXFine
 	sta AnimationEngine_posX,x
 
 	lda #254
@@ -50,22 +120,121 @@ CharacterLogic_Update
 	rts
 
 .addLeft
+	+MCharacterLogic_allocateAnimation CharacterLogic_typeToRight
+	+MCharacterLogic_completeAllocation kCharacterLogic_directionRight , CharacterLogic_typeToRightFlips
+
 	lda #kScreenSpriteOffScreen_left+1
 	sta AnimationEngine_posX,x
 
-	jsr Rand
-	and #127
-	adc #64
+	jsr .getRandomTilePosition
+	adc TileScreen_invYFine
 	sta AnimationEngine_posY,x
 	rts
 
 .addRight
+	+MCharacterLogic_allocateAnimation CharacterLogic_typeToLeft
+	+MCharacterLogic_completeAllocation kCharacterLogic_directionLeft , CharacterLogic_typeToLeftFlips
+
 	lda #kScreenSpriteOffScreen_right-1
 	sta AnimationEngine_posX,x
 
-	jsr Rand
-	and #127
-	adc #64
+	jsr .getRandomTilePosition
+	adc TileScreen_invYFine
 	sta AnimationEngine_posY,x
 	rts
 
+!zn
+.canChangeDirection
+	jsr Rand
+	and #3
+	beq .changeUp
+	cmp #1
+	beq .changeDown
+	cmp #2
+	beq .changeLeft
+
+.changeRight
+	+MCharacterLogic_changeDirection kCharacterLogic_directionRight , CharacterLogic_typeToRight , CharacterLogic_typeToRightFlips
+	rts
+
+.changeLeft
+	+MCharacterLogic_changeDirection kCharacterLogic_directionLeft , CharacterLogic_typeToLeft , CharacterLogic_typeToLeftFlips
+	rts
+
+.changeUp
+	+MCharacterLogic_changeDirection kCharacterLogic_directionUp , CharacterLogic_typeToUp , CharacterLogic_typeToUpFlips
+	rts
+
+.changeDown
+	+MCharacterLogic_changeDirection kCharacterLogic_directionDown , CharacterLogic_typeToDown , CharacterLogic_typeToDownFlips
+	rts
+
+; Updates all characters active on the screen
+CharacterLogic_Update
+	ldx #kAnimationEngine_maxSlots-1
+.l1
+	lda CharacterLogic_type,x
+	bmi .notValidType
+
+	lda CharacterLogic_moveCounter,x
+	beq .potentiallyChangeDirection
+	dec CharacterLogic_moveCounter,x
+	jmp .processDirection
+
+.potentiallyChangeDirection
+	; Check the sprite is in the middle of the tile
+	lda AnimationEngine_posX,x
+	and #$f
+	cmp TileScreen_invXFine
+	bne .cannotChangeDirection
+
+	lda AnimationEngine_posY,x
+	and #$f
+	cmp TileScreen_invYFine
+	bne .cannotChangeDirection
+
+	jsr .canChangeDirection
+
+.cannotChangeDirection
+.processDirection
+	lda CharacterLogic_direction,x
+	cmp #kCharacterLogic_directionUp
+	beq .moveUp
+	cmp #kCharacterLogic_directionDown
+	beq .moveDown
+	cmp #kCharacterLogic_directionLeft
+	beq .moveLeft
+
+.moveRight
+	inc AnimationEngine_posX,x
+	lda AnimationEngine_posX,x
+	cmp #kScreenSpriteOffScreen_right
+	bne .notValidType
+	jmp .deleteCharacter
+
+.moveLeft
+	dec AnimationEngine_posX,x
+	lda AnimationEngine_posX,x
+	cmp #kScreenSpriteOffScreen_left
+	bne .notValidType
+	jmp .deleteCharacter
+
+.moveUp
+	inc AnimationEngine_posY,x
+	bne .notValidType
+	jmp .deleteCharacter
+
+.moveDown
+	dec AnimationEngine_posY,x
+	bne .notValidType
+	jmp .deleteCharacter
+
+.deleteCharacter
+	lda #-1
+	sta CharacterLogic_type,x
+	jsr AnimationEngine_Delete
+
+.notValidType
+	dex
+	bpl .l1
+	rts
