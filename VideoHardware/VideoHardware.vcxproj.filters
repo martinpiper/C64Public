@@ -70,6 +70,7 @@
     </None>
     <None Include="FeatureEditor.bat" />
     <None Include="MakeRelease.bat" />
+    <None Include="SDK README.md" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -143,6 +144,9 @@
     </Library>
     <Library Include="asm\CharacterLogicData.a">
       <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Music.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

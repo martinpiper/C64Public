@@ -9,8 +9,9 @@
 !cpu 6510
 !ct pet
 
-zeroPage_Temp0	= $02
-zeroPage_Temp1	= $03
+; Save space for zeroPageCode_realStart
+zeroPage_Temp0	= $10
+zeroPage_Temp1	= $11
 
 
 
@@ -25,6 +26,7 @@ Initialise_NoIRQServiceRoutine = 1
 !source "stdlib/Initialise.a"
 !source "BombJack/stdlib/Bus24Bit.a"
 !source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/Music.a"
 
 !zn
 start
@@ -34,6 +36,7 @@ start
 	jsr Bus24Bit_Init
 	jsr Bus24Bit_DisableDisplay
 
+	jsr MusicInit
 	jsr AnimationEngine_Init
 	jsr AllocatePlayer
 
@@ -49,7 +52,7 @@ start
 	; Enable screen, tiles, border shrink
 	lda #$f0
 	jsr Bus24Bit_EnableDisplay
-	jsr Bus24Bit_WaitVSync
+	jsr Bus24Bit_WaitVBlank
 
 mainLoop
 .l1
@@ -58,10 +61,11 @@ mainLoop
 	jmp .l1
 
 setupFrame
-	jsr Bus24Bit_WaitVSync
+	jsr Bus24Bit_WaitVBlank
 	jsr copyMode7Regs
 	jsr copyTilesScrolls
 	jsr copySprites
+	jsr MusicPoll
 	jsr HandleJoystick
 	jsr TileScreen_calculateFine
 	jsr AnimationEngine_Update
@@ -80,3 +84,8 @@ setupFrame
 !source "asm/AnimationData.a"
 !source "asm/CharacterLogic.a"
 !source "asm/CharacterLogicData.a"
+
+MusicDataStart
+MusicDataStart_afterHeader = MusicDataStart + 4
+	!bin "tmp/target/exportedMusicEvents.cmp"
+MusicDataEnd

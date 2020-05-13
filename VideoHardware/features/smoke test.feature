@@ -4,8 +4,11 @@ Feature: Smoke test
   Quickly load the output and check various simple aspects of the code
 
   Scenario: Smoke test for video
+    Given a new audio expansion
     Given a new video display
     Given video display processes 8 pixels per instruction
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
     Given video display refresh window every 256 instructions
     Given video display add joystick to port 1
     Given video display saves debug BMP images to leaf filename "tmp/frames/TC-1-"
@@ -22,6 +25,8 @@ Feature: Smoke test
     Given show video window
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
+	#  Music
+	Given write data from file "tmp/target/exportedMusicSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
     # Palette
     Given write data from file "tmp/PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
     # Sprites
@@ -48,7 +53,8 @@ Feature: Smoke test
 
 #    And I enable trace with indent
     When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
-    Then expect image "testdata/TC-1-000000.bmp" to be identical to "tmp/frames/TC-1-000000.bmp"
+	Given render a video display frame
+#    Then expect image "testdata/TC-1-000000.bmp" to be identical to "tmp/frames/TC-1-000000.bmp"
 
 #    And I enable trace with indent
     When I execute the procedure at setupFrame for no more than 1000000 instructions
@@ -68,12 +74,16 @@ Feature: Smoke test
     Then expect image "testdata/TC-1-000006.bmp" to be identical to "tmp/frames/TC-1-000006.bmp"
     Then expect image "testdata/TC-1-000007.bmp" to be identical to "tmp/frames/TC-1-000007.bmp"
     Then expect image "testdata/TC-1-000008.bmp" to be identical to "tmp/frames/TC-1-000008.bmp"
+    Then expect image "testdata/TC-1-000009.bmp" to be identical to "tmp/frames/TC-1-000009.bmp"
+
 
     # This allows the last frame to be observed and window zoomed/resized
 #    When rendering the video until window closed
 
     # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
     Given property "bdd6502.bus24.trace" is set to string "false"
     Given video display does not save debug BMP images
+#    Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
     When I execute the procedure at mainLoop until return

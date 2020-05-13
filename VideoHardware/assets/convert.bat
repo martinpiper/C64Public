@@ -12,4 +12,11 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 echo Convert the clouds with new palette data
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 255 0 255 --palettesize 256 --loadpalette ../tmp/PaletteData.bin --image "clouds.png" --tilewh 16 16 --fitpalettes --outputtilebytes ../tmp/clouds_tiles.bin --outputscrcol ../tmp/clouds_screen.bin --nostacking --convertwritepass >..\tmp\clouds2.log
 
+
+echo Convert music
+cd ..\tmp
+if not exist target mkdir target
+java.exe -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod ..\assets\asikwp_-_twistmachine.mod
+
+
 popd
