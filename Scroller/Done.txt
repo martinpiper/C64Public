@@ -277,3 +277,7 @@ Player1Information or Player2Information is used depending on the active players
 * Potential bug in the static level redraw back in the map, test case using a modified Transputerman (SEUCK game 3) in C64\SEUCK\tstlvlrwedraw .i
 	The later levels jump backwards through the map with a redraw, in SEUCK the same enemies should respawn, this code should do the same
 	* Done see "; Test for still (static) level redraw tweak"
+
+
+
+* If IRQOpenBorders was being used then BottomBorderLessTime was not saving the X register and restoring from some other value, oops.
