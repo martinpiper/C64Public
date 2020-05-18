@@ -37,7 +37,8 @@ Scroller_IRQVectorLo = IRQServiceRoutineLo
 Scroller_IRQVectorHi = IRQServiceRoutineHi
 Scroller_NMIVectorLo = NMIServiceRoutineLo
 Scroller_NMIVectorHi = NMIServiceRoutineHi
-Scroller_IRQRasterAdjust=0
+; Used to adjust IRQs that check their raster, when kernal mode is enabled
+Scroller_IRQRasterAdjust=1
 Scroller_SpriteDiscardAdjust=0
 Scroller_NMITimerAdjust=7
 Scroller_Split2Adjust=0

@@ -10,19 +10,19 @@ Multiplex_items	= 24
 ;Scroller_DebugSplit = 1
 
 ; Define this to use the KERNAL, alters how IRQ/NMI vectors are used
-Scroller_UseKernal = 1
+;Scroller_UseKernal = 1
 
 ; Define Scroller_EnableSpeedCode to enable scroller speed code in cartridge banks. This number is the starting bank of the scroller speed code
 ; Each block of speed code in the bank is in fixed order defined by the colour and screen size requirement.
 ; Scroller_UseKernal must also be defined to use the speed code approach.
-Scroller_EnableSpeedCode = 1
+;Scroller_EnableSpeedCode = 1
 !source "_f_index1.a"
 
 ; Enable this to unroll block plotting speed code where possible
-Scroller_EnableBlockStripsSpeedCode = 1
+;Scroller_EnableBlockStripsSpeedCode = 1
 
 ; Enable this to unroll block colour plotting speed code where possible
-Scroller_EnableBlockColourSpeedCode = 1
+;Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page

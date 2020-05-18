@@ -3,7 +3,8 @@ del Scroller.prg
 ..\acme.exe -v3 --msvc ScrollEntry.a
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
-..\bin\LZMPi.exe -c64b ScrollerOrig.prg Scroller.prg 1024 >t.txt
+rem ..\bin\LZMPi.exe -c64b ScrollerOrig.prg Scroller.prg 1024 >t.txt
+..\bin\LZMPi.exe -c64mr ScrollerOrig.prg Scroller.prg 1024 >t.txt
 if not exist Scroller.prg goto error
 
 rem No extra Ultimax boot, so use a simple empty address switch as placeholder for the command line

@@ -1,3 +1,16 @@
+* Depending on the MSB move the sprite positions to offscreen
+	Is there better logic here? For example shift the MSB, then rotate into the hi bit?
+	Or use Y to store zero in one pass?
+
+
+
+* For Multiplexor_UpdateCollisionDetails and other related hardware collision code
+	"!ifdef Scroller_MultiDirection { } else {" should not be used, instead "ScrollEntry_*.a" should have a specific define to enable hardware collision code so it can be used in other projects.
+	* Study Multiplex_LogCollisions usage
+
+
+
+
 * Option of playing soundFX/music from interrupt instead of mainline. This will mean that any SFX play request will need to be queued and executed inside the interrupt.
 	* Added Scroller_DoMusicUpdateInIRQ - The test works well, no music slowdown as expected
 	Still need a way to queue sound effect play requests into the IRQ. Basically when Scroller_DoMusicUpdateInIRQ is defined then MusicPlayerPlaySFX and MusicPlayerPlay can be redirected.

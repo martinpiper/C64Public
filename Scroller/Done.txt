@@ -281,3 +281,57 @@ Player1Information or Player2Information is used depending on the active players
 
 
 * If IRQOpenBorders was being used then BottomBorderLessTime was not saving the X register and restoring from some other value, oops.
+
+
+
+
+* Scroller_FullScreen with Scroller_UseKernal and IRQOpenBorders needs to have its timing adjusted for BottomBorder*
+	Also: ScrollerNMI1 and Scroller_NMITimerAdjust
+	Top border done
+	Bottom border is proving tricky
+	All below timings are with debug border colour change
+	* Timing without kernal (w store d011) no sprites, frameScrollY = 0
+		lin 002 cyc 009 = %01110000
+		lin 055 cyc 024 = %00010000
+		lin 245 cyc 011 = %01111011
+		lin 250 cyc 026 = %11110011
+		lin 263 cyc 041 = %01110011
+	* Timing without kernal (w store d011) all sprites top and bottom borders, frameScrollY = 0
+		lin 002 cyc 010 = %01110000
+		lin 055 cyc 031 = %00010000
+		lin 245 cyc 019 = %01111011
+		lin 250 cyc 033 = %11110011
+		lin 263 cyc 042 = %01110011
+	* Without BottomBorderLessTime, all sprites and no sprites seems stable for frameScrollY = 0-7
+		So remove BottomBorderLessTime
+	* What cabout the score panel timings, can ScorePanel1Quick be removed?
+	* Timing without kernal, frameScrollY = 0, no IRQOpenBorders, with ScorePanel1Quick
+		lin 001 cyc 014 = %00010000
+		lin 207 cyc 011 = %01111111
+			raster 207 = %11001111 = So forces a bad line
+		lin 215 cyc 012 = %00011111
+			raster 215 = %11010111 : Another bad line
+	* Timing without kernal, frameScrollY = 0, no IRQOpenBorders, without ScorePanel1Quick
+		lin 001 cyc 013 = %00010000
+		lin 207 cyc 020 = %01111111
+		lin 215 cyc 059 = %0001ffff6644
+		Seems stable
+	* When IRQOpenBorders, add a scorePanelPos2 check to BottomBorder2
+	* Timing without kernal (w store d011) all sprites and no sprites top and bottom borders, frameScrollY = 0-7
+		lin 002 cyc 007 = %01110000
+		lin 055 cyc 027 = %00010000
+		lin 245 cyc 021 = %01111011
+		lin 250 cyc 044 = %11110011
+		lin 263 cyc 041 = %01110011
+		Seems stable
+	* Using sprite combinatons and "Uses the joystick to manipulate frameScrollPos values" with fire to cycle the Y scroll pos:
+		* With and without debug border colour change
+		* all non-kernal IRQOpenBorders appear stable
+		* all non-kernal score panel scrolls appears stable
+
+
+
+* Bottom open borders split and top panel split with kernal still wobbles without sprites on some Y scroll values, check timing...
+	Does not need more Scroller_IRQRasterAdjust, causes flickering.
+	Might need a quick routine...
+	Without kernal, when frameScrollY=6 the line flickers to one row down, so use topScreenScrollYUsedIRQ
