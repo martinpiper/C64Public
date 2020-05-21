@@ -13,7 +13,7 @@ CharColours_GeneralCharsColourise
 !ifdef Scroller_FullScreen {
 	ldy #24
 } else {
-	ldy #19
+	ldy #19 + Scroller_AdditionalCharLines
 }
 .l1
 .sm1	ldx $c800
@@ -56,7 +56,7 @@ ScrollerDrawStripLeftColour
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawStripColouriseUnrolled 0 , 25 , 40
 } else {
-	+MACROScrollerDrawStripColouriseUnrolled 0 , 20 , 40
+	+MACROScrollerDrawStripColouriseUnrolled 0 , 20 + Scroller_AdditionalCharLines, 40
 }
 
 } else {

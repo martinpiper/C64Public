@@ -85,6 +85,21 @@ ScrollBank0To1_1b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(20*40),x
+	sta $cc00+01+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(21*40),x
+	sta $cc00+01+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripLeftBank1
 !ifdef IRQOpenBorders {
@@ -177,6 +192,21 @@ ScrollBank1To0_1b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(20*40),x
+	sta $c800+01+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(21*40),x
+	sta $c800+01+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripLeftBank0
 !ifdef IRQOpenBorders {
@@ -273,6 +303,21 @@ ScrollBank0To1_m1b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(20*40),x
+	sta $cc00-01+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(21*40),x
+	sta $cc00-01+(21*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripRightBank1
 !ifdef IRQOpenBorders {
@@ -365,6 +410,21 @@ ScrollBank1To0_m1b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(20*40),x
+	sta $c800-01+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(21*40),x
+	sta $c800-01+(21*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripRightBank0
 !ifdef IRQOpenBorders {
@@ -459,6 +519,21 @@ ScrollBank0To1_40b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(19*40),x
+	sta $cc00+40+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(20*40),x
+	sta $cc00+40+(20*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank1
 !ifdef IRQOpenBorders {
@@ -549,6 +624,21 @@ ScrollBank1To0_40b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(19*40),x
+	sta $c800+40+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(20*40),x
+	sta $c800+40+(20*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank0
 !ifdef IRQOpenBorders {
@@ -643,6 +733,21 @@ ScrollBank0To1_m40b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(20*40),x
+	sta $cc00-40+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(21*40),x
+	sta $cc00-40+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank1
 !ifdef IRQOpenBorders {
@@ -733,6 +838,21 @@ ScrollBank1To0_m40b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(20*40),x
+	sta $c800-40+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(21*40),x
+	sta $c800-40+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank0
 !ifdef IRQOpenBorders {
@@ -742,7 +862,6 @@ ScrollBank1To0_m40b
 
 
 !ifdef Scroller_MultiDirectionNoDiagonals { } else {
-
 
 ; With diagonal movement
 !zn
@@ -828,6 +947,21 @@ ScrollBank0To1_41b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(19*40),x
+	sta $cc00+41+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(20*40),x
+	sta $cc00+41+(20*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripLeftBank1
@@ -919,6 +1053,21 @@ ScrollBank1To0_41b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(19*40),x
+	sta $c800+41+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(20*40),x
+	sta $c800+41+(20*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripLeftBank0
@@ -1011,6 +1160,21 @@ ScrollBank0To1_39b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(19*40),x
+	sta $cc00+39+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(20*40),x
+	sta $cc00+39+(20*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank1
 	jsr ScrollerDrawStripRightBank1
@@ -1102,6 +1266,21 @@ ScrollBank1To0_39b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(19*40),x
+	sta $c800+39+(19*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(20*40),x
+	sta $c800+39+(20*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripTopBank0
 	jsr ScrollerDrawStripRightBank0
@@ -1196,6 +1375,21 @@ ScrollBank0To1_m41b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(20*40),x
+	sta $cc00-41+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(21*40),x
+	sta $cc00-41+(21*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripRightBank1
@@ -1287,6 +1481,21 @@ ScrollBank1To0_m41b
 	dex
 	bne .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #39
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(20*40),x
+	sta $c800-41+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(21*40),x
+	sta $c800-41+(21*40),x
+}
+	dex
+	bne .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripRightBank0
@@ -1379,6 +1588,21 @@ ScrollBank0To1_m39b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $c800+00+(20*40),x
+	sta $cc00-39+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $c800+00+(21*40),x
+	sta $cc00-39+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank1
 	jsr ScrollerDrawStripLeftBank1
@@ -1470,6 +1694,21 @@ ScrollBank1To0_m39b
 	dex
 	bpl .l2
 }
+!if Scroller_AdditionalCharLines > 0 {
+	ldx #38
+.l2
+!if Scroller_AdditionalCharLines >= 1 {
+	lda $cc00+00+(20*40),x
+	sta $c800-39+(20*40),x
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda $cc00+00+(21*40),x
+	sta $c800-39+(21*40),x
+}
+	dex
+	bpl .l2
+}
+
 }
 	jsr ScrollerDrawStripBottomBank0
 	jsr ScrollerDrawStripLeftBank0

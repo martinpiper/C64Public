@@ -16,9 +16,9 @@ ScrollerDrawStripBottomBank0
 	}
 } else {
 	!ifdef Scroller_EnableBlockStripsSpeedCode {
-		+MACROScrollerDrawHStripUnrolled $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+		+MACROScrollerDrawHStripUnrolled $caf8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 	} else {
-		+MACROScrollerDrawHStrip $caf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+		+MACROScrollerDrawHStrip $caf8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 	}
 }
 
@@ -42,9 +42,9 @@ ScrollerDrawStripBottomBank1
 	}
 } else {
 	!ifdef Scroller_EnableBlockStripsSpeedCode {
-		+MACROScrollerDrawHStripUnrolled $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+		+MACROScrollerDrawHStripUnrolled $cef8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 	} else {
-		+MACROScrollerDrawHStrip $cef8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
+		+MACROScrollerDrawHStrip $cef8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockTabL , BlockTabH
 	}
 }
 

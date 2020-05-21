@@ -8,7 +8,7 @@
 	rts
 
 *=Scroller_ScrollBankEntry + ScrollBankSplit
-!for .y , 10 {
+!for .y , 10 + Scroller_AdditionalCharLines {
 !for .x , 39 {
 	lda ScreenA + ((10+(.y-1))*40) + .x
 	sta ScreenB - 41 + ((10+(.y-1))*40) + .x

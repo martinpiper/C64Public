@@ -47,22 +47,26 @@ InitBank0Data
 	ldx #39
 .colf1
 	lda #0						; In case the split happens early, draw blank chars (should never happen to be honest)
-	sta SCREENRAM+19*40,x
+	sta SCREENRAM+(19+Scroller_AdditionalCharLines)*40,x
 !ifdef Scroller_UseDemoScorePanel {
-!for .t1,5 {
+!for .t1,5-Scroller_AdditionalCharLines {
 	lda ScorePanelCharData+((.t1 - 1)*40),x
-	sta SCREENRAM+((20 + .t1 - 1)*40),x
+	sta SCREENRAM+((20 + .t1 - 1 + Scroller_AdditionalCharLines)*40),x
 	tay
 	lda ScorePanelColourLookup,y
-	sta COLOURRAM+((20 + .t1 - 1)*40),x
+	sta COLOURRAM+((20 + .t1 - 1 + Scroller_AdditionalCharLines)*40),x
 }
 } else {
 	txa
 	ora #$20
+!if Scroller_AdditionalCharLines < 1 {
 	sta SCREENRAM+(20*40),x
 	sta COLOURRAM+(20*40),x
+}
+!if Scroller_AdditionalCharLines < 2 {
 	sta SCREENRAM+(21*40),x
 	sta COLOURRAM+(21*40),x
+}
 	sta SCREENRAM+(22*40),x
 	sta COLOURRAM+(22*40),x
 	sta SCREENRAM+(23*40),x
@@ -75,7 +79,7 @@ InitBank0Data
 } ;< !ifdef Scroller_FullScreen
 
 !ifdef Scroller_RunJumpDemo {
-Scroller_RunJumpDemo_timerPos = SCREENRAM + (22 * VIC2ScreenCharsWidth) + 2
+Scroller_RunJumpDemo_timerPos = SCREENRAM + ((22+Scroller_AdditionalCharLines) * VIC2ScreenCharsWidth) + 2
 Scroller_RunJumpDemo_timerLen = 9
 Scroller_RunJumpDemo_timerZero = 7
 	lda #Scroller_RunJumpDemo_timerZero
@@ -131,11 +135,11 @@ ClearGameScreens
 !ifdef Scroller_FullScreen { } else {
 	ldx #39
 .colf1
-	lda SCREENRAM+20*40,x
-	sta $0800+20*40,x
-	sta $0c00+20*40,x
-	sta $c800+20*40,x
-	sta $cc00+20*40,x
+	lda SCREENRAM+(20+Scroller_AdditionalCharLines)*40,x
+	sta $0800+(20+Scroller_AdditionalCharLines)*40,x
+	sta $0c00+(20+Scroller_AdditionalCharLines)*40,x
+	sta $c800+(20+Scroller_AdditionalCharLines)*40,x
+	sta $cc00+(20+Scroller_AdditionalCharLines)*40,x
 	dex
 	bpl .colf1
 }

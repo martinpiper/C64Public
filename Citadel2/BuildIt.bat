@@ -123,6 +123,7 @@ for %%x in (
 	Scroller_ScrollBankEntry
 	ScrollBankSplit
 	Scroller_FullScreen
+	Scroller_AdditionalCharLines
 	ColourTemp
 	CharColours
 	topScreenBank

@@ -92,6 +92,9 @@ Scroller_MaxScrollSpeed = 4
 ; Enable the following line to allow the bottom and top borders to be opened and have sprites.
 ; This is only used when Scroller_FullScreen is enabled
 IRQOpenBorders = 1
+} else {
+; Alter this to enable extra char lines if not in full screen mode, must not be defined in full screen mode
+Scroller_AdditionalCharLines = 2
 }
 
 ; Use this to enable a demonstration of how to skip the level in the game at any point
@@ -114,6 +117,9 @@ Scroller_NeedFullColourScroll = 1
 ; This can of course be tweaked for various games that use more or less estimated frame time
 Scroller_ColourScrollRasterAbortLevel = $80
 
+; The maximum numebr of frames the code will abort a colour scroll before forcing it to proceed
+Scroller_ColourScrollRasterAbortLevelFrame = 1
+
 ; Define this to force the music update to be in the top screen IRQ
 ;Scroller_DoMusicUpdateInIRQ = 1
 
@@ -122,11 +128,13 @@ Scroller_RunJumpDemo = 1
 ; Define this to cause the demo to include an automated run and jump scenario to provide a repeatable set of inputs
 ;Scroller_RunJumpDemo_RunJumpTest = 1
 
+!ifdef Scroller_NeedFullColourScroll {
 ; Enable this to make the block drawing code use colours for every character in a map tile rather than constant for each map tile. This is quite memory hungry.
 ;BlockColoursForEveryCharacter = 1
 
 ; Enable this to make the block drawing code use colours for every character. Requires a mapping file for the same number of used characters, up to 256 bytes
 CharColoursForEveryCharacter = 1
+}
 
 
 ; Define this as a value to clear the screen to a specific colour before bank 0 and game screen are cleared

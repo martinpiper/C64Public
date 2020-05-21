@@ -395,6 +395,10 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 !ifdef Scroller_FullScreen {
 	jsr .DrawWholeBlock
 }
+!if Scroller_AdditionalCharLines > 0 {
+	; MPi: TODO: Optimise, we don't want to draw a while block strip, however
+	jsr .DrawWholeBlock
+}
 
 	; Draw the last block
 	lda .mapLY
@@ -536,6 +540,10 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawVStripUnrolled_DrawWholeBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 , .mapLX
 }
+!if Scroller_AdditionalCharLines > 0 {
+	; MPi: TODO: Optimise, we don't want to draw a while block strip, however
+	+MACROScrollerDrawVStripUnrolled_DrawWholeBlock .GetBlockFromMap , .theBlockTabL , .theBlockTabH , .sm2 , .mapLX
+}
 
 	; Draw the last block
 	lda .mapLY
@@ -596,6 +604,10 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 	jsr .DrawWholeBlockColour
 	jsr .DrawWholeBlockColour
 !ifdef Scroller_FullScreen {
+	jsr .DrawWholeBlockColour
+}
+!if Scroller_AdditionalCharLines > 0 {
+	; MPi: TODO: Optimise, we don't want to draw a while block strip, however
 	jsr .DrawWholeBlockColour
 }
 
@@ -673,6 +685,7 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 }
 } else {
 !macro MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY {
+!if Scroller_AdditionalCharLines = 0 {
 	lda scrollMapLY
 	clc
 	adc #3
@@ -682,5 +695,25 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 	lda scrollMapHY
 	adc #4
 	sta .lscrollMapHY
+}
+!if Scroller_AdditionalCharLines = 1 {
+	lda scrollMapLY
+	sta .lscrollMapLY
+	lda scrollMapHY
+	clc
+	adc #5
+	sta .lscrollMapHY
+}
+!if Scroller_AdditionalCharLines >= 2 {
+	lda scrollMapLY
+	clc
+	adc #Scroller_AdditionalCharLines-1
+	cmp #4	; Get carry
+	and #3
+	sta .lscrollMapLY
+	lda scrollMapHY
+	adc #5
+	sta .lscrollMapHY
+}
 }
 }

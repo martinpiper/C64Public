@@ -1,5 +1,5 @@
 @echo off
-del Scroller.prg
+del Scroller.prg Scroller.map
 ..\acme.exe -v3 --msvc ScrollEntry.a
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
@@ -38,6 +38,7 @@ for %%x in (
 	Scroller_ScrollBankEntry
 	ScrollBankSplit
 	Scroller_FullScreen
+	Scroller_AdditionalCharLines
 	ColourTemp
 	CharColours
 	topScreenBank

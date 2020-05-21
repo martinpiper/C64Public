@@ -12,7 +12,7 @@ ScrollerDrawStripRightColour
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawStripColouriseUnrolled 39 , 25 , 40
 } else {
-	+MACROScrollerDrawStripColouriseUnrolled 39 , 20 , 40
+	+MACROScrollerDrawStripColouriseUnrolled 39 , 20 + Scroller_AdditionalCharLines, 40
 }
 
 } else {

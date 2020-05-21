@@ -7,7 +7,7 @@ scorePanelPos2 = $fa	; The place for the second part to the open border code if 
 scorePanelPos1 = $f8	; The place to start the bottom of the screen IRQ.
 }
 } else {
-scorePanelPos1 = 205	; The place to start the split. Turns off the screen, sprites, resets scroll coordinates, graphics colours and mode etc
+scorePanelPos1 = 205 + (Scroller_AdditionalCharLines * 8)	; The place to start the split. Turns off the screen, sprites, resets scroll coordinates, graphics colours and mode etc
 scorePanelPos2 = scorePanelPos1+7	; The line above where we want to display the real panel. Just enough time to set V pos and enable the screen
 Scroller_ScorePanelYScrollTweak = %111
 }

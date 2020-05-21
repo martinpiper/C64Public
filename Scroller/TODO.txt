@@ -113,10 +113,3 @@
 ; might have placed their sprites to compensate for this one frame lag. In this case just make
 ; sure the sprite position is correct when the screen is static or stops scrolling (like that 
 ; scroll after a push scroll).
-
-
-
-; MPi: TODO: Add configuration to shift the screen split down one or two characters giving different size bottom areas.
-; Things to tweak: scorePanelPos1 , (19*40) and (20*40) will need to be optionally enabled, MACROScrollerBottomAdjust , MACROScrollerDrawVStrip, MACROScrollerDrawVStripColour, ScrollerDrawStripBottomBank,
-; ScrollerDrawStripBottomColour, DrawMap
-; InitBank0Data and ClearGameScreens where it copies the screen lines at 20*40

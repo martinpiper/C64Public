@@ -13,13 +13,13 @@ ScrollerDrawStripBottomColour
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawStripColouriseUnrolled $3c0 , 40 , 1
 } else {
-	+MACROScrollerDrawStripColouriseUnrolled $2f8 , 40 , 1
+	+MACROScrollerDrawStripColouriseUnrolled $2f8 + (Scroller_AdditionalCharLines * 40) , 40 , 1
 }
 } else {
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawHStripColourise $3c0
 } else {
-	+MACROScrollerDrawHStripColourise $2F8
+	+MACROScrollerDrawHStripColourise $2F8 + (Scroller_AdditionalCharLines * 40)
 }
 }
 } else {
@@ -27,13 +27,13 @@ ScrollerDrawStripBottomColour
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawHStrip $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
 } else {
-	+MACROScrollerDrawHStrip $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
+	+MACROScrollerDrawHStrip $daf8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY , BlockColTabL , BlockColTabH
 }
 } else {
 !ifdef Scroller_FullScreen {
 	+MACROScrollerDrawHStripOneColour $dbc0, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
 } else {
-	+MACROScrollerDrawHStripOneColour $daf8, scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
+	+MACROScrollerDrawHStripOneColour $daf8 + (Scroller_AdditionalCharLines * 40), scrollMapLX , scrollMapHX, .lscrollMapLY , .lscrollMapHY
 }
 }
 }

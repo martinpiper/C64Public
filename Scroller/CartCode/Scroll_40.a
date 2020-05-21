@@ -28,6 +28,16 @@
 }
 }
 
+!if Scroller_AdditionalCharLines > 0 {
+!for .y , Scroller_AdditionalCharLines {
+!for .x , 40 {
+	lda ScreenA + ((20-(.y-1))*40) + (.x-1)
+	sta ScreenB + 40 + ((20-(.y-1))*40) + (.x-1)
+}
+}
+}
+
+
 !for .y , 9 {
 !for .x , 40 {
 	lda ScreenA + ((18-(.y-1))*40) + (.x-1)

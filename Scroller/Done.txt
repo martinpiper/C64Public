@@ -335,3 +335,15 @@ Player1Information or Player2Information is used depending on the active players
 	Does not need more Scroller_IRQRasterAdjust, causes flickering.
 	Might need a quick routine...
 	Without kernal, when frameScrollY=6 the line flickers to one row down, so use topScreenScrollYUsedIRQ
+
+
+
+; MPi: TODO: Add configuration to shift the screen split down one or two characters giving different size bottom areas.
+; Things to tweak: scorePanelPos1 , (19*40) and (20*40) will need to be optionally enabled, MACROScrollerBottomAdjust , MACROScrollerDrawVStrip, MACROScrollerDrawVStripColour, ScrollerDrawStripBottomBank,
+; ScrollerDrawStripBottomColour, DrawMap
+; InitBank0Data and ClearGameScreens where it copies the screen lines at 20*40
+	* Added: Scroller_AdditionalCharLines
+	* Added: Scroller_ColourScrollRasterAbortLevelFrame to stop constant detected overruns from endlessly pausing the colour scroll
+	* Done: ScrollersNoColour.a - WinMerge helps here a lot
+	* Done: Scroller_FullScreen in CartCode/Scroll_*.a
+	* TODO: BlockColoursForEveryCharacter will work, but the score panel edges are affected by the colour scroll... "Optimise, we don't want to draw a while block strip, however"
