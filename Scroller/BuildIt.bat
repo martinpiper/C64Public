@@ -1,6 +1,6 @@
 @echo off
 del Scroller.prg Scroller.map
-..\acme.exe -v3 --msvc ScrollEntry.a
+..\acme.exe -v4 --msvc ScrollEntry.a
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
 rem ..\bin\LZMPi.exe -c64b ScrollerOrig.prg Scroller.prg 1024 >t.txt
@@ -153,7 +153,7 @@ echo Adding speed code
 ..\bin\MakeCart.exe -i _f_index1.a -tg -n -a $8000 -b 7 -f $2000 %SCROLLER_SPEED_CODE_FILES_NUM% %SCROLLER_SPEED_CODE_FILES% -o Scroller.crt >>t.txt
 
 rem Build the final code again to get the offsets
-..\acme.exe -v3 --msvc ScrollEntry.a >tf.txt
+..\acme.exe -v4 --msvc ScrollEntry.a >tf.txt
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
 rem If the game refuses to start properly, or crashes during decompression, then it might be because the -c64b decompressor does not like going all the way up to $ffff

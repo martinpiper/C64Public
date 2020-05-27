@@ -1,3 +1,20 @@
+* For numerous build configs, consider using something like this to generate screenshots at various cycle counts:
+	C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -autostartprgmode 1 +autostart-delay-random +VICIIdsize +VICIIdscan -VICIIborders 2 -VICIIfilter 0 +sound -warp -remotemonitor -exitscreenshot c:\temp\t.png -limitcycles 6000000 C:\Work\C64\Scroller\Scroller.crt
+	* Something like: DebugFrames.bat
+		It could do with parameters for the starting cycle number, number of frames, and input prg/crt
+	* Or start in remote monitor mode with: C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -autostartprgmode 1 +autostart-delay-random +VICIIdsize +VICIIdscan -VICIIborders 2 -VICIIfilter 0 +sound -warp -remotemonitor
+		Then attach to 127.0.0.1 6510
+		Use monitor commands:
+			attach "c:\work\c64\scroller\scroller.crt" 20
+			reset
+			break 13e9 (.afterScrollerDemoWaitTopIRQ)
+			scrsh "c:\temp\t.png" 2
+		* This gives more control and avoids the need to run the emulator a lot of times to get consecutive screen shots
+
+			
+
+
+
 * Depending on the MSB move the sprite positions to offscreen
 	Is there better logic here? For example shift the MSB, then rotate into the hi bit?
 	Or use Y to store zero in one pass?

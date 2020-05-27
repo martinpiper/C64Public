@@ -469,7 +469,7 @@ ScrollerDemoMainline
 
 	; Pause and quit key check
 	; MPi: TODO: Consider tidying this into a couple of functions
-.lk1
+.afterScrollerDemoWaitTopIRQ
 	lda #0
 	sta .pauseKeyPressed
 	sta .quitKeyPressed
