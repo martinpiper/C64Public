@@ -1281,8 +1281,8 @@ Also tweaked the enemy start positions
 		AnimationInit2
 		UpdateSprites
 	* So, plan:
-		..\acme.exe -f cbm -o c:\temp\t.prg -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a DataAutoDefs.a
-		..\acme.exe -f cbm -o c:\temp\t.prg -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a
+		..\acme.exe -f cbm -o c:\temp\t.prg -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a DataAutoDefs.a
+		..\acme.exe -f cbm -o c:\temp\t.prg -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a
 
 		Use the whole code from the game code assemble Citadel2Entry_Game.a
 			Defining the TitleScreenAnimationHook and DisplayTitleScreen forward references

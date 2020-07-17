@@ -1,0 +1,7 @@
+!source "CharEffects.a"
+!source "ScrollerScrollSprites.a"
+
+UpdateSprites
+	jsr Animation_UpdateTick
+	jsr Scroller_ScrollSprites
+	rts

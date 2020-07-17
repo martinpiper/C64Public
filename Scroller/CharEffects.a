@@ -55,7 +55,7 @@ AllocateCharacterEffect
 	bpl .l1
 
 	; Debug
-	inc VIC2BorderColour
+;	inc VIC2BorderColour
 
 	sec
 	rts
@@ -149,7 +149,7 @@ AfterScrollers
 	ora tempWork0
 	sta tempWork3
 	lda (tempWork2),y
-	cmp #MapSolidChars
+	cmp #MapSolidCharsUpper
 	bcs .offScreen
 	sta CharEffectsBkChar,x
 

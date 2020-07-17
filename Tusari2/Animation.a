@@ -1,0 +1,267 @@
+!zn
+
+!source "SpritePosToScreenPosMem.a"
+!source "SpritePosToScreenPosMem2.a"
+
+ZP_SpriteYPosToScreenCharPosLolo	= tempWork6
+ZP_SpriteYPosToScreenCharPosLohi	= tempWork7
+ZP_SpriteYPosToScreenCharPosHilo	= tempWork8
+ZP_SpriteYPosToScreenCharPosHihi	= tempWork9
+ZP_SpriteXPosToScreenCharPoslo		= tempWork10
+ZP_SpriteXPosToScreenCharPoshi		= tempWork11
+
+!set kAnimation_currentSpeed = 0
+!set kAnimation_currentAddress = 0
+
+!source "Animation_macros.a"
+
+!zn
+	+StartAnim ~AnimationFrames_MainCharTorsoStandLeft , 1
+	+DoFrame 153
+	+StartAnim ~AnimationFrames_MainCharLegsStandLeft , 1
+	+DoFrame 155
+
+	+StartAnim ~AnimationFrames_MainCharTorsoStandRight , 1
+	+DoFrame 182
+	+StartAnim ~AnimationFrames_MainCharLegsStandRight , 1
+	+DoFrame 184
+
+	+StartAnim ~AnimationFrames_MainCharTorsoLeft , 2
+	+DoFrame 131 , 132 , 133 , 134 , 135 , 136 , 137 , 138 , 137 , 136 , 135 , 134 , 133 , 132
+	+StartAnim ~AnimationFrames_MainCharLegsLeft , 2
+	+DoFrame 139 , 140 , 141 , 142 , 143 , 144 , 145 , 146 , 147 , 148 , 149 , 150 , 151 , 152
+
+	+StartAnim ~AnimationFrames_MainCharTorsoRight , 2
+	+DoFrame $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1
+	+StartAnim ~AnimationFrames_MainCharLegsRight , 2
+	+DoFrame $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5
+
+	+StartAnim ~AnimationFrames_Bat , 6
+	+DoFrame $5b , $5c , $5d , $5e , $5f , $60
+	+StartAnim ~AnimationFrames_Explosion , 8
+	+DoFrame $42 , $43 , $44 , $45 , $46 , $47 , $48
+	+StartAnim ~AnimationFrames_Worm , 5
+	+DoFrame $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50
+
+
+
+	; Must be the last macro to correctly terminate the last sequence
+	+EndAnim
+
+
+Animation_FramesLo
+	!by <AnimationFrames_MainCharLegsStandLeft
+	!by <AnimationFrames_MainCharTorsoStandLeft
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat+1
+	!by <AnimationFrames_Explosion+1
+	!by <AnimationFrames_Worm+1
+	!by <AnimationFrames_Bat+2
+	!by <AnimationFrames_Explosion+2
+	!by <AnimationFrames_Worm+2
+	!by <AnimationFrames_Bat+3
+	!by <AnimationFrames_Explosion+3
+	!by <AnimationFrames_Worm+3
+	!by <AnimationFrames_Bat+4
+	!by <AnimationFrames_Explosion+4
+	!by <AnimationFrames_Worm+5
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+	!by <AnimationFrames_Bat
+	!by <AnimationFrames_Explosion
+	!by <AnimationFrames_Worm
+
+Animation_FramesHi
+	!by >AnimationFrames_MainCharLegsRight
+	!by >AnimationFrames_MainCharTorsoRight
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat+1
+	!by >AnimationFrames_Explosion+1
+	!by >AnimationFrames_Worm+1
+	!by >AnimationFrames_Bat+2
+	!by >AnimationFrames_Explosion+2
+	!by >AnimationFrames_Worm+2
+	!by >AnimationFrames_Bat+3
+	!by >AnimationFrames_Explosion+3
+	!by >AnimationFrames_Worm+3
+	!by >AnimationFrames_Bat+4
+	!by >AnimationFrames_Explosion+4
+	!by >AnimationFrames_Worm+5
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+	!by >AnimationFrames_Bat
+	!by >AnimationFrames_Explosion
+	!by >AnimationFrames_Worm
+
+
+
+
+Animation_Index
+	!fill 32 , 0
+
+
+
+Animation_UpdateTick
+
+	; Loop through animation frames
+	ldx Multiplex_MaxSpr
+	dex
+.an1
+	lda Animation_FramesHi,x
+	beq .nextSlot
+	sta tempWork1
+	lda Animation_FramesLo,x
+	sta tempWork0
+	ldy Animation_Index,x
+	lda (tempWork0),y
+	bne .gotFrame
+	; 0 = end of animation sequence
+	tay
+	sta Animation_Index,x
+	lda (tempWork0),y
+.gotFrame
+	sta AnimationSpriteFrame,x
+	iny
+	tya
+	sta Animation_Index,x
+
+.nextSlot
+	dex
+	bpl .an1
+
+	; MPi: TODO: Process movement for everything else
+
+	rts
+
+
+
+!zn
+; Morphs to a particular animation if it is different to what is currently there. This resets the frame index if the morph happens.
+; Entry:
+; A/X = lo/hi animation header
+; Y = Animation index
+Animation_MorphToIfNeeded
+	pha
+	cmp Animation_FramesLo,y
+	bne .l1
+
+	txa
+	cmp Animation_FramesHi,y
+	bne .l2
+
+	pla
+	rts
+
+.l1
+	txa
+.l2
+	sta Animation_FramesHi,y
+	pla
+	sta Animation_FramesLo,y
+	lda #0
+	sta Animation_Index,y
+	rts
+
+
+
+
+!zn
+UpdateMultiplexorToAnimation
+	ldx #Multiplex_items
+	jsr Multiplex_Default_Init
+	ldx #Multiplex_items-1
+.l1
+	lda Multiplex_SpriteFrame,x
+	sta AnimationSpriteFrame,x
+
+	lda Multiplex_Colour,x
+	sta AnimationSpriteColour,x
+
+	lda Multiplex_XPosLo,x
+	sta AnimationXPosLo,x
+	lda Multiplex_XPosHi,x
+	sta AnimationXPosHi,x
+	lda Multiplex_YPos,x
+	sta AnimationYPos,x
+
+	; Create some less tightly packed positions when in this demo mode
+	txa
+	and #1
+	bne .o1
+	lda Multiplex_YPos,x
+	rol
+	sta AnimationYPos,x
+.o1
+	txa
+	and #2
+	bne .o2
+	lda Multiplex_YPos,x
+	rol
+	sta AnimationYPos,x
+.o2
+
+
+	dex
+	bpl .l1
+
+	; Setup the player position
+	lda #136
+	sta AnimationXPosLo
+	lda #144
+	sta AnimationYPos
+	lda #0
+	sta AnimationXPosHi
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	lda #VIC2Colour_LightRed
+	sta AnimationSpriteColour+1
+
+
+	+MByteValueToAddress_A 71 , scrollMapHX
+	+MByteValueToAddress_A 0 , scrollMapLX
+	+MByteValueToAddress_A 24 , scrollMapHY
+	+MByteValueToAddress_A 0 , scrollMapLY
+	+MByteValueToAddress_A 4 , frameScrollX
+	+MByteValueToAddress_A 4 , frameScrollY
+
+	rts
+
+
+
+!source "../SpriteMultiplexor/SpriteMultiplexorDefaultPattern.a"

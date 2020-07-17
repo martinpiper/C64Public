@@ -26,7 +26,8 @@ Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page
-!source "ScrollerOptimisations.a"
+;!source "ScrollerOptimisations.a"
+!source "ScrollerOptimisationsAggressive.a"
 
 ; Set this to allow the AnimationUpdateMultiplexor to skip sprites above this limit
 Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
@@ -127,6 +128,17 @@ Scroller_ColourScrollRasterAbortLevelFrame = 1
 Scroller_RunJumpDemo = 1
 ; Define this to cause the demo to include an automated run and jump scenario to provide a repeatable set of inputs
 ;Scroller_RunJumpDemo_RunJumpTest = 1
+; These define the ranges for solid characters
+MapSolidCharsLower = 16
+MapSolidCharsUpper = 43
+;MapSolidCharsUpper = 75
+
+!ifdef Scroller_RunJumpDemo {
+EnableBeforeScrollersHook = 1
+EnableAfterScrollersHook = 1
+RedirectHandleUserInput = 1
+}
+
 
 !ifdef Scroller_NeedFullColourScroll {
 ; Enable this to make the block drawing code use colours for every character in a map tile rather than constant for each map tile. This is quite memory hungry.

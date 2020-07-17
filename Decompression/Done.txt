@@ -17,9 +17,9 @@
 * Automate the creation of the sC64Decomp* data blocks from the C64\Decompression code
 	* Include automatic detection of the theC64Code[0x offsets by reading the labels from the automated assembly output
 	* This assembles and outputs the prefix TestDecompression2 for all LauncherAddress labels:
-		..\acme.exe -v3 --msvc TestDecompression2.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression2/p" TestDecompression.map
-		..\acme.exe -v3 --msvc TestDecompression3.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3/p" TestDecompression.map
-		..\acme.exe -v3 --msvc TestDecompression3RLE.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3RLE/p" TestDecompression.map
+		..\acme.exe -v4 --msvc TestDecompression2.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression2/p" TestDecompression.map
+		..\acme.exe -v4 --msvc TestDecompression3.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3/p" TestDecompression.map
+		..\acme.exe -v4 --msvc TestDecompression3RLE.a && ..\ExternalTools\Gnu\bin\sed.exe -n "/LauncherAddress/s/^/TestDecompression3RLE/p" TestDecompression.map
 		* Checked all the 0x addresses with the assembled output, they match perfectly
 		..\ExternalTools\dump.exe TestDecompression.prg /noascii /address n /head /lower | ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/^/0x/" -e "s/ /, 0x/g" -e "s/$/,/p" | ..\ExternalTools\Gnu\bin\sed.exe "$ s/.$//"
 

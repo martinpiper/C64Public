@@ -231,6 +231,7 @@ DisplayTitleScreen
 	bne .l5
 }
 
+.titleJoystickTest
 	; Wait for fire
 	lda #%10000
 	bit CIA1KeyboardColumnJoystickA
@@ -275,7 +276,7 @@ TitleScreen_SpriteAnimateCount !by 0
 .spriteOffset2 = 128+32
 
 ; Spread evenly
-.spriteSpread = 17
+.spriteSpread = 16
 ;.spriteSpread = 20
 ;.spritePerStroke = 12
 ;.spritePerStroke = 10

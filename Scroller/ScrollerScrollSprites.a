@@ -1,0 +1,54 @@
+!zn
+Scroller_ScrollSprites
+	; Note: Usually it is better to optimise this by combining animation movement and screen scroll movement together.
+	lda scrollerRealMovementXPixels
+	beq .noX1
+	bmi .negX1
+	ldx Multiplex_MaxSpr
+	dex
+.spx1
+	lda AnimationXPosLo,x
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo,x
+	bcc .noxMSB1
+	lda #1
+	sta AnimationXPosHi,x
+.noxMSB1
+	dex
+	bpl .spx1
+	jmp .noX1
+
+.negX1
+	ldx Multiplex_MaxSpr
+	dex
+.spx2
+	lda AnimationXPosLo,x
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo,x
+	bcs .noxMSB2
+	lda #0
+	sta AnimationXPosHi,x
+.noxMSB2
+
+	dex
+	bpl .spx2
+
+.noX1
+
+	lda scrollerRealMovementYPixels
+	beq .noY1
+	ldx Multiplex_MaxSpr
+	dex
+.spy1
+	lda AnimationYPos,x
+	clc
+	adc scrollerRealMovementYPixels
+	sta AnimationYPos,x
+
+	dex
+	bpl .spy1
+.noY1
+
+	rts

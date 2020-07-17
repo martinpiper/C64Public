@@ -29,6 +29,8 @@ using namespace RNReplicaNet::RNXPCompression;
 //-c64m C:\work\C64\RacingGame\Original\OriginalData.prg c:\temp\tc.prg 2048
 //-c64mb C:\work\C64\RacingGame\Original\OriginalData.prg c:\temp\tc.prg 2048
 //-cut c:\temp\t.txt c:\temp\tout.txt 123 $200
+//-hex C:\Work\BombJack\output\DebugAudioOutput.txt c:\temp\t.bin 3 4
+//-hex C:\Work\BombJack\output\DebugAudioOutput.txt c:\temp\t.bin 0 4
 
 //-ce C:\work\C64\MusicEditorHelp\MusicEditorHelp.prg c:\temp\t.rnzip2
 //c:\ReplicaNet\ReplicaNetPublic\RNZip\RNZip.exe -c C:\work\C64\MusicEditorHelp\MusicEditorHelp.prg c:\temp\t.rnzip
@@ -80,6 +82,7 @@ int main(int argc,char **argv)
 			" -c <input file> <outfile file> <offset> [length]\n\n"
 			" -cut <input file> <outfile file> <offset> [length]\n"
 			"-cut will not compress the file, meaning data is just effectively cut and written to the output file.\n"
+			"-hex <input file containing hex data> <output file> <start offset> <skip>"
 			"-t <address>\n"
 			" The default value is $10000. Must be first in the parameter list. This will set the top most memory address used by the decompression code when using the -c64 self extracting code. This is useful to segregate the top pages of memory so they can be used for saved data between file loads.\n"
 		);
@@ -184,6 +187,55 @@ int main(int argc,char **argv)
 		exit(-1);
 	}
 
+	// -hex
+	if (argv[1][1] == 'h' && argv[1][2] == 'e' && argv[1][3] == 'x')
+	{
+		int skip = ParamToNum(argv[4]);
+		int skipDefault = ParamToNum(argv[5]);
+		FILE *out = fopen(argv[3],"wb");
+		if (!out)
+		{
+			printf("Problem opening '%s' for writing\n",argv[3]);
+			exit(-1);
+		}
+
+		while (!feof(fp))
+		{
+			int a = tolower(fgetc(fp));
+			if ((a >= '0' && a <= '9') || (a >= 'a' && a <= 'f'))
+			{
+				if (a >= 'a' && a <= 'f')
+				{
+					a = 10 + (a - 'a');
+				} else {
+					a = a - '0';
+				}
+				int b = tolower(fgetc(fp));
+				if ((b >= '0' && b <= '9') || (b >= 'a' && b <= 'f'))
+				{
+					if (b >= 'a' && b <= 'f')
+					{
+						b = 10 + (b - 'a');
+					} else {
+						b = b - '0';
+					}
+					int output = (a << 4) | b;
+					if (skip > 0)
+					{
+						skip--;
+						continue;
+					}
+					fputc(output , out);
+					skip = skipDefault-1;
+				}
+			}
+		}
+		fclose(fp);
+		printf("output len = %d\n" , ftell(out));
+		fclose(out);
+		return 0;
+	}
+
 	if (outputC64Header)
 	{
 		if (!loadC64Code)
@@ -230,6 +282,7 @@ int main(int argc,char **argv)
 
 	if (argv[1][1] == 'c')
 	{
+		// -cut
 		if (argv[1][2] == 'u' && argv[1][3] == 't')
 		{
 			fwrite(input , 1 , inputSize , fp);

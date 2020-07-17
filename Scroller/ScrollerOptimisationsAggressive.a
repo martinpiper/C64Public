@@ -1,0 +1,20 @@
+; Demonstrates how to move various information into zeropage from the absolute addresses they normally occupy
+!ifndef Multiplex_items {
+!error "Multiplex_items must be set when including ScrollerOptimisations.a"
+}
+; This optionally moves multiplexor sprites data into the zero page
+Multiplex_YPos+1		= $2
+Multiplex_XPosLo		= Multiplex_YPos + Multiplex_items
+Multiplex_XPosHi		= Multiplex_XPosLo + Multiplex_items
+Multiplex_Colour		= Multiplex_XPosHi + Multiplex_items
+Multiplex_SpriteFrame	= Multiplex_Colour + Multiplex_items
+
+; Tell the assembler that we really have defined them
+defined_Multiplex_YPos = 1
+defined_Multiplex_XPosLo = 1
+defined_Multiplex_XPosHi = 1
+defined_Multiplex_Colour = 1
+defined_Multiplex_SpriteFrame = 1
+
+; Sets the start zeropage address that that ScrollerVars.a will use
+mainRoutineZP_start = Multiplex_SpriteFrame + Multiplex_items

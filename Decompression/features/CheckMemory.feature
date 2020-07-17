@@ -44,7 +44,7 @@ Feature: Test compression toolset and code
   Scenario Outline: Execute LZMPi self extracting compressed output using <option>
     # Build the self extracting test from source
     Given I run the command line: ..\bin\LZMPi.exe <compress> target\CheckMemory.prg target\CheckMemory.cmp 2
-    Given I run the command line: ..\acme.exe -v3 DefineDoCheckMemory.a <source>
+    Given I run the command line: ..\acme.exe -v4 DefineDoCheckMemory.a <source>
     And I am using C64 processor port options
     And I load prg "TestDecompression.prg"
     And I load labels "target\CheckMemory.lbl"

@@ -1,6 +1,6 @@
 @echo off
 del MusicPlayerDemo.prg
-..\acme.exe -v3 --msvc MusicPlayerDemo.a
+..\acme.exe -v4 --msvc MusicPlayerDemo.a
 if not exist MusicPlayerDemo.prg goto error
 ..\bin\LZMPi.exe -c64b MusicPlayerDemo.prg MusicPlayerDemo.prg $1000 >t.txt
 if not exist MusicPlayerDemo.prg goto error

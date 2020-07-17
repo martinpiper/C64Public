@@ -9,6 +9,7 @@
 .diskCommandWriteFile = 2
 .diskCommandSetPulseSpeed = 3
 .diskCommandFutureExpansion = 4
+.diskCommandSendClockedData = 5
 
 !ifdef IRQDisk_NoDriveCode { } else {
 ; By default after the init the drive has incomming port %00 which is C0D0.
@@ -497,6 +498,58 @@ IRQDisk_WriteData
 
 	lda .tempStore
 	rts
+
+!ifdef IRQDisk_TestClockedTransfer {
+
+IRQDisk_SendClockedRecv:
+	lda #.diskCommandSendClockedData
+	jsr .computerSend
+	rts
+
+
+IRQDisk_ClockedRecv:
+	; Counter for 8 bits to receive
+	ldx #8
+.waitClock1:
+	; Wait while C1
+	lda .serialIn
+	sta .smbit1
+	and #.serialClockIn
+	bne .waitClock1
+
+.smbit1=*+1
+	lda #0
+
+	; Choose the best code to get carry from the serial data in bit
+!if .serialDataIn = 128 {
+	asl
+} else {
+!if .serialDataIn < .serialClockIn {
+	and #.serialDataIn
+}
+	cmp #.serialDataIn
+}
+
+	; Shift in the data bit
+	ror .tempStore
+
+	; Wait while C0
+	lda #.serialClockIn
+.waitClock0:
+	bit .serialIn
+	beq .waitClock0
+
+	; Loop around getting the rest of the bits
+	dex
+	bne .waitClock1	; loop until all bits are received
+
+	; Debug timing
+	inc VIC2BorderColour
+
+	lda .tempStore
+	rts
+
+}
 
 !ifdef IRQDisk_UseATN {
 .computerRecvBitsATNBurst:

@@ -146,9 +146,15 @@
 	; For example, sending data to the drive so it can process it and send back the result.
 ;	cmp #.diskCommandFutureExpansion
 ;	beq .doSomething
+!ifdef IRQDisk_TestClockedTransfer {
+	cmp #.diskCommandSendClockedData
+	beq .lsendClockedData
+}
 	; If the command isn't handled then report an error and loop
 	jmp .driveErrorSoQuit
-
+!ifdef IRQDisk_TestClockedTransfer {
+.lsendClockedData jmp .sendClockedData
+}
 .driveSetPulseSpeed
 	jsr .driveRecv
 	bcs .driveWaitForAnyInputL
@@ -275,6 +281,22 @@
 	jsr .driveSend
 	; And wait for the next file
 	jmp .driveWaitForAnyInputL
+
+
+!ifdef IRQDisk_TestClockedTransfer {
+.sendClockedData
+	ldx #0
+.ld1
+	jsr .driveDelay
+	dex
+	bne .ld1
+.scd1
+.smbyte1=*+1
+	ldx #0
+	jsr .driveSendClocked
+	inc .smbyte1
+	jmp .scd1
+}
 
 ; Sends X
 ; A,X corrupted, Y unchanged
@@ -505,6 +527,44 @@
 	; Loop for the other bits
 	bne .driveSendBitL
 	rts
+
+!ifdef IRQDisk_TestClockedTransfer {
+.driveSendClocked:
+	stx .unused1541ZP
+	; Counter to send 8 bits
+	ldx #8
+.driveSendBitL1:
+	jsr .driveDelay
+	; Send C0
+	lda #0
+	sta .VIA1Port
+
+	; Read next bit to send
+	lsr .unused1541ZP
+	lda #.VIA1Port_ClockOut | .VIA1Port_DataOut
+	bcc .noD1
+	lda #.VIA1Port_ClockOut
+.noD1
+	sta .VIA1Port
+	jsr .driveDelay
+
+	; Send clear, but with no delay here
+	lda #0
+	sta .VIA1Port
+
+	dex
+	; Loop for the other bits
+	bne .driveSendBitL1
+	rts
+
+.driveDelay
+	; Hardly any delay and it still works with the screen off
+;	ldy #1
+.dl1
+;	dey
+;	bne .dl1
+	rts
+}
 
 !ifdef IRQDisk_UseATN {
 ; Sends 8 bits in four groups of 2 bits using data and clock with ATN as the trigger

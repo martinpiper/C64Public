@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>Compression and Decompression.</b>
+  </p>
+  <br />
+  <p>
+    <b>Compression...</b>
+  </p>
+  <p>The compression function can be used to remove unnecessary duplication and/or unused items
+    from a project, several options are offered when 'Compress' is clicked...</p>
+  &#x2022; Remove duplicate characters.
+  <br />&#x2022; Remove duplicate tiles. *
+  <br />&#x2022; Remove unused characters.
+  <br />&#x2022; Remove unused tiles. *
+  <p>(*) Tile compression options will only be available if the project uses tiles.</p>
+
+  <p>Also included is an option to sort the characters in the set by their material values (in
+    ascending order), this option is provided mainly to support the 'Shoot 'em Up Construction Kit'
+    as it uses a character's position in the set to decide it's collision effect on the player rather
+    than consulting a look-up table of character material values.</p>
+
+  <br />
+
+  <p>
+    <b>Decompression...</b>
+  </p>
+  <p>The decompression function is only available to projects that use tiles.</p>
+
+  <p>CharPad contains features that allow tiles to be drawn and transformed as if they were bitmap
+    images, they are not, tiles only contain references to character images.</p>
+
+  <p>When 'Decompress' is clicked, the character set will expand to a size that exactly matches the 
+     number of cells (character image references) in the entire tile set and all of the character images 
+     that are referenced by tile cells will be duplicated (as needed) across the character set.</p>
+
+  <p>At the same time, the tile set data is re-written so that each cell of each tile references a
+    unique character image.</p>
+
+  <p>In this special state, it becomes possible to edit all of the character images used by any
+    tile from a single canvas (the tile editor) as if the tile were a single bitmap image.</p>
+
+  <p>Without this feature it would only be possible to make tiles by assigning particular character
+    images to tile cells (ie. using the 'Char Brush' tool).</p>
+
+  <p>CharPad will always ask permission to decompress the project when an operation requires it.</p>
+
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+
+</body>
+
+</html>

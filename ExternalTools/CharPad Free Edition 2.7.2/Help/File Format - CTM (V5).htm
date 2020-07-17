@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>CTM File Format, Version 5.</b>
+  </p>
+  <br />
+  <p>Used by CharPad 2.0 - 2.3 to record project data.</p>
+  <br />
+
+  <pre class="rose">
+First comes the header, 20 bytes...
+
+ID_STR    [00-02] : 3 bytes : File ID string (ASCII) "CTM".
+VERSION   [03]    : 1 byte  : Format version number (5).
+COLOURS   [04-07] : 4 bytes : Screen colour, Char multi-colour 1, Char multi-colour 2, Char colour.
+COLR_METH [08]    : 1 byte  : Colouring method (0 = Global, 1 = Per-tile, 2 = Per-char).
+FLAGS     [09]    : 1 byte  : Project flags (b0:TILESYS, b1:CHAREX, b2:MCMODE, see notes below).
+NUM_CHARS [10,11] : 2 bytes : Character image quantity -1 (16 bits).
+NUM_TILES [12,13] : 2 bytes : Tile quantity -1 (16 bits).
+TILE_WID  [14]    : 1 byte  : Tile width (1-8).
+TILE_HEI  [15]    : 1 byte  : Tile height (1-8).
+MAP_WID   [16,17] : 2 bytes : Map width (16 bits).
+MAP_HEI   [18,19] : 2 bytes : Map height (16 bits).
+
+Then comes the data...
+
+CHAR_DATA    : NUM_CHARS * 8 bytes                       : Character image data (one byte per pixel row).
+CHAR_ATTRIBS : NUM_CHARS bytes.                          : Character image attribute data (one byte per char, MMMMCCCC format, see notes below).
+TILE_DATA    : NUM_TILES * TILE_WID * TILE_HEI * 2 bytes : Tile data (16 bits per tile cell, only exists if the CHAREX flag is clear).
+TILE_COLOURS : NUM_TILES bytes                           : Tile colour data (one byte per tile, only exists if COLR_METH = 1).
+MAP_DATA     : MAP_WID * MAP_HEI * 2 bytes               : Map data (16 bits per cell).
+
+
+Notes...
+
+16-bit values should always be interpreted as least significant byte first (LSBF).
+
+The data for each character image (CHAR_DATA) consists of eight rows of pixels (one byte per row) starting with the top row.
+
+The data for each tile (TILE_DATA) begins with the tile's top-left element and runs left-to-right, top-to-bottom (Z-pattern LRTB).
+
+The data for the map (MAP_DATA) begins with the map's top-left element and runs left-to-right, top-to-bottom (Z-pattern LRTB).
+
+The FLAGS header byte contains 3 project flags...
+
+Bit 0 : TILESYS - Indicates whether the project uses tiles, 1 = Yes. 
+Bit 1 : CHAREX - Indicates whether the character set is in an expanded state (TILE_DATA will be absent), 1 = Yes.
+Bit 2 : MCMODE - Indicates whether the project uses character multi-colour mode, 1 = Yes.
+
+If the TILESYS flag is clear then the project does not use tiles and the file should not contain any tile data.
+
+The header entries NUM_TILES, TILE_WID and TILE_HEI can be ignored and the map data will refer to characters, not to tiles.
+
+nb. Colouring method (COLR_METH) 'per tile' (1) is not valid for a project that does not use tiles and should never be found set for a project that has the 
+tile system disabled.
+
+The CHAREX flag can also be ignored if a project does not use tiles.
+
+The CHAREX flag indicates that the total number of characters exactly matches the total number of cells in the tile set and the tile set data is an unbroken 
+integer sequence beginning at zero, such a data block (TILE_DATA) is easily recreated algorithmically and is therefore omitted from the file.
+
+The CHAR_ATTRIBS block stores one attribute byte for each character image in the set, each byte should be interpreted as follows...
+
+MMMMCCCC, where M is one of 4 material bits (0-15), C is one of 4 colour bits (0-15).
+
+
+Changes...
+
+Tile cell attributes are no longer supported, it is really more efficient to assign the attributes (colour/material) to the character images themselves, 
+consequently the CELL_ATTRIBS/CELL_COLOURS block available in previous versions of the format is no longer needed.
+
+The format now provides a 16-bit tile count (up to 65536 tiles) hence the map data now consists of 16-bit values.
+
+The format no longer supports the 1x1 tile size and instead implements disabling of the tile system, when this is the case, the map data will refer to 
+characters not to tiles.
+
+
+File format limitations...
+
+Max character images : 65536
+Max tiles : 65536
+Max maps : 1
+Max tile size : 255 x 255 (including non-square)
+Max map width : 65535
+Max map height : 65535
+
+
+CharPad 2.7 limitations...
+
+Max character images : 65536
+Max tiles : 65536
+Max maps : 1
+Max tile size : 8 x 8 (including non-square)
+Max map width : 8192
+Max map height : 8192
+  </pre>
+
+  <p>
+    <b>See also:-</b>
+  </p>
+  <a href="File Format - CTM (V1).htm">CTM File Format, Version 1.</a>
+  <br />
+  <a href="File Format - CTM (V2).htm">CTM File Format, Version 2.</a>
+  <br />
+  <a href="File Format - CTM (V3).htm">CTM File Format, Version 3.</a>
+  <br />
+  <a href="File Format - CTM (V4).htm">CTM File Format, Version 4.</a>
+  <br />
+  <a href="File Format - CTM (V6).htm">CTM File Format, Version 6.</a>
+  <br />
+  <a href="File Format - CTM (V7).htm">CTM File Format, Version 7.</a>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

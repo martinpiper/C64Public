@@ -1,0 +1,25 @@
+; --- Main build options end ---
+
+
+; Set these two values to the x position for the player's score panels
+ScorePlayer1XPos = 44
+ScorePlayer2XPos = 228
+
+ClearGameScreensChar = 0
+
+; Enable this to disable sound code
+;DisableSound = 1
+
+; Enable this to calculate sprite 8x8 cell usage. This is not normally used in SEUCK games
+;SpriteEmptyLookupTab2Enable = 1
+
+!source "ScrollEntryCommon.a"
+
+; This allows a source file to be hooked into the build
+!ifdef Scroller_HookInclude {
+!source "HookInclude.a"
+}
+
+!source "ScrollerDataMacro.a"
+!source "ScrollerData.a"
+!source "DataCheck.a"

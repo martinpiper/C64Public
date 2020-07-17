@@ -1,0 +1,558 @@
+!zn
+HandleUserInput
+	jsr HandleJoystick
+	rts
+
+!zn
+.toggle !by 0
+.playerDeltaY !by 0
+.lastPushX !by 2
+.lastPushY !by 2
+.standing !by 0
+.upImpulse !by 0
+.jumpIndex !by -1
+; This allows the feel and height of the maximum jump with "sub-pixel" accuracy to be precisely defined
+.jumpVelocities !by 4 , 4 , 4 , 4 , 4 , 3 , 4 , 3 , 3 , 3 , 3 , 3 , 2 , 3 , 2 , 2 , 3 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 1 , 2 , 1 , 2 , 1 , 1 , 2 , 1 , 1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 1 , 0 , 0 , 0
+.jumpVelocitiesEnd
+;.fallingVelocities 1 , 1 , 2 , 1 , 2 , 2 , 2 , 2 , -1
+
+HandleJoystick
+
+!set RunJumpDemo_Joystick = CIA1KeyboardColumnJoystickA
+	lda #Scroller_RunJumpDemo_timerZero
+	ldx #Scroller_RunJumpDemo_timerLen
+.cll1
+	inc Scroller_RunJumpDemo_timerPos,x
+	lda Scroller_RunJumpDemo_timerPos,x
+	cmp #Scroller_RunJumpDemo_timerZero+10
+	bne .cll2
+	lda #Scroller_RunJumpDemo_timerZero
+	sta Scroller_RunJumpDemo_timerPos,x
+	dex
+	bpl .cll1
+.cll2
+
+	lda #0
+	sta AnimPlayer_directionSet
+
+	lda AnimationYPos
+	sta .playerDeltaY
+
+	+MSpritePosToCharacterLookup_Setup SpriteXPosToScreenCharPos , SpriteYPosToScreenCharPosLo , SpriteYPosToScreenCharPosHi , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosLohi , ZP_SpriteYPosToScreenCharPosHilo , ZP_SpriteYPosToScreenCharPosHihi , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteXPosToScreenCharPoshi , topScreenScrollX , topScreenScrollY
+
+	; Assume not standing
+	lda #0
+	sta .standing
+
+	; No need for fall detection when we are moving upwards due to jumping
+	ldx .jumpIndex
+	bpl .rejectRoutine
+
+	; Falling or standing detection code
+
+	; Assume standing now
+	lda #1
+	sta .standing
+
+	ldx #0
+
+	+MSpritePosToCharacterLookupPosTweak 0 , -5 , .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	tya
+	clc
+	adc #40
+	tay
+	lda (tempWork0),y
+	beq .doFall
+!ifdef MapSolidCharsLower {
+	cmp #MapSolidCharsLower	; The character that is solid
+	bcc .rejectRoutine
+}
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .rejectRoutine
+}
+.doFall
+	inc AnimationYPos
+	inc AnimationYPos
+	lda #0
+	sta .standing
+.rejectRoutine
+
+	lda #JoystickBits_Right
+	bit RunJumpDemo_Joystick
+	bne .o1
+
+	jsr AnimPlayerRunRight
+
+	lda AnimationXPosLo
+	clc
+	adc #2
+	sta AnimationXPosLo
+	bcc .o1
+	lda #1
+	sta AnimationXPosHi
+.o1
+
+	lda #JoystickBits_Left
+	bit RunJumpDemo_Joystick
+	bne .o2
+
+	jsr AnimPlayerRunLeft
+
+	lda AnimationXPosLo
+	sec
+	sbc #2
+	sta AnimationXPosLo
+	bcs .o2
+	lda #0
+	sta AnimationXPosHi
+.o2
+
+	lda #JoystickBits_Down
+	bit RunJumpDemo_Joystick
+	bne .o3
+	inc AnimationYPos
+.o3
+
+	lda #JoystickBits_Up
+	bit RunJumpDemo_Joystick
+	bne .notUp
+
+	lda .upImpulse
+	bne .o4
+
+	lda #1
+	sta .upImpulse
+
+	; Already jumping?
+	lda .jumpIndex
+	bpl .o4
+
+	; Not standing?
+	lda .standing
+	beq .o4
+	; Start jumping then
+	lda #0
+	sta .jumpIndex
+	jmp .o4
+.notUp
+	lda #0
+	sta .upImpulse
+	; Stop jumping
+	lda #-1
+	sta .jumpIndex
+.o4
+
+	lda #JoystickBits_Fire
+	bit RunJumpDemo_Joystick
+	bne .o5
+
+	jsr .fireDagger
+
+.o5
+	; TODO: Probably should check the head positions for solid blocks here to stop jumping happening
+	ldx .jumpIndex
+	bmi .noJumping
+	lda AnimationYPos
+	sec
+	sbc .jumpVelocities,x
+	sta AnimationYPos
+	inx
+	cpx #.jumpVelocitiesEnd-.jumpVelocities
+	bne .noJumping
+	ldx #-1
+.noJumping
+	stx .jumpIndex
+
+
+	jsr AnimPlayerCheckForStand
+
+	; Calculate any delta Y moved by the player
+	lda AnimationYPos
+	sec
+	sbc .playerDeltaY
+	sta .playerDeltaY
+
+	; Simple push camera calculations
+	lda #0
+	sta frameTargetVelX
+	sta frameTargetVelY
+
+	lda AnimationYPos
+	cmp #151+16	; Carefully selected to avoid any misaligned scrolling
+	bcc .no1b
+	lda .playerDeltaY
+	bmi .endY
+	lda #-3
+	sta frameTargetVelY
+	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no1b
+	lda AnimationYPos
+	cmp #151	; Carefully selected to avoid any misaligned scrolling
+	bcc .no1
+	lda .playerDeltaY
+	bmi .endY
+	lda #-2
+	sta frameTargetVelY
+	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no1
+
+	lda AnimationYPos
+	cmp #119-16	; Carefully selected to avoid any misaligned scrolling
+	bcs .no2c
+	lda .playerDeltaY
+	beq .no2bb
+	bpl .no2
+.no2bb
+	lda #3
+	sta frameTargetVelY
+	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no2c
+	cmp #119	; Carefully selected to avoid any misaligned scrolling
+	bcs .no2
+	lda .playerDeltaY
+	beq .no2b
+	bpl .no2
+.no2b
+	lda #2
+	sta frameTargetVelY
+	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no2
+
+.endY
+
+	; TODO: Calculate larger push scroll values if the player is close to the screen edges
+	; Handle the X position now
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sta tempWork2
+
+	cmp #128+8
+	bcc .no3b
+	lda #-3
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .endX
+.no3b
+	cmp #128-8
+	bcc .no3
+	lda #-2
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .endX
+.no3
+
+	cmp #48-8
+	bcs .no4b
+	lda #3
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .endX
+.no4b
+	cmp #48+8
+	bcs .no4
+	lda #2
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .endX
+.no4
+
+.endX
+
+	; When there is no target X velocity, attempt to center the X scroll until it is 4 pixels again
+	lda frameTargetVelX
+	bne .haveTargetX
+
+	lda topScreenScrollX
+	cmp #4
+	beq .haveTargetX
+
+	ldx .lastPushX
+	stx frameTargetVelX
+.haveTargetX
+
+
+
+	; When there is no target Y velocity, attempt to center the Y scroll until it is 4 pixels again
+	lda frameTargetVelY
+	bne .haveTargetY
+
+	lda topScreenScrollY
+	cmp #4
+	beq .haveTargetY
+
+	ldx .lastPushY
+	stx frameTargetVelY
+.haveTargetY
+
+	lda AnimationYPos
+	sec
+	sbc #VIC2SpriteSizeY
+	sta AnimationYPos+1
+	lda AnimationXPosLo
+	sta AnimationXPosLo+1
+	lda AnimationXPosHi
+	sta AnimationXPosHi+1
+
+
+	; Double check we are not going to cause bad screen scrolls with certain alignments
+	lda frameTargetVelX
+	beq .noXScr1
+	bpl .isPosX1
+
+	; Player moving to the right, screen scrolling to the left
+
+	; If it's not close enough to the edge then ignore the velocity
+	lda frameScrollX
+	cmp #3
+	bcs .noXScr1
+
+	lda frameTargetVelY
+	beq .noXScr1
+	bmi .isNegY1
+
+	; Player at the top of the screen, screen moving downwards
+	; -x , y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #3
+	bcs .noXScr1
+
+	; Stop X velocity
+.stopXVel
+;	inc VIC2BorderColour
+	lda #0
+	sta frameTargetVelX
+	jmp .noXScr1
+
+
+.isNegY1
+	; Player at the bottom of the screen, screen moving upwards
+	; -x , -y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcs .stopXVel
+
+	jmp .noXScr1
+
+.isPosX1
+	; Player moving to the left, screen scrolling to the right
+	; If it's not close enough to the edge then ignore the velocity
+	lda frameScrollX
+	cmp #4
+	bcc .noXScr1
+
+	lda frameTargetVelY
+	beq .noXScr1
+	bmi .isNegY2
+
+	; Player at the top of the screen, screen moving downwards
+	; x , y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcc .stopXVel
+	jmp .noXScr1
+
+.isNegY2
+	; Player at the bottom of the screen, screen moving upwards
+	; x , -y
+	; Has it just scrolled in the Y?
+	lda frameScrollY
+	cmp #4
+	bcs .stopXVel
+
+	jmp .noXScr1
+
+.noXScr1
+
+	!source "ClampScrollVelocity.a"
+	rts
+
+
+.lnoBulletAllocated jmp .noBulletAllocated
+.fireDagger
+
+	lda AnimationYPos
+	sec
+	sbc topScreenScrollY
+	sbc #20
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	bmi .lnoBulletAllocated
+	sta .smcyp1+1
+
+	lda topScreenScrollX
+	lsr
+	sta tempWork0
+
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sec
+	sbc tempWork0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	bmi .lnoBulletAllocated
+	sta .smcxp1+1
+
+	jsr AllocateCharacterEffect
+	bcc .gotBullet1
+	jmp .o5b
+.gotBullet1
+	stx .smcx1+1
+	lda .smcyp1+1
+	sta CharEffectsY,x
+
+	jsr AllocateCharacterEffect
+	bcc .gotBullet2
+	jmp .o5b2
+.gotBullet2
+	stx .smcx2+1
+
+
+
+
+.smcx1	ldx #0
+.smcx2	ldy #0
+.smbx	lda #1
+	sta CharEffectsXVel,x
+	sta CharEffectsXVel,y
+.smby	lda #-1
+	sta CharEffectsYVel,x
+	sta CharEffectsYVel,y
+	lda #VIC2Multicolour_Yellow
+	sta CharEffectsCol,x
+	sta CharEffectsCol,y
+	lda #30
+	sta CharEffectsTime,x
+	sta CharEffectsTime,y
+	lda #1
+	sta CharEffectsChar,x
+	lda #2
+	sta CharEffectsChar,y
+.smcxp1	lda #0
+	sta CharEffectsX,x
+	clc
+	adc #1
+	sta CharEffectsX,y
+.smcyp1	lda #0
+	sta CharEffectsY,x
+	sta CharEffectsY,y
+
+
+	lda #48
+	ldx #1
+	ldy #2
+	jsr MusicPlayerPlaySFX
+
+	jmp .o5b
+
+
+	; Just kill it
+.o5b2
+	ldx .smcx1+1
+	lda #-1
+	sta CharEffectsY,x
+.o5b
+
+.noBulletAllocated
+
+	inc .smby+1
+	lda .smby+1
+	cmp #3
+	bne .osmby
+	lda #-2
+	sta .smby+1
+
+	inc .smbx+1
+	lda .smbx+1
+	cmp #3
+	bne .osmbx
+	lda #-2
+	sta .smbx+1
+.osmbx
+
+.osmby
+	rts
+
+!zn
+Scroller_RunJumpDemo_timerPos = SCREENRAM + ((22+Scroller_AdditionalCharLines) * VIC2ScreenCharsWidth) + 2
+Scroller_RunJumpDemo_timerLen = 9
+Scroller_RunJumpDemo_timerZero = 7
+RunJump_InitTimer
+	lda #Scroller_RunJumpDemo_timerZero
+	ldx #Scroller_RunJumpDemo_timerLen
+.cll1
+	sta Scroller_RunJumpDemo_timerPos,x
+	dex
+	bpl .cll1
+	rts
+
+
+
+!zn
+AnimPlayer_directionSet !by -1
+AnimPlayer_lastDirectionSet !by -1
+
+AnimPlayerRunLeft
+	lda #-1
+	sta AnimPlayer_directionSet
+	sta AnimPlayer_lastDirectionSet
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsLeft
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoLeft
+	jmp Animation_MorphToIfNeeded
+
+AnimPlayerRunRight
+	lda #1
+	sta AnimPlayer_directionSet
+	sta AnimPlayer_lastDirectionSet
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsRight
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoRight
+	jmp Animation_MorphToIfNeeded
+
+AnimPlayerCheckForStand
+	lda AnimPlayer_directionSet
+	beq .tryStand
+	rts
+
+.tryStand
+	lda AnimPlayer_lastDirectionSet
+	bmi .standLeft
+
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsStandRight
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoStandRight
+	jmp Animation_MorphToIfNeeded
+
+.standLeft
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsStandLeft
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoStandLeft
+	jmp Animation_MorphToIfNeeded

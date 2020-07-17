@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>Multi-colour character images.</b>
+  </p>
+  <br />
+  <p>Multi-colour character images are 4x8 pixels in size and use a bit-depth of 2 bits-per-pixel.</p>
+  <p>They can therefore use four colours...</p>
+  <p>&#x2022; Background colour (0-15), defined in the VIC colour register at memory address $d021 (53281). Pixel = "00".</p>
+  <p>&#x2022; Multi-colour 1 (0-15), defined in the VIC colour register at memory address $d022 (53282). Pixel = "01".</p>
+  <p>&#x2022; Multi-colour 2 (0-15), defined in the VIC colour register at memory address $d023 (53283). Pixel ="10".</p>
+  <p>&#x2022; Foreground colour (0-7), screen-position dependent, defined in the colour-RAM matrix from
+    $d800 (55296). Pixel = "11".</p>
+  <br />
+  <p>When the VIC chip is operating in multi-colour character mode, it uses a mechanism that allows high-resolution character
+     images to be displayed as well.</p>
+  <p>The foreground colour value (in the colour-RAM matrix) is reduced to just 3 bits to specify
+     a colour (0-7) and the highest bit (of the nybble) is used to select multi-colour mode for any
+    particular screen cell.</p>
+  <p>ie. any character image displayed in a screen cell using a colour value between 0-7 will
+     appear in high-resolution mode.</p>
+  <p>Any character image displayed in a screen cell using a colour value between 8-15 will appear
+     in multi-colour mode.</p>
+  <br />
+  <p>
+    <b>Notes...</b>
+  </p>
+  <p>Multi-colour character images are displayed using double-width pixels so their visible size
+    is actually the same as that of high-resolution character images.</p>
+  <p>In standard character-mode (without using raster tricks), the Commodore 64 can display up to
+     256 different character images on-screen.</p>
+  <p>The following formula can be used to determine the memory address for a particular colour-RAM cell...</p> 
+  <p>55296 + (y * 40) + x</p> 
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

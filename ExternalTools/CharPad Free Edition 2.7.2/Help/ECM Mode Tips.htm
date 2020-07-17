@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>ECM Mode Tips.</b>
+  </p>
+  <br />
+
+  <p>Extended Colour character mode (ECM) is one of the most recent additions to CharPad, the mode itself is similar to the 
+  standard 'High resolution' character mode but with some added flexibility with cell background colours, it has always been a standard 
+  feature of the Commodore 64 but it's use in games has been extremely rare.</p>
+
+  <p>Part of the reason for this may be that in ECM mode the range of available character images is limited to just 64 whereas the more 
+  popular 'High resolution' and 'Multi-colour' modes allow 256.</p>
+
+  <p>Despite this drawback, ECM mode does offer at least one quite special ability...</p>
+
+  <p>The screen matrix in ECM mode is still filled with 8-bit values but only the lower 6 bits of each value are used to select an image, 
+  limiting the available range to just 64.</p>
+
+  <p>The upper two bits of each screen matrix cell are re-purposed to select a background colour (0-3) for each cell and each of these 
+  2-bit values makes reference to one of four 8-bit registers on the video chip itself to determine the actual colour shown...</p> 
+
+  <br />&#x2022; 00 (0) = Background colour is taken from VIC register $d021 (Bg #1, 0-15). 
+  <br />&#x2022; 01 (1) = Background colour is taken from VIC register $d022 (Bg #2, 0-15). 
+  <br />&#x2022; 10 (2) = Background colour is taken from VIC register $d023 (Bg #3, 0-15). 
+  <br />&#x2022; 11 (3) = Background colour is taken from VIC register $d024 (Bg #4, 0-15). 
+  <br />
+  <br />
+
+  <p>So there is an obvious trade-off taking place here, fewer images.. more colour flexibility.</p>
+
+  <p>Each byte of screen matrix data effectively contains both an image selector value and a background colour selector value.</p>
+
+  <p>This is all very well if your project can afford the time to separately write 6-bit image selectors and 2-bit background colour values
+  to the screen matrix as well as likely needing to write foreground colours into the colour matrix.
+
+  <p>There is an alternative and faster way of dealing with this system, rather than thinking of each screen matrix cell as being split
+  into a 6-bit value + a 2-bit value, we can think of it as an 8-bit selector that selects one of 256 characters from a set which 
+  is divided into four (background) colour banks of 64 images per bank.
+
+  <p>This way of treating ECM mode has some peculiarities though, in a set of 256 characters we only actually have 64 different images which
+  now seem to be duplicated across four colour banks and where the actual background colour for any particular image seems locked to the 
+  image and entirely dependent on it's position in the set.
+  
+  <p>Despite it's peculiarities, this is the model that CharPad employs, it has some advantages, by treating ECM mode as if we have 256 
+  characters available then we can also store foreground colours and material values for all 256, greatly increasing our options in both
+  colouring and gameplay.
+
+  <p>Having colour and material properties asscociated with images rather than screen cells is a good thing!
+
+  <br /> 
+  <br /> 
+
+  <p><b>CharPad and ECM mode</b></p>
+
+  <p>CharPad attempts to make ECM mode as intuitive as possible using the model described above, here are some key points to bear in mind...</p>
+ 
+  <p>&#x2022; Supports any number of character &quot;items&quot; but only ever 64 images max. There is no (as yet determined) advantage to 
+  (CharPad) using more than 256 characters in ECM mode.</p>
+
+  <p>&#x2022; Pixel editing or transforming an image will affect items in multiple (background) colour banks but will really only affect a single image.</p>
+
+  <p>&#x2022; Delete/Insert/Cut/Paste ops divide the set into separate colour banks and perform the operation in each available colour
+  bank, images (and their properties) can never be pulled or pushed into neighbouring colour banks, items pushed beyond the end of a colour bank 
+  (by using insert or paste) are lost.</p>
+
+  <p>&#x2022; Items in a character set may share images but each item can still have it's own colour and material value.</p>
+
+  <p>&#x2022; Because of the restrictions on image quantity and colouring in ECM mode, Compression/Decompression features are not available, this
+  also means that direct pixelling of tiles is not possible, nor is copying/pasting tiles between program instances.</p> 
+    
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

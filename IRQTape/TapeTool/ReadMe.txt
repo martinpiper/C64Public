@@ -23,7 +23,7 @@ turbo tape byte codes used. The turbo byte codes don't really need to be changed
 The block compression is also enabled.
 
 Now assemble the code using:
->	acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a
+>	acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a
 This creates three files.
 "Loaders.bin" the assembled code.
 "Loaders.map" the map file of symbols used.
@@ -85,7 +85,7 @@ also closed and the correct file length set with the 'c' parameter.
 
 
 So in summary the following lines are executed:
-acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a
+acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a
 TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin c
 TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd c
 TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c

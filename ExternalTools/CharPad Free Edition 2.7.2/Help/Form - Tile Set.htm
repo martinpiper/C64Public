@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>The Tile Set Form.</b>
+  </p>
+  <br />
+  <p>The Tile Set form allows you to view and organize the project's tiles and also perform
+    multi-tile transformations.</p>
+  <br />
+  <p>
+    <b>Resizing the tile set (quantity)...</b>
+  </p>
+  <p>To set the quantity of tiles in the tile set, simply type a new quantity into the numeric
+    entry box on the form's tool bar and hit ENTER.</p>
+  <p>nb. The minimum quantity is 1 and the maximum is 65536.</p>
+  <br />
+  <p>
+    <b>Resizing the tile set (dimensions)...</b>
+  </p>
+  <p>To alter the dimensions of all the tiles in the set, select a new tile size from the
+    drop-down list on the form's tool bar, all existing tiles will have their dimensions altered and
+    their contents converted to retain the existing images as much as possible.</p>
+  <p>nb. The smallest tile size is 1x2 or 2x1, the largest size is 10x10 (character images).</p>
+  <br />
+  
+
+  <p><b>Selecting tiles...</b></p>
+  <p>This version of CharPad allows you to specify two 'current' tiles, a 'primary tile',
+     this is the one that also appears (for editing) in the Tile Editor, you can use the LEFT mouse button
+     to specify a primary tile, it will appear highlighted and boxed by yellow vertical bars to indicate
+     it's position in the set.</p> 
+
+  <p>The primary tile is the one that will be used as a brush when drawing on the map using the 
+     LEFT mouse button.</p>
+
+  <p>A 'secondary tile' may be selected by using the RIGHT mouse button, it will appear boxed by
+     red horizontal bars to indicate it's position in the set.</p>
+
+  <p>The secondary tile will be used as a brush when drawing on the map using the RIGHT mouse
+     button.</p>
+ 
+  <p>To select a range of tiles, use the LEFT mouse button to select a primary tile, then hold 
+     down the SHIFT key and select another primary tile, the selected range will appear highlighted.</p>
+  <br />
+
+  <p>
+    <b>Naming and Tagging...</b>
+  </p>
+  <p>This version of CharPad allows each tile to be assigned a name (string) and a tag value (byte).</p>
+
+  <p>To change the name or tag value for the current tile (or the currently selected range), simply 
+   type the new information into the text entry boxes provided in the toolbar on the main form.</p> 
+
+  <p>nb. It is not necessary to hit ENTER in these text entry boxes but doing so will create an Undo snapshot.</p>
+
+  <br />
+  <p>
+    <b>Transformations...</b>
+  </p>
+  <p>The following transformations are available when this form is active...</p>
+  <p>&#x2022; Scroll (up, down, left, right).</p>
+  <p>&#x2022; Flip (left-to-right, top-to-bottom).</p>
+  <p>&#x2022; Reflect (left-to-right, top-to-bottom).</p>
+  <p>&#x2022; Negative.</p>
+  <p>&#x2022; Colour swapping (for multi-colour tiles).</p>
+  <br />
+  <p>nb. Clicking a Scroll, Flip or Reflect action while holding the SHIFT key allows the selected action to be 
+     performed on the tile contents only rather than both the tile contents AND the char images.
+  <br />
+  
+  <p><b>Other functions...</b></p>
+  <p>&#x2022; Swapping - By selecting a tile using the LEFT mouse button and then selecting a second
+    tile using the LEFT mouse button whilst holding down the ALT key, the tile's positions in the set 
+    can be swapped (alternated).</p>
+  <p>&#x2022; Cropping - With a range of tiles selected, the 'Crop' menu item will remove all tiles not
+    included in the selection.</p>
+  <p>&#x2022; Cycling - With a range of tiles selected, the 'Cycle Backwards' and 'Cycle Forwards' menu
+    items will cycle (rotate) the selected tile's positions in the set by one place.</p>
+  <p>nb. Tile cycling does not perform correction on ie. map data, so the function can be used to
+    produce an animation effect.</p>
+  
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+
+</body>
+
+</html>

@@ -79,15 +79,7 @@ InitBank0Data
 } ;< !ifdef Scroller_FullScreen
 
 !ifdef Scroller_RunJumpDemo {
-Scroller_RunJumpDemo_timerPos = SCREENRAM + ((22+Scroller_AdditionalCharLines) * VIC2ScreenCharsWidth) + 2
-Scroller_RunJumpDemo_timerLen = 9
-Scroller_RunJumpDemo_timerZero = 7
-	lda #Scroller_RunJumpDemo_timerZero
-	ldx #Scroller_RunJumpDemo_timerLen
-.cll1
-	sta Scroller_RunJumpDemo_timerPos,x
-	dex
-	bpl .cll1
+	jsr RunJump_InitTimer
 }
 
 

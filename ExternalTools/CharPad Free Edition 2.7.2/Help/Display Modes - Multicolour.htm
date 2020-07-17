@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>Display Modes - Multi-colour Character Mode.</b>
+  </p>
+  <br />
+
+  <p>Multi-colour character mode allows up to 256 different character images to be displayed on a 40x25 byte screen matrix.</p>
+
+  <p>This mode is capable of simultaneously displaying both hi-res (8x8 pixel, 1bpp) and multi-colour (4x8 pixel, 2bpp) character images.</p>
+ 
+  <p>The colour matrix at $d800 (55296) is used to set the foreground colour and the display mode of each character image...</p>
+
+  <br />
+  <p>The highest bit (bit 3) of each colour nybble is used to set the display mode for each character cell (1 = multi-colour).</p>  
+
+  <p>The lowest 3 bits of each colour nybble are used to set the foreground colour (0-7) for each character cell.</p>
+
+  <br />
+  <p>All character images share a common background colour which can be set using the VIC register at $d021 (53281).</p> 
+ 
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

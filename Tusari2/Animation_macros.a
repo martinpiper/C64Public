@@ -1,0 +1,157 @@
+!macro DoSpeed .speed {
+	!set kAnimation_currentSpeed = .speed
+}
+!macro DoFrame .frame {
+	!fill kAnimation_currentSpeed , .frame
+	!if kAnimation_currentAddress = 0 {
+		!error "DoFrame used without a corresponding StartAnim?"
+	}
+	!if * - kAnimation_currentAddress >= 254 {
+		!error "Animation max length reached"
+	}
+}
+
+!macro DoFrame .frame1 , .frame2 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 , .frame10 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+	+DoFrame .frame10
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 , .frame10 , .frame11 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+	+DoFrame .frame10
+	+DoFrame .frame11
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 , .frame10 , .frame11 , .frame12 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+	+DoFrame .frame10
+	+DoFrame .frame11
+	+DoFrame .frame12
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 , .frame10 , .frame11 , .frame12 , .frame13 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+	+DoFrame .frame10
+	+DoFrame .frame11
+	+DoFrame .frame12
+	+DoFrame .frame13
+}
+!macro DoFrame .frame1 , .frame2 , .frame3 , .frame4 , .frame5 , .frame6 , .frame7 , .frame8 , .frame9 , .frame10 , .frame11 , .frame12 , .frame13 , .frame14 {
+	+DoFrame .frame1
+	+DoFrame .frame2
+	+DoFrame .frame3
+	+DoFrame .frame4
+	+DoFrame .frame5
+	+DoFrame .frame6
+	+DoFrame .frame7
+	+DoFrame .frame8
+	+DoFrame .frame9
+	+DoFrame .frame10
+	+DoFrame .frame11
+	+DoFrame .frame12
+	+DoFrame .frame13
+	+DoFrame .frame14
+}
+
+!macro EndAnim {
+	!if kAnimation_currentAddress > 0 {
+		!by 0
+	}
+	!set kAnimation_currentAddress = 0
+}
+
+!macro StartAnim ~.label , .speed {
+	+EndAnim
+	.label = *
+	!set kAnimation_currentAddress = .label
+	+DoSpeed .speed
+}

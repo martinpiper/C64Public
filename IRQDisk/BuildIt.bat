@@ -1,10 +1,10 @@
 @echo off
 del TestIRQDisk.prg
-..\acme.exe -v3 --msvc TestIRQDisk.a
+..\acme.exe -v4 --msvc TestIRQDisk.a
 if not exist TestIRQDisk.prg goto error
 ..\bin\LZMPi.exe -c64b TestIRQDisk.prg TestIRQDisk.prg $c000 >t.txt
 if not exist TestIRQDisk.prg goto error
-..\acme.exe -v3 --msvc TestIRQDisk2.a
+..\acme.exe -v4 --msvc TestIRQDisk2.a
 if not exist TestIRQDisk2.prg goto error
 ..\bin\LZMPi.exe -c64b TestIRQDisk2.prg TestIRQDisk2.prg $c000 >t.txt
 if not exist TestIRQDisk2.prg goto error

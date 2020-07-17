@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="MultiDirection|Win32">
+      <Configuration>MultiDirection</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName>Tusari2</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{C820702E-E7E6-4326-8813-886CEE09D50C}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'">
+    <OutDir>.\Scroller___Win32_Release\</OutDir>
+    <IntDir>.\Scroller___Win32_Release\</IntDir>
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat</NMakeReBuildCommandLine>
+    <NMakeOutput>Scroller.exe</NMakeOutput>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\Scroller\AnimationEngine.a" />
+    <None Include="..\Scroller\CatchUndefCartFiles.a" />
+    <None Include="..\Scroller\CharEffects.a" />
+    <None Include="..\Scroller\ClampScrollVelocity.a" />
+    <None Include="..\Scroller\DataCheck.a" />
+    <None Include="..\Scroller\LevelControl.a" />
+    <None Include="..\Scroller\OneTime.a" />
+    <None Include="..\Scroller\PlayerControl.a" />
+    <None Include="..\Scroller\RunJumpDemo.a" />
+    <None Include="..\Scroller\ScoreControl.a" />
+    <None Include="..\Scroller\ScrollEntry.a" />
+    <None Include="..\Scroller\ScrollEntryAfter.a" />
+    <None Include="..\Scroller\ScrollEntryCommon.a" />
+    <None Include="..\Scroller\ScrollEntry_MultiDirection.a" />
+    <None Include="..\Scroller\ScrollEntry_SEUCK.a" />
+    <None Include="..\Scroller\Scroller.a" />
+    <None Include="..\Scroller\ScrollerAnimation.a" />
+    <None Include="..\Scroller\ScrollerAnimationMemory.a" />
+    <None Include="..\Scroller\ScrollerCommon.a" />
+    <None Include="..\Scroller\ScrollerData.a" />
+    <None Include="..\Scroller\ScrollerDataMacro.a" />
+    <None Include="..\Scroller\ScrollerMacros.a" />
+    <None Include="..\Scroller\ScrollerOptimisations.a" />
+    <None Include="..\Scroller\ScrollerOptimisationsAggressive.a" />
+    <None Include="..\Scroller\Scrollers.a" />
+    <None Include="..\Scroller\ScrollerScrollSprites.a" />
+    <None Include="..\Scroller\ScrollerSingle.a" />
+    <None Include="..\Scroller\ScrollerSingleH.a" />
+    <None Include="..\Scroller\ScrollersNoColour.a" />
+    <None Include="..\Scroller\ScrollerStripsBottom.a" />
+    <None Include="..\Scroller\ScrollerStripsColouriseBottom.a" />
+    <None Include="..\Scroller\ScrollerStripsColouriseLeft.a" />
+    <None Include="..\Scroller\ScrollerStripsColouriseRight.a" />
+    <None Include="..\Scroller\ScrollerStripsColouriseTop.a" />
+    <None Include="..\Scroller\ScrollerStripsCommon.a" />
+    <None Include="..\Scroller\ScrollerStripsLeft.a" />
+    <None Include="..\Scroller\ScrollerStripsMacros.a" />
+    <None Include="..\Scroller\ScrollerStripsRight.a" />
+    <None Include="..\Scroller\ScrollerStripsTop.a" />
+    <None Include="..\Scroller\ScrollerVars.a" />
+    <None Include="..\Scroller\ScrollMain.a" />
+    <None Include="..\Scroller\SetupIRQs.a" />
+    <None Include="..\Scroller\SFXWithMusic.a" />
+    <None Include="..\Scroller\SpritePosToScreenPosMacros.a" />
+    <None Include="..\Scroller\SpritePosToScreenPosMem.a" />
+    <None Include="..\Scroller\SpritePosToScreenPosMem2.a" />
+    <None Include="..\Scroller\test.a" />
+    <None Include="..\Scroller\TitleScreen.a" />
+    <None Include="..\Scroller\_f_index1.a" />
+    <None Include="..\stdlib\BASICEntry80d.a" />
+    <None Include="..\stdlib\BASICEntry810.a" />
+    <None Include="..\stdlib\BASICEntry900.a" />
+    <None Include="..\stdlib\Initialise.a" />
+    <None Include="..\stdlib\LongBranches.a" />
+    <None Include="..\stdlib\MemoryCopy.a" />
+    <None Include="..\stdlib\PETSCII.a" />
+    <None Include="..\stdlib\SampleInit.a" />
+    <None Include="..\stdlib\stdlib.a" />
+    <None Include="..\stdlib\VideoModes.a" />
+    <None Include="..\stdlib\VideoModes_Macros.a" />
+    <None Include="Animation.a" />
+    <None Include="Animation_macros.a" />
+    <None Include="BuildIt.bat" />
+    <None Include="HandleUserInput.a" />
+    <None Include="HookInclude.a" />
+    <None Include="ScrollEntry_Tusari.a" />
+    <None Include="ScrollerData.a" />
+    <None Include="UpdateSprites.a" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="Tusari docs.txt" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

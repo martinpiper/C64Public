@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>VIC-II Sub-routine Library.</b>
+  </p>
+  <br />
+  <p>The code below can be copied to a plain text file, included in a project and assembled using
+    the 64TASS (or similar) assembler.</p>
+  <pre class="code">
+
+; vic_lib.asm
+
+; A small library of sub-routines for performing common tasks on the
+; Commodore 64's VIC-II video chip.
+
+; Author    : Stewart Wilson, Subchrist Software.
+; Created   : Sept 2012
+; Updated   : Jan 2017
+; Platform  : Commodore 64
+; Processor : MOS 6510
+; Assembler : 64TASS 1.46
+
+
+; Contents...
+
+; vic_select_bank    (A = 16KB video bank, 0-3)
+; vic_select_vmatrix (A = 1KB video matrix, 0-15)
+; vic_select_charset (A = 2KB character set, 0-7)
+; vic_select_bitmap  (A = 8KB bitmap image, 0 or 1)
+; vic_blank_on
+; vic_blank_off
+; vic_mode_text
+; vic_mode_bitmap
+; vic_mode_ecm
+; vic_multicolour_on
+; vic_multicolour_off
+; vic_fatborderLR_on 
+; vic_fatborderLR_off
+; vic_fatborderTB_on 
+; vic_fatborderTB_off 
+; vic_reset_scroll
+; vic_reset_sprites
+; vic_set_scroll (X,Y = offsets)
+; vic_wait_offmatrix
+; vic_wait_offscreen
+; vic_wait_one_sec
+; vic_getbanknumber (result in A)
+; vic_getmatrixnumber (result in A)
+; vic_getmatrixaddress (result in A)
+; vic_fill_cmatrix (A = colour nybble value)
+; vic_fill_vmatrix (A = byte value)
+; vic_test_vmatrix 
+
+
+
+; Define some colour constants...
+
+BLACK      = 0
+WHITE      = 1
+RED        = 2
+CYAN       = 3
+PURPLE     = 4
+GREEN      = 5
+BLUE       = 6
+YELLOW     = 7
+ORANGE     = 8
+BROWN      = 9
+PINK       = 10
+DARKGREY   = 11
+GREY       = 12
+LIGHTGREEN = 13
+LIGHTBLUE  = 14
+LIGHTGREY  = 15
+
+
+;---------------------------------------------
+; vic_select_bank - selects a 16KB video bank.
+;
+; parameters: A = video bank (0-3).
+; returns: none.
+;
+; video bank 0 is $0000-$3fff (nb. char ROM (4KB) available at $1000-$1fff, slots 2 &amp; 3).
+; video bank 1 is $4000-$7fff
+; video bank 2 is $8000-$bfff (nb. char ROM (4KB) available at $9000-$9fff, slots 2 &amp; 3).
+; video bank 3 is $c000-$ffff
+;---------------------------------------------
+
+vic_select_bank
+
+and #3     ; be sure to only use a 2-bit parameter value (0-3).
+eor #3     ; binary invert the parameter value.
+sta vsb_b1 ; store the result temporarily.
+lda $dd02  ; read Port-A Data Direction register (CIA #2).
+ora #3     ; set the lowest two bits (outputs).
+sta $dd02  ; write Port-A Data Direction register (CIA #2).
+lda $dd00  ; read Port-A data register (CIA#2).
+and #$fc   ; preserve the upper 6 bits, clear the lower 2.
+ora vsb_b1 ; add in the adjusted 2-bit parameter value.
+sta $dd00  ; write Port-A data register (CIA#2).
+rts
+
+vsb_b1 .byte 0
+
+;-------------------------------------------------
+; vic_select_vmatrix - selects a 1KB video matrix.
+;
+; parameters: A = video matrix (0-15).
+; returns: none.
+;-------------------------------------------------
+
+vic_select_vmatrix
+
+and #$0f   ; be sure to only use a 4-bit parameter value (0-f).
+asl        ; shift the value to the high nybble...
+asl
+asl
+asl
+sta vsm_b1 ; store the result temporarily.
+lda $d018  ; read the VIC-II pointer register.
+and #$0f   ; preserve the low nybble, clear the high nybble.
+ora vsm_b1 ; add in the adjusted 4-bit parameter value.
+sta $d018  ; write the VIC-II pointer register.
+rts
+
+vsm_b1 .byte 0
+
+;--------------------------------------------------
+; vic_select_charset - selects a 2KB character set.
+;
+; parameters: A = character set (0-7).
+; returns: none.
+;--------------------------------------------------
+
+vic_select_charset
+
+and #7     ; be sure to only use a 3-bit parameter value (0-7).
+asl        ; shift the parameter value left one binary place.
+sta vsc_b1 ; store the result temporarily.
+lda $d018  ; read the VIC-II pointer register.
+and #$f0   ; preserve the upper nybble, clear the lower nybble.
+ora vsc_b1 ; add in the adjusted 3-bit parameter value.
+sta $d018  ; write the VIC-II pointer register.
+rts
+
+vsc_b1 .byte 0
+
+;-------------------------------------------------
+; vic_select_bitmap - selects an 8KB bitmap image.
+;
+; parameters: A = bitmap image (0 or 1).
+; returns: none.
+;-------------------------------------------------
+
+vic_select_bitmap
+
+and #1     ; be sure to only use a 1-bit parameter value (0 or 1).
+asl        ; shift the parameter left 3 binary places...
+asl       
+asl
+sta vsi_b1 ; store the result temporarily.
+lda $d018  ; read the VIC-II pointer register. 
+and #$f0   ; preserve the upper nybble, clear the lower nybble.
+ora vsi_b1 ; add in the adjusted 1-bit parameter value.
+sta $d018  ; write the VIC-II pointer register.
+rts
+
+vsi_b1 .byte 0
+
+;-------------------------------------------------------------------
+; vic_blank_on - blanks the screen matrix area to the border colour.
+;
+; parameters: none.
+; returns: none.
+;-------------------------------------------------------------------
+
+vic_blank_on
+
+lda $d011
+and #$ef ; clear bit 4 of vic control register 1.
+sta $d011
+rts
+
+;-------------------------------------------------
+; vic_blank_off - unblanks the screen matrix area.
+;
+; parameters: none.
+; returns: none.
+;-------------------------------------------------
+
+vic_blank_off
+
+lda $d011
+ora #$10 ; set bit 4 of vic control register 1.
+sta $d011
+rts
+
+;--------------------------------------------
+; vic_mode_text - enables standard text mode.
+;
+; parameters: none.
+; returns: none.
+;--------------------------------------------
+
+vic_mode_text
+
+lda $d011
+and #$1f ; clear bits 5,6,7 of vic control register 1.
+sta $d011
+rts
+
+;---------------------------------------
+; vic_mode_bitmap - enables bitmap mode.
+;
+; parameters: none.
+; returns: none.
+;---------------------------------------
+
+vic_mode_bitmap
+
+lda $d011
+and #$1f ; clear bits 5,6,7 of vic control register 1.
+ora #$20 ; set bit 5.
+sta $d011
+rts
+
+;----------------------------------------------------
+; vic_mode_ecm - enables "extended colour" text mode.
+;
+; parameters: none.
+; returns: none.
+;----------------------------------------------------
+
+vic_mode_ecm
+
+lda $d011
+and #$1f ; clear bits 5,6,7 of vic control register 1.
+ora #$40 ; set bit 6.
+sta $d011
+rts
+
+;-----------------------------------------------------------------
+; vic_multicolour_on - enables character/bitmap multi-colour mode.
+;
+; parameters: none.
+; returns: none.
+;-----------------------------------------------------------------
+
+vic_multicolour_on
+
+lda $d016
+ora #$10 ; set bit 4 of vic control register 2.
+sta $d016
+rts
+
+;-------------------------------------------------------------------
+; vic_multicolour_off - disables character/bitmap multi-colour mode.
+;
+; parameters: none.
+; returns: none.
+;-------------------------------------------------------------------
+
+vic_multicolour_off
+
+lda $d016
+and #$ef ; clear bit 4 of vic control register 2.
+sta $d016
+rts
+
+;-----------------------------------------------
+; vic_fatborderLR_on - enables "38 column" mode. 
+;
+; parameters: none.
+; returns: none.
+;-----------------------------------------------
+
+vic_fatborderLR_on 
+
+lda $d016
+and #$f7 ; clear bit 3 of vic control register 2.
+sta $d016
+rts
+
+;------------------------------------------------
+; vic_fatborderLR_off - enables "40 column" mode. 
+;
+; parameters: none.
+; returns: none.
+;------------------------------------------------
+
+vic_fatborderLR_off 
+
+lda $d016
+ora #8 ; set bit 3 of vic control register 2.
+sta $d016
+rts
+
+;--------------------------------------------
+; vic_fatborderTB_on - enables "24 row" mode.
+;
+; parameters: none.
+; returns: none.
+;--------------------------------------------
+
+vic_fatborderTB_on 
+
+lda $d011
+and #$f7 ; clear bit 3 of vic control register 1.
+sta $d011
+rts
+
+;---------------------------------------------
+; vic_fatborderTB_off - enables "25 row" mode.
+;
+; parameters: none.
+; returns: none.
+;---------------------------------------------
+
+vic_fatborderTB_off 
+
+lda $d011
+ora #8 ; set bit 3 of vic control register 1.
+sta $d011
+rts
+
+;-----------------------------------------------------------------------------------------
+; vic_reset_scroll - sets both screen scroll registers to their default values (x:0, y:3).
+;
+; parameters: none.
+; returns: none.
+;-----------------------------------------------------------------------------------------
+
+vic_reset_scroll
+
+lda $d016 ; reset horizontal scroll (0)...
+and #$f8
+sta $d016
+lda $d011 ; reset vertical scroll (3)...
+and #$f8
+ora #3
+sta $d011
+rts
+
+;--------------------------------------------------------------------------
+; vic_reset_sprites - turns all sprites off + resets all sprite attributes.
+;
+; parameters: none.
+; returns: none.
+;--------------------------------------------------------------------------
+
+vic_reset_sprites
+
+     lda #0
+     sta $d015   ; turn all sprites off. 
+     sta $d017   ; disable vertical expansion for all sprites.
+     sta $d01d   ; disable horizontal expansion for all sprites.
+     sta $d01b   ; give all sprites priority over background graphics.
+
+     ldx #16     ; zero all sprite positions...
+     lda #0      ; (clears $d000 - $d010)
+vrs0 sta $d000,x
+     dex
+     bpl vrs0
+
+     ldx #7      ; zero all sprite colours (black)...
+     lda #0      ; (clears $d027 - $d02e)
+vrs1 sta $d027,x
+     dex
+     bpl vrs1
+     rts
+
+;--------------------------------------------------------------------------------
+; vic_set_scroll - sets both the horizontal and vertical screen scroll registers.
+;
+; parameters: X,Y = horizontal and vertical scroll offsets (0-7).
+; returns: none.
+;--------------------------------------------------------------------------------
+
+vic_set_scroll
+
+txa
+and #7    ; ensure the parameter (x) is 0-7.
+sta vss_x
+tya
+and #7    ; ensure the parameter (y) is 0-7.
+sta vss_y
+
+lda $d016
+and #$f8
+ora vss_x
+sta $d016
+
+lda $d011
+and #$f8
+ora vss_y
+sta $d011
+rts
+
+vss_x .byte 0
+vss_y .byte 0
+
+;---------------------------------------------------------------------------------------
+; vic_wait_offmatrix - waits for the raster beam to leave the visible matrix (line 251).
+;
+; parameters: none.
+; returns: none.
+;---------------------------------------------------------------------------------------
+
+vic_wait_offmatrix
+
+vwom0 lda $d012 ; wait for raster line 251...
+      cmp #251
+      bne vwom0
+      rts
+
+;---------------------------------------------------------------------------------------
+; vic_wait_offscreen - waits for the raster beam to leave the visible screen (line 300).
+;
+; parameters: none.
+; returns: none.
+;---------------------------------------------------------------------------------------
+
+vic_wait_offscreen
+
+vwos0 lda $d011 ; wait for raster msb clear..
+      and #$80
+      bne vwos0
+vwos1 lda $d011 ; wait for raster msb set (line 256)..
+      and #$80
+      beq vwos1
+vwos2 lda $d012 ; wait for raster line 300 (256 + 44)...
+      cmp #44
+      bne vwos2
+      rts
+
+;---------------------------------------------------------------------------------
+; vic_wait_one_sec - uses the raster beam to wait for approx one second (50 raster 
+; cycles/PAL).
+;
+; nb. all used cpu registers are saved and restored after execution, this makes it
+; simple to use this routine in a loop involving the cpu registers.
+;
+; parameters: none.
+; returns: none.
+;---------------------------------------------------------------------------------
+
+vic_wait_one_sec
+
+     pha ; save cpu registers...
+     txa
+     pha
+     tya
+     pha
+
+     ldx #50
+vws0 jsr vic_wait_offmatrix
+     jsr vic_wait_offscreen
+     dex
+     bne vws0
+
+     pla ; restore cpu registers...
+     tay
+     pla
+     tax
+     pla
+     rts
+
+;-----------------------------------------------------------
+; vic_getbanknumber - returns the current video bank number.
+;
+; parameters: none.
+; returns: A = current video bank number (0-3).
+;-----------------------------------------------------------
+
+vic_getbanknumber
+
+lda $dd00 ; read the port-A data register of CIA#2.
+and #3    ; keep the lowest 2 bits.
+eor #3    ; invert them to give the video bank number.
+rts
+
+;---------------------------------------------------------------------
+; vic_getmatrixnumber - returns the current screen matrix slot number.
+;
+; parameters: none.
+; returns: A = active screen matrix slot number (0-15).
+;---------------------------------------------------------------------
+
+vic_getmatrixnumber
+
+lda $d018 ; compute current matrix base address...
+lsr
+lsr
+lsr
+lsr
+rts
+
+;-----------------------------------------------------------------------------
+; vic_getmatrixaddress - returns the active screen matrix address (high byte).
+;
+; parameters: none.
+; returns: A = high byte of active screen matrix.
+;-----------------------------------------------------------------------------
+
+vic_getmatrixaddress
+
+jsr vic_getbanknumber
+asl
+asl
+asl
+asl
+asl
+asl
+sta vgma_b1
+
+jsr vic_getmatrixnumber
+asl
+asl
+sta vgma_b2
+
+lda vgma_b1
+clc
+adc vgma_b2
+rts
+
+vgma_b1 .byte 0
+vgma_b2 .byte 0
+
+;-----------------------------------------------------------------------------------
+; vic_fill_cmatrix - fills the colour matrix with a specified colour (nybble) value.
+;
+; nb. this fills only the 1000 "visible" nybbles of the (1024 * 4-bit) colour matrix. 
+;
+; parameters: A = colour (0-15).
+; returns: none.
+;-----------------------------------------------------------------------------------
+
+vic_fill_cmatrix
+
+     ldx #250    ; nb. the used counter values are 250 down to 1...   
+vfc0 sta $d7ff,x ; instead of 249 down to 0...
+     sta $d8f9,x ; this allows for a small code optimization.
+     sta $d9f3,x ; in the final comparison (just a bne needed).
+     sta $daed,x ; part of which is these addresses being one less than expected.
+     dex         ; as this loop runs 250 times it makes a difference.
+     bne vfc0    
+     rts
+
+;------------------------------------------------------------------------------
+; vic_fill_vmatrix - fills the active video matrix with a specified byte value.
+;
+; nb. this fills only the 1000 "visible" bytes of the 1KB video matrix. 
+;
+; parameters: A = value.
+; returns: none.
+;------------------------------------------------------------------------------
+
+vic_fill_vmatrix
+
+     sta vfv_b0 ; save the parameter.
+
+     lda #0 ; create a pointer to the active video matrix in zero page ($02,$03)...
+     sta $02
+     jsr vic_getmatrixaddress
+     sta $03
+
+     ldx #4 ; fill the matrix (4 x 250 = 1000 bytes)...
+vfv0 ldy #0
+     lda vfv_b0
+vfv1 sta ($02),y
+     iny
+     cpy #250
+     bne vfv1
+
+     lda $02
+     clc
+     adc #250
+     sta $02
+     bcc vfv2
+     inc $03
+
+vfv2 dex
+     bne vfv0
+     rts
+
+vfv_b0 .byte 0
+
+;------------------------------------------------------------------------
+; vic_test_vmatrix - fills the active video matrix with ascending values.
+;
+; nb. this fills the 1000 visible bytes of the 1KB video matrix. 
+;
+; parameters: none.
+; returns: none.
+;------------------------------------------------------------------------
+
+vic_test_vmatrix
+
+     lda #0 ; create a pointer to the active video matrix in zero page ($02,$03)...
+     sta $02
+     jsr vic_getmatrixaddress
+     sta $03
+
+     ldx #4 ; fill the matrix (4 x 250 = 1000 bytes)...
+vtv0 ldy #0
+vtv1 tya
+     sta ($02),y
+     iny
+     cpy #250
+     bne vtv1
+
+     lda $02
+     clc
+     adc #250
+     sta $02
+     bcc vtv2
+     inc $03
+
+vtv2 dex
+     bne vtv0
+     rts
+ 
+</pre>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

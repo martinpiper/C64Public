@@ -1,0 +1,101 @@
+* Using Scroller in multi-direction mode as an engine, assess the feasibility of creating Tusari 2 which would be a hack-n-slash with daggers and magic.
+
+
+* Need art assets, reverse existing Tusari code or just rip from active Vice snapshots?
+	Might need to write a one-off Tusari format to CharPad conversion tool to grab the maps. They will have lots of empty areas because the flip screen levels were sparse.
+	Level editor source code, converted: C:\CCS64\MyOldE114Software\TusariDevTusari\leveled.txt
+	C:\CCS64\MyOldE114Software\TusariDevTusari\CHRS.PRG
+	For level editor:
+		Open: C:\CCS64\MyOldE114Software\TusariDevTusari.d64
+		L (level editor)
+		It will fail to load "editor" on line 141
+		Attach: C:\CCS64\MyOldE114Software\TusariDevInOutSide1.d64
+		goto 141
+		Enter screen: 1
+	Level editor controls:
+		Screen left		Shift+z
+		Screen right	Shift+x
+		Screen up		]
+		Screen down		Shift+/
+		Cursor left		z
+		Cursor right	x
+		Cursor up		;
+		Cursor down		/
+		Prev block		-
+		Next block		Shift+=
+	
+	Block data format:
+		C:\CCS64\MyOldE114Software\TusariDevTusari\BLKS.PRG
+		C:\CCS64\MyOldE114Software\TusariDevTusari\BLKS2.PRG
+		For 64 (256/4=64) blocks
+		$0000	0123
+		$0100	4567
+		$0200	89ab
+		$0300	cdef
+		Then second file another 64 blocks
+
+	Map: C:\CCS64\MyOldE114Software\TusariDevTusari\MAP.PRG
+		10*5 bytes of:
+			Tile colour
+			Tile index
+		bytes for up/down/left/right exit screen index
+	Starting screen is index 1
+	
+	Background colours: 0
+	MC colours: 11 and 9
+
+	C64\ExternalTools\CharPad Free Edition 2.7.2
+		Allows tile colours to be separately imported
+		Note: Using raw binary files from the conversion process means the number of tiles is limited to 256 from the map bytes
+			An option exists to use the CharPad file format: file:///C:/Work/C64/ExternalTools/CharPad%20Free%20Edition%202.7.2/Help/File%20Format%20-%20CTM%20(V7).htm
+	
+	While decoding the original map data, screen 0 can be skipped, the screenVisited array can avoid parsing an already parsed screen
+		Make the decode screen to map code recursive, parsing each non-zero value for the screen exits until return
+
+	* Problem is that the exits for screens are not entirely consistent with the visible or reachable exits, sometimes the same screen number is used for multiple exits.
+	
+	Level1.ctm - Contains the FlattenMap exported data, plus some simple copy/paste fixup to connect the correct areas of the map, fixing the inconsistent exit issues
+		Materials (1 and f) are used to allow characters to be sorted and maintain the "solid" chars in their correct order towards the upper end of the used characters memory.
+	Level1-2.ctm - Contains the above, but with per-character colour enabled and numerous block and map tweaks added.
+
+	Using the above CTM file, plus Tusari2\ScrollerData.a and "BuildIt.bat ScrollEntry_MultiDirection.a"
+		Produces a working output: Tusari2\Scroller.crt
+
+
+
+* BuildIt.bat used to create Scroller.crt for this Tusari2 build
+
+
+
+* Update animation engine to not use frame speed, but instead have duplicated updates per frame, reduces code complexity and uses more memory
+
+
+
+* Create SpritePad file instead of pulling in original Tusari data files
+	Interesting historical point, sprite 183 in the original game had my old phone number from around 1989/1990.
+		One day about 2000 someone called the number to tell me they had been searching the sprites of the game and found the number. :)
+		This version does not include the number as it was discontinued and is probably owned by someone else at this point.
+
+
+
+* Add player run left animations
+	AnimationFrames_MainCharTorsoLeft
+	AnimationFrames_MainCharLegsLeft
+
+
+
+
+* Add player stand animations
+
+
+
+* Add player weapon characters, dagger left and right chars
+	Level chars to be the full 256 with lots of blank space
+
+
+
+* Add better daggers
+
+
+
+* ; TODO: Calculate larger push scroll values if the player is close to the screen edges

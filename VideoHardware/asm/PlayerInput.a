@@ -57,10 +57,13 @@ kScreenSpriteOffScreen_left		= 244
 	bpl .l1
 }
 
-!macro TilesCloudsDec .mode7 , .tiles {
-	lda .mode7+1
+!macro TilesCloudsDec .val , .mode7 , .tiles {
+	lda .mode7+0
 	sec
-	sbc #2
+	sbc #<.val
+	sta .mode7+0
+	lda .mode7+1
+	sbc #>.val
 	sta .mode7+1
 	lda .mode7+2
 	sbc #0
@@ -74,10 +77,13 @@ kScreenSpriteOffScreen_left		= 244
 .o1
 }
 
-!macro TilesCloudsInc .mode7 , .tiles {
-	lda .mode7+1
+!macro TilesCloudsInc .val , .mode7 , .tiles {
+	lda .mode7
 	clc
-	adc #2
+	adc #<.val
+	sta .mode7
+	lda .mode7+1
+	adc #>.val
 	sta .mode7+1
 	lda .mode7+2
 	adc #0
@@ -89,13 +95,41 @@ kScreenSpriteOffScreen_left		= 244
 .o1
 }
 
+!macro CloudsDec .val , .mode7 {
+	lda .mode7+0
+	sec
+	sbc #<.val
+	sta .mode7+0
+	lda .mode7+1
+	sbc #>.val
+	sta .mode7+1
+	lda .mode7+2
+	sbc #0
+	sta .mode7+2
+}
+
+!macro CloudsInc .val , .mode7 {
+	lda .mode7
+	clc
+	adc #<.val
+	sta .mode7
+	lda .mode7+1
+	adc #>.val
+	sta .mode7+1
+	lda .mode7+2
+	adc #0
+	sta .mode7+2
+}
+
 !zn
 playerAnimationIndex !by 0
 HandleJoystick
 
 	lda #JoystickBits_Up
 	bit CIA1KeyboardColumnJoystickA
-	bne .notUp
+	beq .isUp
+	jmp .notUp
+.isUp
 
 	+MoveAnimationsForBy AnimationEngine_posY , -1
 
@@ -103,13 +137,19 @@ HandleJoystick
 	ldy #kAnimationType_playerRunUp
 	jsr AnimationEngine_MutateToTypeIfDifferent
 
-	+TilesCloudsDec Mode7Regs0_ypos , TileScreen_ypos
+	+TilesCloudsDec $200 , Mode7Regs0_ypos , TileScreen_ypos
+!ifdef Mode7LayersEnable {
+	+CloudsDec $206 , Mode7Regs1_ypos
+	+CloudsDec $20c , Mode7Regs2_ypos
+}
 
 .notUp
 
 	lda #JoystickBits_Down
 	bit CIA1KeyboardColumnJoystickA
-	bne .notDown
+	beq .isDown
+	jmp .notDown
+.isDown
 
 	+MoveAnimationsForBy AnimationEngine_posY , 1
 
@@ -117,13 +157,19 @@ HandleJoystick
 	ldy #kAnimationType_playerRunDown
 	jsr AnimationEngine_MutateToTypeIfDifferent
 
-	+TilesCloudsInc Mode7Regs0_ypos , TileScreen_ypos
+	+TilesCloudsInc $200 , Mode7Regs0_ypos , TileScreen_ypos
+!ifdef Mode7LayersEnable {
+	+CloudsInc $206 , Mode7Regs1_ypos
+	+CloudsInc $20c , Mode7Regs2_ypos
+}
 
 .notDown
 
 	lda #JoystickBits_Left
 	bit CIA1KeyboardColumnJoystickA
-	bne .notLeft
+	beq .isLeft
+	jmp .notLeft
+.isLeft
 
 	+MoveAnimationsForBy AnimationEngine_posX , 1
 
@@ -133,13 +179,19 @@ HandleJoystick
 	lda #0
 	sta AnimationEngine_flips,x
 
-	+TilesCloudsDec Mode7Regs0_xpos , TileScreen_xpos
+	+TilesCloudsDec $200 , Mode7Regs0_xpos , TileScreen_xpos
+!ifdef Mode7LayersEnable {
+	+CloudsDec $206 , Mode7Regs1_xpos
+	+CloudsDec $20c , Mode7Regs2_xpos
+}
 
 .notLeft
 
 	lda #JoystickBits_Right
 	bit CIA1KeyboardColumnJoystickA
-	bne .notRight
+	beq .isRight
+	jmp .notRight
+.isRight
 
 	+MoveAnimationsForBy AnimationEngine_posX , -1
 
@@ -149,7 +201,11 @@ HandleJoystick
 	lda #kAnimationEngine_flipX
 	sta AnimationEngine_flips,x
 
-	+TilesCloudsInc Mode7Regs0_xpos , TileScreen_xpos
+	+TilesCloudsInc $200 , Mode7Regs0_xpos , TileScreen_xpos
+!ifdef Mode7LayersEnable {
+	+CloudsInc $206 , Mode7Regs1_xpos
+	+CloudsInc $20c , Mode7Regs2_xpos
+}
 
 .notRight
 	rts

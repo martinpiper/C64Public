@@ -15,7 +15,7 @@ rem echo MartyLoad = 1 >>_config.a
 
 
 echo Assembling with ACME
-acme.exe --lib  ../ --lib ../../  -v3 --msvc Loaders.a
+acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a
 
 echo Writing data
 rem Tiny header auto-boot loaders are used so use this...

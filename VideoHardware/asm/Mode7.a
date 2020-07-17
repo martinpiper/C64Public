@@ -11,6 +11,9 @@
 	!by 0,0,0,0,0,0,0,0
 	!by 0,0,0,0,0,0,0,0
 Mode7_Update
+!ifdef Mode7LayersEnable {
+	rts
+} else {
 	inc .cnt1
 	lda .cnt1
 	lsr
@@ -99,6 +102,7 @@ Mode7_Update
 
 
 	rts
+}
 
 !zn	
 Mode7Regs0
@@ -113,15 +117,101 @@ Mode7Regs0_scale_dYX
 	+MLittleEndian24Bit 0
 
 Mode7Regs0_xpos
+!ifdef Mode7LayersEnable {
+	+MLittleEndian24Bit ((64*16)-120) * $100
+} else {
 	+MLittleEndian24Bit 0
+}
 Mode7Regs0_ypos
+!ifdef Mode7LayersEnable {
+	+MLittleEndian24Bit ((32*16)-110) * $100
+} else {
 	+MLittleEndian24Bit 0
+}
+
+	!by 0
+	!by 0
+
+Mode7Regs0_backgroundColour !by 0
+Mode7Regs0_flags !by $1f
 
 Mode7Regs0Size = * - Mode7Regs0
 
 
+
+!ifdef Mode7LayersEnable {
+Mode7Regs1
+
+Mode7Regs1_scale_dX
+	+MLittleEndian24Bit $f0
+Mode7Regs1_scale_dXY
+	+MLittleEndian24Bit 0
+Mode7Regs1_scale_dY
+	+MLittleEndian24Bit $f0
+Mode7Regs1_scale_dYX
+	+MLittleEndian24Bit 0
+
+Mode7Regs1_xpos
+	+MLittleEndian24Bit (((64*16)-120) * $103) + $100
+Mode7Regs1_ypos
+	+MLittleEndian24Bit (((32*16)-110) * $100) + $700
+
+	!by 0
+	!by 0
+
+Mode7Regs1_backgroundColour !by 0
+Mode7Regs1_flags !by $1f
+
+Mode7Regs1Size = * - Mode7Regs1
+
+
+
+Mode7Regs2
+
+Mode7Regs2_scale_dX
+	+MLittleEndian24Bit $e0
+Mode7Regs2_scale_dXY
+	+MLittleEndian24Bit 0
+Mode7Regs2_scale_dY
+	+MLittleEndian24Bit $e0
+Mode7Regs2_scale_dYX
+	+MLittleEndian24Bit 0
+
+Mode7Regs2_xpos
+	+MLittleEndian24Bit (((64*16)-120) * $106) + $100
+Mode7Regs2_ypos
+	+MLittleEndian24Bit (((32*16)-110) * $106) + $700
+
+	!by 0
+	!by 0
+
+Mode7Regs2_backgroundColour !by 0
+Mode7Regs2_flags !by $1f
+
+Mode7Regs2Size = * - Mode7Regs2
+}
+
+
 !zn
 copyMode7Regs
+!ifdef Mode7LayersEnable {
+	lda #$01
+	+MWordValueTo_XY $b000
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX Mode7Regs2
+	ldy #Mode7Regs2Size
+	jsr Bus24Bit_CopySmallData
+
+	lda #$01
+	+MWordValueTo_XY $a800
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX Mode7Regs1
+	ldy #Mode7Regs1Size
+	jsr Bus24Bit_CopySmallData
+}
+
 	lda #$01
 	+MWordValueTo_XY $a000
 	jsr Bus24Bit_SetAddressBus

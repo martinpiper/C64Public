@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+
+  <p><b>The Project Palette Form.</b></p>
+  <br />
+  <p>The Project Palette form allows you to adjust various project options as well as define the
+    project's colour scheme and select a current pen colour.</p>
+  <br />
+
+  <p><b>Colours...</b></p>
+
+        &#x2022; Char : The native colour value used to render a character (or tile). See notes.
+
+  <br />&#x2022; Bg #1 : The primary background (screen) colour, choose from all 16 colours.
+  
+  <br />&#x2022; Bg #2 / Mc #1 : Multi-colour 1 when using the Multi-colour screen mode or background colour 2 if using ECM mode, 
+  choose from all 16 colours.
+
+  <br />&#x2022; Bg #3 / Mc #2 : Multi-colour 2 when using the Multi-colour screen mode or background colour 3 if using ECM mode, 
+  choose from all 16 colours.
+
+  <br />&#x2022; Bg #4 : Background colour 4 if using ECM (Extended Colour) mode, choose from all 16 colours.
+  <br />
+  <br />
+
+  <p><b>Materials...</b></p>
+  Use the left mouse button to set a material value (hex, 0-f) for the selected character(s). 
+  <br />  
+  <br />  
+
+  <p><b>Display mode...</b></p>
+
+  &#x2022; High Resolution : 256 character images, 8x8 pixels, 1 bit-per-pixel (two colours, fixed background colour).
+
+  <br />&#x2022; Multi-colour : 256 character images, 8x8 pixels or 4x8 pixels, 1 or 2 bits-per-pixel (two or four colours, fixed background colour). 
+
+  <br />&#x2022; Extended Colour : 64 character images, 8x8 pixels, 1 bit-per-pixel (two colours, variable background colour, also known as 'ECM' mode). 
+  <br />
+  <br />
+  <p>nb. The character image quantities apply to the actual Commodore 64, CharPad allows significantly more for various purposes.
+  <br />
+  <br />
+
+  <p><b>Colouring Method...</b></p>
+  &#x2022; Global : All characters are rendered using the same colour.
+  <br />&#x2022; Per Tile : All characters for a particular tile are rendered using the colour assigned to
+  the tile.
+  <br />&#x2022; Per Character : Each character is rendered using the colour assigned to it.
+  <br />
+  <br />
+
+  <p><b>Tile Set...</b></p>
+  &#x2022; Enabled : The project can make use of a tile set, the map data refers to tiles.
+  <br />&#x2022; Disabled : The project cannot use a tile set, the map data refers to characters.
+  <br />
+  <br />
+
+  <p><b>Key Map...</b></p>
+  <p>The key map specifies a key-to-character map to use for the Text Entry tool (Map Editor).</p>
+  <br /> 
+
+  <p><b>Notes...</b></p>
+  <p>When using the Multi-colour display mode, the character set may use up to four colours in any
+    character that uses a char colour greater than 7 (yellow) in the colour palette with the
+    restriction that the character's horizontal resolution is halved and the actual char colour can
+    only be one of the first 8 colours.</p>
+  <p>If using the Hi-res or ECM display modes, characters can only use two colours, the background colour
+    and the char colour which can be any of the possible 16.</p>
+  <p>On the Commodore 64, colour is not a property of character images, it is a property of the
+    screen matrix cells in colour RAM and so a character's colour (and multi-colour status) will
+    depend on the value assigned to the screen position (in colour RAM) the character is displayed
+    in.</p>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

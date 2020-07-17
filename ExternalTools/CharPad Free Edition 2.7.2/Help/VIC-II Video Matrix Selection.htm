@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CharPad 2.7 Manual</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+    <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+    <p>
+        <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+    </p>
+    <p>
+        <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+    </p>
+    <p>
+        <b>VIC-II Video Matrix Selection.</b>
+    </p>
+    <br />
+    <p>
+        The VIC-II video matrix is a relocatable block of 1024 bytes (1KB).
+    </p>
+    <p>
+        The matrix itself requires only a 40x25 byte array (1000 bytes), so this leaves
+        24 spare bytes, the last 8 of these are used by the VIC-II as Sprite Pointers.
+    </p>
+    <p>
+        In character (text) mode, the video matrix is used to store the codes for the on-screen
+        text characters.
+    </p>
+    <p>
+        In bitmap mode, the video matrix is used to store colour data, two 4-bit values
+        per 8x8 pixel cell.
+    </p>
+    <p>
+        Selection of a particular 1KB RAM area to use as a video matrix is performed using
+        VIC-II register #24 ($d018) which stores a 4-bit pointer (0-f) in it's upper nybble,
+        this allows the video matrix to be switched very quickly between any of the 16 possible
+        slots in the active (16KB) video bank.
+    </p>
+    <p>
+        The following code will select a video matrix using $d018, taking care to only affect
+        the upper nybble...
+    </p>
+
+    <pre class="code">
+lda $d018 ; read the VIC-II pointer register.
+and #$0f  ; preserve the lower nybble, clear the upper nybble.
+ora #$??  ; add in the desired video matrix number (0-f, followed by a zero).
+sta $d018 ; write the VIC-II pointer register.
+    </pre>
+
+    <p>
+        Replace the missing value '??' with the desired 1KB slot number in hexadecimal format
+        (0-f) followed by a zero.
+    </p>
+
+    <pre>
+??  Location        Location        Location        Location
+    (Video Bank 0)  (Video Bank 1)  (Video Bank 2)  (Video Bank 3)
+
+00  $0000 - $03ff   $4000 - $43ff   $8000 - $83ff   $c000 - $c3ff
+10  $0400 - $07ff*  $4400 - $47ff   $8400 - $87ff   $c400 - $c7ff
+20  $0800 - $0bff   $4800 - $4bff   $8800 - $8bff   $c800 - $cbff
+30  $0c00 - $0fff   $4c00 - $4fff   $8c00 - $8fff   $cc00 - $cfff
+40  $1000 - $13ff   $5000 - $53ff   $9000 - $93ff   $d000 - $d3ff
+50  $1400 - $17ff   $5400 - $57ff   $9400 - $97ff   $d400 - $d7ff
+60  $1800 - $1bff   $5800 - $5bff   $9800 - $9bff   $d800 - $dbff
+70  $1c00 - $1fff   $5c00 - $5fff   $9c00 - $9fff   $dc00 - $dfff
+80  $2000 - $23ff   $6000 - $63ff   $a000 - $a3ff   $e000 - $e3ff
+90  $2400 - $27ff   $6400 - $67ff   $a400 - $a7ff   $e400 - $e7ff
+a0  $2800 - $2bff   $6800 - $6bff   $a800 - $abff   $e800 - $ebff
+b0  $2c00 - $2fff   $6c00 - $6fff   $ac00 - $afff   $ec00 - $efff
+c0  $3000 - $33ff   $7000 - $73ff   $b000 - $b3ff   $f000 - $f3ff
+d0  $3400 - $37ff   $7400 - $77ff   $b400 - $b7ff   $f400 - $f7ff
+e0  $3800 - $3bff   $7800 - $7bff   $b800 - $bbff   $f800 - $fbff
+f0  $3c00 - $3fff   $7c00 - $7fff   $bc00 - $bfff   $fc00 - $ffff
+    </pre>
+
+    <p>
+        The actual location of the video matrix depends on which of the four 16KB video
+        banks the VIC-II is using.
+    </p>
+    <p>
+        * marks the default location for the video matrix on the Commodore 64.
+    </p>
+    <br />
+    <p>
+        Alternatively, the following sub-routine can be used to perform video matrix selection,
+        it simply takes the desired video matrix number (0-f) as a parameter.
+    </p>
+    <p>
+        This and many other useful sub-routines are available in the <a href="VIC-II Sub-routine Library.htm">
+            VIC-II Sub-routine Library</a>.
+    </p>
+
+    <pre class="code">
+;-------------------------------------------------
+; vic_select_vmatrix - selects a 1KB video matrix.
+;
+; parameters: A = video matrix (0-15).
+; returns: none.
+;-------------------------------------------------
+
+vic_select_vmatrix
+
+and #$0f   ; be sure to only use a 4-bit parameter value (0-f).
+asl        ; shift the value to the high nybble...
+asl
+asl
+asl
+sta vsm_b1 ; store the result temporarily.
+lda $d018  ; read the VIC-II pointer register.
+and #$0f   ; preserve the low nybble, clear the high nybble.
+ora vsm_b1 ; add in the adjusted 4-bit parameter value.
+sta $d018  ; write the VIC-II pointer register.
+rts
+
+vsm_b1 .byte 0
+    </pre>
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+</body>
+
+</html>

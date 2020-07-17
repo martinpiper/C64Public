@@ -17,15 +17,15 @@ set CART_BOOT_TYPE_HI=-a $a000 -b 0 -c $1ffc 2 4 -w
 echo CART_BOOT_TYPE = %CART_BOOT_TYPE%
 
 echo ******** Assembling Citadel2Cart.a
-..\acme.exe -v3 --msvc Citadel2Cart.a
+..\acme.exe -v4 --msvc Citadel2Cart.a
 if not exist Citadel2Cart_8K.prg goto error
 
 echo ******** Assembling DataScorePanel.a
-..\acme.exe -v3 --msvc --lib ../Scroller/ asm\DataScorePanel.a
+..\acme.exe -v4 --msvc --lib ../Scroller/ asm\DataScorePanel.a
 if not exist DataScorePanel.prg goto error
 
 echo ******** Assembling DataLevel1.a
-..\acme.exe -v3 --msvc asm\DataLevel1.a
+..\acme.exe -v4 --msvc asm\DataLevel1.a
 if not exist DataLevel1.prg goto error
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/MapData. =\$//p" DataLevel1.map | ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/;.*//p" > _tmpFile
 set /p CODE_MAPDATA= < _tmpFile
@@ -80,7 +80,7 @@ for %%x in (
 
 rem ********************************************************************
 echo ******** Assembling Citadel2Entry_Title.a
-..\acme.exe -f cbm -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a DataAutoDefs.a
+..\acme.exe -f cbm -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a DataAutoDefs.a
 ren Citadel2.prg Citadel2_Title.prg
 if not exist Citadel2_Title.prg goto error
 
@@ -103,7 +103,7 @@ set /A FILE_TITLE_SIZE=%FILE_TITLE_END% - %FILE_TITLE_START%
 
 rem ********************************************************************
 echo ******** Assembling Citadel2Entry_Game.a pass 1
-..\acme.exe -f cbm -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a
+..\acme.exe -f cbm -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a
 ren Citadel2.prg Citadel2_Game.prg
 if not exist Citadel2_Game.prg goto error
 
@@ -210,7 +210,7 @@ for %%x in (
 
 rem ********************************************************************
 echo ******** Assembling Citadel2Entry_Game.a pass 2 for updated SubGameAutoDefs.a
-..\acme.exe -f cbm -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a
+..\acme.exe -f cbm -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a
 ren Citadel2.prg Citadel2_Game.prg
 if not exist Citadel2_Game.prg goto error
 
@@ -327,7 +327,7 @@ echo NUM_FILES=%NUM_FILES%
 
 rem Get the final cart data offsets and link them in to the base code
 ..\bin\MakeCart.exe -i _f_index1.a -tg -n -a $8000 -b 7 -f $2000 %NUM_FILES% %OTHER_FILES% %SCROLLER_SPEED_CODE_FILES%
-..\acme.exe -f cbm -v3 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a >tf.txt
+..\acme.exe -f cbm -v4 --msvc --lib ../Scroller/ --lib ../Decompression/ Citadel2Entry.a Citadel2Entry_Game.a asm/Data.a ../Scroller/DataCheck.a >tf.txt
 
 copy Citadel2.lbl Citadel2_Game.lbl
 copy Citadel2.map Citadel2_Game.map

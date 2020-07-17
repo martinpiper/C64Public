@@ -18,6 +18,7 @@
 !sal
 !sl "TestIRQDisk.map"
 !svl "TestIRQDisk.lbl"
+!pdb "TestIRQDisk.pdb"
 !cpu 6510
 !ct pet
 
@@ -29,6 +30,17 @@ IRQDisk_LEDFlash = 15
 
 ; Enable this to cause timing debug code to run instead. It helps show timings for 2 bit transfer.
 ;IRQDisk_DebugTimings = 1
+
+; Enable this to use the JAM opcode and remove joystick fire waits. Stop the save from happening. Useful for timing the loading speed.
+; Remember to use this Vice command line option to stop random delays on boot: -drive8wobble 0 +autostart-delay-random
+;IRQDisk_DebugElapsedTime = 1
+; Current:
+; 12972074
+
+; This enables a test of data transfer on the rising edge of the clock line. It can be clocked twice as fast as the normal transfer when the screen and IRQs are disabled.
+; Rising egde of the clock means the timing on the C64 side is not so tight and can cope with some wobble.
+;IRQDisk_TestClockedTransfer = 1
+
 
 !if 0 {
 !source "../stdlib/BASICEntry900.a"
@@ -51,10 +63,37 @@ IRQDisk_LEDFlash = 15
 	+SetDefaultScreen_A
 	lda #1
 	sta VIC2BorderColour
+!ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
 
 	lda ZPCurrentFileDeviceNumber
 	jsr IRQDisk_Init
+
+!ifdef IRQDisk_TestClockedTransfer {
+	; Code to test clocked transfer, perhaps useful when IRQ and screen are off
+	lda #0
+	sta VIC2ScreenControlV
+	sei
+	+MACROWaitForRaster 0
+	jsr IRQDisk_SendClockedRecv
+	ldy #0
+.ll1
+	jsr IRQDisk_ClockedRecv
+	; Validate the values and jam when they do not match
+	sta .smt1
+	tya
+.smt1=*+1
+	cmp #0
+	bne .dojam
+	sta SCREENRAM,y
+	iny
+	jmp .ll1
+.dojam jam
+}
+
+;	lda #0
+;	sta VIC2ScreenControlV
 
 !ifdef IRQDisk_DebugTimings {
 .l1
@@ -116,7 +155,9 @@ IRQDisk_LEDFlash = 15
 
 	jsr InitIRQ
 
+!ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
 
 	lda #.nameTestEnd-.nameTest
 	ldx #<.nameTest
@@ -125,7 +166,9 @@ IRQDisk_LEDFlash = 15
 
 	inc VIC2BorderColour
 
+!ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
 
 	lda #.nameTest2End-.nameTest2
 	ldx #<.nameTest2
@@ -134,7 +177,13 @@ IRQDisk_LEDFlash = 15
 
 	inc VIC2BorderColour
 
+!ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+
+!ifdef IRQDisk_DebugElapsedTime {
+	jam
+}
 
 !if 1 {
 	; Now try saving the just loaded data to another file of the same length.

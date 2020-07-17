@@ -13,7 +13,11 @@
 zeroPage_Temp0	= $10
 zeroPage_Temp1	= $11
 
-
+; Enable this to test using the extra mode7 layers code
+; This will need "smoke test.feature" to enable the extra mode7 layers at 0xa800 and 0xb000
+; Also disable the output image checks, since the expected output graphics won't match
+; Also use assets\convert2.bat
+;Mode7LayersEnable = 1
 
 !zn
 *=$200
@@ -36,7 +40,9 @@ start
 	jsr Bus24Bit_Init
 	jsr Bus24Bit_DisableDisplay
 
+!ifndef Mode7LayersEnable {
 	jsr MusicInit
+}
 	jsr AnimationEngine_Init
 	jsr AllocatePlayer
 
@@ -65,7 +71,9 @@ setupFrame
 	jsr copyMode7Regs
 	jsr copyTilesScrolls
 	jsr copySprites
+!ifndef Mode7LayersEnable {
 	jsr MusicPoll
+}
 	jsr HandleJoystick
 	jsr TileScreen_calculateFine
 	jsr AnimationEngine_Update

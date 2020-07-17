@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>The Snapshot Ripper Form.</b>
+  </p>
+  <br />
+  <p>The Snapshot Ripper form allows you to search for useable project data inside a Commodore 64
+    emulator snapshot file.</p>
+  <p>The tool currently only supports snapshots made with the VICE (x64) emulator.</p>
+  <p>nb. Data ripping can be a somewhat expert skill and novices attempting it may struggle to
+    find much more than a character set.</p>
+  <br />
+  <p>
+    <b>The File menu...</b>
+  </p>
+  <p>- Open Snapshot : Brings up a file dialog where you can choose a snapshot (.vsf) file to
+    load.</p>
+  <p>- Save RAM Dump : Brings up a file dialog where you can choose where to save a (raw binary)
+    64K RAM dump.</p>
+  <p>- Exit : Closes the tool.</p>
+  <br />
+  <p>
+    <b>The Options menu...</b>
+  </p>
+  <p>- Reset Configuration : Sets all controls to their default positions.</p>
+  <p>- Recall Previous Configuration : Sets all controls to the positions recorded by a previous
+    use.</p>
+  <br />
+  <p>
+    <b>Address Specifiers...</b>
+  </p>
+  <p>- Character Set : Use the scroll-bar to search for a character set.</p>
+  <p>nb. A character set used by the C64 must sit on a 2K boundary, hence there are only 32
+    possible locations in 64K.</p>
+  <br />
+  <p>- Character Attributes : Use the scroll-bar (and offset control) to search for character
+    attribute data.</p>
+  <p>nb. Character attribute data may exist literally anywhere in the 64K and may not even be in
+    a format useable by CharPad.</p>
+  <p>nb. Character attribute searching is only available to projects using the per-char colouring
+    method.</p>
+  <br />
+  <p>- Tile Set : Use the scroll-bar (and offset control) to search for a tile set.</p>
+  <p>nb. Tile set data may exist literally anywhere in the 64K and may not even be in a format
+    useable by CharPad.</p>
+  <br />
+  <p>- Map : Use the scroll-bar (and offset control) to search for map data.</p>
+  <p>nb. Map data may exist literally anywhere in the 64K and may not even be in a format useable
+    by CharPad.</p>
+  <br />
+  <p>
+    <b>Map Dimension Controls...</b>
+  </p>
+  <p>&#x2022; Map Width : You can type a specific map width or scroll through all possibilities.</p>
+  <p>&#x2022; Map Height : You can type a specific map height or scroll through all possibilities.</p>
+  <br />
+  <p>
+    <b>Tile Data Format</b> - Choose from 8 (Z-Pattern) formats, left-right, top-bottom (LRTB) is
+    the most common.</p>
+  <p>
+    <b>Map Data Format</b> - Choose from 8 (Z-Pattern) formats, left-right, top-bottom (LRTB) is the
+    most common.</p>
+  <p>
+    <b>Map Data Cipher : XOR</b> - Choose a (byte) value with which to defeat an XOR (exclusive OR)
+    cipher used on the map data.</p>
+  <p>
+    <b>Map Data Cipher : ROR</b> - Choose a quantity with which to defeat a binary rotation cipher
+    used on the map data (0-7).</p>
+  <br />
+  <p>
+    <b>Notes...</b>
+  </p>
+  <p>When the snapshot ripper is closed...</p>
+  <p>- The 64K memory is not cleared so you may return to it without having to reload the same
+    snapshot file.</p>
+  <p>- The last configuration of the controls is automatically saved for recall using the menu
+    option.</p>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

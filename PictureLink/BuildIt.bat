@@ -8,6 +8,6 @@ echo Compress the picture data from the Koala paint file
 
 ..\bin\LZMPi.exe -c fw86atc000.prg fw86atc000Comp.prg 2
 
-..\acme.exe -v3 --msvc PictureLink.a
+..\acme.exe -v4 --msvc PictureLink.a
 
 :end

@@ -1,5 +1,5 @@
 @echo off
-..\acme.exe -v3 --msvc %2 %3 %4
+..\acme.exe -v4 --msvc %2 %3 %4
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "/LauncherAddress/s/^/static int %1_/p" TestDecompression.map >t.txt
 ..\ExternalTools\Gnu\bin\sed.exe -n -i -e "s/\$/ 0x/p" t.txt
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "s/;.*$/;/p" t.txt >>PrgData.cpp

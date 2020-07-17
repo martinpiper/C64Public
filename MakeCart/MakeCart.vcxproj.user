@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-i _f_index1.a -tg -n -a $8000 -b 7 -s $2000 -f $2000 3 disks\files\l disks\files\sgload disks\files\k+$0002 -s 0 -o Entry.crt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>C:\work\c64\AnimationBitmap\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>C:\Work\PrivateWork\SummerGames</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 s:data\smp_*.raw -o AnimationBitmap.crt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-i _f_index1.a -it _f_index1tab.a -tg -n -a $8000 -b 7 -s $2000 -f $2000 3 disks\files\l disks\files\sgload disks\files\k+$0002 -s 0 -o Entry.crt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>C:\work\c64\AnimationBitmap\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>C:\Work\PrivateWork\SummerGames</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

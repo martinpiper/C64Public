@@ -1,0 +1,597 @@
+
+
+
+CharPad 2.7 - What's New?...
+
+
+
+NB. THE FREE EDITION OF THE SOFTWARE IS DERIVED FROM THE LATEST PRO EDITION JUST BE AWARE THAT SOME ITEMS 
+    MENTIONED IN THIS LIST MAY ONLY BE AVAILABLE IN THE PRO EDITION!!!
+
+
+
+Public Release 12/6/20 
+
+- Fixed: There was a problem with the selected range after a cut/delete.
+
+- Added: The free edition now includes tile naming/tagging features.
+
+- Added: Active Colour keyboard shortcuts (F1-F5).
+
+- Changed: Previous/Next item shortcuts changed to CTRL + LEFTCURSOR / CTRL + RIGHTCURSOR (was F1/F2).
+
+
+
+Public Release 16/5/20 
+
+- Fixed: Export All (Binary) - There was a bug in the code that handles the folder history file.
+
+
+
+Public Release 26/4/20 
+
+- Fixed: Open Project (CTM4) - There was a bug causing the char colours to not be set properly/entirely.
+
+- Fixed: Open Project (CTM2) - There was a bug causing a crash when reading a project using a 1x1 tile-set.
+
+- Fixed: Tile Editor - Undo/Redo were resetting the tile cell selection rectangle.
+
+- Added: Support for the VIC-II 'Extended Colour' (ECM) video mode.
+
+- Added: Char Set - Assign Colours (incremental/random).
+
+- Added: Binary Export (All) : Folder path dialog with recorded history and cleaning/clearing of history.
+
+- Added: Updated the help files.
+
+
+
+Public Release 11/3/20
+
+- Fixed: There was a problem with using the space-bar shortcut for map panning (multiple toolbar buttons checked).
+
+- Fixed: There was a problem with using the space-bar shortcut for map panning (random jumping).
+
+
+
+Public Release 10/3/20
+
+- Fixed: Copy/Paste between program instances was not working properly - it only worked for the first copy/paste.
+
+- Fixed: Toolbar buttons - it was possible to deselect all.
+
+- Fixed: KeyMap Reference example 'Subscii x37' still had 48 characters available.   
+
+- Added: Tile Editor - Scroll, Flip and Reflect ops can now work on a selected tile area (image mode).
+
+- Added: Tile Editor - Scroll, Flip and Reflect ops can now work on a selected tile area (cell mode, use SHIFT).
+
+- Added: Tile Set - Scroll, Flip and Reflect ops can now work in 'cell mode', use SHIFT.
+
+- Added: Tile Editor - Click on any (blank) form region to de-focus text boxes.
+
+- Changed: Major rewrite of the tile editing library to simplify things behind the scenes.
+
+- Changed: Shortcuts for all 'Negative' ops changed to CTRL+SHIFT+N, CTRL+I seemed to be having some issues.
+
+- Changed: Tile name/tag fields removed from the main toolbar and put back in the tile editor (a Thalamus Digital request).
+
+
+
+Public Release 29/2/20
+
+- Fixed: Map Editor - Text Entry - the highlighted area was not following the cursor.
+
+- Added: Map Editor - press/hold SPACE to temporarily engage the 'Pan' tool.
+
+- Added: Tile Editor/Set - Scroll Up/ Down/ Left/ Right with SHIFT key held to scroll the tile(s) cells, not the pixel data. 
+
+- Added: Map Editor - Fill (random, from selected range).
+
+- Added: Map Editor - Fill (random, from available range).
+
+- Added: Tile Editor - Select All/ Clear/ Cut (rectangular areas of char cells). 
+
+- Added: Tile name/tag editing now creates undo snapshots on RETURN/ENTER.
+
+- Changed: Tile Name and Tile Tag fields have been moved from the Tile Editor to the main form's tool bar and can now also
+           be used by the Tile Set form.
+
+- Changed: Tile Cut/Copy/Paste shortcut keys have been changed to CTRL+X, CTRL+C, CTRL+V.
+           nb. They were using ALT due to some conflicts with the textbox shortcuts, these are now resolved.
+
+- Changed: Flexi-Grid default line thickness changed to Thick.
+
+- Changed: 'About Box' graphics.
+
+
+
+Public Release 19/2/20
+
+- Fixed: There was a bug in the code that handles copy/paste between program instances.
+         (After using Copy it was not possible to change ie. the map dimensions).
+
+- Added: Tile Editor - Select / Copy / Paste (rectangular areas of char cells). 
+
+- Added: Example map - 'Excursion (4x4)'.
+
+- Changed: Made a few of the toolbar icons a bit clearer.
+
+- Changed: The toolbars now show slightly larger icons.
+
+- Changed: 'About box' - adjusted the colour scheme.
+
+
+
+Public Release 12/2/20
+
+
+- Added: Ability to copy/paste between program instances. 
+
+- Added: Colouring method conversion from per-char to per-tile using reasonable measures/tests/warnings.
+
+- Added: Compressor - Sort tiles by colour (ascending).
+
+- Added: Compressor - Radio button groups for the sorting options to avoid conflicting choices. 
+
+- Added: Improved graphics in the 'About Box'.
+
+- Changed: Version number forwarded to 2.6 to better reflect the amount of work since the last public release.
+
+
+Private Release (Thalamus) 7/2/20
+
+- Fixed: There was a problem (crash) when when cancelling the image import dialog.
+
+- Added: Minor updates to the help pages.
+
+- Changed: The 'View' menu can now be used to hide forms as well as show/select them.
+
+- Changed: A few changes to the 'About Box' text etc.
+
+- Changed: Tile names can now be up to 32 characters in length.
+
+- Changed: The icon/logo for CharPad "Thalamus" Edition has been re-coloured to distinguish it from the standard version.
+
+           nb. you may need to close explorer, open a command line (cmd.exe) and "del /a iconcache.db" 
+           from "C:\Users\UserName\AppData\Local" and open a new explorer (explorer.exe) to see the change.
+           nb. you can hit "CTRL+ALT+DEL" then choose "Start Task Manager" to begin this process (Windows 7).
+
+
+
+Private Release (Thalamus) 2/2/20
+
+- Fixed: The current tile name/tag was being copied to all selected when cycling back/forward.
+
+- Added: Compressor - Now resets (char) colour in characters that don't use their assigned colour.
+         Example : Mayhem in Monsterland - Cherryland Sad, char set reduced by 11 chars after a decompress/re-compress.
+
+- Added: File Import/Export >> "Other >> Export Project (CTM version 5)..." - for some backwards compatibility.
+
+- Added: Quote characters around tile names when displayed in the status bar (tile-set, map editor).
+
+- Added: New font - "Rainchild".
+
+- Added: A few of the old fonts have been brought into "keymap compliance" and included.
+
+- Added: Key map "Subscii x37" for the benefit of more minimal alphanumeric sets.
+
+- Changed: Most of the (tiled) Subchrist examples now include tile names.
+
+
+
+Private Release (Thalamus) 29/1/20
+
+- Fixed: There was a problem with the tile naming feature not processing the backspace/delete keys properly.
+
+- Fixed: There was a problem with the tile tagging feature also changing the names of all selected tiles.
+
+- Fixed: There was a problem with the project palette showing the wrong char colour when using "per-tile" coloured tiles.
+
+- Changed: Tile Editor - Any changes to the tile name/tag are now applied to the selected range. 
+
+
+
+Private Release (Thalamus) 27/1/20
+
+- Fixed: Image import - The selected image file was not being released after use.
+
+- Fixed: Map editor - There was a problem with the scroll position after maximizing the window.
+
+- Fixed: Compress/Decompress - There was a problem when decompressing non-square tiles.
+
+- Added: Colour palette editor - YUV colour editing, load/save palettes, more filters etc.
+
+- Added: Map data exports - file names now include the map dimensions + grid coordinates for sub-maps.
+
+- Added: Binary export - 'Export All' option.
+ 
+- Added: Binary export - Flexi-gridded sub-maps (8-bit).
+
+- Added: Binary export - Selected map area (8-bit).
+
+- Changed: File Import/Export Menus - new arrangement and file naming alterations.
+
+
+
+Private Release (Thalamus) 16/1/20
+
+- Fixed: Form update timer was running too slowly, repeating ops such as Prev/Next should be smoother now. 
+
+- Added: Colour palette editor (unfinished).
+
+- Added: Compressor option : Sort characters by colour (ascending).
+
+- Changed: Maximum tile size is now 10 x 10.
+
+
+Private Release (Thalamus) 20/12/19
+
+- Added: Map editor - Tile name and tag info in the status bar (all tools apart from Pan and Text Entry).
+
+- Added: Help Files - Updated form documentation with some of the new features.
+
+
+
+Private Release (Thalamus) 16/12/19
+
+- Fixed: Map editor - Form was not updating properly after some ops that affect map size.
+
+- Fixed: Map editor (text entry) - RETURN was not working if used on the bottom row. 
+
+
+
+Private Release (Thalamus) 16/12/19
+
+- Fixed: Map editor (text entry) - DELETE op was not "scrolling in" the correct space value.
+
+- Fixed: Map editor (text entry) - Menu shortcut CTRL + DEL (clear) was not working.
+
+- Added: Mouse wheel + CTRL to adjust zoom level (all editors and sets).
+
+- Added: Map editor - Scroll, Flip, Reflect ops now affect the whole map if only a single cell is selected.
+
+- Added: Map editor - 'Delete Row' and 'Delete Column' menu ops.
+
+- Added: Map editor (text entry) - 'Pg Up' and 'Pg Dn' keys can now be used for navigation.
+
+- Added: Map editor (text entry) - Vertical scroll bar now tracks the cursor when it moves "offscreen".
+
+
+
+Private Release (Thalamus) 5/12/19
+
+- Fixed: Tile editor was not painting with the "space" char on RIGHT mouse button.
+
+- Added: Tile Set now shows the name and tag value of the tile under the cursor (in the status bar).
+
+- Changed: Char editor - brush/flood actions no longer create unnecessary undo snapshots.. 
+           ie. multiple left-clicks of the same pixel etc, undo's are only made when the image changes. 
+
+
+
+Private Release (Thalamus) 2/12/19
+
+- Added: Map editor - Picker tool can now pick a "space" char/tile using the RIGHT mouse button.
+ 
+- Added: Assignment of a "space" char/tile is now automatic when a Key Map is selected (Project Palette).
+         nb. As long as a char/tile of the required value exists in the project.  
+
+- Added: Tile Set - User selectable "current blank/eraser" item, select using RIGHT mouse button.
+         nb. Item "swaps" are now performed by LEFT mouse button + ALT key. 
+
+- Added: Char Set - User selectable "current blank/eraser" item, select using RIGHT mouse button.
+         nb. Item "swaps" are now performed by LEFT mouse button + ALT key.
+
+- Added: Map editor - The DELETE key now drags text from the right of the cursor (same row only).
+
+- Changed: Key Map selection is now available on the Project Palette (moved from the main form's menu).
+
+
+
+Private Release (Thalamus) 25/11/19
+
+- Fixed: VICE Snapshot Import - Wasn't working properly if initiated after loading a project.
+
+- Fixed: Tile editor - Tag value (UpDown) no longer accepts unusable characters.
+
+- Fixed: CTM v4 projects that use (compressed) 1x1 tiles were having some problems loading/converting.
+
+- Added: Map editor - Selector Tool - Selected rectangle dimensions are now shown in the status bar.
+
+- Added: Maps now contain a variable 'space' value that can change depending on the current key-char map.
+         This will affect how text is deleted, cleared, cut etc and also what the mouse paints when the 
+         RIGHT mouse button is used.
+
+- Added: Map text entry : 'Key-char map' selection (main window/options menu) to allow choice between 
+         conversion models when coverting from Unicode/ASCII (keyboard input) to the current project's 
+         alphanumeric characters (eight options added).
+
+- Added: Map editor - "Text Entry" mode.   
+
+- Added: Map editor - Insert.. Blank Column, Insert.. Blank Row.
+
+- Added: Map editor - Box highlighting of "current" cell (Selector tool).  
+
+- Changed: Tile editor - Copy/Paste tile shortcuts are now ALT+C/ALT+V, this allows CTRL+C/CTRL+V to copy text.
+
+- Changed: Tile Set form now shows tile under cursor in dec and hex.
+
+- Changed: Char Set form now shows character under cursor in dec and hex.
+
+- Changed: Image Export (Char Set), image width reduced to 32 cells (was 64).
+
+- Changed: Map editor - Status bar now shows coord and cell value for all tools apart from "Pan".
+
+- Changed: Improvements in rendering/gridding speeds.
+
+
+
+Private Release (Thalamus) 6/11/19
+
+- Fixed: Various text entry boxes and "UpDown" controls no longer accept unusable characters.
+
+- Fixed: Text/asm export - Char/tile usage stats now use 'txt' file extension as the default.
+
+- Added: Tile editor - The "Name" field now accepts the DELETE key.
+
+- Added: Tile editor/Tile Set - "Casing" features for tile names (menu items).
+
+- Added: Tile editor/Tile Set - "Reset" features for tile names/tags (menu items).
+
+- Changed: Text/asm export - Char/tile usage stats can now be exported independently.
+
+- Changed: Several minor naming alterations to exported text files. 
+
+- Changed: Tile editor - Coord and cell value (dec and hex) now shown when using the picker tool. 
+
+- Changed: Map editor- Coord and cell value (dec and hex) now shown when using the picker tool. 
+
+
+
+Private Release (Thalamus) 1/11/19
+
+- Added: Map editor - Previous/Next Brush (F1/F2).
+
+- Added: Text/asm export - Char/Tile usage statistics.
+
+- Added: Text/asm export - Named Tile Events (No Prefix/Suffix).
+
+- Added: Current zoom level added to all editor/set window status bars. 
+
+- Changed: Previous/Next Char/Tile now assigned to F1/F2.
+ 
+- Changed: Tile name input now accepts '#','$','%' and '_' characters.
+
+
+
+Private Release (Thalamus) 24/10/2019
+
+- Fixed: Tile names/tags were resetting to defaults when tile dimensions were resized.
+
+- Added: Next/Previous Image in Char editor and Char Set.
+
+- Added: Next/Previous Tile in Tile editor and Tile Set.
+
+- Added: Text/asm export - Selected map area (8-bit format).
+
+- Added: Text/asm export - Flexi-gridded sub-maps (8-bit format).
+
+- Changed: Text/asm export - Named Tile Events, labels no longer forced to use lower case.
+
+- Changed: Tile name input no longer requires ENTER to be pressed. 
+
+- Changed: Tile name input now rejects any keys apart from.. a-z, A-Z, 0-9, SPACE, BACKSPACE, LEFT/RIGHT, ENTER.
+
+- Changed: "Thalamus Digital" menu moved from "Tools" to "File>>Export>>Text/Asm".
+
+
+
+Private Release (Thalamus) 18/10/2019
+
+- Added: Tile naming/tagging features.
+
+- Added: Tile "events" exporting (text file) based on tile names.
+
+- Changed: Tile editor auto-sizing (min 2x2 char, max 5x5 char).
+
+- Changed: Several minor naming alterations to text output (asm) files. 
+
+- Changed: Export text (tiles) now includes tile tag values.
+
+- Changed: "Clear" op keyboard shortcut for char, tile and map editors is now CTRL + DEL (DEL alone was interfering with string input).
+           nb. this op shortcut is now the same for all windows, DEL alone is only used to delete from char/tile sets.
+
+
+
+Private Release (Thalamus) 29/8/2019
+
+- Added: Flexi-Grid Settings : Choice of grid size units (Map Cells, Char Cells).
+         nb. To export flexi-gridded sub-maps the selected units must be 'map cells'.
+
+- Added: Text/Asm Export : Selected Map Area (16-Bit, Split).
+
+- Added: Text/Asm Export : Selected Map Area (12-Bit, Split, Packed).
+
+- Added: Text/Asm Export : Flexi-Gridded Sub-Maps (16-Bit, Split).
+
+- Added: Text/Asm Export : Flexi-Gridded Sub-Maps (12-Bit, Split, Packed).
+
+- Added: Proper/accurate warnings about potentially insufficient bit-depths for all tile and map data exports.
+
+
+
+Private Release (Thalamus) 13/8/2019...
+
+- Added: Map editor - 'Flexi-Grid' feature + flexi-grid properties editor 'Tools/Flexi-Grid Settings'.
+
+- Added: Mouse wheel functionality on map editor (vertical scroll).
+
+
+
+Private Release (Thalamus) 8/8/2019...
+
+- Changed: Text/Asm Export - 16-bit map data export is now only available from the 'Tools/Thalamus Digital' menu.
+           nb. Standard text exports only support 8-bit tile/map data.
+
+
+
+Private Release (Thalamus) 5/8/2019...
+
+- Fixed: Image import (map) - major processing bottle-neck identified and fixed.
+         The problem was causing the program to (appear to) hang when attempting to import large multi-colour images (ie. any Turrican map).
+
+- Fixed: Text Export - If the project contains more than 256 tiles, 16-bit output is now automatically generated for map data (low/high byte tables). 
+         nb. char maps (and tile data) are always written out as 8-bit data so may be clipped if the project contains more than 256 char images.
+         NB. THIS FEATURE HAS SINCE BEEN REMOVED.
+
+- Added: 'Tools/Thalamus Digital' menu item..
+         ..all Thalamus Digital requested ops (deemed unsuitable for general inclusion) will appear here.
+
+- Added: Text/Asm Export : Map (16-bit, Split).
+
+- Added: Text/Asm Export : Map (12-bit, Split, Packed).
+
+- Added: Map (area) Fill (Solid, With Current).
+
+- Added: Text/Asm Export : Char Set.
+
+- Added: Text/Asm Export : Tile Set.
+
+- Added: Text/Asm Export : Map.
+
+- Added: Map (area) Fill (Incremental, From Current).
+
+- Added: Mouse wheel functionality on char-set and tile-set windows (vertical scroll).
+
+- Added: Tile-set window : the current tile is now box-highlighted for improved visibility.
+
+- Added: Char-set window : the current char image is now box-highlighted for improved visibility.
+
+
+
+Private Release (Thalamus) 25-7-2019...
+
+- Added: Char picker tool to tile editor.
+
+- Added: New content and reformatting of help files.
+
+- Added: New Subchrist example "Plant Samples.ctm".
+
+- Changed: Map and Tile data now uses 32-bits internally (previously 16-bits).. 
+           ..images (maps) containing up to 500,000 character images can now be imported.
+
+
+
+Public Release 3-4-2019...
+
+- Fixed: There was a problem when loading CTM V4 files that use a 1x1 tile-set and per tile colouring, such files are now properly converted to tile-less/per-char colouring.
+
+- Fixed: There was a problem causing crashes when copying tiles larger than 5x5.
+
+- Fixed: There was a problem causing crashes when importing map data that was smaller than the current map dimensions.
+
+- Fixed: There were some issues with window positioning when the program was not maximized.
+
+- Fixed: There were some issues causing crashes when de-tiling/re-tiling large maps to use smaller tiles (ie. Turrican/Rambo).
+
+- Added: Character and tile editors now display the numbers of the current items.
+
+- Added: 'Insert Blank' for char/tile set (with reference auto-correction).
+
+- Added: 'Paste Overwrite' for char/tile set.
+
+- Added: 'Paste Append' for char/tile set (simplifies pasting chars/tiles to the very end of a set).
+
+- Added: 'Range Cycle' (forwards/backwards) for char/tile set.
+
+- Added: 'Crop' for selected chars/tiles (with reference auto-correction).
+
+- Added: 'Crop' for selected map areas.
+
+- Added: 'Reverse Order' for selected chars/tiles.
+
+- Added: Project data auto-correction on project load/save.
+
+- Added: 'Reset Window Layout' menu option.
+
+- Added: Open/Save (project) icons to the main toolbar.
+
+- Added: Warnings about tile size mismatches when copying/pasting between projects.
+
+- Added: Warnings when decompression is not possible due to excessive chars required (>65536).
+
+- Added: Warnings on tile and map data exports about possible value clipping when a project contains more than 256 chars or tiles. 
+         Exported binaries store only only 8-bit data.
+
+- Added: Warning/correction when pasting map data with references not valid for the curent project.
+
+- Added: Import/Export/Binary - Import char set attributes.
+
+- Added: Import/Export/Binary - Import tile set attributes.
+
+- Added: 'Reflect Left to Right' and 'Reflect Top to Bottom' for map data.
+
+- Added: Scroll, Flip and Reflect operations for only the selected map area (when the Selection tool is enabled).
+
+- Added: Map (area) Fill (Incremental, From Zero).
+
+- Added: HTML help files.
+
+- Added: A few additions and tweaks to the examples.
+
+- Added: A folder of examples kindly donated by Saul Cross.
+
+- Changed: Conversions between tiled/un-tiled projects process improved (no conversion offered if map blank + sensible map resizing).
+
+- Changed: Complete code translation from C++/DotNet to C#/DotNet, a number of potential problems were exposed and fixed during translation and a great many improvements have been made to the program's internals.
+           The switch to C# may also improve compatibility with 'Mono' for non-Windows operating systems?
+
+- Changed: Clipboard operations on tiles now always handle pixel data (char images) not tile data, cutting/copying/pasting between projects should be improved as a result.
+
+- Changed: If multi-colour mode is enabled, all four pens will now be available even if the selected item is high-resolution, a warning is given if attempting to draw into a high-resolution item with a multi-colour pen. 
+           This allows the multi-colour pen colours to be modified without first needing to select a multi-colour item.
+
+- Changed: The default (new) project is now an un-tiled one.
+
+- Changed: When a project's tile system gets enabled, all child forms are now displayed.
+
+- Changed: Duplicate tiles are now automatically removed when the tile system gets enabled.
+
+- Changed: Smoothing of the tile-set and map images is now off by default.
+
+- Changed: Map clipboard ops/area highlighting is now only available when using the selection tool.
+
+- Changed: Menu and toolbar (main form) are now dynamic, available items will depend on which child form is active.
+
+- Changed: 'Delete' for char/tile set (items are now removed not just cleared, with reference auto-correction).
+
+- Changed: 'Cut' for char/tile set (items are now copied/removed, with reference auto-correction).
+
+- Changed: 'Paste' for char/tile set (items are now inserted, with reference auto-correction).
+
+- Changed: Bitmap image export of character set is now 64 characters wide (maximum, no longer fixed-width).
+
+- Changed: Bitmap image export of tile set is now 16 tiles wide (maximum, no longer fixed-width).
+
+- Changed: 'Paste (overwrite)' can now increase the set size when necessary.
+
+- Changed: 'Cut' for char/tile editors has been removed (it's operations (clear/copy) are still available).
+
+- Changed: Character editor is now sizeable and zoomable.
+
+- Changed: Improved naming for file exports.
+
+- Changed: Import/Export menus, Export items now appear before Import items.
+
+
+
+
+
+
+
+
+
+
+
+

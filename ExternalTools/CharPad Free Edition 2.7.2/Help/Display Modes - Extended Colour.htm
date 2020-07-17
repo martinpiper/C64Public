@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>Display Modes - Extended Colour Character Mode (ECM).</b>
+  </p>
+  <br />
+
+  <p>Extended Colour character mode allows up to 64 different character images to be displayed on a 40x25 byte screen matrix using one of 4 different background colours per screen cell.</p>
+
+  <p>Each character image is 8x8 pixels in size and uses a bit depth of 1 bit-per-pixel (two colours).</p>
+
+  <p>The foreground colour (0-15) of each displayed character image can be set using the 40x25 byte colour matrix at $d800 (55296).</p>
+
+  <p>The lower 6 bits of each screen matrix cell are used to select the character image (0-63) and the upper two bits are used to select a background colour...</p>
+   
+  <br />&#x2022; 00 (0) = Background colour is taken from VIC register $d021 (0-15). 
+  <br />&#x2022; 01 (1) = Background colour is taken from VIC register $d022 (0-15). 
+  <br />&#x2022; 10 (2) = Background colour is taken from VIC register $d023 (0-15). 
+  <br />&#x2022; 11 (3) = Background colour is taken from VIC register $d024 (0-15). 
+
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

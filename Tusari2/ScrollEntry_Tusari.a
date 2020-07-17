@@ -1,0 +1,91 @@
+Multiplex_items	= 24
+
+;Multiplex_DefaultPatternYPosTweak = 114	; Places all eight sprites over the split
+;Scroller_DebugSplit = 1
+
+Scroller_UseKernal = 1
+
+Scroller_EnableSpeedCode = 1
+!source "_f_index1.a"
+
+Scroller_EnableBlockStripsSpeedCode = 1
+Scroller_EnableBlockColourSpeedCode = 1
+
+
+;!source "ScrollerOptimisations.a"
+!source "ScrollerOptimisationsAggressive.a"
+
+Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
+
+!source "ScrollerVars.a"
+Multiplex_VarBase	= scrollerDemo_endVars
+Multiplex_spritepointer	= $cbf8
+;Multiplex_MaintainPriority	= 1
+;Multiplex_ReverseOrder = 1
+
+;Multiplex_SplitSort = 1
+!source "../SpriteMultiplexor/SpriteMultiplexorVars.a"
+!ifdef Multiplex_SplitSort {
+MultiplexSort_YPos = AnimationYPosToSort
+}
+
+Multiplex_EnableEarlyOut = 1
+Multiplex_OverflowRasterCheck1 = 1
+Multiplex_OverflowRasterCheck2 = 1
+Multiplex_BunchingCheck = 1
+
+;DisableUpdateMultiplexorToAnimation = 1
+
+;Multiplexor_DebugBorder = 1
+;Scroller_DebugIRQBorder = 1
+;Scroller_DebugNMIBorder = 1
+;Scroller_DebugMainlineBorder = 1
+;Scroller_DebugColourScrollTimings = 1
+;Scroller_DebugScreenScrollTimings = 1
+;Scroller_DebugParalaxScrollTimings = 1
+
+Scroller_MultiDirection = 1
+
+;Scroller_FullScreen = 1
+
+Scroller_MaxScrollSpeed = 4
+
+
+!ifdef Scroller_FullScreen {
+IRQOpenBorders = 1
+} else {
+Scroller_AdditionalCharLines = 2
+}
+
+Scroller_UseDemoScorePanel = 1
+Scroller_NeedFullColourScroll = 1
+
+Scroller_DisableUpdateSprites = 1
+DisableUpdateMultiplexorToAnimationCode = 1
+Scroller_HookInclude = 1
+
+Scroller_ColourScrollRasterAbortLevel = $80
+Scroller_ColourScrollRasterAbortLevelFrame = 1
+
+;Scroller_DoMusicUpdateInIRQ = 1
+
+;MapSolidCharsLower = 16
+MapSolidCharsUpper = 128
+
+EnableBeforeScrollersHook = 1
+EnableAfterScrollersHook = 1
+RedirectHandleUserInput = 1
+
+
+CharColoursForEveryCharacter = 1
+
+
+; Define this as a value to clear the screen to a specific colour before bank 0 and game screen are cleared
+!ifndef Scroller_NeedFullColourScroll {
+!ifndef CharColoursForEveryCharacter {
+!ifndef BlockColoursForEveryCharacter {
+Scroller_ClearColour = 9
+}
+}
+}
+

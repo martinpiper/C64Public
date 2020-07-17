@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CharPad 2.7 Manual</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+    <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+    <p>
+        <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+    </p>
+    <p>
+        <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+    </p>
+    <p>
+        <b>VIC-II Video Bank Selection.</b>
+    </p>
+    <br />
+    <p>
+        The VIC-II graphics chip can only access 16KB of RAM at any one time but the Commodore
+        64 has 64KB of RAM and helpfully provides a means by which the VIC-II can be switched
+        to use any 16KB quarter of the available memory.
+    </p>
+    <p>
+        The 16KB memory area that the VIC-II has access to is known as a Video Bank.
+    </p>
+    <p>
+        Selection of a particular video bank is performed using bits 0 and 1 of the Port-A
+        data register of CIA chip #2.
+    </p>
+    <p>
+        The Port-A data register of CIA #2 is available at address $dd00.
+    </p>
+    <p>
+        Before writing a new value to the port you must first ensure that bits 0 and 1 of
+        the port are set as 'outputs' by configuring the port's Data Direction register
+        at address $dd02...
+    </p>
+
+    <pre class="code">
+lda $dd02 ; read Port-A Data Direction register (CIA #2).
+ora #3    ; set the lowest two bits (outputs).
+sta $dd02 ; write Port-A Data Direction register (CIA #2).
+    </pre>
+
+    <p>
+        Now you can change video banks using address $dd00, taking care to only affect the
+        lowest two bits...
+    </p>
+
+    <pre class="code">
+lda $dd00 ; read Port-A data register (CIA #2).
+and #$fc  ; preserve the upper 6 bits, clear the lower 2.
+ora #n    ; add in the desired video bank number (0 to 3, binary inverted).
+sta $dd00 ; write Port-A data register (CIA #2).
+    </pre>
+
+    <p>
+        The missing value (n) is always the binary inverse of the desired bank number (0-3),
+        so just replace 'n' in the above code with one of the following values...
+    </p>
+
+    <pre>
+Bank    n       Location
+0 "00"  3 "11"  $0000-$3fff (nb. 4KB ROM character set available at $1000).
+1 "01"  2 "10"  $4000-$7fff
+2 "10"  1 "01"  $8000-$bfff (nb. 4KB ROM character set available at $9000).
+3 "11"  0 "00"  $c000-$ffff
+    </pre>
+
+    <p>
+        Alternatively, the following sub-routine can be used to perform video bank selection,
+        it simply takes the desired video bank number (0-3) as a parameter.
+    </p>
+    <p>
+        This and many other useful sub-routines are available in the <a href="VIC-II Sub-routine Library.htm">
+            VIC-II Sub-routine Library</a>.
+    </p>
+
+    <pre class="code">
+;---------------------------------------------
+; vic_select_bank - selects a 16KB video bank.
+;
+; parameters: A = video bank (0-3).
+; returns: none.
+;
+; video bank 0 is $0000-$3fff (nb. char ROM (4KB) available at $1000-$1fff, slots 2 & 3).
+; video bank 1 is $4000-$7fff
+; video bank 2 is $8000-$bfff (nb. char ROM (4KB) available at $9000-$9fff, slots 2 & 3).
+; video bank 3 is $c000-$ffff
+;---------------------------------------------
+
+vic_select_bank
+
+and #3     ; be sure to only use a 2-bit parameter value (0-3).
+eor #3     ; binary invert the parameter value.
+sta vsb_b1 ; store the result temporarily.
+lda $dd02  ; read Port-A Data Direction register (CIA #2).
+ora #3     ; set the lowest two bits (outputs).
+sta $dd02  ; write Port-A Data Direction register (CIA #2).
+lda $dd00  ; read Port-A data register (CIA#2).
+and #$fc   ; preserve the upper 6 bits, clear the lower 2.
+ora vsb_b1 ; add in the adjusted 2-bit parameter value.
+sta $dd00  ; write Port-A data register (CIA#2).
+rts
+
+vsb_b1 .byte 0
+    </pre>
+
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+</body>
+
+</html>

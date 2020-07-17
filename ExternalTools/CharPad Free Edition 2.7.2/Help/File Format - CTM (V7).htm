@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>CTM File Format, Version 7.</b>
+  </p>
+  <br />
+  <p>Used by CharPad 2.7 to record project data.</p>
+  <br />
+
+  <pre class="rose">
+First comes the header, 12 bytes...
+
+ID_STR    [00-02] : 3 bytes : File format ID string "CTM", ASCII format.
+
+VERSION   [03]    : 1 byte  : File format version number (7). 
+
+COLOURS   [04-08] : 5 bytes : BG1, BG2/MC1, BG3/MC2, BG4, Char.
+
+COLR_METH [09]    : 1 byte  : Colouring method (0 = Per-map, 1 = Per-tile, 2 = Per-char).
+
+SCRN_MODE [10]    : 1 byte  : Screen mode (0 = Hi-res, 1 = Multi-colour, 2 = Extended Colour). 
+
+FLAGS     [11]    : Project flags (byte)... 
+                      Bit0 : TILESYS (Tile system enable, 1 = yes).
+
+
+Character data block (always present)...
+
+BLKMARK : Block marker (0xDA, 0xB0). 
+CHARCNT : Character image count minus one (16-bit, LSBF). 
+CHARDAT : Character image data (eight bytes/rows per image for CHARCNT images, rows are in TB order).
+
+
+Character set attributes block (always present)...
+
+BLKMARK  : Block marker (0xDA, 0xB1).
+CHARATTS : Char attribute data, one byte per char image for CHARCNT images, low nybble = colour, high nybble = material.
+           nb. colours are only stored when the colouring mode is "per character".
+
+
+Tile data block (only present if TILESYS is true)...
+
+BLKMARK : Block marker (0xDA, 0xBn).
+TILECNT : Tile count minus one (16-bit, LSBF).
+TILEWID : Tile width (byte).
+TILEHEI : Tile height (byte).
+TILEDAT : Tile data, 16 bits per tile cell (LSBF) for TILEWID * TILEHEI cells * TILECNT items, cells are in LRTB order.
+
+
+Tile colours block (only exists if TILESYS is true and the colouring method is "Per tile")...
+
+BLKMARK   : Block marker (0xDA, 0xBn).
+TILECOLRS : Tile colour data, one byte per tile for TILECNT tiles, low nybble = colour, high nybble is unused.
+
+
+Tile tags block (only exists if TILESYS is true)...
+
+BLKMARK  : Block marker (0xDA, 0xBn).
+TILETAGS : Tile tag values, one byte per tile for TILECNT items.
+
+
+Tile names block (only exists if TILESYS is true)...
+
+BLKMARK   : Block marker (0xDA, 0xBn). 
+TILENAMES : Tile name strings (ASCII format, 0 to 32 chars max, zero terminated) for TILECNT items.
+
+
+Map data block (always present)...
+
+BLKMARK : Block marker (0xDA, 0xBn). 
+MAPWID  : Map Width (16-bit, LSBF).
+MAPHEI  : Map height (16-bit, LSBF). 
+MAPDAT  : Map data, 16 bits per cell (LSBF) for MAPWID * MAPHEI cells, cells are in LRTB order.
+
+
+Notes...
+
+- LSBF = Least Significant Byte First, TB = Top-to-Bottom, LRTB = Left-to-Right/Top-to-Bottom.
+
+- The block markers always consist of two bytes, the first byte is always 0xDA, the second byte always has 0xB in it's upper nybble
+  and the block number in the lower nybble, the block numbers begin at zero and increment by one for each block in the file.
+
+- The block markers do not indicate the type of data in a block but the written order of block types (and what type to expect next)
+  will always be as described above. 
+
+- The block markers really only exist as a development convenience, their values are not actually necessary for the successful
+  reading of a CTM v7 file.
+
+
+File format limitations...
+
+Max character images : 65536
+Max tiles : 65536
+Max maps : 1
+Max tile size : 255 x 255 (including non-square)
+Max map width : 65535
+Max map height : 65535
+
+
+CharPad 2.7 limitations...
+
+Max character images : 65536
+Max tiles : 65536
+Max maps : 1
+Max tile size : 10 x 10 (including non-square)
+Max map width : 8192
+Max map height : 8192
+  </pre>
+
+  <p>
+    <b>See also:-</b>
+  </p>
+  <a href="File Format - CTM (V1).htm">CTM File Format, Version 1.</a>
+  <br />
+  <a href="File Format - CTM (V2).htm">CTM File Format, Version 2.</a>
+  <br />
+  <a href="File Format - CTM (V3).htm">CTM File Format, Version 3.</a>
+  <br />
+  <a href="File Format - CTM (V4).htm">CTM File Format, Version 4.</a>
+  <br />
+  <a href="File Format - CTM (V5).htm">CTM File Format, Version 5.</a>
+  <br />
+  <a href="File Format - CTM (V6).htm">CTM File Format, Version 6.</a>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

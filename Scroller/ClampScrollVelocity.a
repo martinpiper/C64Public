@@ -1,0 +1,22 @@
+	; Clamp the velocity
+	lda frameTargetVelX
+	cmp #-Scroller_MaxScrollSpeed
+	bpl .c1
+	lda #-Scroller_MaxScrollSpeed
+.c1
+	cmp #Scroller_MaxScrollSpeed+1
+	bmi .c2
+	lda #Scroller_MaxScrollSpeed
+.c2
+	sta frameTargetVelX
+
+	lda frameTargetVelY
+	cmp #-Scroller_MaxScrollSpeed
+	bpl .c3
+	lda #-Scroller_MaxScrollSpeed
+.c3
+	cmp #Scroller_MaxScrollSpeed+1
+	bmi .c4
+	lda #Scroller_MaxScrollSpeed
+.c4
+	sta frameTargetVelY

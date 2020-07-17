@@ -7,7 +7,7 @@ https://github.com/martinpiper/C64Public
 Unzip it somewhere.
 
 Change to the Scroller directory. 
-Run buildIt.bat 
+Run buildIt.bat
 
 It creates a compressed Scroller.prg and Scroller.crt that can be run on a C64 or pretty much any C64 emulator.
 

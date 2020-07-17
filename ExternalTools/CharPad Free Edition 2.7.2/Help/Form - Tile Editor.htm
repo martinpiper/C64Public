@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>The Tile Editor Form.</b>
+  </p>
+  <br />
+  <p>The Tile Editor form allows you to edit the currently selected tile.</p>
+  <br />
+  <p>
+    <b>Painting...</b>
+  </p>
+
+  <p>It is important to note that there are two distinct ways to paint tiles, the first way is to
+    use the 'Char Brush' tool to manually assign character images to the tile's cells, before
+    CharPad existed, this was the only way that tiles could be constructed, it was slow and
+    extremely frustrating.</p>
+
+  <p>The second way, only made possible by CharPad, is to draw the tile as if it were a single
+    image having it's own set of pixels...</p>
+
+  <p>nb. For this method to work, it is vital that the project data be 'decompressed', doing so
+    assigns a separate character image to each cell of each tile and effectively turns the tile
+    editor into an array of inter-connected character image editors.</p>
+
+  <p>With one of the pen tools selected, pixels can be drawn using the mouse.</p>
+
+  <p>The LEFT mouse button draws using the currently selected colour (on the Project form) and the
+    RIGHT mouse button draws using the background colour.</p>
+
+  <p>With the Flood-fill tool selected, areas of the tile can be flood-filled, clicking the LEFT 
+    mouse button while over the drawing canvas will flood-fill using the currently selected colour
+    and the RIGHT mouse button will flood-fill using the background colour.</p>
+  <br />
+
+
+  <p>
+    <b>Naming and Tagging...</b>
+  </p>
+  <p>This version of CharPad allows each tile to be assigned a name (string) and a tag value (byte).</p>
+
+  <p>To change the name or tag value for the current tile (or the currently selected range), simply 
+   type the new information into the text entry boxes provided in the toolbar on the main form.</p> 
+
+  <p>nb. It is not necessary to hit ENTER in these text entry boxes but doing so will create an Undo snapshot.</p>
+
+  <br />
+
+  <p>
+    <b>Transformations...</b>
+  </p>
+  <p>The following transformations are available when this form is active...</p>
+  <p>&#x2022; Scroll (up, down, left, right).</p>
+  <p>&#x2022; Flip (left-to-right, top-to-bottom).</p>
+  <p>&#x2022; Reflect (left-to-right, top-to-bottom).</p>
+  <p>&#x2022; Negative.</p>
+  <p>&#x2022; Colour swapping (for multi-colour tiles).</p>
+  <br />
+  <p>nb. Clicking a Scroll, Flip or Reflect action while holding the SHIFT key allows the selected action to be 
+     performed on the tile contents only rather than both the tile contents AND the char images.
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

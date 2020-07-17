@@ -43,9 +43,12 @@ BlockColours
 
 ; This needs CharColoursForEveryCharacter = 1 to be defined in ScrollEntry.a
 numMapUsedChars = 194
+;numMapUsedChars = 162
+
 !ifndef BlockColoursForEveryCharacter {
 CharColours
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars , $14 + (numMapUsedChars * 8)
+;!bin "../Tusari2/Level1-2.ctm" , numMapUsedChars , $10 + (numMapUsedChars * 8) + 2
 }
 
 !align 255,0
@@ -55,8 +58,10 @@ BlockData
 !bin "../FreeDirRant/tiles.raw"
 }
 numMapUsedTiles = 172
+;numMapUsedTiles = 72
 !ifndef BlockColoursForEveryCharacter {
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedTiles*4*4 , $14 + (numMapUsedChars * 8) + numMapUsedChars , 2
+;!bin "../Tusari2/Level1-2.ctm" , numMapUsedTiles*4*4 , $10 + (numMapUsedChars * 8) + 2 + numMapUsedChars + 6 , 2
 }
 
 
@@ -72,6 +77,11 @@ MapData
 !by 170
 !by 48
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , 170*48 , $14 + (numMapUsedChars * 8) + numMapUsedChars + (numMapUsedTiles*4*4*2) , 2
+
+;!by 170
+;!by 31
+; Assume block names are 9 bytes long for "Untitled\0"
+;!bin "../Tusari2/Level1-2.ctm" , 170*31 , $10 + (numMapUsedChars * 8) + 2 + numMapUsedChars + 6 + (numMapUsedTiles*4*4*2) + 2 + numMapUsedTiles + 2 + (numMapUsedTiles*9) + 6 , 2
 }
 MapDataEnd
 
@@ -324,6 +334,7 @@ CharData
 }
 !ifndef BlockColoursForEveryCharacter {
 !bin "../ExternalTools/CharPad 2.0 310715/Examples (CTM5)/Examples - Rips/Turrican 2 - 4x4/Turrican 2 L2-2.ctm" , numMapUsedChars * 8 , $14
+;!bin "../Tusari2/Level1-2.ctm" , numMapUsedChars * 8 , $10
 }
 
 !ifdef Scroller_RunJumpDemo {

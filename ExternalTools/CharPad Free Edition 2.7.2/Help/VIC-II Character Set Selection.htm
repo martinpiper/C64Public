@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>VIC-II Character Set Selection.</b>
+  </p>
+  <br />
+  <p>The VIC-II character set is a relocatable block of 2048 bytes (2KB) that contains the pixel
+    data for the 256 character images that are displayable when the VIC-II is operating in
+    character (text) mode.</p>
+  <p>Each image requires 8 bytes of data, one byte per pixel row.</p>
+  <p>As there are 256 images, the total memory required for a complete character set is 2048
+    bytes (256 * 8, 2KB).</p>
+  <p>Selection of a particular 2KB RAM area to use as a character set is performed using VIC-II
+    register #24 ($d018) which stores a 3-bit pointer (0-7) in the upper 3 bits of it's lower
+    nybble, this allows the character set to be switched very quickly between any of the 8 possible
+    slots in the active (16KB) video bank.</p>
+  <p>The following code will select a character set using $d018, taking care to only affect the
+    lower nybble...</p>
+
+  <pre class="code">
+lda $d018 ; read the VIC-II pointer register.
+and #$f0  ; preserve the upper nybble, clear the lower nybble.
+ora #$0?  ; add in the desired character set slot number (0-7, multiplied by two).
+sta $d018 ; write the VIC-II pointer register.
+</pre>
+
+  <p>Replace the missing value '?' with the desired 2KB slot number (0-7) multiplied by two,
+    hexadecimal format.</p>
+
+  <pre>
+Slot#  ?  Location        Location        Location        Location
+          (Video Bank 0)  (Video Bank 1)  (Video Bank 2)  (Video Bank 3)
+
+0      0  $0000 - $07ff   $4000 - $47ff   $8000 - $87ff   $c000 - $c7ff
+1      2  $0800 - $0fff   $4800 - $4fff   $8800 - $8fff   $c800 - $cfff
+2      4  $1000 - $17ff*  $5000 - $57ff   $9000 - $97ff*  $d000 - $d7ff
+3      6  $1800 - $1fff   $5800 - $5fff   $9800 - $9fff   $d800 - $dfff
+4      8  $2000 - $27ff   $6000 - $67ff   $a000 - $a7ff   $e000 - $e7ff
+5      a  $2800 - $2fff   $6800 - $6fff   $a800 - $afff   $e800 - $efff
+6      c  $3000 - $37ff   $7000 - $77ff   $b000 - $b7ff   $f000 - $f7ff
+7      e  $3800 - $3fff   $7800 - $7fff   $b800 - $bfff   $f800 - $ffff
+</pre>
+
+  <p>The actual location of the character set depends on which of the four 16KB video banks the
+    VIC-II is using.</p>
+  <p>* marks the default location for the character set on the Commodore 64.</p>
+  <br />
+  <p>Alternatively, the following sub-routine can be used to perform character set selection, it
+    simply takes the desired character set number (0-7) as a parameter.</p>
+  <p>This and many other useful sub-routines are available in the
+    <a href="VIC-II Sub-routine Library.htm">VIC-II Sub-routine Library</a>.</p>
+
+  <pre class="code">
+;--------------------------------------------------
+; vic_select_charset - selects a 2KB character set.
+;
+; parameters: A = character set (0-7).
+; returns: none.
+;--------------------------------------------------
+
+vic_select_charset
+
+and #7     ; be sure to only use a 3-bit parameter value (0-7).
+asl        ; shift the parameter value left one binary place.
+sta vsc_b1 ; store the result temporarily.
+lda $d018  ; read the VIC-II pointer register.
+and #$f0   ; preserve the upper nybble, clear the lower nybble.
+ora vsc_b1 ; add in the adjusted 3-bit parameter value.
+sta $d018  ; write the VIC-II pointer register.
+rts
+
+vsc_b1 .byte 0
+</pre>
+
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

@@ -1,8 +1,8 @@
 ;Decompression test code. Demonstrates how to create self extracting code.
-;..\acme.exe -v3 --msvc TestDecompression2.a && TestDecompression.prg
-;..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
-;..\acme.exe -v3 --msvc DefineDecompress_RNZip.a TestDecompression2.a && TestDecompression.prg
-;..\acme.exe -v3 --msvc DefineDecompress_RNZip.a DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v4 --msvc TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v4 --msvc DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v4 --msvc DefineDecompress_RNZip.a TestDecompression2.a && TestDecompression.prg
+;..\acme.exe -v4 --msvc DefineDecompress_RNZip.a DefineDoBorderEffect.a TestDecompression2.a && TestDecompression.prg
 
 ; This decompression code will typically kill data in locations:
 ; $10 to ZPSTVariable-1

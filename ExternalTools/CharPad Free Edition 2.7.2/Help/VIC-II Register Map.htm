@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>VIC-II Register Map.</b>
+  </p>
+  <br />
+  <p>The VIC-II graphics chip has 47 (8-bit) registers that can be collectively switched in or out
+    of the Commodore 64's address space but they will always appear between addresses $d000 and $d02e
+    when switched in, these addresses are included in the register map below.</p>
+  <br />
+
+  <pre class="rose">
+Reg  Hex     Dec     Description
+
+0    $d000   53248   Sprite 0 X-position.
+1    $d001   53249   Sprite 0 Y-position.
+2    $d002   53250   Sprite 1 X-position.
+3    $d003   53251   Sprite 1 Y-position.
+4    $d004   53252   Sprite 2 X-position.
+5    $d005   53253   Sprite 2 Y-position.
+6    $d006   53254   Sprite 3 X-position.
+7    $d007   53255   Sprite 3 Y-position.
+8    $d008   53256   Sprite 4 X-position.
+9    $d009   53257   Sprite 4 Y-position.
+10   $d00a   53258   Sprite 5 X-position.
+11   $d00b   53259   Sprite 5 Y-position.
+12   $d00c   53260   Sprite 6 X-position.
+13   $d00d   53261   Sprite 6 Y-position.
+14   $d00e   53262   Sprite 7 X-position.
+15   $d00f   53263   Sprite 7 Y-position.
+16   $d010   53264   Sprites 0-7 X-position MSb's, one bit per sprite.
+       
+17   $d011   53265   Control register 1 (default = X0011011)...
+
+                     Bit 7 - Raster line (Bit 8), read current, write for IRQ.
+                     Bit 6 - Extended colour text mode (1 = Enabled).
+                     Bit 5 - Bitmap mode (1 = Enabled).
+                     Bit 4 - Blank screen to border colour (0 = Blank).
+                     Bit 3 - Select 24/25 row text display (1 = 25 Rows).
+                     Bit 2 - Screen scroll pixel Y-offset (Bit 2).
+                     Bit 1 - Screen scroll pixel Y-offset (Bit 1). nb. Screen moves down as value (0-7) increases.
+                     Bit 0 - Screen scroll pixel Y-offset (Bit 0).
+       
+18   $d012   53266   Raster line (Bits 0-7), read current, write for IRQ.
+19   $d013   53267   Light-pen latch X-position.
+20   $d014   53268   Light-pen latch Y-position.
+21   $d015   53269   Sprite display enable (one bit per sprite, 1 = Enabled).
+       
+22   $d016   53270   Control register 2 (default = 11001000)...
+
+                     Bit 7 - NC
+                     Bit 6 - NC
+                     Bit 5 - RES: ALWAYS SET THIS BIT TO 0!.
+                     Bit 4 - Screen multi-colour mode. (1 = Enabled).
+                     Bit 3 - Select 38/40 column text display (1 = 40 columns).
+                     Bit 2 - Screen scroll pixel X-offset (Bit 2).
+                     Bit 1 - Screen scroll pixel X-offset (Bit 1). nb. Screen moves right as value (0-7) increases.
+                     Bit 0 - Screen scroll pixel X-offset (Bit 0).
+       
+23   $d017   53271   Sprites 0-7 expand 2x vertical (one bit per sprite, 1 = Enabled).
+       
+24   $d018   53272   Memory pointer register (default = 00010101)...
+
+                     Bit 7 - Video matrix (1K) base address (Bit 3).
+                     Bit 6 - Video matrix (1K) base address (Bit 2).
+                     Bit 5 - Video matrix (1K) base address (Bit 1).
+                     Bit 4 - Video matrix (1K) base address (Bit 0).
+                     Bit 3 - Character set (2K) base address (Bit 2).
+                     Bit 2 - Character set (2K) base address (Bit 1).
+                     Bit 1 - Character set (2K) base address (Bit 0).
+                     Bit 0 - NC
+       
+                     nb. In bitmap mode, bit 3 selects the upper or lower 8K, bits 1 and 2 are ignored).
+       
+25   $d019   53273   Interrupt flag register (1 = IRQ occurred)...
+
+                     Bit 7 - Set on any enabled VIC IRQ condition.
+                     Bit 6 - NC
+                     Bit 5 - NC
+                     Bit 4 - NC
+                     Bit 3 - IRQ: Light-pen.
+                     Bit 2 - IRQ: Sprite-to-sprite collision.
+                     Bit 1 - IRQ: Sprite-to-character collision.
+                     Bit 0 - IRQ: Raster beam reached written line.
+       
+                     nb. Read to determine IRQ status/sources, write (1's) to acknowledge/clear IRQ(s).
+       
+26   $d01a   53274   Interrupt mask register. (1 = IRQ enabled)...
+
+                     Bit 7 - NC
+                     Bit 6 - NC
+                     Bit 5 - NC
+                     Bit 4 - NC
+                     Bit 3 - IRQ: Light-pen.
+                     Bit 2 - IRQ: Sprite-to-sprite collision.
+                     Bit 1 - IRQ: Sprite-to-character collision.
+                     Bit 0 - IRQ: Raster line comparison.
+       
+                     nb. Write (1's) to enable IRQ source(s).
+       
+27   $d01b   53275   Sprite to background display priority (one bit per sprite, 0 = Sprite has priority).
+28   $d01c   53276   Sprites 0-7 multi-colour mode select (one bit per sprite, 1 = Multi-colour).
+29   $d01d   53277   Sprites 0-7 expand 2x horizontal (one bit per sprite, 1 = Expand).
+30   $d01e   53278   Sprite-to-sprite collision detection (one bit per sprite, cleared on reading).
+31   $d01f   53279   Sprite-to-character collision detection (one bit per sprite, cleared on reading).
+32   $d020   53280   Screen border colour (0-15).
+33   $d021   53281   ECM Background colour 1 / Screen colour (0-15).
+34   $d022   53282   ECM Background colour 2 / Character multi-colour 1 (0-15).
+35   $d023   53283   ECM Background colour 3 / Character multi-colour 2 (0-15).
+36   $d024   53284   ECM Background colour 4 (0-15).
+37   $d025   53285   Sprite multi-colour 1 (0-15).
+38   $d026   53286   Sprite multi-colour 2 (0-15).
+39   $d027   53287   Sprite 0 colour (0-15).
+40   $d028   53288   Sprite 1 colour (0-15).
+41   $d029   53289   Sprite 2 colour (0-15).
+42   $d02a   53290   Sprite 3 colour (0-15).
+43   $d02b   53291   Sprite 4 colour (0-15).
+44   $d02c   53292   Sprite 5 colour (0-15).
+45   $d02d   53293   Sprite 6 colour (0-15).
+46   $d02e   53294   Sprite 7 colour (0-15).  
+  </pre>
+
+  <br />
+  <p>
+    <b>Notes...</b>
+  </p>
+  <p>Bits marked NC are not connected and will always read as set (1).</p>
+  <p>All colour registers only have their low nybbles (4 bits) connected, the bits of their upper
+    nybbles will always read as set (1).</p>
+  <p>The 24/25 row mode switch ($d011, bit 3) is something of a misnomer, there are always 25 rows
+    in the video matrix, this switch just toggles the visual expansion of the top and bottom borders,
+    "24 row mode" is usually used to conceal the sudden appearance of fresh data when scrolling the
+    screen vertically.</p>
+  <p>The 38/40 column mode switch ($d016, bit 3) is something of a misnomer, there are always 40
+    columns in the video matrix, this switch just toggles the visual expansion of the left and right
+    borders, "38 column mode" is usually used to conceal the sudden appearance of fresh data when
+    scrolling the screen horizontally.</p>
+  <p>The VIC-II can only access 16KB of memory (it only has 14 address lines), this can be deduced
+    by examining the memory pointer register (reg #24, $d018) which only provides a 4-bit pointer
+    (values 0-15) to specify a 1KB video matrix, a 3-bit pointer (values 0-7) to specify a 2KB
+    character set and a 1-bit pointer (0 or 1) to specify an 8KB bitmap image.</p>
+  <p>The Commodore 64 (with it's 64KB memory) solves the above issue by providing two additional
+    address bits in CIA chip #2, using these, the VIC-II can be made to "see" any one (but only one)
+    of the four possible 16KB quarters ("video banks") of the available 64KB RAM.</p>
+  <p>Sprite images (63 bytes each) are selected using the Sprite Pointers, these are not available
+    as on-chip registers, instead they are always located in the last 8 bytes of the active 1024 byte
+    video matrix (which itself requires only 1000 bytes, 40x25 cells).</p>
+  <p>ie. If the VIC-II is using video bank 0 ($0000-$3fff, 16KB) and the video matrix pointer
+    ($d018, upper nybble) is also set to 0 ($0000-$03ff, 1KB) then the 8 Sprite Pointers will be
+    available at addresses $03f8-$03ff.</p>
+  <p>Although each sprite image requires only 63 bytes, each image's data should always be aligned
+    on a 64 byte boundary, as each Sprite Pointer stores an 8-bit value (0-255) then we have space
+    for a possible 256 sprite images in a 16KB video bank (256 * 64).</p>
+  <p>When the VIC-II is switched in to the Commodore 64's address space (as is normal) it's 47
+    registers appear from $d000 to $d02e but they are also mirrored every 64 bytes up to $d3ff, a
+    total of 16 times across this 1024 byte (1KB) memory area as listed below.</p>
+  <p>nb. After each range of 47 addresses follows 17 disconnected addresses (64 total) that will
+    always read $ff (ie. $d02f-$d03f).</p>
+  <br />$d000 - $d02e (the VIC-II registers are normally accessed using this address range).
+  <br />$d040 - $d06e
+  <br />$d080 - $d0ae
+  <br />$d0c0 - $d0ee
+  <br />$d100 - $d12e
+  <br />$d140 - $d16e
+  <br />$d180 - $d1ae
+  <br />$d1c0 - $d1ee
+  <br />$d200 - $d22e
+  <br />$d240 - $d26e
+  <br />$d280 - $d2ae
+  <br />$d2c0 - $d2ee
+  <br />$d300 - $d32e
+  <br />$d340 - $d36e
+  <br />$d380 - $d3ae
+  <br />$d3c0 - $d3ee
+  <p>We can say then that the chip has a 1KB (1024 byte) footprint despite only having 47 (byte) 
+    registers.</p>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

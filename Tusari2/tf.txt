@@ -1,0 +1,154 @@
+Using max mode
+Using RLE mode
+Using run address $0400
+Opening 'ScrollerOrig.prg' for reading...
+Read load address as $0400
+End address = $ffc0
+Opening 'Scroller.prg' for writing...
+Working...
+Input length = $fbc0 output length = $64b6
+Setting EasyFlash mode
+New address $8000
+New bank $0
+File '..\Citadel2\Citadel2Cart_8K.prg' read $297
+ Copy from $2 len $295 to $0
+ Write bank
+New address $a000
+New bank $0
+ Copy from $2 len $2 to $1ffc
+ Write bank
+File 'Scroller.prg' read $64b6
+New address $8000
+New bank $1
+ Copy from $1 len $2000 to $0
+ Write bank
+New address $8000
+New bank $2
+ Copy from $2001 len $2000 to $0
+ Write bank
+New address $8000
+New bank $3
+ Copy from $4001 len $2000 to $0
+ Write bank
+New address $8000
+New bank $4
+ Copy from $6001 len $4b5 to $0
+ Write bank
+New address $8000
+New bank $5
+ Write bank
+New address $8000
+New bank $6
+ Write bank
+New address $8000
+New bank $7
+File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2df
+File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
+File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2df
+File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
+File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $19b
+File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
+File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
+File 'bin\ColouriseRight.bin' offset $0 xor $0 len $19b
+File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_41.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_39.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_39.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_1.bin' offset $0 xor $0 len $148f
+File 'bin\Colour_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Colour_40.bin' offset $0 xor $0 len $15c1
+File 'bin\Colour_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Colour_39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
+File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
+File 'bin\ColouriseTop.bin' read $2df to use $2df
+File 'bin\Char0To1_1.bin' read $148f to use $148f
+File 'bin\Char1To0_1.bin' read $148f to use $148f
+New bank $7
+ Write multi-bank 7 $8000
+File 'bin\ColouriseBottom.bin' read $2df to use $2df
+New bank $8
+ Write multi-bank 8 $8000
+File 'bin\Char0To1_m1.bin' read $148f to use $148f
+File 'bin\Char1To0_m1.bin' read $148f to use $148f
+New bank $9
+ Write multi-bank 9 $8000
+File 'bin\ColouriseLeft.bin' read $19b to use $19b
+New bank $a
+ Write multi-bank 10 $8000
+File 'bin\Char0To1_40.bin' read $14d1 to use $14d1
+File 'bin\Char1To0_40.bin' read $14d1 to use $14d1
+New bank $b
+ Write multi-bank 11 $8000
+File 'bin\ColouriseRight.bin' read $19b to use $19b
+New bank $c
+ Write multi-bank 12 $8000
+File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1
+File 'bin\Char1To0_m40.bin' read $15c1 to use $15c1
+New bank $d
+ Write multi-bank 13 $8000
+File 'bin\Char0To1_41.bin' read $148f to use $148f
+New bank $e
+ Write multi-bank 14 $8000
+File 'bin\Char1To0_41.bin' read $148f to use $148f
+New bank $f
+ Write multi-bank 15 $8000
+File 'bin\Char0To1_39.bin' read $148f to use $148f
+New bank $10
+ Write multi-bank 16 $8000
+File 'bin\Char1To0_39.bin' read $148f to use $148f
+New bank $11
+ Write multi-bank 17 $8000
+File 'bin\Char0To1_m41.bin' read $1579 to use $1579
+New bank $12
+ Write multi-bank 18 $8000
+File 'bin\Char1To0_m41.bin' read $1579 to use $1579
+New bank $13
+ Write multi-bank 19 $8000
+File 'bin\Char0To1_m39.bin' read $1579 to use $1579
+New bank $14
+ Write multi-bank 20 $8000
+File 'bin\Char1To0_m39.bin' read $1579 to use $1579
+New bank $15
+ Write multi-bank 21 $8000
+File 'bin\Colour_1.bin' read $148f to use $148f
+New bank $16
+ Write multi-bank 22 $8000
+File 'bin\Colour_m1.bin' read $148f to use $148f
+New bank $17
+ Write multi-bank 23 $8000
+File 'bin\Colour_40.bin' read $15c1 to use $15c1
+New bank $18
+ Write multi-bank 24 $8000
+File 'bin\Colour_m40.bin' read $15c1 to use $15c1
+New bank $19
+ Write multi-bank 25 $8000
+File 'bin\Colour_39.bin' read $1579 to use $1579
+New bank $1a
+ Write multi-bank 26 $8000
+File 'bin\Colour_m39.bin' read $1579 to use $1579
+New bank $1b
+ Write multi-bank 27 $8000
+File 'bin\Colour_41.bin' read $1579 to use $1579
+New bank $1c
+ Write multi-bank 28 $8000
+File 'bin\Colour_m41.bin' read $1579 to use $1579
+New bank $1d
+ Write multi-bank 29 $8000
+File 'bin\BlockStrips.bin' read $c35 to use $c35
+New bank $1e
+ Write multi-bank 30 $8000
+New bank $1f
+ Write multi-bank 31 $8000
+Finished adding chunks
+File 'Scroller.crt' wrote $42250

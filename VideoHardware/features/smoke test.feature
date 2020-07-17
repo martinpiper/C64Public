@@ -6,6 +6,7 @@ Feature: Smoke test
   Scenario: Smoke test for video
     Given a new audio expansion
     Given a new video display
+	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
     And audio refresh window every 0 instructions
     And audio refresh is independent
@@ -21,6 +22,8 @@ Feature: Smoke test
     Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
     Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
     Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+#    Given add a Mode7 layer with registers at '0xa800' and addressEx '0x08'
+#    Given add a Mode7 layer with registers at '0xb000' and addressEx '0x08'
 #    Given add a Chars layer with registers at '0x9000' and addressEx '0x20'
     Given show video window
 

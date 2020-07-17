@@ -1,18 +1,18 @@
 To build:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
-..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
+..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
 
 Or:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
-..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
+..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
 
 Or:
-cls && ..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a && ..\..\bin\LZMPi.exe -c64 t.prg t.prg 2061 && t.prg
+cls && ..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a && ..\..\bin\LZMPi.exe -c64 t.prg t.prg 2061 && t.prg
 
 
 Oric:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
-..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
+..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
 oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
 
 TODO
@@ -66,12 +66,12 @@ TODO
 		C:\Work\C64\MusicStudio2\MusicStudio\Release\MusicStudio.exe /openFile "C:\Work\C64\MusicStudio2\ExampleFiles\OriginalC64Music\P.TUSARI LEVEL1.PRG" /exportToSelf n C:\Temp\t.prg /exit
 	Then:
 		cd /D C:\Work\C64\MusicStudio2\MusicStudio
-		..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
+		..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
 		cd /d C:\Users\Martin Piper\Downloads\Oricutron_win32_v12
 		oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
 
 		For the "P.TUSARI LEVEL1.ref.self.prg" file
-		..\..\acme.exe -v3 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
+		..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
 		"C:\Program Files\Git\usr\bin\diff.exe" t.prg "P.TUSARI LEVEL1.ref.self.prg"
 
 	* Oric now makes sounds!

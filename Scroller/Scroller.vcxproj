@@ -1,8 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
+    <ProjectConfiguration Include="MultiDirection|Win32">
+      <Configuration>MultiDirection</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SEUCK|Win32">
+      <Configuration>SEUCK</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -13,7 +17,12 @@
     <ProjectGuid>{C820702E-E7E6-4326-8813-886CEE09D50C}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SEUCK|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
@@ -21,16 +30,27 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SEUCK|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'">
     <OutDir>.\Scroller___Win32_Release\</OutDir>
     <IntDir>.\Scroller___Win32_Release\</IntDir>
-    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BuildIt.bat </NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>BuildIt.bat ScrollEntry_MultiDirection.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat ScrollEntry_MultiDirection.a</NMakeReBuildCommandLine>
+    <NMakeOutput>Scroller.exe</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SEUCK|Win32'">
+    <OutDir>.\Scroller___Win32_Release\</OutDir>
+    <IntDir>.\Scroller___Win32_Release\</IntDir>
+    <NMakeBuildCommandLine>BuildIt.bat ScrollEntry_SEUCK.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat ScrollEntry_SEUCK.a</NMakeReBuildCommandLine>
     <NMakeOutput>Scroller.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -85,11 +105,13 @@
     <None Include="CartCode\StripsOffsets.a" />
     <None Include="CatchUndefCartFiles.a" />
     <None Include="CharEffects.a" />
+    <None Include="ClampScrollVelocity.a" />
     <None Include="DataCheck.a" />
-    <None Include="DebugFrames.bat" />
     <None Include="features\animation.feature" />
     <None Include="features\VerifyByScreenshots.feature" />
     <None Include="README.md" />
+    <None Include="RunJumpDemo.a" />
+    <None Include="ScrollEntryAfter.a" />
     <None Include="ScrollEntryCommon.a" />
     <None Include="ScrollEntry_MultiDirection.a" />
     <None Include="ScrollEntry_SEUCK.a" />
@@ -98,6 +120,8 @@
     <None Include="ScrollerDataMacro.a" />
     <None Include="ScrollerMacros.a" />
     <None Include="ScrollerOptimisations.a" />
+    <None Include="ScrollerOptimisationsAggressive.a" />
+    <None Include="ScrollerScrollSprites.a" />
     <None Include="ScrollersNoColour.a" />
     <None Include="ScrollerStripsBottom.a" />
     <None Include="ScrollerStripsColouriseBottom.a" />

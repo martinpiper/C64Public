@@ -26,7 +26,8 @@ Scroller_EnableBlockColourSpeedCode = 1
 
 
 ; Enable this to move certain sprite data into the zero page
-!source "ScrollerOptimisations.a"
+;!source "ScrollerOptimisations.a"
+!source "ScrollerOptimisationsAggressive.a"
 
 ; Set this to allow the AnimationUpdateMultiplexor to skip sprites above this limit
 Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
@@ -38,7 +39,7 @@ Multiplex_spritepointer	= $cbf8
 ; Enable this to maintain sprite priority ordering based on Y position.
 ;Multiplex_MaintainPriority	= 1
 ; Enable this to reverse sprite ordering
-;Multiplex_ReverseOrder = 1
+Multiplex_ReverseOrder = 1
 
 ; Enable this to allow multiplex sorting during the multiplexor IRQs.
 ;Multiplex_SplitSort = 1

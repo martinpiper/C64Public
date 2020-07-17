@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>CharPad 2.7 Manual</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+  <img src="Icon48_Green.png" alt="image" width="96" height="96" />
+  <p>
+    <a href="Contents.htm">&lt;&lt; Back to contents.</a>
+  </p>
+  <p>
+    <b>CharPad 2.7 User Manual - Subchrist Software, 2020.</b>
+  </p>
+  <p>
+    <b>Importing Data From Files.</b>
+  </p>
+  <br />
+  <p>CharPad can import data in a variety of ways...</p>
+  <br />
+  <p>
+    <b>Binary files...</b>
+  </p>
+  <p>These should be plain (raw) binary files with no specific file-formatting and should only
+    contain the data that needs to be imported.</p>
+  <p>nb. Binary files that contain character set data may optionally begin with a two-byte PRG
+    header (ie. a 16-bit load address), as the data for a character image is always 8 bytes, a file
+    size divisible by 8 with a 2 byte remainder is easily detected.</p>
+  <p>Character Sets : 8 bytes per character image (byte 0 = top pixel row of image 0 etc) for
+    however many character images.</p>
+  <p>Character Set Attributes : 1 byte per image (upper nybble = Material, lower nybble =
+    Colour).</p>
+  <p>Tile Sets : TileWidth x TileHeight bytes per tile (byte 0 = top/left corner of tile 0 etc)
+    for however many tiles.</p>
+  <p>Tile Set Attributes : 1 byte per tile (upper nybble = unused (0), lower nybble =
+    Colour).</p>
+  <p>Map : MapWidth x MapHeight bytes (byte 0 = top/left corner).</p>
+  <p>nb. Binary files containing tile or map data do not include dimensional information and so
+    the data will just be applied to a project's existing tiles/map using the existing tile/map
+    dimensions.</p>
+  <p>ie. You will need to know and set the dimensions for a project's tiles/map before importing
+    the binary data.</p>
+  <br />
+  <p>
+    <b>Image files...</b>
+  </p>
+  <p>These should be in either Microsoft Windows Bitmap (BMP) or Portable Network Graphics (PNG)
+    format.</p>
+  <p>CharPad will run a colour processing algorithm to decide on a suitable colour scheme and
+    will convert each 8x8 pixel region of the image into a Commodore 64 compatible character
+    image.</p>
+  <p>The resulting character set will automatically have any duplicate images removed and a map
+    will be created.</p>
+  <br />
+  <p>
+    <b>Emulator snapshot files...</b>
+  </p>
+  <p>This feature currently supports snapshot files (images) made using the VICE (x64) emulator
+    (VSF files).</p>
+  <p>A snapshot file (aka snapshot image) contains, amongst other things, a binary dump of the
+    entire 64KB RAM at the precise moment that the snapshot was taken.</p>
+  <p>nb. Despite the name, a snapshot image is not a visible/viewable picture, it is a binary
+    file of a very particular format.</p>
+  <p>CharPad features a "Snapshot Ripper" tool that allows you to manually search for graphics
+    data in a snapshot file.</p>
+  <br />
+  <p>
+    <b>Shoot 'em Up Construction Kit (background) files...</b>
+  </p>
+  <p>Commonly referred to as SEUCK, the Shoot 'em Up Construction Kit was (and remains) a popular
+    tool for making games on the Commodore 64.</p>
+  <p>When the kit saves data to files, one of them will contain the character set, the tile set
+    and the map, it is known as the background file and it's file name will be terminated with
+    '.B'</p>
+  <p>If you can find it, CharPad can load it.</p>
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

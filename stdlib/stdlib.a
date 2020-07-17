@@ -106,7 +106,10 @@ ZPDatasetteBufferHo				= $b3
 ZPRS232BitCounter				= $b4
 ZPRS232BitBuffer				= $b5
 
+ZPFilenameLen					= $b7
 ZPCurrentFileDeviceNumber		= $ba		; Usually the last used device to load a file.
+ZPFilenameLo					= $bb
+ZPFilenameHi					= $bc
 
 ; $b7 - $c4 Various file operation working area
 
@@ -170,6 +173,8 @@ SaveRoutineHi					= $0333
 ; $0334 - $033b unused
 
 ; $033c - $03fb Datasette buffer
+ZPExTapeIOBuffer				= $33c
+ZPExTapeIOBufferEnd				= $3fb
 
 ; $03fc - $03ff unused
 
@@ -881,7 +886,6 @@ RasterLinesPALC64		= 312
 	bne .dm1
 }
 
-; Useful for displaying text strings or copying small chunks of memory <= 256 bytes long
 !macro DisplayTextMiddle_AX .start , .end , .scr {
 	ldx #.end-.start
 .dm1
@@ -891,6 +895,7 @@ RasterLinesPALC64		= 312
 	bne .dm1
 }
 
+; Useful for displaying text strings or copying small chunks of memory <= 256 bytes long
 !macro DisplayTextAt_AX .start , .end , .scr {
 	ldx #.end-.start
 .dm1
@@ -1087,6 +1092,11 @@ RasterLinesPALC64		= 312
 !macro M_ASR {
 	cmp #$80
 	ror
+}
+
+!macro MByteValueToAddress_A .value , .addr {
+	lda #.value
+	sta .addr
 }
 
 !macro MWordValueToAddress_A .value , .addr {

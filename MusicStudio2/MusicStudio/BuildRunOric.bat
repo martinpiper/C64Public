@@ -1,6 +1,6 @@
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
 del /q t.tap
-..\..\acme.exe -v3 --msvc --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
+..\..\acme.exe -v4 --msvc --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
 if not exist t.tap goto error:
 goto end
 

@@ -17,29 +17,6 @@
 
 !source "../stdlib/stdlib.a"
 
-; Choose one of the below source includes for the main build options
+; After this, one of the source includes for the main build options is used by BuildIt.bat
 ; --- Main build options start ---
 
-!source "ScrollEntry_MultiDirection.a"
-;!source "ScrollEntry_SEUCK.a"
-
-; --- Main build options end ---
-
-
-; Set these two values to the x position for the player's score panels
-ScorePlayer1XPos = 44
-ScorePlayer2XPos = 228
-
-ClearGameScreensChar = 0
-
-; Enable this to disable sound code
-;DisableSound = 1
-
-; Enable this to calculate sprite 8x8 cell usage. This is not normally used in SEUCK games
-;SpriteEmptyLookupTab2Enable = 1
-
-!source "ScrollEntryCommon.a"
-
-!source "ScrollerDataMacro.a"
-!source "ScrollerData.a"
-!source "DataCheck.a"

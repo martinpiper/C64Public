@@ -14,6 +14,8 @@
 // -i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 -o AnimationBitmap.crt
 // -i _f_index1.a -te -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart.prg -c 0 2 $ffff -w -a $a000 -b 0 -c $1ffc 2 4 -w -r AnimationBitmap.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $a000 -b 1 -c 0 $2001 $ffff -w -a $8000 -b 2 -c 0 $4001 $ffff -w -a $a000 -b 2 -c 0 $6001 $ffff -w -a $8000 -b 3 -c 0 $8001 $ffff -w -a $a000 -b 3 -c 0 $a001 $ffff -w -a $8000 -b 4 -m data\frm0*.del $4000 s:data\smp_*.raw -o AnimationBitmap.crt
 
+// -i _f_index1.a -tg -n -a $8000 -b 7 -s $2000 -f $2000 3 disks\files\l disks\files\sgload disks\files\k+$0002 -s 0 -o Entry.crt
+
 // Reference:
 // https://ist.uwaterloo.ca/~schepers/formats/CRT.TXT
 // http://ar.c64.org/wiki/CRT_ID
@@ -24,6 +26,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <set>
+#include <map>
 #include <vector>
 #include <algorithm>
 #include "../Common/ParamToNum.h"
@@ -47,6 +50,7 @@ static unsigned char sChipData[] = {
 static unsigned char sBankData[0x2000];
 
 static FILE *indexFP = 0;
+static FILE *indexFPTable = 0;
 static int outNameIndex = 0;
 
 void ReplaceAll(std::string &str, const std::string& from, const std::string& to)
@@ -139,6 +143,8 @@ bool FilenameResetOffset(const char *filename)
 	return false;
 }
 
+static std::map<std::string,int> sExistingNames;
+
 void WriteFileIndex(const char * filename, int theBank, int theAddress, int fileLen, int fileXOR)
 {
 	if (!indexFP)
@@ -155,12 +161,41 @@ void WriteFileIndex(const char * filename, int theBank, int theAddress, int file
 	ReplaceAllFirstOf(safeName , "\\/ .:" , "_");
 
 	fprintf(indexFP , "; %s\n" , filename);
+	bool spanned = false;
+	if (sExistingNames.find(safeName) == sExistingNames.end())
+	{
+		if (indexFPTable && !sExistingNames.empty())
+		{
+			fprintf(indexFPTable , "	!by 0\n\n");
+		}
+		sExistingNames[safeName] = 0;
+	}
+	else
+	{
+		spanned = true;
+		sExistingNames[safeName]++;
+		std::string extra = "spanned_" + std::to_string(sExistingNames[safeName]) + "_";
+		safeName = extra + safeName;
+	}
 	fprintf(indexFP , "CartFile%d_Bank_%s = $%x\n" , outNameIndex, safeName.c_str() , theBank);
 	fprintf(indexFP , "CartFile%d_Start_%s = $%x\n" , outNameIndex, safeName.c_str() , theAddress);
 	fprintf(indexFP , "CartFile%d_Size_%s = $%x\n" , outNameIndex, safeName.c_str() , fileLen);
 	fprintf(indexFP , "CartFile%d_XOR_%s = $%x\n" , outNameIndex, safeName.c_str() , fileXOR);
 
 	fprintf(indexFP , "\n");
+
+	if (indexFPTable)
+	{
+		if (!spanned)
+		{
+			fprintf(indexFPTable , "	!pet \"%s\"\n" , safeName.c_str());
+			fprintf(indexFPTable , "	!by 0\n");
+		}
+		fprintf(indexFPTable , "	!by $%x		; Bank\n" , theBank);
+		fprintf(indexFPTable , "	!word $%x	; Address\n" , theAddress);
+		fprintf(indexFPTable , "	!word $%x	; Len\n" , fileLen);
+		fprintf(indexFPTable , "	!by $%x		; XOR\n" , fileXOR);
+	}
 }
 
 int WriteChunkToBanks( int startBankNum, int maxSize, DynamicMessageHelper &chunkData, int startAddress, DynamicMessageHelper &output )
@@ -383,6 +418,7 @@ int main( int argc , char **argv )
 	int compressionLowerThreshold = -1;
 	int compressionUpperThreshold = -1;
 	int compressionTrimStart = 0;
+	int spanSize =  0;
 	std::string theCompressionToolPath = "..\\bin\\LZMPi.exe";
 	std::string theCompressionPreCommand = "-ce ";
 	std::string theCompressionPostCommand = " ";
@@ -489,19 +525,40 @@ int main( int argc , char **argv )
 
 				case 'i':
 				{
-					argc--;
-					argv++;
-					if ( argc  >= 1 )
+					if (argv[0][2] == 't')
 					{
-						if (indexFP)
+						argc--;
+						argv++;
+						if ( argc  >= 1 )
 						{
-							fclose(indexFP);
+							if (indexFPTable)
+							{
+								fclose(indexFPTable);
+							}
+							indexFPTable = fopen(argv[0] , "w");
+							if (!indexFPTable)
+							{
+								printf("Problem writing file '%s'\n" , argv[0] );
+							}
 						}
-						indexFP = fopen(argv[0] , "w");
-						outNameIndex++;
-						if (!indexFP)
+					}
+					else
+					{
+						argc--;
+						argv++;
+						if ( argc  >= 1 )
 						{
-							printf("Problem writing file '%s'\n" , argv[0] );
+							if (indexFP)
+							{
+								fclose(indexFP);
+							}
+							indexFP = fopen(argv[0] , "w");
+							outNameIndex++;
+							sExistingNames.clear();
+							if (!indexFP)
+							{
+								printf("Problem writing file '%s'\n" , argv[0] );
+							}
 						}
 					}
 					break;
@@ -822,6 +879,18 @@ int main( int argc , char **argv )
 					break;
 				}
 
+				case 's':
+				{
+					argc--;
+					argv++;
+					if ( argc  >= 1 )
+					{
+						spanSize = ParamToNum( argv[0] );
+						printf("Using new span size $%x\n" , spanSize);
+					}
+					break;
+				}
+
 				case 'f':
 				{
 					argc--;
@@ -843,6 +912,8 @@ int main( int argc , char **argv )
 						int theBank = startBankNum;
 						int bankSize = 0;
 						int entry = 0;
+						bool moreData = false;
+						int extraOffset = 0;
 						while (entry < numEntries)
 						{
 							std::string tempName = StripFilename(argv[entry]);
@@ -861,7 +932,7 @@ int main( int argc , char **argv )
 							}
 
 							fseek(fp,0,SEEK_END);
-							int fileLen = ftell(fp) - tweakOffset;
+							int fileLen = ftell(fp) - tweakOffset - extraOffset;
 							fclose(fp);
 
 							if (fileLen <= 0)
@@ -869,12 +940,20 @@ int main( int argc , char **argv )
 								printf("Skip file '%s' due to zero or negative length\n" , filename);
 								continue;
 							}
+							if (spanSize > 0 && fileLen > spanSize)
+							{
+								moreData = true;
+							}
+							else
+							{
+								moreData = false;
+							}
 							if (fileLen > maxSize)
 							{
 								fileLen = maxSize;
 							}
 
-							printf("File '%s' offset $%x xor $%x len $%x\n" , filename , tweakOffset , fileXOR , fileLen);
+							printf("File '%s' offset $%x xor $%x len $%x\n" , filename , tweakOffset + extraOffset , fileXOR , fileLen);
 
 							if ( (fileReset && (bankSize > 0)) || (bankSize + fileLen) >= maxSize )
 							{
@@ -885,9 +964,21 @@ int main( int argc , char **argv )
 							WriteFileIndex(filename, theBank, startAddress + bankSize, fileLen, fileXOR);
 
 							bankSize += fileLen;
+
+							if (moreData)
+							{
+								extraOffset += spanSize;
+								entry--;
+							}
+							else
+							{
+								extraOffset = 0;
+							}
 						}
 
 						entry = 0;
+						moreData = false;
+						extraOffset = 0;
 						while (entry < numEntries)
 						{
 							std::string tempName = StripFilename(argv[entry]);
@@ -902,7 +993,7 @@ int main( int argc , char **argv )
 
 							if ( fileData.Read( filename , true ) )
 							{
-								printf("File '%s' read $%x to use $%x\n" , filename , fileData.GetBufferSize() , fileData.GetBufferSize() - tweakOffset);
+								printf("File '%s' read $%x to use $%x\n" , filename , fileData.GetBufferSize() , fileData.GetBufferSize() - tweakOffset - extraOffset);
 							}
 							else
 							{
@@ -910,10 +1001,18 @@ int main( int argc , char **argv )
 								continue;
 							}
 
-							int fileLen = fileData.GetBufferSize() - tweakOffset;
+							int fileLen = fileData.GetBufferSize() - tweakOffset - extraOffset;
 							if (fileLen <= 0)
 							{
 								continue;
+							}
+							if (spanSize > 0 && fileLen > spanSize)
+							{
+								moreData = true;
+							}
+							else
+							{
+								moreData = false;
 							}
 							if (fileLen > maxSize)
 							{
@@ -934,7 +1033,17 @@ int main( int argc , char **argv )
 								startBankNum = WriteChunkToBanks(startBankNum, maxSize, chunkData, startAddress, output);
 							}
 
-							chunkData.AddData((char*)fileData.GetBuffer() + tweakOffset , fileLen);
+							chunkData.AddData((char*)fileData.GetBuffer() + tweakOffset + extraOffset , fileLen);
+
+							if (moreData)
+							{
+								extraOffset += spanSize;
+								entry--;
+							}
+							else
+							{
+								extraOffset = 0;
+							}
 						}
 
 
@@ -982,6 +1091,13 @@ int main( int argc , char **argv )
 	{
 		fclose(indexFP);
 		indexFP = 0;
+	}
+	if (indexFPTable)
+	{
+		fprintf(indexFPTable , "	!by 0\n\n");
+		fprintf(indexFPTable , "	!by 0\n\n");
+		fclose(indexFPTable);
+		indexFPTable = 0;
 	}
 
 	if ( displayHelp )
