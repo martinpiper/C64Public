@@ -369,3 +369,11 @@ Player1Information or Player2Information is used depending on the active players
 
 
 * For Scroller_RunJumpDemo split code out
+
+
+
+
+* Trying to solve the "sprite will pop on if it's within a few pixels of the screen split issue"
+	Multiplex_DiscardSpritesYPos needs to be expanded to add Multiplex_DiscardSpritesYPosForSort
+	Interestingly Multiplex_DiscardSpritesYPosForSort can be used in Multiplex_Sort and the issue is fixed
+	Usage of Multiplex_SetDiscardPosition will need to be updated to include proper SetupIRQs.a calculated discard values and to include Multiplex_SetDiscardSpritesYPosForSort

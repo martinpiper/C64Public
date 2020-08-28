@@ -25,16 +25,33 @@ CharEffectsScrH	!fill kNumCharEffects , -1
 !zn
 CharEffects_Init
 	ldx #kNumCharEffects-1
-.l1
 	lda #-1
+.l1
 	sta CharEffectsX,x
 	sta CharEffectsY,x
 	sta CharEffectsTime,x
 	sta CharEffectsScrL,x
 	sta CharEffectsScrH,x
-
 	dex
 	bpl .l1
+
+!ifdef CharEffects_HiddenIndexLookupEnabled {
+!ifdef CharEffects_HiddenIndexLookup {
+!if (CharEffects_HiddenIndexLookup & 0x3ff) != 0 {
+	!error "CharEffects_HiddenIndexLookup must use: !align $3ff,0	; Because of ora #>CharEffects_HiddenIndexLookup"
+}
+}
+	ldx #0
+.l2
+	sta CharEffects_HiddenIndexLookup,x
+	sta CharEffects_HiddenIndexLookup+$100,x
+	sta CharEffects_HiddenIndexLookup+$200,x
+	sta CharEffects_HiddenIndexLookup+$2e8,x
+	dex
+	bne .l2
+}
+
+
 	rts
 
 !zn
@@ -85,6 +102,15 @@ BeforeScrollers
 
 	ldy CharEffectsX,x
 
+!ifdef CharEffects_HiddenIndexLookupEnabled {
+	; Clear hidden index screen
+	lda tempWork1
+	ora #>CharEffects_HiddenIndexLookup
+	sta tempWork3
+	lda #-1
+	sta (tempWork2),y
+}
+
 	lda tempWork1
 	ora tempWork0
 	sta tempWork3
@@ -104,7 +130,7 @@ BeforeScrollers
 
 !zn
 .loffScreen jmp .offScreen
-; characters movement and render characters to screen
+; Characters movement and render characters to screen
 AfterScrollers
 	lda ScrollerBankVisible
 	sta tempWork0
@@ -187,6 +213,15 @@ AfterScrollers
 	sta tempWork3
 	lda CharEffectsCol,x
 	sta (tempWork2),y
+
+!ifdef CharEffects_HiddenIndexLookupEnabled {
+	; Store char effect index
+	lda tempWork1
+	ora #>CharEffects_HiddenIndexLookup
+	sta tempWork3
+	txa
+	sta (tempWork2),y
+}
 
 .o2
 	dex

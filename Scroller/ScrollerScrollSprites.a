@@ -4,15 +4,20 @@ Scroller_ScrollSprites
 	lda scrollerRealMovementXPixels
 	beq .noX1
 	bmi .negX1
-	ldx Multiplex_MaxSpr
-	dex
+	ldx #Multiplex_items-1
 .spx1
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero,x
+	beq .noxMSB1
+}
 	lda AnimationXPosLo,x
 	clc
 	adc scrollerRealMovementXPixels
 	sta AnimationXPosLo,x
 	bcc .noxMSB1
-	lda #1
+	; This ensures the 9bit wraparound happens correctly
+	lda AnimationXPosHi,x
+	eor #1
 	sta AnimationXPosHi,x
 .noxMSB1
 	dex
@@ -20,15 +25,20 @@ Scroller_ScrollSprites
 	jmp .noX1
 
 .negX1
-	ldx Multiplex_MaxSpr
-	dex
+	ldx #Multiplex_items-1
 .spx2
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero,x
+	beq .noxMSB2
+}
 	lda AnimationXPosLo,x
 	clc
 	adc scrollerRealMovementXPixels
 	sta AnimationXPosLo,x
 	bcs .noxMSB2
-	lda #0
+	; This ensures the 9bit wraparound happens correctly
+	lda AnimationXPosHi,x
+	eor #1
 	sta AnimationXPosHi,x
 .noxMSB2
 
@@ -39,14 +49,18 @@ Scroller_ScrollSprites
 
 	lda scrollerRealMovementYPixels
 	beq .noY1
-	ldx Multiplex_MaxSpr
-	dex
+	ldx #Multiplex_items-1
 .spy1
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero,x
+	beq .skipEntry
+}
 	lda AnimationYPos,x
 	clc
 	adc scrollerRealMovementYPixels
 	sta AnimationYPos,x
 
+.skipEntry
 	dex
 	bpl .spy1
 .noY1

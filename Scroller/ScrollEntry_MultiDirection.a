@@ -139,6 +139,8 @@ EnableAfterScrollersHook = 1
 RedirectHandleUserInput = 1
 }
 
+; Define this to run one frame of game logic before displaying the screen
+Scroller_MultiDirection_RunPreFrame = 1
 
 !ifdef Scroller_NeedFullColourScroll {
 ; Enable this to make the block drawing code use colours for every character in a map tile rather than constant for each map tile. This is quite memory hungry.

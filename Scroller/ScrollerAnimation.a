@@ -22,23 +22,42 @@ AnimationInit
 AnimationUpdateMultiplexorPre
 	ldx #Multiplex_items-1
 .l1
-	lda AnimationYPos,x
-	cmp #$ff
-	beq .blank2
-
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero,x
+	beq .blank
+}
 	; Is the sprite totally blank? If yes then skip it
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
 
 	lda AnimationYPos,x
+!ifndef Animation_ActiveNonZeroEnabled {
+	cmp #$ff
+	beq .blank2
+}
 !ifdef Scroller_DiscardMinSpriteYPos {
-!if Scroller_DiscardMinSpriteYPos > 0 {
 	cmp #Scroller_DiscardMinSpriteYPos
 	bcc .blank
 }
+!ifdef Scroller_DiscardForMultiplexorBottomDefined {
+	cmp #Scroller_DiscardForMultiplexorBottom
+	bcs .blank
 }
 	sta AnimationYPosToSort,x
+
+	; TODO: Why does this make the sprite update go wrong near the MSB when scrolling left/right?
+;!ifdef Scroller_DiscardForMultiplexorRight {
+;	lda AnimationXPosHi,x
+;!if Scroller_DiscardForMultiplexorRight >= $100 {
+;	beq .noXDiscard
+;}
+;	lda Multiplex_XPosLo,x
+;	cmp #<Scroller_DiscardForMultiplexorRight
+;	bcs .blank
+;.noXDiscard
+;}
+
 
 	dex
 	bpl .l1
@@ -62,7 +81,14 @@ AnimationUpdateMultiplexorPre
 AnimationUpdateMultiplexor
 	ldx #Multiplex_items-1
 .l1
+!ifndef Multiplex_SplitSort {
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero,x
+	beq .blank
+}
+}
 !ifdef Multiplex_SplitSort {
+	; Used later on...
 	lda AnimationYPosToSort,x
 	cmp #$ff
 	beq .blank2
@@ -72,14 +98,23 @@ AnimationUpdateMultiplexor
 	ldy AnimationSpriteFrame,x
 	lda SpriteEmptyLookupTab,y
 	beq .blank
+	; Used later on...
 	lda AnimationYPos,x
+!ifndef Animation_ActiveNonZeroEnabled {
+!ifndef Scroller_DiscardForMultiplexorBottomDefined {
+	cmp #$ff
+	beq .blank2
+}
+}
 !ifdef Scroller_DiscardMinSpriteYPos {
-!if Scroller_DiscardMinSpriteYPos > 0 {
 	cmp #Scroller_DiscardMinSpriteYPos
 	bcc .blank
 }
+!ifdef Scroller_DiscardForMultiplexorBottomDefined {
+	cmp #Scroller_DiscardForMultiplexorBottom
+	bcs .blank
 }
-}
+} ; <!ifndef Multiplex_SplitSort {
 	sta Multiplex_YPos,x
 
 	lda AnimationSpriteFrame,x
@@ -100,6 +135,17 @@ AnimationUpdateMultiplexor
 	sta Multiplex_XPosLo,x
 	lda AnimationXPosHi,x
 	sta Multiplex_XPosHi,x
+!ifndef Multiplex_SplitSort {
+!ifdef Scroller_DiscardForMultiplexorRight {
+!if Scroller_DiscardForMultiplexorRight >= $100 {
+	beq .noXDiscard
+}
+	lda Multiplex_XPosLo,x
+	cmp #<Scroller_DiscardForMultiplexorRight
+	bcs .blank
+.noXDiscard
+}
+} ; <!ifndef Multiplex_SplitSort {
 
 	dex
 	bpl .l1

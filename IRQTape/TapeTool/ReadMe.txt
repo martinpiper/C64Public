@@ -114,7 +114,7 @@ The "MartyLoad" displays some animated bars like the old Cyber loader.
 The "NovaishLoad" displays a screen that looks like the old Nova loader.
 
 If none of the auto-boot loader options are chosen then a different auto-boot loader is used. This loader doesn't use a tiny
-header, instead it uses a header with some extra filename and load address information.
+header (TinyHeader otft option), instead it uses a header with some extra filename and load address information.
 So instead of the real loader being written with "otft" it needs to be written with "otf" instead.
 For example use: otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart
 Instead of: otft "Loaders.bin" .RealCodeStart .RealCodeEnd

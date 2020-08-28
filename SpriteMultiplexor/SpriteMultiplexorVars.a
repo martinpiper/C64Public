@@ -26,8 +26,10 @@
 
 ; Any sprite Y position >= to this value will stop the multiplexor from generating interrupts to draw any further sprites.
 ;Multiplex_DiscardSpritesYPos=255
-; Define this to make the check use a zero page byte memory location for Multiplex_DiscardSpritesYPosLocation so it can be dynamically updated.
-; Multiplex_DiscardSpritesYPosLocation will also be defined as a byte for internal working purposes.
+; Sprites will be discarded in the sort after this position. This can be, and would typically be, below the Multiplex_DiscardSpritesYPos value.
+;Multiplex_DiscardSpritesYPosForSort=255
+; Define this to make the check use a zero page byte memory location for Multiplex_DiscardSpritesYPos and Multiplex_DiscardSpritesYPosForSort so it can be dynamically updated.
+; Multiplex_DiscardSpritesYPosLocation anf Multiplex_DiscardSpritesYPosForSortLocation will also be defined as a byte for internal working purposes.
 ; The function Multiplex_SetDiscardPosition will also be created that sets the discard position from passed in via A.
 ;Multiplex_DiscardSpritesYPosUseLocation = 1
 
@@ -112,8 +114,9 @@ Multiplex_endIndexInternal	= Multiplex_indextable + Multiplex_items
 
 Multiplex_DiscardSpritesYPosLocation = Multiplex_endIndexInternal
 Multiplex_DiscardSpritesYPosLocation2 = Multiplex_endIndexInternal + 1
+Multiplex_DiscardSpritesYPosForSortLocation = Multiplex_endIndexInternal + 2
 
-Multiplex_endIndexInternal2 = Multiplex_endIndexInternal + 2
+Multiplex_endIndexInternal2 = Multiplex_endIndexInternal + 3
 
 } else {
 

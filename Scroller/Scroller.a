@@ -28,6 +28,17 @@ frameScrollX			!by 0	; Pixels
 frameScrollY			!by 0	; Pixels
 }
 
+; These are updated during the offscreen (screen flip) phase, which gives the most accurate position
+; Combined with scrollerRealMovementXPixels, scrollerRealMovementYPixels, frameScrollX, frameScrollY these give non-lagged values that can be used during Scroller_CallbackBeforeCharScreenScroll and UpdateSprites
+scrollRealMapHX	!by $00		; Block pos in map
+scrollRealMapLX	!by $00		; Char pos in block (0-3)
+scrollRealMapHY	!by $00		; Block pos in map
+scrollRealMapLY	!by $00		; Char pos in block (0-3)
+
+; Inverted values, used for some calculations
+scrollRealMapLXInv	!by $00		; Char pos in block (0-3)
+scrollRealMapLYInv	!by $00		; Char pos in block (0-3)
+
 frameMovedScreenOrColours	!by 0
 
 !zn {
@@ -59,6 +70,8 @@ ScrollerInitVariables
 
 	sta topScreenScrollX
 	sta topScreenScrollY
+
+	jsr ScrollerUpdateRealCoordinates
 	rts
 }
 
@@ -88,6 +101,28 @@ ScrollerInitTables
 }
 
 !zn {
+
+ScrollerUpdateRealCoordinates
+	lda scrollMapLX
+	sta scrollRealMapLX
+	lda scrollMapHX
+	sta scrollRealMapHX
+	lda scrollMapLY
+	sta scrollRealMapLY
+	lda scrollMapHY
+	sta scrollRealMapHY
+	lda #3
+	sec
+	sbc scrollRealMapLX
+	sta scrollRealMapLXInv
+	lda #3
+	sec
+	sbc scrollRealMapLY
+	sta scrollRealMapLYInv
+	rts
+
+
+
 !ifdef Scroller_DebugSplit {
 .debounce !by 0
 }
@@ -184,6 +219,10 @@ ScrollerCalculate
 !ifdef Paralax_Enable {
 	sta paralaxScrollYPixels
 }
+
+	; Update the real coordinates
+	jsr ScrollerUpdateRealCoordinates
+
 !if 0 {
 	; Debug profiling raster position for colour scroll trigger
 	ldx $400
@@ -233,54 +272,7 @@ framePauseMoveColours !by 0
 .ipo3
 }
 
-	; Do map range check before fine scrolling
-	lda scrollMapHX
-	ora scrollMapLX
-	bne .no1
-	lda frameTargetVelX
-	bmi .no1
-	lda #0
-	sta frameTargetVelX
-.no1
-	lda scrollMapHY
-	ora scrollMapLY
-	bne .no2
-	lda frameTargetVelY
-	bmi .no2
-	lda #0
-	sta frameTargetVelY
-.no2
-
-	; Compare for the block map and block column pos to stop scrolling to the right when near the right hand edge
-	lda MapData	; Width
-	sec
-	sbc #10
-	cmp scrollMapHX
-	bne .no3
-	lda scrollMapLX
-	cmp #1
-	bne .no3
-	lda frameTargetVelX
-	bpl .no3
-	lda #0
-	sta frameTargetVelX
-.no3
-	lda MapData+1	; Height
-	sec
-	sbc #6
-	cmp scrollMapHY
-	bne .no4
-	lda scrollMapLY
-	cmp #3
-	bne .no4
-	lda frameTargetVelY
-	bpl .no4
-	lda #0
-	sta frameTargetVelY
-.no4
-
-
-
+	jsr ScrollerCheckMapRangeAndVelocity
 
 	ldx #0
 	ldy #0
@@ -472,6 +464,55 @@ framePauseMoveColours !by 0
 	and #3
 	sta scrollMapLY
 	jmp .yRet
+
+
+ScrollerCheckMapRangeAndVelocity
+	; Do map range check before fine scrolling
+	lda scrollMapHX
+	ora scrollMapLX
+	bne .no1
+	lda frameTargetVelX
+	bmi .no1
+	lda #0
+	sta frameTargetVelX
+.no1
+	lda scrollMapHY
+	ora scrollMapLY
+	bne .no2
+	lda frameTargetVelY
+	bmi .no2
+	lda #0
+	sta frameTargetVelY
+.no2
+
+	; Compare for the block map and block column pos to stop scrolling to the right when near the right hand edge
+	lda MapData	; Width
+	sec
+	sbc #10
+	cmp scrollMapHX
+	bne .no3
+	lda scrollMapLX
+	cmp #1
+	bne .no3
+	lda frameTargetVelX
+	bpl .no3
+	lda #0
+	sta frameTargetVelX
+.no3
+	lda MapData+1	; Height
+	sec
+	sbc #6
+	cmp scrollMapHY
+	bne .no4
+	lda scrollMapLY
+	cmp #3
+	bne .no4
+	lda frameTargetVelY
+	bpl .no4
+	lda #0
+	sta frameTargetVelY
+.no4
+	rts
 }
 
 !zn {
@@ -490,6 +531,11 @@ JNotWantingScroll
 
 	lda frameTotalScrScroll
 	beq JNotWantingScroll
+
+!ifdef Scroller_EnableCallbackBeforeCharScreenScroll {
+	jsr Scroller_CallbackBeforeCharScreenScroll
+	lda frameTotalScrScroll
+}
 
 	inc frameIsBusyScrolling
 	inc frameScrollMoveColours

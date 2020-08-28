@@ -44,6 +44,7 @@ ScrollerInitSpecificCode_Start = *
 	; by the title screen display code.
 !source "../stdlib/Initialise.a"
 !source "OneTime.a"
+!source "FingerPrint.a"
 ScrollerInitSpecificCode_End = *
 ScrollerInitSpecificCode_Size = * - ScrollerInitSpecificCode_Start
 	; The start of the real code. Memory from $400 to $fff is written by the title screen display code

@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ASM">
+      <UniqueIdentifier>{b28c6ec9-10ee-4c56-abc6-1b1b0f492772}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ASM\stdlib">
+      <UniqueIdentifier>{78d53143-b374-43dd-8b0b-9cac057f8560}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\DevBuild.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\..\stdlib\PETSCII.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\IRQTape1.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\ScrollerMusicLoader.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIA.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIACommon.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIAIRQ.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIAMartyLoad.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIANovaish.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TapeLoaderCIASmall.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TurboTapeVars.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\TurboTapeWrite.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\Loaders.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\_config.a">
+      <Filter>ASM</Filter>
+    </None>
+    <None Include="..\..\..\stdlib\stdlib.a">
+      <Filter>ASM\stdlib</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+</Project>

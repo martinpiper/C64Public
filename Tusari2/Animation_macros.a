@@ -6,7 +6,7 @@
 	!if kAnimation_currentAddress = 0 {
 		!error "DoFrame used without a corresponding StartAnim?"
 	}
-	!if * - kAnimation_currentAddress >= 254 {
+	!if * - kAnimation_currentAddress >= 253 {
 		!error "Animation max length reached"
 	}
 }
@@ -142,16 +142,69 @@
 	+DoFrame .frame14
 }
 
-!macro EndAnim {
+kEndAnim_Loop = 0
+kEndAnim_Delete = 1
+
+!macro EndAnimLoop {
 	!if kAnimation_currentAddress > 0 {
 		!by 0
+		!by kEndAnim_Loop
+	}
+	!set kAnimation_currentAddress = 0
+}
+
+!macro EndAnimDelete {
+	!if kAnimation_currentAddress > 0 {
+		!by 0
+		!by kEndAnim_Delete
 	}
 	!set kAnimation_currentAddress = 0
 }
 
 !macro StartAnim ~.label , .speed {
-	+EndAnim
+	+EndAnimLoop
 	.label = *
 	!set kAnimation_currentAddress = .label
 	+DoSpeed .speed
+}
+
+!macro DoAnimationType ~.label , .init {
+!set .t = *
+!if kAnimation_currentAnimationType >= kAnimation_maxTypes {
+	!error "kAnimation_maxTypes reached"
+}
+
+	.label = kAnimation_currentAnimationType
+* = AnimationTypes_initLo + kAnimation_currentAnimationType
+	!by <.init
+* = AnimationTypes_initHi + kAnimation_currentAnimationType
+	!by >.init
+!set kAnimation_currentAnimationType = kAnimation_currentAnimationType + 1
+
+* = .t
+}
+
+kAnimationEnemyMapPlacement__size = 3
+!macro AnimationEnemyMapPlacement .activationObjectIndex , .mapX , .mapY {
+	!by .activationObjectIndex
+	!by .mapX , .mapY
+}
+
+!macro DoAnimationActivationObject ~.label , .type , .offsetX , .offsetY {
+!set .t = *
+!if kAnimation_currentActivationObject >= kAnimation_maxActivationObjects {
+	!error "kAnimation_maxActivationObjects reached"
+}
+
+	.label = kAnimation_currentActivationObject
+
+* = AnimationActivationObject_type + kAnimation_currentActivationObject
+	!by .type
+* = AnimationActivationObject_offsetX + kAnimation_currentActivationObject
+	!by .offsetX
+* = AnimationActivationObject_offsetY + kAnimation_currentActivationObject
+	!by .offsetY
+
+!set kAnimation_currentActivationObject = kAnimation_currentActivationObject + 1
+* = .t
 }

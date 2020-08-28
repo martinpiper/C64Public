@@ -161,6 +161,7 @@ tapeHeader
 	; The following is actually quite general purpose code because it obeys the load/end address.
 	; It could be made shorter and less general purpose by assuming the length of the data to load.
 	; The space saved by the shorter code could then use more obfuscation/decryption etc.
+	; This is not the TinyHeader (otft) option, this handles the full header but doesn't handle compressed blocks.
 
 	; Ignore the file name
 	jsr GetTapeByte

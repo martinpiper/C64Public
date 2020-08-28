@@ -31,6 +31,11 @@ SpriteEmptyLookupTab		!fill 256 , 0
 SpriteEmptyLookupTab2		!fill 256 , 0
 }
 
+BackgroundFixedColours
+;!by $9, $f ,$c
+;!by 14, 12 ,9
+!by 0 , $f , $9
+
 !source "ScrollerAnimationMemory.a"
 
 !align 255,0
@@ -85,11 +90,6 @@ MapData
 }
 MapDataEnd
 
-
-BackgroundFixedColours
-;!by $9, $f ,$c
-;!by 14, 12 ,9
-!by 0 , $f , $9
 
 } else {
 ; Include some demonstration SEUCK data instead

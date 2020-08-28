@@ -1,7 +1,7 @@
 Feature: Animation tests
 
-	Execute this with: java -jar ..\..\BDD6502\target\BDD6502-1.0.2-SNAPSHOT-jar-with-dependencies.jar
-	Or with CPU trace: java -Dbdd6502.trace=true -jar ..\..\BDD6502\target\BDD6502-1.0.2-SNAPSHOT-jar-with-dependencies.jar
+	Execute this with: java -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar
+	Or with CPU trace: java -Dbdd6502.trace=true -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar
 
 	Performs animation routine tests using known data
 Data from ANIMTSTS.P00
@@ -34,7 +34,7 @@ MPi: TODO: Document the rest
  10 41 10 42 10 44 48 ff
 
 Scenario: Enemy animation allocation test
-	Given I have a simple 6502 system
+	Given I have a simple overclocked 6502 system
 	And I create file "test.a" with
 	"""
 	!sal
@@ -72,8 +72,11 @@ Scenario: Enemy animation allocation test
 	ScorePlayer1XPos = 44
 	ScorePlayer2XPos = 228
 	Scroller_SkipEmptySpriteExplodingEnemies = 1
+	ClearGameScreensChar = 0
+	ScrollerTestingNoWait = 1
 
 	!source "ScrollEntryCommon.a"
+	TitleScreen_Enable_ScrollerDemoWait_Hooks !by 0
 
 	; Test specific code goes here
 	AllocateEnemyTest
@@ -350,9 +353,9 @@ Scenario: Enemy directional fire animation with speed zero bullets
 	And I hex dump memory between AnimationType and AnimationType + Multiplex_items
 	And I hex dump memory between AnimationDirectionIn and AnimationDirectionIn + Multiplex_items
 	Then I expect to see AnimationType + 1 equal AnimationType_Enemy1Bullet + 1
-	And I expect to see AnimationDirectionIn + 1 equal 8
+	And I expect to see AnimationDirectionIn + 1 equal 0
 
 	When I execute the procedure at AnimationUpdateFrameMovement for no more than 320 instructions
 	Then I expect to see AnimationType + 1 equal AnimationType_Enemy1Bullet + 1
 	And I expect to see AnimationDirectionIn equal 0
-	And I expect to see AnimationDirectionIn + 1 equal 8
+	And I expect to see AnimationDirectionIn + 1 equal 0

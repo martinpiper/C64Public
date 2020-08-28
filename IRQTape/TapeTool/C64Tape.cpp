@@ -1184,6 +1184,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							else
 							{
 								printf( "Couldn't open '%s' for reading.\n" , filename.c_str() );
+								exit(-1);
 							}
 						}
 						else
@@ -1227,7 +1228,8 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					FILE *inFp = fopen( filename , "rb" );
 					if ( !inFp )
 					{
-						printf( "Couldn't open file '%s' for reading.\n" , inFp );
+						printf( "Couldn't open file '%s' for reading.\n" , filename );
+						exit(-1);
 						break;
 					}
 

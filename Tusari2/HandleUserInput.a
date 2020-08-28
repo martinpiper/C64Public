@@ -82,6 +82,14 @@ HandleJoystick
 	bit RunJumpDemo_Joystick
 	bne .o1
 
+	; Check screen edge range
+	lda AnimationXPosHi
+	beq .nop1
+	lda AnimationXPosLo
+	cmp #<(VIC2SpriteXBorderRight38-VIC2SpriteSizeX)
+	bcs .o1
+.nop1
+
 	jsr AnimPlayerRunRight
 
 	lda AnimationXPosLo
@@ -96,6 +104,14 @@ HandleJoystick
 	lda #JoystickBits_Left
 	bit RunJumpDemo_Joystick
 	bne .o2
+
+	; Check screen edge range
+	lda AnimationXPosHi
+	bne .nop2
+	lda AnimationXPosLo
+	cmp #<VIC2SpriteXBorderLeft38
+	bcc .o2
+.nop2
 
 	jsr AnimPlayerRunLeft
 
@@ -309,77 +325,9 @@ HandleJoystick
 	sta AnimationXPosHi+1
 
 
-	; Double check we are not going to cause bad screen scrolls with certain alignments
-	lda frameTargetVelX
-	beq .noXScr1
-	bpl .isPosX1
+	jsr ScrollerCheckMapRangeAndVelocity
 
-	; Player moving to the right, screen scrolling to the left
-
-	; If it's not close enough to the edge then ignore the velocity
-	lda frameScrollX
-	cmp #3
-	bcs .noXScr1
-
-	lda frameTargetVelY
-	beq .noXScr1
-	bmi .isNegY1
-
-	; Player at the top of the screen, screen moving downwards
-	; -x , y
-	; Has it just scrolled in the Y?
-	lda frameScrollY
-	cmp #3
-	bcs .noXScr1
-
-	; Stop X velocity
-.stopXVel
-;	inc VIC2BorderColour
-	lda #0
-	sta frameTargetVelX
-	jmp .noXScr1
-
-
-.isNegY1
-	; Player at the bottom of the screen, screen moving upwards
-	; -x , -y
-	; Has it just scrolled in the Y?
-	lda frameScrollY
-	cmp #4
-	bcs .stopXVel
-
-	jmp .noXScr1
-
-.isPosX1
-	; Player moving to the left, screen scrolling to the right
-	; If it's not close enough to the edge then ignore the velocity
-	lda frameScrollX
-	cmp #4
-	bcc .noXScr1
-
-	lda frameTargetVelY
-	beq .noXScr1
-	bmi .isNegY2
-
-	; Player at the top of the screen, screen moving downwards
-	; x , y
-	; Has it just scrolled in the Y?
-	lda frameScrollY
-	cmp #4
-	bcc .stopXVel
-	jmp .noXScr1
-
-.isNegY2
-	; Player at the bottom of the screen, screen moving upwards
-	; x , -y
-	; Has it just scrolled in the Y?
-	lda frameScrollY
-	cmp #4
-	bcs .stopXVel
-
-	jmp .noXScr1
-
-.noXScr1
+	!source "CheckForBadScrolls.a"
 
 	!source "ClampScrollVelocity.a"
 	rts

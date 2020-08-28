@@ -1,0 +1,404 @@
+; Routine that handle activation object processing, spawning emeies in the map etc
+
+; Define this to cause enemy positions to be drawn with a blank map tile. Useful for debugging sprite positioning.
+;DebugMapEnemyMakeBlank = 1
+
+!zn
+AnimationUnpackMapPlacements
+	; Sort out the map table based on map width
+	ldx #0
+	+MWordValueToAddress_A EnemyActivationMapStart , tempWork0
+.fma1
+	lda tempWork0
+	sta EnemyActivationMapLo,x
+	lda tempWork1
+	sta EnemyActivationMapHi,x
+	lda tempWork0
+	clc
+	adc MapData
+	sta tempWork0
+	bcc .over2
+	inc tempWork1
+.over2
+	inx
+	bne .fma1
+
+	; Populate the placement map from the compressed data
+	+MWordValueToAddress_A AnimationEnemyMapPlacements , tempWork0
+.pl1
+	ldy #0
+	lda (tempWork0),y
+	beq .pl2
+
+	pha
+	iny
+	lda (tempWork0),y
+	pha
+	iny
+	lda (tempWork0),y
+	tay
+	lda EnemyActivationMapLo,y
+	sta tempWork2
+	lda EnemyActivationMapHi,y
+	sta tempWork3
+
+	; Debug - For clearing the map tiles for placed enemies
+!ifdef DebugMapEnemyMakeBlank {
+	lda MapTabL,y
+	sta tempWork4
+	lda MapTabH,y
+	sta tempWork5
+}
+	pla	; Get mapX
+	tay
+	pla ; Get activation object index
+	; Store into the EnemyActivationMapStart
+	sta (tempWork2),y
+!ifdef DebugMapEnemyMakeBlank {
+	lda #0	; Debug - Use a blank tile for placed enemies
+	sta (tempWork4),y
+}
+
+	lda tempWork0
+	clc
+	adc #kAnimationEnemyMapPlacement__size
+	sta tempWork0
+	bcc .pl1
+	inc tempWork1
+	jmp .pl1
+
+.pl2
+	rts
+
+!zn
+AnimationCommonSetInitPosition
+	lda tempWork6
+	sta AnimationXPosLo,y
+	lda tempWork7
+	sta AnimationXPosHi,y
+	lda tempWork8
+	sta AnimationYPos,y
+	rts
+
+!zn
+AnimationCommonInitPosition_OffsetX
+	clc
+	adc tempWork6
+	sta tempWork6
+	lda tempWork7
+	adc #0
+	and #1
+	sta tempWork7
+	rts
+
+
+
+!zn
+.setCalcSpriteEdgeLeft
+	; TODO: Study this, perhaps there is an optimisation here where scrollRealMapLXInv is always = 0 or 3?
+	lda scrollRealMapLXInv
+	asl
+	asl
+	asl
+	adc topScreenScrollX
+	sec
+	sbc #(4*8) ; For the one wider block
+	sta tempWork3
+	bcs .msb1
+	lda #1
+	sta tempWork4
+	sta tempWork7
+	rts
+.msb1
+	lda #0
+	sta tempWork4
+	sta tempWork7
+	rts
+
+.setCalcSpriteEdgeRight
+	; TODO: Study this, perhaps there is an optimisation here where scrollRealMapLXInv is always = 0 or 3?
+	lda scrollRealMapLXInv
+	asl
+	asl
+	asl
+	adc topScreenScrollX
+	adc #<(VIC2ScreenCharsWidth * 8)
+	; The one block to the left, plus one extra block, cancel each other out. So no need to adjust here
+	sta tempWork3
+	lda #1
+	sta tempWork4
+	sta tempWork7
+	rts
+
+.setCalcSpriteEdgeTop
+	lda scrollRealMapLYInv
+	asl
+	asl
+	asl
+	adc #VIC2SpriteYBorderTop24-31-32
+	clc
+	adc topScreenScrollY
+	sta tempWork5
+	rts
+
+.setCalcSpriteEdgeBottom
+	lda #3
+	sec
+	sbc .lscrollMapLY
+	asl
+	asl
+	asl
+!ifdef Scroller_FullScreen {
+	adc #VIC2SpriteYBorderTop24-31 + (VIC2ScreenCharsHeight*8)
+} else {
+	adc #VIC2SpriteYBorderTop24-31 + (((5*4)+Scroller_AdditionalCharLines)*8)
+}
+	clc
+	adc topScreenScrollY
+	sta tempWork5
+	rts
+
+.setCalcMapTop
+	ldx .usingMapY
+	stx tempWork9
+	lda EnemyActivationMapLo,x
+	sta tempWork0
+	lda EnemyActivationMapHi,x
+	sta tempWork1
+	rts
+
+.setCalcMapBottom
+	ldx .lscrollMapHY
+	stx tempWork9
+	lda EnemyActivationMapLo,x
+	sta tempWork0
+	lda EnemyActivationMapHi,x
+	sta tempWork1
+	rts
+
+.error
+	+MDebugBreak
+; Entry:
+; A = Activiation object type
+; Y = x coordinate, index into (tempWork0),y
+ActivationObject_Spawn
+	sty .smy+1
+
+	cmp #kAnimation_maxActivationObjects
+	bcs .error
+	tax
+
+	lda AnimationActivationObject_type,x
+	sta .smType+1
+
+	lda AnimationActivationObject_offsetX,x
+	clc
+	adc tempWork3
+	sta tempWork6
+	lda tempWork4
+	adc #0
+	and #1
+	sta tempWork7
+	lda AnimationActivationObject_offsetY,x
+	clc
+	adc tempWork5
+	sta tempWork8
+
+.smType	ldy #0
+	lda AnimationTypes_initLo,y
+	sta .smJSRInit+1
+	lda AnimationTypes_initHi,y
+	sta .smJSRInit+2
+.smJSRInit jsr $1234
+	bcs .noSpawn2
+
+	; Stop it spawning again
+	lda #0
+.smy	ldy #0
+	sta (tempWork0),y
+.noSpawn2
+	rts
+
+.usingMapX		!by 0
+.usingMapY		!by 0
+.oldMapX		!by -1
+.oldMapYTop		!by -1
+.oldMapYBot		!by -1
+.lscrollMapLY	!by 0
+.lscrollMapHY	!by 0
+
+Scroller_CallbackBeforeCharScreenScroll
+	lda scrollRealMapHY
+	sec
+	sbc #1	; for the taller screen area
+	sta .usingMapY
+
+	lda scrollRealMapHX
+	sec
+	sbc #1	; Wider by one map block
+	cmp MapData
+	bcs .return
+	sta .usingMapX
+	cmp .oldMapX
+	beq .compareY
+	jsr .differentX
+.compareY
+
+	lda scrollerRealMovementYPixels
+	bne .someY
+
+.return
+	rts
+
+.someY
+	bmi .doBottomEdge
+
+	lda .usingMapY
+	cmp MapData+1
+	bcs .return
+	cmp .oldMapYTop
+	beq .return
+	sta .oldMapYTop
+	jmp .differentYTop
+
+.doBottomEdge
+	+MACROScrollerBottomAdjust .lscrollMapLY, .lscrollMapHY
+	lda .lscrollMapHY
+	sta .usingMapY
+	cmp MapData+1
+	bcs .return
+	cmp .oldMapYBot
+	beq .return
+	sta .oldMapYBot
+	jmp .differentYBot
+
+
+.differentX
+	sta .oldMapX
+	lda scrollerRealMovementXPixels
+	bne .someX
+	rts
+.someX
+	; +ve means test the left had edge
+	bpl .doLeftEdge
+
+.doRightEdge
+	jsr .setCalcSpriteEdgeRight
+	jsr .setCalcSpriteEdgeTop
+	jsr .setCalcMapTop
+	lda .usingMapX
+	clc
+	adc #11	; Wider one map block from the left
+	cmp MapData
+	bcs .return
+	jmp .handleVerticalEdge
+	rts
+
+.doLeftEdge
+	jsr .setCalcSpriteEdgeLeft
+	jsr .setCalcSpriteEdgeTop
+	jsr .setCalcMapTop
+	lda .usingMapX
+	jmp .handleVerticalEdge
+
+.handleVerticalEdge
+	cmp MapData
+	bcs .le3
+	sta .smlx1+1
+
+	; One extra to account for the taller screen
+!ifdef Scroller_FullScreen {
+	lda #8
+} else {
+	lda #7
+}
+	sta tempWork2
+
+.le1
+	ldx tempWork9
+	cpx MapData+1
+	bcs .le3
+	inc tempWork9
+	lda EnemyActivationMapLo,x
+	sta tempWork0
+	lda EnemyActivationMapHi,x
+	sta tempWork1
+
+
+.smlx1	ldy #0
+	lda (tempWork0),y
+	beq .noSpawn
+
+	jsr ActivationObject_Spawn
+
+.noSpawn
+	; Update sprite coordinates
+	lda tempWork5
+	clc
+	adc #4*8	; Block height in pixels
+	cmp #Multiplex_DiscardSpritesYPos
+	bcs .le3
+	sta tempWork5
+
+	dec tempWork2
+	bne .le1
+.le3
+	rts
+
+
+.differentYTop
+
+	jsr .setCalcMapTop
+	jsr .setCalcSpriteEdgeLeft
+	jsr .setCalcSpriteEdgeTop
+	lda .usingMapX
+	jmp .handleHorizontalEdge
+	rts
+
+.differentYBot
+	jsr .setCalcMapBottom
+	jsr .setCalcSpriteEdgeLeft
+	jsr .setCalcSpriteEdgeBottom
+	lda .usingMapX
+	jmp .handleHorizontalEdge
+
+
+	rts
+
+
+.handleHorizontalEdge
+	sta .hsmlx1+1
+
+	lda tempWork9
+	cmp MapData+1
+	bcs .hle3
+
+	lda #11	; One extra block for the wider on the left X spawn potential
+	sta tempWork2
+
+.hle1
+.hsmlx1	ldy #0
+	cpy MapData
+	bcs .hle3
+
+	lda (tempWork0),y
+	beq .hnoSpawn
+
+	jsr ActivationObject_Spawn
+
+.hnoSpawn
+	; Update sprite coordinates
+	lda tempWork3
+	clc
+	adc #(4*8)	; Block width in pixels
+	sta tempWork3
+	lda tempWork4
+	adc #0
+	and #1
+	sta tempWork4
+	; Update enemy map activation address
+	inc .hsmlx1+1
+	dec tempWork2
+	bne .hle1
+.hle3
+	rts

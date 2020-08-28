@@ -182,7 +182,9 @@ InitialiseGameWithoutWait
 	jsr ScrollerPreGameCalcuation
 }
 
+!ifndef ScrollerTestingNoWait {
 	+MACROWaitForTheLastScanPlus1_A
+}
 
 	; Zero out the pixel scroll values
 	lda #0
@@ -342,6 +344,25 @@ InitialiseGameWithoutWait
 	jsr DrawMap
 	lda #$cb
 	jsr Multiplex_SetSpritePointer
+
+!ifdef Scroller_MultiDirection {
+!ifdef Scroller_MultiDirection_RunPreFrame {
+	jsr HandleUserInput
+	jsr UpdateSprites
+
+!ifdef Multiplex_SplitSort {
+	jsr AnimationUpdateMultiplexorPre
+	jsr Multiplex_Sort
+}
+	jsr AnimationUpdateMultiplexor
+!ifdef Multiplex_SplitSort { } else {
+	jsr Multiplex_Sort
+}
+!ifdef Multiplex_SplitSort {
+	jsr CopyMultiplexTables
+}
+} ;< !ifdef Scroller_MultiDirection_RunPreFrame {
+}
 
 	rts
 
@@ -1143,6 +1164,7 @@ SkipLevelFrameLogic
 	sta VIC2BorderColour
 }
 	jsr ScrollerDemoWaitScorePanel
+.afterScrollerDemoWaitScorePanel
 
 	jsr ScrollerUpdateTopIRQ
 

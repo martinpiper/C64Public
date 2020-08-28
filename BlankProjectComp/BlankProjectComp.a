@@ -1,6 +1,6 @@
 ;BlankProjectComp test code
 
-!source "../stdlib/stdlib.a"
+!source "stdlib/stdlib.a"
 !to "BlankProjectComp.prg", cbm
 !sl "BlankProjectComp.map"
 !svl "BlankProjectComp.lbl"
@@ -45,6 +45,28 @@
 }
 
 !if 1 {
+	; Example bitmap screen display
+	+MWordValueTo_XY BitmapLogoColours
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY COLOURRAM
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY VIC2ScreenCharsWidth * VIC2ScreenCharsHeight
+	jsr MemoryCopy_ForSize
+
+	lda #kVIC2ScreenControlHBits_40Columns | kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+	+MVIC2MemorySetup_ScreenBitmap_A BitmapLogoScreen , BitmapLogo
+	sta VIC2MemorySetup
+	lda #CIA2PortASerialBusVICBank_Bank2
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Bitmap
+	sta VIC2ScreenControlV
+
+	inc $d020
+	jmp *-3
+}
+
+!if 0 {
 .l1
 
 .r1
@@ -171,7 +193,7 @@ NMIEntry
 	rti
 }
 
-!if 1 {
+!if 0 {
 	; 67 Cycles
 	inc VIC2BorderColour
 	sta+1 .sma
@@ -491,4 +513,16 @@ SampleEnd
 !fill 63, 255
 }
 
-!source "../stdlib/Initialise.a"
+!source "stdlib/Initialise.a"
+
+!if 1 {
+!source "stdlib/MemoryCopy.a"
+BitmapLogoColours
+!bin "Tusari.col",,2
+* = $8c00
+BitmapLogoScreen
+!bin "Tusari.scr",,2
+* = $a000
+BitmapLogo
+!bin "Tusari.bmp",,2
+}

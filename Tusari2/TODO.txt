@@ -2,10 +2,88 @@
 * C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe
 * C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe
 
+* For the init and tick (AnimationTypes_tickLo etc) here is a possibile optimisation where the type is multiplied by 3 and a linear block of memory consisting of "jmp $1234" is created instead
+	Making it very quick to index into the array and call the function, espeically if aligned to a page boundary.
+
+
+
+; TODO: Why does this make the sprite update go wrong near the MSB when scrolling left/right?
+
+
+
+* Optionally unroll Scroller_ScrollSprites
+
+
+
+
+* Full screen mode will need to tweak the sprite Y position screen edge detection to allow some top edge wraparound
+	Tusari2\Animation.a Animation_UpdateTick
+		Scroller_DiscardMinSpriteYPos
+
+
+; TODO: If one fails to allocate then abort the creation
+	Also if carry is returned during the init then perhaps don't clear the map trigger value?
+
+
+
+* Some assert macros would be nice, would help find bugs earlier
+	Can be disabled by defining a value
+	To jump (jsr) to a standard screen, perhaps with optional message?
+		The jsr can be used to read the message text
+			Look for: .error and +MDebugBreak usage
+
+
+
+* Adjust the score panel so the score is not off the bottom of the screen
+
+
 
 * Add player head solid character movement block and fall
 
 
 * Add left/right solid char player movement block
 	* Add player step up one character?
+
+
+
+* TODO: Add AnimationTypes_tickLo/Hi support
+
+
+
+* Add "dragon" animation, plus fireball
+	AnimationInit_dragon proves the model, the spawn position needs to be shifted horizontally though to hide the observed "pop on"
+	However currently the edge screen detection, with a strict sprite egde to screen edge calculaton, means wide (or tall) objects will still appear to "pop on"
+	What might be better is to somehow sync or link animations so that partially scrolled objects will not appear as partially spawned objects
+	Hmm, even with a modest 8 pixel horizontal adjustment to the spawn position, AnimationObject_dragonBody_8_11, the body still appears to pop on and there is a gap observed on the screen edge for the head
+	Also the 11 pixel Y adjustment (32-21 to get the sprite on the bottom of the block) makes the top edge scroll object appear to "pop on"
+	The area around the screen for objects might need to be made a few chars wider...
+	* Done - To de-stress the multiplexor perhaps have the aggressive screen edge detection during the animation data copy
+		* Added Scroller_DiscardForMultiplexorBottom* , Scroller_DiscardForMultiplexorRight
+	* Done - Then the animation screen edge detection can be wider and this would allow larger variation with map block spawn positions without appearing to "pop on" the screen
+		Currently wider discard in the X, to support the dragon
+		Y discard is also a bit wider
+		X position init is now wider on the left, the right position is unchanged since the dragon always spawns another sprite to the right
+		Done - Still need the top edge to be moved up one block
+			* This needs to adjust the map block Y L+H when processing the bottom since the bottom is not a whole number of blocks from the top
+	* Dragon init could do with storing the other animation index allocated and an additional delete routine which is called on remove and removes the other linked animation
+	* Fireball 230
+
+
+
+* Add ghost animation
+
+
+
+* Add drip animation
+
+
+
+* Add fish animation
+
+
+
+* Perhaps AnimationEnemyMapPlacement can inclue a map block X/Y char position to more closely match the sprite spawning position in the borders?
+	Depending on the horizontal or vertical edge being tested this would only activate the enemy if the value matched.
+	This would allow the edge of screen check to be brought in significantly
+	The pixel offset would then only need to be a value 0-7 and the use of scrollRealMapLXInv and scrollRealMapLYInv with their "3 x asl" can be removed
 

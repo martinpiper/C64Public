@@ -8,6 +8,9 @@ TapeLoaderExpectedLoadingBlocks			= $08
 TurboTapeBlockLoadError					= $09
 
 
+BitmapLogoScreen	= $8c00
+BitmapLogo			= $a000
+
 ; The screen offset for the tape counter
 TapeLoadErrorLine = 16
 TapeCounterOffset = (15*40)+18
@@ -42,6 +45,18 @@ MainSecondLoaderStart
 	sta SCREENRAM+$2e8,x
 	dex
 	bne .cl1
+
+	; Clear any bitmap data
+	lda #0
+.cl2
+	sta BitmapLogo
+	inc .cl2+1
+	bne .cl2
+	inc .cl2+2
+	ldy .cl2+2
+	cpy #$c0
+	bne .cl2
+
 
 	; Initialise the scroller text and tape counter white colour
 	ldy #39
@@ -96,6 +111,7 @@ MainSecondLoaderStart
 	sta VIC2ScreenColour
 	lda #8	; Sprite data at $200-$23f
 	sta SPRITEFRAME
+	sta BitmapLogoScreen+SPRITEFRAMESCROFF
 !ifdef Scroller_LOTD {
 	lda #170
 	sta VIC2Sprite0X
@@ -127,19 +143,7 @@ MainSecondLoaderStart
 	lda #1
 	sta VIC2SpriteEnable
 }
-	; Setup some screen display values, just to make sure everything is OK
-	lda #VIC2MemorySetupDefault
-	sta VIC2MemorySetup
-	; Set VIC bank 0
-	lda #CIA2PortASerialBusVICBankDefault
-	sta CIA2PortASerialBusVICBank
-	lda #VIC2ScreenControlHDefault
-	sta VIC2ScreenControlH
-!ifdef MainLoad_EnableScreen {
-	lda #VIC2ScreenControlVDefault
-	sta VIC2ScreenControlV
-}
-
+	jsr DisplayTextScreen
 .MainLoop
 	; Some debugging that allows us to see spare mainline cycles between the IRQs by changing the screen colour
 !if 0 {
@@ -153,9 +157,14 @@ MainSecondLoaderStart
 	cmp #.yposSplit
 	bcc .s00
 
+	lda CIA2PortASerialBusVICBank
+	and #kCIA2PortASerialBusVICBankBits_BankMask
+	cmp #CIA2PortASerialBusVICBank_Bank0
+	bne .noScrollSplit1
 	; Scrolling split
 	lda .xpos
 	sta VIC2ScreenControlH
+.noScrollSplit1
 
 !ifdef OpenBorders {
 .notYet1
@@ -184,7 +193,7 @@ MainSecondLoaderStart
 	lda .musicInited
 	beq .s1
 	; Play
-	jsr $8003
+	jsr $c003
 .s1
 
 
@@ -194,12 +203,19 @@ MainSecondLoaderStart
 	lda VIC2Raster
 	cmp #.yposSplit
 	bcs .s0
+
+	lda CIA2PortASerialBusVICBank
+	and #kCIA2PortASerialBusVICBankBits_BankMask
+	cmp #CIA2PortASerialBusVICBank_Bank0
+	bne .noScrollSplit2
+
 !ifdef OpenBorders {
 	lda #0
 } else {
 	lda #%1000
 }
 	sta VIC2ScreenControlH
+.noScrollSplit2
 
 	; Now it is safe to execute routines that can take some time
 !ifdef EnableBlockCompression {
@@ -210,11 +226,11 @@ MainSecondLoaderStart
 
 	; Here is where this scroller routine will display some text while the music data loads, then plays and then the final application loads and runs.
 	lda TurboTapeFinishedLoadingFile
-	beq .SkipFileLoaded
+	beq .lSkipFileLoaded
 
 	; Check what was just loaded
 	ldx FileNameByte
-	cpx #2	; For the code we want to load an start
+	cpx #5	; For the code we want to load an start
 	beq .startLoadedCode
 
 	; Prepare the IRQ loader to load the next file
@@ -227,13 +243,17 @@ MainSecondLoaderStart
 	beq .SkipFileLoaded
 	cpx #1
 	beq .InitMusic
+	cpx #2
+	beq .displayBitmap
 	; Add extra cases here for file name bytes we want to handle
+	jmp .SkipFileLoaded
+.lSkipFileLoaded jmp .SkipFileLoaded
 
 .startLoadedCode
 	; Start the main code we just loaded
 	lda #0
 	sta SIDVolumeFilter
-	; Turn off the screen before starting the compressed game. Alows faster unpacking and also
+	; Turn off the screen before starting the compressed game. Allows faster unpacking and also
 	; stops the screen from displaying the junk while the decompression is working.
 	sta VIC2ScreenControlV
 !ifdef JMPQuickStartAddress {
@@ -290,10 +310,16 @@ UnusedSpace = $0334
 .restoreStateEnd
 }
 
+.displayBitmap
+	jsr DisplayBitmapScreen
+	; Quickly copy the sprite to the other VIC bank
+	+DisplayTextAt_AX $200 , $23f , $8200
+	jmp .SkipFileLoaded
+
 	; Some small functions to flag updates close to where they are branched from
 .InitMusic
 	lda #0
-	jsr $8000
+	jsr $c000
 	lda #1
 	sta .musicInited
 ;	jmp .SkipFileLoaded
@@ -314,9 +340,11 @@ UnusedSpace = $0334
 
 	lda .stopPressed
 	bne .rrwnd
+	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressStop , .textLoadErrorPressStopEnd , SCREENRAM + (TapeLoadErrorLine*40), VIC2Colour_LightRed
 	jmp .overText
 .rrwnd
+	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressRewind , .textLoadErrorPressRewindEnd , SCREENRAM + (TapeLoadErrorLine*40) , VIC2Colour_LightRed
 .overText
 
@@ -451,12 +479,12 @@ UnusedSpace = $0334
 	!by VIC2Colour_Orange,VIC2Colour_Purple,VIC2Colour_DarkGrey,VIC2Colour_Red
 	!by VIC2Colour_Brown,VIC2Colour_Blue,VIC2Colour_Black,VIC2Colour_Black
 
-; Lookup tables to convert the remaing blocks left to load value into hundreds, tens and units.
+; Lookup tables to convert the remaining blocks left to load value into hundreds, tens and units.
 TableMod10 !for .t,256 {!by (.t-1) % 10}
 TableDiv10 !for .t,256 {!by (.t-1) / 10}
 TableDiv100 !for .t,256 {!by (.t-1) / 100}
 
-; Use this macro to define what happends during the bit processing from the tape loader
+; Use this macro to define what happens during the bit processing from the tape loader
 !macro MTapeLoader_bitProcess_A {
 	; Produces some sound during loading
 ;	lda SIDVolumeFilter
@@ -480,6 +508,33 @@ TableDiv100 !for .t,256 {!by (.t-1) / 100}
 }
 
 !source "TapeLoaderCIAIRQ.a"
+
+DisplayTextScreen
+	; Setup some screen display values, just to make sure everything is OK
+	lda #VIC2MemorySetupDefault
+	sta VIC2MemorySetup
+	; Set VIC bank 0
+	lda #CIA2PortASerialBusVICBankDefault
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlHDefault
+	sta VIC2ScreenControlH
+!ifdef MainLoad_EnableScreen {
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+}
+	rts
+
+DisplayBitmapScreen
+	lda #kVIC2ScreenControlHBits_40Columns | kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+	+MVIC2MemorySetup_ScreenBitmap_A BitmapLogoScreen , BitmapLogo
+	sta VIC2MemorySetup
+	lda #CIA2PortASerialBusVICBank_Bank2
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Bitmap
+	sta VIC2ScreenControlV
+	rts
+
 
 ; Must be the last bit of memory since this table is not allocated. Why bother to load a table
 ; full of zeros? :)

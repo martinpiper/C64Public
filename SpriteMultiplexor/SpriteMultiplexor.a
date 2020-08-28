@@ -38,6 +38,10 @@ Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPr
 }
 
 
+!ifndef Multiplex_DiscardSpritesYPosForSort {
+Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
+}
+
 
 !macro MACROMultiplex_SpriteStrip ~.Multiplex_LBLISFP9 , .spriteIndex {
 !ifdef Multiplex_ReverseOrder {
@@ -720,9 +724,9 @@ Multiplex_SortStore
 	ldx MultiplexSort_indextable,y
 	lda MultiplexSort_YPos,x
 !ifdef Multiplex_DiscardSpritesYPosUseLocation {
-	cmp Multiplex_DiscardSpritesYPosLocation
+	cmp Multiplex_DiscardSpritesYPosForSortLocation
 } else {
-	cmp #Multiplex_DiscardSpritesYPos					; Don't display any sprites once this is reached
+	cmp #Multiplex_DiscardSpritesYPosForSort					; Don't display any sprites once this is reached
 }
 	bcs .l2
 	iny
@@ -854,11 +858,13 @@ Multiplex_SetSpritePointer
 !ifdef Multiplex_DiscardSpritesYPosUseLocation {
 !zn {
 ; Entry:
-; A = Discard raster position position
+; A = Discard raster IRQ position
+; X = Discard sprite position for sort
 ; Exit:
 ; A = Trashed
 Multiplex_SetDiscardPosition
 	sta Multiplex_DiscardSpritesYPosLocation
+	stx Multiplex_DiscardSpritesYPosForSortLocation
 	sec
 	sbc #Multiplex_rasterHeight+1
 	sta Multiplex_DiscardSpritesYPosLocation2

@@ -10,6 +10,9 @@
     <Filter Include="ExtLib">
       <UniqueIdentifier>{010fb7c4-74e6-45af-a07a-73722ae25399}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Multiplexor">
+      <UniqueIdentifier>{8a5f040d-559a-4b27-a425-70a926e4d3d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Scroller\_f_index1.a">
@@ -70,9 +73,6 @@
       <Filter>Scroller</Filter>
     </None>
     <None Include="..\Scroller\ScrollerCommon.a">
-      <Filter>Scroller</Filter>
-    </None>
-    <None Include="..\Scroller\ScrollerData.a">
       <Filter>Scroller</Filter>
     </None>
     <None Include="..\Scroller\ScrollerDataMacro.a">
@@ -214,11 +214,26 @@
     <None Include="HandleUserInput.a">
       <Filter>Sources</Filter>
     </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>Multiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>Multiplexor</Filter>
+    </None>
+    <None Include="..\Scroller\CheckForBadScrolls.a">
+      <Filter>Scroller</Filter>
+    </None>
+    <None Include="AnimationData.a">
+      <Filter>Sources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt" />
     <Text Include="Tusari docs.txt" />
     <Text Include="Done.txt" />
+    <Text Include="ActivationObject.a">
+      <Filter>Sources</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

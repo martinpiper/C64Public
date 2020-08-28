@@ -39,6 +39,7 @@
     <None Include="..\Scroller\AnimationEngine.a" />
     <None Include="..\Scroller\CatchUndefCartFiles.a" />
     <None Include="..\Scroller\CharEffects.a" />
+    <None Include="..\Scroller\CheckForBadScrolls.a" />
     <None Include="..\Scroller\ClampScrollVelocity.a" />
     <None Include="..\Scroller\DataCheck.a" />
     <None Include="..\Scroller\LevelControl.a" />
@@ -55,7 +56,6 @@
     <None Include="..\Scroller\ScrollerAnimation.a" />
     <None Include="..\Scroller\ScrollerAnimationMemory.a" />
     <None Include="..\Scroller\ScrollerCommon.a" />
-    <None Include="..\Scroller\ScrollerData.a" />
     <None Include="..\Scroller\ScrollerDataMacro.a" />
     <None Include="..\Scroller\ScrollerMacros.a" />
     <None Include="..\Scroller\ScrollerOptimisations.a" />
@@ -85,6 +85,8 @@
     <None Include="..\Scroller\test.a" />
     <None Include="..\Scroller\TitleScreen.a" />
     <None Include="..\Scroller\_f_index1.a" />
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a" />
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a" />
     <None Include="..\stdlib\BASICEntry80d.a" />
     <None Include="..\stdlib\BASICEntry810.a" />
     <None Include="..\stdlib\BASICEntry900.a" />
@@ -97,6 +99,7 @@
     <None Include="..\stdlib\VideoModes.a" />
     <None Include="..\stdlib\VideoModes_Macros.a" />
     <None Include="Animation.a" />
+    <None Include="AnimationData.a" />
     <None Include="Animation_macros.a" />
     <None Include="BuildIt.bat" />
     <None Include="HandleUserInput.a" />
@@ -106,6 +109,7 @@
     <None Include="UpdateSprites.a" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="ActivationObject.a" />
     <Text Include="Done.txt" />
     <Text Include="TODO.txt" />
     <Text Include="Tusari docs.txt" />

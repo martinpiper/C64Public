@@ -50,6 +50,16 @@ ScrollerUpdateTopIRQ
 	sta topScreenScrollX
 	lda frameScrollY
 	sta topScreenScrollY
+
+	; Create some inverted values for code to use later on
+	lda #7
+	sec
+	sbc topScreenScrollX
+	sta topScreenScrollXInv
+	lda #7
+	sec
+	sbc topScreenScrollY
+	sta topScreenScrollYInv
 } else {
 	lda frameScrollPos
 ;	lda #6	; Debug: Force the bad line code to be used no matter what the scroll should be

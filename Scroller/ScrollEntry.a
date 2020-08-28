@@ -7,7 +7,8 @@
 !pdb "Scroller.pdb"
 !cpu 6510
 !ct pet
-!initmem %10101010
+!initmem $02	; JAM opcode
+;!initmem %10101010
 
 ; Note: Sprite expansion options must be configured before including stdlib.a
 ; Enable this enable X expanded sprites in game

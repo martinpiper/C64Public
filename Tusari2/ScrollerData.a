@@ -21,10 +21,15 @@ ScorePanelBGCol2
 !bin "ScorePanel.ctm" , 1 , 6
 }
 
+!source "AnimationData.a"
+
 !align 255,0
 
 MaxSpriteNumber = 191
 SpriteEmptyLookupTab		!fill 256 , 0
+
+BackgroundFixedColours
+!by 0 , $f , $9
 
 !source "ScrollerAnimationMemory.a"
 
@@ -51,11 +56,9 @@ MapData
 !bin "Level1-2.ctm" , 170*31 , $10 + (numMapUsedChars * 8) + 2 + numMapUsedChars + 6 + (numMapUsedTiles*4*4*2) + 2 + numMapUsedTiles + 2 + (numMapUsedTiles*9) + 6 , 2
 MapDataEnd
 
-
-BackgroundFixedColours
-!by 0 , $f , $9
-
-
+EnemyActivationMapStart
+!fill 170*31 , 0
+EnemyActivationMapEnd
 
 !ifdef Scroller_NoMusic {} else {
 ; Include demonstration music from the Element 114 music editor
@@ -70,14 +73,17 @@ BackgroundFixedColours
 
 
 ; Define these to point the entry points of the included music routine.
-MusicPlayerInit = $8000
-MusicPlayerPlay = $8003
-MusicPlayerPlaySFX = $8009
+MusicPlayerInit		= $8000
+MusicPlayerPlay		= $8003
+MusicPlayerPlaySFX	= $8009
 }
 !align 255,0
 
 MarkEndData = *
 
+*=$bc00
+CharEffects_HiddenIndexLookup
+	!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , -1
 
 ; VIC Graphics data
 *=$c000

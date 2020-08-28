@@ -10,142 +10,123 @@ ZP_SpriteYPosToScreenCharPosHihi	= tempWork9
 ZP_SpriteXPosToScreenCharPoslo		= tempWork10
 ZP_SpriteXPosToScreenCharPoshi		= tempWork11
 
-!set kAnimation_currentSpeed = 0
-!set kAnimation_currentAddress = 0
+EnemyActivationMapLo
+!fill 256
+EnemyActivationMapHi
+!fill 256
 
-!source "Animation_macros.a"
-
-!zn
-	+StartAnim ~AnimationFrames_MainCharTorsoStandLeft , 1
-	+DoFrame 153
-	+StartAnim ~AnimationFrames_MainCharLegsStandLeft , 1
-	+DoFrame 155
-
-	+StartAnim ~AnimationFrames_MainCharTorsoStandRight , 1
-	+DoFrame 182
-	+StartAnim ~AnimationFrames_MainCharLegsStandRight , 1
-	+DoFrame 184
-
-	+StartAnim ~AnimationFrames_MainCharTorsoLeft , 2
-	+DoFrame 131 , 132 , 133 , 134 , 135 , 136 , 137 , 138 , 137 , 136 , 135 , 134 , 133 , 132
-	+StartAnim ~AnimationFrames_MainCharLegsLeft , 2
-	+DoFrame 139 , 140 , 141 , 142 , 143 , 144 , 145 , 146 , 147 , 148 , 149 , 150 , 151 , 152
-
-	+StartAnim ~AnimationFrames_MainCharTorsoRight , 2
-	+DoFrame $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1
-	+StartAnim ~AnimationFrames_MainCharLegsRight , 2
-	+DoFrame $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5
-
-	+StartAnim ~AnimationFrames_Bat , 6
-	+DoFrame $5b , $5c , $5d , $5e , $5f , $60
-	+StartAnim ~AnimationFrames_Explosion , 8
-	+DoFrame $42 , $43 , $44 , $45 , $46 , $47 , $48
-	+StartAnim ~AnimationFrames_Worm , 5
-	+DoFrame $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50
-
-
-
-	; Must be the last macro to correctly terminate the last sequence
-	+EndAnim
-
+AnimationInit2
+	jsr AnimationUnpackMapPlacements
+	rts
 
 Animation_FramesLo
 	!by <AnimationFrames_MainCharLegsStandLeft
 	!by <AnimationFrames_MainCharTorsoStandLeft
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat+1
-	!by <AnimationFrames_Explosion+1
-	!by <AnimationFrames_Worm+1
-	!by <AnimationFrames_Bat+2
-	!by <AnimationFrames_Explosion+2
-	!by <AnimationFrames_Worm+2
-	!by <AnimationFrames_Bat+3
-	!by <AnimationFrames_Explosion+3
-	!by <AnimationFrames_Worm+3
-	!by <AnimationFrames_Bat+4
-	!by <AnimationFrames_Explosion+4
-	!by <AnimationFrames_Worm+5
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
-	!by <AnimationFrames_Bat
-	!by <AnimationFrames_Explosion
-	!by <AnimationFrames_Worm
+	!fill Multiplex_items-2 , 0
 
 Animation_FramesHi
 	!by >AnimationFrames_MainCharLegsRight
 	!by >AnimationFrames_MainCharTorsoRight
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat+1
-	!by >AnimationFrames_Explosion+1
-	!by >AnimationFrames_Worm+1
-	!by >AnimationFrames_Bat+2
-	!by >AnimationFrames_Explosion+2
-	!by >AnimationFrames_Worm+2
-	!by >AnimationFrames_Bat+3
-	!by >AnimationFrames_Explosion+3
-	!by >AnimationFrames_Worm+3
-	!by >AnimationFrames_Bat+4
-	!by >AnimationFrames_Explosion+4
-	!by >AnimationFrames_Worm+5
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
-	!by >AnimationFrames_Bat
-	!by >AnimationFrames_Explosion
-	!by >AnimationFrames_Worm
+	!fill Multiplex_items-2 , 0
 
+
+Animation_TickLo
+	!fill Multiplex_items , 0
+Animation_TickHi
+	!fill Multiplex_items , 0
 
 
 
 Animation_Index
-	!fill 32 , 0
+	!fill Multiplex_items , 0
+
+; Can be used for anything, but mostly health
+Animation_GeneralStorage0
+	!fill Multiplex_items , 0
 
 
+Animation_FindFreeSlot
+	ldy #Multiplex_items-1
+.ff1
+	lda Animation_FramesHi,y
+	beq .foundFree
+	dey
+	; Never consider the two player animation slots
+	cpy #1
+	bne .ff1
+	sec
+	rts
+.foundFree
+	clc
+	rts
+
+
+; For Animation_UpdateTick
+.discard
+	lda #0
+	sta Animation_FramesHi,x
+	jmp .nextSlot
+
+PlayerXPosShifted !by 0
 
 Animation_UpdateTick
 
+	; Calculate the shufted player pos once
+	lda AnimationXPosHi
+	ror
+	lda AnimationXPosLo
+	ror
+	sta PlayerXPosShifted
+
+
 	; Loop through animation frames
-	ldx Multiplex_MaxSpr
-	dex
+	ldx #Multiplex_items-1
 .an1
 	lda Animation_FramesHi,x
 	beq .nextSlot
 	sta tempWork1
+
+	; Never, ever, discard the player animations in the first two slots
+	cpx #2
+	bcc .noDiscard
+
+	lda AnimationYPos,x
+!set .safeAreaY = <(VIC2SpriteYBorderTop24-32-32)
+;!set .safeAreaY = 240
+	cmp #.safeAreaY
+	bcs .testXPos
+!set Multiplex_DiscardSpritesYPosSafe = Multiplex_DiscardSpritesYPos+20
+!if Multiplex_DiscardSpritesYPosSafe > VIC2SpriteYBorderBottom {
+	!set Multiplex_DiscardSpritesYPosSafe = VIC2SpriteYBorderBottom
+}
+!if Multiplex_DiscardSpritesYPosSafe >= .safeAreaY {
+	!error "Safe areas overlap in the Y"
+}
+	cmp #Multiplex_DiscardSpritesYPosSafe
+	bcs .discard
+
+.testXPos
+	lda AnimationXPosHi,x
+	beq .noDiscard
+	lda AnimationXPosLo,x
+	cmp #-32-16	; Annoying, but sprites spawned almost totally off screen (with 32x32 pixel blocks) might be at this coordinate range
+	bcs .noDiscard
+	cmp #<(VIC2SpriteXBorderRight+32+16)
+	bcs .discard
+
+.noDiscard
 	lda Animation_FramesLo,x
 	sta tempWork0
 	ldy Animation_Index,x
 	lda (tempWork0),y
 	bne .gotFrame
 	; 0 = end of animation sequence
+	iny
+	lda (tempWork0),y
+	cmp #kEndAnim_Delete
+	beq .discard
+	; Otherwise it's kEndAnim_Loop
+	lda #0
 	tay
 	sta Animation_Index,x
 	lda (tempWork0),y
@@ -154,6 +135,17 @@ Animation_UpdateTick
 	iny
 	tya
 	sta Animation_Index,x
+
+	lda Animation_TickHi,x
+	beq .noTickFunc
+	sta .smTick+2
+
+	lda Animation_TickLo,x
+	sta .smTick+1
+
+.smTick	jsr $1234
+
+.noTickFunc
 
 .nextSlot
 	dex
@@ -188,52 +180,23 @@ Animation_MorphToIfNeeded
 	sta Animation_FramesHi,y
 	pla
 	sta Animation_FramesLo,y
+.commonInit
 	lda #0
 	sta Animation_Index,y
 	rts
 
-
+; Entry:
+; A/X = lo/hi animation header
+; Y = Animation index
+Animation_ForceSet
+	sta Animation_FramesLo,y
+	txa
+	sta Animation_FramesHi,y
+	jmp .commonInit
 
 
 !zn
 UpdateMultiplexorToAnimation
-	ldx #Multiplex_items
-	jsr Multiplex_Default_Init
-	ldx #Multiplex_items-1
-.l1
-	lda Multiplex_SpriteFrame,x
-	sta AnimationSpriteFrame,x
-
-	lda Multiplex_Colour,x
-	sta AnimationSpriteColour,x
-
-	lda Multiplex_XPosLo,x
-	sta AnimationXPosLo,x
-	lda Multiplex_XPosHi,x
-	sta AnimationXPosHi,x
-	lda Multiplex_YPos,x
-	sta AnimationYPos,x
-
-	; Create some less tightly packed positions when in this demo mode
-	txa
-	and #1
-	bne .o1
-	lda Multiplex_YPos,x
-	rol
-	sta AnimationYPos,x
-.o1
-	txa
-	and #2
-	bne .o2
-	lda Multiplex_YPos,x
-	rol
-	sta AnimationYPos,x
-.o2
-
-
-	dex
-	bpl .l1
-
 	; Setup the player position
 	lda #136
 	sta AnimationXPosLo
@@ -250,18 +213,17 @@ UpdateMultiplexorToAnimation
 	sta VIC2ExtraSpriteColour2
 
 	lda #VIC2Colour_LightRed
+	sta AnimationSpriteColour
 	sta AnimationSpriteColour+1
 
-
+	; Set map scroll position
 	+MByteValueToAddress_A 71 , scrollMapHX
 	+MByteValueToAddress_A 0 , scrollMapLX
 	+MByteValueToAddress_A 24 , scrollMapHY
+;	+MByteValueToAddress_A 0 , scrollMapHY
 	+MByteValueToAddress_A 0 , scrollMapLY
 	+MByteValueToAddress_A 4 , frameScrollX
 	+MByteValueToAddress_A 4 , frameScrollY
+	jsr ScrollerUpdateRealCoordinates
 
 	rts
-
-
-
-!source "../SpriteMultiplexor/SpriteMultiplexorDefaultPattern.a"

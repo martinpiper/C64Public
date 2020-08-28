@@ -12,6 +12,7 @@ scorePanelPos2 = scorePanelPos1+7	; The line above where we want to display the 
 Scroller_ScorePanelYScrollTweak = %111
 }
 
+Multiplex_DiscardSpritesYPosForSort = scorePanelPos1
 
 ; MPi: TODO: Think about initialising this in the init?
 ScreenVisibleHi !by $c8
@@ -34,7 +35,7 @@ SetupIRQs
 	lda #$0
 	sta VIC2Raster
 	sta NMINotTimerGenerated
-	lda #$1b
+	lda #0	; No screen displayed, no hi raster
 	sta VIC2ScreenControlV
 
 	+MACROAckRasterIRQ_A
@@ -163,6 +164,8 @@ NMINotTimerGenerated	!by 0
 !ifdef Scroller_MultiDirection {
 topScreenScrollX		!by 0
 topScreenScrollY		!by 0
+topScreenScrollXInv		!by 0
+topScreenScrollYInv		!by 0
 } else {
 topScreenScrollPos		!by 0
 }

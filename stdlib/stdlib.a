@@ -287,6 +287,11 @@ VIC2SpriteXMSB					= $d010
 ; 6 1 = Extended background mode on
 ; 7 Read: Current raster line position bit 9. Write: Bit 9 of raster line position to generate next interrupt.
 ; Default: $1b, %00011011
+kVIC2ScreenControlVBits_25Rows		= %1000
+kVIC2ScreenControlVBits_ScreenOn	= %10000
+kVIC2ScreenControlVBits_Bitmap		= %100000
+kVIC2ScreenControlVBits_Extended	= %1000000
+kVIC2ScreenControlVBits_RasterHi	= %10000000
 VIC2ScreenControlVDefault		= %00011011
 VIC2ScreenControlV				= $d011
 
@@ -307,6 +312,8 @@ VIC2SpriteEnable				= $d015
 ; 4 1 = Multicolour on
 ; 5-7 Unused
 ; Default: $c8, %11001000
+kVIC2ScreenControlHBits_40Columns	= %1000
+kVIC2ScreenControlHBits_Multicolour	= %10000
 VIC2ScreenControlHDefault		= %11001000
 VIC2ScreenControlH				= $d016
 
@@ -681,6 +688,7 @@ CIA1TimerBControl				= $dc0f
 ; Bit 6: Serial bus CLOCK IN; 0 = High; 1 = Low.
 ; Bit 7: Serial bus DATA IN; 0 = High; 1 = Low.
 CIA2PortASerialBusVICBank		= $dd00
+kCIA2PortASerialBusVICBankBits_BankMask = %11
 CIA2PortASerialBusVICBank_Bank0	= %11
 CIA2PortASerialBusVICBank_Bank1	= %10
 CIA2PortASerialBusVICBank_Bank2	= %01

@@ -4,14 +4,25 @@
 OpenBorders = 1
 ; Define this to enable the screen during the main load, otherwise the screen and sprite are turned off
 MainLoad_EnableScreen = 1
+; Define this to enable bitmap display code. This will start to display a bitmap after loading filename "3" (the colour RAM at $d800)
+BitmapDisplay = 1
 
-; These three loaders use the TinyHeader option
+; These three loaders use the TinyHeader (otft) option
 ; No screen, flashing, sound
+; ~$1bf bytes
 SmallLoader = 1
+
 ; A bit like Cyberload
+; ~$21a bytes
 ;MartyLoad = 1
+
 ; A bit like Novaload
+; ~$1fa bytes
 ;NovaishLoad = 1
+
+; Without selecting one of the above, this enables the loader without TinyHeader (otft option)
+; Displays the filename in the top left with an otherwise empty screen. Processes the full header as one whole file, but doesn't include block compression.
+; bytes $21a
 
 ; The number of cycles for half of one pulse
 TapeTurboSpeed = $80

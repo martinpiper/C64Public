@@ -4,6 +4,7 @@ Multiplex_items	= 24
 ;Scroller_DebugSplit = 1
 
 Scroller_UseKernal = 1
+UseAnimationInit2 = 1
 
 Scroller_EnableSpeedCode = 1
 !source "_f_index1.a"
@@ -15,7 +16,12 @@ Scroller_EnableBlockColourSpeedCode = 1
 ;!source "ScrollerOptimisations.a"
 !source "ScrollerOptimisationsAggressive.a"
 
+; Defines some aggressive multiplexor updates
 Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
+; Unfortunately Multiplex_DiscardSpritesYPos is calculated by the IRQ setup code, so we need Scroller_DiscardForMultiplexorBottomDefined
+Scroller_DiscardForMultiplexorBottomDefined = 1
+Scroller_DiscardForMultiplexorBottom = Multiplex_DiscardSpritesYPosForSort
+Scroller_DiscardForMultiplexorRight = VIC2SpriteXBorderRight38
 
 !source "ScrollerVars.a"
 Multiplex_VarBase	= scrollerDemo_endVars
@@ -36,8 +42,8 @@ Multiplex_BunchingCheck = 1
 
 ;DisableUpdateMultiplexorToAnimation = 1
 
-;Multiplexor_DebugBorder = 1
-;Scroller_DebugIRQBorder = 1
+Multiplexor_DebugBorder = 1
+Scroller_DebugIRQBorder = 1
 ;Scroller_DebugNMIBorder = 1
 ;Scroller_DebugMainlineBorder = 1
 ;Scroller_DebugColourScrollTimings = 1
@@ -61,11 +67,20 @@ Scroller_UseDemoScorePanel = 1
 Scroller_NeedFullColourScroll = 1
 
 Scroller_DisableUpdateSprites = 1
+Scroller_SpriteNegativeColourEqualsFlashingColour = VIC2Colour_White
 DisableUpdateMultiplexorToAnimationCode = 1
 Scroller_HookInclude = 1
 
+Animation_ActiveNonZeroEnabled = 1
+Animation_ActiveNonZero = Animation_FramesHi
+
+
 Scroller_ColourScrollRasterAbortLevel = $80
 Scroller_ColourScrollRasterAbortLevelFrame = 1
+
+Scroller_EnableCallbackBeforeCharScreenScroll = 1
+
+CharEffects_HiddenIndexLookupEnabled = 1
 
 ;Scroller_DoMusicUpdateInIRQ = 1
 
@@ -76,6 +91,7 @@ EnableBeforeScrollersHook = 1
 EnableAfterScrollersHook = 1
 RedirectHandleUserInput = 1
 
+Scroller_MultiDirection_RunPreFrame = 1
 
 CharColoursForEveryCharacter = 1
 

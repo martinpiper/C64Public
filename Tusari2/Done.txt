@@ -99,3 +99,97 @@
 
 
 * ; TODO: Calculate larger push scroll values if the player is close to the screen edges
+
+
+
+* Animation edge of screen removal code
+	Animation_UpdateTick updated to include .discard and also define Animation_ActiveNonZeroEnabled and Animation_ActiveNonZero
+
+
+
+* Fixed edge of map range checking and scrolling. Also added extra char lines for the screen character checking code.
+
+
+
+
+* Efficient enemy storage format
+	When scrolling, the edge(s) coming into view need to be checked
+	Enemies placed at correct position on the screen edge, just inside the discard range
+		Discard range needs to be bigger to accomodate offscreen spawned enemies
+	Once spawned, do not respawn
+	Once discard, option to allow respawn
+
+	Screen edges maintain their own latest map block coordinate tree iterator, scan next/prev for next one if different
+		Same for the Y coordinate tree when X coordinate changes
+	* TODO: Double check which scroll uses less time and prefer X or Y scanning update order
+
+	* Map block X coordinate tree
+		Coordinate value
+		lo/hi prev ptr
+		lo/hi next ptr
+		lo/hi to Y coordinate tree
+	* Y coordinate tree
+		Coordinate value
+		lo/hi prev ptr
+		lo/hi next ptr
+			Num animations in this block
+				0 = no spawned, 1 = spawned (so skip)
+				Animation type
+				X offset pixels from top left of block
+				Y offset pixels from top left of block
+
+	* Do this instead
+	* Less efficient, but quick to lookup
+		Byte per map tile, 0 = no enemy, 1+ = index into enemy activation array
+		Enemy activation object: (can be used more than once, useful for duplicates)
+			0	Animation type index
+			1	X offset pixels from top left of block
+			2	Y offset pixels from top left of block
+	* Index can be cleared in RAM for spawned enemy
+	* Activation objects can be stored in cartridge memory
+
+	* These can also be stored in cartridge memory
+	* Animation types
+		lo/hi init routine
+		lo/hi tick routine
+
+	* Done !DoAnimationActivationObject, !DoAnimationType and  AnimationEnemyMapPlacements parsing into EnemyActivationMapStart
+	* Done Widen the discard area and detect screen edge changes and spawn type from activation objects
+		Added Scroller_CallbackBeforeCharScreenScroll
+		Done: .doLeftEdge Sprite X position seems correct, Y position seems to be wrong for some block scrolls?
+			Added scrollRealMap* which provides non-lagged accurate posiitions taking into account the offscreen phase
+		All screen edges seem to work OK
+
+
+
+* ActivationObject needs to stop processing map coordinates beyond the bottom or right of the map data
+
+
+
+* Add ability for very aggressive animation to multiplexor update, strictly for minimum visible screen edges otherwise set the multiplexor sprite Y to be 255
+	This then allows for the animation positions to contain sprites off screen without hurting multiplexor performance
+		Added Scroller_DiscardForMultiplexorRight
+
+
+
+* Uh oh, when "!initmem $02	; JAM opcode" is used then there is no crash but when "!initmem %10101010" is used there is a crash when running to the far right of the level and jumping around a bit.
+	Out of range enemy map data read
+
+
+
+
+* Bat move slowly towards player tick
+
+
+
+* Added CharEffects_HiddenIndexLookupEnabled to allow fast bullet lookups
+* For enemy to bullet chars collision: Going to need a quick way to reference from screen position back to CharEffectsChar etc.
+	Fastest, least memory efficient way, is to store the index at the position in a hidden screen. Clearing the values to -1 to indicate no char bullet at that position
+	Then the enemy can read the hidden screen char, check for a valid index (not -ve), and set the CharEffectsTime to -1 to kill the bullet
+
+
+
+* Consider where to do enemy hit detection. In the tick, or have "animation health" that will optimise the hit detection logic?
+	If in the tick then the decision on what process and when can be tweaked for different enemies
+	It also allows better variety around enemy death processing and score or dropped item awards
+	* In the tick, example code "; Decrease bat health"

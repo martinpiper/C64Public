@@ -1,0 +1,452 @@
+!set kAnimation_currentSpeed = 0
+!set kAnimation_currentAddress = 0
+
+!source "Animation_macros.a"
+
+!zn
+	+StartAnim ~AnimationFrames_MainCharTorsoStandLeft , 1
+	+DoFrame 153
+	+StartAnim ~AnimationFrames_MainCharLegsStandLeft , 1
+	+DoFrame 155
+
+	+StartAnim ~AnimationFrames_MainCharTorsoStandRight , 1
+	+DoFrame 182
+	+StartAnim ~AnimationFrames_MainCharLegsStandRight , 1
+	+DoFrame 184
+
+	+StartAnim ~AnimationFrames_MainCharTorsoLeft , 2
+	+DoFrame 131 , 132 , 133 , 134 , 135 , 136 , 137 , 138 , 137 , 136 , 135 , 134 , 133 , 132
+	+StartAnim ~AnimationFrames_MainCharLegsLeft , 2
+	+DoFrame 139 , 140 , 141 , 142 , 143 , 144 , 145 , 146 , 147 , 148 , 149 , 150 , 151 , 152
+
+	+StartAnim ~AnimationFrames_MainCharTorsoRight , 2
+	+DoFrame $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1
+	+StartAnim ~AnimationFrames_MainCharLegsRight , 2
+	+DoFrame $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5
+
+	+StartAnim ~AnimationFrames_Bat , 6
+	+DoFrame $5b , $5c , $5d , $5e , $5f , $60
+
+	+StartAnim ~AnimationFrames_Explosion , 8
+	+DoFrame $42 , $43 , $44 , $45 , $46 , $47 , $48
+	+EndAnimDelete
+
+	+StartAnim ~AnimationFrames_Worm , 5
+	+DoFrame $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50
+
+
+	+StartAnim ~AnimationFrames_practice , 1
+	+DoFrame 231
+
+	+StartAnim ~AnimationFrames_DragonBody , 50
+	+DoFrame 227 , 229
+	+StartAnim ~AnimationFrames_DragonHead , 50
+	+DoFrame 226 , 228
+
+	; Must be the last macro to correctly terminate the last sequence
+	+EndAnimLoop
+
+kAnimation_maxTypes = 32
+kAnimation_maxActivationObjects = 64
+!set kAnimation_currentAnimationType = 0
+; Note: Type 0 = no enemy placed, so it's not used
+!set kAnimation_currentActivationObject = 1
+
+AnimationTypes_initLo
+* = * + kAnimation_maxTypes
+AnimationTypes_initHi
+* = * + kAnimation_maxTypes
+
+AnimationActivationObject_type
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_offsetX
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_offsetY
+* = * + kAnimation_maxActivationObjects
+
+	; These are used in maps to give spawn variety
+	+DoAnimationActivationObject ~AnimationObject_bat_0_0 , AnimationType_bat , 0 , 0
+	+DoAnimationActivationObject ~AnimationObject_explosion_0_0 , AnimationType_explosion , 0 , 0
+	+DoAnimationActivationObject ~AnimationObject_bat_20_10 , AnimationType_bat , 20 , 10
+	+DoAnimationActivationObject ~AnimationObject_explosion_20_10 , AnimationType_explosion , 20 , 10
+	+DoAnimationActivationObject ~AnimationObject_practice_0_0 , AnimationType_practice , 0 , 0
+	+DoAnimationActivationObject ~AnimationObject_dragon_0_11 , AnimationType_dragon , 0 , 11
+
+	; These types are referenced by the activation objects
+	+DoAnimationType ~AnimationType_bat , AnimationInit_bat
+	+DoAnimationType ~AnimationType_explosion , AnimationInit_explosion
+	+DoAnimationType ~AnimationType_practice , AnimationInit_practice
+	+DoAnimationType ~AnimationType_dragon , AnimationInit_dragon
+
+!macro MAnimationSetFuncs .tick {
+	lda #<.tick
+	sta Animation_TickLo,y
+	lda #>.tick
+	sta Animation_TickHi,y
+}
+
+AnimationInit_bat
+	jsr Animation_FindFreeSlot
+	bcs .error
+	+MWordValueTo_AX AnimationFrames_Bat
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	; Interesting colour choice
+	tya
+	sta AnimationSpriteColour,y
+
+	+MAnimationSetFuncs AnimationTick_bat
+
+	; Health
+	lda #3
+	sta Animation_GeneralStorage0,y
+
+	clc
+.error
+	rts
+
+BulletScreenBankHi !by >CharEffects_HiddenIndexLookup
+.explode
+	txa
+	pha
+	tay
+	+MWordValueTo_AX AnimationFrames_Explosion
+	jsr Animation_ForceSet
+	+MAnimationSetFuncs 0
+	pla
+	tax
+	rts
+AnimationTick_bat
+
+	+MSpritePosToCharacterLookup .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , BulletScreenBankHi , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	lda (tempWork0),y
+	bmi .rejectRoutine
+	; The char effects index
+	tay
+	lda #-1
+	sta CharEffectsTime,y	; Kill the char effect
+	; Decrease bat health
+	dec Animation_GeneralStorage0,x
+	bmi .explode
+	; Flash the sprite
+	lda AnimationSpriteColour,x
+	eor #$ff
+	sta AnimationSpriteColour,x
+
+.rejectRoutine
+
+	lda #1
+	sta tempWork2
+	lda Animation_Index,x
+	cmp #20
+	bcc .goSlow
+	cmp #30
+	bcc .goFast
+	; Alternate between 1 and 2 for some frames
+	and #1
+	beq .goSlow
+.goFast
+	lda #2
+	sta tempWork2
+.goSlow
+	lda AnimationXPosHi,x
+	ror
+	lda AnimationXPosLo,x
+	ror
+	cmp #$f0
+	bcc .noAdjust1
+	lda #0
+.noAdjust1
+	cmp PlayerXPosShifted
+	beq .doY
+	bcc .moveRight
+
+;.moveLeft
+	lda AnimationXPosLo,x
+	sec
+	sbc tempWork2
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,x
+	sbc #0
+	and #1
+	sta AnimationXPosHi,x
+	jmp .doY
+
+.moveRight
+	lda AnimationXPosLo,x
+	clc
+	adc tempWork2
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,x
+	adc #0
+	and #1
+	sta AnimationXPosHi,x
+
+.doY
+
+	lda AnimationYPos,x
+	sec
+	sbc #4
+	cmp AnimationYPos+1
+	beq .doRet
+	bcs .moveUp
+;.moveDown
+	lda AnimationYPos,x
+	clc
+	adc tempWork2
+	sta AnimationYPos,x
+	rts
+.moveUp
+	lda AnimationYPos,x
+	sec
+	sbc tempWork2
+	sta AnimationYPos,x
+	rts
+
+.doRet
+	rts
+
+AnimationInit_explosion
+	jsr Animation_FindFreeSlot
+	bcs .error2
+	+MWordValueTo_AX AnimationFrames_Explosion
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	; Interesting colour choice
+	tya
+	sta AnimationSpriteColour,y
+
+	+MAnimationSetFuncs 0
+
+	clc
+.error2
+	rts
+
+
+
+AnimationInit_practice
+	jsr Animation_FindFreeSlot
+	bcs .error3
+	+MWordValueTo_AX AnimationFrames_practice
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	lda #VIC2Colour_White
+	sta AnimationSpriteColour,y
+
+	+MAnimationSetFuncs AnimationTick_practice
+
+	clc
+.error3
+	rts
+AnimationTick_practice
+	rts
+
+
+AnimationInit_dragon
+	jsr Animation_FindFreeSlot
+	bcs .error4
+	+MWordValueTo_AX AnimationFrames_DragonBody
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	lda #VIC2Colour_Green
+	sta AnimationSpriteColour,y
+
+	+MAnimationSetFuncs 0
+
+	; TODO: If one fails to allocate then abort the creation of both parts
+	jsr Animation_FindFreeSlot
+	bcs .error4
+
+	+MWordValueTo_AX AnimationFrames_DragonHead
+	jsr Animation_ForceSet
+	lda #VIC2SpriteSizeX
+	jsr AnimationCommonInitPosition_OffsetX
+	jsr AnimationCommonSetInitPosition
+	lda #VIC2Colour_Green
+	sta AnimationSpriteColour,y
+
+	+MAnimationSetFuncs AnimationTick_dragon
+
+	clc
+.error4
+	rts
+AnimationTick_dragon
+	rts
+
+
+; These get decompressed into the EnemyActivationMapStart at level start
+AnimationEnemyMapPlacements
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 30
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 27
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 23
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 20
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 17
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 14
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 11
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 8
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 5
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 68	, 2
+
+;	!by 0
+
+	+AnimationEnemyMapPlacement AnimationObject_dragon_0_11	, 69	, 27
+	+AnimationEnemyMapPlacement AnimationObject_dragon_0_11	, 69	, 20
+
+	+AnimationEnemyMapPlacement AnimationObject_dragon_0_11	, 69	, 15
+
+	+AnimationEnemyMapPlacement AnimationObject_dragon_0_11	, 69	, 10
+
+	+AnimationEnemyMapPlacement AnimationObject_dragon_0_11	, 68	, 5
+
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 69	, 21
+
+
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 65	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 63	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 61	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 59	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 57	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 56	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 55	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 53	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 51	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 47	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 75	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 73	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 70	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 79	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 75	, 25
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 73	, 24
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 71	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 79	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 77	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 65	, 25
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 63	, 24
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 61	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 59	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 57	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 56	, 25
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 55	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 53	, 24
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 51	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 47	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 64	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_20_10		, 63	, 27
+	+AnimationEnemyMapPlacement AnimationObject_explosion_20_10		, 62	, 28
+
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 85	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 83	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 81	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 46	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 43	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 41	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 95	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 93	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 90	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 99	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 95	, 15
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 93	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 91	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 99	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 97	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 85	, 15
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 83	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 81	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 46	, 15
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 43	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 41	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 84	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_20_10		, 83	, 17
+	+AnimationEnemyMapPlacement AnimationObject_explosion_20_10		, 82	, 18
+
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 15	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 13	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 11	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 47	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 46	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 45	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 43	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 41	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 47	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 25	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 23	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 20	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 29	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 25	, 25
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 23	, 24
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 21	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 29	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 27	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 15	, 15
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 13	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 11	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 46	, 15
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 43	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 41	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 49	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 47	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 45	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 14	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_20_10		, 13	, 17
+	+AnimationEnemyMapPlacement AnimationObject_explosion_20_10		, 12	, 18
+
+	+AnimationEnemyMapPlacement AnimationObject_practice_0_0	, 115	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 113	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 111	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 149	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 147	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 146	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 145	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 143	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 141	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 149	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 147	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 145	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 125	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 123	, 26
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 120	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 129	, 26
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 125	, 25
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 123	, 24
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 121	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 129	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 127	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 115	, 15
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 113	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 111	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 149	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 147	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 146	, 15
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 145	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 143	, 14
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 141	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 149	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 147	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_0_0			, 145	, 16
+	+AnimationEnemyMapPlacement AnimationObject_explosion_0_0		, 114	, 16
+	+AnimationEnemyMapPlacement AnimationObject_bat_20_10		, 113	, 17
+	+AnimationEnemyMapPlacement AnimationObject_explosion_20_10		, 112	, 18
+
+	!by 0	; Terminate the list
