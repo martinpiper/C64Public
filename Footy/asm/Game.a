@@ -1,0 +1,83 @@
+!zn
+Game_MainLoop
+.mainLoop
+
+	; NOTE: At this point, the multiplexor can be running, so all updates must not touch multiplexor data
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+	jsr HandleUserInput
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	jsr AnimationUpdate_Ball
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+}
+	jsr Player_AnimationUpdate
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+	jsr AnimationUpdate_ScreenCamera
+
+
+	; NOTE: At this point the multiplexor has finished the frame, so it can be updated
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+.l1
+	lda Multiplex_BottomTriggered
+	beq .l1
+	lda #0
+	sta Multiplex_BottomTriggered
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+}
+	jsr Ball_UpdateMultiplexor
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	jsr Player_UpdateMultiplexor
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Purple
+	sta VIC2BorderColour
+}
+	jsr Multiplex_Sort
+
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+.l2
+	lda BottomRasterReached
+	beq .l2
+	lda #0
+	sta BottomRasterReached
+	sta Multiplex_BottomTriggered
+!ifdef Mainline_DebugBorder {
+	inc VIC2BorderColour
+}
+
+	jsr Pitch_UpdateVIC
+	jsr PitchDrawOptimised
+
+!ifdef Mainline_DebugBorder {
+	dec VIC2BorderColour
+}
+
+	jmp .mainLoop

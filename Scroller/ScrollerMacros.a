@@ -4,3 +4,14 @@
 	jsr .entry
 	jsr CartKillBank
 }
+
+!macro Scroller_ScrollExecCartBankWith_X .bank , .entry {
+	txa
+	pha
+	lda #.bank
+	jsr CartSelectBank_8K_NoSEI
+	pla
+	tax
+	jsr .entry
+	jsr CartKillBank
+}

@@ -1,0 +1,86 @@
+; Change list
+
+* Add multiplexor
+
+
+* Add pitch background
+
+
+* Add player sprites
+
+
+
+
+* Use cartridge banks to fast scroll the screen to any position
+	; TODO: This could instead use Y position divided by PitchMapData_Width and reduce the number of draw routines accordingly
+	Speed code for pitch drawing has been added to several cart banks: PitchDrawOptimised
+
+
+
+
+* Ball using 4 bit accuracy for sub-pixel movement
+
+
+
+* Scroll to any position if needed, chase the raster probably, probably one screen bank
+	* Follow the ball camera?
+
+
+
+* Simple ball control, hold fire longer to "kick" harder. Release fire with a direction to "kick" the ball in that direction.
+
+
+
+* Ball vertical height with gravity/velocity. Can be 8 bits. Use ball frames 93-99
+
+
+
+* Player screen positions, 16 bits, to be copied to the multiplexor and screen edges to the handled
+	Similar to the ball position code BallScreenPosX/Y
+
+
+
+* Controller movement
+	* Joystick direction to velocity of current player index
+	* If the player moves into the ball without fire pressed, then automatically kick it ahead a bit
+		Sometimes a short kick, sometimes a slightly longer, will happen to simulate how controlling the ball can be hard in real life
+	* If the player moves into the ball with fire pressed, then automatically kick it ahead a tiny bit and save shot power
+		The effect is that the ball is somewhat glues to the feet of the player while running, allowing turns to be made
+	* PlayerShotPower could do with a power gauge, and also decrease back to minimum again. Perhaps a simple wrap-around gauage? 0 - 7 for example
+	* After touch for some frames afterwards, option to bend the velocity of the ball in motion, unless it is touched by any player
+	* The trapped ball could use some smoothing, perhaps calculate the difference to the target point and divide it down before using it as the velocity?
+	* While after touch is active, the collision with the player controlling after touch is ignored. This avoids a double collision issue.
+	* Controller is the current closest player on your team to the ball
+		Regularly sweep for the closest player to the ball, update the index
+
+
+
+* Player teams
+	* Colours
+
+
+
+* Arrow pointing to controlled player, sprite 101
+
+
+
+
+* Update BallLastTouchedBy when HandleUserInput_Joystick2PlayerIndex changes due to camera change, then reinstate the code in Balla @ "NOTE: If the computer players want after touch"...
+	If the previous touch was not the previous onwer, then reset the BallAfterTouchTimer
+
+
+
+
+
+* Controller movement
+	* Update the player running animation based on the direction, this can be set when the velocity is set
+		Only run animation frames for visible sprites sent to the multiplexor
+		asm\AnimationData.a
+		Player_AnimationFramesLo/Hi
+		Animation_SetAnimationIfDifferent
+
+
+
+* Computer movement
+	Your team, depending on controller position, other players try to run to a sensible position
+	Opposition team, closest player tries to get the ball, other players try to run to sensible positions

@@ -38,7 +38,7 @@ xcopy ..\..\C64\stdlib\* ..\..\Builds\VideoHardwareSDK\C64\stdlib\ /s
 xcopy ..\..\C64\BerzerkRedux\Rand.a ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux\ /s
 xcopy ..\..\C64\VideoHardware\README.md ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 copy "..\..\C64\VideoHardware\SDK README.md" ..\..\Builds\VideoHardwareSDK\README.md
-xcopy ..\..\C64\VideoHardware\BuildIt.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
+xcopy ..\..\C64\VideoHardware\BuildIt*.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\FeatureEditor.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\asm\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\asm\ /s
 xcopy ..\..\C64\VideoHardware\assets\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\ /s

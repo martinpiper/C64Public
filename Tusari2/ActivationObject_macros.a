@@ -1,0 +1,194 @@
+!macro MActivationObject_HandleEdge .MapPlacement_primaryPosLo , .MapPlacement_primaryPosHi , .MapPlacement_secondaryPosLo , .MapPlacement_secondaryPosHi , .ActivationObjectTrigger_address , .ActivationObjectPosition , .secondaryPositionShift, .primaryStartPos , .doingHorizontalEdge , .AnimationCommon_workingPositionPrimary , .AnimationCommon_workingPositionSecondary , .ActivationObjectPosition_Secondary {
+	lda .ActivationObjectPosition
+	and #%00000111
+	sta .smremainderPixels+1
+	lda .ActivationObjectPosition
+	and #%11111000
+	sta .smmaskedPixelsPos+1
+
+	; Saves the previously chosen direction this iteration to avoid the test moving between next/prev all the time
+	lda #0
+	sta .smPrevDirX+1
+
+	lda .ActivationObjectTrigger_address
+	sta tempWork0
+	lda .ActivationObjectTrigger_address+1
+	sta tempWork1
+.testLeftEdgeStart
+	ldy #kAnimationEnemyMapPlacement_Pos__size
+	; First MapPlacement index
+	lda (tempWork0),y
+	tax
+	lda .MapPlacement_primaryPosHi,x
+	cmp .ActivationObjectPosition+1
+	+lbne .notSameLeftX
+	lda .MapPlacement_primaryPosLo,x
+	and #%11111000
+.smmaskedPixelsPos	cmp #0
+	+lbne .notSameLeftX
+.testEdgeSame
+	; Same left X position
+	; Check early out check
+	ldy #kAnimationEnemyMapPlacement_Pos_numberEntriesRemaining
+	lda (tempWork0),y
+	bne .gotMovement1
+	rts
+.gotMovement1
+	ldy #kAnimationEnemyMapPlacement_Pos_numberEntries
+	lda (tempWork0),y
+	bne .gotMovement2
+	rts
+.gotMovement2
+	sta .numEntries
+	ldy #kAnimationEnemyMapPlacement_Pos__size
+.primaryLoop
+	; MapPlacement index
+	lda (tempWork0),y
+	tax
+
+	lda .MapPlacement_primaryPosLo,x
+	and #%00000111
+	sta .smRemainderPrimary+1
+
+	lda .MapPlacement_secondaryPosLo,x
+	sec
+	sbc .ActivationObjectPosition_Secondary
+	sta .AnimationCommon_workingPositionSecondary
+	lda .MapPlacement_secondaryPosHi,x
+	sbc .ActivationObjectPosition_Secondary+1
+!if .doingHorizontalEdge > 0 {
+	bmi .primaryLoopContinue
+	sta .AnimationCommon_workingPositionSecondary+1
+	cmp #2
+	bcc .primaryLoopOnScreen
+	rts	; Far out of range so stop looking
+} else {
+	beq .primaryLoopOnScreen
+	bpl .lnoXMovement	; Far out of range so stop looking
+}
+.primaryLoopContinue
+	; Start of next entry
+	iny
+	; TODO: Optimisation where the "num entries" can be offset by the size of the block and this allows .numEntries to be removed
+	dec .numEntries
+	bne .primaryLoop
+	rts
+.numEntries !by 0
+.lnoXMovement rts
+.primaryLoopOnScreen
+
+	lda MapPlacement_spawnedFlag,x
+	bne .primaryLoopContinue
+
+!if .doingHorizontalEdge > 0 {
+
+	lda .AnimationCommon_workingPositionSecondary
+	clc
+	adc #.secondaryPositionShift
+	sta .AnimationCommon_workingPositionSecondary
+	bcc .noXMSB
+	inc .AnimationCommon_workingPositionSecondary+1
+.noXMSB
+	lda .AnimationCommon_workingPositionSecondary+1
+	beq .okPos
+	cmp #2
+	bcs .lnoXMovement	; Far out of range so stop looking
+	lda .AnimationCommon_workingPositionSecondary
+	cmp #<(Scroller_DiscardForMultiplexorRight+8)
+	bcs .lnoXMovement	; Far out of range so stop looking
+.okPos
+
+} else {
+
+	lda .AnimationCommon_workingPositionSecondary
+	clc
+	adc #.secondaryPositionShift
+	bcs .lnoXMovement	; Far out of range so stop looking
+!set .safeYPos = Multiplex_DiscardSpritesYPosForSort + 8
+!if .safeYPos >= VIC2SpriteYBorderBottom {
+	!set .safeYPos = VIC2SpriteYBorderBottom
+}
+	cmp #.safeYPos
+	bcs .lnoXMovement	; Far out of range so stop looking
+	sta .AnimationCommon_workingPositionSecondary
+
+}
+
+!if .doingHorizontalEdge > 0 {
+	+MByteValueToAddress_A .primaryStartPos , .AnimationCommon_workingPositionPrimary
+} else {
+	+MWordValueToAddress_A .primaryStartPos , .AnimationCommon_workingPositionPrimary
+}
+	lda .AnimationCommon_workingPositionPrimary
+	clc
+.smRemainderPrimary	adc #0
+!if .doingHorizontalEdge = 0 {
+	bcc .noC1
+	inc .AnimationCommon_workingPositionPrimary+1
+.noC1
+}
+	sec
+.smremainderPixels	sbc #0
+!if .doingHorizontalEdge = 0 {
+	bcs .noC2
+	dec .AnimationCommon_workingPositionPrimary+1
+.noC2
+}
+	sta .AnimationCommon_workingPositionPrimary
+!if .doingHorizontalEdge = 0 {
+	lda .AnimationCommon_workingPositionPrimary+1
+	and #1
+	sta .AnimationCommon_workingPositionPrimary+1
+}
+	lda MapPlacement_activationObject,x
+	sty.smy+1
+	jsr ActivationObject_Spawn
+.smy ldy #0
+	jmp .primaryLoopContinue
+
+.earlyOut
+	rts
+.notSameLeftX
+.smPrevDirX	lda #0
+	beq .carryXTest
+	bmi .tryXLT2
+	jmp .tryGTX2
+.carryXTest
+	; Either < or > at this point
+	bcc .tryXLT
+.tryGTX
+	inc .smPrevDirX+1
+.tryGTX2
+	; This is GT, so any indication of reversing the direction results in an early out
+	bcc .earlyOut
+	ldy #kAnimationEnemyMapPlacement_Pos_previousHi
+	lda (tempWork0),y
+	beq .earlyOut
+	sta tempWork2
+	iny ; kAnimationEnemyMapPlacement_Pos_previousLo
+	lda (tempWork0),y
+	sta tempWork0
+	sta .ActivationObjectTrigger_address
+	lda tempWork2
+	sta tempWork1
+	sta .ActivationObjectTrigger_address+1
+	jmp .testLeftEdgeStart
+
+.tryXLT
+	dec .smPrevDirX+1
+.tryXLT2
+	; This is LT, so any indication of reversing the direction results in an early out
+	bcs .earlyOut
+	ldy #kAnimationEnemyMapPlacement_Pos_nextHi
+	lda (tempWork0),y
+	beq .earlyOut
+	sta tempWork2
+	iny ; kAnimationEnemyMapPlacement_Pos_nextLo
+	lda (tempWork0),y
+	sta tempWork0
+	sta .ActivationObjectTrigger_address
+	lda tempWork2
+	sta tempWork1
+	sta .ActivationObjectTrigger_address+1
+	jmp .testLeftEdgeStart
+}

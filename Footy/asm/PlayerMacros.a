@@ -1,0 +1,271 @@
+!macro MEncodeValueInMemory .val {
+!set .i = .val * 8
+	+MLittleEndian16Bit .i
+}
+
+
+!macro MPlayerMultiplexorUpdate .i {
+	lda PlayersPosY + (.i*2)
+	sec
+	sbc PitchScreenPosY
+	sta Multiplex_YPos + .i
+	lda PlayersPosY + (.i*2) + 1
+	sbc PitchScreenPosY+1
+	sta Footy_Temp1
+	lda Multiplex_YPos + .i
+	clc
+	adc #VIC2SpriteYBorderTop24
+	sta Multiplex_YPos + .i
+	lda Footy_Temp1
+	adc #0
+	sta Player_Multiplex_YPosHi + .i
+	cmp #1
+	bcs .plOffScreenSprite
+
+	lda PlayersPosX + (.i*2)
+	sec
+	sbc PitchScreenPosX
+	sta Multiplex_XPosLo + .i
+	lda PlayersPosX + (.i*2) + 1
+	sbc PitchScreenPosX+1
+	sta Multiplex_XPosHi + .i
+	lda Multiplex_XPosLo + .i
+	clc
+	adc #VIC2SpriteXBorderLeft38
+	sta Multiplex_XPosLo + .i
+	lda Multiplex_XPosHi + .i
+	adc #0
+	sta Multiplex_XPosHi + .i
+	cmp #2
+	bcc .plOnScreenSprite
+.plOffScreenSprite
+	lda #$ff
+	sta Multiplex_YPos + .i
+	jmp .ret
+.plOnScreenSprite
+	ldx #.i
+	jsr Animation_RunAnimationFrame
+.ret
+}
+
+
+!macro MPlayerPositionUpdate .i {
+	; If there is any velocity
+	lda PlayerVelX + .i
+	ora PlayerVelY + .i
+	bne .someMovement
+	; Or if we want to trap the ball while stationary
+	lda PlayerTrapBall + .i
+	bne .someMovement
+	jmp .over1
+
+.someMovement
+	+MAdd8STo16S PlayerVelX + .i , PlayersPosX + (.i*2) , PlayersPosX + (.i*2) + 1
+
+	+MAdd8STo16S PlayerVelY + .i , PlayersPosY + (.i*2) , PlayersPosY + (.i*2) + 1
+
+	lda BallAfterTouchTimer
+	beq .noAftertouch1
+	lda BallLastTouchedBy
+	cmp #.i
+	; Ignore any other collisions while after touch is enabled
+	+lbeq .noBallCollision
+.noAftertouch1
+	; Check for collision
+	+MSubS16AddrToAddrS16 PlayersPosX + (.i*2) , PlayersPosX + (.i*2) + 1 , Player_CollisionAdjustedBallX , Player_CollisionAdjustedBallX + 1 , Footy_Temp0 , Footy_Temp1
+	+lbne .noBallCollision
+	lda Footy_Temp0
+	cmp #16
+	+lbcs .noBallCollision
+
+	+MSubS16AddrToAddrS16 PlayersPosY + (.i*2) , PlayersPosY + (.i*2) + 1 , Player_CollisionAdjustedBallY , Player_CollisionAdjustedBallY + 1 , Footy_Temp0 , Footy_Temp1
+	+lbne .noBallCollision
+	lda Footy_Temp0
+	cmp #16
+	+lbcs .noBallCollision
+
+	lda #.i
+	sta BallLastTouchedBy
+
+	lda PlayerTrapBall + .i
+	+lbeq .justKickAhead
+
+	; This moves the ball ahead only very slightly faster than the player, if they are trapping the ball at their feet
+	lda #0
+	sta BallVelX
+	sta BallVelX+1
+	sta BallVelY
+	sta BallVelY+1
+	; Cancel any after touch
+	sta BallAfterTouchTimer
+
+	ldx PlayerVelX + .i
+	lda PlayerVelToBallLoX8,x
+	sta Footy_Temp0
+	lda PlayerVelToBallHiX8,x
+	sta Footy_Temp1
+	+MAddr16toAddr_A PlayersPosX + (.i*2) , Footy_Temp2
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MAdd16STo16S Footy_Temp2 , Footy_Temp0 , Footy_Temp2
+	; Smoothes the ball position, avoids harsh snapping
+	+MAdd16STo16S Footy_Temp2 , BallPosX , BallPosX
+	lda BallPosX+1
+	+M_ASR
+	sta BallPosX+1
+	ror BallPosX
+	
+	ldx PlayerVelY + .i
+	lda PlayerVelToBallLoX8,x
+	sta Footy_Temp0
+	lda PlayerVelToBallHiX8,x
+	sta Footy_Temp1
+	+MAddr16toAddr_A PlayersPosY + (.i*2) , Footy_Temp2
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MLSL16_A Footy_Temp2 , Footy_Temp2 + 1
+	+MAdd16STo16S Footy_Temp2 , Footy_Temp0 , Footy_Temp2
+	; Smoothes the ball position, avoids harsh snapping
+	+MAdd16STo16S Footy_Temp2 , BallPosY , BallPosY
+	lda BallPosY+1
+	+M_ASR
+	sta BallPosY+1
+	ror BallPosY
+
+
+	; Don't add velocity if it is already quite high
+	lda BallPosZ
+	cmp #4
+	+lbcs .over1
+	lda #2
+	sta BallVelZ
+	jmp .over1
+
+.justKickAhead
+
+	; ShowPower is 1-127 so divide it down
+	lda PlayerShotPower + .i
+	beq .noShotPower
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	clc
+	adc #2
+	sta BallVelZ
+;	inc VIC2BorderColour
+	; TODO: Need a lookup table here to fine tune the power?
+	sta Footy_Temp0
+
+	; The time used for after touch
+	lda #50
+	sta BallAfterTouchTimer
+
+	lda PlayerVelX + .i
+	beq .noPowerShotX
+	bmi .negPowerShotX
+
+	ldx Footy_Temp0
+	lda PlayerVelToBallLo,x
+	sta BallVelX
+	lda PlayerVelToBallHi,x
+	sta BallVelX + 1
+	jmp .noPowerShotX
+
+.negPowerShotX
+
+	lda #0
+	sec
+	sbc Footy_Temp0
+	tax
+	lda PlayerVelToBallLo,x
+	sta BallVelX
+	lda PlayerVelToBallHi,x
+	sta BallVelX + 1
+	jmp .noPowerShotX
+
+.noPowerShotX
+
+	lda PlayerVelY + .i
+	beq .noPowerShotY
+	bmi .negPowerShotY
+
+	ldx Footy_Temp0
+	lda PlayerVelToBallLo,x
+	sta BallVelY
+	lda PlayerVelToBallHi,x
+	sta BallVelY + 1
+	jmp .noPowerShotY
+
+.negPowerShotY
+
+	lda #0
+	sec
+	sbc Footy_Temp0
+	tax
+	lda PlayerVelToBallLo,x
+	sta BallVelY
+	lda PlayerVelToBallHi,x
+	sta BallVelY + 1
+	jmp .noPowerShotY
+
+.noPowerShotY
+
+	; Remove any shot power after the kick
+	lda #0
+	sta PlayerShotPower + .i
+	jmp .over1
+
+.noShotPower
+	jsr Rand
+	and #1
+	beq .slightlyLargerKick
+
+	; TODO: This velocity needs to change depending on what the player is doing with their fire button
+	ldx PlayerVelX + .i
+	lda PlayerVelToBallLoX3_2,x
+	sta BallVelX
+	lda PlayerVelToBallHiX3_2,x
+	sta BallVelX + 1
+
+	ldx PlayerVelY + .i
+	lda PlayerVelToBallLoX3_2,x
+	sta BallVelY
+	lda PlayerVelToBallHiX3_2,x
+	sta BallVelY + 1
+
+	; TODO: This vertical speed needs to change depending on what the player is doing with their fire button
+	lda #2
+	sta BallVelZ
+	jmp .over1
+
+.slightlyLargerKick
+	ldx PlayerVelX + .i
+	lda PlayerVelToBallLoX7_4,x
+	sta BallVelX
+	lda PlayerVelToBallHiX7_4,x
+	sta BallVelX + 1
+
+	ldx PlayerVelY + .i
+	lda PlayerVelToBallLoX7_4,x
+	sta BallVelY
+	lda PlayerVelToBallHiX7_4,x
+	sta BallVelY + 1
+
+	lda #4
+	sta BallVelZ
+	jmp .over1
+
+.noBallCollision
+	; Reduces any shot power if no collision and ball trap is not enabled
+	lda PlayerTrapBall + .i
+	bne .over1
+
+	lsr PlayerShotPower + .i
+
+.over1
+}

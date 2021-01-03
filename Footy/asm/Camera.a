@@ -1,0 +1,8 @@
+!zn
+PitchScreenPosX !by 0,0
+PitchScreenPosY !by 0,0
+
+AnimationUpdate_ScreenCamera
+	+MScreenPosToPitchScroll BallScreenPosX , PitchScreenPosX , (PitchMapData_Width - VIC2ScreenCharsWidth + 1) * 8 , PitchPosXPixel , PitchPosX , ((VIC2ScreenCharsWidth/2)*8)
+	+MScreenPosToPitchScroll BallScreenPosY , PitchScreenPosY , (PitchMapData_Height - VIC2ScreenCharsHeight + 1) * 8 , PitchPosYPixel , PitchPosY , ((VIC2ScreenCharsHeight/2)*8)
+	rts

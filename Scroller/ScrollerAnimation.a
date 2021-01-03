@@ -46,17 +46,16 @@ AnimationUpdateMultiplexorPre
 }
 	sta AnimationYPosToSort,x
 
-	; TODO: Why does this make the sprite update go wrong near the MSB when scrolling left/right?
-;!ifdef Scroller_DiscardForMultiplexorRight {
-;	lda AnimationXPosHi,x
-;!if Scroller_DiscardForMultiplexorRight >= $100 {
-;	beq .noXDiscard
-;}
-;	lda Multiplex_XPosLo,x
-;	cmp #<Scroller_DiscardForMultiplexorRight
-;	bcs .blank
-;.noXDiscard
-;}
+!ifdef Scroller_DiscardForMultiplexorRight {
+	lda AnimationXPosHi,x
+!if Scroller_DiscardForMultiplexorRight >= $100 {
+	beq .noXDiscard
+}
+	lda AnimationXPosLo,x
+	cmp #<Scroller_DiscardForMultiplexorRight
+	bcs .blank
+.noXDiscard
+}
 
 
 	dex
@@ -140,7 +139,7 @@ AnimationUpdateMultiplexor
 !if Scroller_DiscardForMultiplexorRight >= $100 {
 	beq .noXDiscard
 }
-	lda Multiplex_XPosLo,x
+	lda AnimationXPosLo,x
 	cmp #<Scroller_DiscardForMultiplexorRight
 	bcs .blank
 .noXDiscard

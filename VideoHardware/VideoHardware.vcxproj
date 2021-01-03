@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release3Anim|Win32">
+      <Configuration>Release3Anim</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release3|Win32">
+      <Configuration>Release3</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -17,12 +25,28 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release3|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release3Anim|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release3|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release3Anim|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -32,15 +56,31 @@
     <NMakeReBuildCommandLine>BuildIt.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release3|Win32'">
+    <NMakeBuildCommandLine>BuildIt3.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt3.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt3.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release3Anim|Win32'">
+    <NMakeBuildCommandLine>BuildIt3Anim.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt3Anim.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt3Anim.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="assets\clouds.tmx" />
     <None Include="assets\clouds.tsx" />
     <None Include="assets\convert.bat" />
+    <None Include="assets\convert2.bat" />
+    <None Include="assets\convert3.bat" />
     <None Include="assets\map.tmx" />
     <None Include="assets\RPG.tsx" />
     <None Include="BuildIt.bat" />
+    <None Include="BuildIt3.bat" />
+    <None Include="BuildIt3Anim.bat" />
     <None Include="FeatureEditor.bat" />
     <None Include="features\AnimationEngine.feature" />
     <None Include="features\smoke test.feature" />
@@ -67,22 +107,38 @@
     <Library Include="..\stdlib\VideoModes_Macros.a" />
     <Library Include="asm\AnimationData.a" />
     <Library Include="asm\AnimationEngine.a" />
+    <Library Include="asm\BatBallAnim\DisplayScreen.a" />
+    <Library Include="asm\BatBall\Animation.a" />
+    <Library Include="asm\BatBall\AnimationData.a" />
+    <Library Include="asm\BatBall\BlockRoutines.a" />
+    <Library Include="asm\BatBall\DisplayScreen.a" />
+    <Library Include="asm\BatBall\Levels.a" />
+    <Library Include="asm\BatBall\Sprites.a" />
     <Library Include="asm\CharacterLogic.a" />
     <Library Include="asm\CharacterLogicData.a" />
     <Library Include="asm\main.a" />
+    <Library Include="asm\main3.a" />
+    <Library Include="asm\main3Anim.a" />
     <Library Include="asm\Mode7.a" />
     <Library Include="asm\PlayerInput.a" />
     <Library Include="asm\StackedSprites.a" />
     <Library Include="asm\TileScreen.a" />
+    <Library Include="tmp\BatBallspriteSheet.txt.a" />
     <Library Include="tmp\spriteSheet.txt.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
+    <Text Include="tmp\batball.log" />
+    <Text Include="tmp\BatBallspriteSheet.txt" />
     <Text Include="tmp\map.log" />
     <Text Include="tmp\spriteSheet.txt" />
     <Text Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\BatBall\Blocks.png" />
+    <Image Include="assets\BatBall\level1.png" />
+    <Image Include="assets\BatBall\powerups.png" />
+    <Image Include="assets\BatBall\sprites.png" />
     <Image Include="assets\cloud tiles.png" />
     <Image Include="assets\clouds.png" />
     <Image Include="assets\map tiles.png" />

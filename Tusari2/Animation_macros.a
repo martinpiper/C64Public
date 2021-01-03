@@ -1,3 +1,54 @@
+!set kAnimation_currentSpeed = 0
+!set kAnimation_currentAddress = 0
+
+!macro MAnimation_SetFuncs .tick , .delete {
+	lda #<.tick
+	sta Animation_TickLo,y
+	lda #>.tick
+	sta Animation_TickHi,y
+
+	lda #<.delete
+	sta Animation_DeleteLo,y
+	lda #>.delete
+	sta Animation_DeleteHi,y
+}
+
+!macro MAnimation_PreserveMapPlacementTo .array {
+	txa
+	sta .array,y
+}
+
+!macro MAnimation_MakeObjectRespawnFrom .array {
+	ldy .array,x
+	lda #0
+	sta MapPlacement_spawnedFlag,y
+}
+
+!macro MAnimation_StopObjectRespawnFrom .array {
+	ldy .array,x
+	lda #-1
+	sta MapPlacement_spawnedFlag,y
+}
+
+!macro MAnimation_StandardInit .animationFrames , .colour , .tick , .delete {
+	jsr Animation_FindFreeSlot
+	bcs .error
+
+	+MAnimation_PreserveMapPlacementTo Animation_ActivationObjectIndex
+
+	+MWordValueTo_AX .animationFrames
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	lda #.colour
+	sta AnimationSpriteColour,y
+
+	+MAnimation_SetFuncs .tick , .delete
+
+	clc
+.error
+	rts
+}
+
 !macro DoSpeed .speed {
 	!set kAnimation_currentSpeed = .speed
 }
@@ -168,29 +219,56 @@ kEndAnim_Delete = 1
 	+DoSpeed .speed
 }
 
-!macro DoAnimationType ~.label , .init {
+!macro AnimationEnemyMapPlacement ~.label , .activationObjectIndex , .posX , .posY {
 !set .t = *
-!if kAnimation_currentAnimationType >= kAnimation_maxTypes {
-	!error "kAnimation_maxTypes reached"
+!if kMapPlacement_currentIndex >= kMapPlacement_maxIndex {
+	!error "kMapPlacement_maxIndex reached"
 }
 
-	.label = kAnimation_currentAnimationType
-* = AnimationTypes_initLo + kAnimation_currentAnimationType
-	!by <.init
-* = AnimationTypes_initHi + kAnimation_currentAnimationType
-	!by >.init
-!set kAnimation_currentAnimationType = kAnimation_currentAnimationType + 1
+	.label = kMapPlacement_currentIndex
+* = MapPlacement_activationObject + kMapPlacement_currentIndex
+	!by .activationObjectIndex
+* = MapPlacement_spawnedFlag + kMapPlacement_currentIndex
+	!by 0
+* = MapPlacement_posXLo + kMapPlacement_currentIndex
+	!by <.posX
+* = MapPlacement_posXHi + kMapPlacement_currentIndex
+	!by >.posX
+* = MapPlacement_posYLo + kMapPlacement_currentIndex
+	!by <.posY
+* = MapPlacement_posYHi + kMapPlacement_currentIndex
+	!by >.posY
 
+!set kMapPlacement_currentIndex = kMapPlacement_currentIndex + 1
 * = .t
 }
 
-kAnimationEnemyMapPlacement__size = 3
-!macro AnimationEnemyMapPlacement .activationObjectIndex , .mapX , .mapY {
-	!by .activationObjectIndex
-	!by .mapX , .mapY
+kAnimationEnemyMapPlacement_mapPlacementIndex	= 0
+kAnimationEnemyMapPlacement_PosEntry_size		= 1
+!macro AnimationEnemyMapPlacement_PosBlockEntry .mapPlacementIndex {
+	!by .mapPlacementIndex
 }
 
-!macro DoAnimationActivationObject ~.label , .type , .offsetX , .offsetY {
+kAnimationEnemyMapPlacement_Pos_numberEntries			= 0
+kAnimationEnemyMapPlacement_Pos_numberEntriesRemaining	= 1	; To be used as an early out, to avoid processing once all the entries are spawned
+kAnimationEnemyMapPlacement_Pos_nextHi					= 2
+kAnimationEnemyMapPlacement_Pos_nextLo					= 3
+kAnimationEnemyMapPlacement_Pos_previousHi				= 4
+kAnimationEnemyMapPlacement_Pos_previousLo				= 5
+kAnimationEnemyMapPlacement_Pos__size					= 6
+!macro AnimationEnemyMapPlacement_PosBlock .numberEntries , .next , .prev {
+	!by .numberEntries
+	!by .numberEntries
+	!by >.next , <.next
+	!by >.prev , <.prev
+
+!if (kAnimationEnemyMapPlacement_Pos__size + (.numberEntries * kAnimationEnemyMapPlacement_PosEntry_size)) >= 256 {
+	!error "number of entries exceeds Y index capability"
+}
+}
+
+
+!macro DoAnimationActivationObject ~.label , .init , .respawnTime, .extData0 , .extData1 {
 !set .t = *
 !if kAnimation_currentActivationObject >= kAnimation_maxActivationObjects {
 	!error "kAnimation_maxActivationObjects reached"
@@ -198,12 +276,17 @@ kAnimationEnemyMapPlacement__size = 3
 
 	.label = kAnimation_currentActivationObject
 
-* = AnimationActivationObject_type + kAnimation_currentActivationObject
-	!by .type
-* = AnimationActivationObject_offsetX + kAnimation_currentActivationObject
-	!by .offsetX
-* = AnimationActivationObject_offsetY + kAnimation_currentActivationObject
-	!by .offsetY
+* = AnimationActivationObject_InitLo + kAnimation_currentActivationObject
+	!by <.init
+* = AnimationActivationObject_InitHi + kAnimation_currentActivationObject
+	!by >.init
+* = AnimationActivationObject_respawnTiming + kAnimation_currentActivationObject
+	!by .respawnTime
+* = AnimationActivationObject_ExtData0 + kAnimation_currentActivationObject
+	!by .extData0
+* = AnimationActivationObject_ExtData1 + kAnimation_currentActivationObject
+	!by .extData1
+
 
 !set kAnimation_currentActivationObject = kAnimation_currentActivationObject + 1
 * = .t

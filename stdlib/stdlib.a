@@ -894,6 +894,17 @@ RasterLinesPALC64		= 312
 	bne .dm1
 }
 
+!macro ClearScreenAtWithA_X .start {
+	ldx #0
+.dm1
+	sta .start,x
+	sta .start + $100,x
+	sta .start + $200,x
+	sta .start + $2e8,x
+	dex
+	bne .dm1
+}
+
 !macro DisplayTextMiddle_AX .start , .end , .scr {
 	ldx #.end-.start
 .dm1
@@ -1102,6 +1113,22 @@ RasterLinesPALC64		= 312
 	ror
 }
 
+!macro M_ABS_A {
+	cmp #$80
+	bcc .isPos
+	eor #$ff
+	adc #0	; Carry always set
+.isPos
+}
+
+!macro M_ABS_WithST_A {
+	bpl .isPos
+	eor #$ff
+	clc
+	adc #1
+.isPos
+}
+
 !macro MByteValueToAddress_A .value , .addr {
 	lda #.value
 	sta .addr
@@ -1117,6 +1144,11 @@ RasterLinesPALC64		= 312
 !macro MWordValueTo_AX .value {
 	lda #<.value
 	ldx #>.value
+}
+
+!macro MWordValueTo_AY .value {
+	lda #<.value
+	ldy #>.value
 }
 
 !macro MWordValueTo_XY .value {
@@ -1148,4 +1180,141 @@ RasterLinesPALC64		= 312
 
 !macro MLittleEndian24Bit .a {
 	!by .a & $ff , (.a >> 8)  & $ff , (.a >> 16)  & $ff
-	}
+}
+
+!macro MLittleEndian16Bit .a {
+	!by <.a , >.a
+}
+
+!macro MBigEndian24Bit .a {
+	!by (.a >> 16)  & $ff , (.a >> 8)  & $ff , .a & $ff
+}
+
+!macro MBigEndian16Bit .a {
+	!by >.a , <.a
+}
+
+!macro MAdd24To24ToOut .a , .b , .c {
+	lda .a
+	clc
+	adc .b
+	sta .c
+	lda .a + 1
+	adc .b + 1
+	sta .c + 1
+	lda .a + 2
+	adc .b + 2
+	sta .c + 2
+}
+
+!macro MAddAToAddr16 .lo , .hi {
+	clc
+	adc .lo
+	sta .lo
+	bcc .o1
+	inc .hi
+.o1
+}
+
+!macro MAddU8ToAddr16 .value , .lo , .hi {
+	lda #.value
+	+MAddAToAddr16 .lo , .hi
+}
+
+!macro MSubS16ToAddrS16 .val , .srcLo , .srcHi , .destLo , .destHi {
+	lda .srcLo
+	sec
+	sbc #<.val
+	sta .destLo
+	lda .srcHi
+	sbc #>.val
+	sta .destHi
+}
+
+!macro MSubS16AddrToAddrS16 .lo1 , .hi1 , .lo2 , .hi2 , .destLo , .destHi {
+	lda .lo1
+	sec
+	sbc .lo2
+	sta .destLo
+	lda .hi1
+	sbc .hi2
+	sta .destHi
+}
+
+
+!macro MSubU8AddrToAddr16 .addr , .lo , .hi {
+	lda .lo
+	sec
+	sbc .addr
+	sta .lo
+	bcs .o1
+	dec .hi
+.o1
+}
+
+!macro MAdd8STo16SCommonPre .val1 , .val2Lo , .val2Hi {
+	ldy #0	; Sign of .val1
+	lda .val1
+}
+
+!macro MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi {
+	bpl .pos
+	dey	; Now neg sign
+.pos
+	clc
+	adc .val2Lo
+	sta .val2Lo
+	tya
+	adc .val2Hi
+	sta .val2Hi
+}
+
+!macro MAdd8STo16S .val1 , .val2Lo , .val2Hi {
+	+MAdd8STo16SCommonPre .val1 , .val2Lo , .val2Hi
+	+MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi
+}
+
+!macro MAdd8STo16SWithZeroCheck .val1 , .val2Lo , .val2Hi {
+	+MAdd8STo16SCommonPre .val1 , .val2Lo , .val2Hi
+	beq .end
+	+MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi
+.end
+}
+
+
+!macro MAdd16STo16S .src , .val , .dest {
+	lda .src
+	clc
+	adc .val
+	sta .dest
+
+	lda .src+1
+	adc .val+1
+	sta .dest+1
+}
+
+!macro MLSL16_A .lo , .hi {
+	asl .lo
+	rol .hi
+}
+
+!macro MAddr16toAddr_A .src , .dst {
+	lda .src
+	sta .dst
+	lda .src + 1
+	sta .dst + 1
+}
+
+
+!macro MCheckNotInMemoryRange .low , .hi {
+!if * >= .low {
+!if * < .hi {
+	!error "Code/data within bad memory range"
+}
+}
+}
+
+
+!macro MCheckNotInMemoryRange_C64Cartridge_Lo_8K {
+	+MCheckNotInMemoryRange C64Cartridge_Lo_8K , (C64Cartridge_Lo_8K + kSize_8K)
+}

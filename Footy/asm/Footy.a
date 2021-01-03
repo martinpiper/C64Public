@@ -1,0 +1,107 @@
+!source "stdlib/stdlib.a"
+!to "Footy.prg", cbm
+!sal
+!sl "Footy.map"
+!svl "Footy.lbl"
+!pdb "Footy.pdb"
+!cpu 6510
+!ct pet
+
+;Mainline_DebugBorder = 1
+;Multiplexor_DebugBorder = 1
+
+!source "stdlib/LongBranches.a"
+!source "_f_index1.a"
+!source "Scroller/ScrollerMacros.a"
+!source "PlayerMacros.a"
+!source "FootyMacros.a"
+!source "BallMacros.a"
+!source "SpriteMultiplexor/SpriteMultiplexorVars.a"
+
+Footy_Temp0 = Multiplex_endVars + 0
+Footy_Temp1 = Multiplex_endVars + 1
+Footy_Temp2 = Multiplex_endVars + 2
+Footy_Temp3 = Multiplex_endVars + 3
+Footy_Temp4 = Multiplex_endVars + 4
+Footy_Temp5 = Multiplex_endVars + 5
+
+
+
+*=$400
+!zn {
+Start
+	lda #ProcessorPortKERNALWithIO
+	jsr InitialiseMachine
+	
+.outerLoop
+	jsr Player_Init
+	jsr Screen_PitchInit
+
+	jsr IRQ_GameInit
+
+	ldx #$40
+!for .ii , Multiplex_items {
+!set .i = .ii - 1
+	stx Multiplex_SpriteFrame + .i
+	inx
+	lda #$ff
+	sta Multiplex_YPos + .i
+}
+	lda #VIC2Colour_Red
+!for .i , kPlayersPerSide {
+	sta Multiplex_Colour + .i - 1
+}
+	lda #VIC2Colour_Blue
+!for .i , kPlayersPerSide {
+	sta Multiplex_Colour + .i - 1 + kPlayersPerSide
+}
+
+	lda #VIC2Colour_White
+	sta Multiplex_Colour + kTotalPlayers
+
+	; Draw shot power arrow
+	lda #VIC2SpriteYBorderTop24
+	sta Multiplex_YPos + kStatusPanelSpriteIndex
+	lda #100
+	sta Multiplex_SpriteFrame + kStatusPanelSpriteIndex
+	lda #VIC2Colour_Yellow
+	sta Multiplex_Colour + kStatusPanelSpriteIndex
+	lda #0
+	sta Multiplex_XPosHi + kStatusPanelSpriteIndex
+
+	lda #101
+	sta Multiplex_SpriteFrame + kStatusPanelSpriteIndex + 1
+	lda #VIC2Colour_Yellow
+	sta Multiplex_Colour + kStatusPanelSpriteIndex + 1
+
+	jsr Game_MainLoop
+	jmp .outerLoop
+}
+!source "FingerPrint.a"
+!source "stdlib/Initialise.a"
+
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "../MakeCart/asm/EasyFlash_Code.a"
+!source "IRQ.a"
+!source "PitchDraw.a"
+!source "GameData.a"
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+
+!source "SpriteMultiplexor/SpriteMultiplexorDefaultPattern.a"
+!source "Ball.a"
+!source "Camera.a"
+!source "UserInput.a"
+!source "Game.a"
+!source "Player.a"
+!source "PlayerData.a"
+!source "Screen.a"
+!source "BerzerkRedux\Rand.a"
+!source "Animation.a"
+!source "AnimationData.a"
+
+
+
+; At the end of memory
+!source "GameGraphics.a"

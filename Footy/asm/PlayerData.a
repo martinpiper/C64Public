@@ -1,0 +1,102 @@
+﻿!zn
+PlayerVelToBallLo1_12
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <((.i * 16)/12)
+}
+PlayerVelToBallHi1_12
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >((.i * 16)/12)
+}
+
+PlayerVelToBallLo
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <(.i * 16)
+}
+PlayerVelToBallHi
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >(.i * 16)
+}
+
+PlayerVelToBallLoX6_5
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <((.i * 16 * 6)/5)
+}
+PlayerVelToBallHiX6_5
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >((.i * 16 * 6)/5)
+}
+
+PlayerVelToBallLoX3_2
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <((.i * 16 * 3)/2)
+}
+PlayerVelToBallHiX3_2
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >((.i * 16 * 3)/2)
+}
+
+PlayerVelToBallLoX7_4
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <((.i * 16 * 7)/4)
+}
+PlayerVelToBallHiX7_4
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >((.i * 16 * 7)/4)
+}
+
+PlayerVelToBallLoX8
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by <(.i * 16 * 6)
+}
+PlayerVelToBallHiX8
+!for .ii , 256 {
+!set .i = .ii - 1
+!if .i >= 128 {
+!set .i = -128 + (.i - 128)
+}
+	!by >(.i * 16 * 6)
+}

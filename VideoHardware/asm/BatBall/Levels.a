@@ -1,0 +1,62 @@
+!zn
+SetupLevel
+	; Setup a "level"
+	lda #0
+	ldx #10
+	ldy #5
+	jsr BlockSet
+	lda #1
+	ldx #12
+	ldy #5
+	jsr BlockSet
+	lda #2
+	ldx #14
+	ldy #5
+	jsr BlockSet
+	lda #3
+	ldx #16
+	ldy #5
+	jsr BlockSet
+	lda #8
+	ldx #10
+	ldy #7
+	jsr BlockSet
+	lda #9
+	ldx #12
+	ldy #7
+	jsr BlockSet
+	lda #10
+	ldx #14
+	ldy #7
+	jsr BlockSet
+	lda #11
+	ldx #16
+	ldy #7
+	jsr BlockSet
+
+	lda #1
+	ldx #15
+	ldy #12
+	jsr BlockSet
+	lda #1
+	ldx #25
+	ldy #12
+	jsr BlockSet
+	lda #1
+	ldx #21
+	ldy #12
+	jsr BlockSet
+	lda #2
+	ldx #8
+	ldy #15
+	jsr BlockSet
+	lda #2
+	ldx #12
+	ldy #15
+	jsr BlockSet
+	lda #2
+	ldx #16
+	ldy #15
+	jsr BlockSet
+
+	rts

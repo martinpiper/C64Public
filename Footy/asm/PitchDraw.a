@@ -1,0 +1,149 @@
+!zn
+PitchPosX !by 0
+PitchPosXPixel !by 0
+PitchPosY !by 0
+PitchPosYPixel !by 0
+
+.previousPosX !by -1
+.previousPosY !by -1
+
+PitchDrawOptimised
+
+	lda PitchPosY
+	cmp .previousPosY
+	bne .do
+	ldx PitchPosX
+	cpx .previousPosX
+	bne .do2
+
+	; No difference, nothing to do
+	rts
+
+.do2
+	stx .previousPosX
+.do
+	sta .previousPosY
+	lsr
+	lsr
+	tay
+	lda PitchDrawLo,y
+	sta .smj+1
+	lda PitchDrawHi,y
+	sta .smj+2
+	lda PitchDrawBanks,y
+	jsr CartSelectBank_8K_NoSEI
+	lda PitchPosY
+	and #3
+	tay
+	lda PitchDrawLSBPos,y
+	clc
+	adc PitchPosX
+	tax
+.smj	jsr $1234
+	jmp CartKillBank
+	
+; This draws the map at any position using speed code
+PitchDrawLSBPos
+!for .ii , 4 {
+!set .i = .ii - 1
+	!by .i * PitchMapData_Width
+}
+
+PitchDrawBanks
+	!by CartFile1_Bank_Scroll0_bin
+	!by CartFile1_Bank_Scroll1_bin
+	!by CartFile1_Bank_Scroll2_bin
+	!by CartFile1_Bank_Scroll3_bin
+	!by CartFile1_Bank_Scroll4_bin
+	!by CartFile1_Bank_Scroll5_bin
+	!by CartFile1_Bank_Scroll6_bin
+	!by CartFile1_Bank_Scroll7_bin
+	!by CartFile1_Bank_Scroll8_bin
+	!by CartFile1_Bank_Scroll9_bin
+	!by CartFile1_Bank_Scroll10_bin
+	!by CartFile1_Bank_Scroll11_bin
+	!by CartFile1_Bank_Scroll12_bin
+	!by CartFile1_Bank_Scroll13_bin
+	!by CartFile1_Bank_Scroll14_bin
+	!by CartFile1_Bank_Scroll15_bin
+	!by CartFile1_Bank_Scroll16_bin
+	!by CartFile1_Bank_Scroll17_bin
+	!by CartFile1_Bank_Scroll18_bin
+	!by CartFile1_Bank_Scroll19_bin
+	!by CartFile1_Bank_Scroll20_bin
+	!by CartFile1_Bank_Scroll21_bin
+	!by CartFile1_Bank_Scroll22_bin
+	!by CartFile1_Bank_Scroll23_bin
+	!by CartFile1_Bank_Scroll24_bin
+	!by CartFile1_Bank_Scroll25_bin
+	!by CartFile1_Bank_Scroll26_bin
+
+PitchDrawLo
+	!by <CartFile1_Start_Scroll0_bin
+	!by <CartFile1_Start_Scroll1_bin
+	!by <CartFile1_Start_Scroll2_bin
+	!by <CartFile1_Start_Scroll3_bin
+	!by <CartFile1_Start_Scroll4_bin
+	!by <CartFile1_Start_Scroll5_bin
+	!by <CartFile1_Start_Scroll6_bin
+	!by <CartFile1_Start_Scroll7_bin
+	!by <CartFile1_Start_Scroll8_bin
+	!by <CartFile1_Start_Scroll9_bin
+	!by <CartFile1_Start_Scroll10_bin
+	!by <CartFile1_Start_Scroll11_bin
+	!by <CartFile1_Start_Scroll12_bin
+	!by <CartFile1_Start_Scroll13_bin
+	!by <CartFile1_Start_Scroll14_bin
+	!by <CartFile1_Start_Scroll15_bin
+	!by <CartFile1_Start_Scroll16_bin
+	!by <CartFile1_Start_Scroll17_bin
+	!by <CartFile1_Start_Scroll18_bin
+	!by <CartFile1_Start_Scroll19_bin
+	!by <CartFile1_Start_Scroll20_bin
+	!by <CartFile1_Start_Scroll21_bin
+	!by <CartFile1_Start_Scroll22_bin
+	!by <CartFile1_Start_Scroll23_bin
+	!by <CartFile1_Start_Scroll24_bin
+	!by <CartFile1_Start_Scroll25_bin
+	!by <CartFile1_Start_Scroll26_bin
+
+PitchDrawHi
+	!by >CartFile1_Start_Scroll0_bin
+	!by >CartFile1_Start_Scroll1_bin
+	!by >CartFile1_Start_Scroll2_bin
+	!by >CartFile1_Start_Scroll3_bin
+	!by >CartFile1_Start_Scroll4_bin
+	!by >CartFile1_Start_Scroll5_bin
+	!by >CartFile1_Start_Scroll6_bin
+	!by >CartFile1_Start_Scroll7_bin
+	!by >CartFile1_Start_Scroll8_bin
+	!by >CartFile1_Start_Scroll9_bin
+	!by >CartFile1_Start_Scroll10_bin
+	!by >CartFile1_Start_Scroll11_bin
+	!by >CartFile1_Start_Scroll12_bin
+	!by >CartFile1_Start_Scroll13_bin
+	!by >CartFile1_Start_Scroll14_bin
+	!by >CartFile1_Start_Scroll15_bin
+	!by >CartFile1_Start_Scroll16_bin
+	!by >CartFile1_Start_Scroll17_bin
+	!by >CartFile1_Start_Scroll18_bin
+	!by >CartFile1_Start_Scroll19_bin
+	!by >CartFile1_Start_Scroll20_bin
+	!by >CartFile1_Start_Scroll21_bin
+	!by >CartFile1_Start_Scroll22_bin
+	!by >CartFile1_Start_Scroll23_bin
+	!by >CartFile1_Start_Scroll24_bin
+	!by >CartFile1_Start_Scroll25_bin
+	!by >CartFile1_Start_Scroll26_bin
+
+
+
+!zn
+Pitch_UpdateVIC
+	lda PitchPosXPixel
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+	lda PitchPosYPixel
+	ora #kVIC2ScreenControlVBits_ScreenOn
+	sta VIC2ScreenControlV
+	rts

@@ -1,0 +1,32 @@
+!zn
+Screen_PitchInit
+	lda #0
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda Sprite_MC1
+	sta VIC2ExtraSpriteColour1
+	lda Sprite_MC2
+	sta VIC2ExtraSpriteColour2
+
+	lda #CIA2PortASerialBusVICBank_Bank3
+	sta CIA2PortASerialBusVICBank
+	+MVIC2MemorySetup_ScreenChar_A $c000 , $c800
+	sta VIC2MemorySetup
+	lda #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+
+	lda PitchColour_BG
+	sta VIC2ScreenColour
+	lda PitchColour_MC1
+	sta VIC2ExtraBackgroundColour1
+	lda PitchColour_MC2
+	sta VIC2ExtraBackgroundColour2
+	lda PitchColour_Char
+	+ClearScreenAtWithA_X COLOURRAM
+
+	rts

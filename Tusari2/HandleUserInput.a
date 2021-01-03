@@ -16,22 +16,20 @@ HandleUserInput
 .jumpVelocitiesEnd
 ;.fallingVelocities 1 , 1 , 2 , 1 , 2 , 2 , 2 , 2 , -1
 
+; Used to store Y from MSpritePosToCharacterLookupPosTweak
+.headScrY !by 0
+.headScrYP40 !by 0
+.headScrYM40 !by 0
+.legsScrY !by 0
+.legsScrYP40 !by 0
+.legsScrYM40 !by 0
+.legs2ScrY !by 0
+.legs2ScrYP40 !by 0
+.legs2ScrYM40 !by 0
+
 HandleJoystick
 
 !set RunJumpDemo_Joystick = CIA1KeyboardColumnJoystickA
-	lda #Scroller_RunJumpDemo_timerZero
-	ldx #Scroller_RunJumpDemo_timerLen
-.cll1
-	inc Scroller_RunJumpDemo_timerPos,x
-	lda Scroller_RunJumpDemo_timerPos,x
-	cmp #Scroller_RunJumpDemo_timerZero+10
-	bne .cll2
-	lda #Scroller_RunJumpDemo_timerZero
-	sta Scroller_RunJumpDemo_timerPos,x
-	dex
-	bpl .cll1
-.cll2
-
 	lda #0
 	sta AnimPlayer_directionSet
 
@@ -44,6 +42,45 @@ HandleJoystick
 	lda #0
 	sta .standing
 
+	ldx #1
+	+MSpritePosToCharacterLookup .rejectRoutineHead , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork2 , tempWork3 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .headScrY
+	tya
+	clc
+	adc #40
+	sta .headScrYP40
+	tya
+	sec
+	sbc #40
+	sta .headScrYM40
+.rejectRoutineHead
+	ldx #0
+	+MSpritePosToCharacterLookupPosTweak 0 , -5 , .rejectRoutineLegs , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .legsScrY
+	tya
+	clc
+	adc #40
+	sta .legsScrYP40
+	tya
+	sec
+	sbc #40
+	sta .legsScrYM40
+.rejectRoutineLegs
+
+	ldx #0
+	; 0 , 1 carefully tweaked to cause the player to land on top of platforms while jumping
+	+MSpritePosToCharacterLookupPosTweak 0 , 1 , .rejectRoutineLegs2 , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork4 , tempWork5 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .legs2ScrY
+	tya
+	clc
+	adc #40
+	sta .legs2ScrYP40
+	tya
+	sec
+	sbc #40
+	sta .legs2ScrYM40
+.rejectRoutineLegs2
+
 	; No need for fall detection when we are moving upwards due to jumping
 	ldx .jumpIndex
 	bpl .rejectRoutine
@@ -54,19 +91,8 @@ HandleJoystick
 	lda #1
 	sta .standing
 
-	ldx #0
-
-	+MSpritePosToCharacterLookupPosTweak 0 , -5 , .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
-	tya
-	clc
-	adc #40
-	tay
+	ldy .legsScrYP40
 	lda (tempWork0),y
-	beq .doFall
-!ifdef MapSolidCharsLower {
-	cmp #MapSolidCharsLower	; The character that is solid
-	bcc .rejectRoutine
-}
 !ifdef MapSolidCharsUpper {
 	cmp #MapSolidCharsUpper	; The character that is solid
 	bcs .rejectRoutine
@@ -89,6 +115,35 @@ HandleJoystick
 	cmp #<(VIC2SpriteXBorderRight38-VIC2SpriteSizeX)
 	bcs .o1
 .nop1
+
+	ldy .headScrY
+	iny
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .headScrYP40
+	iny
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .legs2ScrY
+	iny
+	lda (tempWork4),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .legsScrYM40
+	iny
+	lda (tempWork0),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
 
 	jsr AnimPlayerRunRight
 
@@ -113,6 +168,35 @@ HandleJoystick
 	bcc .o2
 .nop2
 
+	ldy .headScrY
+	dey
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .headScrYP40
+	dey
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .legs2ScrY
+	dey
+	lda (tempWork4),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .legsScrYM40
+	dey
+	lda (tempWork0),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+
 	jsr AnimPlayerRunLeft
 
 	lda AnimationXPosLo
@@ -124,15 +208,19 @@ HandleJoystick
 	sta AnimationXPosHi
 .o2
 
-	lda #JoystickBits_Down
-	bit RunJumpDemo_Joystick
-	bne .o3
-	inc AnimationYPos
-.o3
+;	lda #JoystickBits_Down
+;	bit RunJumpDemo_Joystick
+;	bne .o3
+;	inc AnimationYPos
+;.o3
 
 	lda #JoystickBits_Up
 	bit RunJumpDemo_Joystick
 	bne .notUp
+
+	; Already jumping?
+	lda .jumpIndex
+	bpl .alreadyJumping
 
 	lda .upImpulse
 	bne .o4
@@ -140,9 +228,6 @@ HandleJoystick
 	lda #1
 	sta .upImpulse
 
-	; Already jumping?
-	lda .jumpIndex
-	bpl .o4
 
 	; Not standing?
 	lda .standing
@@ -151,6 +236,22 @@ HandleJoystick
 	lda #0
 	sta .jumpIndex
 	jmp .o4
+
+.alreadyJumping
+	ldy .headScrYM40
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .notUp
+}
+	ldy .headScrY
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .notUp
+}
+	jmp .o4
+
 .notUp
 	lda #0
 	sta .upImpulse
@@ -172,6 +273,7 @@ HandleJoystick
 	lda AnimationYPos
 	sec
 	sbc .jumpVelocities,x
+;	sbc #1
 	sta AnimationYPos
 	inx
 	cpx #.jumpVelocitiesEnd-.jumpVelocities
@@ -251,7 +353,6 @@ HandleJoystick
 	lsr
 	lda AnimationXPosLo
 	ror
-	sta tempWork2
 
 	cmp #128+8
 	bcc .no3b
@@ -347,14 +448,14 @@ HandleJoystick
 
 	lda topScreenScrollX
 	lsr
-	sta tempWork0
+	sta .sma+1
 
 	lda AnimationXPosHi
 	lsr
 	lda AnimationXPosLo
 	ror
 	sec
-	sbc tempWork0
+.sma	sbc #0
 	tay
 	lda CharEffects_SpriteXPosToScreenCharPos,y
 	bmi .lnoBulletAllocated
@@ -439,20 +540,6 @@ HandleJoystick
 
 .osmby
 	rts
-
-!zn
-Scroller_RunJumpDemo_timerPos = SCREENRAM + ((22+Scroller_AdditionalCharLines) * VIC2ScreenCharsWidth) + 2
-Scroller_RunJumpDemo_timerLen = 9
-Scroller_RunJumpDemo_timerZero = 7
-RunJump_InitTimer
-	lda #Scroller_RunJumpDemo_timerZero
-	ldx #Scroller_RunJumpDemo_timerLen
-.cll1
-	sta Scroller_RunJumpDemo_timerPos,x
-	dex
-	bpl .cll1
-	rts
-
 
 
 !zn

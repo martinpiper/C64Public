@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="SpriteMultiplexor">
+      <UniqueIdentifier>{5f3e3fd2-e809-4141-b584-6378a07bf984}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MakeCart">
+      <UniqueIdentifier>{63b37052-4b14-4270-ae36-f8a638202e9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Externals">
+      <UniqueIdentifier>{503713ed-f8cb-4762-9e7e-649e2eed5389}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildIt.bat" />
+    <None Include="..\stdlib\BASICEntry80d.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\BASICEntry900.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\PETSCII.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\SampleInit.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\stdlib\MemoryCopy.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
+      <Filter>SpriteMultiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorDefaultPattern.a">
+      <Filter>SpriteMultiplexor</Filter>
+    </None>
+    <None Include="..\SpriteMultiplexor\SpriteMultiplexorVars.a">
+      <Filter>SpriteMultiplexor</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\BankSelect8K.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash_Code.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash_Macros.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\GMod2_Code.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\GMod2_Macros.a">
+      <Filter>Header Files\MakeCart</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerMacros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="_f_index1.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Screen.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Footy.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\PitchDraw.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\IRQ.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Game.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Player.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\PlayerMacros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\FootyMacros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Ball.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Camera.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\UserInput.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\PitchDrawUnrolled.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\GameData.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\GameGraphics.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="BallMacros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\BerzerkRedux\Rand.a">
+      <Filter>Externals</Filter>
+    </None>
+    <None Include="..\stdlib\LongBranches.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\Tusari2\Animation_macros.a">
+      <Filter>Externals</Filter>
+    </None>
+    <None Include="asm\AnimationData.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\Animation.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\AnimationMacros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="asm\PlayerData.a">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="tf.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

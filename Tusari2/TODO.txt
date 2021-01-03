@@ -1,13 +1,27 @@
 * C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor %cd%\Scroller.crt
-* C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe
+* For editing the levels: C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe
+* For editing enemy placement: C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe
+* For editing the score panel: C:\Work\C64\ExternalTools\CharPad 2.0 310715\CharPad.exe
 * C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe
 
-* For the init and tick (AnimationTypes_tickLo etc) here is a possibile optimisation where the type is multiplied by 3 and a linear block of memory consisting of "jmp $1234" is created instead
-	Making it very quick to index into the array and call the function, espeically if aligned to a page boundary.
+
+
+* Late jump, for a few frames after starting to fall, allow a jump.
 
 
 
-; TODO: Why does this make the sprite update go wrong near the MSB when scrolling left/right?
+
+* Boss PoC
+	Added boss sprites and map placement
+	Need some simple AI
+		Jump with leg animation
+		Throw rock
+
+
+
+
+* Sword, press space to switch?
+
 
 
 
@@ -34,56 +48,15 @@
 
 
 
-* Adjust the score panel so the score is not off the bottom of the screen
+* Hidden power-up block, turns into standable block when shot
+	Releases power-ups
 
 
 
-* Add player head solid character movement block and fall
-
-
-* Add left/right solid char player movement block
-	* Add player step up one character?
+* Collectable coins/crystals?
 
 
 
-* TODO: Add AnimationTypes_tickLo/Hi support
-
-
-
-* Add "dragon" animation, plus fireball
-	AnimationInit_dragon proves the model, the spawn position needs to be shifted horizontally though to hide the observed "pop on"
-	However currently the edge screen detection, with a strict sprite egde to screen edge calculaton, means wide (or tall) objects will still appear to "pop on"
-	What might be better is to somehow sync or link animations so that partially scrolled objects will not appear as partially spawned objects
-	Hmm, even with a modest 8 pixel horizontal adjustment to the spawn position, AnimationObject_dragonBody_8_11, the body still appears to pop on and there is a gap observed on the screen edge for the head
-	Also the 11 pixel Y adjustment (32-21 to get the sprite on the bottom of the block) makes the top edge scroll object appear to "pop on"
-	The area around the screen for objects might need to be made a few chars wider...
-	* Done - To de-stress the multiplexor perhaps have the aggressive screen edge detection during the animation data copy
-		* Added Scroller_DiscardForMultiplexorBottom* , Scroller_DiscardForMultiplexorRight
-	* Done - Then the animation screen edge detection can be wider and this would allow larger variation with map block spawn positions without appearing to "pop on" the screen
-		Currently wider discard in the X, to support the dragon
-		Y discard is also a bit wider
-		X position init is now wider on the left, the right position is unchanged since the dragon always spawns another sprite to the right
-		Done - Still need the top edge to be moved up one block
-			* This needs to adjust the map block Y L+H when processing the bottom since the bottom is not a whole number of blocks from the top
-	* Dragon init could do with storing the other animation index allocated and an additional delete routine which is called on remove and removes the other linked animation
-	* Fireball 230
-
-
-
-* Add ghost animation
-
-
-
-* Add drip animation
-
-
-
-* Add fish animation
-
-
-
-* Perhaps AnimationEnemyMapPlacement can inclue a map block X/Y char position to more closely match the sprite spawning position in the borders?
-	Depending on the horizontal or vertical edge being tested this would only activate the enemy if the value matched.
-	This would allow the edge of screen check to be brought in significantly
-	The pixel offset would then only need to be a value 0-7 and the use of scrollRealMapLXInv and scrollRealMapLYInv with their "3 x asl" can be removed
-
+* For the init and tick (AnimationTypes_tickLo etc) here is a possible optimisation where the type is multiplied by 3 and a linear block of memory consisting of "jmp $1234" is created instead
+	Making it very quick to index into the array and call the function, especially if aligned to a page boundary.
+	The test needs to update the scroller mapH/L/pixel scroll values using the correct internal routine from the Scroller source

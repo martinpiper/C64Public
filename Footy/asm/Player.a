@@ -1,0 +1,293 @@
+!zn
+PlayerTrapBall
+	!fill kTotalPlayers , 0
+PlayerShotPower
+	!fill kTotalPlayers , 0
+
+PlayerVelX
+	!fill kTotalPlayers , 0
+PlayerVelY
+	!fill kTotalPlayers , 0
+
+Player_Multiplex_YPosHi
+	!fill kTotalPlayers , 0
+
+
+PlayersPosXOriginal
+	; Team A
+	+MEncodeValueInMemory 29
+
+	+MEncodeValueInMemory 12
+	+MEncodeValueInMemory 47
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+	+MEncodeValueInMemory 12
+	+MEncodeValueInMemory 47
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+	; Team B
+	+MEncodeValueInMemory 29
+
+	+MEncodeValueInMemory 12
+	+MEncodeValueInMemory 47
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+	+MEncodeValueInMemory 12
+	+MEncodeValueInMemory 47
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+	+MEncodeValueInMemory 21
+	+MEncodeValueInMemory 38
+
+PlayersPosYOriginal
+	; Team A
+	+MEncodeValueInMemory 5
+
+	+MEncodeValueInMemory 20
+	+MEncodeValueInMemory 20
+	+MEncodeValueInMemory 17
+	+MEncodeValueInMemory 17
+
+	+MEncodeValueInMemory 32
+	+MEncodeValueInMemory 32
+	+MEncodeValueInMemory 32
+	+MEncodeValueInMemory 32
+
+	+MEncodeValueInMemory 45
+	+MEncodeValueInMemory 45
+
+	; Team B
+	+MEncodeValueInMemory 89
+
+	+MEncodeValueInMemory 74
+	+MEncodeValueInMemory 74
+	+MEncodeValueInMemory 77
+	+MEncodeValueInMemory 77
+
+	+MEncodeValueInMemory 62
+	+MEncodeValueInMemory 62
+	+MEncodeValueInMemory 62
+	+MEncodeValueInMemory 62
+
+	+MEncodeValueInMemory 49
+	+MEncodeValueInMemory 49
+
+PlayersPosX
+	!fill kTotalPlayers * 2 , 0
+PlayersPosY
+	!fill kTotalPlayers * 2 , 0
+
+Player_Init
+	ldx #(kTotalPlayers * 2) - 1
+.cl1
+	lda PlayersPosXOriginal,x
+	sta PlayersPosX,x
+	lda PlayersPosYOriginal,x
+	sta PlayersPosY,x
+	dex
+	bpl .cl1
+	rts
+
+Player_UpdateMultiplexor
+!for .ii , kTotalPlayers {
+!set .i = .ii -1
+	+MPlayerMultiplexorUpdate .i
+}
+
+	lda #$ff
+	sta Multiplex_YPos + kStatusPanelSpriteIndex + 1
+	ldx HandleUserInput_Joystick2PlayerIndex
+	bmi .noController
+	lda Multiplex_YPos , x
+	clc
+	adc #VIC2SpriteSizeY + 1
+	bcs .noController
+	sta Multiplex_YPos + kStatusPanelSpriteIndex + 1
+	lda Multiplex_XPosLo , x
+	sta Multiplex_XPosLo + kStatusPanelSpriteIndex + 1
+	lda Multiplex_XPosHi , x
+	sta Multiplex_XPosHi + kStatusPanelSpriteIndex + 1
+.noController
+
+	rts
+
+
+Player_currentPlayerTest		!by 0
+Player_CollisionAdjustedBallX	!by 0 , 0
+Player_CollisionAdjustedBallY	!by 0 , 0
+
+Player_AnimationUpdate
+
+	; Adjust ball coordinates for collision player to ball checks
+	+MSubS16ToAddrS16 8 , BallScreenPosX , BallScreenPosX + 1 , Player_CollisionAdjustedBallX , Player_CollisionAdjustedBallX + 1
+	+MSubS16ToAddrS16 8 , BallScreenPosY , BallScreenPosY + 1 , Player_CollisionAdjustedBallY , Player_CollisionAdjustedBallY + 1
+
+
+	inc Player_currentPlayerTest
+	ldx Player_currentPlayerTest
+	cpx #kTotalPlayers
+	bne .o1
+	ldx #0
+	stx Player_currentPlayerTest
+.o1
+	jsr Player_RunAI
+
+
+!for .ii , kTotalPlayers {
+!set .i = .ii -1
+	+MPlayerPositionUpdate .i
+}
+	rts
+
+
+!zn
+.velX !by 0
+.velY !by 0
+.currentPlayerIndex !by 0
+.joystickBits !by 0
+Player_RunAI
+	cpx HandleUserInput_Joystick2PlayerIndex
+	bne .notUserInput
+	rts
+.notUserInput
+	stx .currentPlayerIndex
+	txa
+	asl
+	tay
+
+	; Calculate the vector to the original position for this player
+	lda PlayersPosXOriginal,y
+	sec
+	sbc PlayersPosX,y
+	sta Footy_Temp0
+	lda PlayersPosXOriginal + 1,y
+	sbc PlayersPosX + 1,y
+	sta Footy_Temp1
+
+	lda PlayersPosYOriginal,y
+	sec
+	sbc PlayersPosY,y
+	sta Footy_Temp2
+	lda PlayersPosYOriginal + 1,y
+	sbc PlayersPosY + 1,y
+	sta Footy_Temp3
+
+	jsr DivideVectorBy8
+
+	; Get the larger positive value
+	lda Footy_Temp0
+	+M_ABS_WithST_A
+	sta Footy_Temp4
+	lda Footy_Temp2
+	+M_ABS_WithST_A
+	cmp Footy_Temp4
+	bcs .larger
+	lda Footy_Temp4
+.larger
+	; It's not that far away from the original spot, so run to the ball
+	cmp #10
+	bcc .runToBall
+
+	; Randomly run back to the target
+	jsr Rand
+	and #3
+	beq .runToTarget
+
+	; Otherwise stop
+	lda #0
+	sta PlayerVelX,x
+	sta PlayerVelY,x
+
+	; TODO: Needs stop animation choice, preserve the last good "joystick" input from the AI
+
+	rts
+
+.runToBall
+	; Calculate the vector to the ball
+	lda BallScreenPosX
+	sec
+	sbc PlayersPosX,y
+	sta Footy_Temp0
+	lda BallScreenPosX + 1
+	sbc PlayersPosX + 1,y
+	sta Footy_Temp1
+
+	lda BallScreenPosY
+	sec
+	sbc PlayersPosY,y
+	sta Footy_Temp2
+	lda BallScreenPosY + 1
+	sbc PlayersPosY + 1,y
+	sta Footy_Temp3
+
+	jsr DivideVectorBy8
+
+.runToTarget
+
+	; Check for direction to run
+!macro MPlayerCheckRunTo .targetPos , .playerVelocity , .joystickBits , .negJoy , .posJoy {
+	lda .targetPos
+	beq .over
+	bmi .perhapsNeg
+.perhapsPos
+	cmp #1
+	beq .no
+	lda #2
+	sta .playerVelocity,x
+	lda #.posJoy
+	ora .joystickBits
+	sta .joystickBits
+	jmp .over
+.perhapsNeg
+	cmp #-1
+	beq .no
+	lda #-2
+	sta .playerVelocity,x
+	lda #.negJoy
+	ora .joystickBits
+	sta .joystickBits
+	jmp .over
+.no
+	lda #0
+	sta .playerVelocity,x
+.over
+}
+	lda #0
+	sta .joystickBits
+	+MPlayerCheckRunTo Footy_Temp0 , PlayerVelX , .joystickBits , JoystickBits_Left , JoystickBits_Right
+	+MPlayerCheckRunTo Footy_Temp2 , PlayerVelY , .joystickBits , JoystickBits_Up , JoystickBits_Down
+
+	lda .joystickBits
+	eor #JoystickBits_AllDirections
+	tax
+	lda UserInput_joystickDirectionalBitsToAnimationLo,x
+	ldy UserInput_joystickDirectionalBitsToAnimationHi,x
+	ldx .currentPlayerIndex
+	jsr Animation_SetAnimationIfDifferent
+
+	rts
+
+
+!zn
+DivideVectorBy8
+	lda Footy_Temp1
+!for .i , 3 {
+	+M_ASR
+	ror Footy_Temp0
+}
+	sta Footy_Temp1
+
+	lda Footy_Temp3
+!for .i , 3 {
+	+M_ASR
+	ror Footy_Temp2
+}
+	sta Footy_Temp3
+	rts

@@ -1,0 +1,224 @@
+!zn
+AnimationFramesOriginalLo
+	!by <SpriteAnimation_PlayerLeft
+	!by <SpriteAnimation_PlayerRight
+	!by <SpriteAnimation_Enemy1
+	!by <SpriteAnimation_Enemy1
+	!by <SpriteAnimation_Enemy2
+	!by <SpriteAnimation_Enemy3
+	!by <SpriteAnimation_Enemy4
+	!by <SpriteAnimation_Ball1
+	!by <SpriteAnimation_Ball1
+	!by <SpriteAnimation_Ball1
+
+	!fill kMaxSprites , 0
+
+AnimationFramesOriginalHi
+	!by >SpriteAnimation_PlayerLeft
+	!by >SpriteAnimation_PlayerRight
+	!by >SpriteAnimation_Enemy1
+	!by >SpriteAnimation_Enemy1
+	!by >SpriteAnimation_Enemy2
+	!by >SpriteAnimation_Enemy3
+	!by >SpriteAnimation_Enemy4
+	!by >SpriteAnimation_Ball1
+	!by >SpriteAnimation_Ball1
+	!by >SpriteAnimation_Ball1
+
+	!fill kMaxSprites , 0
+
+AnimationFramesLo
+	!by <SpriteAnimation_PlayerLeft
+	!by <SpriteAnimation_PlayerRight
+	!by <SpriteAnimation_Enemy1
+	!by <SpriteAnimation_Enemy1
+	!by <SpriteAnimation_Enemy2
+	!by <SpriteAnimation_Enemy3
+	!by <SpriteAnimation_Enemy4
+	!by <SpriteAnimation_Ball1
+	!by <SpriteAnimation_Ball1
+	!by <SpriteAnimation_Ball1
+
+	!fill kMaxSprites , 0
+
+AnimationFramesHi
+	!by >SpriteAnimation_PlayerLeft
+	!by >SpriteAnimation_PlayerRight
+	!by >SpriteAnimation_Enemy1
+	!by >SpriteAnimation_Enemy1
+	!by >SpriteAnimation_Enemy2
+	!by >SpriteAnimation_Enemy3
+	!by >SpriteAnimation_Enemy4
+	!by >SpriteAnimation_Ball1
+	!by >SpriteAnimation_Ball1
+	!by >SpriteAnimation_Ball1
+
+	!fill kMaxSprites , 0
+
+
+!macro MHandleVelocity .SpriteFrameDataLo , .SpriteFrameData , .SpriteFrameDataDeltaLo , .SpriteFrameDataDeltaHi , .minPos , .maxPos {
+	lda .SpriteFrameDataLo,x
+	sta .smLo+1
+	clc
+	adc .SpriteFrameDataDeltaLo,x
+	sta .SpriteFrameDataLo,x
+	lda .SpriteFrameData,x
+	sta .smHi+1
+	adc .SpriteFrameDataDeltaHi,x
+	sta .SpriteFrameData,x
+	cmp #.minPos
+	bcc .swapSign
+	cmp #.maxPos
+	bcs .swapSign
+	jmp .over
+.swapSign
+.smLo lda #0
+	sta .SpriteFrameDataLo,x
+.smHi lda #0
+	sta .SpriteFrameData,x
+	lda #0
+	sec
+	sbc .SpriteFrameDataDeltaLo,x
+	sta .SpriteFrameDataDeltaLo,x
+	lda #0
+	sbc .SpriteFrameDataDeltaHi,x
+	sta .SpriteFrameDataDeltaHi,x
+	jmp .end
+.over
+	; Handle ball to block collision
+	lda SpriteFrameDataIsBall,x
+	beq .notBall
+
+	; TODO: Currently a point test. Edge test is quite expensive.
+	ldy SpriteFrameDataY,x
+	sty .smy+1
+	lda SpritePosYToBlockScreenLo,y
+	sta zeroPage_Temp2
+
+	lda SpritePosYToBlockScreenHi,y
+	sta zeroPage_Temp3
+	ldy SpriteFrameDataX,x
+	lda SpritePosXToBlockScreenLo,y
+	tay
+	lda (zeroPage_Temp2),y
+	beq .noBlock
+
+	; Trigger a block removal in the vblank
+	sty BlockRemove1Y
+
+	lda zeroPage_Temp2
+	sta BlockRemove1
+	lda zeroPage_Temp3
+	sta BlockRemove1 + 1
+
+.smy	ldy #0
+	lda SpritePosYToMainVideoScreenHi,y
+	sta BlockRemove1MainVideo
+	lda SpritePosYToOriginalMainScreenHi,y
+	sta BlockRemove1OriginalMain
+
+	jmp .swapSign
+
+.noBlock
+.notBall
+.end
+}
+
+!align 255,0
+SpritePosYToBlockScreenLo
+!for .ii , 256 {
+!set .i = (256 - .ii) - 10
+!if .i < 0 {
+	!set .i = 0
+}
+	!by <(BlockScreen + ((.i / 8) * $20))
+}
+SpritePosYToBlockScreenHi
+!for .ii , 256 {
+!set .i = (256 - .ii) - 10
+!if .i < 0 {
+	!set .i = 0
+}
+	!by >(BlockScreen + ((.i / 8) * $20))
+}
+
+; The address in the video hardware
+SpritePosYToMainVideoScreenHi
+!for .ii , 256 {
+!set .i = (256 - .ii) - 10
+!if .i < 0 {
+	!set .i = 0
+}
+	!by >($9000 + ((.i / 8) * $20))
+}
+SpritePosYToOriginalMainScreenHi
+!for .ii , 256 {
+!set .i = (256 - .ii) - 10
+!if .i < 0 {
+	!set .i = 0
+}
+	!by >(OriginalMainScreen + ((.i / 8) * $20))
+}
+
+SpritePosXToBlockScreenLo
+!for .ii , 256 {
+!set .i = .ii - 1 + 2
+	!by .i / 8
+}
+
+!zn
+AnimationFrames_Process
+	ldx #kMaxSprites-1
+.l1
+	lda AnimationFramesHi,x
+	+lbeq .noAnim
+	sta zeroPage_Temp1
+	lda AnimationFramesLo,x
+	sta zeroPage_Temp0
+
+	+MHandleVelocity SpriteFrameDataXLo , SpriteFrameDataX , SpriteFrameDataXDeltaLo , SpriteFrameDataXDeltaHi , 10 , 232
+	+MHandleVelocity SpriteFrameDataYLo , SpriteFrameDataY , SpriteFrameDataYDeltaLo , SpriteFrameDataYDeltaHi , 6 , 218
+
+	ldy #1
+	lda (zeroPage_Temp0),y
+	bne .gotFrame
+
+	; Hi address = 0 indicates animation loop
+	lda AnimationFramesOriginalLo,x
+	sta zeroPage_Temp0
+	lda AnimationFramesOriginalHi,x
+	sta zeroPage_Temp1
+
+	lda (zeroPage_Temp0),y
+.gotFrame
+	sta zeroPage_Temp3
+	dey
+	lda (zeroPage_Temp0),y
+	sta zeroPage_Temp2
+
+	inc zeroPage_Temp0
+	bne .o1
+	inc zeroPage_Temp1
+.o1
+	inc zeroPage_Temp0
+	bne .o2
+	inc zeroPage_Temp1
+.o2
+	lda zeroPage_Temp0
+	sta AnimationFramesLo,x
+	lda zeroPage_Temp1
+	sta AnimationFramesHi,x
+
+	; Get frame and palette
+	; TODO: There is a potential to process all the data from SpriteAnimation_AllFrames to SpriteAnimation_AllFrames_End and remove the need for this double indrect
+	ldy #0
+	lda (zeroPage_Temp2),y
+	sta SpriteFrameDataFrame,x
+	iny
+	lda (zeroPage_Temp2),y
+	sta SpriteFrameDataColour,x
+
+.noAnim
+	dex
+	+lbpl .l1
+	rts

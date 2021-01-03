@@ -111,3 +111,105 @@
 
 
 * Added mode7 top down test, yes it looks like Thunder Blade (main.a: Mode7LayersEnable): https://twitter.com/MartinPiper/status/1273987207863267328
+
+
+
+* Improved the Mode7LayersEnable documentation. The perpsective effect now has its own scenario.
+
+
+
+
+* When Mode7LayersEnable is enabled, figure out the mathematical relationship with Mode7LayerX/YPos, Mode7Layer0Scale, Mode7Layer1Scale and Mode7Layer2Scale and Mode7Regs0/1/2_x/ypos
+	To get the vanishing point in the middle of the screen, the different scales seem to need some extra tweaks?
+		e.g. "((Mode7LayerXPos*5)/4) * Mode7Layer2Scale" compared to "(Mode7LayerXPos/2) * Mode7Layer1Scale" compared to "Mode7LayerXPos * Mode7Layer0Scale"
+		Trying to simplify, the calculation now uses consistent: Mode7LayerAccuracy = $100
+			Far		$200:	(Mode7LayerXPos * Mode7LayerAccuracy * 5)/2				((Mode7LayerXPos*5)/4) * Mode7Layer2Scale
+			Middle	$100:	Mode7LayerXPos * Mode7LayerAccuracy						Mode7LayerXPos * Mode7Layer0Scale
+			Near	$80:	(Mode7LayerXPos * Mode7LayerAccuracy)/4					(Mode7LayerXPos/2) * Mode7Layer1Scale
+		* Now changed to use:
+			Mode7Layer1Scale = $80
+			Mode7Layer1Multiplier = 1
+			Mode7Layer1Divider = 2
+			Mode7Layer0Scale = $100
+			Mode7Layer0Multiplier = 1
+			Mode7Layer0Divider = 1
+			Mode7Layer2Scale = $200
+			Mode7Layer2Multiplier = 5
+			Mode7Layer2Divider = 4
+		* After making Mode7Layer*Divider = 256 then the ratios for Mode7Layer*Multiplier become clearer
+			Graphing it: https://docs.google.com/spreadsheets/d/1QBX7a31QZNNJsE-wVR33rMleGYEHlFAiU6XOTCAHLBU/edit?usp=sharing
+			Obviously some kind of (1+x)/(1/x)
+				https://docs.google.com/spreadsheets/d/1QBX7a31QZNNJsE-wVR33rMleGYEHlFAiU6XOTCAHLBU/edit#gid=0
+		* Created: !macro TransformPositionTo24Bit .pos , .scale
+
+
+
+
+* Create a table to allow zoom to be updated in realtime. The 24 bit offset position can be added to this base value for the different scales
+	Fire + up/down to zoom in or out ("fly" up and down)
+
+
+
+
+* For @BatBall
+	https://www.spriters-resource.com/arcade/arkanoid/
+
+
+
+* BatBall
+	Done - Add shadows	
+	Done - Add simple enemy movement
+		Can use 16 bits, then just use the high byte for screen pos
+	Done - Add first ball sprites
+	Done - Add brick characters
+	Done - Add example level bricks
+		BlockSet
+			BlockScreen will be updated to indcate if it is the left or right hand portion of the block
+	Done - Add simple ball movement
+
+
+
+* Tidy main3.a
+
+
+
+* BatBall : Remove collided blocks
+	BlockRemoveChecks removes the blocks with 0 chars
+	Done - Need to remove with actual chars from the correct position
+
+
+
+* Main3Anim (Arkanoid large ship animation)
+	https://www.youtube.com/watch?v=QCfnri9hefQ
+	Note the intro sequence shows the ship being damaged, but no green teleport effect
+	Also note the game win sequence shows the ship being repaired and the green teleport effect
+	These two sequences are not more than 16 frames each, even though there are 20 frames in total
+	While converting all of the 20 frames to 8x8 chars gives:
+		num tiles=277
+		num palettes=9
+	The 20 (or even 16) screens are too many, even for the banked char screen (at 2x2 = 4 banks) to display
+	However when using the tile layer which has 4x4 = 16 screens:
+		java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 255 0 255 --paletteoffset 0 --palettesize 8 --imagequantize 8 --startxy 0 0 --image BatBall\ShipAnim.png --tilewh 16 16 --outputplanes ../tmp/BatBallAnim_plane --outputscrcol ../tmp/BatBallAnim_map.bin --outputpalettes ../tmp/BatBallAnim_palette.bin --numbitplanes 3 --convertwritepass
+		num tiles=114
+		num palettes=10
+	The tile layer can easily store the animations for the intro and outro separately
+	* Re-arrange the file so that the frames used in the intro/outro are converted into two "banks" of the large virtual tile screen
+		4x4 and another 4x4 map underneath, giving 4x8 in total
+		Use the assembler to separate out this data
+	* This will output one set of tile planes, but provide two tile maps that can be animated using the scroll registers
+		This means, the tile board will need to be constructed
+	* Alternative: Since the ships are half screen height:
+		Black opaque characters, with some optional stars, can be used to blank out the remaining portion
+		Or if black opaque 32x32 sprites are used, it would be possible to use one tile map and blank out the required portion of the screen.
+		Some sprites will still be available to use for the explosions, flying ship, lasers, player ship etc
+	When using 16x16 tiles, the last few frames, the green beaming effect, does not seem to have quite enough colours for the back portion of the effect
+		This could be fixed up with sprites if needed
+		The 8x8 chars do not have this issue, due to the palette entries for the smaller area being able to cope
+		* Perhaps the grey front part of the ship above the green effect is causing the colour palette to be overloaded?
+			Moved the entire ship sheet downwards by 8 pixels, this reduced the used tiles from 114 to 106 !!
+			This fixed the green effect, but causes problems with the right top small engine yellow highlight
+			* So, for now, don't move the sheet
+
+
+
+* 1.0.0.4

@@ -14,7 +14,7 @@ rem To get the _f_index1.a file offsets first
 ..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -b 4 -m data\frm0*.del $4000 s:data\smp_*.raw -o AnimationBitmap.crt >t.txt
 
 
-..\acme.exe -v3 --msvc AnimationBitmap2_11.a
+..\acme.exe -v4 --msvc AnimationBitmap2_11.a
 if not exist AnimationBitmap.prg goto error
 ..\bin\LZMPi.exe -c64mr AnimationBitmap.prg AnimationBitmap.prg $c000 >t.txt
 if not exist AnimationBitmap.prg goto error

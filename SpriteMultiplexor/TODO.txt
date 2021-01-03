@@ -9,6 +9,12 @@
 
 	Maintain an array of eight height values.
 	Map this to the next physical sprite choice code. Double the value for y expansion.
+		However the above method has issues where sprites will no longer be used sequentially depending on their sorted Y position
+	* An alternative would be to just read the sprite Y expansion register
+		Then when is NE 0 then use double the height for the sprite height.
+		When the byte EQ 0 then use the normal sprite height
+			This is less efficient
+
 
 	Make it a large value to reserve the sprite
 

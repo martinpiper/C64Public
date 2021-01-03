@@ -1,0 +1,15 @@
+PitchColour_BG = *
+PitchColour_MC1 = *+1
+PitchColour_MC2 = *+2
+PitchColour_Char = *+4
+!bin "Pitch.ctm" , 5 , $04
+
+PitchMapData_Width = 60
+PitchMapData_Height = 97
+PitchMapData
+!bin "Pitch.ctm" , PitchMapData_Width*PitchMapData_Height , $918 , 2
+PitchMapDataEnd
+
+Sprite_MC1 = *
+Sprite_MC2 = *+1
+!bin "Footy.spd" , $2 , $7

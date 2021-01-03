@@ -1,0 +1,69 @@
+!zn
+
+!source "Tusari2\Animation_macros.a"
+
++StartAnim ~Animation_PlayerUp , 5
+	+DoFrame 64 , 65 , 66 , 67
++EndAnimLoop
+
++StartAnim ~Animation_PlayerUpRight , 5
+	+DoFrame 68 , 69 , 70 , 71
++EndAnimLoop
+
++StartAnim ~Animation_PlayerRight , 5
+	+DoFrame 72 , 73 , 74 , 75
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDownRight , 5
+	+DoFrame 76 , 77 , 78 , 79
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDown , 5
+	+DoFrame 80 , 81 , 82 , 83
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDownLeft , 5
+	+DoFrame 104 , 105 , 106 , 107
++EndAnimLoop
+
++StartAnim ~Animation_PlayerLeft , 5
+	+DoFrame 108 , 109 , 110 , 111
++EndAnimLoop
+
++StartAnim ~Animation_PlayerUpLeft , 5
+	+DoFrame 112 , 113 , 114 , 115
++EndAnimLoop
+
+
+
++StartAnim ~Animation_PlayerUpStop , 1
+	+DoFrame 84
++EndAnimLoop
+
++StartAnim ~Animation_PlayerUpRightStop , 1
+	+DoFrame 85
++EndAnimLoop
+
++StartAnim ~Animation_PlayerRightStop , 1
+	+DoFrame 86
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDownRightStop , 1
+	+DoFrame 87
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDownStop , 1
+	+DoFrame 88
++EndAnimLoop
+
++StartAnim ~Animation_PlayerDownLeftStop , 1
+	+DoFrame 89
++EndAnimLoop
+
++StartAnim ~Animation_PlayerLeftStop , 1
+	+DoFrame 90
++EndAnimLoop
+
++StartAnim ~Animation_PlayerUpLeftStop , 1
+	+DoFrame 91
++EndAnimLoop

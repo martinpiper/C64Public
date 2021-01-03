@@ -1,0 +1,98 @@
+!macro SpriteAnimationFrame .address , .speed {
+!for .i , .speed {
+	+MLittleEndian16Bit .address
+}
+}
+
+!macro SpriteAnimationEnd {
+	+MLittleEndian16Bit 0
+}
+
+SpriteAnimation_AllFrames
+
+SpriteAnimation_PlayerLeft
+	+SpriteAnimationFrame EmitSpriteFrame128_0 , 1
+	+SpriteAnimationEnd
+SpriteAnimation_PlayerRight
+	+SpriteAnimationFrame EmitSpriteFrame144_0 , 1
+	+SpriteAnimationEnd
+
+SpriteAnimation_Enemy1
+	+SpriteAnimationFrame EmitSpriteFrame0_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame16_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame32_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame48_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame64_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame80_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame96_0 , 3
+	+SpriteAnimationFrame EmitSpriteFrame112_0 , 3
+	+SpriteAnimationEnd
+
+SpriteAnimation_Enemy2
+	+SpriteAnimationFrame EmitSpriteFrame0_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame16_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame32_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame48_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame64_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame80_16 , 4
+	+SpriteAnimationFrame EmitSpriteFrame0_32 , 4
+	+SpriteAnimationFrame EmitSpriteFrame16_32 , 4
+	+SpriteAnimationFrame EmitSpriteFrame32_32 , 4
+	+SpriteAnimationFrame EmitSpriteFrame48_32 , 4
+	+SpriteAnimationFrame EmitSpriteFrame64_32 , 4
+	+SpriteAnimationEnd
+
+SpriteAnimation_Enemy3
+	+SpriteAnimationFrame EmitSpriteFrame0_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame16_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame32_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame48_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame64_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame80_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame96_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame112_48 , 2
+	+SpriteAnimationFrame EmitSpriteFrame0_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame16_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame32_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame48_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame64_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame80_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame96_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame112_64 , 2
+	+SpriteAnimationFrame EmitSpriteFrame0_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame16_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame32_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame48_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame64_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame80_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame96_80 , 2
+	+SpriteAnimationFrame EmitSpriteFrame112_80 , 2
+	+SpriteAnimationEnd
+
+
+SpriteAnimation_Enemy4
+	+SpriteAnimationFrame EmitSpriteFrame0_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame16_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame32_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame48_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame64_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame0_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame16_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame32_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame48_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame64_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame48_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame32_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame16_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame0_112 , 3
+	+SpriteAnimationFrame EmitSpriteFrame64_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame48_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame32_96 , 3
+	+SpriteAnimationFrame EmitSpriteFrame16_96 , 3
+	+SpriteAnimationEnd
+
+SpriteAnimation_Ball1
+	+SpriteAnimationFrame EmitSpriteFrame80_96 , 1
+	+SpriteAnimationEnd
+
+SpriteAnimation_AllFrames_End

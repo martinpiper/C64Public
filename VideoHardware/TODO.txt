@@ -1,5 +1,66 @@
+* BatBall
+	* Ball collision with bat
+		Depending on how far from the middle (or to the edges) the ball return X velocity (hence direction) changes
+	* Collisions with enemies make the ball bounce randomly, with a speed component
+	* Different sprite shadow height (offset) can provide extra visual feeling of depth
+	* Every N bounces the ball speed increases
+
+
+
+
+
+* Using convert2.bat the black pixels in "Top down.png" seem to be coming through with transparency. Perhaps this is a palette matching problem or where the loaded palette has black in colour 0??
+	This would mean the layer combination logic is detecting a lower 3 bit pixel and treating it as transparent. The convertor could do with a mode where that transparent pixel is ignored in the output palette.
+
+
+
 * Unit test:
 	AnimationEngine_MutateToType
 	AnimationEngine_Delete
 	CharacterLogic_CheckSpawn
 	CharacterLogic_Update
+
+
+
+* Intro for the hardware. Sound effects in stereo, zooming/scaling plane plus sprites and scrolling stars?
+	https://modarchive.org/index.php?request=view_player&query=182799
+	https://modarchive.org/index.php?request=view_player&query=158076
+	https://modarchive.org/index.php?request=view_player&query=65855
+	* https://modarchive.org/index.php?request=view_player&query=102831
+	https://modarchive.org/index.php?request=view_player&query=67177
+	https://modarchive.org/index.php?request=view_player&query=188620
+	https://modarchive.org/index.php?request=view_player&query=67475
+	https://modarchive.org/index.php?request=view_player&query=160307
+	https://modarchive.org/index.php?request=view_player&query=67772
+	Trimmed? https://modarchive.org/index.php?request=view_player&query=159149
+	* https://modarchive.org/index.php?request=view_player&query=159249
+	** https://modarchive.org/index.php?request=view_player&query=46133
+	https://modarchive.org/index.php?request=view_player&query=118994
+	* https://modarchive.org/index.php?request=view_player&query=119262
+	https://modarchive.org/index.php?request=view_player&query=119263
+	https://modarchive.org/index.php?request=view_player&query=54666
+	https://modarchive.org/index.php?request=view_player&query=77231
+	Note drop?
+	Dubstep?
+	https://www.youtube.com/watch?v=_lBY-zZksGw&list=WL&index=25&t=0s
+	https://www.youtube.com/watch?v=vb97JWdn82w
+	https://youtu.be/LyhU7qwGuFA?t=228
+	https://youtu.be/LkDImfh9LaM?t=154
+	https://www.youtube.com/watch?v=cf6S-uErp2M
+	https://www.youtube.com/watch?v=ljEJOYA9gMg
+		https://www.youtube.com/results?search_query=sound+effect+dramtic+whoosh+impact
+	https://www.youtube.com/watch?v=tMO7WKTjZbM
+		effect 3 and 9
+	https://www.youtube.com/watch?v=DAN6fVzc7QY
+	https://www.youtube.com/watch?v=9gvwhl505-o
+		More bass
+	https://www.youtube.com/watch?v=3g9eJRd0cXM&list=PLCHQYDMF4Ne-GZ9kel4cji1GJFwQzsbKi
+	https://www.youtube.com/watch?v=qBnxz7PqS6c&list=PLCHQYDMF4Ne-GZ9kel4cji1GJFwQzsbKi&index=6
+	Braams https://www.youtube.com/watch?v=ZWoY-iEwgIU
+		https://www.youtube.com/watch?v=WniOZT7FlKM
+	
+	Editor https://batman.no/buze/
+		C:\Program Files (x86)\Buze
+	C:\Users\Martin Piper\Downloads\ft2-clone-v1.34-win64\ft2-clone-win64
+		https://16-bits.org/ft2.php
+			<Space> for edit mode!

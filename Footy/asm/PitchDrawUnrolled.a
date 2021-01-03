@@ -1,0 +1,16 @@
+!source "stdlib/stdlib.a"
+!cpu 6510
+!ct pet
+
+* = C64Cartridge_Lo_8K
+
+DrawMap0ToScreen0
+!for .yy , VIC2ScreenCharsHeight {
+!set .y = .yy - 1
+!for .xx , VIC2ScreenCharsWidth {
+!set .x = .xx - 1
+	lda PitchMapData + (.y * PitchMapData_Width) + .x + ((MapYPos * 4) * PitchMapData_Width), x
+	sta $c000 + (.y * VIC2ScreenCharsWidth) + .x
+}
+}
+	rts

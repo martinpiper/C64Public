@@ -1,0 +1,386 @@
+!zn
+HandleUserInput_Joystick2PlayerIndex !by 1
+.currentJoystickValue !by 0
+UserInput_lastDirectionalJoystickInput !by 0
+.kUseDebugJoystick1 = 1
+HandleUserInput
+!ifdef .kUseDebugJoystick1 {
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardRowsJoystickB
+	bne .notFire
+	inc ShotPower
+	; Test for a maximum power shot
+	ldy ShotPower
+	cpy #$ff
+	beq .doShot
+	jmp .noShot
+.notFire
+	ldy ShotPower
+	beq .noShot
+.doShot
+	; Convert shot power into vertical velocity
+	lda ShotPower
+	lsr
+	lsr
+	lsr
+	lsr
+	sta BallVelZ
+	lda #JoystickBits_Left
+	bit CIA1KeyboardRowsJoystickB
+	bne .notLeft
+	lda #0
+	sec
+	sbc ShotPower
+	sta BallVelX
+	lda #-1
+	sta BallVelX+1
+.notLeft
+	lda #JoystickBits_Right
+	bit CIA1KeyboardRowsJoystickB
+	bne .notRight
+	sty BallVelX
+	lda #0
+	sta BallVelX+1
+.notRight
+	lda #JoystickBits_Up
+	bit CIA1KeyboardRowsJoystickB
+	bne .notUp
+	lda #0
+	sec
+	sbc ShotPower
+	sta BallVelY
+	lda #-1
+	sta BallVelY+1
+.notUp
+	lda #JoystickBits_Down
+	bit CIA1KeyboardRowsJoystickB
+	bne .notDown
+	sty BallVelY
+	lda #0
+	sta BallVelY+1
+.notDown
+	lda #0
+	sta ShotPower
+
+.noShot
+}
+	jsr UserInput_SweepForPlayer
+	jsr UserInput_SweepForPlayer
+
+	lda CIA1KeyboardColumnJoystickA
+	sta .currentJoystickValue
+
+	; Handle the controlled player updates
+	ldx HandleUserInput_Joystick2PlayerIndex
+
+	lda #0
+	sta PlayerVelX,x
+	sta PlayerVelY,x
+	sta PlayerTrapBall,x
+
+	lda #2
+	sta .moveSpeed
+	lda #-2
+	sta .moveSpeedNeg
+
+	lda #JoystickBits_Fire
+	bit .currentJoystickValue
+	bne .notFire2
+	lda #1
+	sta PlayerTrapBall,x
+	sta .moveSpeed
+	lda #-1
+	sta .moveSpeedNeg
+
+	; While fire is held down, increase the shot power of the player up to a maximum
+	lda PlayerShotPower,x
+	clc
+	adc #2
+	and #127
+	sta PlayerShotPower,x
+
+.notFire2
+
+	lda #JoystickBits_Left
+	bit .currentJoystickValue
+	bne .notLeft2
+	lda .moveSpeedNeg
+	sta PlayerVelX,x
+
+	lda .currentJoystickValue
+	sta UserInput_lastDirectionalJoystickInput
+
+.notLeft2
+
+	lda #JoystickBits_Right
+	bit .currentJoystickValue
+	bne .notRight2
+	lda .moveSpeed
+	sta PlayerVelX,x
+
+	lda .currentJoystickValue
+	sta UserInput_lastDirectionalJoystickInput
+
+.notRight2
+
+	lda #JoystickBits_Up
+	bit .currentJoystickValue
+	bne .notUp2
+	lda .moveSpeedNeg
+	sta PlayerVelY,x
+
+	lda .currentJoystickValue
+	sta UserInput_lastDirectionalJoystickInput
+
+.notUp2
+
+	lda #JoystickBits_Down
+	bit .currentJoystickValue
+	bne .notDown2
+	lda .moveSpeed
+	sta PlayerVelY,x
+
+	lda .currentJoystickValue
+	sta UserInput_lastDirectionalJoystickInput
+
+.notDown2
+
+	; Handle what animation to set
+	lda .currentJoystickValue
+	and #JoystickBits_AllDirections
+	cmp #JoystickBits_AllDirections
+	beq .noDirection
+	tax
+	lda UserInput_joystickDirectionalBitsToAnimationLo,x
+	ldy UserInput_joystickDirectionalBitsToAnimationHi,x
+	ldx HandleUserInput_Joystick2PlayerIndex
+	jsr Animation_SetAnimationIfDifferent
+	jmp .overNoDirection
+.noDirection
+	lda UserInput_lastDirectionalJoystickInput
+	and #JoystickBits_AllDirections
+	tax
+	lda UserInput_joystickNoDirectionalBitsToAnimationLo,x
+	ldy UserInput_joystickNoDirectionalBitsToAnimationHi,x
+	ldx HandleUserInput_Joystick2PlayerIndex
+	jsr Animation_SetAnimationIfDifferent
+
+.overNoDirection
+
+	lda PlayerShotPower,x
+	; This multiplexor update is safe, since the Y position (and X MSB) is not touched during rendering
+	clc
+	adc #VIC2SpriteXBorderLeft38
+	sta Multiplex_XPosLo + kStatusPanelSpriteIndex
+
+	rts
+.moveSpeed !by 0
+.moveSpeedNeg !by 0
+
+UserInput_joystickDirectionalBitsToAnimationHi
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+
+	!by 0
+	!by >Animation_PlayerDownRight
+	!by >Animation_PlayerUpRight
+	!by >Animation_PlayerRight
+
+	!by 0
+	!by >Animation_PlayerDownLeft
+	!by >Animation_PlayerUpLeft
+	!by >Animation_PlayerLeft
+
+	!by 0
+	!by >Animation_PlayerDown
+	!by >Animation_PlayerUp
+	!by 0
+
+
+UserInput_joystickDirectionalBitsToAnimationLo
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+
+	!by 0
+	!by <Animation_PlayerDownRight
+	!by <Animation_PlayerUpRight
+	!by <Animation_PlayerRight
+
+	!by 0
+	!by <Animation_PlayerDownLeft
+	!by <Animation_PlayerUpLeft
+	!by <Animation_PlayerLeft
+
+	!by 0
+	!by <Animation_PlayerDown
+	!by <Animation_PlayerUp
+	!by 0
+
+
+UserInput_joystickNoDirectionalBitsToAnimationHi
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+
+	!by 0
+	!by >Animation_PlayerDownRightStop
+	!by >Animation_PlayerUpRightStop
+	!by >Animation_PlayerRightStop
+
+	!by 0
+	!by >Animation_PlayerDownLeftStop
+	!by >Animation_PlayerUpLeftStop
+	!by >Animation_PlayerLeftStop
+
+	!by 0
+	!by >Animation_PlayerDownStop
+	!by >Animation_PlayerUpStop
+	!by 0
+
+
+UserInput_joystickNoDirectionalBitsToAnimationLo
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+
+	!by 0
+	!by <Animation_PlayerDownRightStop
+	!by <Animation_PlayerUpRightStop
+	!by <Animation_PlayerRightStop
+
+	!by 0
+	!by <Animation_PlayerDownLeftStop
+	!by <Animation_PlayerUpLeftStop
+	!by <Animation_PlayerLeftStop
+
+	!by 0
+	!by <Animation_PlayerDownStop
+	!by <Animation_PlayerUpStop
+	!by 0
+
+!zn
+.currentPlayerTest !by 1
+.bestDistance !by 0,127
+.bestIndex !by -1
+
+UserInput_SweepForPlayer
+	; Sweep for the closest player to the ball
+	ldx .currentPlayerTest
+	inx
+	cpx #kPlayersPerSide
+	bne .l1
+
+	lda .bestIndex
+	bmi .notFound
+
+.useIndex
+	ldx BallLastTouchedBy
+	cpx HandleUserInput_Joystick2PlayerIndex
+	bne .notPreviousTouch
+	; Update ball owner to us
+	sta BallLastTouchedBy
+	jmp .continueTouch
+.notPreviousTouch
+	ldx #0
+	stx BallAfterTouchTimer
+.continueTouch
+	ldx HandleUserInput_Joystick2PlayerIndex
+	sta HandleUserInput_Joystick2PlayerIndex
+
+	cpx HandleUserInput_Joystick2PlayerIndex
+	beq .notFound	; No change, so don't do anything
+
+
+	; Switching from the old controlled player, so clear the input states
+	lda #0
+	sta PlayerVelX,x
+	sta PlayerVelY,x
+	sta PlayerTrapBall,x
+
+	stx .smx1+1
+	; And stop any previous animation
+	lda UserInput_lastDirectionalJoystickInput
+	and #JoystickBits_AllDirections
+	tax
+	lda UserInput_joystickNoDirectionalBitsToAnimationLo,x
+	ldy UserInput_joystickNoDirectionalBitsToAnimationHi,x
+.smx1	ldx #0
+	jsr Animation_SetAnimationIfDifferent
+
+
+.notFound
+	lda #127
+	sta .bestDistance+1
+	lda #-1
+	sta .bestIndex
+	ldx #0
+.l1
+	stx .currentPlayerTest
+	txa
+	asl
+	tay
+
+	; Get the abs deltas
+	lda PlayersPosX,y
+	sec
+	sbc BallScreenPosX
+	sta Footy_Temp0
+	lda PlayersPosX+1,y
+	sbc BallScreenPosX+1
+	sta Footy_Temp1
+	bpl .abs1
+
+	lda #0
+	sec
+	sbc Footy_Temp0
+	sta Footy_Temp0
+	lda #0
+	sbc Footy_Temp1
+	sta Footy_Temp1
+
+.abs1
+	lda PlayersPosY,y
+	sec
+	sbc BallScreenPosY
+	sta Footy_Temp2
+	lda PlayersPosY+1,y
+	sbc BallScreenPosY+1
+	sta Footy_Temp3
+	bpl .abs2
+
+	lda #0
+	sec
+	sbc Footy_Temp2
+	sta Footy_Temp2
+	lda #0
+	sbc Footy_Temp3
+	sta Footy_Temp3
+
+.abs2
+
+	+MAdd16STo16S Footy_Temp0 , Footy_Temp2 , Footy_Temp0
+
+.cmpLoop
+	lda Footy_Temp0+1
+	cmp .bestDistance+1
+	bcc .isCloser
+	beq .mightBeCloser
+	jmp .notCloser
+.mightBeCloser
+	lda Footy_Temp0
+	cmp .bestDistance
+	bcs .notCloser
+.isCloser
+	stx .bestIndex
+	+MAddr16toAddr_A Footy_Temp0 , .bestDistance
+;	inc VIC2BorderColour
+.notCloser
+	rts
+
+

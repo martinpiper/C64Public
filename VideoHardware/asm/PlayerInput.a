@@ -1,3 +1,15 @@
+!ifdef Mode7LayersEnable {
+	Mode7Layer0Speed = $280
+} else {
+	Mode7Layer0Speed = $200
+}
+!ifdef Mode7LayersEnable {
+PlayerLayerXPos !by 0,0,0
+PlayerLayerYPos !by 0,0,0
+
+PlayerBaseScale !by $20
+}
+
 !zn
 
 AllocatePlayer
@@ -125,6 +137,35 @@ kScreenSpriteOffScreen_left		= 244
 playerAnimationIndex !by 0
 HandleJoystick
 
+!ifdef Mode7LayersEnable {
+	lda #JoystickBits_Fire
+	bit CIA1KeyboardColumnJoystickA
+	beq .isFire
+	jmp .notFire
+.isFire
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardColumnJoystickA
+	beq .isUpFire
+	jmp .notUpFire
+.isUpFire
+	dec PlayerBaseScale
+	jmp .notDown
+
+.notUpFire
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	beq .isDownFire
+	jmp .notDownFire
+.isDownFire
+	inc PlayerBaseScale
+
+	; Skip the up/down movement
+	jmp .notDown
+.notDownFire
+.notFire
+}
+
 	lda #JoystickBits_Up
 	bit CIA1KeyboardColumnJoystickA
 	beq .isUp
@@ -137,10 +178,10 @@ HandleJoystick
 	ldy #kAnimationType_playerRunUp
 	jsr AnimationEngine_MutateToTypeIfDifferent
 
-	+TilesCloudsDec $200 , Mode7Regs0_ypos , TileScreen_ypos
 !ifdef Mode7LayersEnable {
-	+CloudsDec $206 , Mode7Regs1_ypos
-	+CloudsDec $20c , Mode7Regs2_ypos
+	+CloudsDec Mode7Layer0Speed , PlayerLayerYPos
+} else {
+	+TilesCloudsDec Mode7Layer0Speed , Mode7Regs0_ypos , TileScreen_ypos
 }
 
 .notUp
@@ -157,10 +198,10 @@ HandleJoystick
 	ldy #kAnimationType_playerRunDown
 	jsr AnimationEngine_MutateToTypeIfDifferent
 
-	+TilesCloudsInc $200 , Mode7Regs0_ypos , TileScreen_ypos
 !ifdef Mode7LayersEnable {
-	+CloudsInc $206 , Mode7Regs1_ypos
-	+CloudsInc $20c , Mode7Regs2_ypos
+	+CloudsInc Mode7Layer0Speed , PlayerLayerYPos
+} else {
+	+TilesCloudsInc Mode7Layer0Speed , Mode7Regs0_ypos , TileScreen_ypos
 }
 
 .notDown
@@ -179,10 +220,10 @@ HandleJoystick
 	lda #0
 	sta AnimationEngine_flips,x
 
-	+TilesCloudsDec $200 , Mode7Regs0_xpos , TileScreen_xpos
 !ifdef Mode7LayersEnable {
-	+CloudsDec $206 , Mode7Regs1_xpos
-	+CloudsDec $20c , Mode7Regs2_xpos
+	+CloudsDec Mode7Layer0Speed , PlayerLayerXPos
+} else {
+	+TilesCloudsDec Mode7Layer0Speed , Mode7Regs0_xpos , TileScreen_xpos
 }
 
 .notLeft
@@ -201,11 +242,59 @@ HandleJoystick
 	lda #kAnimationEngine_flipX
 	sta AnimationEngine_flips,x
 
-	+TilesCloudsInc $200 , Mode7Regs0_xpos , TileScreen_xpos
 !ifdef Mode7LayersEnable {
-	+CloudsInc $206 , Mode7Regs1_xpos
-	+CloudsInc $20c , Mode7Regs2_xpos
+	+CloudsInc Mode7Layer0Speed , PlayerLayerXPos
+} else {
+	+TilesCloudsInc Mode7Layer0Speed , Mode7Regs0_xpos , TileScreen_xpos
+}
+.notRight
+
+!macro ScaleInYPrepare .regs {
+	lda LayerScaleLo,y
+	sta .regs + 0
+	lda LayerScaleHi,y
+	sta .regs + 1
+
+	lda LayerScaleLo,y
+	sta .regs + 6
+	lda LayerScaleHi,y
+	sta .regs + 7
+
+	lda LayerScaleOffsetX0,y
+	sta .regs + 12
+	lda LayerScaleOffsetX1,y
+	sta .regs + 13
+	lda LayerScaleOffsetX2,y
+	sta .regs + 14
+
+	lda LayerScaleOffsetY0,y
+	sta .regs + 15
+	lda LayerScaleOffsetY1,y
+	sta .regs + 16
+	lda LayerScaleOffsetY2,y
+	sta .regs + 17
+}
+!ifdef Mode7LayersEnable {
+	ldy PlayerBaseScale
+	+ScaleInYPrepare Mode7Regs1
+	+MAdd24To24ToOut PlayerLayerXPos , Mode7Regs1 + 12 , Mode7Regs1 + 12
+	+MAdd24To24ToOut PlayerLayerYPos , Mode7Regs1 + 15 , Mode7Regs1 + 15
+
+	lda PlayerBaseScale
+	clc
+	adc #$20
+	tay
+	+ScaleInYPrepare Mode7Regs0
+	+MAdd24To24ToOut PlayerLayerXPos , Mode7Regs0 + 12 , Mode7Regs0 + 12
+	+MAdd24To24ToOut PlayerLayerYPos , Mode7Regs0 + 15 , Mode7Regs0 + 15
+
+	lda PlayerBaseScale
+	clc
+	adc #$40
+	tay
+	+ScaleInYPrepare Mode7Regs2
+	+MAdd24To24ToOut PlayerLayerXPos , Mode7Regs2 + 12 , Mode7Regs2 + 12
+	+MAdd24To24ToOut PlayerLayerYPos , Mode7Regs2 + 15 , Mode7Regs2 + 15
 }
 
-.notRight
 	rts

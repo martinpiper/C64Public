@@ -1,0 +1,157 @@
+!macro MReduceValue .val {
+	lda .val+1
+	beq .velXSmall
+	bmi .velXIncr
+	jmp .velXDecr
+.velXSmall
+	lda .val
+	beq .noVelX
+.velXDecr
+	lda .val
+	sec
+	sbc #1
+	sta .val
+	lda .val+1
+	sbc #0
+	sta .val+1
+	jmp .noVelX
+.velXIncr
+	inc .val
+	bne .noVelX
+	inc .val+1
+.noVelX
+}
+
+
+!macro MBallToScreenPos .ballPos , .screenPos {
+	lda .ballPos + 1
+	sta Footy_Temp1
+
+	lda .ballPos
+
+	; / 16 (4 bits)
+	lsr Footy_Temp1
+	ror
+	lsr Footy_Temp1
+	ror
+	lsr Footy_Temp1
+	ror
+	lsr Footy_Temp1
+	ror
+	sta .screenPos
+	lda Footy_Temp1
+	sta .screenPos+1
+}
+
+
+!macro MScreenPosToPitchScroll .screenPos , .pitchScreenPos, .maxVal, .screenPixel , .screenChar , .midVal {
+	lda .screenPos
+	sec
+	sbc #<.midVal
+	sta .pitchScreenPos
+	lda .screenPos+1
+	sbc #>.midVal
+	bmi .clampZero
+	sta .pitchScreenPos+1
+
+	cmp #>.maxVal
+	beq .mightBeMaxVal
+	bcs .clampMaxVal
+	jmp .o1
+.mightBeMaxVal
+	lda .pitchScreenPos
+	cmp #<.maxVal
+	bcc .o1
+
+.clampMaxVal
+	+MWordValueToAddress_A .maxVal-1 , .pitchScreenPos
+	jmp .o1
+.clampZero
+	lda #0
+	sta .pitchScreenPos
+	sta .pitchScreenPos+1
+.o1
+	lda .pitchScreenPos + 1
+	sta Footy_Temp1
+	lda .pitchScreenPos
+	and #7
+	eor #7
+	sta .screenPixel
+	lda .pitchScreenPos
+	; / 8
+	lsr Footy_Temp1
+	ror
+	lsr Footy_Temp1
+	ror
+	lsr Footy_Temp1
+	ror
+	sta .screenChar
+}
+
+
+!macro MCheckMinimum .pos , .vel {
+	lda .pos+1
+	bpl .notNegX
+	lda #0
+	sec
+	sbc .pos
+	sta .pos
+	lda #0
+	sbc .pos+1
+	sta .pos+1
+	; Check the velocity sign
+	lda .vel+1
+	bpl .notNegX
+	; Bounce the velocity
+	lda #0
+	sec
+	sbc .vel
+	sta .vel
+	lda #0
+	sbc .vel+1
+	sta .vel+1
+.notNegX
+}
+
+
+!macro MCheckMaximum .pos , .vel , .val {
+	lda .pos+1
+	cmp #>.val
+	beq .mightBe
+	bcc .notPosX
+	jmp .doBounce
+.mightBe
+	lda .pos
+	cmp #<.val
+	bcc .notPosX
+.doBounce
+	lda .pos
+	sec
+	sbc #<.val
+	sta Footy_Temp0
+	lda .pos+1
+	sbc #>.val
+	sta Footy_Temp1
+	lda #<.val
+	sec
+	sbc Footy_Temp0
+	sta .pos
+	lda #>.val
+	sbc Footy_Temp1
+	sta .pos+1
+	; Check the velocity sign
+	lda .vel+1
+	bmi .notPosX
+	lda .vel
+	beq .notPosX
+
+	; Bounce the velocity
+	lda #0
+	sec
+	sbc .vel
+	sta .vel
+	lda #0
+	sbc .vel+1
+	sta .vel+1
+.notPosX
+}

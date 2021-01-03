@@ -6,6 +6,18 @@
 // cls && Conv2_11.bat && ConvDelta2_11.bat && BuildIt2_11.bat
 
 
+* MashSamples
+	Could it use u-law instead for better quality?
+		import librosa
+		import numpy
+		y, sr = librosa.load(filename, samplerate, True) #load file
+		numpy.clip(y, -1, 1, y) #Clip samples
+		norm = librosa.mu_compress(y, mu=15, quantize=True) #mu-compress and quantize to 16 different values
+		norm = norm + 8 #offset the samples values
+		bin8 = numpy.uint8(norm) #convert to 8-bit unsigned
+
+
+
 * Dragon's Lair - Needs a better way to read the video and audio start lo/hi/bank information
 	An indexed table of animation chunks would do
 	This would replace all the references to address/bank in GameState_null and all GameState_* sections

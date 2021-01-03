@@ -1,0 +1,180 @@
+!zn
+!align 255,0
+BlockScreen
+	!fill $400 , 0
+
+MainScreenBlocks
+	!bin "tmp/BatBallBlocksmap.bin"
+kNumMainScreenBlocks = (*-MainScreenBlocks) / 2
+
+
+MainScreenTabLo
+!for .ii , 32 {
+!set .i = .ii -1
+	!by <(MainScreen + (.i * $20))
+}
+MainScreenTabHi
+!for .ii , 32 {
+!set .i = .ii -1
+	!by >(MainScreen + (.i * $20))
+}
+
+MainScreenColoursTabLo
+!for .ii , 32 {
+!set .i = .ii -1
+	!by <(MainScreen + (.i * $20) + $400)
+}
+MainScreenColoursTabHi
+!for .ii , 32 {
+!set .i = .ii -1
+	!by >(MainScreen + (.i * $20) + $400)
+}
+
+BlockScreenTabLo
+!for .ii , 32 {
+!set .i = .ii -1
+	!by <(BlockScreen + (.i * $20))
+}
+BlockScreenTabHi
+!for .ii , 32 {
+!set .i = .ii -1
+	!by >(BlockScreen + (.i * $20))
+}
+
+!zn
+BlockSet
+	asl
+	sta .smIndex+1
+
+	lda MainScreenTabLo,y
+	sta zeroPage_Temp0
+	lda MainScreenTabHi,y
+	sta zeroPage_Temp1
+
+	lda MainScreenColoursTabLo,y
+	sta zeroPage_Temp2
+	lda MainScreenColoursTabHi,y
+	sta zeroPage_Temp3
+
+	lda BlockScreenTabLo,y
+	sta zeroPage_Temp4
+	lda BlockScreenTabHi,y
+	sta zeroPage_Temp5
+
+	txa
+	tay
+
+.smIndex	ldx #0
+	lda MainScreenBlocks,x
+	clc
+	adc #kCharOffsetToBlocks
+	sta (zeroPage_Temp0),y
+
+	lda MainScreenBlocks + kNumMainScreenBlocks,x
+	sta (zeroPage_Temp2),y
+
+	lda #-1
+	sta (zeroPage_Temp4),y
+
+	iny
+
+	lda MainScreenBlocks+1,x
+	clc
+	adc #kCharOffsetToBlocks
+	sta (zeroPage_Temp0),y
+
+	lda MainScreenBlocks + kNumMainScreenBlocks + 1,x
+	sta (zeroPage_Temp2),y
+
+	lda #1
+	sta (zeroPage_Temp4),y
+
+	rts
+
+
+!zn
+BlockRemove1				!by 0,0
+BlockRemove1Y				!by 0
+BlockRemove1MainVideo		!by 0
+BlockRemove1OriginalMain	!by 0
+
+; This is executed in the vlbank, to remove any pending blocks from the screen safely
+BlockRemoveChecks
+	lda BlockRemove1 + 1
+	bne .gotBlock
+
+	rts
+
+.gotBlock
+	sta zeroPage_Temp1
+
+	lda BlockRemove1
+	sta zeroPage_Temp0
+
+	lda #0
+	sta BlockRemove1 + 1
+
+	ldy BlockRemove1Y
+	lda (zeroPage_Temp0),y
+	beq .noBlock
+	bpl .isRight
+	bmi .isLeft
+
+.noBlock
+	rts
+
+.isRight
+	dey
+
+.isLeft
+	sty zeroPage_Temp4
+	lda #0
+	sta (zeroPage_Temp0),y
+	iny
+	sta (zeroPage_Temp0),y
+	dey
+
+	; Calculate the destination address in the video hardware
+	tya
+	clc
+	adc BlockRemove1
+	sta zeroPage_Temp2
+	lda BlockRemove1MainVideo
+	adc #0
+	sta zeroPage_Temp3
+
+	lda #1
+	ldx zeroPage_Temp2
+	ldy zeroPage_Temp3
+	jsr Bus24Bit_SetAddressBus
+	ldy zeroPage_Temp4
+	lda BlockRemove1OriginalMain
+	sta zeroPage_Temp1
+	lda (zeroPage_Temp0),y
+	sta CIA2PortBRS232
+	iny
+	lda (zeroPage_Temp0),y
+	sta CIA2PortBRS232
+
+	; And the colours
+	lda zeroPage_Temp1
+	clc
+	adc #4
+	sta zeroPage_Temp1
+
+	lda zeroPage_Temp3
+	clc
+	adc #4
+	tay
+	lda #1
+	ldx zeroPage_Temp2
+	jsr Bus24Bit_SetAddressBus
+	ldy zeroPage_Temp4
+	lda (zeroPage_Temp0),y
+	sta CIA2PortBRS232
+	iny
+	lda (zeroPage_Temp0),y
+	sta CIA2PortBRS232
+
+	rts
+

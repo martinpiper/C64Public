@@ -1,0 +1,105 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 12
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr Bus24Bit_DisableDisplay
+
+	jsr InitScreenData
+	jsr DisplayScreen
+
+	jsr SetupLevel
+
+	jsr DisplayScreenAgain
+
+	jsr AnimationFrames_Process
+
+mainLoop
+	jsr Bus24Bit_WaitVBlank
+	jsr BlockRemoveChecks
+	jsr CopySpriteFrameData
+	jsr AnimationFrames_Process
+
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	dec SpriteFrameDataX
+	dec SpriteFrameDataX+1
+	dec SpriteFrameDataX
+	dec SpriteFrameDataX+1
+.notLeft
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	inc SpriteFrameDataX
+	inc SpriteFrameDataX+1
+	inc SpriteFrameDataX
+	inc SpriteFrameDataX+1
+.notRight
+
+	jmp mainLoop
+	rts
+
+!source "asm/BatBall/Levels.a"
+
+!source "asm/BatBall/Sprites.a"
+
+!source "asm/BatBall/Animation.a"
+!source "asm/BatBall/AnimationData.a"
+
+
+!macro MEmitSpriteFrame_Preserve {
+}
+!macro MEmitSpriteFrame .frame , .col {
+	!by .frame
+	!by .col
+}
+
+!macro MEmitSpriteFrame_RestoreExit {
+}
+
+!source "tmp/BatBallspriteSheet.txt.a"
+
+
+!source "asm/BatBall/DisplayScreen.a"
+
+!source "asm/BatBall/BlockRoutines.a"
+
+!source "stdlib/MemoryCopy.a"

@@ -1,11 +1,11 @@
-!macro MSpritePosToCharacterLookup .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .tempWork0 , .tempWork1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
+!macro MSpritePosToCharacterLookup .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .outputAddress0 , .outputAddress1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
 	ldy .AnimationYPos,x
 	lda (.ZP_SpriteYPosToScreenCharPosHilo),y
 	bmi .rejectRoutine
 	ora .drawnBank
-	sta .tempWork1
+	sta .outputAddress1
 	lda (.ZP_SpriteYPosToScreenCharPosLolo),y
-	sta .tempWork0
+	sta .outputAddress0
 
 	lda .AnimationXPosHi,x
 	lsr
@@ -17,7 +17,7 @@
 	tay
 }
 
-!macro MSpritePosToCharacterLookupPosTweak .tweakX , .tweakY , .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .tempWork0 , .tempWork1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
+!macro MSpritePosToCharacterLookupPosTweak .tweakX , .tweakY , .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .outputAddress0 , .outputAddress1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
 	lda .AnimationYPos,x
 	clc
 	adc #.tweakY
@@ -25,9 +25,9 @@
 	lda (.ZP_SpriteYPosToScreenCharPosHilo),y
 	bmi .rejectRoutine
 	ora .drawnBank
-	sta .tempWork1
+	sta .outputAddress1
 	lda (.ZP_SpriteYPosToScreenCharPosLolo),y
-	sta .tempWork0
+	sta .outputAddress0
 
 	lda .AnimationXPosHi,x
 	lsr

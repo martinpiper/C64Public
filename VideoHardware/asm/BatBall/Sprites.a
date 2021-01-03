@@ -1,0 +1,141 @@
+!zn
+CopySpriteFrameData
+	jsr Bus24Bit_SetAddressSprites
+	; Very optimised unrolled loop to copy sprite data in the vblank
+
+	; Draw sprites
+!for .ii , kMaxSprites {
+!set .i = .ii - 1
+	lda SpriteFrameDataFrame + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataColour + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataY + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataX + .i
+	sta CIA2PortBRS232
+}
+
+	; Draw shadows
+!for .ii , kMaxSprites {
+!set .i = .ii - 1
+	lda SpriteFrameDataFrame + .i
+	sta CIA2PortBRS232
+	lda #$1f	; Last palette is all black, for shadows
+	sta CIA2PortBRS232
+	lda SpriteFrameDataY + .i
+	sec
+	sbc #4
+	sta CIA2PortBRS232
+	lda SpriteFrameDataX + .i
+	clc
+	adc #4
+	sta CIA2PortBRS232
+}
+
+	jsr Bus24Bit_Reset
+	inc VIC2BorderColour
+	rts
+
+!zn
+SpriteFrameDataXDeltaLo
+	!by 0
+	!by 0
+	!by 48
+	!by 78
+	!by 64
+	!by 80
+	!by 96
+	!by 128
+	!by 32
+	!by 64
+	!fill kMaxSprites , 0
+SpriteFrameDataXDeltaHi
+	!by 0
+	!by 0
+	!by -1
+	!by 1
+	!by 2
+	!by 0
+	!by -1
+	!by -2
+	!by 1
+	!by 2
+	!fill kMaxSprites , 0
+
+SpriteFrameDataYDeltaLo
+	!by 0
+	!by 0
+	!by 128
+	!by 98
+	!by 48
+	!by 80
+	!by 96
+	!by 64
+	!by 164
+	!by 94
+	!fill kMaxSprites , 0
+SpriteFrameDataYDeltaHi
+	!by 0
+	!by 0
+	!by 1
+	!by 1
+	!by -1
+	!by -1
+	!by 0
+	!by -2
+	!by 1
+	!by 2
+	!fill kMaxSprites , 0
+
+SpriteFrameDataXLo
+	!fill kMaxSprites , 0
+
+SpriteFrameDataX
+	!by 16
+	!by 32
+	!by 48
+	!by 48
+	!by 64
+	!by 80
+	!by 96
+	!by 78
+	!by 178
+	!by 128
+	!fill kMaxSprites , 0
+
+SpriteFrameDataYLo
+	!fill kMaxSprites , 0
+
+SpriteFrameDataY
+	!by 16
+	!by 16
+	!by 110
+	!by 110
+	!by 200
+	!by 164
+	!by 123
+	!by 32
+	!by 132
+	!by 92
+	!fill kMaxSprites , 0
+
+SpriteFrameDataFrame
+	!fill kMaxSprites , 0
+
+SpriteFrameDataColour
+	!fill kMaxSprites , 0
+
+SpriteFrameDataIsBall
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 1
+	!by 1
+	!by 1
+
+	!fill kMaxSprites , 0

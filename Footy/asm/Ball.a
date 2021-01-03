@@ -1,0 +1,170 @@
+!zn
+ShotPower	!by 0
+BallPosX	!by 0,0
+BallPosY	!by 0,0
+
+BallVelX	!by 0,0
+BallVelY	!by 0,0
+
+; Coordinates suitable for player position comparions
+BallScreenPosX	!by 0,0
+BallScreenPosY	!by 0,0
+
+BallPosZ	!by 0
+BallVelZ	!by 0
+
+BallLastTouchedBy	!by -1
+BallAfterTouchTimer	!by 0
+
+AnimationUpdate_Ball
+	; Movement
+	+MAdd16STo16S BallPosX , BallVelX , BallPosX
+	+MAdd16STo16S BallPosY , BallVelY , BallPosY
+
+	; Handle any after touch
+	lda BallAfterTouchTimer
+	beq .noAfterTouch
+
+	; Adjusts the velocity, not the position
+	dec BallAfterTouchTimer
+	; NOTE: If the computer players want after touch, then this check will need to check for the computer player velocity
+	ldy BallLastTouchedBy
+	bmi .skipAfterTouchReset
+
+;	inc VIC2BorderColour
+
+	ldx PlayerVelX,y
+	lda PlayerVelToBallLo1_12,x
+	sta Footy_Temp0
+	lda PlayerVelToBallHi1_12,x
+	sta Footy_Temp1
+	+MAdd16STo16S BallVelX , Footy_Temp0 , BallVelX
+
+	ldx PlayerVelY,y
+	lda PlayerVelToBallLo1_12,x
+	sta Footy_Temp0
+	lda PlayerVelToBallHi1_12,x
+	sta Footy_Temp1
+	+MAdd16STo16S BallVelY , Footy_Temp0 , BallVelY
+	jmp .skipAfterTouchReset
+
+.noAfterTouch
+	lda #-1
+	sta BallLastTouchedBy
+
+.skipAfterTouchReset
+
+	; Edge of pitch checks
+	+MCheckMinimum BallPosX , BallVelX
+	+MCheckMinimum BallPosY , BallVelY
+
+	+MCheckMaximum BallPosX , BallVelX , (PitchMapData_Width-3)*8*16
+	+MCheckMaximum BallPosY , BallVelY , (PitchMapData_Height-3)*8*16
+
+	; Friction (and air resistance): Reduce velocity of the ball per frame
+	+MReduceValue BallVelX
+	+MReduceValue BallVelY
+
+	; Calculate the final screen position, remove accuracy bits
+	+MBallToScreenPos BallPosX , BallScreenPosX
+	+MBallToScreenPos BallPosY , BallScreenPosY
+
+	jsr AnimationUpdate_Ball_Bounce
+
+	rts
+
+!zn
+AnimationUpdate_Ball_Bounce
+	; Handle the ball bounce
+	lda BallPosZ
+	clc
+	adc BallVelZ
+	bvc .noOverflow
+	lda #$7f
+.noOverflow
+	sta BallPosZ
+	bpl .noballZBounce
+	; It bounced on the ground
+	lda #0
+	sec
+	sbc BallPosZ
+	sta BallPosZ
+	lda BallVelZ
+	bpl .velocityIsPositive
+	; Enforce the velocity direction after the bounce
+	lda #0
+	sec
+	sbc BallVelZ
+	; Reduce velocity on each bounce, can assume the value is positive here
+.velocityIsPositive
+	lsr
+	sta BallVelZ
+	jmp .noBallFall
+.noballZBounce
+	beq .noBallFall
+	inc .gravityReduce
+	lda .gravityReduce
+	and #1
+	bne .noBallFall
+	; Simulate gravity
+	dec BallVelZ
+.noBallFall
+	rts
+.gravityReduce !by 0
+
+
+
+BallPosZToSpriteFrame
+	!fill 6 , 93
+	!fill 6 , 94
+	!fill 6 , 95
+	!fill 6 , 96
+	!fill 6 , 97
+	!fill 6 , 98
+	!fill 6 , 99
+	!fill 256 , 99
+
+!zn
+Ball_UpdateMultiplexor
+	ldy BallPosZ
+	lda BallPosZToSpriteFrame,y
+	sta Multiplex_SpriteFrame + kTotalPlayers
+
+	lda BallScreenPosY
+	sec
+	sbc PitchScreenPosY
+	sta Multiplex_YPos + kTotalPlayers
+	lda BallScreenPosY+1
+	sbc PitchScreenPosY+1
+	sta Footy_Temp0
+	lda Multiplex_YPos + kTotalPlayers
+	clc
+	adc #VIC2SpriteYBorderTop24
+	sta Multiplex_YPos + kTotalPlayers
+	lda Footy_Temp0
+	adc #0
+	cmp #1
+	bcs .offScreenSprite
+
+	lda BallScreenPosX
+	sec
+	sbc PitchScreenPosX
+	sta Multiplex_XPosLo + kTotalPlayers
+	lda BallScreenPosX+1
+	sbc PitchScreenPosX+1
+	sta Multiplex_XPosHi + kTotalPlayers
+	lda Multiplex_XPosLo + kTotalPlayers
+	clc
+	adc #VIC2SpriteXBorderLeft38
+	sta Multiplex_XPosLo + kTotalPlayers
+	lda Multiplex_XPosHi + kTotalPlayers
+	adc #0
+	cmp #2
+	bcs .offScreenSprite
+	sta Multiplex_XPosHi + kTotalPlayers
+	jmp .onScreenSprite
+.offScreenSprite
+	lda #$ff
+	sta Multiplex_YPos + kTotalPlayers
+.onScreenSprite
+	rts

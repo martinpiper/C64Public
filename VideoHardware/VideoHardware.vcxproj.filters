@@ -40,6 +40,15 @@
     <Filter Include="Source Files\BerzerkRedux">
       <UniqueIdentifier>{59135770-4aa3-4dca-969c-2c70d463faa9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\assets\BatBall">
+      <UniqueIdentifier>{b6dd02aa-b989-47d3-83bc-99df47d2e751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\asm\BatBall">
+      <UniqueIdentifier>{2c154773-3e86-41b2-b73b-903001e41e48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\asm\BatBallAnim">
+      <UniqueIdentifier>{1c9e9b0e-1c47-4731-ae87-322fb86dea24}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -71,6 +80,14 @@
     <None Include="FeatureEditor.bat" />
     <None Include="MakeRelease.bat" />
     <None Include="SDK README.md" />
+    <None Include="assets\convert2.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt3.bat" />
+    <None Include="assets\convert3.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt3Anim.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -148,6 +165,36 @@
     <Library Include="..\..\BombJack\stdlib\Music.a">
       <Filter>Header Files\BombJack\stdlib</Filter>
     </Library>
+    <Library Include="tmp\BatBallspriteSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="asm\main3.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\BatBall\DisplayScreen.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\BatBall\BlockRoutines.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\BatBall\AnimationData.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\BatBall\Animation.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\BatBall\Sprites.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\BatBall\Levels.a">
+      <Filter>Source Files\asm\BatBall</Filter>
+    </Library>
+    <Library Include="asm\main3Anim.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\BatBallAnim\DisplayScreen.a">
+      <Filter>Source Files\asm\BatBallAnim</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -156,6 +203,12 @@
       <Filter>tmp</Filter>
     </Text>
     <Text Include="tmp\spriteSheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\BatBallspriteSheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\batball.log">
       <Filter>tmp</Filter>
     </Text>
   </ItemGroup>
@@ -174,6 +227,18 @@
     </Image>
     <Image Include="assets\sprites.png">
       <Filter>Resource Files\assets</Filter>
+    </Image>
+    <Image Include="assets\BatBall\Blocks.png">
+      <Filter>Resource Files\assets\BatBall</Filter>
+    </Image>
+    <Image Include="assets\BatBall\level1.png">
+      <Filter>Resource Files\assets\BatBall</Filter>
+    </Image>
+    <Image Include="assets\BatBall\powerups.png">
+      <Filter>Resource Files\assets\BatBall</Filter>
+    </Image>
+    <Image Include="assets\BatBall\sprites.png">
+      <Filter>Resource Files\assets\BatBall</Filter>
     </Image>
   </ItemGroup>
 </Project>

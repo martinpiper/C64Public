@@ -18,16 +18,22 @@ To build and run
 To convert the artwork assets used in the demo. This does not need to be run every time, only when the assets are changed. Run:
 
 	* assets\convert.bat
+	* assets\convert3.bat
 	
-To build the code, execute tests, and run the example game. Run:
+To build the code, execute tests, and run one of the examples by running one of these:
 
 	* BuildIt.bat
+	* BuildIt3.bat
+	* BuildIt3Anim.bat
 
 
 Map editor
 ==========
 
-The map files in assets\*.tmx and *.tsxuse this editor: https://www.mapeditor.org/2020/04/14/tiled-1-3-4-released.html
+The map files in assets\*.tmx and *.tsx use this editor: https://www.mapeditor.org/2020/04/14/tiled-1-3-4-released.html
+
+	* The map needs to be expoerted as an image, which is then converted into tile data using convert.bat
+		Menu->File->Export as image: assets\map.png
 
 	
 Editing tests
@@ -48,6 +54,8 @@ Credits
 		https://opengameart.org/content/rpg-town-pixel-art-assets
 		https://opengameart.org/content/colored-16x16-fantasy-tileset
 		https://opengameart.org/content/cloud-set
+		https://www.spriters-resource.com/arcade/arkanoid/
 
 	Music:
 		https://modarchive.org/index.php?request=view_by_moduleid&query=188017
+

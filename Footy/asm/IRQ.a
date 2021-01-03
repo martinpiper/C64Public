@@ -1,0 +1,70 @@
+!zn
+BottomRasterReached !by 0
+
+IRQ_GameInit
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
+	jsr Multiplex_Default_Init
+
+	jsr Multiplex_InitSort
+	jsr Multiplex_Sort
+
+	lda #<Multiplex_maininter
+	sta IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta IRQServiceRoutineHi
+	+MACROWaitForTheLastScan_A
+	lda #1
+	sta VIC2InteruptControl
+	lda #VIC2SpriteYBorderTop24-VIC2SpriteSizeY-Multiplex_TopRasterHeight
+	sta VIC2Raster
+	+MACROAckRasterIRQ_A
+	cli
+
+	rts
+
+
+
+!align 255, 0
+;--------------------------------------
+; This function is defined before including "SpriteMultiplexor.a" which then causes the last IRQ to call this
+!zn {
+MultiplexExt_LastIRQ
+	lda #VIC2SpriteYBorderBottom
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+
+	inc BottomRasterReached
+
+.over
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	; Start the top interrupt as late as possible
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+	
+	lda #VIC2SpriteYBorderTop24-VIC2SpriteSizeY-Multiplex_TopRasterHeight
+	sta VIC2Raster
+
+	jmp Multiplex_AckExitInterrupt
+}
+
+!source "SpriteMultiplexor/SpriteMultiplexor.a"

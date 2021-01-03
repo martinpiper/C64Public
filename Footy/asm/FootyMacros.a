@@ -1,0 +1,42 @@
+kPlayersPerSide = 11
+kTotalPlayers = kPlayersPerSide * 2
+kStatusPanelSpriteIndex = 1 + kTotalPlayers
+
+; Define what the multiplexor can use
+Multiplex_spritepointer	= $c000 + SPRITEFRAMESCROFF
+Multiplex_IRQServiceRoutineLo = IRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = IRQServiceRoutineHi
+Multiplex_IRQExitDefined = 1
+!macro Multiplex_IRQExit {
+	jmp MinimalIRQServiceRoutine
+}
+Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom-4
+
+Multiplex_ReverseOrder = 1
+Multiplex_MaintainPriority = 1
+
+Multiplex_items = 25
+
+; This will move the sprite information into zeropage. With the maximum number of sprites there won't be enough space in zeropage for all of them
+defined_Multiplex_YPos			= 1
+defined_Multiplex_XPosLo		= 1
+defined_Multiplex_XPosHi		= 1
+defined_Multiplex_Colour		= 1
+defined_Multiplex_SpriteFrame	= 1
+Multiplex_YPos+1			= $02
+Multiplex_XPosLo+1		= Multiplex_YPos + Multiplex_items
+Multiplex_XPosHi+1		= Multiplex_XPosLo + Multiplex_items
+Multiplex_Colour+1		= Multiplex_XPosHi + Multiplex_items
+Multiplex_SpriteFrame+1	= Multiplex_Colour + Multiplex_items
+
+
+;Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
+;Multiplex_VarBase	= Multiplex_XPosHi + Multiplex_items
+Multiplex_VarBase	= Multiplex_SpriteFrame + Multiplex_items
+Multiplex_EnableEarlyOut = 1
+Multiplex_BunchingCheck = 1
+
+
+!if kStatusPanelSpriteIndex >= Multiplex_items {
+	!error "kStatusPanelSpriteIndex out of range"
+}

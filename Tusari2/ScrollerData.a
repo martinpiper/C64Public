@@ -51,14 +51,10 @@ numMapUsedTiles = 72
 ; First two bytes = width,height
 MapData
 !by 170
-!by 31
+!by 40
 ; Assume block names are 9 bytes long for "Untitled\0"
-!bin "Level1-2.ctm" , 170*31 , $10 + (numMapUsedChars * 8) + 2 + numMapUsedChars + 6 + (numMapUsedTiles*4*4*2) + 2 + numMapUsedTiles + 2 + (numMapUsedTiles*9) + 6 , 2
+!bin "Level1-2.ctm" , 170*40 , $10 + (numMapUsedChars * 8) + 2 + numMapUsedChars + 6 + (numMapUsedTiles*4*4*2) + 2 + numMapUsedTiles + 2 + (numMapUsedTiles*9) + 6 , 2
 MapDataEnd
-
-EnemyActivationMapStart
-!fill 170*31 , 0
-EnemyActivationMapEnd
 
 !ifdef Scroller_NoMusic {} else {
 ; Include demonstration music from the Element 114 music editor

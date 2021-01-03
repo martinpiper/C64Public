@@ -1,4 +1,81 @@
 !zn
+; These offset values put the layers in the "middle" of the screen in the emulation
+; However there *may* be differences to the simulation (or real hardware) that will need these values to be verified
+; This effect *may* be due to the differences when the horizontal and vertical internal registers are reset during the HSYNC and VSYNC
+Mode7LayerXPos = -128
+Mode7LayerYPos = -80
+
+!macro TransformPositionTo24BitShifted .pos , .scale , .shift {
+!set .val = (.scale / 256.0) + 1
+!set .multiplier = (((1+.val)/(1-.val))  * 64) + 448
+	!by (((.pos * .scale * .multiplier) DIV $100) >> .shift) & $ff
+}
+
+!macro TransformPositionTo24Bit .pos , .scale {
+	+TransformPositionTo24BitShifted .pos , .scale , 0
+	+TransformPositionTo24BitShifted .pos , .scale , 8
+	+TransformPositionTo24BitShifted .pos , .scale , 16
+}
+
+LayerScaleLo
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	!by <.scale
+}
+LayerScaleHi
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	!by >.scale
+}
+
+LayerScaleOffsetX0
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerXPos , .scale , 0
+}
+LayerScaleOffsetX1
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerXPos , .scale , 8
+}
+LayerScaleOffsetX2
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerXPos , .scale , 16
+}
+
+LayerScaleOffsetY0
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerYPos , .scale , 0
+}
+LayerScaleOffsetY1
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerYPos , .scale , 8
+}
+LayerScaleOffsetY2
+!for .i , 256 {
+!set .scale = (.i + 1) * 4
+	+TransformPositionTo24BitShifted Mode7LayerYPos , .scale , 16
+}
+
+; << Big
+;Mode7Layer1Scale = $20
+;Mode7Layer1Scale = $40
+;Mode7Layer1Scale = $80
+Mode7Layer1Scale = $c0
+
+; << Middle: No scale
+Mode7Layer0Scale = $100
+
+Mode7Layer2Scale = $180
+;Mode7Layer2Scale = $200
+;Mode7Layer2Scale = $300
+;Mode7Layer2Scale = $400
+; << Small
+
+
 .cnt1 !by $50
 .cnt2 !by $80
 .cnt3 !by $80
@@ -108,23 +185,23 @@ Mode7_Update
 Mode7Regs0
 
 Mode7Regs0_scale_dX
-	+MLittleEndian24Bit $100
+	+MLittleEndian24Bit Mode7Layer0Scale
 Mode7Regs0_scale_dXY
 	+MLittleEndian24Bit 0
 Mode7Regs0_scale_dY
-	+MLittleEndian24Bit $100
+	+MLittleEndian24Bit Mode7Layer0Scale
 Mode7Regs0_scale_dYX
 	+MLittleEndian24Bit 0
 
 Mode7Regs0_xpos
 !ifdef Mode7LayersEnable {
-	+MLittleEndian24Bit ((64*16)-120) * $100
+	+TransformPositionTo24Bit Mode7LayerXPos , Mode7Layer0Scale
 } else {
 	+MLittleEndian24Bit 0
 }
 Mode7Regs0_ypos
 !ifdef Mode7LayersEnable {
-	+MLittleEndian24Bit ((32*16)-110) * $100
+	+TransformPositionTo24Bit Mode7LayerYPos , Mode7Layer0Scale
 } else {
 	+MLittleEndian24Bit 0
 }
@@ -142,19 +219,20 @@ Mode7Regs0Size = * - Mode7Regs0
 !ifdef Mode7LayersEnable {
 Mode7Regs1
 
+; Smaller scale value, bigger graphics
 Mode7Regs1_scale_dX
-	+MLittleEndian24Bit $f0
+	+MLittleEndian24Bit Mode7Layer1Scale
 Mode7Regs1_scale_dXY
 	+MLittleEndian24Bit 0
 Mode7Regs1_scale_dY
-	+MLittleEndian24Bit $f0
+	+MLittleEndian24Bit Mode7Layer1Scale
 Mode7Regs1_scale_dYX
 	+MLittleEndian24Bit 0
 
 Mode7Regs1_xpos
-	+MLittleEndian24Bit (((64*16)-120) * $103) + $100
+	+TransformPositionTo24Bit Mode7LayerXPos , Mode7Layer1Scale
 Mode7Regs1_ypos
-	+MLittleEndian24Bit (((32*16)-110) * $100) + $700
+	+TransformPositionTo24Bit Mode7LayerYPos , Mode7Layer1Scale
 
 	!by 0
 	!by 0
@@ -168,19 +246,20 @@ Mode7Regs1Size = * - Mode7Regs1
 
 Mode7Regs2
 
+; Larger scale value, smaller graphics
 Mode7Regs2_scale_dX
-	+MLittleEndian24Bit $e0
+	+MLittleEndian24Bit Mode7Layer2Scale
 Mode7Regs2_scale_dXY
 	+MLittleEndian24Bit 0
 Mode7Regs2_scale_dY
-	+MLittleEndian24Bit $e0
+	+MLittleEndian24Bit Mode7Layer2Scale
 Mode7Regs2_scale_dYX
 	+MLittleEndian24Bit 0
 
 Mode7Regs2_xpos
-	+MLittleEndian24Bit (((64*16)-120) * $106) + $100
+	+TransformPositionTo24Bit Mode7LayerXPos , Mode7Layer2Scale
 Mode7Regs2_ypos
-	+MLittleEndian24Bit (((32*16)-110) * $106) + $700
+	+TransformPositionTo24Bit Mode7LayerYPos , Mode7Layer2Scale
 
 	!by 0
 	!by 0

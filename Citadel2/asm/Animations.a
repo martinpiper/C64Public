@@ -1,20 +1,6 @@
 
 !ct pet
 
-!macro Add8STo16S .val1 , .val2Lo , .val2Hi {
-	ldy #0	; Sign of .val1
-	lda .val1
-	bpl .pos
-	dey	; Now neg sign
-.pos
-	clc
-	adc .val2Lo
-	sta .val2Lo
-	tya
-	adc .val2Hi
-	sta .val2Hi
-}
-
 !macro EnemySpritePosToCharacterLookup .rejectRoutine {
 	+MSpritePosToCharacterLookup .rejectRoutine , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , Citadel2_ZP_EnemySpriteXPosToScreenCharPoslo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosLolo , Citadel2_ZP_EnemySpriteYPosToScreenCharPosHilo
 }
@@ -206,8 +192,8 @@ UpdateSprites
 	sbc scrollerRealMovementYPixels
 	sta scrollerRealMovementYPixelsNeg
 
-	+Add8STo16S scrollerRealMovementXPixelsNeg , Animation_MapPosXLo , Animation_MapPosXHi
-	+Add8STo16S scrollerRealMovementYPixelsNeg , Animation_MapPosYLo , Animation_MapPosYHi
+	+MAdd8STo16S scrollerRealMovementXPixelsNeg , Animation_MapPosXLo , Animation_MapPosXHi
+	+MAdd8STo16S scrollerRealMovementYPixelsNeg , Animation_MapPosYLo , Animation_MapPosYHi
 
 	jsr DetectPlayer_AutoDoorChars
 

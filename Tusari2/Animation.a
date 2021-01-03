@@ -3,22 +3,6 @@
 !source "SpritePosToScreenPosMem.a"
 !source "SpritePosToScreenPosMem2.a"
 
-ZP_SpriteYPosToScreenCharPosLolo	= tempWork6
-ZP_SpriteYPosToScreenCharPosLohi	= tempWork7
-ZP_SpriteYPosToScreenCharPosHilo	= tempWork8
-ZP_SpriteYPosToScreenCharPosHihi	= tempWork9
-ZP_SpriteXPosToScreenCharPoslo		= tempWork10
-ZP_SpriteXPosToScreenCharPoshi		= tempWork11
-
-EnemyActivationMapLo
-!fill 256
-EnemyActivationMapHi
-!fill 256
-
-AnimationInit2
-	jsr AnimationUnpackMapPlacements
-	rts
-
 Animation_FramesLo
 	!by <AnimationFrames_MainCharLegsStandLeft
 	!by <AnimationFrames_MainCharTorsoStandLeft
@@ -35,14 +19,65 @@ Animation_TickLo
 Animation_TickHi
 	!fill Multiplex_items , 0
 
+Animation_DeleteLo
+	!fill Multiplex_items , 0
+Animation_DeleteHi
+	!fill Multiplex_items , 0
 
 
 Animation_Index
 	!fill Multiplex_items , 0
 
+Animation_ActivationObjectIndex
+	!fill Multiplex_items , 0
+
 ; Can be used for anything, but mostly health
 Animation_GeneralStorage0
 	!fill Multiplex_items , 0
+Animation_GeneralStorage1
+	!fill Multiplex_items , 0
+Animation_GeneralStorage2
+	!fill Multiplex_items , 0
+
+AnimationInit2
+	; Setup the player position
+	lda #136
+	sta AnimationXPosLo
+	lda #144
+	sta AnimationYPos
+	lda #0
+	sta AnimationXPosHi
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	lda #VIC2Colour_LightRed
+	sta AnimationSpriteColour
+	sta AnimationSpriteColour+1
+
+	; Set map scroll position
+	+MByteValueToAddress_A 71 , scrollMapHX
+;	+MByteValueToAddress_A 41 , scrollMapHX
+	+MByteValueToAddress_A 0 , scrollMapLX
+	+MByteValueToAddress_A 24 , scrollMapHY
+;	+MByteValueToAddress_A 0 , scrollMapHY
+	+MByteValueToAddress_A 0 , scrollMapLY
+	+MByteValueToAddress_A 4 , frameScrollX
+	+MByteValueToAddress_A 4 , frameScrollY
+	jsr ScrollerUpdateRealCoordinates
+	jsr ActivationObjectInit
+
+	+MWordValueTo_AX Scroller_RunJumpDemo_timerPos
+	jsr ScoreSetAddress
+	ldy #Scroller_RunJumpDemo_timerLen
+	jsr ScoreInit
+
+	rts
+
 
 
 Animation_FindFreeSlot
@@ -63,6 +98,17 @@ Animation_FindFreeSlot
 
 ; For Animation_UpdateTick
 .discard
+	lda Animation_DeleteHi,x
+	beq .noDeleteFunc
+	sta .smDelete+2
+
+	lda Animation_DeleteLo,x
+	sta .smDelete+1
+
+.smDelete	jsr $1234
+
+.noDeleteFunc
+
 	lda #0
 	sta Animation_FramesHi,x
 	jmp .nextSlot
@@ -70,14 +116,12 @@ Animation_FindFreeSlot
 PlayerXPosShifted !by 0
 
 Animation_UpdateTick
-
-	; Calculate the shufted player pos once
+	; Calculate the shifted player pos once
 	lda AnimationXPosHi
 	ror
 	lda AnimationXPosLo
 	ror
 	sta PlayerXPosShifted
-
 
 	; Loop through animation frames
 	ldx #Multiplex_items-1
@@ -91,16 +135,11 @@ Animation_UpdateTick
 	bcc .noDiscard
 
 	lda AnimationYPos,x
-!set .safeAreaY = <(VIC2SpriteYBorderTop24-32-32)
-;!set .safeAreaY = 240
-	cmp #.safeAreaY
-	bcs .testXPos
-!set Multiplex_DiscardSpritesYPosSafe = Multiplex_DiscardSpritesYPos+20
+	cmp #Scroller_DiscardMinSpriteYPos-16
+	bcc .discard
+!set Multiplex_DiscardSpritesYPosSafe = Multiplex_DiscardSpritesYPos+16
 !if Multiplex_DiscardSpritesYPosSafe > VIC2SpriteYBorderBottom {
 	!set Multiplex_DiscardSpritesYPosSafe = VIC2SpriteYBorderBottom
-}
-!if Multiplex_DiscardSpritesYPosSafe >= .safeAreaY {
-	!error "Safe areas overlap in the Y"
 }
 	cmp #Multiplex_DiscardSpritesYPosSafe
 	bcs .discard
@@ -109,8 +148,6 @@ Animation_UpdateTick
 	lda AnimationXPosHi,x
 	beq .noDiscard
 	lda AnimationXPosLo,x
-	cmp #-32-16	; Annoying, but sprites spawned almost totally off screen (with 32x32 pixel blocks) might be at this coordinate range
-	bcs .noDiscard
 	cmp #<(VIC2SpriteXBorderRight+32+16)
 	bcs .discard
 
@@ -130,12 +167,15 @@ Animation_UpdateTick
 	tay
 	sta Animation_Index,x
 	lda (tempWork0),y
+	sta AnimationSpriteFrame,x
+	jmp .doTick
 .gotFrame
 	sta AnimationSpriteFrame,x
 	iny
 	tya
 	sta Animation_Index,x
 
+.doTick
 	lda Animation_TickHi,x
 	beq .noTickFunc
 	sta .smTick+2
@@ -143,7 +183,10 @@ Animation_UpdateTick
 	lda Animation_TickLo,x
 	sta .smTick+1
 
+	; Preserve X
+	stx .smx+1
 .smTick	jsr $1234
+.smx ldx #0
 
 .noTickFunc
 
@@ -190,40 +233,11 @@ Animation_MorphToIfNeeded
 ; Y = Animation index
 Animation_ForceSet
 	sta Animation_FramesLo,y
+	sta .smFrame+1
 	txa
 	sta Animation_FramesHi,y
+	sta .smFrame+2
+	; Init the first frame
+.smFrame lda $1234
+	sta AnimationSpriteFrame,y
 	jmp .commonInit
-
-
-!zn
-UpdateMultiplexorToAnimation
-	; Setup the player position
-	lda #136
-	sta AnimationXPosLo
-	lda #144
-	sta AnimationYPos
-	lda #0
-	sta AnimationXPosHi
-
-	lda #$ff
-	sta VIC2SpriteMulticolour
-	lda #VIC2Colour_DarkGrey
-	sta VIC2ExtraSpriteColour1
-	lda #VIC2Colour_Yellow
-	sta VIC2ExtraSpriteColour2
-
-	lda #VIC2Colour_LightRed
-	sta AnimationSpriteColour
-	sta AnimationSpriteColour+1
-
-	; Set map scroll position
-	+MByteValueToAddress_A 71 , scrollMapHX
-	+MByteValueToAddress_A 0 , scrollMapLX
-	+MByteValueToAddress_A 24 , scrollMapHY
-;	+MByteValueToAddress_A 0 , scrollMapHY
-	+MByteValueToAddress_A 0 , scrollMapLY
-	+MByteValueToAddress_A 4 , frameScrollX
-	+MByteValueToAddress_A 4 , frameScrollY
-	jsr ScrollerUpdateRealCoordinates
-
-	rts

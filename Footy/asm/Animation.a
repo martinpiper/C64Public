@@ -1,0 +1,51 @@
+!zn
+Multiplex_AnimationFramesHi
+	!fill Multiplex_items , 0
+Multiplex_AnimationFramesLo
+	!fill Multiplex_items , 0
+Multiplex_AnimationFrameIndex
+	!fill Multiplex_items , 0
+
+; Entry:
+; A/Y	: Lo/Hi of the animation frames
+; X		: Multiplexor index
+Animation_SetAnimationIfDifferent
+	cmp Multiplex_AnimationFramesLo,x
+	bne .differentLo
+	sta .sma+1
+	tya
+	cmp  Multiplex_AnimationFramesHi,x
+	beq .same
+.sma	lda #0
+.differentLo
+	sta Multiplex_AnimationFramesLo,x
+	tya
+	sta Multiplex_AnimationFramesHi,x
+
+	lda #0
+	sta Multiplex_AnimationFrameIndex,x
+.same
+	rts
+
+
+; Generally only called during on-screen multiplexor updates
+; Entry:
+; X		: Multiplexor index
+Animation_RunAnimationFrame
+	lda Multiplex_AnimationFramesHi,x
+	beq .ret
+	sta Footy_Temp1
+	lda Multiplex_AnimationFramesLo,x
+	sta Footy_Temp0
+	ldy Multiplex_AnimationFrameIndex,x
+	lda (Footy_Temp0),y
+	bne .gotFrame
+	ldy #0
+	lda (Footy_Temp0),y
+.gotFrame
+	sta Multiplex_SpriteFrame,x
+	iny
+	tya
+	sta Multiplex_AnimationFrameIndex,x
+.ret
+	rts

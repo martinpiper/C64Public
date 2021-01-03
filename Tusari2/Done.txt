@@ -153,7 +153,7 @@
 		lo/hi init routine
 		lo/hi tick routine
 
-	* Done !DoAnimationActivationObject, !DoAnimationType and  AnimationEnemyMapPlacements parsing into EnemyActivationMapStart
+	* Done !DoAnimationActivationObject, !DoAnimationType and  AnimationEnemyMapPlacementsX parsing into EnemyActivationMapStart
 	* Done Widen the discard area and detect screen edge changes and spawn type from activation objects
 		Added Scroller_CallbackBeforeCharScreenScroll
 		Done: .doLeftEdge Sprite X position seems correct, Y position seems to be wrong for some block scrolls?
@@ -193,3 +193,184 @@
 	If in the tick then the decision on what process and when can be tweaked for different enemies
 	It also allows better variety around enemy death processing and score or dropped item awards
 	* In the tick, example code "; Decrease bat health"
+
+
+
+
+* Add "dragon" animation, plus fireball
+	AnimationInit_dragon proves the model, the spawn position needs to be shifted horizontally though to hide the observed "pop on"
+	However currently the edge screen detection, with a strict sprite egde to screen edge calculaton, means wide (or tall) objects will still appear to "pop on"
+	What might be better is to somehow sync or link animations so that partially scrolled objects will not appear as partially spawned objects
+	Hmm, even with a modest 8 pixel horizontal adjustment to the spawn position, AnimationObject_dragonBody_8_11, the body still appears to pop on and there is a gap observed on the screen edge for the head
+	Also the 11 pixel Y adjustment (32-21 to get the sprite on the bottom of the block) makes the top edge scroll object appear to "pop on"
+	The area around the screen for objects might need to be made a few chars wider...
+	* Done - To de-stress the multiplexor perhaps have the aggressive screen edge detection during the animation data copy
+		* Added Scroller_DiscardForMultiplexorBottom* , Scroller_DiscardForMultiplexorRight
+	* Done - Then the animation screen edge detection can be wider and this would allow larger variation with map block spawn positions without appearing to "pop on" the screen
+		Currently wider discard in the X, to support the dragon
+		Y discard is also a bit wider
+		X position init is now wider on the left, the right position is unchanged since the dragon always spawns another sprite to the right
+		Done - Still need the top edge to be moved up one block
+			* This needs to adjust the map block Y L+H when processing the bottom since the bottom is not a whole number of blocks from the top
+	* Dragon init could do with storing the other animation index allocated and an additional delete routine which is called on remove and removes the other linked animation
+	* Fireball 230
+
+
+
+
+* Try moving to a pixel accurate spawning model, using some for of tree or fast sparse array traversal.
+	This will mean a sprite can be accurately spawned at left most X of (VIC2SpriteXBorderLeft38-VIC2SpriteSizeX) 31-24 = 7
+	And top most Y of (VIC2SpriteYBorderTop24-VIC2SpriteSizeY) 54-21 = 33
+	This is greatly simplify enemy edge screen detection and logic (in AnimationTick_bat "cmp #$f0" "bcc .noAdjust1") as there is no negative spawn position
+	Also the top and bottom edges can be spawned mroe precisely and the discard position brought is appropriately.
+	Sprite coordinates can be kept as pixel accurate values up to 16 (in reality 14) bits each
+	* This model has easier syncing with the map as corresponding screen edge coordinates can be updated with scrollerRealMovementXPixels and scrollerRealMovementYPixels
+	** Fixed: When Scroller_MaxScrollSpeed = 1 then the position of the sprite seems accurate. When it is Scroller_MaxScrollSpeed = 4 then is shifts by 1 pixel.
+		This indicates the compensation for the spawn position is not quite correct. Is there a double use of the scrolling values by Scroller_ScrollSprites???
+			The sprite scroll was after the spawn, oops, so the large map edge adjustment was using twice the frame offset
+	*** Test the left edge for "+AnimationEnemyMapPlacement AnimationObject_practice , 7" results in all the fine pixels being visible as the scroll progresses for each pixel with "Scroller_MaxScrollSpeed = 1"
+		Visually tested Scroller_MaxScrollSpeed = 1 and Scroller_MaxScrollSpeed = 4
+		Multiple X pos entries tested working for .testLeftEdge, link list seems fine
+
+	* Remember to remove all the hack code, in bat routine, the screen edge discard coordinates etc
+		No more wraparound check code needed
+		Done: ;.noAdjust1
+
+	* Prepare data for AnimationEnemyMapPlacementsY
+		There is a chance that MActivationObject_VerticalEdge can handle both horizontal and vertical edges, with a little bit of parameterised tweaking
+			Notably the "Far out of range so stop looking" test would need to take into account the wider screen
+
+
+
+
+* Currently AnimationEnemyMapPlacement_PosBlockEntry has position, which makes it faster to access, but harder to update
+	Perhaps it would be better if AnimationEnemyMapPlacement had X&Y pos and the AnimationEnemyMapPlacement_PosBlockEntry was only a list of pointers to AnimationEnemyMapPlacement?
+	Slower to access, but simpler to construct
+	However construction of this data is goign to be with a tool anyway
+	The position or the pointer is 16 bits storage, so not really more efficient in terms of space either way
+	* However if the AnimationEnemyMapPlacement_PosBlockEntry only had the index and AnimationEnemyMapPlacement has all the positions in a bunch of arrays, then it becomes an absolute,x to get the data, which is faster
+		Supporting up to 256 enemies, which should be easily enough
+
+
+
+* Countdown for respawn
+	Optional so that some enemy types will always respawn after some timeout
+	; Negative values do not respawn, ever
+
+
+
+
+* Edge spawn detect timing debug
+
+
+
+
+* Instead of spawning two sprites for the dragon at the same time, instead have a notion of object extension data in the map.
+	In the map object extension data have spare byte that is updated with the spawned object index.
+	By default, or when de-spawned, then set the index to be -1 since we won't have more than 127 active animations on screen anyway.
+	The head and body assume know they are next to each other in the map data memory.
+	Accessing the spawned object index for syncing the animation index between the head and body is then trivial.
+	This will allow the edge of screen detection to be brought in again and avoid spawning objects at negative X/Y positions
+	* Added DragonAnimationFrame
+
+
+
+* Dragon to store the MapPlacement index, X, into Animation_GeneralStorage1
+
+
+
+
+* Need optional animation delete func for MAnimationSetFuncs
+
+
+
+* Dragon to use animation delete func to set the corresponding head/body spawn to be -1 to disable the spawn for unspawned parts
+
+
+
+
+; TODO: Why does this make the sprite update go wrong near the MSB when scrolling left/right?
+	AnimationXPosLo should be used, not Multiplex_XPosLo, when processing AnimationUpdateMultiplexorPre
+
+
+
+
+* When a dragon is over the screen edge, it is possible just the head or body is discarded first and the other half remains
+	The delete function needs to take this into account and kill the whole object
+
+
+
+
+* If the screen is not scrolling, then cycle around the screen edge tests
+
+
+
+* Perhaps MapPlacement_respawnTiming can be moved to AnimationActivationObject_* instead?
+	Since it makes sense the respawn timer is er object type
+
+
+
+
+* Bats are expensive to tick, in terms of CPU but also in terms of the multiplexor because they home to the player.
+	So limit their numbers when attempting to spawn. Just have a counter check that limits enemies that home in the Y coordinate.
+
+
+
+
+* Map enemy placement conversion:
+	CharPad: File->Import/Export->Image->Export Map
+		exported assets\Level1-2 - Map.png
+	SpritePad: File->Import/Export->Bitmap Image->Export Sprite Sheet
+		exported assets\Level1 sprites.bmp
+		
+	Tiled:  Uses:
+		Sprite tiles into Object layer: assets\Level1 sprites.bmp
+		Tiles as locked map layer: assets\Level1-2 - Map.png
+		Save map as CSV type: exported assets\Level1-2.tmx
+
+	Toolchain works
+	Optimised the edge lookup to early out if the search direction changes
+
+
+
+
+* For objects removed due to the screen edge, not explosion, then enable their on-screen check again
+	Always store the activation object index in dedicated storage space
+	Remove the despawn checks from the dragon, since the parts will spawn again
+	* Only an explosion/kill results in the object being removed
+
+
+
+* Adjust the score panel so the score is not off the bottom of the screen
+
+
+
+* Add proper score routine ("Citadel2/asm/Score.a")
+	On bat being killed...
+	Also added Tusari2Vars.a
+
+
+
+
+* Add player head solid character movement block and fall
+	Can detect the top middle of the head first, then shoulders, then left/right thorax
+		* Add left/right solid char player movement block
+	* Add player step up one character when moving left/right up?
+		If the ankle/legs did not detect a left/right character, but if the feet do, then hop up one character with a small triggered jump
+	While jumping added top of head check to terminate the jump up: .alreadyJumping
+
+
+
+
+* TODO: Add AnimationTypes_tickLo/Hi support
+
+* Add AnimationTick_detectHitExplode, which demonstrates how to detect and explode enemies and stop them respawning
+* Add ghost animation
+
+
+
+* Add drip animation
+
+
+
+* Add fish animation

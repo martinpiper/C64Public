@@ -20,3 +20,15 @@
 	jmp .target
 +
 }
+
+!macro lbcs .target {
+	bcc +
+	jmp .target
++
+}
+
+!macro lbcc .target {
+	bcs +
+	jmp .target
++
+}
