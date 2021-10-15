@@ -16,10 +16,10 @@
 
 *=BASICEntry
 	sei
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
 	lda #ProcessorPortAllRAM
 	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
 
 
 	ldx #<$0400

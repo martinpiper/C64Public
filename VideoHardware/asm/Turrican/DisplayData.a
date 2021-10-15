@@ -1,0 +1,126 @@
+kDoSprites = 1
+kDoTiles = 1
+kDoChars = 1
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!zn
+DisplayData
+	lda #$01
+	+MWordValueTo_XY $9c00
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .palette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #1
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+
+
+
+
+
+!ifdef kDoSprites {
+	+MRLEPlanesDataToDefaultSprite .Sprites_plane0 , .Sprites_plane1 , .Sprites_plane2 , .Sprites_plane3
+
+	; Zero out the last sprite
+	lda #$10
+	+MWordValueTo_XY $3fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $5fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $9fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $1fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+}
+
+
+!ifdef kDoTiles {
+	+MRLEScreenDataToDefaultTileScreen .Tiles_map
+	+MRLEPlanesDataToDefaultTileScreen .Tiles_plane0 , .Tiles_plane1 , .Tiles_plane2 , .Tiles_plane3
+}
+
+
+!ifdef kDoChars {
+	+MRLEScreenDataToDefaultCharScreen .Chars_map
+	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+}
+
+	rts
+
+
+!ifdef kDoSprites {
+.Sprites_plane0
+	!bin "tmp/TurricanSprites_plane0.cmp"
+;	!fill 8192 , %10001000
+.Sprites_plane1
+	!bin "tmp/TurricanSprites_plane1.cmp"
+;	!fill 8192 , %10001000
+.Sprites_plane2
+	!bin "tmp/TurricanSprites_plane2.cmp"
+;	!fill 8192 , %10001000
+.Sprites_plane3
+	!bin "tmp/TurricanSprites_plane3.cmp"
+;	!fill 8192 , %10001000
+.kSpritesSizeHi = >(* - .Sprites_plane3)
+}
+
+
+!ifdef kDoTiles {
+.Tiles_map
+	!bin "tmp/TurricanTiles_map.cmp"
+.kTilesMapSizeHi = >(* - .Tiles_map)
+.Tiles_plane0
+	!bin "tmp/TurricanTiles_plane0.cmp"
+.Tiles_plane1
+	!bin "tmp/TurricanTiles_plane1.cmp"
+.Tiles_plane2
+	!bin "tmp/TurricanTiles_plane2.cmp"
+.Tiles_plane3
+	!bin "tmp/TurricanTiles_plane3.cmp"
+.kTilesSizeHi = >(* - .Tiles_plane3)
+}
+
+
+!ifdef kDoChars {
+.Chars_map
+	!bin "tmp/TurricanStatus_map.cmp"
+.kCharsMapSizeHi = >(* - .Chars_map)
+.Chars_plane0
+	!bin "tmp/TurricanStatus_plane0.cmp"
+.Chars_plane1
+	!bin "tmp/TurricanStatus_plane1.cmp"
+.Chars_plane2
+	!bin "tmp/TurricanStatus_plane2.cmp"
+.Chars_plane3
+	!bin "tmp/TurricanStatus_plane3.cmp"
+.kCharsSizeHi = >(* - .Chars_plane3)
+}
+
+.palette
+	!bin "tmp/TurricanPaletteData.bin"
+!if 0 {
+!for .x , 16 {
+!for .i , 16 {
+	+MBus24Bit_MakePaletteRGB .i * 15 , .i * 14 , .i * 14
+}
+}
+}
+	!fill 512,0

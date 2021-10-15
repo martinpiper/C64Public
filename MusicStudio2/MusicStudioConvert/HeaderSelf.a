@@ -9,6 +9,7 @@
 !ct pet
 
 ;MusicPlayer_DebugBorder = 1
+Initialise_NoPreserveStack = 1
 
 !source "stdlib/BASICEntry80d.a"
 
@@ -54,13 +55,130 @@
 
 !source "t.a"
 
+analyserTable !fill SCREENRAM , 0
+analyserTableScreen = SCREENRAM + (20 * VIC2ScreenCharsWidth)
+updateAnalyser
+	ldx #VIC2ScreenCharsWidth-1
+.dl1
+	lda analyserTable,x
+	lsr
+	lsr
+	lsr
+	sta .smfv1+1
+	lda analyserTable,x
+	clc	; Deliberate bias with 1
+.smfv1	sbc #0
+	bcs .no1
+	lda #0
+.no1
+	sta analyserTable,x
+	tay
+	lda .valueToMeter0,y
+	sta analyserTableScreen,x
+	lda .valueToMeter1,y
+	sta analyserTableScreen - VIC2ScreenCharsWidth,x
+	dex
+	bpl .dl1
+
+	ldx #2
+.dl2
+	lda .ntlo,x
+	cmp .prevNoteLo,x
+	bne .upd1
+
+	lda .nthi,x
+	cmp .prevNoteHi,x
+	bne .upd1
+
+	lda .core,x
+	cmp .prevCore,x
+	beq .noc1
+
+.upd1
+	lda .ntlo,x
+	sta .prevNoteLo,x
+	lda .core,x
+	sta .prevCore,x
+
+	lda .nthi,x
+	sta .prevNoteHi,x
+
+	lda .ltnt,x
+	tay
+	lda .noteHiToScreenX,y
+	tay
+
+	lda analyserTable,y
+	clc
+	adc #16
+	bcc .ok1
+	lda #255
+.ok1
+	sta analyserTable,y
+
+	lda analyserTable+1,y
+	clc
+	adc #64
+	bcc .ok2
+	lda #255
+.ok2
+	sta analyserTable+1,y
+
+	lda analyserTable+2,y
+	clc
+	adc #16
+	bcc .ok3
+	lda #255
+.ok3
+	sta analyserTable+2,y
+
+.noc1
+	dex
+	bpl .dl2
+
+	rts
+.prevCore !by 0,0,0
+.prevNoteHi !by 0,0,0
+.prevNoteLo !by 0,0,0
+.noteHiToScreenX
+!for .i , 96 {
+!set .val = ((.i-1) * (VIC2ScreenCharsWidth - 3)) / 70
+!if .val > (VIC2ScreenCharsWidth - 3) {
+	!set .val = VIC2ScreenCharsWidth - 3
+}
+	!by .val
+}
+
+.valueToMeter0
+!fill 16 , ' '
+!fill 16 , $64
+!fill 16 , $6f
+!fill 16 , $79
+!fill 16 , $f8
+!fill 16 , $f7
+!fill 16 , $e3
+!fill 16 , $a0
+!fill 128 , $a0
+
+.valueToMeter1
+!fill 128 , ' '
+!fill 16 , ' '
+!fill 16 , $64
+!fill 16 , $6f
+!fill 16 , $79
+!fill 16 , $f8
+!fill 16 , $f7
+!fill 16 , $e3
+!fill 16 , $a0
+
+
 !source "stdlib/PETSCII.a"
 
 !source "stdlib/Initialise.a"
 
 text
-!by CHR_Clear
 !by CHR_LightRed
+!by CHR_Clear
 !tx "Playing "
 !by CHR_LightGreen
 !tx "Music Studio 2.2"
@@ -73,6 +191,9 @@ text
 !by CHR_LightBlue
 !tx "Raster time used: 00 lines"
 !by CHR_Return
+!by 0
+
+text2
 !tx "Average: 00 lines"
 !by CHR_Return
 !by CHR_Blue
@@ -93,7 +214,6 @@ text
 !by CHR_LightRed
 !tx "Press the letter keys to play different sound effects."
 }
-
 !by 0
 
 .valDiv10
@@ -110,6 +230,9 @@ DisplayScreenText
 	lda #<text
 	ldy #>text
 	jsr BASICTextPrint
+	lda #<text2
+	ldy #>text2
+	jsr BASICTextPrint
 	rts
 
 
@@ -119,6 +242,8 @@ DisplayScreenText
 Mainline
 .l1
 	+MACROWaitForTheLastScan_A
+
+	jsr updateAnalyser
 .smidx	ldx #0
 	lda .rasterTime
 	sta .movingAverage,x

@@ -1,0 +1,134 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+kAPUData_Blimp1DataNum = 8
+kAPUData_Blimp2DataNum = 2
+kAPUData_MoonDataNum = 13
+
+kAPUData_Tree1Num = 4 + 8 + 8
+
+kAPUData_Tree2aNum = 2
+kAPUData_Tree2bNum = 2
+kAPUData_Tree2cNum = 2
+kAPUData_Tree2dNum = 2
+
+kAPUData_Tree3aNum = 2
+kAPUData_Tree3bNum = 2
+kAPUData_Tree3cNum = 2
+kAPUData_Tree3dNum = 2
+
+kAPUData_Tree4aNum = 2
+kAPUData_Tree4bNum = 2
+kAPUData_Tree4cNum = 2
+kAPUData_Tree4dNum = 2
+
+kAPUData_Tree5aNum = 2
+kAPUData_Tree5bNum = 2
+kAPUData_Tree5cNum = 2
+kAPUData_Tree5dNum = 2
+kAPUData_Tree5eNum = 1
+
+zeroPage_Temp0	= $12
+zeroPage_Temp1	= $13
+zeroPage_Temp2	= $14
+zeroPage_Temp3	= $15
+zeroPage_Temp4	= $16
+zeroPage_Temp5	= $17
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "stdlib/MemoryCopy.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/Music.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr MusicInit
+	jsr DisplayScreen
+	jsr APU_Enable
+
+mainLoop
+;	+WaitForFire_A
+
+mainLoopGame
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+!source "asm/main6CommonScrolls.a"
+
++MSubU8FromAddrS16 APU_Scroll0Chars , 1
+
+	+MAddU8ToAddr16 6 , APU_Scroll1Chars , APU_Scroll1Chars+1
+
+	+MAddU8ToAddr16 4 , APU_Scroll0 , APU_Scroll0 + 1
+	+MAddU8ToAddr16 3 , APU_Scroll1 , APU_Scroll1 + 1
+	+MAddU8ToAddr16 2 , APU_Scroll2 , APU_Scroll2 + 1
+	+MAddU8ToAddr16 1 , APU_Scroll3 , APU_Scroll3 + 1
+.alternate2 lda #1
+	inc .alternate2+1
+	and #1
+	bne .o2
+	; Produces a better speed for APU_Scroll3 as it is different to the trees layer
+	+MAddU8ToAddr16 1 , APU_Scroll3 , APU_Scroll3 + 1
+	+MAddU8ToAddr16 1 , APU_Scroll4 , APU_Scroll4 + 1
+	+MAddU8ToAddr16 1 , APU_Scroll6 , APU_Scroll6 + 1
+.o2
+.alternate1 lda #1
+	inc .alternate1+1
+	and #3
+	bne .o1
+	+MAddU8ToAddr16 1 , APU_Scroll5 , APU_Scroll5 + 1
+.o1
+
+	+MAddU8ToAddr16 1 , APU_Scroll7 , APU_Scroll7 + 1
+	+MAddU8ToAddr16 2 , APU_Scroll8 , APU_Scroll8 + 1
+	+MAddU8ToAddr16 3 , APU_Scroll9 , APU_Scroll9 + 1
+	+MAddU8ToAddr16 4 , APU_Scroll10 , APU_Scroll10 + 1
+	+MAddU8ToAddr16 5 , APU_Scroll11 , APU_Scroll11 + 1
+
+!source "asm/main6CommonBlimps.a"
+	dec APUData_TreeX
+	+MAPU_DataUpdateNumBytes APUData_TreeX , 1
+
+	jsr MusicPoll
+
+
+	jmp mainLoopGame
+	rts
+
+MusicDataStart
+MusicDataStart_afterHeader = MusicDataStart + 4
+	!bin "tmp/target/SotBexportedMusicEvents.cmp"
+MusicDataEnd
+
+!source "asm/ShadowBeast/DisplayScreen.a"
+!source "asm/ShadowBeast/APUTitle.a"
+!source "asm/ShadowBeast/DisplayData.a"
+

@@ -1,0 +1,60 @@
+!ifndef RNXPCompressionDecompress_WriteBytesmAddr {
+RNXPCompressionDecompress_WriteBytesmAddr !by 0,0
+}
+; Note special write byte goes straight to the video hardware and skips C64 memory entirely
+RNXPCompressionDecompress_WriteByte	sta CIA2PortBRS232
+	; Needs to update a fake "store" address for the end of file check
+	inc RNXPCompressionDecompress_WriteBytesmAddr+0
+	bne .e1
+	inc RNXPCompressionDecompress_WriteBytesmAddr+1
+.e1
+	rts
+
+RNXPCompressionDecompress_GetByte	lda $1234
+	inc RNXPCompressionDecompress_GetByte+1
+	bne .e2
+	inc RNXPCompressionDecompress_GetByte+2
+.e2
+	rts
+!macro RNXPCompressionIncBorder_A {}
+!source "..\Decompression\DecompressRLE.a"
+
+
+!macro MDecompressRLEToEBBSAddr .rledata , .ebbs , .addr {
+	lda #.ebbs
+	+MWordValueTo_XY .addr
+	jsr RNXPCompressionDecompressRLE_InitStore
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_XY .rledata
+	jsr RNXPCompressionDecompressRLE
+	inc VIC2BorderColour
+}
+
+!macro MRLEPlanesDataToDefaultCharScreen .plane0 , .plane1 , .plane2 , .plane3 {
+	+MDecompressRLEToEBBSAddr .plane0 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .plane1 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .plane2 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .plane3 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_3
+}
+
+!macro MRLEScreenDataToDefaultCharScreen .data {
+	+MDecompressRLEToEBBSAddr .data , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap
+}
+
+!macro MRLEPlanesDataToDefaultTileScreen .plane0 , .plane1 , .plane2 , .plane3 {
+	+MDecompressRLEToEBBSAddr .plane0 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .plane1 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .plane2 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .plane3 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_3
+}
+
+!macro MRLEScreenDataToDefaultTileScreen .data {
+	+MDecompressRLEToEBBSAddr .data , kBus24Bit_TileScreenMap_EBBS , kBus24Bit_TileScreenMap
+}
+
+!macro MRLEPlanesDataToDefaultSprite .plane0 , .plane1 , .plane2 , .plane3 {
+	+MDecompressRLEToEBBSAddr .plane0 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_0
+	+MDecompressRLEToEBBSAddr .plane1 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_1
+	+MDecompressRLEToEBBSAddr .plane2 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_2
+	+MDecompressRLEToEBBSAddr .plane3 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_3
+}

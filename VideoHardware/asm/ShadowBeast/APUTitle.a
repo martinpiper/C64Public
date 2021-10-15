@@ -1,0 +1,360 @@
+!source "BombJack/stdlib/APU.a"
+TotalAPU_Start
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS | kAPU_Load_EBS2
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU_LoadEADDR2FromB1
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_ProcessRasterWord
+	+MAPU_ProcessRasterWord
+	+MAPU_ProcessRasterByte
+
+	; Copy blimps and moon data
+	+MAPU_LoadEADDRFromB1
+
+!macro MAPUCopySpriteWithAddX {
+		+MAPU kAPU_ExternalMEWR
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+		+MAPU kAPU_ExternalMEWR
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+		+MAPU kAPU_ExternalMEWR
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+		+MAPU kAPU_ExternalMEWR | kAPU_IDataSelectMemAddReg3
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+}
+!macro MAPUCopySprite {
+	!for .i , 4 {
+		+MAPU kAPU_ExternalMEWR
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+	}
+}
+!macro MAPU_LoadXReg {
+	+MAPU kAPU_IDataRegLoad3
+	+MAPU kAPU_Incr_ADDRB1
+}
+	+MAPU_LoadXReg
+!for .i , kAPUData_Blimp1DataNum {
+	+MAPUCopySpriteWithAddX
+}
+	+MAPU_LoadXReg
+!for .i , kAPUData_Blimp2DataNum {
+	+MAPUCopySpriteWithAddX
+}
+!for .i , kAPUData_MoonDataNum {
+	+MAPUCopySprite
+}
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	; Tree
+	+MAPU_ProcessRasterByte
+
+	+MAPU_ProcessRasterByte
+	; Copy tree data
+	+MAPU_LoadEADDRFromB1
+	+MAPU_LoadXReg
+
+!for .i , kAPUData_Tree1Num {
+	+MAPUCopySpriteWithAddX
+}
+	+MAPU_ProcessRasterByte
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+!macro APU_ProcessSpriteStrip .num {
+	+MAPU kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Copy tree data
+	+MAPU_LoadEADDRFromB1
+!for .i , .num {
+	+MAPUCopySpriteWithAddX
+}
+	; Wait for a bit to allow 16 pixels to pass before enabling the sprites again
+	+MAPU
+	+MAPU
+	+MAPU
+
+	+MAPU kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2
+	+MAPU kAPU_Incr_ADDRB1
+}
+
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree2aNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree2bNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree2cNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree2dNum
+
+
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree3aNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree3bNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree3cNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree3dNum
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree4aNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree4bNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree4cNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree4dNum
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree5aNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree5bNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree5cNum
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree5dNum
+
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+APU_ProcessSpriteStrip kAPUData_Tree5eNum
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	; Wall
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+APUData_Start
+	!by $01
+	; Into EADDR2, for faster multiplexing
+	+MLittleEndian16Bit kBus24Bit_SpritesControlLo
+
+	; Next RHRV to wait for
+	!by $88 , $01 , 0
+	+MAPUEmitChangePalette 102 , 119 , 136
+	+MAPUEmitChangeXScroll ~APU_Scroll0
+	+MAPUEmitChangeXScrollChars ~APU_Scroll0Chars
+
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_Priority
+	; Sprites behind clouds
+	+MAPU_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Background
+
+	; Blimps and moon sprite update
+	+MLittleEndian16Bit kBus24Bit_Sprites
+
+APUData_Blimp1X !by 0
+APUData_Blimp1
+	!fill kAPUData_Blimp1DataNum * 4 , 0
+APUData_Blimp2X !by 0
+APUData_Blimp2
+	!fill kAPUData_Blimp2DataNum * 4 , 0
+APUData_Moon
+!fill kAPUData_MoonDataNum * 4 , 0
+
+	!by $88 , $01 , 37
+	+MAPUEmitChangeXScroll ~APU_Scroll1
+	!by $88 , $01 , 72
+	; Tree
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_Priority
+	; Sprites behind chars
+	+MAPU_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Background
+
+	+MLittleEndian16Bit kBus24Bit_SpritesControlLo
+	!by 0
+
+	; Tree1 sprite update
+	+MLittleEndian16Bit kBus24Bit_Sprites
+APUData_TreeX !by 0
+APUData_Tree1Data
+	!fill kAPUData_Tree1Num * 4 , 0
+	
+	+MLittleEndian16Bit kBus24Bit_SpritesControlLo
+	!by kBus24Bit_SpritesControlLoEnable
+
+	!by $88 , $01 , 78
+	+MAPUEmitChangeXScroll ~APU_Scroll2
+	!by $88 , $01 , 92
+	+MAPUEmitChangePalette 119 , 119 , 136
+	!by $88 , $01 , 97
+	+MAPUEmitChangeXScroll ~APU_Scroll3
+	!by $88 , $01 , 106
+	+MAPUEmitChangeXScroll ~APU_Scroll4
+
+
+	!by $88 , $01 , 112
+	+MAPUEmitChangeXScroll ~APU_Scroll5
+
+
+!macro APUMultiplexStrip ~.dataAddr , .num , .offset {
+	; Uses EADDR2
+	!by 0
+
+	+MLittleEndian16Bit kBus24Bit_Sprites + (.offset * 4)
+.dataAddr = *
+	!fill .num * 4 , 0
+	
+	; Reuses EADDR2
+	!by kBus24Bit_SpritesControlLoEnable
+}
+
+	!by $88 , $01 , 113
+	+APUMultiplexStrip ~APUData_Tree2aData , kAPUData_Tree2aNum , 0
+	!by $88 , $01 , 114
+	+APUMultiplexStrip ~APUData_Tree2bData , kAPUData_Tree2bNum , kAPUData_Tree2aNum
+	!by $88 , $01 , 115
+	+APUMultiplexStrip ~APUData_Tree2cData , kAPUData_Tree2cNum , kAPUData_Tree2aNum + kAPUData_Tree2bNum
+	!by $88 , $01 , 116
+	+APUMultiplexStrip ~APUData_Tree2dData , kAPUData_Tree2dNum , kAPUData_Tree2aNum + kAPUData_Tree2bNum + kAPUData_Tree2cNum
+
+
+
+	!by $88 , $01 , 119
+	+MAPUEmitChangePalette 136 , 119 , 136
+	!by $88 , $01 , 134
+	+MAPUEmitChangePalette 153 , 119 , 136
+
+	; Next tree segment
+	!by $48 , $00 , 135
+	+APUMultiplexStrip ~APUData_Tree3aData , kAPUData_Tree3aNum , 12
+	!by $48 , $00 , 136
+	+APUMultiplexStrip ~APUData_Tree3bData , kAPUData_Tree3bNum , 12 + kAPUData_Tree3aNum
+	!by $48 , $00 , 137
+	+APUMultiplexStrip ~APUData_Tree3cData , kAPUData_Tree3cNum , 12 + kAPUData_Tree3aNum + kAPUData_Tree3bNum
+	!by $48 , $00 , 138
+	+APUMultiplexStrip ~APUData_Tree3dData , kAPUData_Tree3dNum , 12 + kAPUData_Tree3aNum + kAPUData_Tree3bNum + kAPUData_Tree3cNum
+
+	!by $88 , $01 , 143
+	+MAPUEmitChangePalette 170 , 119 , 136
+
+	; Next tree segment
+	!by $88 , $01 , 145
+	+APUMultiplexStrip ~APUData_Tree4aData , kAPUData_Tree4aNum , 0
+	!by $88 , $01 , 146
+	+APUMultiplexStrip ~APUData_Tree4bData , kAPUData_Tree4bNum , kAPUData_Tree4aNum
+	!by $88 , $01 , 147
+	+APUMultiplexStrip ~APUData_Tree4cData , kAPUData_Tree4cNum , kAPUData_Tree4aNum + kAPUData_Tree4bNum
+	!by $88 , $01 , 148
+	+APUMultiplexStrip ~APUData_Tree4dData , kAPUData_Tree4dNum , kAPUData_Tree4aNum + kAPUData_Tree4bNum + kAPUData_Tree4cNum
+
+	!by $88 , $01 , 151
+	+MAPUEmitChangePalette 187 , 119 , 136
+	!by $88 , $01 , 158
+	+MAPUEmitChangePalette 204 , 119 , 136
+	!by $88 , $01 , 164
+	+MAPUEmitChangePalette 221 , 119 , 136
+
+	; Next tree segment
+	!by $48 , $00 , 165
+	+APUMultiplexStrip ~APUData_Tree5aData , kAPUData_Tree5aNum , 12
+	!by $48 , $00 , 166
+	+APUMultiplexStrip ~APUData_Tree5bData , kAPUData_Tree5bNum , 12 + kAPUData_Tree5aNum
+	!by $48 , $00 , 167
+	+APUMultiplexStrip ~APUData_Tree5cData , kAPUData_Tree5cNum , 12 + kAPUData_Tree5aNum + kAPUData_Tree5bNum
+	!by $48 , $00 , 168
+	+APUMultiplexStrip ~APUData_Tree5dData , kAPUData_Tree5dNum , 12 + kAPUData_Tree5aNum + kAPUData_Tree5bNum + kAPUData_Tree5cNum
+
+
+	!by $88 , $01 , 170
+	+MAPUEmitChangePalette 238 , 119 , 136
+	!by $48 , $00 , 171
+	+APUMultiplexStrip ~APUData_Tree5eData , kAPUData_Tree5eNum , 12 + kAPUData_Tree5aNum + kAPUData_Tree5bNum + kAPUData_Tree5cNum + kAPUData_Tree5dNum
+	!by $88 , $01 , 174
+	+MAPUEmitChangePalette 255 , 119 , 136
+	!by $88 , $01 , 184
+	+MAPUEmitChangePalette 255 , 98 , 118
+	!by $88 , $01 , 194
+	+MAPUEmitChangePalette 255 , 85 , 106
+	; Mountains moved away from the clouds to give a full screen and make more room for the tree sprites
+	!by $88 , $01 , 186 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll6
+	+MAPUEmitChangeXScrollChars ~APU_Scroll1Chars
+	!by $88 , $01 , 188 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll7
+	!by $88 , $01 , 193 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll8
+	!by $88 , $01 , 198 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll9
+	!by $88 , $01 , 205 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll10
+	!by $88 , $01 , 210 + 25
+	+MAPUEmitChangeXScroll ~APU_Scroll11
+
+
+APUData_Size = * -APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+
+!macro MEmitSpriteFrame_Preserve {}
+!macro MEmitSpriteFrame .frame , .palette {
+	!by .frame , .palette
+}
+!macro MEmitSpriteFrame_RestoreExit {}
+!source "tmp/ShadowBeastSpritesSheet.txt.a"

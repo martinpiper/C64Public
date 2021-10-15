@@ -19,10 +19,13 @@ To build and run
 To convert the artwork assets used in the demo. This does not need to be run every time, only when the assets are changed. Run:
 
 	* C64\VideoHardware\assets\convert.bat
+	* C64\VideoHardware\assets\convert3.bat
 	
 To build the code, execute tests, and run the example game. Run:
 
 	* C64\VideoHardware\BuildIt.bat
+	* C64\VideoHardware\BuildIt3.bat
+	* C64\VideoHardware\BuildIt3Anim.bat
 
 
 Documentation

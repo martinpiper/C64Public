@@ -1,6 +1,8 @@
 ;main test code
 
 !source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+
 !to "bin/main.prg", cbm
 !sal
 !sl "tmp/main.map"
@@ -40,20 +42,53 @@ start
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
-	jsr Bus24Bit_DisableDisplay
+	jsr Video_DisableDisplay
+	jsr Video_SpritesDisable
 
 	jsr DisplayScreen
 
 mainLoop
-;	+WaitForFire_A
-	jsr Bus24Bit_WaitVBlank
-	jsr Bus24Bit_WaitVBlank
-	jsr Bus24Bit_WaitVBlank
-	jsr Bus24Bit_WaitVBlank
-	jsr Bus24Bit_WaitVBlank
+	jsr SetMaskingCharScreen
+
+	ldy #72
+.logoScroll
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jsr DisplayLogo
+
+	+MSubU8FromAddrS16 .logoPos+2 , 1
+	dey
+	bne .logoScroll
+
+mainLoop2
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jsr DisplayLogo
+
 	jsr TileScrollUpdates
-	jmp mainLoop
+	jmp mainLoop2
+	rts
+
+.logoPos
+	+MLittleEndian16Bit -2*8
+	+MLittleEndian16Bit 210*8
+
+DisplayLogo
+	; Display the logo from the tiles screen
+	jsr Video_SetAddressTileScrollRegisters
+!for .i , 4 {
+	lda .logoPos + .i -1
+	sta CIA2PortBRS232
+}
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #2
+	sta CIA2PortBRS232
+	+MBus24Bit_WaitUntilRasterY 160
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #1
+	sta CIA2PortBRS232
 	rts
 
 !source "asm/BatBallAnim/DisplayScreen.a"
-

@@ -56,6 +56,8 @@ AnimationFramesHi
 	!fill kMaxSprites , 0
 
 
+; This handles either the X or Y velocity and the corresponding positions.
+; Doing it like this means the same code can be used to detect collisions, it also makes the block edge reactions easier to code.
 !macro MHandleVelocity .SpriteFrameDataLo , .SpriteFrameData , .SpriteFrameDataDeltaLo , .SpriteFrameDataDeltaHi , .minPos , .maxPos {
 	lda .SpriteFrameDataLo,x
 	sta .smLo+1
@@ -72,10 +74,13 @@ AnimationFramesHi
 	bcs .swapSign
 	jmp .over
 .swapSign
+	; If there is a bounce, i.e. if a velocity sign swap is needed
+	; Then restore the original position before the bounce
 .smLo lda #0
 	sta .SpriteFrameDataLo,x
 .smHi lda #0
 	sta .SpriteFrameData,x
+	; Then swap the sign
 	lda #0
 	sec
 	sbc .SpriteFrameDataDeltaLo,x
@@ -87,7 +92,55 @@ AnimationFramesHi
 .over
 	; Handle ball to block collision
 	lda SpriteFrameDataIsBall,x
-	beq .notBall
+	+lbeq .notBall
+
+!if .SpriteFrameData = SpriteFrameDataY {
+	; Bat hit ball test
+
+	; If the ball is already travelling upwardsm, then ignore the bat to ball test
+	lda .SpriteFrameDataDeltaHi,x
+	bpl .noBat
+
+	; Hit the top of the bat yet?
+	lda SpriteFrameDataY,x
+	cmp #16
+	bcs .noBat
+
+	; Bat width test
+	lda SpriteFrameDataX,x
+	clc
+	adc #2
+	sec
+	sbc SpriteFrameDataX
+	cmp #32
+	bcs .noBat
+
+	; Use the horizontal hit position to alter the X velocity for the bounce
+	sec
+	sbc #16
+	; Shift it down a little
+	ldy #0
+	sty zeroPage_Temp2
+	+M_ASR
+	ror zeroPage_Temp2
+	+M_ASR
+	ror zeroPage_Temp2
+	+M_ASR
+	ror zeroPage_Temp2
+
+	clc
+	adc SpriteFrameDataXDeltaHi,x
+	sta SpriteFrameDataXDeltaHi,x
+	lda SpriteFrameDataXDeltaLo,x
+	adc zeroPage_Temp2
+	sta SpriteFrameDataXDeltaLo,x
+
+	; Bounce!
+	jmp .swapSign
+
+.noBat
+}
+
 
 	; TODO: Currently a point test. Edge test is quite expensive.
 	ldy SpriteFrameDataY,x
@@ -112,8 +165,10 @@ AnimationFramesHi
 	sta BlockRemove1 + 1
 
 .smy	ldy #0
-	lda SpritePosYToMainVideoScreenHi,y
+	lda SpritePosYToMainVideoScreenLo,y
 	sta BlockRemove1MainVideo
+	lda SpritePosYToMainVideoScreenHi,y
+	sta BlockRemove1MainVideo+1
 	lda SpritePosYToOriginalMainScreenHi,y
 	sta BlockRemove1OriginalMain
 
@@ -143,13 +198,21 @@ SpritePosYToBlockScreenHi
 }
 
 ; The address in the video hardware
+SpritePosYToMainVideoScreenLo
+!for .ii , 256 {
+!set .i = (256 - .ii) - 10
+!if .i < 0 {
+	!set .i = 0
+}
+	!by <(kBus24Bit_CharScreenMap + ((.i / 8) * $40))
+}
 SpritePosYToMainVideoScreenHi
 !for .ii , 256 {
 !set .i = (256 - .ii) - 10
 !if .i < 0 {
 	!set .i = 0
 }
-	!by >($9000 + ((.i / 8) * $20))
+	!by >(kBus24Bit_CharScreenMap + ((.i / 8) * $40))
 }
 SpritePosYToOriginalMainScreenHi
 !for .ii , 256 {
@@ -170,53 +233,12 @@ SpritePosXToBlockScreenLo
 AnimationFrames_Process
 	ldx #kMaxSprites-1
 .l1
-	lda AnimationFramesHi,x
-	+lbeq .noAnim
-	sta zeroPage_Temp1
-	lda AnimationFramesLo,x
-	sta zeroPage_Temp0
+	+MAnimation_Pre .noAnim
 
 	+MHandleVelocity SpriteFrameDataXLo , SpriteFrameDataX , SpriteFrameDataXDeltaLo , SpriteFrameDataXDeltaHi , 10 , 232
 	+MHandleVelocity SpriteFrameDataYLo , SpriteFrameDataY , SpriteFrameDataYDeltaLo , SpriteFrameDataYDeltaHi , 6 , 218
 
-	ldy #1
-	lda (zeroPage_Temp0),y
-	bne .gotFrame
-
-	; Hi address = 0 indicates animation loop
-	lda AnimationFramesOriginalLo,x
-	sta zeroPage_Temp0
-	lda AnimationFramesOriginalHi,x
-	sta zeroPage_Temp1
-
-	lda (zeroPage_Temp0),y
-.gotFrame
-	sta zeroPage_Temp3
-	dey
-	lda (zeroPage_Temp0),y
-	sta zeroPage_Temp2
-
-	inc zeroPage_Temp0
-	bne .o1
-	inc zeroPage_Temp1
-.o1
-	inc zeroPage_Temp0
-	bne .o2
-	inc zeroPage_Temp1
-.o2
-	lda zeroPage_Temp0
-	sta AnimationFramesLo,x
-	lda zeroPage_Temp1
-	sta AnimationFramesHi,x
-
-	; Get frame and palette
-	; TODO: There is a potential to process all the data from SpriteAnimation_AllFrames to SpriteAnimation_AllFrames_End and remove the need for this double indrect
-	ldy #0
-	lda (zeroPage_Temp2),y
-	sta SpriteFrameDataFrame,x
-	iny
-	lda (zeroPage_Temp2),y
-	sta SpriteFrameDataColour,x
+	+MAnimation_Post
 
 .noAnim
 	dex

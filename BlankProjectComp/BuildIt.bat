@@ -14,3 +14,29 @@ goto end
 echo BlankProjectComp.prg not created!
 exit /B -1
 :end
+
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t0.bin $00 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t1.bin $40 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t2.bin $80 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t3.bin $c0 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t4.bin $100 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t5.bin $140 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t6.bin $180 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t7.bin $1c0 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t8.bin $200 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t9.bin $240 $40
+rem ..\bin\LZMPi.exe -cut "C:\Users\Martin Piper\Downloads\seq.bin" c:\temp\t10.bin $280 $40
+rem 
+rem 
+rem ..\bin\LZMPi.exe -ce c:\temp\t0.bin  c:\temp\tc0.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t1.bin  c:\temp\tc1.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t2.bin  c:\temp\tc2.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t3.bin  c:\temp\tc3.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t4.bin  c:\temp\tc4.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t5.bin  c:\temp\tc5.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t6.bin  c:\temp\tc6.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t7.bin  c:\temp\tc7.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t8.bin  c:\temp\tc8.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t9.bin  c:\temp\tc9.bin
+rem ..\bin\LZMPi.exe -ce c:\temp\t10.bin c:\temp\tc10.bin
+rem ^^ Then trim last 5 bytes since they are not really needed for fixed lenght decompress

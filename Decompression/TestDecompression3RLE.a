@@ -39,6 +39,8 @@ EndOfMemory = $10000
 	sei
 	; Due to being started with a BASIC SYS:
 	; Assume the DDR is correct
+;	lda #ProcessorPortAllRAMWithIO
+;	sta ZPProcessorPort
 ;	lda #ProcessorPortDDRDefault
 ;	sta ZPProcessorPortDDR
 
@@ -46,8 +48,6 @@ EndOfMemory = $10000
 	txs
 
 !if 0 {
-	lda #ProcessorPortAllRAMWithIO
-	sta ZPProcessorPort
 	lda #0
 	sta VIC2ScreenControlV
 }

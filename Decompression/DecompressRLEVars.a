@@ -6,9 +6,10 @@ RNXPCompressionDecompress_GetByteAddr = $401
 }
 
 RNXPCompressionDecompress_WriteByte	sta RNXPCompressionDecompress_WriteByteAddr
-	inc RNXPCompressionDecompress_WriteByte+1
+RNXPCompressionDecompress_WriteBytesmAddr = RNXPCompressionDecompress_WriteByte + 1
+	inc RNXPCompressionDecompress_WriteBytesmAddr+0
 	bne .e1
-	inc RNXPCompressionDecompress_WriteByte+2
+	inc RNXPCompressionDecompress_WriteBytesmAddr+1
 .e1
 	rts
 

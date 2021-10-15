@@ -67,6 +67,11 @@ m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCo
 ..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "..\TestMultiplexor.prg" $101 $4896 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // Without TinyHeader
 ..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "..\TestMultiplexor.prg" $ff $101 $4896 $900 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+
+
+// With loading screen
+wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUSC000.prg" 1 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.scr" 2 $2 $3eb .BitmapLogoScreen otl$c0 otfbr "..\..\BlankProjectComp\Tusari.col" 3 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.bmp" 4 $2 $1f43 .BitmapLogo otl$c0 otfbr "..\TestMultiplexor.prg" 5 otl$c0 c
+
 */
 
 #include <stdio.h>

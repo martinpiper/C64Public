@@ -31,6 +31,7 @@ http://c64tapes.org/dokuwiki/doku.php?id=loaders:rom_loader
 static const char *tapeMagic = "C64-TAPE-RAW";
 static int sStreamPriority = 1;
 static int sStreamFile = 1;
+static int sRandomSeed = 0;
 
 C64Tape::C64Tape()
 {
@@ -234,6 +235,12 @@ void C64Tape::TapeWriteByte( const bool useTurbo , const unsigned char output )
 
 	}
 
+	mChecksumRegister = mChecksumRegister ^ output;
+}
+
+void C64Tape::TapeChecksumByte( std::vector<unsigned char> &data, const unsigned char output )
+{
+	data.push_back(output);
 	mChecksumRegister = mChecksumRegister ^ output;
 }
 
@@ -1297,11 +1304,21 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					// Write bytes
 					if ( checksumBlocks )
 					{
+						class ABlock
+						{
+						public:
+							ABlock() : mLeader(-1) {}
+							int mLeader;
+							std::vector<unsigned char> mData;
+						};
+						std::list<ABlock> blocks;
+
 						int thisBlock = startAddress;
-						bool firstBlock = true;
 
 						while ( thisBlock < endAddress )
 						{
+							ABlock block;
+
 							mChecksumRegister = 0;
 							int thisBlockSize = endAddress - thisBlock;
 							if ( thisBlockSize > 256 )
@@ -1329,39 +1346,39 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								}
 							}
 
-							TapeWriteByte( true , mTapeSyncCode );
-							TapeWriteByte( true , mTapeHeaderByteEx );
+							TapeChecksumByte( block.mData , mTapeSyncCode );
+							TapeChecksumByte( block.mData , mTapeHeaderByteEx );
 							if (savedBytes > 0)
 							{
-								TapeWriteByte( true , mTapeHeaderByteEx2RLE );
+								TapeChecksumByte( block.mData , mTapeHeaderByteEx2RLE );
 							}
 							else
 							{
-								TapeWriteByte( true , mTapeHeaderByteEx2 );
+								TapeChecksumByte( block.mData , mTapeHeaderByteEx2 );
 							}
 
-							TapeWriteByte( true , filenameByte );
+							TapeChecksumByte( block.mData , filenameByte );
 
-							TapeWriteByte( true , thisBlock & 0xff );
-							TapeWriteByte( true , (thisBlock >> 8) & 0xff );
+							TapeChecksumByte( block.mData , thisBlock & 0xff );
+							TapeChecksumByte( block.mData , (thisBlock >> 8) & 0xff );
 
-							TapeWriteByte( true , numBlocks );
+							TapeChecksumByte( block.mData , numBlocks );
 
 							if (savedBytes > 0)
 							{
 								// The "end address" portion of the header is different in this mode
-								TapeWriteByte( true , (unsigned char) outCompressedLen );
+								TapeChecksumByte( block.mData , (unsigned char) outCompressedLen );
 								// The "original size" -1 for the sec/adc in the code just after .isRLEHeader2
-								TapeWriteByte( true , (unsigned char) thisBlockSize-1 );
+								TapeChecksumByte( block.mData , (unsigned char) thisBlockSize-1 );
 
-								TapeWriteByte( true , mChecksumRegister );
+								TapeChecksumByte( block.mData , mChecksumRegister );
 
 								printf("Block $%x compressed saved %d bytes (%d to %d)\n" , thisBlock , savedBytes , thisBlockSize , outCompressedLen);
 								int tempSize = (int) outCompressedLen;
 								int i = 0;
 								while( tempSize > 0 )
 								{
-									TapeWriteByte( true , outputCompressedFileData[i] );
+									TapeChecksumByte( block.mData , outputCompressedFileData[i] );
 
 									tempSize--;
 									i++;
@@ -1369,27 +1386,64 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							}
 							else
 							{
-								TapeWriteByte( true , thisBlockEnd & 0xff );
-								TapeWriteByte( true , (thisBlockEnd >> 8) & 0xff );
+								TapeChecksumByte( block.mData , thisBlockEnd & 0xff );
+								TapeChecksumByte( block.mData , (thisBlockEnd >> 8) & 0xff );
 
-								TapeWriteByte( true , mChecksumRegister );
+								TapeChecksumByte( block.mData , mChecksumRegister );
 
 								int tempSize = thisBlockSize;
 								while( ( tempSize > 0 ) && !feof( inFp ) )
 								{
 									int got = fgetc( inFp );
 
-									TapeWriteByte( true , got );
+									TapeChecksumByte( block.mData , got );
 
 									tempSize--;
 								}
 							}
 
-							TapeWriteByte( true , mChecksumRegister );
+							TapeChecksumByte( block.mData , mChecksumRegister );
 
 							if (savedBytes > 0)
 							{
-								WriteTurboLeader(8);
+								block.mLeader = 8;
+							}
+
+							thisBlock += thisBlockSize;
+
+							blocks.push_back(block);
+						} //< while ( thisBlock < endAddress )
+
+						bool firstBlock = true;
+						while (!blocks.empty())
+						{
+							std::list<ABlock>::iterator st = blocks.begin();
+
+							if (sRandomSeed != 0)
+							{
+								// Pick one at random from the list
+								int counter = rand() & 255;
+								while (counter-- > 0)
+								{
+									st++;
+									if (st == blocks.end())
+									{
+										st = blocks.begin();
+									}
+								}
+							}
+
+							ABlock block = *st;
+							blocks.erase(st);
+
+							for (size_t p = 0 ; p < block.mData.size() ; p++)
+							{
+								TapeWriteByte( true , block.mData[p] );
+							}
+
+							if (block.mLeader >=0)
+							{
+								WriteTurboLeader(block.mLeader);
 							}
 							else
 							{
@@ -1398,9 +1452,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 							AddStream(firstBlock);
 							firstBlock = false;
-
-							thisBlock += thisBlockSize;
-						} //< while ( thisBlock < endAddress )
+						}
 
 					}
 					else
@@ -1620,6 +1672,23 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				break;
 			}
 
+			case 'n':
+			{
+				argc--;
+				argv++;
+
+				if ( argc <= 0 )
+				{
+					printf("Error: Random seed expected\n");
+					exit(-1);
+				}
+
+				sRandomSeed = ParamToNum( *argv );
+				srand(sRandomSeed);
+
+				break;
+			}
+
 		} //< switch
 	}
 
@@ -1675,6 +1744,7 @@ otn[r] [bytes] : Write tape bytes in turbo format.  If 'r' is supplied the check
 otf[b][r] <file name> <file name byte> [start offset] [end offset] [load address] : Writes turbo data. If 'b' is added it will write checksum blocks rather than a whole file checksum. The checksum register is always reset. The start offset, end offset and load are optional and if the file is a PRG format file the load address is taken from the first two bytes. If 'r' is added after 'b' then the blocks will be compressed with RLE encoding.\n\n\
 otft <file name> [start offset] [end offset] : Writes turbo data with a tiny header without a filename or a load address. The checksum register is always reset. The start offset and end offset are optional, they are calculated assuming a PRG format file.\n\n\
 s : Interleave the next file with the previous file when using turbo checksum block method.\n\n\
+n <seed> : If seed is non-zero then randomly write blocks using the seed for the random number generator. A value of 0, the default, will write blocks in memory order.\n\n\
 ");
 }
 

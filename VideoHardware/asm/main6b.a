@@ -1,0 +1,90 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+kAPUData_Blimp1DataNum = 8
+kAPUData_Blimp2DataNum = 2
+kAPUData_MoonDataNum = 13
+
+zeroPage_Temp0	= $12
+zeroPage_Temp1	= $13
+zeroPage_Temp2	= $14
+zeroPage_Temp3	= $15
+zeroPage_Temp4	= $16
+zeroPage_Temp5	= $17
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "stdlib/MemoryCopy.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/Music.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr MusicInit
+	jsr DisplayScreen
+	jsr APU_Enable
+
+mainLoop
+;	+WaitForFire_A
+
+mainLoopGame
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+!source "asm/main6CommonScrolls.a"
+
+	jsr CopySpriteFrameData
+
+!source "asm/main6CommonBlimps.a"
+
+
+	jsr MusicPoll
+
+	jsr AnimationFrames_Process
+
+	jmp mainLoopGame
+	rts
+
+MusicDataStart
+MusicDataStart_afterHeader = MusicDataStart + 4
+	!bin "tmp/target/SotBexportedMusic2Events.cmp"
+MusicDataEnd
+
+!source "asm/ShadowBeast/DisplayScreenGame.a"
+!source "asm/ShadowBeast/APUGame.a"
+!source "asm/ShadowBeast/DisplayData.a"
+
+!source "asm/ShadowBeast/Sprites.a"
+
+!source "asm/AnimMacros.a"
+!source "asm/ShadowBeast/Animation.a"
+!source "asm/ShadowBeast/AnimationData.a"
+!source "tmp/ShadowBeastSprites2Sheet.txt.a"
+

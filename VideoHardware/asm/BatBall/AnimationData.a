@@ -1,13 +1,3 @@
-!macro SpriteAnimationFrame .address , .speed {
-!for .i , .speed {
-	+MLittleEndian16Bit .address
-}
-}
-
-!macro SpriteAnimationEnd {
-	+MLittleEndian16Bit 0
-}
-
 SpriteAnimation_AllFrames
 
 SpriteAnimation_PlayerLeft

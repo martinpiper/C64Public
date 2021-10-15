@@ -95,7 +95,7 @@ BlockSet
 !zn
 BlockRemove1				!by 0,0
 BlockRemove1Y				!by 0
-BlockRemove1MainVideo		!by 0
+BlockRemove1MainVideo		!by 0,0
 BlockRemove1OriginalMain	!by 0
 
 ; This is executed in the vlbank, to remove any pending blocks from the screen safely
@@ -137,13 +137,13 @@ BlockRemoveChecks
 	; Calculate the destination address in the video hardware
 	tya
 	clc
-	adc BlockRemove1
+	adc BlockRemove1MainVideo
 	sta zeroPage_Temp2
-	lda BlockRemove1MainVideo
+	lda BlockRemove1MainVideo+1
 	adc #0
 	sta zeroPage_Temp3
 
-	lda #1
+	lda #kBus24Bit_CharScreenMap_EBBS
 	ldx zeroPage_Temp2
 	ldy zeroPage_Temp3
 	jsr Bus24Bit_SetAddressBus
@@ -162,11 +162,12 @@ BlockRemoveChecks
 	adc #4
 	sta zeroPage_Temp1
 
+	; Video hardware address
 	lda zeroPage_Temp3
 	clc
-	adc #4
+	adc #>(kBus24Bit_CharColourMap-kBus24Bit_CharScreenMap)
 	tay
-	lda #1
+	lda #kBus24Bit_CharScreenMap_EBBS
 	ldx zeroPage_Temp2
 	jsr Bus24Bit_SetAddressBus
 	ldy zeroPage_Temp4

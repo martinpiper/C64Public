@@ -3,10 +3,80 @@ Feature: Smoke test
 
   Quickly load the output and check various simple aspects of the code
 
+
+  # Run with BuildIt7.bat
+  # TODO: This emulation needs to support some C64 KERNAL routines
+  @JustVideo
+  Scenario: Smoke test for just the video layer
+    Given a new video display with 16 colours
+	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display add joystick to port 1
+    Given video display add joystick to port 2
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-3-"
+#    Given property "bdd6502.bus24.trace" is set to string "true"
+#	Given property "bdd6502.apu.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+
+	# Nothing plugged in, all floating high logic values
+#    Given add a StaticColour layer for palette index '0xff'
+#    And the layer has 16 colours
+#    And add a StaticColour layer for palette index '0xff'
+#    And the layer has 16 colours
+#    And add a StaticColour layer for palette index '0xff'
+#    And the layer has 16 colours
+#    And add a StaticColour layer for palette index '0xff'
+#    And the layer has 16 colours
+
+	# Some layers plugged in
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+#    Given add a GetBackground layer fetching from layer index '1'
+    Given add a Chars V4.0 layer with registers at '0xa000' and screen addressEx '0x04' and planes addressEx '0x08'
+    And the layer has 16 colours
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+
+    And enable user port bus debug output
+#    And enable APU mode
+    Given show video window
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+  # Run with Convert.bat
   @RPG
   Scenario: Smoke test for video
     Given a new audio expansion
-    Given a new video display
+    Given a new video display with 16 colours
 	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
     And audio refresh window every 0 instructions
@@ -20,34 +90,46 @@ Feature: Smoke test
     When I enable unitialised memory read protection with immediate fail
     * That does fail on BRK
     Given a user port to 24 bit bus is installed
-    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a GetBackground layer fetching from layer index '1'
+	# Order with priority register
     Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    And the layer has 16 colours
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+
     Given show video window
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
 	#  Music
 	Given write data from file "tmp/target/exportedMusicSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
-    # Palette
+	# In main.a check IncludeGraphicsData for data upload
+#    # Palette
     Given write data from file "tmp/PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
-    # Sprites
+#    # Sprites
     Given write data from file "tmp/sprite_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
     Given write data from file "tmp/sprite_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
     Given write data from file "tmp/sprite_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
-    # Tiles
+    Given write data from file "tmp/sprite_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
+#    # Tiles
     Given write data from file "tmp/map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
     Given write data from file "tmp/background_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
     Given write data from file "tmp/background_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
     Given write data from file "tmp/background_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
-    # Chars
-#    Given write data from file "C:\work\BombJack\05_k08t.bin" to 24bit bus at '0x2000' and addressEx '0x20'
-#    Given write data from file "C:\work\BombJack\04_h08t.bin" to 24bit bus at '0x4000' and addressEx '0x20'
-#    Given write data from file "C:\work\BombJack\03_e08t.bin" to 24bit bus at '0x8000' and addressEx '0x20'
-    # Mode7
+    Given write data from file "tmp/background_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+#    # Chars
+    Given write data from file "tmp/status_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+    Given write data from file "tmp/status_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "tmp/status_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "tmp/status_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "tmp/status_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+#    # Mode7
     Given write data from file "tmp/clouds_screen.bin" to 24bit bus at '0x2000' and addressEx '0x08'
     Given write data from file "tmp/clouds_tiles.bin" to 24bit bus at '0x4000' and addressEx '0x08'
     Given write data from file "tmp/clouds_tiles.bin2" to 24bit bus at '0x8000' and addressEx '0x08'
-
 
     And I load prg "bin/main.prg"
     And I load labels "tmp/main.map"
@@ -67,14 +149,14 @@ Feature: Smoke test
     When I execute the procedure at setupFrame for no more than 1000000 instructions
     When I execute the procedure at setupFrame for no more than 1000000 instructions
 
-    Then expect image "testdata/TC-1-000001.bmp" to be identical to "tmp/frames/TC-1-000001.bmp"
-    Then expect image "testdata/TC-1-000002.bmp" to be identical to "tmp/frames/TC-1-000002.bmp"
-    Then expect image "testdata/TC-1-000003.bmp" to be identical to "tmp/frames/TC-1-000003.bmp"
-    Then expect image "testdata/TC-1-000004.bmp" to be identical to "tmp/frames/TC-1-000004.bmp"
-    Then expect image "testdata/TC-1-000005.bmp" to be identical to "tmp/frames/TC-1-000005.bmp"
-    Then expect image "testdata/TC-1-000006.bmp" to be identical to "tmp/frames/TC-1-000006.bmp"
-    Then expect image "testdata/TC-1-000007.bmp" to be identical to "tmp/frames/TC-1-000007.bmp"
-    Then expect image "testdata/TC-1-000008.bmp" to be identical to "tmp/frames/TC-1-000008.bmp"
+#    Then expect image "testdata/TC-1-000001.bmp" to be identical to "tmp/frames/TC-1-000001.bmp"
+#    Then expect image "testdata/TC-1-000002.bmp" to be identical to "tmp/frames/TC-1-000002.bmp"
+#    Then expect image "testdata/TC-1-000003.bmp" to be identical to "tmp/frames/TC-1-000003.bmp"
+#    Then expect image "testdata/TC-1-000004.bmp" to be identical to "tmp/frames/TC-1-000004.bmp"
+#    Then expect image "testdata/TC-1-000005.bmp" to be identical to "tmp/frames/TC-1-000005.bmp"
+#    Then expect image "testdata/TC-1-000006.bmp" to be identical to "tmp/frames/TC-1-000006.bmp"
+#    Then expect image "testdata/TC-1-000007.bmp" to be identical to "tmp/frames/TC-1-000007.bmp"
+#    Then expect image "testdata/TC-1-000008.bmp" to be identical to "tmp/frames/TC-1-000008.bmp"
 
 
     # This allows the last frame to be observed and window zoomed/resized
@@ -95,7 +177,7 @@ Feature: Smoke test
   @Mode7LayersEnable
   Scenario: Smoke test for video with Mode7LayersEnable
     Given a new audio expansion
-    Given a new video display
+    Given a new video display with 16 colours
 	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
     And audio refresh window every 0 instructions
@@ -110,12 +192,15 @@ Feature: Smoke test
     * That does fail on BRK
     Given a user port to 24 bit bus is installed
     Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
 	# For Mode7LayersEnable
     Given add a Mode7 layer with registers at '0xb000' and addressEx '0x08'
     Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
     Given add a Mode7 layer with registers at '0xa800' and addressEx '0x08'
     Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
 #    Given add a Chars layer with registers at '0x9000' and addressEx '0x20'
+#    And the layer has 16 colours
     Given show video window
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
@@ -127,11 +212,13 @@ Feature: Smoke test
     Given write data from file "tmp/sprite_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
     Given write data from file "tmp/sprite_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
     Given write data from file "tmp/sprite_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+    Given write data from file "tmp/sprite_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
     # Tiles
     Given write data from file "tmp/map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
     Given write data from file "tmp/background_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
     Given write data from file "tmp/background_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
     Given write data from file "tmp/background_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    Given write data from file "tmp/background_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
     # Mode7
     Given write data from file "tmp/clouds_screen.bin" to 24bit bus at '0x2000' and addressEx '0x08'
     Given write data from file "tmp/clouds_tiles.bin" to 24bit bus at '0x4000' and addressEx '0x08'
@@ -166,22 +253,31 @@ Feature: Smoke test
   # Run with Convert3.bat
   @BatBall
   Scenario: Smoke test for chars with sprites (BatBall)
-    Given a new video display
+    Given a new video display with 16 colours
 	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
     Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
     Given video display saves debug BMP images to leaf filename "tmp/frames/TC-3-"
-    Given property "bdd6502.bus24.trace" is set to string "true"
+#    Given property "bdd6502.bus24.trace" is set to string "true"
+#	Given property "bdd6502.apu.trace" is set to string "true"
     Given I disable trace
     Given I have a simple overclocked 6502 system
     When I enable unitialised memory read protection with immediate fail
     * That does fail on BRK
     Given a user port to 24 bit bus is installed
-    Given add a StaticColour layer for palette index '0x7f'
-	Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-    Given add a Chars layer with registers at '0x9000' and addressEx '0x20'
+    And enable user port bus debug output
+    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+    Given add a GetBackground layer fetching from layer index '1'
+    And the layer has 16 colours
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
     Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
     Given show video window
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
@@ -191,11 +287,93 @@ Feature: Smoke test
 #    Given write data from file "tmp/BatBallsprite_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
 #    Given write data from file "tmp/BatBallsprite_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
 #    Given write data from file "tmp/BatBallsprite_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+#    Given write data from file "tmp/BatBallsprite_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
     # Chars
 #    Given write data from file "tmp/BatBallmap.bin" to 24bit bus at '0x9000' and addressEx '0x01'
 #    Given write data from file "tmp/BatBallchars_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
 #    Given write data from file "tmp/BatBallchars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
 #    Given write data from file "tmp/BatBallchars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+#    Given write data from file "tmp/BatBallchars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+# Run with Convert4.bat
+  @Turrican
+  Scenario: Smoke test for Turrican demo
+    Given a new video display with 16 colours
+	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-4-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+#	And I enable trace with indent
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+#    Given add a StaticColour layer for palette index '0x7f'
+#    Given add a GetBackground layer fetching from layer index '1'
+    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+#    Given write data from file "tmp/TurricanPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Sprites
+#    Given write data from file "tmp/TurricanSprites_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
+#    Given write data from file "tmp/TurricanSprites_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
+#    Given write data from file "tmp/TurricanSprites_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+#    Given write data from file "tmp/TurricanSprites_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
+    # Tiles
+#    Given write data from file "tmp/TurricanTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+#    Given write data from file "tmp/TurricanTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+#    Given write data from file "tmp/TurricanTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+#    Given write data from file "tmp/TurricanTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+#    Given write data from file "tmp/TurricanTiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+    # Chars
+#    Given write data from file "tmp/TurricanStatus_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+#    Given write data from file "tmp/TurricanStatus_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+#    Given write data from file "tmp/TurricanStatus_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+#    Given write data from file "tmp/TurricanStatus_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+#    Given write data from file "tmp/TurricanStatus_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Mode7
+    Given write data from file "tmp/TurricanClouds_screen.bin" to 24bit bus at '0x2000' and addressEx '0x08'
+    Given write data from file "tmp/TurricanClouds_tiles.bin" to 24bit bus at '0x4000' and addressEx '0x08'
+    Given write data from file "tmp/TurricanClouds_tiles.bin2" to 24bit bus at '0x8000' and addressEx '0x08'
 
 
     And I load prg "bin/main.prg"
@@ -214,6 +392,386 @@ Feature: Smoke test
     Given I disable trace
     Given property "bdd6502.bus24.trace" is set to string "false"
     Given video display does not save debug BMP images
-#    Given video display processes 24 pixels per instruction
+    Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
     When I execute the procedure at mainLoop until return
+
+
+
+
+# Run with Convert4_8.bat
+  @Turrican_8
+  Scenario: Smoke test for Turrican demo with 8 colours
+    Given a new video display
+	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+#    Given add a StaticColour layer for palette index '0x7f'
+    Given add a GetBackground layer fetching from layer index '1'
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    Given add a Chars layer with registers at '0x9000' and addressEx '0x20'
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+#    Given write data from file "tmp/TurricanPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Sprites
+#    Given write data from file "tmp/TurricanSprites_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
+#    Given write data from file "tmp/TurricanSprites_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
+#    Given write data from file "tmp/TurricanSprites_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+    # Tiles
+#    Given write data from file "tmp/TurricanTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+#    Given write data from file "tmp/TurricanTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+#    Given write data from file "tmp/TurricanTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+#    Given write data from file "tmp/TurricanTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    # Chars
+#    Given write data from file "tmp/TurricanStatus_map.bin" to 24bit bus at '0x9000' and addressEx '0x01'
+#    Given write data from file "tmp/TurricanStatus_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+#    Given write data from file "tmp/TurricanStatus_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+#    Given write data from file "tmp/TurricanStatus_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+
+# Run with Convert5.bat
+  @Road
+  Scenario: Smoke test for Road demo
+    Given a new video display with 16 colours
+	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+    And enable user port bus debug output
+    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+    Given add a GetBackground layer fetching from layer index '1'
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+    Given write data from file "tmp/RoadPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Tiles
+    Given write data from file "tmp/RoadTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+    Given write data from file "tmp/RoadTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+    Given write data from file "tmp/RoadTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+    Given write data from file "tmp/RoadTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    Given write data from file "tmp/RoadTiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+
+# Run with Convert6.bat
+  @ShadowBeast
+  Scenario: Smoke test for Shadow of the Beast demo
+    Given a new audio expansion
+    Given a new video display with 16 colours
+#	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+#    And enable user port bus debug output
+    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+    Given add a GetBackground layer fetching from layer index '1'
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+    Given write data from file "tmp/ShadowBeastPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Sprites
+    Given write data from file "tmp/ShadowBeastSprites_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
+    # Chars
+    Given write data from file "tmp/ShadowBeastChars_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+    Given write data from file "tmp/ShadowBeastChars_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Tiles
+    Given write data from file "tmp/ShadowBeastTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+    Given write data from file "tmp/ShadowBeastTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+	#  Music
+	Given write data from file "tmp/target/SotBexportedMusicSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+# Run with Convert6.bat
+  @ShadowBeastB
+  Scenario: Smoke test for Shadow of the Beast running demo
+    Given a new audio expansion
+    Given a new video display with 16 colours
+#	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+#    And enable user port bus debug output
+    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+    Given add a GetBackground layer fetching from layer index '1'
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+    Given write data from file "tmp/ShadowBeastPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Sprites
+    Given write data from file "tmp/ShadowBeastSprites2_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites2_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites2_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+    Given write data from file "tmp/ShadowBeastSprites2_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x10'
+    # Chars
+    Given write data from file "tmp/ShadowBeastChars2_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+    Given write data from file "tmp/ShadowBeastChars2_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars2_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars2_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "tmp/ShadowBeastChars2_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Tiles
+    Given write data from file "tmp/ShadowBeastTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+    Given write data from file "tmp/ShadowBeastTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    Given write data from file "tmp/ShadowBeastTiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+	#  Music
+	Given write data from file "tmp/target/SotBexportedMusic2Samples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+
+
+
+
+# Run with Convert9.bat
+  @Demo9
+  Scenario: Smoke test for Demo9
+    Given a new audio expansion
+    Given a new video display with 16 colours
+	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I disable trace
+    Given I have a simple overclocked 6502 system
+    When I enable unitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+    And enable user port bus debug output
+#    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+#    Given add a GetBackground layer fetching from layer index '1'
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+#    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    Given add a Sprites2 layer with registers at '0x9000' and addressEx '0x10'
+    And the layer has 16 colours
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x02'
+    And the layer has 16 colours
+    Given show video window
+
+    # Instead of writing this data via the 6502 CPU, just send it straight to memory
+    # Palette
+    Given write data from file "tmp/Demo9PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Sprites1
+    Given write data from file "tmp/Demo9Sprites10.bin" to 24bit bus at '0x2000' and addressEx '0x02'
+    Given write data from file "tmp/Demo9Sprites11.bin" to 24bit bus at '0x4000' and addressEx '0x02'
+    Given write data from file "tmp/Demo9Sprites12.bin" to 24bit bus at '0x8000' and addressEx '0x02'
+    Given write data from file "tmp/Demo9Sprites13.bin" to 24bit bus at '0x0000' and addressEx '0x02'
+
+    # Sprites2
+    Given write data from file "tmp/Demo9Sprites20.bin" to 24bit bus at '0x2000' and addressEx '0x10'
+#    Given write data from file "tmp/Demo9Sprites21.bin" to 24bit bus at '0x4000' and addressEx '0x10'
+#    Given write data from file "tmp/Demo9Sprites22.bin" to 24bit bus at '0x8000' and addressEx '0x10'
+#    Given write data from file "tmp/Demo9Sprites23.bin" to 24bit bus at '0x0000' and addressEx '0x10'
+    # Chars
+    Given write data from file "tmp/Demo9Chars_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+    Given write data from file "tmp/Demo9Chars_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "tmp/Demo9Chars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "tmp/Demo9Chars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "tmp/Demo9Chars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Tiles
+    Given write data from file "tmp/Demo9Tiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
+    Given write data from file "tmp/Demo9Tiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
+    Given write data from file "tmp/Demo9Tiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
+    Given write data from file "tmp/Demo9Tiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
+    Given write data from file "tmp/Demo9Tiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
+	#  Music
+    Given write data from file "tmp/target/MusicMW2000Samples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
+
+    # Enable sprites2
+    Given write data byte '0x01' to 24bit bus at '0x9100' and addressEx '0x01'
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+#    And I enable trace with indent
+    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+	Given render a video display frame
+
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at mainLoop until return
+

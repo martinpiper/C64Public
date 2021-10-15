@@ -1,16 +1,84 @@
+* MegaWang 3000 Turbo Edition: https://twitter.com/too_late_nate/status/1446606425925554181
+	Logos:
+		https://github.com/ianhan/BitmapFonts/blob/main/bb_font.png
+		https://github.com/ianhan/BitmapFonts/blob/main/font-pack/Charset-DNS_Kefrens%20The%20Wall%20Font.png
+		Wang https://github.com/ianhan/BitmapFonts/blob/main/font-pack/Charset-DNS_Sentinel.png
+		https://github.com/ianhan/BitmapFonts/blob/main/font-pack/jet.png
+		https://github.com/ianhan/BitmapFonts/blob/main/mvision2.png
+		Mega https://github.com/ianhan/BitmapFonts/blob/main/silver_f.png
+		2000 https://github.com/ianhan/BitmapFonts/blob/main/tristarf.png
+		Turbo edition https://github.com/ianhan/BitmapFonts/blob/main/32X32-F6.png
+		https://github.com/ianhan/BitmapFonts/blob/main/32X32-F7.png
+		https://github.com/ianhan/BitmapFonts/blob/main/Cool-Cat-Font.png
+		https://github.com/ianhan/BitmapFonts/blob/main/FRESH.png
+	Mods:
+		* https://modarchive.org/index.php?request=view_player&query=83123
+		https://modarchive.org/index.php?request=view_player&query=82719
+		* https://modarchive.org/index.php?request=view_player&query=80199
+		https://modarchive.org/index.php?request=view_player&query=159691
+		https://modarchive.org/index.php?request=view_player&query=122630
+		https://modarchive.org/index.php?request=view_player&query=104840
+		** https://modarchive.org/index.php?request=view_player&query=42987
+		https://modarchive.org/index.php?request=view_player&query=122628
+		https://modarchive.org/index.php?request=view_player&query=77048
+		https://modarchive.org/index.php?request=view_player&query=84825
+		https://modarchive.org/index.php?request=view_player&query=157799
+	Background:
+		https://www.spriters-resource.com/fullview/73184/?source=genre
+
+
+
+
+* main8.a created from main7.a to separate out the RaspberryPi example
+
+
+
+* For all the raster waits, convert them into +MAPU_EmitWait
+	Could also use a "raster screen edge" constant define
+
+
+
+* Check the full user port design, that a bus reset and address setup sequence does not toggle the address write signal
+
+
+
 * BatBall
-	* Ball collision with bat
-		Depending on how far from the middle (or to the edges) the ball return X velocity (hence direction) changes
 	* Collisions with enemies make the ball bounce randomly, with a speed component
 	* Different sprite shadow height (offset) can provide extra visual feeling of depth
 	* Every N bounces the ball speed increases
 
 
 
+* R-Type?
+	https://www.youtube.com/watch?v=pVWtI0426mU
+	https://www.spriters-resource.com/arcade/rtype/
+	https://retrogamezone.co.uk/rtype.htm
+	http://hol.abime.net/1288/gamemap
+	Would need two tiles layers however
+
+* Turrican?
+	Clean files: https://github.com/Josef-Friedrich/turrican-clone-assets-collection/tree/master/turrican2
+	The number of unique 16x16 tiles is quite large, more than 256
+		cls && java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 136 170 255 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "C:\temp\1-1 trim.png" --tilewh 16 16 --imagequantize 8 --outputplanes ../tmp/background_plane --outputscrcol ../tmp/map.bin --outputpalettes ../tmp/PaletteData.bin --numbitplanes 3 --convertwritepass
+* Turrican: The tiles layer runs out of tiles with the background data as is. Perhaps try the background in the chars layer and check how many chars it uses?
+	Then the score could be in the tiles layer instead? :D
+
+
+* Metal slug?
+	https://www.spriters-resource.com/arcade/ms6/sheet/123749/
+	
+	
+* Darius?
+	https://www.spriters-resource.com/fullview/114007/?source=genre
+	
+* Flying Shark
+	Would need two sprite layers: https://www.spriters-resource.com/sharp_x68000/hishouzameflyingshark/sheet/134119/?source=genre
+	
+
 
 
 * Using convert2.bat the black pixels in "Top down.png" seem to be coming through with transparency. Perhaps this is a palette matching problem or where the loaded palette has black in colour 0??
-	This would mean the layer combination logic is detecting a lower 3 bit pixel and treating it as transparent. The convertor could do with a mode where that transparent pixel is ignored in the output palette.
+	This would mean the layer combination logic is detecting a lower 3 bit pixel and treating it as transparent. The converter could do with a mode where that transparent pixel is ignored in the output palette.
 
 
 

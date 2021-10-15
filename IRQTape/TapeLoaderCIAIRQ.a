@@ -74,7 +74,9 @@ TapeLoaderLoadNewFile
 	sta .byte					; Safe to set 0 zero here since we will be getting a sync byte which resets to 1 for the carry 8 bit check later on
 	sta TurboTapeHeaderStatus
 	sta TurboTapeFinishedLoadingFile
+!ifdef EnableBlockCompression {
 	sta intTurboTapeFinishedLoadingFile
+}
 	sta .checksum
 	rts
 
@@ -450,9 +452,9 @@ TapeLoaderCompressedBufferFull_Handle
 
 	; Setup RLE decompress
 	lda .smZPStartBasicLo+1
-	sta RNXPCompressionDecompress_WriteByte+1
+	sta RNXPCompressionDecompress_WriteBytesmAddr+0
 	lda .smZPStartBasicHi+1
-	sta RNXPCompressionDecompress_WriteByte+2
+	sta RNXPCompressionDecompress_WriteBytesmAddr+1
 
 !ifdef TapeLoaderCompressed_screenIndicator {
 	lda #'-'
@@ -467,7 +469,7 @@ TapeLoaderCompressedBufferFull_Handle
 	cpy #96
 	bcs .endRle1
 
-	lda RNXPCompressionDecompress_WriteByte+1
+	lda RNXPCompressionDecompress_WriteBytesmAddr+0
 	bmi .endRle1
 
 	lda TapeLoaderCompressedBuffer,y
@@ -548,9 +550,10 @@ TapeLoaderCompressedBufferFull_Handle
 
 
 RNXPCompressionDecompress_WriteByte	sta $1234
-	inc RNXPCompressionDecompress_WriteByte+1
+RNXPCompressionDecompress_WriteBytesmAddr = RNXPCompressionDecompress_WriteByte + 1
+	inc RNXPCompressionDecompress_WriteBytesmAddr+0
 	bne .e1
-	inc RNXPCompressionDecompress_WriteByte+2
+	inc RNXPCompressionDecompress_WriteBytesmAddr+1
 .e1
 	rts
 }

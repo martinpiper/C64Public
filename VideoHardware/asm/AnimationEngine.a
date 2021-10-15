@@ -1,5 +1,5 @@
 !zn
-kAnimationEngine_maxSlots = 8
+kAnimationEngine_maxSlots = 20
 
 kAnimationEngine_flipX = %01000000
 kAnimationEngine_flipY = %10000000
@@ -139,13 +139,10 @@ AnimationEngine_RenderSprites
 	ldx EmitSpriteFrame_count
 	lda #0
 .cl1
-	cpx #24	; max 24 hardware sprites
+	cpx #kBus24Bit_SpritesMaxNum*4	; max 24 hardware sprites
 	bcs .cl2
 	; Store frame/palette/x/y
-	sta CIA2PortBRS232
-	sta CIA2PortBRS232
-	sta CIA2PortBRS232
-	sta CIA2PortBRS232
+	sta StackedSpriteData,x
 	inx
 	jmp .cl1
 .cl2

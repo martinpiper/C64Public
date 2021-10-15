@@ -1,0 +1,528 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	jsr Bus24Bit_Init
+
+!if 0 {
+.db1sm	lda .db1
+	sta CIA2PortBRS232
+	inc .db1sm+1
+	bne .cl1
+	inc .db1sm+2
+.cl1
+	lda .db1sm+1
+	cmp #<.db1End
+	bne .db1sm
+	lda .db1sm+2
+	cmp #>.db1End
+	bne .db1sm
+
+.db2sm	lda .db2
+	sta CIA2PortBRS232
+	inc .db2sm+1
+	bne .cl2
+	inc .db2sm+2
+.cl2
+	lda .db2sm+1
+	cmp #<.db2End
+	bne .db2sm
+	lda .db2sm+2
+	cmp #>.db2End
+	bcc .db2sm
+
+.ll1
+	jmp .ll1
+
+!convtab raw
+.db1
+	!by $1b
+	!text "[2J"
+	!by $1b
+	!text "[m"
+	!text "This is some text"
+	!by $1b
+	!text "[#0;10;100;80l"
+	!by $1b
+	!text "[#200;200;64c"
+	!by $1b
+	!text "[#0;8;8;16a"
+	!text "00;01;02;03;04;05;06;07;"
+	!text "10;11;12;13;14;15;16;17;"
+	!text "00;01;02;03;04;05;06;07;"
+	!text "10;11;12;13;14;15;16;17;"
+	!text "00;01;02;03;04;05;06;07;"
+	!text "10;11;12;13;14;15;16;17;"
+	!text "00;01;02;03;04;05;06;07;"
+	!text "10;11;12;13;14;15;16;17;"
+	!by $1b
+	!text "[#0;100;150d"
+.db1End
+.db2
+	!text "This is some more text"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+	!by $1b
+	!text "[#1>"
+;	!bin "C:\Work\BombJack\PiJack2\sprite\sample\load_hex.txt"
+;	!bin "C:\Work\BombJack\PiJack2\sprite\sample\anim_dinos.txt"
+.db2End
+}
+!if 0 {
+;	+MACRODelay_X 16
+	lda #$01
+	sta CIA2PortBRS232
+;	+MACRODelay_X 16
+	lda #$c1
+	sta CIA2PortBRS232
+;	+MACRODelay_X 16
+	lda #$f7
+	sta CIA2PortBRS232
+.tl1
+	jmp .tl1
+}
+
+	jsr Video_DisableDisplay
+;	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink | kVideo_EnableDisplay_Tiles_BorderYShrink
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Background
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #255
+	sta CIA2PortBRS232
+
+	jsr DisplayData
+
+!if 0 {
+.do1
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressTileScrollRegisters
+.xp1	lda #0
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+
+	inc .xp1+1
+
+	+WaitForFireB_A
+	jmp .do1
+}
+
+	jsr Video_WaitVBlank
+
+.l1
+
+!if 0 {
+!if 0 {
+	+WaitForFireB_A
+	lda #<textBlack
+	ldy #>textBlack
+	jsr BASICTextPrint
+	jsr .waitVBlankSetPalAddress
+.smpal
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 0
+
+	+WaitForFireB_A
+	lda #<textRed
+	ldy #>textRed
+	jsr BASICTextPrint
+	jsr .waitVBlankSetPalAddress
+	+MBus24Bit_SendPaletteRGB 255 , 0 , 0
+
+	+WaitForFireB_A
+	lda #<textGreen
+	ldy #>textGreen
+	jsr BASICTextPrint
+	jsr .waitVBlankSetPalAddress
+	+MBus24Bit_SendPaletteRGB 0 , 255 , 0
+
+	+WaitForFireB_A
+	lda #<textBlue
+	ldy #>textBlue
+	jsr BASICTextPrint
+	jsr .waitVBlankSetPalAddress
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 255
+} else {
+	jsr .waitVBlankSetPalAddress
+.smpal
+	+MBus24Bit_SendPaletteRGB 64 , 64 , 64
+	jsr .incrPal
+
+!if 1 {
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 160
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 0
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 140
+	+MBus24Bit_SendPaletteRGB 128 , 128 , 128
+
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 120
+	+MBus24Bit_SendPaletteRGB 255 , 0 , 0
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 100
+	+MBus24Bit_SendPaletteRGB 128 , 0 , 0
+
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 80
+	+MBus24Bit_SendPaletteRGB 0 , 255 , 0
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 60
+	+MBus24Bit_SendPaletteRGB 0 , 128 , 0
+
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 40
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 255
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 20
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 128
+}
+
+!if 0 {
+	jsr .setPalAddress
+	+MBus24Bit_WaitUntilRasterY 116
+	+MBus24Bit_SendPaletteRGB 128 , 0 , 0
+}
+}
+} else {
+	; Simple scroll demo with RType data
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressCharScrollRegisters
+	lda .chars
+	sta CIA2PortBRS232
+	lda .chars+1
+	sta CIA2PortBRS232
+	jsr Video_SetAddressTileScrollRegisters
+	lda .tiles
+	sta CIA2PortBRS232
+	lda .tiles+1
+	sta CIA2PortBRS232
+
+!if 0 {
+	; Optimal data copy of new faded palette data
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	; Just the tiles palettes
+!for .dc , 5*16*2 {
+	lda PaletteNew + .dc -1
+	sta CIA2PortBRS232
+}
+}
+
+
+	inc .smc1+1
+.smc1	lda #0
+	and #1
+	bne .oc1
+	inc .chars
+	bne .oc1
+	inc .chars+1
+.oc1
+	inc .tiles
+	bne .oc2
+	inc .tiles+1
+.oc2
+
+!if 0 {
+	; Calculate faded palette data
+	inc .paletteShift
+	lda .paletteShift
+	and #$0f
+	cmp #14
+	bcc .idxOK
+	lda #0
+.idxOK
+	clc
+	adc #>.shiftedPalettes
+	sta .smpl1+2
+	sta .smpl2+2
+	ldx #0
+.spl1
+	ldy GamePalette,x
+.smpl1 lda .shiftedPalettes,y
+	sta PaletteNew,x
+	ldy GamePalette + $100,x
+.smpl2 lda .shiftedPalettes,y
+	sta PaletteNew + $100,x
+	dex
+	bne .spl1
+}
+
+}
+
+	jmp .l1
+.chars !by 0,0
+.tiles !by 0,0
+!if 0 {
+.paletteShift	!by 14
+!align 255 , 0
+.shiftedPalettes
+!for .shift , 14 {
+!for .palette , 256 {
+!set .rpalette = .palette - 1
+	!set .r = .rpalette & 0x0f
+	!set .g = (.rpalette >> 4) & 0x0f
+	!set .r = (.shift * .r) / 15;
+	!set .g = (.shift * .g) / 15;
+	!by .r | (.g << 4)
+}
+}
+}
+
+!if 0 {
+.incrPal
+	inc .smpal+1
+	bne .l2
+	inc .smpal+6
+.l2
+;	jmp .l2
+	rts
+}
+
+.waitVBlankSetPalAddress
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+.setPalAddress
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette + (255*2)
+	jmp Bus24Bit_SetAddressBus
+
+
+!zn
+FillMemory
+	ldx #8*4
+	ldy #0
+.fl1
+	sta CIA2PortBRS232
+	dey
+	bne .fl1
+	dex
+	bne .fl1
+	rts
+
+!if 0 {
+GamePalette
+!for .i , 256 {
+!set .ii = .i - 1
+	+MBus24Bit_MakePaletteRGB .ii * 16 , (255 - .ii) * 16 , .ii / 4
+}
+}
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!macro SpriteOutput2x2 .x , .y , .s0 , .s1 , .s2 , .s3 {
+	ldx #.x
+	ldy #.y
+	jsr .s0
+	ldx #.x+16
+	ldy #.y
+	jsr .s1
+
+	ldx #.x
+	ldy #.y-16
+	jsr .s2
+	ldx #.x+16
+	ldy #.y-16
+	jsr .s3
+}
+
+!macro SpriteOutput6x2 .x , .y , .s0 , .s1 , .s2 , .s3 , .s4 , .s5 , .s6 , .s7 , .s8 , .s9 , .s10 , .s11 {
+	ldx #.x
+	ldy #.y
+	jsr .s0
+	ldx #.x+16
+	ldy #.y
+	jsr .s1
+	ldx #.x+32
+	ldy #.y
+	jsr .s2
+	ldx #.x+48
+	ldy #.y
+	jsr .s3
+	ldx #.x+64
+	ldy #.y
+	jsr .s4
+	ldx #.x+80
+	ldy #.y
+	jsr .s5
+
+	ldx #.x
+	ldy #.y-16
+	jsr .s6
+	ldx #.x+16
+	ldy #.y-16
+	jsr .s7
+	ldx #.x+32
+	ldy #.y-16
+	jsr .s8
+	ldx #.x+48
+	ldy #.y-16
+	jsr .s9
+	ldx #.x+64
+	ldy #.y-16
+	jsr .s10
+	ldx #.x+80
+	ldy #.y-16
+	jsr .s11
+}
+
+DisplayData
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #1
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressSprites
+	+SpriteOutput2x2 48 , 60 , EmitSpriteFrame0_0 , EmitSpriteFrame16_0 , EmitSpriteFrame0_16 , EmitSpriteFrame16_16
+	+SpriteOutput2x2 120 , 130 , EmitSpriteFrame0_32 , EmitSpriteFrame16_32 , EmitSpriteFrame0_48 , EmitSpriteFrame16_48
+	+SpriteOutput2x2 200 , 170 , EmitSpriteFrame0_64 , EmitSpriteFrame16_64 , EmitSpriteFrame0_80 , EmitSpriteFrame16_80
+	+SpriteOutput6x2 96 , 48 , EmitSpriteFrame0_112 , EmitSpriteFrame16_112 , EmitSpriteFrame32_112 , EmitSpriteFrame48_112 , EmitSpriteFrame64_112 , EmitSpriteFrame80_112 , EmitSpriteFrame0_128 , EmitSpriteFrame16_128 , EmitSpriteFrame32_128 , EmitSpriteFrame48_128 , EmitSpriteFrame64_128 , EmitSpriteFrame80_128
+
+	+MRLEScreenDataToDefaultCharScreen .Chars_map
+	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+
+	+MRLEScreenDataToDefaultTileScreen .Tiles_map
+	+MRLEPlanesDataToDefaultTileScreen .Tiles_plane0 , .Tiles_plane1 , .Tiles_plane2 , .Tiles_plane3
+
+	+MRLEPlanesDataToDefaultSprite .Sprites_plane0 , .Sprites_plane1 , .Sprites_plane2 , .Sprites_plane3
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo7PaletteData.bin"
+	!fill 512 , 0
+
+PaletteNew
+	!fill 512 , 0
+
+.Chars_map
+	!bin "tmp/Demo7Chars_map.cmp"
+.Chars_plane0
+	!bin "tmp/Demo7Chars_plane0.cmp"
+.Chars_plane1
+	!bin "tmp/Demo7Chars_plane1.cmp"
+.Chars_plane2
+	!bin "tmp/Demo7Chars_plane2.cmp"
+.Chars_plane3
+	!bin "tmp/Demo7Chars_plane3.cmp"
+
+.Tiles_map
+	!bin "tmp/Demo7Tiles_map.cmp"
+.Tiles_plane0
+	!bin "tmp/Demo7Tiles_plane0.cmp"
+.Tiles_plane1
+	!bin "tmp/Demo7Tiles_plane1.cmp"
+.Tiles_plane2
+	!bin "tmp/Demo7Tiles_plane2.cmp"
+.Tiles_plane3
+	!bin "tmp/Demo7Tiles_plane3.cmp"
+
+
+.Sprites_plane0
+	!bin "tmp/Demo7Sprites_plane0.cmp"
+.Sprites_plane1
+	!bin "tmp/Demo7Sprites_plane1.cmp"
+.Sprites_plane2
+	!bin "tmp/Demo7Sprites_plane2.cmp"
+.Sprites_plane3
+	!bin "tmp/Demo7Sprites_plane3.cmp"
+
+!macro MEmitSpriteFrame_Preserve {
+}
+!macro MEmitSpriteFrame .frame , .colour {
+	lda #.frame
+	sta CIA2PortBRS232
+	lda #.colour
+	sta CIA2PortBRS232
+
+	sty CIA2PortBRS232
+	stx CIA2PortBRS232
+}
+!macro MEmitSpriteFrame_RestoreExit {
+	rts
+}
+!source "tmp\Demo7SpritesSheet.txt.a"

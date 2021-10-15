@@ -1,0 +1,304 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+	jsr Video_DisableDisplay
+	jsr Video_SpritesDisable
+
+	jsr InitScreenData
+	jsr DisplayScreen
+
+	jsr SetupAPU
+
+	jsr SetupLevel
+
+	jsr DisplayScreenAgain
+
+	jsr Video_WaitVBlank
+	jsr APU_Enable
+
+mainLoop
+	; Multiplexor demo
+	; This uses the APU to generate multiple sprite position updates as the raster travels down the screen. See README.md: Raster line schedule
+	; The APU is designed to allow precise horizonal and vertical pixel synch, so updating the sprite slots outside of their display periods becomes possible.
+	; This allows a continuous vertical sheet of sprites to be updated, without blank areas.
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	; Copy over new sprite data positions
+	lda #$02; EBBS
+	+MWordValueTo_XY APUSpriteData
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX APURealSpriteDataStart
+	ldy #4*48
+	jsr Bus24Bit_CopySmallData
+
+	; Update next frame X positions
+	; Note how the sprites are stored in memory as one contiguous block
+	inc .animationFrame
+	ldy .animationFrame
+	ldx #0
+.sx1
+	lda SpriteAnimationTab,y
+	sta APURealSpriteDataStart + 3,x
+	iny
+	iny
+	inx
+	inx
+	inx
+	inx
+	cpx #48*4
+	bne .sx1
+
+	jmp mainLoop
+
+.animationFrame !by 0
+SpriteAnimationTab
+	!for .i , 512 {
+		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+	}
+
+
+!source "BombJack/stdlib/APU_Macros.a"
+!source "BombJack/stdlib/APU.a"
+TotalAPU_Start
+
+APUCode_Start
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get ADDRB2 values
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad0
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad1
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_ADDRB2Load16
+
+	; Get ADDRB1 values
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad0
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad1
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_ADDRB1Load16
+
+	; Get enable sprites value
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad2
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Get sprite enable register address
+	+MAPU kAPU_Load_EBS | kAPU_Load_EBS2
+	+MAPU kAPU_Incr_ADDRB1
+
+	+MAPU kAPU_Load_EADDR2Lo
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDR2Hi
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Get sprite registers address
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataRegLoad0
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDRHi | kAPU_IDataRegLoad1
+	+MAPU kAPU_Incr_ADDRB1
+
+
+	+MAPU_LoadDoWait
+
+
+	; Copy sprite data
+!for .i , 24 * 4 {
+	+MAPU kAPU_ExternalMEWR
+	+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+}
+
+
+!macro MAPU_DoB2WaitDisableSprites {
+	+MAPU kAPU_ADDRB2Select | kAPU_Load_Wait8
+	+MAPU kAPU_ADDRB2Select | kAPU_Incr_ADDRB2
+	+MAPU kAPU_ADDRB2Select | kAPU_Load_Wait16
+	+MAPU kAPU_ADDRB2Select | kAPU_Incr_ADDRB2
+	+MAPU kAPU_ADDRB2Select | kAPU_Load_Wait24
+	+MAPU kAPU_ADDRB2Select | kAPU_Incr_ADDRB2
+	+MAPU kAPU_ADDRB2Select | kAPU_WaitForEqualsHV
+
+	; Disable sprites
+	+MAPU kAPU_ADDRB2Select | kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2
+	+MAPU kAPU_ADDRB2Select | kAPU_Incr_ADDRB2
+}
+
+!macro MAPU_EnableSprites {
+	; Wait for a bit to allow 16 pixels to pass before enabling the sprites again
+	+MAPU
+	+MAPU
+	+MAPU
+	; Enable sprites
+	+MAPU kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2 | kAPU_IDataSelectReg2
+}
+
+	; Then reset address back to $9820
+	+MAPU kAPU_Load_EADDRLo | kAPU_IDataSelectReg0
+	+MAPU kAPU_Load_EADDRHi | kAPU_IDataSelectReg1
+
+!for .y , 12 {
+	+MAPU_DoB2WaitDisableSprites
+
+	; Copy sprite data
+!for .i , 2 * 4 {
+	+MAPU kAPU_ExternalMEWR
+	+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+}
+
+	+MAPU_EnableSprites
+}
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+APURealSpriteDataStart = APUData_Start + (APUSpriteData - pseudoAPUData_Start)
+
+APUData_Start
+!pseudopc $4000 {
+pseudoAPUData_Start
+	; Address for the following waits and register updates in ADDRB2
+	+MLittleEndian16Bit APUWaitValues
+	; Sprite update data in ADDRB1
+	+MLittleEndian16Bit APUOtherData
+APUWaitValues
+
+!for .y , 6 {
+!set .yy = .y - 1
+	; Next RHRV to wait for
+	!by $88 , $01 , $20 + .yy
+	; Disable sprites
+	!by 0
+}
+!for .y , 6 {
+!set .yy = .y - 1
+	; Next RHRV to wait for
+	; Note different xpos for this half of the sprites
+	!by $48 , $00 , $30 + .yy
+	; Disable sprites
+	!by 0
+}
+
+APUOtherData
+	; Enable sprites value
+	!by $10
+
+	; Set address to $9a00
+	!by $01 , $00 , $9a
+
+	; Sprite registers address
+	!by $20 , $98
+
+	; Next RHRV to wait for
+	!by $88 , $01 , $00
+
+
+	; Sprite data
+APUSpriteData
+!for .i , 12 {
+	!by .i+1 , 4 , 224 , 0 + (.i * 8)
+}
+!for .i , 12 {
+	!by .i+1+7 , 5 , 208 , 128 + (.i * 8)
+}
+
+!for .y , 6 {
+!set .yy = .y - 1
+	; Sprite data
+!for .i , 2 {
+	!by .i+1+.yy + 10 , 128 + 4 + (.yy & 7) + .i , 192 , 64 + (.i * 4) + (.yy*8*2)
+}
+}
+
+!for .y , 6 {
+!set .yy = .y - 1
+	; Sprite data
+!for .i , 2 {
+	!by .i+1+.yy+20 , 128 + 64 + 4 + (.yy & 7) + .i , 176 , 16 + (.i * 4) + (.yy*8*2)
+}
+}
+
+} ;< !pseudopc
+
+APUData_Size = * -APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+
+!source "asm/BatBall/Levels.a"
+!source "asm/BatBall/DisplayScreen.a"
+!source "asm/BatBall/BlockRoutines.a"
+!source "stdlib/MemoryCopy.a"
+
+

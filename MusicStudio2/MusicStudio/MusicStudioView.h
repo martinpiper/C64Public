@@ -114,6 +114,17 @@ public:
 	afx_msg void OnBnClickedRadio1();
 	afx_msg void OnBnClickedRadio2();
 	afx_msg void OnFileExportToC64();
+
+	void CommonPreExport()
+	{
+		OnBnClickedStop();
+
+		// Make sure the SID doesn't have silly block overrides set
+		mOverrideStartTrack1.SetWindowText(_T(""));
+		mOverrideStartTrack2.SetWindowText(_T(""));
+		mOverrideStartTrack3.SetWindowText(_T(""));
+	}
+
 	afx_msg void OnUpdateFileExportToC64(CCmdUI *pCmdUI);
 	afx_msg LRESULT OnEditNumInsert(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnEditNumRemove(WPARAM wParam, LPARAM lParam);
@@ -263,6 +274,8 @@ public:
 
 	void SetHelpState(const HelpState state);
 	afx_msg void OnBnClickedInsertEnvelope();
+	afx_msg void OnFileExporttoOric();
+	afx_msg void OnUpdateFileExporttoOric(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // debug version in MusicStudioView.cpp

@@ -79,10 +79,10 @@ MoveScreen
 
 	; Turn off interrupts, VIC and chargen to enable RAM underneath
 	sei
-	lda #$2f
-	sta ZPProcessorPortDDR
 	lda #$34
 	sta ZPProcessorPort
+	lda #$2f
+	sta ZPProcessorPortDDR
 
 	; Start the copying until we reach the programmed end
 loop1
@@ -102,10 +102,10 @@ toChk
 	bne loop1
 
 	; Enable interupts and normal VIC
-	lda #$2f
-	sta ZPProcessorPortDDR
 	lda #$37
 	sta ZPProcessorPort
+	lda #$2f
+	sta ZPProcessorPortDDR
 	cli
 	rts
 }

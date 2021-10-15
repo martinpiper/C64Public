@@ -1,0 +1,76 @@
+!macro MEmitSpriteFrame_Preserve {
+!set EmitSpriteFrame_Preserve_add = *
+}
+
+!macro MEmitSpriteFrame .frame , .col {
+	!by .frame
+	!by .col
+}
+
+!macro MEmitSpriteFrame_RestoreExit {
+!if * = EmitSpriteFrame_Preserve_add {
+	; Emit the last index, hopefully it is still empty
+	!by 255 , 0
+}
+}
+
+!macro SpriteAnimationFrame .address , .speed {
+!for .i , .speed {
+	+MLittleEndian16Bit .address
+}
+}
+
+!macro SpriteAnimationEnd {
+	+MLittleEndian16Bit 0
+}
+
+
+
+!macro MAnimation_Pre .noAnim {
+	lda AnimationFramesHi,x
+	+lbeq .noAnim
+	sta zeroPage_Temp1
+	lda AnimationFramesLo,x
+	sta zeroPage_Temp0
+}
+
+!macro MAnimation_Post {
+	ldy #1
+	lda (zeroPage_Temp0),y
+	bne .gotFrame
+
+	; Hi address = 0 indicates animation loop
+	lda AnimationFramesOriginalLo,x
+	sta zeroPage_Temp0
+	lda AnimationFramesOriginalHi,x
+	sta zeroPage_Temp1
+
+	lda (zeroPage_Temp0),y
+.gotFrame
+	sta zeroPage_Temp3
+	dey
+	lda (zeroPage_Temp0),y
+	sta zeroPage_Temp2
+
+	inc zeroPage_Temp0
+	bne .o1
+	inc zeroPage_Temp1
+.o1
+	inc zeroPage_Temp0
+	bne .o2
+	inc zeroPage_Temp1
+.o2
+	lda zeroPage_Temp0
+	sta AnimationFramesLo,x
+	lda zeroPage_Temp1
+	sta AnimationFramesHi,x
+
+	; Get frame and palette
+	; TODO: There is a potential to process all the data from SpriteAnimation_AllFrames to SpriteAnimation_AllFrames_End and remove the need for this double indrect
+	ldy #0
+	lda (zeroPage_Temp2),y
+	sta SpriteFrameDataFrame,x
+	iny
+	lda (zeroPage_Temp2),y
+	sta SpriteFrameDataColour,x
+}

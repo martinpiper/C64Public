@@ -1,6 +1,6 @@
 !zn
 CopySpriteFrameData
-	jsr Bus24Bit_SetAddressSprites
+	jsr Video_SetAddressSprites
 	; Very optimised unrolled loop to copy sprite data in the vblank
 
 	; Draw sprites
@@ -21,7 +21,7 @@ CopySpriteFrameData
 !set .i = .ii - 1
 	lda SpriteFrameDataFrame + .i
 	sta CIA2PortBRS232
-	lda #$1f	; Last palette is all black, for shadows
+	lda #$f	; Last palette is all black, for shadows
 	sta CIA2PortBRS232
 	lda SpriteFrameDataY + .i
 	sec
@@ -108,16 +108,16 @@ SpriteFrameDataYLo
 	!fill kMaxSprites , 0
 
 SpriteFrameDataY
-	!by 16
-	!by 16
+	!by 13
+	!by 13
 	!by 110
 	!by 110
 	!by 200
 	!by 164
 	!by 123
+	!by 12
+	!by 22
 	!by 32
-	!by 132
-	!by 92
 	!fill kMaxSprites , 0
 
 SpriteFrameDataFrame

@@ -1,19 +1,19 @@
 CART_SELECT_BANK		= $DE00
 
 !macro MACRO_CartKillBank {
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
 	lda #CartKillBank_ProcessorPort
 	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
 }
 
 !macro MACRO_CartSelectBank_8K_NoSEI_A {
 ; Entry
 ; A = Cart bank number
-	ldx #ProcessorPortDDRDefault
-	stx ZPProcessorPortDDR
 	ldx #CartSelectBank_ProcessorPort
 	stx ZPProcessorPort
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
 
 	sta CART_SELECT_BANK
 }

@@ -1,0 +1,32 @@
+!zn
+CopySpriteFrameData
+	+MAPU_SetDataUpdateBus APUData_GameSprites
+	; Very optimised unrolled loop to copy sprite data in the vblank
+
+	; Draw sprites into APU data, ready for multiplexing
+!for .ii , kMaxSprites {
+!set .i = .ii - 1
+	lda SpriteFrameDataFrame + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataColour + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataY + .i
+	sta CIA2PortBRS232
+	lda SpriteFrameDataX + .i
+	sta CIA2PortBRS232
+}
+
+	inc VIC2BorderColour
+	rts
+
+SpriteFrameDataX
+	!fill kMaxSprites , 0
+
+SpriteFrameDataY
+	!fill kMaxSprites , 0
+
+SpriteFrameDataFrame
+	!fill kMaxSprites , 0
+
+SpriteFrameDataColour
+	!fill kMaxSprites , 0

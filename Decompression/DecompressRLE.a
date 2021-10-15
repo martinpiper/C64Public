@@ -2,8 +2,8 @@
 !ifdef Decompression_OptimiseNoStoreStub { } else {
 	; The old code for a normal boring RLE, the same format used by "Compression.exe -cr"
 RNXPCompressionDecompressRLE_InitStore
-	stx RNXPCompressionDecompress_WriteByte+1
-	sty RNXPCompressionDecompress_WriteByte+2
+	stx RNXPCompressionDecompress_WriteBytesmAddr+0
+	sty RNXPCompressionDecompress_WriteBytesmAddr+1
 	rts
 }
 
@@ -15,10 +15,10 @@ RNXPCompressionDecompressRLE
 
 	jsr RNXPCompressionDecompress_GetByte
 	clc
-	adc RNXPCompressionDecompress_WriteByte+1
+	adc RNXPCompressionDecompress_WriteBytesmAddr+0
 	sta .smEndTestL+1
 	jsr RNXPCompressionDecompress_GetByte
-	adc RNXPCompressionDecompress_WriteByte+2
+	adc RNXPCompressionDecompress_WriteBytesmAddr+1
 	sta .smEndTestH+1
 
 	jsr RNXPCompressionDecompress_GetByte
@@ -32,10 +32,10 @@ RNXPCompressionDecompressRLE
 	jmp .rle1
 	; Handle a run
 .rle3
-	lda RNXPCompressionDecompress_WriteByte+1
+	lda RNXPCompressionDecompress_WriteBytesmAddr+0
 .smEndTestL	cmp #00
 	bne .rle2
-	lda RNXPCompressionDecompress_WriteByte+2
+	lda RNXPCompressionDecompress_WriteBytesmAddr+1
 .smEndTestH	cmp #00
 	bne .rle2
 !ifdef RNXPCompressionDecompress_ExitCodeDefined {

@@ -6,8 +6,8 @@
 InitialiseMachine
 	; Stop interrupts, clear decimal mode and backup the previous stack entries
 	sei
-	cld
 	tay	; Save
+	cld
 !ifdef Initialise_NoPreserveStack {} else {
 	pla
 	sta .smpreviousStack2+1
@@ -18,10 +18,10 @@ InitialiseMachine
 	txs
 }
 	; Init the processor port
-	ldx #ProcessorPortDDRDefault
-	stx ZPProcessorPortDDR
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
 	; Clear all CIA to known state, interrupts off.
 	+MACROCIAIRQControlDisable_A
 	+MACROVICIRQCIATimerControlDisable_A

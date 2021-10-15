@@ -31,6 +31,7 @@ xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\HeaderPRG.a MusicStudioCon
 xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\HeaderSelf.a MusicStudioConvert\
 xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\HeaderSID.a MusicStudioConvert\
 xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\HeaderSID2.a MusicStudioConvert\
+xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\HeaderOric.a MusicStudioConvert\
 xcopy ..\..\..\..\C64\MusicStudio2\MusicStudioConvert\MusicPlayer2.a MusicStudioConvert\
 
 cd ..\..\..\

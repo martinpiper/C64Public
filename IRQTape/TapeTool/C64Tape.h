@@ -22,6 +22,7 @@ public:
 	PulseTypes CommodoreReadPulse( unsigned char input , const bool updateShortPulse = false );
 	PulseTypes TurboReadPulse( unsigned char input );
 	void TapeWriteByte( const bool useTurbo , const unsigned char output );
+	void TapeChecksumByte( std::vector<unsigned char> &data, const unsigned char output );
 
 	bool IsNum(const char *arg);
 	int ParamToNum(const char *arg);

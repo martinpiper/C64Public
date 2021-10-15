@@ -1,0 +1,32 @@
+!zn
+AnimTestSpriteScreenEdge
+	lda zeroPage_Temp5
+	bne .overScrRightTest
+	lda zeroPage_Temp4
+	; Remove sprites too far off the right edge
+	cmp #244
+	bcs .offScr
+	jmp .onScrX
+.overScrRightTest
+	cmp #$ff
+	bne .offScr
+	; Special left border test
+	lda zeroPage_Temp4
+	cmp #245
+	bcc .offScr
+
+.onScrX
+	lda zeroPage_Temp3
+	bne .offScr
+
+	lda zeroPage_Temp4
+	sta SpriteFrameDataX,x
+	lda zeroPage_Temp2
+	eor #$ff
+	sta SpriteFrameDataY,x
+	rts
+
+.offScr
+	lda #0
+	sta SpriteFrameDataY,x
+	rts

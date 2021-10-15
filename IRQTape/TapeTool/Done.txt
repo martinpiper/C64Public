@@ -152,3 +152,15 @@ cd /d C:\Work\C64\IRQTape\TapeTool
 
 * Some error message improvements when files cannot be found
 * Added loading bitmap display example code
+
+
+
+
+* If there is a load error whilst the loading screen is displayed then the text cannot be seen. To fix this, perhaps rapidly changing the border colour would be a visual aid.
+	The loading will already continue if the tape is rewond and the block is tried again.
+
+
+
+Add the option to write files backwards or with random block placement or with some other ordering. Might be nice for loading screens. :)
+* After writing colour screen data. 
+	Write bitmap chunks randomly.

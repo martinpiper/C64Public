@@ -7,21 +7,27 @@ EmitSpriteFrame_temp	!by 0
 EmitSpriteFrame_count	!by 0
 EmitSpriteFrame_flips	!by 0
 !macro MEmitSpriteFrame frame,palette {
-	ldy #frame
-	sty CIA2PortBRS232
 	pha
+	sta StackedSpriteData+2,y
+	txa
+	sta StackedSpriteData+3,y
+	lda #frame
+	sta StackedSpriteData,y
 	lda #palette
 	ora EmitSpriteFrame_flips
-	sta CIA2PortBRS232
+	sta StackedSpriteData+1,y
+	iny
+	iny
+	iny
+	iny
 	pla
-	sta CIA2PortBRS232
-	stx CIA2PortBRS232
-	inc EmitSpriteFrame_count
 }
 !macro MEmitSpriteFrame_Preserve {
 	sty EmitSpriteFrame_temp
+	ldy EmitSpriteFrame_count
 }
 !macro MEmitSpriteFrame_RestoreExit {
+	sty EmitSpriteFrame_count
 	ldy EmitSpriteFrame_temp
 	rts
 }
@@ -40,8 +46,12 @@ EmitSpriteFrame_flips	!by 0
 
 !zn
 copySprites
-	lda #0
-	sta EmitSpriteFrame_count
-	jsr Bus24Bit_SetAddressSprites
-	jsr AnimationEngine_RenderSprites
+	jsr Video_SetAddressSprites
+!for .i , kBus24Bit_SpritesMaxNum * 4 {
+	lda StackedSpriteData + .i - 1
+	sta CIA2PortBRS232
+}
 	rts
+
+StackedSpriteData
+	!fill kBus24Bit_SpritesMaxNum * 4

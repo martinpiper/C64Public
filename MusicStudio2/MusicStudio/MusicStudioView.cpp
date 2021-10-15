@@ -92,6 +92,8 @@ BEGIN_MESSAGE_MAP(CMusicStudioView, CFormView)
 	ON_COMMAND(ID_FILE_RIPSID, &CMusicStudioView::OnFileRipSID)
 	ON_EN_SETFOCUS(IDC_EDIT1, &CMusicStudioView::OnEnSetfocusEdit1)
 	ON_BN_CLICKED(IDC_BUTTON7, &CMusicStudioView::OnBnClickedInsertEnvelope)
+	ON_COMMAND(ID_FILE_EXPORTTOORIC, &CMusicStudioView::OnFileExporttoOric)
+	ON_UPDATE_COMMAND_UI(ID_FILE_EXPORTTOORIC, &CMusicStudioView::OnUpdateFileExporttoOric)
 END_MESSAGE_MAP()
 
 // CMusicStudioView construction/destruction
@@ -1053,12 +1055,7 @@ void CMusicStudioView::OnUpdateFileExportToC64(CCmdUI *pCmdUI)
 
 void CMusicStudioView::OnFileExportToC64()
 {
-	OnBnClickedStop();
-
-	// Make sure the SID doesn't have silly block overrides set
-	mOverrideStartTrack1.SetWindowText(_T(""));
-	mOverrideStartTrack2.SetWindowText(_T(""));
-	mOverrideStartTrack3.SetWindowText(_T(""));
+	CommonPreExport();
 
 	CExportToC64 dlg;
 	if (dlg.DoModal() != IDOK)
@@ -1094,6 +1091,31 @@ void CMusicStudioView::OnFileExportToC64()
 		CommonSaveC64File(ansi,dlg.mIncludeSoundEffectCode);
 		_trename(_T("t.prg"),realPathName);
 	}
+}
+
+void CMusicStudioView::OnUpdateFileExporttoOric(CCmdUI *pCmdUI)
+{
+	pCmdUI->Enable();
+}
+
+void CMusicStudioView::OnFileExporttoOric()
+{
+	CommonPreExport();
+
+	CFileDialog getFile(FALSE);
+	INT_PTR ret = getFile.DoModal();
+
+	if (ret != IDOK)
+	{
+		return;
+	}
+
+	CString realPathName = getFile.GetPathName();
+
+	_tremove(realPathName);
+
+	CommonSaveC64File("oric");
+	_trename(_T("t.tap"),realPathName);
 }
 
 LRESULT CMusicStudioView::OnEditNumInsert(WPARAM wParam, LPARAM lParam)
@@ -3061,3 +3083,5 @@ void CMusicStudioView::OnBnClickedInsertEnvelope()
 	CommonSetModified();
 	RedrawView();
 }
+
+

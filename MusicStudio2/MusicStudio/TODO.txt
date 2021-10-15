@@ -17,69 +17,9 @@ oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
 
 TODO
 
-* Oric Atmos music player
-	Resources:
-		http://www.emucamp.com/oric.html
-		http://www.ankman.de/load_cassette_tape_8bit_computers.html
-		http://oric.free.fr/EMULATORS/manual.html
-		http://osdk.org/index.php?page=documentation&subpage=floppybuilder
-		http://osdk.org/index.php?page=documentation&subpage=samples
-		http://miniserve.defence-force.org/svn/public/pc/tools/osdk/main/Osdk/_final_/sample/assembly/hello_world_assembly/
-		https://retropie.org.uk/docs/Oric/
-		https://github.com/oric-international/oric-tools/blob/master/euphoric-tools/tape_tools/wav_format/readme.txt
-		http://osdk.defence-force.org/index.php?page=documentation&subpage=memorymap
-		http://www.defence-force.org/computing/oric/library/lib_manual_oric/files/oric1manual.pdf		
-	Sound specific links:
-		http://twilighte.oric.org/twinew/sending.htm
-		http://forum.6502.org/viewtopic.php?f=4&t=3704
-		http://oric.free.fr/programming.html#psg
-
-		
-	Emulator: C:\Users\Martin Piper\Downloads\Oricutron_win32_v12\oricutron.exe
-		cd /d "C:\Users\Martin Piper\Downloads\Oricutron_win32_v12"
-		oricutron.exe -t tapes\Cyclotron.tap
-	This automatically uses: CLOAD""
-	Making a self booting TAP file (in Oric format) seems to be the best option for quick development turnaround
-	$e4ac is the tape loader
-	F2 - monitor
-		bs $e4ac
-		x
-	Tape loader looks for:
-		$24
-		Stores reversed next 9 bytes at $2a7 (+1)
-			In memory $2a8:	00 40 25 16 35 c7 80 00
-							00 00
-			Seems to be: ? lo/hi start lo/hi end ? ? ? ?
-		Expects $00
-		Stores it in $293
-		Load rest of data
-	This seems to be a good minimal Oric TAP file that loads 78 4c 00 05 (plus some padding bytes) to $500 and executes $500
-		16 16 16 24 00 00 80 C7 
-		05 08 05 00 00 00 78 4C
-		00 05 FF EE DD CC BB
-	Run it with: oricutron.exe -t c:\temp\oric.tap
-	This gives a good minimal workflow for getting my code into the Oric emulator and seeing/hearing it run
-	* Next step, create an Oric based ACME stub
-	* Separate out the "play note" code and have optional replacement code for different machines.
-	To export the data:
-		C:\Work\C64\MusicStudio2\MusicStudio\Release\MusicStudio.exe /openFile "C:\Work\C64\MusicStudio2\ExampleFiles\OriginalC64Music\P.TUSARI END.PRG" /exportToSelf n C:\Temp\t.prg /exit
-		C:\Work\C64\MusicStudio2\MusicStudio\Release\MusicStudio.exe /openFile "C:\Work\C64\MusicStudio2\ExampleFiles\OriginalC64Music\P.TUSARI LEVEL1.PRG" /exportToSelf n C:\Temp\t.prg /exit
-	Then:
-		cd /D C:\Work\C64\MusicStudio2\MusicStudio
-		..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
-		cd /d C:\Users\Martin Piper\Downloads\Oricutron_win32_v12
-		oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
-
-		For the "P.TUSARI LEVEL1.ref.self.prg" file
-		..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSelf.a
-		"C:\Program Files\Git\usr\bin\diff.exe" t.prg "P.TUSARI LEVEL1.ref.self.prg"
-
-	* Oric now makes sounds!
+* Different tuning? https://www.youtube.com/watch?v=lvmzgVtZtUQ "just intonation vs equal temperament". Which tuning does the frequency table use?
 
 
-
-		
-	
 
 * Somewhere around .checkVoiceRetrigger check for a new tick box in the extended screen of global hard restart being enabled or disabled.
 	Default is on, but can be switched off.
@@ -99,10 +39,6 @@ TODO
 
 
 * Detect and optimise out various NoteTableCommandXX options
-
-
-
-* From a blank editor in release mode, when importing an old file, the export/extended view menu options are not available?
 
 
 

@@ -4,7 +4,7 @@ InitScreenData
 	jsr MemoryCopy_SetSource
 	+MWordValueTo_XY MainScreen
 	jsr MemoryCopy_SetDestination
-	+MWordValueTo_XY $800
+	+MWordValueTo_XY 32*32*2
 	jsr MemoryCopy_ForSize
 	rts
 
@@ -14,18 +14,16 @@ InitScreenData
 DisplayScreen
 	jsr Bus24Bit_Init
 
-	jsr Bus24Bit_DisableDisplay
-	lda #$30
-	jsr Bus24Bit_EnableDisplay
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+	lda #kVideo_EnableDisplay_Enable
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #0
+	sta CIA2PortBRS232
 	inc VIC2BorderColour
 
-	; No large sprites
-	jsr Bus24Bit_SetAddressSpritesControl
-	lda #$10
-	sta CIA2PortBRS232
-	lda #$00
-	sta CIA2PortBRS232
-
+!if 1 {
 	lda #1
 	+MWordValueTo_XY $9c00
 	jsr Bus24Bit_SetAddressBus
@@ -66,6 +64,16 @@ DisplayScreen
 	jsr Bus24Bit_CopySmallDataRepeatForX
 	inc VIC2BorderColour
 
+	lda #$20
+	+MWordValueTo_XY $0000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .plane3
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #kCharsSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
 	; Sprites
 	lda #$10
 	+MWordValueTo_XY $2000
@@ -97,24 +105,43 @@ DisplayScreen
 	jsr Bus24Bit_CopySmallDataRepeatForX
 	inc VIC2BorderColour
 
-DisplayScreenAgain
-	lda #50
-	sta Bus24Bit_WriteMakeSafeReset
-	jsr Bus24Bit_WaitVBlank
-
-	lda #$01
-	+MWordValueTo_XY $9000
+	lda #$10
+	+MWordValueTo_XY $0000
 	jsr Bus24Bit_SetAddressBus
-	+MWordValueTo_AX MainScreen
+	+MWordValueTo_AX .spritesPlane3
 	ldy #0
 	jsr Bus24Bit_CopySmallData
-	ldx #$7
+	ldx #kSpritesSizeHi
 	jsr Bus24Bit_CopySmallDataRepeatForX
-	jsr Bus24Bit_Reset
 	inc VIC2BorderColour
-	rts
+}
+
+DisplayScreenAgain
+!if 1 {
+!for .yy , 32 {
+!set .y = .yy -1
+	lda #kBus24Bit_CharScreenMap_EBBS
+	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * 64)
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX MainScreen + (.y * 32)
+	ldy #32
+	jsr Bus24Bit_CopySmallData
+	inc VIC2BorderColour
+
+	lda #kBus24Bit_CharScreenMap_EBBS
+	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * 64)
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX MainScreen + (.y * 32) + (32*32)
+	ldy #32
+	jsr Bus24Bit_CopySmallData
+	inc VIC2BorderColour
+}
+}
+rts
 
 .palette
+	!bin "tmp/BatBallPaletteData.bin"
+	; Going to fill the next chunk of palette with meaningful data
 	!bin "tmp/BatBallPaletteData.bin"
 	; Set any remaining palette data to black
 	!fill $200 , 0
@@ -130,6 +157,9 @@ kCharOffsetToBlocks = (* - .plane0) / 8
 	!bin "tmp/BatBallchars_plane2.bin"
 	!bin "tmp/BatBallcharsBlocks_plane2.bin"
 kCharsSizeHi = >(* - .plane2)
+.plane3
+	!bin "tmp/BatBallchars_plane3.bin"
+	!bin "tmp/BatBallcharsBlocks_plane3.bin"
 
 .spritesPlane0
 	!bin "tmp/BatBallsprite_plane0.bin"
@@ -138,13 +168,15 @@ kCharsSizeHi = >(* - .plane2)
 .spritesPlane2
 	!bin "tmp/BatBallsprite_plane2.bin"
 kSpritesSizeHi = >(* - .spritesPlane2)
+.spritesPlane3
+	!bin "tmp/BatBallsprite_plane3.bin"
 
 
 ;    # Chars screen data
 
 !align 255,0
 MainScreen
-	!fill $800 , 0
+	!fill 32*32*2 , 0
 
 !align 255,0
 OriginalMainScreen

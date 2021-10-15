@@ -61,11 +61,11 @@ KERNALIRQServiceRoutineHi   = $ffff
   ; Init the processor port
   jsr reset
   jsr resetcol
-  ldx #ProcessorPortDDRDefault
-  stx ZPProcessorPortDDR
   ; Set the user requested ROM state
   ldy #ProcessorPortAllRAMWithIO
   sty ZPProcessorPort
+  ldx #ProcessorPortDDRDefault
+  stx ZPProcessorPortDDR
   ; Clear all CIA to known state, interrupts off.
   lda #$7f
   sta CIA1InterruptControl

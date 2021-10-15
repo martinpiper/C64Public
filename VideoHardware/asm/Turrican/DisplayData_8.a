@@ -1,0 +1,188 @@
+!zn
+DisplayData
+	lda #$01
+	+MWordValueTo_XY $9c00
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .palette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #1
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+
+
+	lda #$10
+	+MWordValueTo_XY $2000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Sprites_plane0
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kSpritesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $4000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Sprites_plane1
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kSpritesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $8000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Sprites_plane2
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kSpritesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	; Zero out the last sprite
+	lda #$10
+	+MWordValueTo_XY $3fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $5fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+	lda #$10
+	+MWordValueTo_XY $9fc0
+	jsr Bus24Bit_SetAddressBus
+	jsr ClearSpriteData
+	inc VIC2BorderColour
+
+
+
+
+
+	lda #$80
+	+MWordValueTo_XY $2000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Tiles_map
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kTilesMapSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$40
+	+MWordValueTo_XY $2000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Tiles_plane0
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kTilesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$40
+	+MWordValueTo_XY $4000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Tiles_plane1
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kTilesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$40
+	+MWordValueTo_XY $8000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Tiles_plane2
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kTilesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+
+
+	lda #kBus24Bit_CharScreen_EBBS
+	+MWordValueTo_XY kBus24Bit_CharScreen_Control
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Chars_map
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kCharsMapSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$20
+	+MWordValueTo_XY $2000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Chars_plane0
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kCharsSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$20
+	+MWordValueTo_XY $4000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Chars_plane1
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kCharsSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$20
+	+MWordValueTo_XY $8000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .Chars_plane2
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #.kCharsSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	rts
+
+
+.Sprites_plane0
+	!bin "tmp/TurricanSprites_plane0.bin"
+.Sprites_plane1
+	!bin "tmp/TurricanSprites_plane1.bin"
+.Sprites_plane2
+	!bin "tmp/TurricanSprites_plane2.bin"
+.kSpritesSizeHi = >(* - .Sprites_plane2)
+
+
+.Tiles_map
+	!bin "tmp/TurricanTiles_map.bin"
+.kTilesMapSizeHi = >(* - .Tiles_map)
+.Tiles_plane0
+	!bin "tmp/TurricanTiles_plane0.bin"
+.Tiles_plane1
+	!bin "tmp/TurricanTiles_plane1.bin"
+.Tiles_plane2
+	!bin "tmp/TurricanTiles_plane2.bin"
+.kTilesSizeHi = >(* - .Tiles_plane2)
+
+
+.Chars_map
+	!bin "tmp/TurricanStatus_map.bin"
+.kCharsMapSizeHi = >(* - .Chars_map)
+.Chars_plane0
+	!bin "tmp/TurricanStatus_plane0.bin"
+.Chars_plane1
+	!bin "tmp/TurricanStatus_plane1.bin"
+.Chars_plane2
+	!bin "tmp/TurricanStatus_plane2.bin"
+.kCharsSizeHi = >(* - .Chars_plane2)
+
+
+.palette
+	!bin "tmp/TurricanPaletteData.bin"
+	!fill 512,0

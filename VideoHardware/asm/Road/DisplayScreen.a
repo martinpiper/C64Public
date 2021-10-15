@@ -1,0 +1,26 @@
+!zn
+DisplayScreen
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr DisplayData
+
+	jsr Video_SetAddressVideoPriorityRegister
+	lda #$8d
+	sta CIA2PortBRS232
+
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #$00
+	sta CIA2PortBRS232
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink | kVideo_EnableDisplay_Tiles_BorderYShrink
+	jsr Video_EnableDisplay
+
+	jsr Bus24Bit_Reset
+	inc VIC2BorderColour
+	rts

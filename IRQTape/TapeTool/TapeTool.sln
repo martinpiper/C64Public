@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TapeTool", "TapeTool.vcxproj", "{10483618-6A32-43CF-B0DF-FF0EB4D77A5E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "C64TAPBuild", "C64TAPBuild\C64TAPBuild.vcxproj", "{371A2879-7654-421A-99F5-A5272081553B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{10483618-6A32-43CF-B0DF-FF0EB4D77A5E} = {10483618-6A32-43CF-B0DF-FF0EB4D77A5E}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -3,6 +3,7 @@
 !source "stdlib/stdlib.a"
 !to "BlankProjectComp.prg", cbm
 !sl "BlankProjectComp.map"
+!sal
 !svl "BlankProjectComp.lbl"
 !pdb "BlankProjectComp.pdb"
 !cpu 6510
@@ -42,6 +43,64 @@
 !if 0 {
 	inc $d020
 	jmp *-3
+}
+
+!if 0 {
+	lda #1
+	sta VIC2SpriteEnable
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_LightGrey
+	sta VIC2ExtraSpriteColour2
+	lda #VIC2Colour_LightBlue
+	sta VIC2Sprite0Colour
+
+	lda #$80
+	sta VIC2Sprite0X
+	sta VIC2Sprite0Y
+	lda #$ff
+	sta SPRITEFRAME
+
+	; Setup zeropage
+	ldx #DecompCodeSize
+.czl1
+	lda+2 DecompCodeStart-1,x
+	sta+2 DecompCodeRealStart-1,x
+	dex
+	bne .czl1
+
+.l1
+	+MACROWaitForRaster $42
+	inc VIC2BorderColour
+
+	+MWordValueTo_XY $3fc0
+	jsr RNXPCompressionDecompress_InitStore
+	+MWordValueTo_XY Frame0
+	jsr RNXPCompressionDecompress
+
+	dec VIC2BorderColour
+	jmp .l1
+
+
+!macro RNXPCompressionIncBorder_A {}
+
+Decompression_OptimiseForOneEscapeBit = 1
+Decompression_OptimiseNoChangingEscape = 1
+Decompress_RNZip = 1
+
+DecompCodeStart
+!pseudopc $10 {
+DecompCodeRealStart
+!source "../Decompression/DecompressionVars.a"
+CompressionStartOfHistoryBufferTables
+
+}
+DecompCodeSize=*-DecompCodeStart
+
+!source "../Decompression/Decompression.a"
+!source "../Decompression/DecompressionP2.a"
+
 }
 
 !if 1 {
@@ -525,4 +584,29 @@ BitmapLogoScreen
 * = $a000
 BitmapLogo
 !bin "Tusari.bmp",,2
+}
+
+!if 0 {
+Frame0
+	!bin "c:\temp\tc0.bin",,2
+Frame1
+	!bin "c:\temp\tc1.bin",,2
+Frame2
+	!bin "c:\temp\tc2.bin",,2
+Frame3
+	!bin "c:\temp\tc3.bin",,2
+Frame4
+	!bin "c:\temp\tc4.bin",,2
+Frame5
+	!bin "c:\temp\tc5.bin",,2
+Frame6
+	!bin "c:\temp\tc6.bin",,2
+Frame7
+	!bin "c:\temp\tc7.bin",,2
+Frame8
+	!bin "c:\temp\tc8.bin",,2
+Frame9
+	!bin "c:\temp\tc9.bin",,2
+Frame10
+	!bin "c:\temp\tc10.bin",,2
 }

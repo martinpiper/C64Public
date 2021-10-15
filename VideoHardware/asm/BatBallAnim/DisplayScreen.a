@@ -2,17 +2,11 @@
 DisplayScreen
 	jsr Bus24Bit_Init
 
-	jsr Bus24Bit_DisableDisplay
-	lda #$30
-	jsr Bus24Bit_EnableDisplay
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
+	jsr Video_EnableDisplay
 	inc VIC2BorderColour
-
-	; No large sprites
-	jsr Bus24Bit_SetAddressSpritesControl
-	lda #$10
-	sta CIA2PortBRS232
-	lda #$00
-	sta CIA2PortBRS232
 
 	jsr TileScrollUpdates
 
@@ -50,6 +44,16 @@ DisplayScreen
 	+MWordValueTo_XY $8000
 	jsr Bus24Bit_SetAddressBus
 	+MWordValueTo_AX .plane2
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	ldx #kTilesSizeHi
+	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
+
+	lda #$40
+	+MWordValueTo_XY $0000
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX .plane3
 	ldy #0
 	jsr Bus24Bit_CopySmallData
 	ldx #kTilesSizeHi
@@ -96,33 +100,41 @@ DisplayScreen
 ;	jsr Bus24Bit_CopySmallDataRepeatForX
 	inc VIC2BorderColour
 
-
-	; Lastly the slow chars screen
-	lda #50
-	sta Bus24Bit_WriteMakeSafeReset
-	jsr Bus24Bit_WaitVBlank
-
-	lda #$01
-	+MWordValueTo_XY $9000
+	lda #$20
+	+MWordValueTo_XY $0000
 	jsr Bus24Bit_SetAddressBus
-	+MWordValueTo_AX CharScreen
+	+MWordValueTo_AX .charsPlane3
 	ldy #0
 	jsr Bus24Bit_CopySmallData
-	ldx #$3
-	jsr Bus24Bit_CopySmallDataRepeatForX
-
-	; Colours
-	; Luckily palette 1 colour 1 is black :)
-	+MWordValueTo_AX CharScreen
-	ldy #0
-	jsr Bus24Bit_CopySmallData
-	ldx #$3
-	jsr Bus24Bit_CopySmallDataRepeatForX
+	ldx #kCharsSizeHi
+;	jsr Bus24Bit_CopySmallDataRepeatForX
+	inc VIC2BorderColour
 
 	jsr Bus24Bit_Reset
 	inc VIC2BorderColour
 	rts
 
+
+SetMaskingCharScreen
+!for .yy , 32 {
+!set .y = .yy -1
+	lda #kBus24Bit_CharScreenMap_EBBS
+	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * 64)
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX CharScreen + (.y * 32)
+	ldy #32
+	jsr Bus24Bit_CopySmallData
+
+	; Luckily palette 15 colour 15 is black :)
+
+	lda #kBus24Bit_CharScreenMap_EBBS
+	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * 64)
+	jsr Bus24Bit_SetAddressBus
+	ldy #32
+	lda #$0f
+	jsr Bus24Bit_WriteAForY
+}
+	rts
 
 .palette
 	!bin "tmp/BatBallAnim_palette.bin"
@@ -136,10 +148,13 @@ DisplayScreen
 .plane2
 	!bin "tmp/BatBallAnim_plane2.bin"
 kTilesSizeHi = >(* - .plane2)
+.plane3
+	!bin "tmp/BatBallAnim_plane3.bin"
 
 .charsPlane0
 .charsPlane1
 .charsPlane2
+.charsPlane3
 	!fill 8 , 0
 	!fill 8 , $ff
 kCharsSizeHi = >(* - .charsPlane2)
@@ -155,15 +170,40 @@ TileScreenScrollY
 	+MLittleEndian16Bit -128
 
 !zn
+.bounceTab
+!for .i , 256 {
+	!by <(8.5 + (7 * sin( (float(.i) / 128) * 3.14159265 )))
+}
+.bounceTab2
+!for .i , 256 {
+	!by <(8.5 + (7 * cos( (float(.i) / 64) * 3.14159265 )))
+}
+
 TileScrollUpdates
-	jsr Bus24Bit_SetAddressTileScrollRegisters
-	ldx #0
+	jsr Video_SetAddressTileScrollRegisters
 .l1
-.sm1	lda ShipScrollsToUse,x
+.sm0	ldy #0
+.sm1	lda ShipScrollsToUse
+	clc
+	adc .bounceTab2,y
 	sta CIA2PortBRS232
-	inx
-	cpx #4
-	bne .l1
+.sm2	lda ShipScrollsToUse
+	adc #0
+	sta CIA2PortBRS232
+.sm3	lda ShipScrollsToUse
+	clc
+	adc .bounceTab,y
+	sta CIA2PortBRS232
+.sm4	lda ShipScrollsToUse
+	adc #0
+	sta CIA2PortBRS232
+
+	dec .delayTime
+	bne .l3
+
+	lda #5
+	sta .delayTime
+
 	lda .sm1+1
 	clc
 	adc #4
@@ -179,11 +219,22 @@ TileScrollUpdates
 	bne .l3
 	+MWordValueToAddress_A ShipScrollsToUse , .sm1+1
 .l3
+	; Avoiding indirect access, due to the above Y additions
+	+MAddr16toAddr_A .sm1+1 , .sm2+1
+	+MAddr16toAddr_A .sm1+1 , .sm3+1
+	+MAddr16toAddr_A .sm1+1 , .sm4+1
+	+MAddU8ToAddr16 1 , .sm2+1,.sm2+2
+	+MAddU8ToAddr16 2 , .sm3+1,.sm3+2
+	+MAddU8ToAddr16 3 , .sm4+1,.sm4+2
+
+	inc .sm0+1
+
 	rts
+.delayTime !by 5
 
 !macro MDoShipFrame .x , .y {
-	+MLittleEndian16Bit -32 + (208 * .x)
-	+MLittleEndian16Bit -128 + (112 * .y)
+	+MLittleEndian16Bit -40 + (208 * .x)
+	+MLittleEndian16Bit -136 + (112 * .y)
 }
 
 ShipScrollsToUse
@@ -201,32 +252,25 @@ ShipScrollsToUse_End
 }
 }
 
+; Rememebr the first two char screen lines are not visible, but do alter the character screen palette bank control register
 CharScreen
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
-	+CharLine %################################
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+	+CharLine %................................
+
 
 	+CharLine %################################
 	+CharLine %################################
 	+CharLine %################################
 	+CharLine %################################
 	+CharLine %################################
-	+CharLine %###..........................###
-	+CharLine %###..........................###
-	+CharLine %###..........................###
-	+CharLine %###..........................###
-	+CharLine %###..........................###
-
-	+CharLine %###..........................###
-	+CharLine %###..........................###
-	+CharLine %###..........................###
+	+CharLine %################################
 	+CharLine %###..........................###
 	+CharLine %###..........................###
 	+CharLine %###..........................###
@@ -237,3 +281,15 @@ CharScreen
 
 	+CharLine %###..........................###
 	+CharLine %###..........................###
+	+CharLine %###..........................###
+	+CharLine %###..........................###
+	+CharLine %###..........................###
+	+CharLine %###..........................###
+	+CharLine %###..........................###
+	+CharLine %################################
+	+CharLine %################################
+	+CharLine %################################
+	+CharLine %################################
+
+	+CharLine %################################
+	+CharLine %################################

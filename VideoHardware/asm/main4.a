@@ -1,0 +1,80 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "stdlib/MemoryCopy.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr DisplayScreen
+
+mainLoop
+;	+WaitForFire_A
+
+mainLoopGame
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	; Important vblank updates first
+	jsr CopySpriteFrameData
+	jsr CopyMode7Data
+	jsr CopyTileScrolls
+
+	; Now just the rest of the game updates
+	jsr AnimationFrames_Process
+
+	jmp mainLoopGame
+	rts
+
+ClearSpriteData
+	ldx #$40
+	lda #0
+.cl1
+	sta CIA2PortBRS232
+	dex
+	bne .cl1
+	rts
+
+!source "asm/Turrican/DisplayScreen.a"
+!source "asm/Turrican/Sprites.a"
+
+!source "asm/AnimMacros.a"
+!source "asm/Turrican/Animation.a"
+!source "asm/Turrican/AnimationData.a"
+!source "tmp/TurricanSpritesSheet.txt.a"

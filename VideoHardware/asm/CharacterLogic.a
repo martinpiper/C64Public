@@ -15,7 +15,7 @@ CharacterLogic_moveCounter	!fill kAnimationEngine_maxSlots , 0
 ; Checks to see if a new characters can be spawned this  frame
 CharacterLogic_CheckSpawn
 	lda EmitSpriteFrame_count
-	cmp #(24-3)
+	cmp #(kBus24Bit_SpritesMaxNum-3) * 4
 	bcc .potentiallyAdd
 	rts
 

@@ -1,0 +1,26 @@
+!zn
+DisplayData
+	jsr SetupAPU
+	rts
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+
+

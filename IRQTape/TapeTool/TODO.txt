@@ -3,6 +3,8 @@ A tool to provide a command line interface that enables C64 format TAP files to 
 ********************************************
 
 * Add support for faster RNZip option
+	So as well as writing the file with "otfbr" for RLE compression, it could use an extra RNZip option ("otf[b][z]" for example?) to gain even more compression
+
 
 
 
@@ -28,9 +30,6 @@ This executes one extra instruction from the normal tape loader which should be 
 This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (SKB #$60)
 *Using $ea2c isn't really viable, it does kind of work but it goes through a nasty sequence of the BRK vector being hit by a mistaken RTS inside the IRQ.
 *There is another option, save $022c. This will cause the loader at $f92c to be used until the second $02 byte is read. Then always have the start code at $022c, like a JMP.
-
-
-Add the option to write files backwards or with random block placement or with some other ordering. Might be nice for loading screens. :)
 
 
 Detect TinyHeader not being set and display a warning if "otft" is used on the command line asking if they are sure they want to use a tiny header file.

@@ -1,0 +1,103 @@
+!zn
+DisplayData
+	jsr SetupAPU
+	rts
+
+
+
+!source "BombJack/stdlib/APU.a"
+TotalAPU_Start
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Try memory writeback to animate the position
+	+MAPU kAPU_IDataRegLoad3
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_IDataRegLoad0 | kAPU_IDataSelectMemAddReg3
+	+MAPU kAPU_IDataSelectReg0
+	+MAPU kAPU_IDataSelectReg0 | kAPU_InternalMEWR | kAPU_IDataRegLoad3
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS | kAPU_Load_EBS2
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDRLo | kAPU_Load_EADDR2Lo
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_Load_EADDRHi | kAPU_Load_EADDR2Hi
+	+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR2
+
+!macro MAPU_ProcessRasters {
+!for .i , 4 {
+	+MAPU_LoadDoWait
+	; Using counter in reg3
+	+MAPU kAPU_IDataSelectMemAddReg3 | kAPU_ExternalMEWR
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2
+	+MAPU kAPU_Incr_ADDRB1
+}
+}
+	+MAPU_ProcessRasters
+
+	+MAPU_TestAndJump
+
+	+MAPU_ProcessRasters
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+APUData_Start
+!pseudopc $4000 {
+	!by $01	; Number to add
+	!by $00	; Number to add to
+	!by kBus24Bit_TileScreen_EBBS
+	+MLittleEndian16Bit kBus24Bit_TileScreen_ScrollX16
+
+!for .i , 4 {
+	; Next RHRV to wait for
+	!by $88 , $01 , $40 + (.i * 8)
+	+MLittleEndian16Bit $180 + (.i * 4)
+}
+	+MAPU_EmitPC frameStart0
+apuFrameReady0
+	!by 1
+
+!for .i , 4 {
+	; Next RHRV to wait for
+	!by $88 , $01 , $40 + (.i * 8)
+	+MLittleEndian16Bit $180 - (.i * 4)
+}
+	!by 1
+
+} ;< !pseudopc
+
+APUData_Size = * -APUData_Start
+
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts

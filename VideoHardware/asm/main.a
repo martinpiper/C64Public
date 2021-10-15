@@ -1,6 +1,8 @@
 ;main test code
 
 !source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+
 !to "bin/main.prg", cbm
 !sal
 !sl "tmp/main.map"
@@ -18,6 +20,9 @@ zeroPage_Temp1	= $11
 ; Also disable the output image checks, since the expected output graphics won't match
 ; Also use assets\convert2.bat
 ;Mode7LayersEnable = 1
+
+; Define this to include graphics data and not include music
+IncludeGraphicsData = 1
 
 !zn
 *=$200
@@ -38,7 +43,12 @@ start
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
-	jsr Bus24Bit_DisableDisplay
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Mode7 , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles
+
 
 !ifndef Mode7LayersEnable {
 	jsr MusicInit
@@ -47,18 +57,20 @@ start
 	jsr AllocatePlayer
 
 	; Do various video data init here
-
-	; No large sprites
-	jsr Bus24Bit_SetAddressSpritesControl
-	lda #$10
-	sta CIA2PortBRS232
-	lda #$00
+!ifdef IncludeGraphicsData {
+	jsr InitGraphicsMemory
+}
+	jsr Video_SetAddressTileBackgroundRegister
+;	lda #255
+	; The status panel currently uses the first palette, so the first map (tiles background) palette entry is 16
+	lda #16
 	sta CIA2PortBRS232
 
 	; Enable screen, tiles, border shrink
 	lda #$f0
-	jsr Bus24Bit_EnableDisplay
-	jsr Bus24Bit_WaitVBlank
+	jsr Video_EnableDisplay
+
+	jsr Video_WaitVBlank
 
 mainLoop
 .l1
@@ -67,12 +79,14 @@ mainLoop
 	jmp .l1
 
 setupFrame
-	jsr Bus24Bit_WaitVBlank
+	jsr Video_WaitVBlank
 	jsr copyMode7Regs
 	jsr copyTilesScrolls
 	jsr copySprites
 !ifndef Mode7LayersEnable {
+!ifndef IncludeGraphicsData {
 	jsr MusicPoll
+}
 }
 	jsr HandleJoystick
 	jsr TileScreen_calculateFine
@@ -81,6 +95,8 @@ setupFrame
 	; Potentially can do this less often if time is tight
 	jsr CharacterLogic_CheckSpawn
 	jsr Mode7_Update
+	jsr AnimationEngine_RenderSprites
+
 	rts
 
 !source "../BerzerkRedux/Rand.a"
@@ -95,5 +111,75 @@ setupFrame
 
 MusicDataStart
 MusicDataStart_afterHeader = MusicDataStart + 4
+!ifndef IncludeGraphicsData {
 	!bin "tmp/target/exportedMusicEvents.cmp"
+}
 MusicDataEnd
+
+!ifdef IncludeGraphicsData {
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!zn
+InitGraphicsMemory
+	lda #1
+	+MWordValueTo_XY $9c00
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX .palette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	jsr Bus24Bit_CopySmallDataAgain
+	inc VIC2BorderColour
+
+	; Maps
+	+MRLEScreenDataToDefaultTileScreen .tilesMap
+	+MRLEScreenDataToDefaultCharScreen .charsMap
+
+	; Chars
+	+MRLEPlanesDataToDefaultCharScreen .plane0 , .plane1 , .plane2 , .plane3
+
+	; Sprites
+	+MRLEPlanesDataToDefaultSprite .spritesPlane0 , .spritesPlane1 , .spritesPlane2 , .spritesPlane3
+
+	; Tiles
+	+MRLEPlanesDataToDefaultTileScreen .tilesPlane0 , .tilesPlane1 , .tilesPlane2 , .tilesPlane3
+
+	rts
+; All
+.palette
+	!bin "tmp/PaletteData.bin"; to 24bit bus at '0x9c00' and addressEx '0x01'
+	!fill $200,0
+
+.spritesPlane0
+	!bin "tmp/sprite_plane0.cmp"; to 24bit bus at '0x2000' and addressEx '0x10'
+.spritesPlane1
+	!bin "tmp/sprite_plane1.cmp"; to 24bit bus at '0x4000' and addressEx '0x10'
+.spritesPlane2
+	!bin "tmp/sprite_plane2.cmp"; to 24bit bus at '0x8000' and addressEx '0x10'
+.spritesPlane3
+	!bin "tmp/sprite_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x10'
+
+.tilesPlane0
+	!bin "tmp/background_plane0.cmp"; to 24bit bus at '0x2000' and addressEx '0x40'
+.tilesPlane1
+	!bin "tmp/background_plane1.cmp"; to 24bit bus at '0x4000' and addressEx '0x40'
+.tilesPlane2
+	!bin "tmp/background_plane2.cmp"; to 24bit bus at '0x8000' and addressEx '0x40'
+.tilesPlane3
+	!bin "tmp/background_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x40'
+
+.plane0
+	!bin "tmp/status_plane0.cmp"; to 24bit bus at '0x2000' and addressEx '0x20'
+.plane1
+	!bin "tmp/status_plane1.cmp"; to 24bit bus at '0x4000' and addressEx '0x20'
+.plane2
+	!bin "tmp/status_plane2.cmp"; to 24bit bus at '0x8000' and addressEx '0x20'
+.plane3
+	!bin "tmp/status_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x20'
+
+.charsMap
+	!bin "tmp/status_map.cmp"; to 24bit bus at '0x9000' and addressEx '0x01'
+.tilesMap
+	!bin "tmp/map.cmp"; to 24bit bus at '0x2000' and addressEx '0x80'
+}

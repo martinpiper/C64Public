@@ -1,62 +1,68 @@
 !zn
+.levelData
+	!tx " 12  2  21 111"
+	!tx "3   4 5 5   3 "
+	!tx " 4  6 7 66  2 "
+	!tx "  5 8 9 6   4 "
+	!tx "12   2  6   5 "
+	!tx "              "
+	!tx "123  4  1  2  "
+	!tx " 3  2 1 12 1  "
+	!tx " 4  182 1225  "
+	!tx " 6  2 4 1 27  "
+	!tx " 7  4 7 1  6  "
+	!tx "              "
+	!tx "  67  6       "
+	!tx " 6   6 1      "
+	!tx " 7 3 8 1      "
+	!tx " 7 3 1 2      "
+	!tx "  73  4       "
+	!tx "              "
+	!tx "              "
+	!tx " 222 333  66  "
+	!tx "   2 3   6    "
+	!tx " 222 333 666  "
+	!tx " 2     3 6 6  "
+	!tx " 222 333 666  "
+
+.numToBlockIndex
+	!by 0 , 1 , 2 , 3 , 8 , 9 , 10 , 11
+.lx !by 1
+.ly !by 3
 SetupLevel
 	; Setup a "level"
-	lda #0
-	ldx #10
-	ldy #5
-	jsr BlockSet
-	lda #1
-	ldx #12
-	ldy #5
-	jsr BlockSet
-	lda #2
-	ldx #14
-	ldy #5
-	jsr BlockSet
-	lda #3
-	ldx #16
-	ldy #5
-	jsr BlockSet
-	lda #8
-	ldx #10
-	ldy #7
-	jsr BlockSet
-	lda #9
-	ldx #12
-	ldy #7
-	jsr BlockSet
-	lda #10
-	ldx #14
-	ldy #7
-	jsr BlockSet
-	lda #11
-	ldx #16
-	ldy #7
+.smAddr1 lda .levelData
+	cmp #' '
+	beq .o2
+	sec
+	sbc #'0'
+	and #7
+	tax
+	lda .numToBlockIndex,x
+	
+	ldx .lx
+	ldy .ly
 	jsr BlockSet
 
+.o2
+	inc .smAddr1+1
+	bne .o1
+	inc .smAddr1+2
+.o1
+
+	inc .lx
+	inc .lx
+	lda .lx
+	cmp #29
+	bne .smAddr1
+
 	lda #1
-	ldx #15
-	ldy #12
-	jsr BlockSet
-	lda #1
-	ldx #25
-	ldy #12
-	jsr BlockSet
-	lda #1
-	ldx #21
-	ldy #12
-	jsr BlockSet
-	lda #2
-	ldx #8
-	ldy #15
-	jsr BlockSet
-	lda #2
-	ldx #12
-	ldy #15
-	jsr BlockSet
-	lda #2
-	ldx #16
-	ldy #15
-	jsr BlockSet
+	sta .lx
+
+	inc .ly
+	lda .ly
+	cmp #27
+	bne .smAddr1
+
 
 	rts

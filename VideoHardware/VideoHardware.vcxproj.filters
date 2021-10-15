@@ -49,6 +49,18 @@
     <Filter Include="Source Files\asm\BatBallAnim">
       <UniqueIdentifier>{1c9e9b0e-1c47-4731-ae87-322fb86dea24}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\asm\Turrican">
+      <UniqueIdentifier>{def7362c-f6e9-41eb-8204-07a35b860df4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\asm\Road">
+      <UniqueIdentifier>{9ae5d9cc-b5fa-44f4-a1ec-6726e409c910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\asm\ShadowBeast">
+      <UniqueIdentifier>{c3ddbc61-2595-4b1a-8dc8-20d2914695f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\C64\Decompression">
+      <UniqueIdentifier>{2e6b7f23-cec2-4825-a267-eed2ea867945}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -88,6 +100,33 @@
       <Filter>Resource Files\assets</Filter>
     </None>
     <None Include="BuildIt3Anim.bat" />
+    <None Include="..\..\BombJack\README.md">
+      <Filter>Header Files\BombJack</Filter>
+    </None>
+    <None Include="assets\convert4.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt4.bat" />
+    <None Include="BuildIt4_8.bat" />
+    <None Include="BuildIt3MultiplexTimer.bat" />
+    <None Include="BuildIt3MultiplexAPU.bat" />
+    <None Include="BuildIt5.bat" />
+    <None Include="BuildIt6.bat" />
+    <None Include="assets\convert5.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\convert6.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt6b.bat" />
+    <None Include="BuildIt7.bat" />
+    <None Include="assets\convert7.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="assets\convert9.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt9.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -195,6 +234,138 @@
     <Library Include="asm\BatBallAnim\DisplayScreen.a">
       <Filter>Source Files\asm\BatBallAnim</Filter>
     </Library>
+    <Library Include="..\..\BombJack\stdlib\Video_Macros.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="asm\main4.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\Turrican\DisplayScreen.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="asm\AnimMacros.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="tmp\TurricanSpritesSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="asm\Turrican\Sprites.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="asm\Turrican\AnimationData.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="asm\Turrican\Animation.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="asm\Turrican\DisplayData_8.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="asm\Turrican\DisplayData.a">
+      <Filter>Source Files\asm\Turrican</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\APU.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\APU_Macros.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus24BitSimple.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="asm\main3MultiplexTimer.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main3MultiplexAPU.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main5.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\Road\DisplayData.a">
+      <Filter>Source Files\asm\Road</Filter>
+    </Library>
+    <Library Include="asm\Road\DisplayScreen.a">
+      <Filter>Source Files\asm\Road</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\DisplayData.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\DisplayScreen.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSpritesSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSprites2Sheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\Animation.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\AnimationData.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\Sprites.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\main6.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main6b.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\APUTitle.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\APUGame.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\DisplayScreenGame.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\ShadowBeast\CommonBlimpsMoon.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
+    </Library>
+    <Library Include="asm\main6CommonBlimps.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main6CommonScrolls.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\Anim_ScreenEdge.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main7.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\Decompression\DecompressRLE.a">
+      <Filter>Header Files\C64\Decompression</Filter>
+    </Library>
+    <Library Include="..\Decompression\DecompressRLEVars.a">
+      <Filter>Header Files\C64\Decompression</Filter>
+    </Library>
+    <Library Include="asm\DecompressRLECommon.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="tmp\Demo7SpritesSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\HardwareTest.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus24Bit_Macros.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="asm\main9.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="tmp\Demo9Sprites2Sheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo9Sprites1Sheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -210,6 +381,15 @@
     </Text>
     <Text Include="tmp\batball.log">
       <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\TurricanSpritesSheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="..\..\BombJack\Done.txt">
+      <Filter>Header Files\BombJack</Filter>
+    </Text>
+    <Text Include="..\..\BombJack\TODO.txt">
+      <Filter>Header Files\BombJack</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
@@ -238,6 +418,9 @@
       <Filter>Resource Files\assets\BatBall</Filter>
     </Image>
     <Image Include="assets\BatBall\sprites.png">
+      <Filter>Resource Files\assets\BatBall</Filter>
+    </Image>
+    <Image Include="assets\BatBall\ShipAnim.png">
       <Filter>Resource Files\assets\BatBall</Filter>
     </Image>
   </ItemGroup>

@@ -1,0 +1,111 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "stdlib/MemoryCopy.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr DisplayScreen
+
+	jsr Video_SetAddressTileScrollRegisters
+	lda #128
+	sta CIA2PortBRS232
+	lda #1
+	sta CIA2PortBRS232
+
+	+WaitForFire_A
+	jsr Video_SetAddressTileScrollRegisters
+	lda #0
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+	lda #128
+	sta CIA2PortBRS232
+	lda #1
+	sta CIA2PortBRS232
+
+	+WaitForFire_A
+	jsr Video_SetAddressTileScrollRegisters
+	lda #0
+	sta CIA2PortBRS232
+	lda #1
+	sta CIA2PortBRS232
+	lda #128
+	sta CIA2PortBRS232
+	lda #1
+	sta CIA2PortBRS232
+
+mainLoop
+	+WaitForFire_A
+
+	jsr Video_SetAddressTileScrollRegisters
+	lda #128
+	sta CIA2PortBRS232
+	lda #1
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+
+	jsr APU_Enable
+
+mainLoopGame
+	; Demostrate setting and clearing the flag in APU memory to allow the frames to progress
+	+WaitForFire_A
+	lda #$02
+	+MWordValueTo_XY apuFrameReady0
+	jsr Bus24Bit_SetAddressBus
+	; Clear the flag
+	lda #0
+	sta CIA2PortBRS232
+
+	+WaitForFire_A
+	lda #$02
+	+MWordValueTo_XY apuFrameReady0
+	jsr Bus24Bit_SetAddressBus
+	; Set the flag
+	lda #1
+	sta CIA2PortBRS232
+
+	jmp mainLoopGame
+	rts
+
+!source "asm/Road/DisplayScreen.a"
+!source "asm/Road/DisplayData.a"

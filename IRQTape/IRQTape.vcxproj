@@ -52,6 +52,9 @@
     <CustomBuild Include="R.MUS8000.PRG" />
     <CustomBuild Include="TestMultiplexor.prg" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="MakeRelease.bat" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

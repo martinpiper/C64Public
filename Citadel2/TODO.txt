@@ -77,9 +77,22 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
+* When teleporting to near the edges of the map, ensure the map coordinates are not out of range.
+	For example the first level 1 teleport shows corrupt blocks on the bottom edge of the screen
+
+
+
+* Bateries currently recharge on constant movement. Instead make it a cumulative "momentum" based recharge. Each successful move increases a counter by 1, a pause in the movement reduces the cumulative value by 25% (to be tweaked) of the current value
+	Once the maximum is reached the "charge" is dumped into the battery. The status bar display could do with showing this charge value, and how it "goes into" the batteries
+
+
+
+
 * Robot level can increase with kills. 
 	The sub game doors/switches can have levels.
 	The difference between robot and sub game decides how difficult the sub game is.
+	* Capture probe could display the level of the enemy being targetted
+
 
 
 * Level loading, extra levels

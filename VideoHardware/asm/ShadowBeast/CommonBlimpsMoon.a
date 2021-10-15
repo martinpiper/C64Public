@@ -1,0 +1,58 @@
+!zn
+SetupBlimps
+	; Setup some sprites into the APU data
+!macro EmitSprite .apuAddr , .spriteData , .x , .y {
+	lda .spriteData
+	sta .apuAddr,x
+	inx
+	lda .spriteData + 1
+	sta .apuAddr,x
+	inx
+	lda #255 - .y
+	sta .apuAddr,x
+	inx
+	lda #.x
+	sta .apuAddr,x
+	inx
+}
+	ldx #0
+Sprite_LargeAirshipX = 60
+Sprite_LargeAirshipY = 32
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame64_0 , Sprite_LargeAirshipX , Sprite_LargeAirshipY
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame80_0 , Sprite_LargeAirshipX + 16 , Sprite_LargeAirshipY
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame96_0 , Sprite_LargeAirshipX + 32 , Sprite_LargeAirshipY
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame112_0 , Sprite_LargeAirshipX + 48 , Sprite_LargeAirshipY
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame64_16 , Sprite_LargeAirshipX , Sprite_LargeAirshipY + 16
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame80_16 , Sprite_LargeAirshipX + 16 , Sprite_LargeAirshipY + 16
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame96_16 , Sprite_LargeAirshipX + 32 , Sprite_LargeAirshipY + 16
+	+EmitSprite APUData_Blimp1 , EmitSpriteFrame112_16 , Sprite_LargeAirshipX + 48 , Sprite_LargeAirshipY + 16
+
+	ldx #0
+Sprite_SmallAirshipX = 160
+Sprite_SmallAirshipY = 52
+	+EmitSprite APUData_Blimp2 , EmitSpriteFrame128_0 , Sprite_SmallAirshipX , Sprite_SmallAirshipY
+	+EmitSprite APUData_Blimp2 , EmitSpriteFrame144_0 , Sprite_SmallAirshipX + 16 , Sprite_SmallAirshipY
+	rts
+
+!zn
+SetupMoon
+	ldx #0
+Sprite_MoonX = 165
+Sprite_MoonY = 32
+	+EmitSprite APUData_Moon , EmitSpriteFrame0_0 , Sprite_MoonX , Sprite_MoonY
+	+EmitSprite APUData_Moon , EmitSpriteFrame16_0 , Sprite_MoonX + 16 , Sprite_MoonY
+	+EmitSprite APUData_Moon , EmitSpriteFrame32_0 , Sprite_MoonX + 32 , Sprite_MoonY
+	+EmitSprite APUData_Moon , EmitSpriteFrame48_0 , Sprite_MoonX + 48 , Sprite_MoonY
+	+EmitSprite APUData_Moon , EmitSpriteFrame0_16 , Sprite_MoonX , Sprite_MoonY + 16
+	+EmitSprite APUData_Moon , EmitSpriteFrame16_16 , Sprite_MoonX + 16 , Sprite_MoonY + 16
+	+EmitSprite APUData_Moon , EmitSpriteFrame32_16 , Sprite_MoonX + 32 , Sprite_MoonY + 16
+	+EmitSprite APUData_Moon , EmitSpriteFrame48_16 , Sprite_MoonX + 48 , Sprite_MoonY + 16
+;	+EmitSprite APUData_Moon , EmitSpriteFrame0_32 , Sprite_MoonX , Sprite_MoonY + 32
+	+EmitSprite APUData_Moon , EmitSpriteFrame16_32 , Sprite_MoonX + 16 , Sprite_MoonY + 32
+	+EmitSprite APUData_Moon , EmitSpriteFrame32_32 , Sprite_MoonX + 32 , Sprite_MoonY + 32
+	+EmitSprite APUData_Moon , EmitSpriteFrame48_32 , Sprite_MoonX + 48 , Sprite_MoonY + 32
+;	+EmitSprite APUData_Moon , EmitSpriteFrame0_48 , Sprite_MoonX , Sprite_MoonY + 48
+	+EmitSprite APUData_Moon , EmitSpriteFrame16_48 , Sprite_MoonX + 16 , Sprite_MoonY + 48
+	+EmitSprite APUData_Moon , EmitSpriteFrame32_48 , Sprite_MoonX + 32 , Sprite_MoonY + 48
+;	+EmitSprite APUData_Moon , EmitSpriteFrame48_48 , Sprite_MoonX + 48 , Sprite_MoonY + 48
+	rts

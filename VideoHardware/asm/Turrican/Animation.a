@@ -1,0 +1,256 @@
+!zn
+AnimationFramesOriginalLo
+	!by <SpriteAnimation_PlayerRunLeft0
+	!by <SpriteAnimation_PlayerRunLeft1
+	!by <SpriteAnimation_PlayerRunLeft2
+	!by <SpriteAnimation_PlayerRunLeft3
+	!by <SpriteAnimation_PlayerRunLeft4
+	!by <SpriteAnimation_PlayerRunLeft5
+	!fill kMaxSprites , 0
+
+AnimationFramesOriginalHi
+	!by >SpriteAnimation_PlayerRunLeft0
+	!by >SpriteAnimation_PlayerRunLeft1
+	!by >SpriteAnimation_PlayerRunLeft2
+	!by >SpriteAnimation_PlayerRunLeft3
+	!by >SpriteAnimation_PlayerRunLeft4
+	!by >SpriteAnimation_PlayerRunLeft5
+	!fill kMaxSprites , 0
+
+AnimationFramesLo
+	!by <SpriteAnimation_PlayerRunLeft0
+	!by <SpriteAnimation_PlayerRunLeft1
+	!by <SpriteAnimation_PlayerRunLeft2
+	!by <SpriteAnimation_PlayerRunLeft3
+	!by <SpriteAnimation_PlayerRunLeft4
+	!by <SpriteAnimation_PlayerRunLeft5
+	!fill kMaxSprites , 0
+
+AnimationFramesHi
+	!by >SpriteAnimation_PlayerRunLeft0
+	!by >SpriteAnimation_PlayerRunLeft1
+	!by >SpriteAnimation_PlayerRunLeft2
+	!by >SpriteAnimation_PlayerRunLeft3
+	!by >SpriteAnimation_PlayerRunLeft4
+	!by >SpriteAnimation_PlayerRunLeft5
+	!fill kMaxSprites , 0
+
+!zn
+AnimationFrames_Process
+
+	ldx #kMaxSprites-1
+.l1
+	+MAnimation_Pre .noAnim
+
+	+MAnimation_Post
+
+.noAnim
+	dex
+	+lbpl .l1
+
+
+	; Handle any player movement updates
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	+MSubU8FromAddrS16 PlayerPositionX , 2
+	lda #0
+	sta PlayerFlip
+.notLeft
+
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	+MAddU8ToAddr16 2 , PlayerPositionX , PlayerPositionX+1
+	lda #1
+	sta PlayerFlip
+.notRight
+
+	lda #JoystickBits_Up
+	bit CIA1KeyboardColumnJoystickA
+	bne .notUp
+	lda PlayerIsJumping
+	beq .newJump
+	jmp .notUp2
+.newJump
+	lda #1
+	sta PlayerIsJumping
+	lda #-6
+	sta PlayerVelocityY
+	jmp .notUp2
+.notUp
+	lda PlayerVelocityY
+	bpl .isPosVel2
+	lda PlayerFrameToggle
+	and #3
+	bne .isPosVel2
+	inc PlayerVelocityY
+.isPosVel2
+	lda #0
+	sta PlayerIsJumping
+.notUp2
+
+	inc PlayerFrameToggle
+	+MAdd8STo16S PlayerVelocityY , PlayerPositionY , PlayerPositionY+1
+
+	; Ground check
+	lda PlayerPositionY+1
+	cmp #3
+	bcs .onGround
+	lda PlayerVelocityY
+	cmp #8
+	bpl .overGround
+	lda PlayerFrameToggle
+	and #3
+	bne .overGround
+	inc PlayerVelocityY
+	jmp .overGround
+.onGround
+	lda #0
+	sta PlayerVelocityY
+	lda #0
+	sta PlayerPositionY
+	lda #3
+	sta PlayerPositionY+1
+.overGround
+
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+;	+MAddU8ToAddr16 1 , PlayerPositionY , PlayerPositionY+1
+.notDown
+
+	; Calculate any required camera movement to show the player in the middle of the screen
+	+MSubS16AddrToAddrS16 TileScrollX , TileScrollX + 1 , PlayerPositionX , PlayerPositionX + 1 , zeroPage_Temp0 , zeroPage_Temp1
+!macro MSignExtend24Bit {
+	lda zeroPage_Temp0
+	sta zeroPage_Temp2
+	ldy #$ff
+	lda zeroPage_Temp1
+	sta zeroPage_Temp3
+	bmi .isNeg1
+	ldy #0
+.isNeg1
+	sty zeroPage_Temp4
+}
+	+MSignExtend24Bit
+
+	+MAddU8ToAddr16 112 , zeroPage_Temp0 , zeroPage_Temp1
+!macro MDivideCameraMove {
+	; Divide down
+	lda zeroPage_Temp1
+	+M_ASR
+	ror zeroPage_Temp0
+	+M_ASR
+	ror zeroPage_Temp0
+	+M_ASR
+	ror zeroPage_Temp0
+	+M_ASR
+	ror zeroPage_Temp0
+	+M_ASR
+	ror zeroPage_Temp0
+	sta zeroPage_Temp1
+
+	; And mode7 move shift
+	lda zeroPage_Temp4
+	+M_ASR
+	ror zeroPage_Temp3
+	ror zeroPage_Temp2
+}
+	+MDivideCameraMove
+	+MSubS16AddrToAddrS16 TileScrollX , TileScrollX + 1 , zeroPage_Temp0 , zeroPage_Temp1 , TileScrollX , TileScrollX + 1
+	+MSub24To24ToOut Mode7Regs_xpos , zeroPage_Temp2 , Mode7Regs_xpos
+
+	+MSubS16AddrToAddrS16 TileScrollY , TileScrollY + 1 , PlayerPositionY , PlayerPositionY + 1 , zeroPage_Temp0 , zeroPage_Temp1
+	+MSignExtend24Bit
+	+MAddU8ToAddr16 128 , zeroPage_Temp0 , zeroPage_Temp1
+	+MDivideCameraMove
+	+MSubS16AddrToAddrS16 TileScrollY , TileScrollY + 1 , zeroPage_Temp0 , zeroPage_Temp1 , TileScrollY , TileScrollY + 1
+	+MSub24To24ToOut Mode7Regs_ypos , zeroPage_Temp2 , Mode7Regs_ypos
+
+
+	lda TileScrollX
+	sta Mode7Regs_scale_dX
+	sta Mode7Regs_scale_dY
+	lda TileScrollX+1
+	sta Mode7Regs_scale_dX+1
+	sta Mode7Regs_scale_dY+1
+
+	; The player object screen position update is a special case as it's comprised of so many sprites
+	; Calculate the sprite offset to the screen coordinates
+	+MSubS16AddrToAddrS16 PlayerPositionX , PlayerPositionX + 1 , TileScrollX , TileScrollX + 1 , zeroPage_Temp0 , zeroPage_Temp1
+	+MSubS16AddrToAddrS16 PlayerPositionY , PlayerPositionY + 1 , TileScrollY , TileScrollY + 1 , zeroPage_Temp2 , zeroPage_Temp3
+	; Tweak for ground position
+	+MAddU8ToAddr16 8 ,  zeroPage_Temp2 , zeroPage_Temp3
+
+	lda PlayerFlip
+	bne .flipRight
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #0
+	jsr AnimTestSpriteScreenEdge
+	+MAddU8ToAddr16 16 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #1
+	jsr AnimTestSpriteScreenEdge
+
+	+MAddU8ToAddr16 16 , zeroPage_Temp2 , zeroPage_Temp3
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #2
+	jsr AnimTestSpriteScreenEdge
+	+MAddU8ToAddr16 16 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #3
+	jsr AnimTestSpriteScreenEdge
+
+	+MAddU8ToAddr16 16 , zeroPage_Temp2 , zeroPage_Temp3
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #4
+	jsr AnimTestSpriteScreenEdge
+	+MAddU8ToAddr16 16 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #5
+	jsr AnimTestSpriteScreenEdge
+
+	rts
+
+.flipRight
+!for .i , 6 {
+	lda SpriteFrameDataColour + .i-1
+	eor #kBus24Bit_Video_FlipH
+	sta SpriteFrameDataColour + .i-1
+}
+
+	+MAddU8From16ToAddr16 16 , zeroPage_Temp0 , zeroPage_Temp1 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #0
+	jsr AnimTestSpriteScreenEdge
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #1
+	jsr AnimTestSpriteScreenEdge
+
+	+MAddU8ToAddr16 16 , zeroPage_Temp2 , zeroPage_Temp3
+	+MAddU8From16ToAddr16 16 , zeroPage_Temp0 , zeroPage_Temp1 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #2
+	jsr AnimTestSpriteScreenEdge
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #3
+	jsr AnimTestSpriteScreenEdge
+
+	+MAddU8ToAddr16 16 , zeroPage_Temp2 , zeroPage_Temp3
+	+MAddU8From16ToAddr16 16 , zeroPage_Temp0 , zeroPage_Temp1 , zeroPage_Temp4 , zeroPage_Temp5
+	ldx #4
+	jsr AnimTestSpriteScreenEdge
+	+MAddr16ToAddr16_A zeroPage_Temp0 , zeroPage_Temp4
+	ldx #5
+	jsr AnimTestSpriteScreenEdge
+
+	rts
+
+
+
+!source "asm/Anim_ScreenEdge.a"
+
+
+PlayerFlip		!by 0
+PlayerIsRunning	!by 0
+PlayerIsJumping	!by 0
+PlayerPositionX	+MLittleEndian16Bit 384
+PlayerPositionY	+MLittleEndian16Bit 128
+PlayerVelocityY !by 0
+PlayerFrameToggle !by 0

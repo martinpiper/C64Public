@@ -1,0 +1,38 @@
+!zn
+DisplayScreen
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	; Blimp positions
+	lda #0
+	sta zeroPage_Temp0
+	sta zeroPage_Temp1
+	sta zeroPage_Temp2
+
+	jsr SetupBlimps
+	jsr SetupMoon
+
+	jsr DisplayData
+
+	jsr Video_SetAddressVideoPriorityRegister
+	; Layer order
+	; Sprites behind chars
+	lda #%11100001
+	; Sprites behind clouds
+	lda #%11001001
+	sta CIA2PortBRS232
+
+	inc VIC2BorderColour
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	jsr Video_EnableDisplay
+
+	jsr Bus24Bit_Reset
+	inc VIC2BorderColour
+	rts
+
+
+!source "asm/ShadowBeast/CommonBlimpsMoon.a"

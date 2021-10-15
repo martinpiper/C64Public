@@ -130,12 +130,12 @@ RNXPCompressionDecompress_SecondPart
 	inc .workLen+1
 .afterThresholdCheck
 	; const u8 *workPos = dest + outLen - workOffset;
-	lda RNXPCompressionDecompress_WriteByte+1
+	lda RNXPCompressionDecompress_WriteBytesmAddr+0
 	sec
 	sbc .workOffset+0
 	sta RNXPCompressionDecompress_GetDictEntryAndWrite+1
 	; Carry
-	lda RNXPCompressionDecompress_WriteByte+2
+	lda RNXPCompressionDecompress_WriteBytesmAddr+1
 	sbc .workOffset+1
 	sta RNXPCompressionDecompress_GetDictEntryAndWrite+2
 

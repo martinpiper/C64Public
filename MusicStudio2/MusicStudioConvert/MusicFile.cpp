@@ -1688,6 +1688,7 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 
 	bool outputSID = false;
 	bool outputSelfRunning = false;
+	bool outputOric = false;
 
 	if (_stricmp(addr,"sid") == 0)
 	{
@@ -1696,6 +1697,10 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 	else if (_stricmp(addr,"self") == 0)
 	{
 		outputSelfRunning = true;
+	}
+	else if (_stricmp(addr,"oric") == 0)
+	{
+		outputOric = true;
 	}
 
 	DeleteFileA("t.lbl");
@@ -1772,7 +1777,7 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 			fprintf(fp,"jmp MusicStudioInterface\njmp *\n!align 255,0\n");
 		}
 	}
-	else if (outputSelfRunning)
+	else if (outputSelfRunning || outputOric)
 	{
 		// Self running output always uses $900
 		fprintf(fp,"*=$900\n");
@@ -2070,6 +2075,10 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 	{
 		sprintf(theCommand,"%sHeaderSelf.a",acmeOptions);
 	}
+	else if (outputOric)
+	{
+		sprintf(theCommand,"%sHeaderOric.a",acmeOptions);
+	}
 	else
 	{
 		sprintf(theCommand,"%sHeaderPRG.a",acmeOptions);
@@ -2123,7 +2132,15 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 		}
 		else
 		{
-			theLastError = 0x1234567;
+			fp = fopen("t.tap","r");
+			if (fp)
+			{
+				fclose(fp);
+			}
+			else
+			{
+				theLastError = 0x1234567;
+			}
 		}
 	}
 

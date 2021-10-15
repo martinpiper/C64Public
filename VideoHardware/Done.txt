@@ -213,3 +213,177 @@
 
 
 * 1.0.0.4
+
+
+
+* Add char layer to the RPG demo
+	Score, inventory, health etc
+
+
+
+* Ball collision with bat
+	Depending on how far from the middle (or to the edges) the ball return X velocity (hence direction) changes
+		Cummulative X velocity change
+	For MHandleVelocity, if .SpriteFrameData=SpriteFrameDataY then do the bat test and invert the velocity
+	* Logo intro?
+
+
+
+* Sprite multiplexing test
+	https://twitter.com/MartinPiper/status/1348996589352747010
+	MSetSpritesBand is used to quickly update sprites while blanking the sprite output
+	* The real hardware shows some flicking left/right pixels during the sprite blanked write period, but where registers are written
+		This may indicate even during the blanking, the sprites are picking up a fullscreen height sprite definition due to the floating logic
+			Which may be fixed with weak pullups (could test this again)
+				*** Weak pullups did not solve the issue, so it's a different problem
+		Or it may indicate the sprite blanking logic needs to follow what is seen in the chars/tiles layers instead of using the shifter MR
+		** After using logic zero for the sprites, the left/right border issue still happens
+			This indicates an issue somewhere outside of the sprites plane
+			Bus noise perhaps?
+		** It is because I am using the low address for the border blanking signal, and the address bus is active during the sprite writes
+			I should really be using a proper logic 0 for the border toggle signals :) Which the tiles board supplies
+		** Forcing logic 0 from the power header for the horizontal border fixes the issue
+
+
+
+* Add Video_StartRasterTimers
+	Start two timers, which should count raster position
+	Used by the updated "Multiplexor demo"
+	Now using syntax: Given video display add CIA1 timers with raster offset 0 , 0
+
+
+
+* It should be possible to have the intro logo in the tiles screen at the top of the screen
+	With the animating ship in the bottom half of the screen
+	With a screen split somewhere in the middle of the screen
+	SetMaskingCharScreen would need to have a hole notched into the top of the masking chars
+	Using the background colour register it should also be possible to set the background colour
+		Use Video_StartRasterTimers and +MWaitValueToMemoryCC 208 , CIA1TimerBLo
+
+
+* Ship anim was improved (notable the green teleport effect) by moving the "--imagequantize 8" after the --image load :D
+
+
+
+
+* C64\VideoHardware\asm\main3MultiplexAPU.a
+	* "Set address to $9a00" can use EADDR2
+	* Setting $9820 can use EADDR and registers 0/1
+		* EADDR doesn't need to be refreshed for every sprite, since EADDR2 is used for the enable/disable
+			It can just count up instead, making the sprite updates a lot quicker
+	* $01 can be in reg2
+	* Perhaps add one more data dexmux bit which will select an additional one of the EADDR/EADDR2 register lo/hi values giving 8 "registers" in total?
+		Use 74151 instead of 74153?
+	* Before optimisation: TotalAPU_Size = $10b2
+		With partial optimisation: $bbc
+		With enable sprites value removed, and setting two sprites per scanline instead of one: $9cd
+			APU sprite register enable timing also improved by using: bdd6502.apu.trace
+
+
+
+
+* C64\VideoHardware\asm\main3MultiplexAPU.a
+	Using ADDRB2 it should be possible to have all the "Next RHRV to wait for" and "Disable sprites" values separate from the "Sprite data"
+		This would make it easier to write the contiguous block of "Sprite data" from the 6502 and update with an animation
+
+
+
+
+* BuildIt6.bat : main6.a : Shadow of the Beast demo with APU
+	https://codetapper.com/amiga/sprite-tricks/shadow-of-the-beast/
+	https://www.oldgames.sk/docs/sotb/index.html
+	APU copper effects work well
+	Validated video simulation with: C64\VideoHardware\target\debugData.txt
+	* TODO: Done - Blimps, trees (well?), player?, score display, and Done - moon
+		Blimps now move in APU data
+		TODO Tree! SetupTree - Will need multiplexing
+
+
+
+
+* SotB demo - Using the map editor, tidy the tiles and chars graphics, especially the clouds and mountains so they wrap better. Can also use flipped tiles/chars.
+
+
+
+
+* SotB game chars layer needs to use map generated asset and include more trees and bushes
+	Check the number of characters generated
+
+
+
+* SotB demo - Player now stands when not running
+
+
+
+
+* Turrican demo on real hardware
+	Note: C64\VideoHardware\asm\Turrican\DisplayData.a
+		kDoSprites = 1
+		;kDoTiles = 1
+		;kDoChars = 1
+	This needs RLE compression to decompress, so that the RAM and IO spaces are not overlapping in real C64 memory while sending graphics
+		Or instead of RLE, make a CRT file that sends data. However this will need emulation support.
+		Simpler to use RLE for now
+		* Note comment: Note special write byte goes straight to the video hardware and skips C64 memory entirely
+			Graphics data finishes at 70d9 .palette
+
+
+
+* Test for and remove Bus24Bit_WriteMakeSafeReset is possible. Should be possible, the memory access logic is completly different.
+
+
+
+
+* Update all examples to use the newer hardware
+	RPG demo especially will be able to show more sprites as it won't need to stack so many sprites to get the number of colours it needs
+		The 8 colour version used 57 stacked sprites, mostly two and sometimes three sprites were stacked
+		The 16 colour version uses 35 stacked sprites. mostly one and two sprties, rarely three are stacked
+		Conversion to 16 colours done. Things to note: Using "kAnimationEngine_maxSlots = 12" copySprites on a real C64 takes a few scans too long
+			Possible to optimise the sprite data calculation by using a pre-calc buffer
+			Done: Use StackedSpriteData
+			* RPG demo now uses StackedSpriteData which speeds up the sprite data copy
+	* Release updated. Minor screen memory updates needed
+	* Release3 updated. The logic to restore the video hardware needed updating to accomodate the new resolution and memory address
+	* Release4 works
+
+
+
+* RPG Demo and Turrican demo needs to use compressed graphics data for the C64 demo
+	** For now MusicPoll and !bin "tmp/target/exportedMusicEvents.cmp" has been disabled
+	* Also for now, to match the real hardware, the mode7 layer has been disabled and the background colour set to be the tiles layer
+
+
+
+* BuildIt7.bat: Super R-Type
+	https://www.spriters-resource.com/fullview/73177/?source=genre
+	Need to import some sprites
+		Sprites done, also added --loadpaletteraw functionality to the conversion image and fixed a palette selection issue when there are forced colour index values set
+	* TODO: Try removing: copy /b /y ..\tmp\Demo7PaletteData1.bin + ..\tmp\Demo7PaletteData2.bin + ..\tmp\Demo7PaletteData3.bin ..\tmp\Demo7PaletteData.bin
+		Instead use the normal palette selection code and check it produces an overall palette stack of less than 12
+		Didn't work :) Background was using wrong palette values
+
+
+
+
+* APU: Verify increment pulse happens at the start of the instruction
+	Verify load pulse happens late, like the write pulse
+	* Currently the increment and load edge is at the end of the instruction, due to the hi from the signal being made lo for the instruction period, then rising high again with the next instruction
+		To introduce a pulse during the instruction would mean an addition of clock logic, very similar to the external memory write.
+		This would effectively remove the need to have two instructions (to create the edge at the end of the instruction) for the increment/load.
+	* The emulation, apuHandleInstructionSchedule4, needs to switch the increments after the loads...
+
+
+
+* Demo 7 transparent back plane colour
+	Then introduce raster bars for the background
+	Also fade up the various layers independantly
+
+
+
+* Added HardwareTest which adds some standard hardware test routines
+	HardwareTest_VideoPattern0 will display a known simple pattern for the chars screen
+
+
+
+* main6.a updated to handle slower clocked APU, using JP11 rather than JP10
+	Multiplexing tree sprites now use EADDR2 to set kBus24Bit_SpritesControlLo, which saved a lot of cycles

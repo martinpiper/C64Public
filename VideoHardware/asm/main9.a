@@ -1,0 +1,336 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
+!source "BombJack/stdlib/Music.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr MusicInit
+
+	jsr Bus24Bit_Init
+
+	jsr Video_DisableDisplay
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #255
+	sta CIA2PortBRS232
+
+;	jsr DisplayData
+
+	jsr Video_WaitVBlank
+	jsr SetScreenScrolls
+	jsr UpdateSprites2
+	jsr CopySprites2
+
+;	+WaitForFire_A
+
+.l1
+
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+
+	jsr SetScreenScrolls
+
+	lda doCopySprites2
+	beq .o1
+	jsr CopySprites2
+	jsr UpdateSprites2
+.o1
+	lda doCopySprites2
+	bne .o3
+	jsr CopySprites1
+	jsr UpdateSprites1
+.o3
+
+	; Swing the logo
+	lda LogoVelTabDelay
+	beq .o4
+	dec LogoVelTabDelay
+.o4
+	lda LogoVelTabDelay
+	bne .o2
+	ldy LogoVelTabCnt
+	lda LogoVelTab,y
+	beq .o2
+	+MAddAToAddr16 LogoPosX , LogoPosX+1
+	inc LogoVelTabCnt
+.o2
+	jsr MusicPoll
+
+	jmp .l1
+
+!zn
+SetScreenScrolls
+	jsr Video_SetAddressCharScrollRegisters
+	inc BackgroundBounce
+	ldx BackgroundBounce
+	lda #0
+	sta CIA2PortBRS232
+	sta CIA2PortBRS232
+	lda BackgroundBounceTabY,x
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_FastSpeedCopy LogoPosX , 2
+	+MBus24Bit_SendLE16BitValue -130
+	rts
+
+LogoVelTabDelay !by 150
+LogoVelTabCnt !by 0
+LogoVelTab
+!for .i , 128 {
+	!by (128-.i) / 20
+}
+	!by 0
+
+LogoPosX +MLittleEndian16Bit -350
+
+!zn
+doCopySprites2 !by 2
+CopySprites2
+	+MBus24Bit_SetAddress_AXY $01 , $9200
+	+MBus24Bit_FastSpeedCopy Sprite2_data , 8 * 8
+
+	lda Sprite2_count + 7
+	cmp #$ff
+	bne .o1
+	dec doCopySprites2
+.o1
+	rts
+
+UpdateSprites2
+!macro MHandleSprite .i {
+	ldx Sprite2_count + .i
+	lda SpriteYTab,x
+	sta Sprite2_data + 1 + (.i * 8)
+	lda SpriteScaleTab,x
+	sta Sprite2_data + 5 + (.i * 8)
+	sta Sprite2_data + 6 + (.i * 8)
+	lda SpriteYExtentTab,x
+	sta Sprite2_data + 2 + (.i * 8)
+
+	lda Sprite2_delay + .i
+	beq .do1
+	dec Sprite2_delay + .i
+	jmp .do2
+.do1
+	cpx #$ff
+	beq .do2
+	inc Sprite2_count + .i
+.do2
+}
+
+	+MHandleSprite 0
+	+MHandleSprite 1
+	+MHandleSprite 2
+	+MHandleSprite 3
+	+MHandleSprite 4
+	+MHandleSprite 5
+	+MHandleSprite 6
+	+MHandleSprite 7
+
+	rts
+
+!macro SpriteOutput2x2 .xPos , .yPos , .s0 , .s1 , .s2 , .s3 {
+	ldx .xPos
+	ldy .yPos
+	jsr .s0
+	lda .xPos
+	clc
+	adc #16
+	tax
+	jsr .s1
+
+	ldx .xPos
+	lda .yPos
+	sec
+	sbc #16
+	tay
+	jsr .s2
+	lda .xPos
+	clc
+	adc #16
+	tax
+	jsr .s3
+}
+
+!zn
+sprites1PosXTarget
+	!by 130 , 150 , 170 , 190
+sprites1PosYCount
+	!by 0 , 50 , 100 , 150
+sprites1PosX
+	!by 0 , 0 , 0 , 0
+sprites1PosY
+	!by 0 , 0 , 0 , 0
+
+CopySprites1
+	jsr Video_SetAddressSprites
+	+SpriteOutput2x2 sprites1PosX + 0 , sprites1PosY + 0 , EmitSpriteFrame0_0 , EmitSpriteFrame16_0 , EmitSpriteFrame0_16 , EmitSpriteFrame16_16
+	+SpriteOutput2x2 sprites1PosX + 1 , sprites1PosY + 1 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2 sprites1PosX + 2 , sprites1PosY + 2 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2 sprites1PosX + 3 , sprites1PosY + 3 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	rts
+
+Sprites1BounceTabY
+	!for .i , 256 {
+		!by 100 + (12.0 * cos( (float(-.i) / 32.0) * 3.14159265 ))
+	}
+
+UpdateSprites1
+	ldx #3
+.l1
+	lda sprites1PosXTarget,x
+	cmp sprites1PosX,x
+	beq .o1
+	sec
+	sbc sprites1PosX,x
+	tay
+	lda divBy16TabMin1,y
+	clc
+	adc sprites1PosX,x
+	sta sprites1PosX,x
+.o1
+
+	inc sprites1PosYCount,x
+	ldy sprites1PosYCount,x
+	lda Sprites1BounceTabY,y
+	sta sprites1PosY,x
+
+	dex
+	bpl .l1
+	rts
+
+divBy16TabMin1
+!for .ii , 256 {
+!set .i = (.ii-1) / 16
+!if .i <= 1 {
+!set .i = 1
+}
+	!by .i
+}
+
+MusicDataStart
+MusicDataStart_afterHeader = MusicDataStart + 4
+	!bin "tmp/target/MusicMW2000Events.cmp"
+MusicDataEnd
+
+Sprite2_delay
+	!by 0
+	!by 25
+	!by 50
+	!by 75
+	!by 100
+	!by 125
+	!by 150
+	!by 175
+Sprite2_count
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+	!by 0
+Sprite2_data
+!for .ii , 8 {
+!set .i = .ii-1
+!set .xpos = $37 + (.i * 32.5)
+	!by ((.i/4)+1) | ((>.xpos)<<4)  , 0 , 0x20 , <.xpos , 0x20 , 0x20 , 0x20 , .i
+}
+
+SpriteYTab
+	!for .i , 256 {
+		!by 64 - (64 * cos( (float(.i) / 192) * 3.14159265 )) + (52 * sin( (float(.i) / 64) * 3.14159265 ))
+	}
+
+SpriteScaleTab
+	!for .i , 255 {
+		!by 34 + (12.0 * sin( (float(.i) / 128.0) * 3.14159265 ))
+	}
+	!by 34
+
+SpriteYExtentTab
+	!for .i , 255 {
+!set .i = 34 + (12.0 * sin( (float(.i) / 128.0) * 3.14159265 ))
+; Need to calculate the height based on the scale
+!set .realSize = ((32*32) / int(.i))
+!if .realSize < 1 {
+!set .realSize = 1
+}
+		!by .realSize
+	}
+	!by (32 * 32) / 34
+
+
+BackgroundBounce !by 0
+
+BackgroundBounceTabY
+	!for .i , 256 {
+;		!by 30 + (12.0 * cos( (float(-.i) / 32.0) * 3.14159265 )) + (8.0 * sin( (float(.i - 123) / 64.0) * 3.14159265 ))
+		!by 30 + (12.0 * cos( (float(-.i) / 128.0) * 3.14159265 ))
+	}
+
+
+
+!macro MEmitSpriteFrame_Preserve {
+}
+!macro MEmitSpriteFrame .frame , .colour {
+	lda #.frame
+	sta CIA2PortBRS232
+	lda #.colour
+	sta CIA2PortBRS232
+
+	sty CIA2PortBRS232
+	stx CIA2PortBRS232
+}
+!macro MEmitSpriteFrame_RestoreExit {
+	rts
+}
+!source "tmp\Demo9Sprites1Sheet.txt.a"

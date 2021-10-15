@@ -223,6 +223,22 @@ MEMTOP  = $FF99
 OPEN    = $FFC0
 PLOT    = $FFF0
 RAMTAS  = $FF87
+; This macro does not perform a memory check like RAMTAS does
+!macro M_RAMTAS {
+	lda #$00
+	tay
+.cl1
+	sta $0002,y
+	sta $0200,y
+	sta $0300,y
+	iny
+	bne .cl1
+	ldx #$3c
+	ldy #$03
+	stx $b2
+	sty $b3
+	jsr $fd90
+}
 RDTIM   = $FFDE
 READST  = $FFB7
 RESTOR  = $FF8A
@@ -687,7 +703,7 @@ CIA1TimerBControl				= $dc0f
 ; Bit 5: Serial bus DATA OUT; 0 = High; 1 = Low.
 ; Bit 6: Serial bus CLOCK IN; 0 = High; 1 = Low.
 ; Bit 7: Serial bus DATA IN; 0 = High; 1 = Low.
-CIA2PortASerialBusVICBank		= $dd00
+CIA2PortASerialBusVICBank		= $dd00		; 56576
 kCIA2PortASerialBusVICBankBits_BankMask = %11
 CIA2PortASerialBusVICBank_Bank0	= %11
 CIA2PortASerialBusVICBank_Bank1	= %10
@@ -710,13 +726,13 @@ CIA2PortASerialBusVICBankMask	= $3fff
 ; Bit 3: RS232 RI line.
 ; Bit 4: RS232 DCD line.
 ; Bit 5: User port H pin.
-CIA2PortBRS232					= $dd01
+CIA2PortBRS232					= $dd01		; 56577
 
 ; Each enabled bit sets read and write on CIA2PortASerialBusVICBank otherwise the value can just be read.
-CIA2PortADDR					= $dd02
+CIA2PortADDR					= $dd02		; 56578
 
 ; Each enabled bit sets read and write on CIA2PortBRS232 otherwise the value can just be read.
-CIA2PortBDDR					= $dd03
+CIA2PortBDDR					= $dd03		; 56579
 
 CIA2TimerALo					= $dd04
 CIA2TimerAHi					= $dd05
@@ -1016,6 +1032,20 @@ RasterLinesPALC64		= 312
 	beq .ft2
 }
 
+!macro WaitForFireRelease_A {
+.ft2
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	beq .ft2
+}
+
+!macro WaitForFireRelease2_A {
+.ft2
+	lda CIA1KeyboardRowsJoystickB
+	and #JoystickBits_Fire
+	beq .ft2
+}
+
 !macro SetDefaultScreen_A {
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
@@ -1141,6 +1171,13 @@ RasterLinesPALC64		= 312
 	sta .addr+1
 }
 
+!macro MAddr16ToAddr16_A .src , .dest {
+	lda .src
+	sta .dest
+	lda .src+1
+	sta .dest+1
+}
+
 !macro MWordValueTo_AX .value {
 	lda #<.value
 	ldx #>.value
@@ -1207,6 +1244,19 @@ RasterLinesPALC64		= 312
 	sta .c + 2
 }
 
+!macro MSub24To24ToOut .a , .b , .c {
+	lda .a
+	sec
+	sbc .b
+	sta .c
+	lda .a + 1
+	sbc .b + 1
+	sta .c + 1
+	lda .a + 2
+	sbc .b + 2
+	sta .c + 2
+}
+
 !macro MAddAToAddr16 .lo , .hi {
 	clc
 	adc .lo
@@ -1220,6 +1270,31 @@ RasterLinesPALC64		= 312
 	lda #.value
 	+MAddAToAddr16 .lo , .hi
 }
+
+!macro MSubU8FromAddr16 .value , .lo , .hi {
+	lda .lo
+	sec
+	sbc #.value
+	sta .lo
+	bcs .o1
+	dec .hi
+.o1
+}
+
+!macro MAddAFrom16ToAddr16 .lo , .hi , .loDest , .hiDest {
+	clc
+	adc .lo
+	sta .loDest
+	bcc .o1
+	inc .hiDest
+.o1
+}
+
+!macro MAddU8From16ToAddr16 .value , .lo , .hi , .loDest , .hiDest {
+	lda #.value
+	+MAddAFrom16ToAddr16 .lo , .hi , .loDest , .hiDest
+}
+
 
 !macro MSubS16ToAddrS16 .val , .srcLo , .srcHi , .destLo , .destHi {
 	lda .srcLo
@@ -1239,6 +1314,16 @@ RasterLinesPALC64		= 312
 	lda .hi1
 	sbc .hi2
 	sta .destHi
+}
+
+!macro MSubU8FromAddrS16 .addr , .val {
+	lda .addr
+	sec
+	sbc #.val
+	sta .addr
+	bcs .o1
+	dec .addr+1
+.o1
 }
 
 
@@ -1303,6 +1388,13 @@ RasterLinesPALC64		= 312
 	sta .dst
 	lda .src + 1
 	sta .dst + 1
+}
+
+!macro MWaitValueToMemoryCC .val , .addr {
+	lda #.val
+.l1
+	cmp .addr
+	bcc .l1
 }
 
 

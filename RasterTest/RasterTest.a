@@ -34,10 +34,10 @@ nmiYStore = mainRoutineZP+5
 !zn
 	sei
 	cld
-	lda #%101111
-	sta ZPProcessorPortDDR
 	lda #%100101
 	sta ZPProcessorPort
+	lda #%101111
+	sta ZPProcessorPortDDR
 	; Clear all CIA to known state
 	lda #$7f
 	sta CIA1InterruptControl

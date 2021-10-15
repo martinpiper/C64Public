@@ -19,10 +19,10 @@ CART_SELECT_BANK_KILL	= $7f
 !macro MACRO_CartSelectBank_8K_NoSEI_A {
 ; Entry
 ; A = Cart bank number
-	ldx #ProcessorPortDDRDefault
-	stx ZPProcessorPortDDR
 	ldx #CartSelectBank_ProcessorPort
 	stx ZPProcessorPort
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
 
 	ldx #EASYFLASH_CONTROL_8K
 	stx EASYFLASH_CONTROL
@@ -32,10 +32,10 @@ CART_SELECT_BANK_KILL	= $7f
 !macro MACRO_CartSelectBank_16K_NoSEI_A {
 ; Entry
 ; A = Cart bank number
-	ldx #ProcessorPortDDRDefault
-	stx ZPProcessorPortDDR
 	ldx #CartSelectBank_ProcessorPort
 	stx ZPProcessorPort
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
 
 	ldx #EASYFLASH_CONTROL_16K
 	stx EASYFLASH_CONTROL

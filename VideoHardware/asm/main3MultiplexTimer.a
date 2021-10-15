@@ -1,0 +1,127 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Video_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+kMaxSprites = 24
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr Video_DisableDisplay
+	jsr Video_SpritesDisable
+
+	jsr InitScreenData
+	jsr DisplayScreen
+
+	jsr SetupLevel
+
+	jsr DisplayScreenAgain
+
+;	jsr Video_SetAddressVideoPriorityRegister
+	; Layer order, top to bottom, LSB first: chars , mode7 , sprites, tiles
+;	lda #%11111100
+;	sta CIA2PortBRS232
+;	jsr Video_SetAddressTileBackgroundRegister
+;	lda #00
+;	sta CIA2PortBRS232
+
+
+mainLoop
+	; Multiplexor demo
+	; This uses the vblank synchronised timer to generate multiple sprite position updates as the raster travels down the screen.
+	; The eagle eyed will notice that each band of sprites has a blank period, this is where the sprite registers are updated.
+	; This is because the C64 CPU is not fast enough to accureately and precisely time the updates for each sprite, in the horizontal pixels slots, so updates all sprites as fast as it can.
+	; The APU is designed to allow precise horizonal and vertical pixel synch however...
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	ldy .animationFrame
+
+!macro MSetSpritesBand .ypos , .offset , .mul {
+	jsr Video_SetAddressSpritesControl
+	lda #$00
+	sta CIA2PortBRS232
+
+	jsr Video_SetAddressSprites
+!for .ii , kMaxSprites {
+!set .i = .ii - 1
+	lda #.i
+	sta CIA2PortBRS232
+	lda #.i & 0x07
+	sta CIA2PortBRS232
+	lda #.ypos
+	sta CIA2PortBRS232
+	lda SpriteAnimationTab + <((.i * .mul) + .offset),y
+	sta CIA2PortBRS232
+}
+
+	jsr Video_SetAddressSpritesControl
+	lda #$10
+	sta CIA2PortBRS232
+}
+	+MSetSpritesBand 224 , 0 , 4
+	+MBus24Bit_WaitUntilRasterY 208
+	+MSetSpritesBand 192 , 64 , 2
+	+MBus24Bit_WaitUntilRasterY 176
+	+MSetSpritesBand 160 , 128 , 3
+	+MBus24Bit_WaitUntilRasterY 144
+	+MSetSpritesBand 128 , 202 , 3
+	+MBus24Bit_WaitUntilRasterY 112
+	+MSetSpritesBand 96 , 192 , 5
+	+MBus24Bit_WaitUntilRasterY 80
+	+MSetSpritesBand 64 , 76 , 6
+	+MBus24Bit_WaitUntilRasterY 48
+	+MSetSpritesBand 32 , 31 , 4
+
+	inc .animationFrame
+	jmp mainLoop
+
+.animationFrame !by 0
+SpriteAnimationTab
+	!for .i , 256 {
+		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+	}
+	!for .i , 256 {
+		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+	}
+
+
+!source "asm/BatBall/Levels.a"
+!source "asm/BatBall/DisplayScreen.a"
+!source "asm/BatBall/BlockRoutines.a"
+!source "stdlib/MemoryCopy.a"

@@ -12,7 +12,7 @@
 * In the -c64mr and -c64 code there seems to be a problem if the end of memory to decompress to is right at the end of RAM, the $ffff check is failing to detect the loop around to $0000
 	* Done - Use BDD6502 to load and run the output compressed file and check the resultant data with the input data is correct
 		* Note test would have to account for this by setting the stack pointer to what the C64 has during a SYS statement: ; Assume the SP is at (or very near) $f6
-	* Perhaps add a last resort check in RNXPCompressionDecompress_WriteByte, after inc RNXPCompressionDecompress_WriteByte+2 then beq to .gotVeryLongLength or where RNXPCompressionDecompress_ExitCodeDefined is used
+	* Perhaps add a last resort check in RNXPCompressionDecompress_WriteByte, after inc RNXPCompressionDecompress_WriteBytesmAddr+1 then beq to .gotVeryLongLength or where RNXPCompressionDecompress_ExitCodeDefined is used
 		This will at least stop the written byte cycling round back to 0
 	* What would be good is to spot the case where with -c64* when the endAddress >= $fff8 or when using -c64mr* and the endAddress >= $fffe then switch to using the decompression code with
 		an extra lda #<fixup byte XX> sta $fff8 etc before the jmp. The endAddress for the compressed data would need to be tweaked to be less than the hard end.
@@ -42,10 +42,10 @@
 * No need for this code in C64\Decompression\DecompressRLE.a
 		jsr RNXPCompressionDecompress_GetByte
 		clc
-		adc RNXPCompressionDecompress_WriteByte+1
+		adc RNXPCompressionDecompress_WriteBytesmAddr+0
 		sta .smEndTestL+1
 		jsr RNXPCompressionDecompress_GetByte
-		adc RNXPCompressionDecompress_WriteByte+2
+		adc RNXPCompressionDecompress_WriteBytesmAddr+1
 		sta .smEndTestH+1
 	The values can be pre-calculated and just stored by the self extracting code
 

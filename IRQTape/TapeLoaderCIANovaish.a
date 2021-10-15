@@ -147,10 +147,10 @@ MainLoaderEntry
 	+MACROCIAIRQControlDisable_A
 
 	; Turns on cassette motor and removes ROMs
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
 	lda #%101
 	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
 
 	; Clear CIA timers and VIC to a known state
 	lda #VIC2Colour_DarkGrey

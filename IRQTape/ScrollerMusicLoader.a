@@ -25,12 +25,12 @@ MainSecondLoaderStart
 	txs
 
 	; Init the processor port.
-	; Technically this is already done by the CIA loader but we duplicate this here just make it obvious.
-	ldx #ProcessorPortDDRDefault
-	stx ZPProcessorPortDDR
 	; Turns on cassette motor and removes ROMs
 	lda #%101
 	sta ZPProcessorPort
+	; Technically this is already done by the CIA loader but we duplicate this here just make it obvious.
+	ldx #ProcessorPortDDRDefault
+	stx ZPProcessorPortDDR
 
 	; Clear the screen
 	ldx #0
@@ -337,6 +337,12 @@ UnusedSpace = $0334
 
 	lda TurboTapeBlockLoadError
 	beq .noLoadError
+
+	; Flash the border with a known colour that is very different to the tape loading effect
+	lda VIC2BorderColour
+	and #VIC2Colour_Red
+	eor #VIC2Colour_Red
+	sta VIC2BorderColour
 
 	lda .stopPressed
 	bne .rrwnd

@@ -8,6 +8,9 @@ Music Studio 2.2 is a Windows-based SID music creator software. For an accurate 
 For proper initialization, run MusicStudio2.2\MusicStudioLauncher.exe
 
 Video demonstration: https://www.youtube.com/watch?v=3ApqDIbYPec
+C64: MusicStudio2 play music from BASIC: https://youtu.be/s9IgipH5vXw
+C64: MusicStudio2 play music from machine code: https://youtu.be/NRzS6oS9JLo
+
 
 Any errors regarding Visual Studio runtime can be foxed by installing the redistributable from Microsoft: http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU3/vcredist_x86.exe
 
@@ -529,25 +532,10 @@ These options can be concatenated together and are executed in sequence. For exa
 New in this release
 -------------------
 
-* The ability to insert instrument positions has been added.
+* Export to Oric can be used, which creates a self running Oric TAP file.
+	The conversion is preliminary. More work needs to be done on the instruments export.
+	Oricutron was used to test this output. http://www.petergordon.org.uk/oricutron/
 
-
-* Fixed an issue where sometimes acme and the supporting sources cannot be found by the tool when starting from a msmus file in Explorer.
-
-
-* Command line conversion and play mode. This allows the tool to be used during an automated build, for example load a msmus file, add extra source effect files and export as prg.
-
-
-* When ripping a SID, the AD/SR and first few wav table entries are captured.
-
-
-* Fixed an issue with desktop zoom level and high resolution displays
-
-
-* A moving average calculation for raster time as been added to the standalone player
-
-
-* A a millis/seconds/minutes timer has been added to the standalone prg player
 
 
 

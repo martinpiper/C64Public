@@ -1,0 +1,379 @@
+;main test code
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
+
+	jsr Bus24Bit_Init
+
+	jsr Video_DisableDisplay
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Background , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Chars
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #255
+	sta CIA2PortBRS232
+
+	jsr DisplayData
+
+	jsr Video_WaitVBlank
+
+.l1
+
+	; Simple scroll demo with RType data
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressCharScrollRegisters
+	lda .chars
+	sta CIA2PortBRS232
+	lda .chars+1
+	sta CIA2PortBRS232
+	jsr Video_SetAddressTileScrollRegisters
+	lda .tiles
+	sta CIA2PortBRS232
+	lda .tiles+1
+	sta CIA2PortBRS232
+
+!if 1 {
+	lda .paletteUpdated
+	+lbeq .skipPaletteUpdate
+	lda #0
+	sta .paletteUpdated
+	; Optimal data copy of new faded palette data
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	; Just the tiles palettes
+!for .dc , 5*16*2 {
+	lda PaletteNew + .dc -1
+	sta CIA2PortBRS232
+}
+.skipPaletteUpdate
+}
+
+
+	inc .smc1+1
+.smc1	lda #0
+	and #1
+	bne .oc1
+	inc .chars
+	bne .oc1
+	inc .chars+1
+.oc1
+	inc .tiles
+	bne .oc2
+	inc .tiles+1
+.oc2
+
+!if 1 {
+	; Calculate faded palette data
+	ldx #5*16*2 ; For this many entries
+
+	inc .paletteShift
+	lda .paletteShift
+	lsr
+	lsr
+	and #$3f
+	tay
+	lda .fadeBounceTab,y
+	cmp .lastFadeUsed
+	beq .palEnd	; Cache check
+	sta .lastFadeUsed
+	inc .paletteUpdated
+	cmp #0
+	bne .someValue
+
+	lda #0
+.spl2
+	sta PaletteNew - 1,x
+	dex
+	bne .spl2
+	jmp .palEnd
+
+.someValue
+	cmp #15
+	bne .doFade
+
+.spl3
+	lda GamePalette - 1,x
+	sta PaletteNew - 1,x
+	dex
+	bne .spl3
+	jmp .palEnd
+
+.doFade
+	clc
+	adc #(>.shiftedPalettes) - 1	; -1 since the table doesn't have a zero entry
+	sta .smpl1+2
+
+.spl1
+	ldy GamePalette - 1,x
+.smpl1 lda .shiftedPalettes,y
+	sta PaletteNew - 1,x
+	dex
+	bne .spl1
+.palEnd
+}
+
+	jmp .l1
+.chars !by 0,0
+.tiles !by 0,0
+!if 1 {
+.paletteUpdated !by 0
+.lastFadeUsed !by -1
+.fadeBounceTab
+	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15
+	!fill 32 , 15
+	!by 15 , 14 , 13 , 12 , 11 , 10 , 9 , 8 , 7 , 6 , 5 , 4 , 3 , 2 , 1 , 0
+.paletteShift	!by 0
+!align 255 , 0
+.shiftedPalettes
+!for .shift , 14 {
+!for .palette , 256 {
+!set .rpalette = .palette - 1
+	!set .r = .rpalette & 0x0f
+	!set .g = (.rpalette >> 4) & 0x0f
+	!set .r = (.shift * .r) / 15;
+	!set .g = (.shift * .g) / 15;
+	!by .r | (.g << 4)
+}
+}
+}
+
+.waitVBlankSetPalAddress
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+.setPalAddress
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette + (255*2)
+	jmp Bus24Bit_SetAddressBus
+
+
+!zn
+FillMemory
+	ldx #8*4
+	ldy #0
+.fl1
+	sta CIA2PortBRS232
+	dey
+	bne .fl1
+	dex
+	bne .fl1
+	rts
+
+!if 0 {
+GamePalette
+!for .i , 256 {
+!set .ii = .i - 1
+	+MBus24Bit_MakePaletteRGB .ii * 16 , (255 - .ii) * 16 , .ii / 4
+}
+}
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!macro SpriteOutput2x2 .x , .y , .s0 , .s1 , .s2 , .s3 {
+	ldx #.x
+	ldy #.y
+	jsr .s0
+	ldx #.x+16
+	ldy #.y
+	jsr .s1
+
+	ldx #.x
+	ldy #.y-16
+	jsr .s2
+	ldx #.x+16
+	ldy #.y-16
+	jsr .s3
+}
+
+!macro SpriteOutput6x2 .x , .y , .s0 , .s1 , .s2 , .s3 , .s4 , .s5 , .s6 , .s7 , .s8 , .s9 , .s10 , .s11 {
+	ldx #.x
+	ldy #.y
+	jsr .s0
+	ldx #.x+16
+	ldy #.y
+	jsr .s1
+	ldx #.x+32
+	ldy #.y
+	jsr .s2
+	ldx #.x+48
+	ldy #.y
+	jsr .s3
+	ldx #.x+64
+	ldy #.y
+	jsr .s4
+	ldx #.x+80
+	ldy #.y
+	jsr .s5
+
+	ldx #.x
+	ldy #.y-16
+	jsr .s6
+	ldx #.x+16
+	ldy #.y-16
+	jsr .s7
+	ldx #.x+32
+	ldy #.y-16
+	jsr .s8
+	ldx #.x+48
+	ldy #.y-16
+	jsr .s9
+	ldx #.x+64
+	ldy #.y-16
+	jsr .s10
+	ldx #.x+80
+	ldy #.y-16
+	jsr .s11
+}
+
+DisplayData
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressSprites
+	+SpriteOutput2x2 48 , 60 , EmitSpriteFrame0_0 , EmitSpriteFrame16_0 , EmitSpriteFrame0_16 , EmitSpriteFrame16_16
+	+SpriteOutput2x2 120 , 130 , EmitSpriteFrame0_32 , EmitSpriteFrame16_32 , EmitSpriteFrame0_48 , EmitSpriteFrame16_48
+	+SpriteOutput2x2 200 , 170 , EmitSpriteFrame0_64 , EmitSpriteFrame16_64 , EmitSpriteFrame0_80 , EmitSpriteFrame16_80
+	+SpriteOutput6x2 46 , 48 , EmitSpriteFrame0_112 , EmitSpriteFrame16_112 , EmitSpriteFrame32_112 , EmitSpriteFrame48_112 , EmitSpriteFrame64_112 , EmitSpriteFrame80_112 , EmitSpriteFrame0_128 , EmitSpriteFrame16_128 , EmitSpriteFrame32_128 , EmitSpriteFrame48_128 , EmitSpriteFrame64_128 , EmitSpriteFrame80_128
+
+	+MRLEScreenDataToDefaultCharScreen .Chars_map
+	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+
+	+MBus24Bit_SetAddress_AXY 1 , $a000
+	jsr Video_clearByte
+	; Scrolls
+	jsr Video_clearFourBytes
+	+MDecompressRLEToEBBSAddr .Chars2_map , $04 , $4000
+	+MDecompressRLEToEBBSAddr .Chars2_plane0 , $08 , kBus24Bit_CharScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .Chars2_plane1 , $08 , kBus24Bit_CharScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .Chars2_plane2 , $08 , kBus24Bit_CharScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .Chars2_plane3 , $08 , kBus24Bit_CharScreenPlanes_3
+
+
+	+MRLEScreenDataToDefaultTileScreen .Tiles_map
+	+MRLEPlanesDataToDefaultTileScreen .Tiles_plane0 , .Tiles_plane1 , .Tiles_plane2 , .Tiles_plane3
+
+	+MRLEPlanesDataToDefaultSprite .Sprites_plane0 , .Sprites_plane1 , .Sprites_plane2 , .Sprites_plane3
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo7PaletteData.bin"
+	!fill 512 , 0
+
+PaletteNew
+	!fill 512 , 0
+
+.Chars_map
+	!bin "tmp/Demo7Chars_map.cmp"
+.Chars_plane0
+	!bin "tmp/Demo7Chars_plane0.cmp"
+.Chars_plane1
+	!bin "tmp/Demo7Chars_plane1.cmp"
+.Chars_plane2
+	!bin "tmp/Demo7Chars_plane2.cmp"
+.Chars_plane3
+	!bin "tmp/Demo7Chars_plane3.cmp"
+
+.Chars2_map
+	!bin "tmp/Demo7Chars2_map.cmp"
+.Chars2_plane0
+	!bin "tmp/Demo7Chars2_plane0.cmp"
+.Chars2_plane1
+	!bin "tmp/Demo7Chars2_plane1.cmp"
+.Chars2_plane2
+	!bin "tmp/Demo7Chars2_plane2.cmp"
+.Chars2_plane3
+	!bin "tmp/Demo7Chars2_plane3.cmp"
+
+.Tiles_map
+	!bin "tmp/Demo7Tiles_map.cmp"
+.Tiles_plane0
+	!bin "tmp/Demo7Tiles_plane0.cmp"
+.Tiles_plane1
+	!bin "tmp/Demo7Tiles_plane1.cmp"
+.Tiles_plane2
+	!bin "tmp/Demo7Tiles_plane2.cmp"
+.Tiles_plane3
+	!bin "tmp/Demo7Tiles_plane3.cmp"
+
+
+.Sprites_plane0
+	!bin "tmp/Demo7Sprites_plane0.cmp"
+.Sprites_plane1
+	!bin "tmp/Demo7Sprites_plane1.cmp"
+.Sprites_plane2
+	!bin "tmp/Demo7Sprites_plane2.cmp"
+.Sprites_plane3
+	!bin "tmp/Demo7Sprites_plane3.cmp"
+
+!macro MEmitSpriteFrame_Preserve {
+}
+!macro MEmitSpriteFrame .frame , .colour {
+	lda #.frame
+	sta CIA2PortBRS232
+	lda #.colour
+	sta CIA2PortBRS232
+
+	sty CIA2PortBRS232
+	stx CIA2PortBRS232
+}
+!macro MEmitSpriteFrame_RestoreExit {
+	rts
+}
+!source "tmp\Demo7SpritesSheet.txt.a"

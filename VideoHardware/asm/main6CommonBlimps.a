@@ -1,0 +1,11 @@
+
+.alternate3 lda #1
+	inc .alternate3+1
+	and #7
+	+lbne .o3
+	inc APUData_Blimp1X
+	dec APUData_Blimp2X
+	+MAPU_DataUpdateNumBytes APUData_Blimp1X , 1
+	+MAPU_DataUpdateNumBytes APUData_Blimp2X , 1
+.o3
+
