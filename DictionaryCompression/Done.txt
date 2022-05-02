@@ -1,0 +1,59 @@
+-- Done
+
+* Create test data
+	MakeTestData.bat
+
+
+
+* Think about a compression method where:
+	Reference: https://csdb.dk/forums/?roomid=11&topicid=155662
+	Multiple chunks of compressed data can be referenced and decompressed into any memory address
+	Can reference a dictionary of sequences, with the usual encoded offset and length, to copy data from
+		This dictionary can be sorted with "reference count of sequence * number of bytes".
+	Also encode the usual sequence and length from uncompressed data
+	Also include the usual literal encoding
+	* This is actually really similar to the video delta encoding, except that it should not reference previous data.
+		And that encoding assumes the dictionary is part of the whole memory
+		And assumes the destination address of the data is fixed
+
+
+* Results so far with 1024 byte dictionary:
+	Original->Without dictionary (reset dictionary each time)->Using dictionary
+	Total original data size: 3064 + 2811 + 4228 + 2607 = 12710 bytes
+	Original size: 3064
+	Compressed size: 2190
+	Compressed size: 1581
+	Original size: 2811
+	Compressed size: 2278
+	Compressed size: 1909
+	Original size: 4228
+	Compressed size: 2969
+	Compressed size: 2641
+	Original size: 2607
+	Compressed size: 2051
+	Compressed size: 1733
+
+	Compressed without dictionary: 2190 + 2278 + 2969 + 2051 = 9488 bytes
+	Compressed with 1024 byte dictionary: 1581 + 1909 + 2641 + 1733 = 7864 bytes
+	Bytes saved in compressed data due to dictionary: 9488 - 7864 = 1624 bytes
+		- 1024 bytes from original dictionary = 600 bytes
+
+
+
+* Need some small data tests
+	Using byte[] not from files
+
+
+
+* compression.optimiseDictionary();
+	This causes the compression to get worse. Tried ascending and descending ordering by dictionaryUsage[]
+	So obviously the total ordering of the data in the dictionary is important
+	Adding a dictionary UID to preserve spans with varying usage produces some slight saving:
+		** With dictionary
+		1581 + 1909 + 2641 + 1733 = 7864
+		** With optimiseDictionary
+		1586 + 1902 + 2639 + 1729 = 7856
+
+
+
+* The "is dictionary" flag is moved until after the offset/length encoded values. This make the 6502 decompression code more optimised.

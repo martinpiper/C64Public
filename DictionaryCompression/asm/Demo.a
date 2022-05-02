@@ -1,0 +1,140 @@
+;Demo test code
+
+!source "stdlib/stdlib.a"
+!to "target\Demo.prg", cbm
+!sl "target\Demo.map"
+!sal
+!svl "target\Demo.lbl"
+!pdb "target\Demo.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib/PETSCII.a"
+
+; Where we want to decompress to
+MusicInit = $8000
+
+*=$400
+	jmp start
+	
+!source "target\FingerPrint.a"
+
+*=$800
+start
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	+InitKERNALStringDisplay_AXY
+	jsr CLRSCR
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreen_A
+	+MACRODisableCursorFlash_A
+
+	+MBASICTextPrint text
+
+	+SetDefaultScreenLowerCase_A
+
+.l1
+	sei
+	lda #0
+	sta SIDVolumeFilter
+
+	; Initialise what to decompress
+	jsr DecompInit
+.smMus	lda #0
+	jsr DecompDo
+
+	; Init the decompressed music player with the first tune
+	lda #0
+	jsr MusicInit
+
+	+WaitForFireRelease_A
+.l2
+	+MACROWaitForRaster 100
+	inc VIC2BorderColour
+
+	; Play the music
+	jsr MusicInit+3
+
+	dec VIC2BorderColour
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .l2
+
+	; Chooses tune 0-7
+	inc .smMus+1
+	lda .smMus+1
+	and #7
+	sta .smMus+1
+
+	jmp .l1
+
+!source "stdlib/Initialise.a"
+
+text
+!by CHR_LightRed
+!by CHR_Clear
+!tx "Press fire to start different music"
+!by CHR_Return
+!by 0
+
+DecompInit
+	; Setup where the dictionary is
+	+MWordValueTo_AX Dictionary
+	jsr DictionaryDecompression_SetDictionary
+
+	; Setup the address to decompress to
+	+MWordValueTo_AX MusicInit
+	jsr DictionaryDecompression_InitStore
+	rts
+
+; Entry: A = Tune index ("the file")
+DecompDo
+	asl
+	tay
+	lda FileIndexTab,y
+	ldx FileIndexTab+1,y
+	; Actual decompression
+	jsr DictionaryDecompression_Decompress
+
+	rts
+
+
+FileIndexTab
+	+MLittleEndian16Bit Data_file0
+	+MLittleEndian16Bit Data_file1
+	+MLittleEndian16Bit Data_file2
+	+MLittleEndian16Bit Data_file3
+	+MLittleEndian16Bit Data_file4
+	+MLittleEndian16Bit Data_file5
+	+MLittleEndian16Bit Data_file6
+	+MLittleEndian16Bit Data_file3
+
+!source "asm/DictionaryDecompression.a"
+
+Data_file0
+!bin "target/compressed_Dinosaur_Disco.prg.cmp"
+Data_file1
+!bin "target/compressed_Lobster.prg.cmp"
+Data_file2
+!bin "target/compressed_MeanStreak.prg.cmp"
+Data_file3
+!bin "target/compressed_Mule.prg.cmp"
+Data_file4
+!bin "target/compressed_Nintendo.prg.cmp"
+Data_file5
+!bin "target/compressed_Turrican remixed.prg.cmp"
+Data_file6
+!bin "target/compressed_WizballGuitar.prg.cmp"
+
+
+!if * > MusicInit {
+	!error "oops the compressed data has stepped into the decompression memory space"
+}
+
+; Put the dictionary here to demonstrate it doesn't need to be near the compressed data or the destination memory
+; It is also easier to see this memory being accessed in a memory inspection viewer
+*=$c000
+Dictionary
+!bin "target/compressed.dic"

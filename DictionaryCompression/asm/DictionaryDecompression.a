@@ -1,0 +1,136 @@
+!zn
+
+; Entry: A/X	lo/hi of dictionary in memory
+DictionaryDecompression_SetDictionary
+	sta .dictionaryAddr
+	stx .dictionaryAddr+1
+	rts
+
+; Entry: A/X	lo/hi of address to decompress to
+DictionaryDecompression_InitStore
+	sta .writeByte+1
+	stx .writeByte+2
+	rts
+
+; Entry: A/X	lo/hi of address of the compressed data
+DictionaryDecompression_Decompress
+	sta .getByte+1
+	stx .getByte+2
+
+	ldx #$80	; Flag to say, get next byte and bit
+.l1
+	jsr .GetNextBitIntoCarryKillA
+	bcs .doCopy
+
+	; Literal
+	jsr .getByte
+	jsr .writeByte
+	jmp .l1
+
+.doCopy
+
+	; Get the offset
+	lda #0
+	sta .workOffset+1
+.go1
+	jsr .GetNextBitIntoCarryKillA
+	rol .workOffset+1
+	bcs .fastExit
+
+	jsr .GetNextBitIntoCarryKillA
+	bcs .go1
+	jsr .getByte
+	sta .workOffset
+
+	; Get Length
+	lda #0
+	sta .workLen
+	sta .workLen+1
+.gl1
+	jsr .GetNextBitIntoCarryKillA
+	rol .workLen
+	rol .workLen+1
+	bcs .fastExit
+
+	jsr .GetNextBitIntoCarryKillA
+	bcs .gl1
+
+	jsr .GetNextBitIntoCarryKillA
+	bcs .isDictionary
+	; Copy case
+	lda .writeByte+1
+	clc ; Extra -1 adjust
+	sbc .workOffset
+	sta .copyByte+1
+	lda  .writeByte+2
+	sbc .workOffset+1
+	sta .copyByte+2
+	jmp .dcl1
+.isDictionary
+	lda .dictionaryAddr
+	clc	; No adjust here
+	adc .workOffset
+	sta .copyByte+1
+	lda .dictionaryAddr+1
+	adc .workOffset+1
+	sta .copyByte+2
+.dcl1
+	jsr .copyByte
+	dec .workLen
+	lda .workLen
+	cmp #$ff
+	bne .dcl1
+	dec .workLen+1
+	lda .workLen
+	cmp #$ff
+	bne .dcl1
+	jmp .l1
+
+.workOffset !by 0,0
+.workLen !by 0,0
+
+
+.fastExit
+	rts
+
+.dictionaryAddr !by 0,0
+
+.copyByte
+	lda $1234
+	inc .copyByte+1
+	bne .o3
+	inc .copyByte+2
+.o3
+; Note the fall through code
+.writeByte
+	sta $1234
+	inc .writeByte+1
+	bne .o1
+	inc .writeByte+2
+.o1
+	rts
+
+.getByte
+	lda $1234
+	inc .getByte+1
+	bne .o2
+	inc .getByte+2
+.o2
+	rts
+
+.GetNextBitIntoCarryKillA
+	cpx #$80
+	beq .notGotBitsC
+	txa
+	asl
+	tax
+	rts
+.notGotBitsC
+	jsr .getByte
+	; Get carry
+	sec
+	; Set lower flag bit that eventually becomes $80 while getting the upper bit at the same time
+	rol
+	tax
+	rts
+

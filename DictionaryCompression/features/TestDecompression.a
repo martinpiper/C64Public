@@ -1,0 +1,56 @@
+!sal
+!source "stdlib/stdlib.a"
+MusicInit = $8000
+*=$400
+init
+	+MWordValueTo_AX Dictionary
+	jsr DictionaryDecompression_SetDictionary
+	+MWordValueTo_AX MusicInit
+	jsr DictionaryDecompression_InitStore
+	rts
+
+	;Entry: A = file "name" index into FileIndexTab
+decompress
+	asl
+	tay
+	lda FileIndexTab,y
+	ldx FileIndexTab+1,y
+	jsr DictionaryDecompression_Decompress
+
+	rts
+
+!source "asm/DictionaryDecompression.a"
+
+
+
+FileIndexTab
+	+MLittleEndian16Bit Data_file0
+	+MLittleEndian16Bit Data_file1
+	+MLittleEndian16Bit Data_file2
+	+MLittleEndian16Bit Data_file3
+	+MLittleEndian16Bit Data_file4
+	+MLittleEndian16Bit Data_file5
+	+MLittleEndian16Bit Data_file6
+
+Dictionary
+!bin "target/compressed.dic"
+
+Data_file0
+!bin "target/compressed_Dinosaur_Disco.prg.cmp"
+Data_file1
+!bin "target/compressed_Lobster.prg.cmp"
+Data_file2
+!bin "target/compressed_MeanStreak.prg.cmp"
+Data_file3
+!bin "target/compressed_Mule.prg.cmp"
+Data_file4
+!bin "target/compressed_Nintendo.prg.cmp"
+Data_file5
+!bin "target/compressed_Turrican remixed.prg.cmp"
+Data_file6
+!bin "target/compressed_WizballGuitar.prg.cmp"
+
+
+!if * > MusicInit {
+	!error "oops"
+}
