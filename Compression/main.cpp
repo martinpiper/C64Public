@@ -587,6 +587,8 @@ int main(int argc,char **argv)
 
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+
+				outSize -= 2;	//	For the 2 byte original size header
 			}
 			else if (useRNZipMode && maxMode)
 			{

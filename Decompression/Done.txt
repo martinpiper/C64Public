@@ -89,3 +89,9 @@
 		Use LauncherAddress_endOfMemoryMinus256 as it is valid now
 		Construct tests to check that the end of memory is not corrupted
 	Done: Added -t <address>
+
+
+
+* This fails to even decompress properly at the start of the code at $400, why? C:\Work\C64\Scroller>..\bin\LZMPi.exe -c64rb ScrollerOrig.prg Scroller.prg 1024 && Scroller.prg
+	Is -c64rb unsupported?!	- Not supported
+	Memory alignment with -c64mr/-c64mrb issue fixed
