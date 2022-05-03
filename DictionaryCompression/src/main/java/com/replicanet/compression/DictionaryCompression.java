@@ -162,14 +162,14 @@ public class DictionaryCompression {
         writeBitFlag(false);
     }
 
-    public int compressFile(String sourceFilename, String destinationFilename , int skipStart) throws IOException {
+    public int compressFile(String sourceFilename, String destinationFilename , int skipStart , int bitsTweakCopy , int bitsTweakDictionary) throws IOException {
         Path inPath = Paths.get(sourceFilename);
         byte[] data = Files.readAllBytes(inPath);
         if (skipStart > 0) {
             data = Arrays.copyOfRange(data, skipStart, data.length);
         }
 
-        byte[] newOut = compressData(data);
+        byte[] newOut = compressData(data , bitsTweakCopy , bitsTweakDictionary);
 
         Path outPath = Paths.get(destinationFilename);
         Files.write(outPath, newOut);
@@ -177,7 +177,7 @@ public class DictionaryCompression {
         return newOut.length;
     }
 
-    public byte[] compressData(byte[] data) {
+    public byte[] compressData(byte[] data, int bitsTweakCopy , int bitsTweakDictionary) {
         originalSize = data.length;
 
         allocateOutput(data.length);
@@ -199,7 +199,7 @@ public class DictionaryCompression {
                             // Note: Length is zero based and the deltaPos is adjusted -1
                             int deltaPos = (pos - searchPos) - 1;
                             int thisLen = checkOffset + 1;
-                            int thisBits = 2 + bitsForValue(deltaPos >> 8) + 8 + bitsForValue(thisLen - 1);
+                            int thisBits = 2 + bitsForValue(deltaPos >> 8) + 8 + bitsForValue(thisLen - 1) + bitsTweakCopy;
                             int thisSave = (thisLen * 9) - thisBits;
                             if (thisSave > bestSave) {
                                 bestPos = deltaPos;
@@ -225,7 +225,7 @@ public class DictionaryCompression {
                             // Note: Length is zero based and the deltaPos is adjusted -1
                             int deltaPos = searchPos;
                             int thisLen = checkOffset + 1;
-                            int thisBits = 2 + bitsForValue(deltaPos >> 8) + 8 + bitsForValue(thisLen - 1);
+                            int thisBits = 2 + bitsForValue(deltaPos >> 8) + 8 + bitsForValue(thisLen - 1) + bitsTweakDictionary;
                             int thisSave = (thisLen * 9) - thisBits;
                             if (thisSave > bestSave) {
                                 bestPos = deltaPos;
@@ -316,7 +316,7 @@ public class DictionaryCompression {
         Files.write(outPath, newOut);
     }
 
-    public void optimiseDictionary() {
+    public void optimiseDictionary(int newLength) {
         int maxUsage = 0;
 
         for (int i = 0; i < dictionaryUsed ; i++) {
@@ -325,9 +325,9 @@ public class DictionaryCompression {
             }
         }
 
-        byte newDictionary[] = new byte[dictionary.length];
-        int newDictionaryUsage[] = new int[dictionaryUsage.length];
-        int newDictionaryUID[] = new int[dictionaryUID.length];
+        byte newDictionary[] = new byte[newLength];
+        int newDictionaryUsage[] = new int[newLength];
+        int newDictionaryUID[] = new int[newLength];
 
         // Taking the most used entries, preserve the ordering and spans, but move them towards the start of the dictionary
         // This causes shorter offset codes for more frequently used sections
@@ -339,13 +339,15 @@ public class DictionaryCompression {
                     int thisUID = dictionaryUID[i];
                     for (int j = 0 ; j < dictionaryUsed ; j++) {
                         if (dictionaryUID[j] == thisUID) {
-                            newDictionary[idx] = dictionary[j];
-                            newDictionaryUsage[idx] = dictionaryUsage[j];
-                            newDictionaryUID[idx] = dictionaryUID[j];
+                            if (idx < newLength) {
+                                newDictionary[idx] = dictionary[j];
+                                newDictionaryUsage[idx] = dictionaryUsage[j];
+                                newDictionaryUID[idx] = dictionaryUID[j];
+                                idx++;
+                            }
                             // Flag the old entry as not used, since it has been copied
                             dictionaryUsage[j] = -1;
                             dictionaryUID[j] = -1;
-                            idx++;
                             i = j;
                         }
                     }
@@ -354,7 +356,7 @@ public class DictionaryCompression {
             thisUsage--;
         }
 
-        assert(idx == dictionaryUsed);
+        dictionaryUsed = idx;
         dictionary = newDictionary;
         dictionaryUsage = newDictionaryUsage;
         dictionaryUID = newDictionaryUID;

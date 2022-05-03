@@ -6,8 +6,8 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>target\FingerPrint.a
 
 ..\acme.exe --lib ..\ -v4 --msvc asm\Demo.a
 if not exist target\Demo.prg goto error
-..\bin\LZMPi.exe -c64e target\Demo.prg target\Demo.prg $400 >t.txt
-rem ..\bin\LZMPi.exe -c64mr target\Demo.prg target\Demo.prg $400 >t.txt
+rem ..\bin\LZMPi.exe -c64e target\Demo.prg target\Demo.prg $800 >target\t.txt
+..\bin\LZMPi.exe -c64mr target\Demo.prg target\Demo.prg $800 >target\t.txt
 if not exist target\Demo.prg goto error
 goto end
 :error

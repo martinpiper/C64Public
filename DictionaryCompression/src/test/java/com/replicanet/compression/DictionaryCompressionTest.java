@@ -273,8 +273,9 @@ public class DictionaryCompressionTest {
 
         compression.dictionaryUsed = 5;
 
-        compression.optimiseDictionary();
+        compression.optimiseDictionary(512);
 
+        assertThat(compression.dictionaryUsed, is(equalTo(5)));
         assertThat(compression.dictionary[0], is(equalTo((byte)0x14)));
         assertThat(compression.dictionaryUsage[0], is(equalTo(4)));
         assertThat(compression.dictionary[1], is(equalTo((byte)0x15)));
@@ -292,13 +293,13 @@ public class DictionaryCompressionTest {
         compression.dictionaryInit(1024);
 
         org.apache.commons.io.HexDump.dump(inputData , 0, System.out ,0);
-        byte outputData[] = compression.compressData(inputData);
+        byte outputData[] = compression.compressData(inputData, 0 , 0);
         org.apache.commons.io.HexDump.dump(outputData , 0, System.out ,0);
         reportCompression(compression, outputData.length);
 
         assertThat(outputData,is(equalTo(expected)));
 
-        byte outputData2[] = compression.compressData(inputData);
+        byte outputData2[] = compression.compressData(inputData, 0 , 0);
         org.apache.commons.io.HexDump.dump(outputData2 , 0, System.out ,0);
         reportCompression(compression, outputData2.length);
 
@@ -315,7 +316,7 @@ public class DictionaryCompressionTest {
     }
 
     private void commonFileCompressionTest(DictionaryCompression compression, String sourceFilename, String outputFile) throws IOException {
-        int compressedSize = compression.compressFile(sourceFilename, outputFile, 2);
+        int compressedSize = compression.compressFile(sourceFilename, outputFile, 2, 0, 0);
         reportCompression(compression, compressedSize);
 
         Path inPath = Paths.get(sourceFilename);
@@ -337,7 +338,7 @@ public class DictionaryCompressionTest {
     public void compressFile() throws IOException {
         totalCompressedSize = 0;
         DictionaryCompression compression = new DictionaryCompression();
-        compression.dictionaryInit(1024);
+        compression.dictionaryInit(1024 * 20);
 
         if (true) {
 //            compression.dictionaryInit(1024);
@@ -384,8 +385,10 @@ public class DictionaryCompressionTest {
         }
 
         System.out.println("** optimiseDictionary: Start");
-        compression.optimiseDictionary();
+        compression.optimiseDictionary(1024);
         System.out.println("** optimiseDictionary: End");
+
+        totalCompressedSize = 0;
 
         if (true) {
             commonFileCompressionTest(compression,"TestData/Dinosaur_Disco.prg", "target/Dinosaur_Disco.cmp3");

@@ -10,29 +10,34 @@
 !ct pet
 
 !source "stdlib/PETSCII.a"
+Initialise_NoPreserveStack = 1
 
 ; Where we want to decompress to
 MusicInit = $8000
 
-*=$400
-	jmp start
-	
-!source "target\FingerPrint.a"
 
 *=$800
+	jmp start
+
+!source "target\FingerPrint.a"
+
 start
 	lda #ProcessorPortDefault
 	jsr InitialiseMachine
 
+	+M_RAMTAS	; Initialise lower memory for PETSCII
 	+InitKERNALStringDisplay_AXY
+	jsr CINT
+	+MACRODisableCursorFlash_A
+
+	+MACROCIAIRQControlDisable_A
+	+BlankScreenBorderSpriteSound_A
 	jsr CLRSCR
 	+MACROWaitForTheLastScan_A
-	+SetDefaultScreen_A
-	+MACRODisableCursorFlash_A
+	+SetDefaultScreenLowerCase_A
 
 	+MBASICTextPrint text
 
-	+SetDefaultScreenLowerCase_A
 
 .l1
 	sei

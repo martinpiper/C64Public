@@ -57,3 +57,11 @@
 
 
 * The "is dictionary" flag is moved until after the offset/length encoded values. This make the 6502 decompression code more optimised.
+
+
+
+* After more files get added and the dictionary is full, scan for and prune dictionary data that isn't well used. To free up entries for more file later on.
+	Can do this for all but the last file.
+	Then re-run the compression again to try to fill the dictionary?
+		Is a full dictionary after a prune pass the most efficient option?
+	** See: bestLargeThenSmall , bestBitsTweakCopy , bestBitsTweakDictionary
