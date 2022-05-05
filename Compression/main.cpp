@@ -590,6 +590,11 @@ int main(int argc,char **argv)
 
 				outSize -= 2;	//	For the 2 byte original size header
 			}
+			else if (!maxMode && useRLE)
+			{
+				printf("!!RLE and non-max mode not supported!!\n");
+				exit(-1);
+			}
 			else if (useRNZipMode && maxMode)
 			{
 				theC64Code = sC64DecompNoEffectMaxRNZip_Data;

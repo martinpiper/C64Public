@@ -316,7 +316,7 @@ public class DictionaryCompressionTest {
     }
 
     private void commonFileCompressionTest(DictionaryCompression compression, String sourceFilename, String outputFile) throws IOException {
-        int compressedSize = compression.compressFile(sourceFilename, outputFile, 2, 0, 0);
+        int compressedSize = compression.compressFile(true, sourceFilename, outputFile, 2, 0, 0);
         reportCompression(compression, compressedSize);
 
         Path inPath = Paths.get(sourceFilename);

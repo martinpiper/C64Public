@@ -162,7 +162,7 @@ public class DictionaryCompression {
         writeBitFlag(false);
     }
 
-    public int compressFile(String sourceFilename, String destinationFilename , int skipStart , int bitsTweakCopy , int bitsTweakDictionary) throws IOException {
+    public int compressFile(boolean save, String sourceFilename, String destinationFilename , int skipStart , int bitsTweakCopy , int bitsTweakDictionary) throws IOException {
         Path inPath = Paths.get(sourceFilename);
         byte[] data = Files.readAllBytes(inPath);
         if (skipStart > 0) {
@@ -171,8 +171,10 @@ public class DictionaryCompression {
 
         byte[] newOut = compressData(data , bitsTweakCopy , bitsTweakDictionary);
 
-        Path outPath = Paths.get(destinationFilename);
-        Files.write(outPath, newOut);
+        if (save) {
+            Path outPath = Paths.get(destinationFilename);
+            Files.write(outPath, newOut);
+        }
 
         return newOut.length;
     }

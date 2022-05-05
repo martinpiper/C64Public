@@ -64,4 +64,26 @@
 	Can do this for all but the last file.
 	Then re-run the compression again to try to fill the dictionary?
 		Is a full dictionary after a prune pass the most efficient option?
+
+
+
+* Include automatic aggressive compression searching.
+	For a list of files and dictionary size
+		Shuffle the files
+		Try different dictionary optimisation
+		Try dictionary pruning with various lower thresholds and before which files
+		Try adding small tweak value to the length calculation
 	** See: bestLargeThenSmall , bestBitsTweakCopy , bestBitsTweakDictionary
+
+
+
+* Dictionary optimise, ignore entries with dictionaryUsage = 0
+	When adding make dictionaryUsage range 0
+	Try using increaseDictionaryUsageForSpan
+	Then optimiseDictionary() "thisUsage > 0" not "thisUsage >= 0"
+	This should remove redundant bytes from the dictionary
+	** Not better. Probably because it removes the chance of some data being referenced by the last file cycling around to the first file.
+
+
+
+* Using ExecutorService and threads to try various compression options
