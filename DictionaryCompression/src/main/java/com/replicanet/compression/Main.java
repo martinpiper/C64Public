@@ -14,19 +14,22 @@ public class Main {
     static int bestCompressedSize = 0;
     static int bestBitsTweakCopy = 0;
     static int bestBitsTweakDictionary = 0;
+    static boolean bestDictionaryUsageType = false;
 
     public static synchronized void updateDetails(
             boolean lbestOptimiseDictionary,
             boolean lbestLargeThenSmall,
             int lbestCompressedSize,
             int lbestBitsTweakCopy,
-            int lbestBitsTweakDictionary
+            int lbestBitsTweakDictionary,
+            boolean lbestDictionaryUsageType
     ) {
         bestOptimiseDictionary = lbestOptimiseDictionary;
         bestLargeThenSmall = lbestLargeThenSmall;
         bestCompressedSize = lbestCompressedSize;
         bestBitsTweakCopy = lbestBitsTweakCopy;
         bestBitsTweakDictionary = lbestBitsTweakDictionary;
+        bestDictionaryUsageType = lbestDictionaryUsageType;
     }
     public static void main(String args[]) throws Exception {
         if (args.length < 4) {
@@ -41,13 +44,13 @@ public class Main {
 
         System.out.println("Trying compression options...");
         // First pass
-        updateDetails(false , false , 0 , 0 , 0);
-        bestCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip , false , false , 0 , 0);
+        updateDetails(false , false , 0 , 0 , 0 , true);
+        bestCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip , false , false , 0 , 0 , true);
 
         // Try options
         ExecutorService es = Executors.newCachedThreadPool();
-        for (int bitsTweakDictionary = 0 ; bitsTweakDictionary < 5 ; bitsTweakDictionary++) {
-            for (int bitsTweakCopy = 0; bitsTweakCopy < 5; bitsTweakCopy++) {
+        for (int bitsTweakDictionary = -2 ; bitsTweakDictionary < 5 ; bitsTweakDictionary++) {
+            for (int bitsTweakCopy = -2 ; bitsTweakCopy < 5; bitsTweakCopy++) {
 
                 int finalBitsTweakCopy = bitsTweakCopy;
                 int finalBitsTweakDictionary = bitsTweakDictionary;
@@ -57,9 +60,26 @@ public class Main {
 //                        System.out.println("Thread: " + Thread.currentThread().getId());
                         int totalCompressedSize = 0;
                         try {
-                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, false, finalBitsTweakCopy, finalBitsTweakDictionary);
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, false, finalBitsTweakCopy, finalBitsTweakDictionary , true);
                             if (totalCompressedSize < bestCompressedSize) {
-                                updateDetails(true , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary);
+                                updateDetails(true , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , true);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                es.execute(runnable);
+
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+//                        System.out.println("Thread: " + Thread.currentThread().getId());
+                        int totalCompressedSize = 0;
+                        try {
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, false, finalBitsTweakCopy, finalBitsTweakDictionary , false);
+                            if (totalCompressedSize < bestCompressedSize) {
+                                updateDetails(true , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , false);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -75,9 +95,26 @@ public class Main {
 //                        System.out.println("Thread: " + Thread.currentThread().getId());
                         int totalCompressedSize = 0;
                         try {
-                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, true, finalBitsTweakCopy, finalBitsTweakDictionary);
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, true, finalBitsTweakCopy, finalBitsTweakDictionary , true);
                             if (totalCompressedSize < bestCompressedSize) {
-                                updateDetails(true , true , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary);
+                                updateDetails(true , true , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , true);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                es.execute(runnable);
+
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+//                        System.out.println("Thread: " + Thread.currentThread().getId());
+                        int totalCompressedSize = 0;
+                        try {
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, true, true, finalBitsTweakCopy, finalBitsTweakDictionary , false);
+                            if (totalCompressedSize < bestCompressedSize) {
+                                updateDetails(true , true , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , false);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -93,9 +130,26 @@ public class Main {
 //                        System.out.println("Thread: " + Thread.currentThread().getId());
                         int totalCompressedSize = 0;
                         try {
-                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, false, false, finalBitsTweakCopy, finalBitsTweakDictionary);
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, false, false, finalBitsTweakCopy, finalBitsTweakDictionary , true);
                             if (totalCompressedSize < bestCompressedSize) {
-                                updateDetails(false , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary);
+                                updateDetails(false , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , true);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                es.execute(runnable);
+
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+//                        System.out.println("Thread: " + Thread.currentThread().getId());
+                        int totalCompressedSize = 0;
+                        try {
+                            totalCompressedSize = runCompressionPass(false, args, dictionarySize, outputFilename, skip, false, false, finalBitsTweakCopy, finalBitsTweakDictionary , false);
+                            if (totalCompressedSize < bestCompressedSize) {
+                                updateDetails(false , false , totalCompressedSize , finalBitsTweakCopy, finalBitsTweakDictionary , false);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -110,11 +164,11 @@ public class Main {
         es.shutdown();
         es.awaitTermination(5 , TimeUnit.MINUTES);
 
-        System.out.println("Final pass... " + bestOptimiseDictionary + " " + bestLargeThenSmall + " " + bestBitsTweakCopy + " " + bestBitsTweakDictionary);
-        runCompressionPass(true, args, dictionarySize, outputFilename, skip , bestOptimiseDictionary , bestLargeThenSmall , bestBitsTweakCopy , bestBitsTweakDictionary);
+        System.out.println("Final pass... " + bestOptimiseDictionary + " " + bestLargeThenSmall + " " + bestBitsTweakCopy + " " + bestBitsTweakDictionary + " " + bestDictionaryUsageType);
+        runCompressionPass(true, args, dictionarySize, outputFilename, skip , bestOptimiseDictionary , bestLargeThenSmall , bestBitsTweakCopy , bestBitsTweakDictionary , bestDictionaryUsageType);
     }
 
-    private static int runCompressionPass(boolean save , String[] args, int dictionarySize, String outputFilename, int skip , boolean optimiseDictionary , boolean largeThenSmallDictionary , int bitsTweakCopy , int bitsTweakDictionary) throws IOException {
+    private static int runCompressionPass(boolean save , String[] args, int dictionarySize, String outputFilename, int skip , boolean optimiseDictionary , boolean largeThenSmallDictionary , int bitsTweakCopy , int bitsTweakDictionary , boolean dictionaryUsageType) throws IOException {
         DictionaryCompression compression = new DictionaryCompression();
         if (largeThenSmallDictionary) {
             compression.dictionaryInit(dictionarySize * 128);
@@ -126,7 +180,7 @@ public class Main {
         if (dictionarySize > 0) {
             for (int i = 3; i < args.length; i++) {
                 File file = new File(args[i]);
-                totalCompressedSize += compression.compressFile(false, args[i], outputFilename + "_" + file.getName() + ".cmp", skip, bitsTweakCopy, bitsTweakDictionary);
+                totalCompressedSize += compression.compressFile(false, args[i], outputFilename + "_" + file.getName() + ".cmp", skip, bitsTweakCopy, bitsTweakDictionary , dictionaryUsageType);
             }
         }
 
@@ -137,7 +191,7 @@ public class Main {
         totalCompressedSize = 0;
         for (int i = 3; i < args.length; i++) {
             File file = new File(args[i]);
-            totalCompressedSize += compression.compressFile(save, args[i], outputFilename + "_" + file.getName() + ".cmp", skip, bitsTweakCopy, bitsTweakDictionary);
+            totalCompressedSize += compression.compressFile(save, args[i], outputFilename + "_" + file.getName() + ".cmp", skip, bitsTweakCopy, bitsTweakDictionary , dictionaryUsageType);
         }
 
         if (save) {

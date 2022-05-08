@@ -1,9 +1,9 @@
-Dictionary Compression
-======================
+Dictionary Compression (LZMPiED)
+================================
 
 Reference: https://csdb.dk/forums/?roomid=11&topicid=155662
 
-A variant of literal/copy compression that uses an extra common dictionary calculated from multiple input files, to reduce overall compressed data size.
+A variant of literal/copy compression (LZMPiE) that uses an extra common dictionary  (hence LZMPiED) calculated from multiple input files, to reduce overall compressed data size.
 
 The build for this tool is also a good demonstration on how to unit test 6502 code along with java code.
 

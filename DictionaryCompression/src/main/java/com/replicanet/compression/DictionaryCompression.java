@@ -7,9 +7,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class DictionaryCompression {
-    byte dictionary[];
-    int dictionaryUsage[];
-    int dictionaryUID[];
+    byte[] dictionary;
+    int[] dictionaryUsage;
+    int[] dictionaryUID;
     int dictionaryNewID;
 
     public int getDictionaryUsed() {
@@ -18,7 +18,7 @@ public class DictionaryCompression {
 
     int dictionaryUsed = 0;
 
-    byte currentRange[];
+    byte[] currentRange;
     int currentRangePos = 0;
 
     public int getOriginalSize() {
@@ -43,7 +43,7 @@ public class DictionaryCompression {
     int flagsPos;
     int flagsCount;
 
-    byte out[];
+    byte[] out;
     int outPos;
 
     void addLiteral(byte data) {
@@ -145,31 +145,23 @@ public class DictionaryCompression {
         bitMask >>= 1;
 
         while (bitMask > 1) {
-            if ((value & bitMask) == bitMask) {
-                writeBitFlag(true);
-            } else {
-                writeBitFlag(false);
-            }
+            writeBitFlag((value & bitMask) == bitMask);
             bitMask >>= 1;
             writeBitFlag(true);
         }
 
-        if ((value & 0x01) == 0x01) {
-            writeBitFlag(true);
-        } else {
-            writeBitFlag(false);
-        }
+        writeBitFlag((value & 0x01) == 0x01);
         writeBitFlag(false);
     }
 
-    public int compressFile(boolean save, String sourceFilename, String destinationFilename , int skipStart , int bitsTweakCopy , int bitsTweakDictionary) throws IOException {
+    public int compressFile(boolean save, String sourceFilename, String destinationFilename , int skipStart , int bitsTweakCopy , int bitsTweakDictionary , boolean dictionaryUsageType) throws IOException {
         Path inPath = Paths.get(sourceFilename);
         byte[] data = Files.readAllBytes(inPath);
         if (skipStart > 0) {
             data = Arrays.copyOfRange(data, skipStart, data.length);
         }
 
-        byte[] newOut = compressData(data , bitsTweakCopy , bitsTweakDictionary);
+        byte[] newOut = compressData(data , bitsTweakCopy , bitsTweakDictionary, dictionaryUsageType);
 
         if (save) {
             Path outPath = Paths.get(destinationFilename);
@@ -179,7 +171,7 @@ public class DictionaryCompression {
         return newOut.length;
     }
 
-    public byte[] compressData(byte[] data, int bitsTweakCopy , int bitsTweakDictionary) {
+    public byte[] compressData(byte[] data, int bitsTweakCopy , int bitsTweakDictionary , boolean dictionaryUsageType) {
         originalSize = data.length;
 
         allocateOutput(data.length);
@@ -246,8 +238,11 @@ public class DictionaryCompression {
                     flushCurrentRange();
                     writeBitFlag(true);
                     if (isDictionary) {
-                        increaseDictionaryUsageForUID(dictionaryUID[bestPos]);  // This option marginally better with test data
-//                        increaseDictionaryUsageForSpan(bestPos , bestPos + bestLen);
+                        if (dictionaryUsageType) {
+                            increaseDictionaryUsageForUID(dictionaryUID[bestPos]);  // This option marginally better with test data
+                        } else {
+                            increaseDictionaryUsageForSpan(bestPos , bestPos + bestLen);
+                        }
                     }
                     encodeForValue(bestPos>>8);
                     writeByte((byte)bestPos);
@@ -327,9 +322,9 @@ public class DictionaryCompression {
             }
         }
 
-        byte newDictionary[] = new byte[newLength];
-        int newDictionaryUsage[] = new int[newLength];
-        int newDictionaryUID[] = new int[newLength];
+        byte[] newDictionary = new byte[newLength];
+        int[] newDictionaryUsage = new int[newLength];
+        int[] newDictionaryUID = new int[newLength];
 
         // Taking the most used entries, preserve the ordering and spans, but move them towards the start of the dictionary
         // This causes shorter offset codes for more frequently used sections
