@@ -1,0 +1,53 @@
+; http://www.6502.org/tutorials/compare_instructions.html
+; Use of Branch Instructions with Compare
+
+; Unsigned
+
+!macro IfURegLessThanVal .goto {
+   bcc .goto
+}
+
+!macro IfURegEqualToVal .goto {
+   beq .goto
+}
+
+!macro IfURegGreaterThanVal .goto {
+   beq .skip
+   bcs .goto
+.skip
+}
+
+!macro IfURegLessThanOrEqualToVal .goto {
+   bcc .goto
+   beq .goto
+}
+
+!macro IfURegGreaterThanOrEqualToVal .goto {
+   bcs .goto
+}
+
+
+; Signed
+
+!macro IfRegLessThanVal .goto {
+   bmi .goto
+}
+
+!macro IfRegEqualToVal .goto {
+   beq .goto
+}
+
+!macro IfRegGreaterThanVal .goto {
+   beq .skip
+   bpl .goto
+.skip
+}
+
+!macro IfRegLessThanOrEqualToVal .goto {
+   bmi .goto
+   beq .goto
+}
+
+!macro IfRegGreaterThanOrEqualToVal .goto {
+   bpl .goto
+}

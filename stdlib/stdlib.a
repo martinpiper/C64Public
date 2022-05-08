@@ -9,7 +9,7 @@ kSize_8K	= 8 * 1024
 kSize_16K	= 16 * 1024
 
 
-; Zero page
+; Zeropage
 
 ; Each enabled bit sets read and write on the processor port (ZPProcessorPort) otherwise the value can just be read.
 ; Default: $2F, %101111
@@ -1088,10 +1088,12 @@ RasterLinesPALC64		= 312
 
 !macro InitKERNALIO_AXY {
 	jsr IOINIT	; Init I/O
+;	jsr RAMTAS or +M_RAMTAS can be used to clear all extended zeropage. This helps initialise PETSCII print routines, but is too aggressive for most applications.
 	jsr RESTOR	; Restore the normal IRQ
 ;	jsr CINT	; Initialize screen editor. Causes a blue screen to be displayed and inits IRQs. No code uses this, so it is commented out.
 }
 
+; Use jsr RAMTAS or +M_RAMTAS before using this. This is usually called by the cartridge boot code.
 !macro InitKERNALStringDisplay_AXY {
 	; Init string display stack
 	lda #$19
@@ -1271,6 +1273,27 @@ RasterLinesPALC64		= 312
 	+MAddAToAddr16 .lo , .hi
 }
 
+!macro MAddS16From16To16 .value , .src , .dest {
+	lda #<.value
+	clc
+	adc .src
+	sta .dest
+	lda #>.value
+	adc .src+1
+	sta .dest+1
+}
+
+!macro MAddS9From9To9 .value , .src , .dest {
+	lda #<.value
+	clc
+	adc .src
+	sta .dest
+	lda #(>.value)&1
+	adc .src+1
+	and #1
+	sta .dest+1
+}
+
 !macro MSubU8FromAddr16 .value , .lo , .hi {
 	lda .lo
 	sec
@@ -1279,6 +1302,12 @@ RasterLinesPALC64		= 312
 	bcs .o1
 	dec .hi
 .o1
+}
+
+!macro MAndMem .value , .addr {
+	lda .addr
+	and #.value
+	sta .addr
 }
 
 !macro MAddAFrom16ToAddr16 .lo , .hi , .loDest , .hiDest {
