@@ -16,6 +16,24 @@ Example usage:
 
     java -jar target\DictionaryCompression-1.0-SNAPSHOT-jar-with-dependencies.jar 1024 target/compressed 2 TestData/Mule.prg TestData/MeanStreak.prg TestData/Lobster.prg TestData/Dinosaur_Disco.prg "TestData/Turrican remixed.prg" TestData/Nintendo.prg TestData/WizballGuitar.prg
 
+Which equals 11,745 bytes
+
+Compare this with the result of using LZMPi to compress each file individually:
+
+    ..\bin\LZMPi.exe -c TestData/Mule.prg target/compressed_Mule.prg.cmp2
+    ..\bin\LZMPi.exe -c TestData/MeanStreak.prg target/compressed_MeanStreak.prg.cmp2
+    ..\bin\LZMPi.exe -c TestData/Lobster.prg target/compressed_Lobster.prg.cmp2
+    ..\bin\LZMPi.exe -c TestData/Dinosaur_Disco.prg target/compressed_Dinosaur_Disco.prg.cmp2
+    ..\bin\LZMPi.exe -c "TestData/Turrican remixed.prg" "target/compressed_Turrican remixed.prg.cmp2"
+    ..\bin\LZMPi.exe -c TestData/Nintendo.prg target/compressed_Nintendo.prg.cmp2
+    ..\bin\LZMPi.exe -c TestData/WizballGuitar.prg target/compressed_WizballGuitar.prg.cmp2
+    dir target\*.cmp2
+
+Which equals 13,088 bytes
+
+The dictionary compression is 1,343 bytes smaller.
+
+
 
 Demo
 ====
@@ -26,7 +44,7 @@ To assemble the demo, first run the command line about in "Example usage" to pro
 
 Demo source (ACME format) is in: asm\Demo.a
 
-It can be assembled using: BuiltIt.bat
+It can be assembled using: BuildIt.bat
 
 Assembled demo prg file is in: target\Demo.prg
 
