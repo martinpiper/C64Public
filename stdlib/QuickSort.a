@@ -1,0 +1,149 @@
+; Quick sort macros
+; For usage example: features\CheckSortQuick.a
+; For unit test: features\CheckSorts.feature
+
+
+!macro QuickSort_TableInit .SortHardMaxEntries , .SortTemp0 , .SortTemp1 , .SortBlockByteLength , .QuickSort_Sortlo , .QuickSort_Sorthi , .QuickSort_QuickSort_sortstart {
+!if .SortTemp0 + 1 != .SortTemp1 {
+!error ".SortTemp0 and .SortTemp1 must be sequential lo/hi addresses"
+}
+	+MWordValueToAddress_A .QuickSort_QuickSort_sortstart , .SortTemp0
+
+	ldy #$00
+.l2
+	lda .SortTemp0
+	sta .QuickSort_Sortlo,y
+	lda .SortTemp1
+	sta .QuickSort_Sorthi,y
+
+	lda .SortTemp0
+	clc
+	adc #.SortBlockByteLength
+	sta .SortTemp0
+	bcc .over
+	inc .SortTemp1
+.over
+	iny
+	cpy #SortHardMaxEntries-1
+	bne .l2
+}
+
+!macro QuickSort_Init .SortMaxEntries , .SortIndexTable {
+	ldx .SortMaxEntries
+.l1
+	dex
+	txa
+	sta .SortIndexTable,x
+	bne .l1
+}
+
+!macro QuickSort_SortBlock .comparison , .index , .backPos , ~.forward , .SortIndexTable , .SortValueTable {
+.over1	ldy .SortIndexTable+.index+1
+.back1	ldx .SortIndexTable+.index
+.forward = .back1
+
+		lda+2 .SortValueTable,y
+	cmp .SortValueTable,x
+
+;	bcs .over2
+!if .comparison = 0 {
+	!error .comparison must be 1 (for >) or -1 (for <)
+}
+!if .comparison < 0 {
+	+IfURegLessThanOrEqualToVal .over2
+}
+!if .comparison > 0 {
+	+IfURegGreaterThanOrEqualToVal .over2
+}
+
+
+	stx .SortIndexTable+.index+1
+	sty .SortIndexTable+.index
+
+;	bcc .backPos
+!if .comparison = 0 {
+	!error .comparison must be 1 (for >) or -1 (for <)
+}
+!if .comparison < 0 {
+	+IfURegGreaterThanVal .backPos
+}
+!if .comparison > 0 {
+	+IfURegLessThanVal .backPos
+}
+
+.over2
+}
+
+
+!macro QuickSort_SortRTS .comparison , .SortMaxEntries , .SortIndexTable , .SortValueTable , .SortTemp0 , .SortTemp1 , .QuickSort_Sortlo , .QuickSort_Sorthi , ~.SortBlockByteLength , ~.QuickSort_sortstart {
+	lda .SortMaxEntries
+	cmp #$02
+	bcs .someEntries
+
+	rts
+
+.someEntries
+
+	sbc #$02
+	tax
+
+	lda .QuickSort_Sortlo,x
+	sta .SortTemp0
+	lda .QuickSort_Sorthi,x
+	sta .SortTemp1
+
+	; Self modifying code that puts an RTS ($60) into the sort routine below depending on how many entries it wants to process in the index table.
+	ldy #$00
+	lda (.SortTemp0),y
+	sta .smbackup+1
+	lda #$60	; (rts)
+	sta (.SortTemp0),y
+	jsr .over0
+	ldy #$00
+.smbackup	lda #$ff
+	sta (.SortTemp0),y
+
+	rts
+
+.over0	ldy .SortIndexTable+1
+.back0	ldx .SortIndexTable
+	lda+2 .SortValueTable,y
+	cmp .SortValueTable,x
+
+;	bcs .over1
+!if .comparison = 0 {
+	!error .comparison must be 1 (for >) or -1 (for <)
+}
+!if .comparison < 0 {
+	+IfURegLessThanOrEqualToVal .over1
+}
+!if .comparison > 0 {
+	+IfURegGreaterThanOrEqualToVal .over1
+}
+
+	stx .SortIndexTable+1
+	sty .SortIndexTable
+
+.QuickSort_sortstart
+.over1
+	+QuickSort_SortBlock   .comparison , 1 , .back0	, ~.back1		 , .SortIndexTable , .SortValueTable
+.over2
+.SortBlockByteLength = .over2 - .over1
+	+QuickSort_SortBlock  .comparison ,  2 , .back1	, ~.back2		 , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  3 , .back2	, ~.back3        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  4 , .back3	, ~.back4        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  5 , .back4	, ~.back5        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  6 , .back5	, ~.back6        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  7 , .back6	, ~.back7        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  8 , .back7	, ~.back8        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison ,  9 , .back8	, ~.back9        , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 10 , .back9	, ~.back10       , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 11 , .back10 , ~.back11      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 12 , .back11 , ~.back12      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 13 , .back12 , ~.back13      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 14 , .back13 , ~.back14      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 15 , .back14 , ~.back15      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 16 , .back15 , ~.back16      , .SortIndexTable , .SortValueTable
+
+	rts
+}

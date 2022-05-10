@@ -1,0 +1,17 @@
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+
+!source "stdlib/BubbleSort.a"
+!source "features/CheckSortCommon.a"
+
+!zn
+SortInitGT
+SortInitLT
+	+BubbleSort_Init SortMaxEntries , SortIndexTable
+	rts
+
+SortSortGT
+	+BubbleSort_SortRTS 1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1
+
+SortSortLT
+	+BubbleSort_SortRTS -1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1

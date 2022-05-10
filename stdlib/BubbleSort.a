@@ -1,0 +1,60 @@
+; Bubble sort macros
+; For usage example: features\CheckSortBubble.a
+; For unit test: features\CheckSorts.feature
+
+
+!macro BubbleSort_Init .SortMaxEntries , .SortIndexTable {
+	ldx .SortMaxEntries
+.l1
+	dex
+	txa
+	sta .SortIndexTable,x
+	bne .l1
+}
+
+
+
+!macro BubbleSort_SortRTS .comparison , .SortMaxEntries , .SortIndexTable , .SortValueTable , .SortTemp0 , .SortTemp1 {
+	ldy .SortMaxEntries
+	cpy #2
+	+IfURegGreaterThanOrEqualToVal .sl1
+
+	rts
+
+.sl1
+	ldy .SortMaxEntries
+	dey
+	lda #0
+	sta .SortTemp0
+.sl2
+	ldx .SortIndexTable,y
+	lda .SortValueTable,x
+	ldx .SortIndexTable-1,y
+	cmp .SortValueTable,x
+
+!if .comparison = 0 {
+	!error .comparison must be 1 (for >) or -1 (for <)
+}
+!if .comparison < 0 {
+	+IfURegLessThanOrEqualToVal .sl3
+}
+!if .comparison > 0 {
+	+IfURegGreaterThanOrEqualToVal .sl3
+}
+	; Swap index values only
+	lda .SortIndexTable-1,y
+	sta .SortTemp1
+	lda .SortIndexTable,y
+	sta .SortIndexTable-1,y
+	lda .SortTemp1
+	sta .SortIndexTable,y
+
+	inc .SortTemp0 ; Don't care what the value is as long as it's not 0
+.sl3
+	dey
+	bne .sl2
+	lda .SortTemp0
+	bne .sl1
+
+	rts
+}

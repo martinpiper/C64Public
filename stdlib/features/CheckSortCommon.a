@@ -1,0 +1,6 @@
+*=$1000
+SortIndexTable !fill 256 , 0
+SortValueTable !fill 256 , 0
+SortMaxEntries !by 8	; This can be changed up to SortHardMaxEntries
+SortTemp0 = $02
+SortTemp1 = $03
