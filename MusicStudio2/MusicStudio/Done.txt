@@ -412,3 +412,46 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 
 
 * Self playing demo includes extra scope effect
+
+
+
+* Improved the error information if the conversion goes wrong. This can help when debugging failures.
+
+
+
+* Improved the rip SID functionality to extract more of each instrument detected in the SID file
+
+
+
+
+* Ripping SID preferences window. Tracker block length, split into time periods, tempo. Extract instruments etc.
+	Add option to specify maximum length of wave/pulse width frames captured for each new instrument.
+		Make it loop
+	Done: Then call optimise() to reduce all the entries.
+	Done: CMusicStudioDoc::GetInstrument() will need the future SID bytes to be able to construct the table entries...
+	Done: * Add option for track number before starting the SID
+	Done: * Before ripping, ask for instruments that will capture a note table instead of outputting individual notes
+		This will make it potentially more useful for capturing drums sounds...
+			It does!
+	https://youtu.be/HKkapWwicA4
+
+
+
+2.2.0.7
+
+* Menu: Edit->"Clear All" and "Set Default" data options
+
+
+
+* Automatic discovery of note based envelopes
+	Convert with a baseline, no note envelopes
+	Then for each envelope, progressively try to flag it as a note envelope
+	Try a conversion pass
+	If there are savings (fewer block notes output, smaller file size) then use that
+
+
+
+* MIDI file export
+	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
+	Produces something that can be recognised
+	Done: Needs to handle transpose and repeat block commands

@@ -1,0 +1,316 @@
+!zn
+scratchFilename !tx "s0:"
+defaultFilename !tx ""
+	!fill 16 , 0	; Some padding
+
+directoryFilename
+	!tx "$"
+
+GetDefaultFilenameLen
+	ldx #0
+.gdl1
+	lda defaultFilename,x
+	beq .gdl2
+	inx
+	cpx #16
+	bne .gdl1
+.gdl2
+	txa
+	rts
+
+!zn
+.filenamePos !by 0
+.filenameEor !by 0
+.filenameScrPos = SCREENRAM + 12 + (10 * VIC2ScreenCharsWidth)
+.directoryScrPos = SCREENRAM + 12 + (12 * VIC2ScreenCharsWidth)
+
+.textEnterFilename !tx "enter file name:"
+.textEnterFilenameEnd
+
+; Exit:
+; CS = Aborted entry
+; CC = Filename OK
+GetFilenamePrompt
+	jsr Editor_clearScreenDisplay
+
+	jsr GetDefaultFilenameLen
+	sta .filenamePos
+
+	+DisplayColourTextAt_AX .textEnterFilename , .textEnterFilenameEnd , .filenameScrPos - VIC2ScreenCharsWidth , VIC2Colour_Yellow
+
+.gfl1
+	+MACROWaitForTheLastScan_A
+	+DisplayColourTextZeroSkipAt_AX defaultFilename , defaultFilename + 16 , .filenameScrPos , VIC2Colour_Yellow , ' '
+
+	lda .filenameEor
+	eor #$80
+	sta .filenameEor
+	ldx .filenamePos
+	lda .filenameScrPos,x
+	eor .filenameEor
+	sta .filenameScrPos,x
+
+	jsr getkey
+	cmp #0
+	beq .gfl1
+	cmp #$ff
+	beq .gfl1
+
+	cmp #$91
+	beq .gfl1
+	cmp #$11
+	beq .gfl1
+	cmp #$9d
+	beq .gfl1
+	cmp #$1d
+	beq .gfl1
+
+
+	cmp #'$'
+	beq .isDir
+jmp .notDir
+.isDir
+
+	lda #1
+	ldx #<directoryFilename
+	ldy #>directoryFilename
+	jsr SETNAM
+
+	lda #1
+	ldx ZPCurrentFileDeviceNumber
+	ldy #0
+	jsr SETLFS
+
+	ldx #0
+	ldy #$c0
+	lda #0
+	jsr LOAD
+	bcc .noError3
+	jmp .gfl1
+
+.noError3
+
+	stx .smMaxLo+1
+	sty .smMaxHi+1
+
+	lda .smMaxLo+1
+	sec
+	sbc #$20
+	sta .smMaxLo+1
+	lda .smMaxHi+1
+	sbc #0
+	sta .smMaxHi+1
+
+	lda #<$c025
+	sta $fb
+	lda #>$c025
+	sta $fc
+
+	lda #<.directoryScrPos
+	sta $fd
+	lda #>.directoryScrPos
+	sta $fe
+.dl1
+	ldy #15
+.dl3
+	lda ($fb),y
+	sta ($fd),y
+	dey
+	bpl .dl3
+
+	lda $fe
+	and #3
+	ora #>COLOURRAM
+	sta $fe
+	ldy #15
+	lda #VIC2Colour_LightBlue
+.dl5
+	sta ($fd),y
+	dey
+	bpl .dl5
+
+	lda $fe
+	and #3
+	ora #>SCREENRAM
+	sta $fe
+
+	lda $fb
+	clc
+	adc #$20
+	sta $fb
+	bcc .dl2
+	inc $fc
+.dl2
+
+	lda $fd
+	clc
+	adc #VIC2ScreenCharsWidth
+	sta $fd
+	bcc .dl4
+	inc $fe
+.dl4
+
+	lda $fc
+.smMaxHi cmp #0
+	bcc .dl1
+	bne .isGT
+	lda $fb
+.smMaxLo cmp #0
+	bcc .dl1
+
+.isGT	jmp .gfl1
+
+.notDir
+
+	cmp #$03
+	bne .gfnotRunStop
+
+	jsr Editor_clearScreenDisplay
+
+	sec
+	rts
+
+.gfnotRunStop
+
+
+	cmp #$0d
+	bne .gfnotReturn
+
+	jsr Editor_clearScreenDisplay
+
+	clc
+	rts
+
+.gfnotReturn
+
+	cmp #$14
+	bne .gfnotDel
+
+	ldx .filenamePos
+	beq .lgfl1
+	dex
+	lda #0
+	sta defaultFilename,x
+	stx .filenamePos
+
+	jmp .gfl1
+.gfnotDel
+
+	ldx .filenamePos
+	sta defaultFilename,x
+	inc .filenamePos
+
+	lda .filenamePos
+	cmp #16
+	bcc .lgfl1
+	lda #16
+	sta .filenamePos
+
+.lgfl1	jmp .gfl1
+
+
+.loadingMessage !tx "loading..."
+.loadingMessageEnd = *
+
+.savingMessage !tx "saving..."
+.savingMessageEnd = *
+
+.discMessage !tx "do not remove the disc!"
+.discMessageEnd = *
+
+Storage_LoadingMessage
+	jsr Editor_clearScreenDisplay
+	+DisplayColourTextAt_AX .loadingMessage , .loadingMessageEnd , .directoryScrPos , VIC2Colour_Yellow
+	+DisplayColourTextAt_AX .discMessage , .discMessageEnd , .directoryScrPos + (VIC2ScreenCharsWidth*2), VIC2Colour_Yellow
+	rts
+
+Storage_SavingMessage
+	jsr Editor_clearScreenDisplay
+	+DisplayColourTextAt_AX .savingMessage , .savingMessageEnd , .directoryScrPos , VIC2Colour_Yellow
+	+DisplayColourTextAt_AX .discMessage , .discMessageEnd , .directoryScrPos + (VIC2ScreenCharsWidth*2), VIC2Colour_Yellow
+	rts
+
+!zn
+Storage_Init
+	lda #0
+	sta myPlayFlag
+	sta SIDVolumeFilter
+
+	jsr CLRCHN
+
+	rts
+
+
+!zn
+Storage_LoadMusic
+	jsr GetDefaultFilenameLen
+	ldx #<defaultFilename
+	ldy #>defaultFilename
+	jsr SETNAM
+
+	lda #1
+	ldx ZPCurrentFileDeviceNumber
+	ldy #0
+	jsr SETLFS
+
+	ldx #<MusicPlayerDataStart
+	ldy #>MusicPlayerDataStart
+	lda #0
+	jsr LOAD
+	bcc .noError2
+	inc VIC2BorderColour
+	sta SCREENRAM
+.noError2
+	rts
+
+
+!zn
+Storage_Scratch
+	jsr GetDefaultFilenameLen
+	clc
+	adc #3
+	ldx #<scratchFilename
+	ldy #>scratchFilename
+	jsr SETNAM
+
+	lda #15
+	ldx ZPCurrentFileDeviceNumber
+	ldy #15
+	jsr SETLFS
+
+	jsr OPEN	; Ignore carry
+	lda #15
+	jsr CLOSE
+	rts
+
+
+!zn
+Storage_SaveMusic
+	jsr GetDefaultFilenameLen
+	ldx #<defaultFilename
+	ldy #>defaultFilename
+	jsr SETNAM
+
+	lda #0
+	ldx ZPCurrentFileDeviceNumber
+	ldy #0
+	jsr SETLFS
+
+	lda #<MusicPlayerDataStart
+	sta ZPStartBasicLo
+	lda #>MusicPlayerDataStart
+	sta ZPStartBasicHi
+	lda #<MusicPlayerDataEnd
+	sta ZPStartVariableLo
+	lda #>MusicPlayerDataEnd
+	sta ZPStartVariableHi
+
+	lda #ZPStartBasicLo
+	ldx ZPStartVariableLo
+	ldy ZPStartVariableHi
+	jsr SAVE
+	bcc .noError1
+	inc VIC2BorderColour
+	sta SCREENRAM
+.noError1
+	rts

@@ -204,7 +204,7 @@ SpritePosYToMainVideoScreenLo
 !if .i < 0 {
 	!set .i = 0
 }
-	!by <(kBus24Bit_CharScreenMap + ((.i / 8) * $40))
+	!by <(kBus24Bit_CharScreenMap + ((.i / 8) * kBus24Bit_CharScreenWidth))
 }
 SpritePosYToMainVideoScreenHi
 !for .ii , 256 {
@@ -212,7 +212,7 @@ SpritePosYToMainVideoScreenHi
 !if .i < 0 {
 	!set .i = 0
 }
-	!by >(kBus24Bit_CharScreenMap + ((.i / 8) * $40))
+	!by >(kBus24Bit_CharScreenMap + ((.i / 8) * kBus24Bit_CharScreenWidth))
 }
 SpritePosYToOriginalMainScreenHi
 !for .ii , 256 {
@@ -243,4 +243,38 @@ AnimationFrames_Process
 .noAnim
 	dex
 	+lbpl .l1
+	rts
+
+
+
+!zn
+AnimationFrames_ProcessForDisplay
+	ldx #kMaxSprites-1
+.l1
+	lda SpriteFrameDataX,x
+	clc
+	; Adjust for the screen position
+	adc #48
+	sta SpriteFrameDataXDisplay,x
+	lda SpriteFrameDataColour,x
+	bcc .noMSB
+	ora #kBus24Bit_Sprites_MSBX
+.noMSB
+	sta SpriteFrameDataColourDisplay,x
+
+	; Shadows
+	lda SpriteFrameDataX,x
+	clc
+	; Adjust for the screen position, plus shadow
+	adc #48+4
+	sta SpriteFrameDataXDisplayShadow,x
+	lda SpriteFrameDataColour,x
+	bcc .noMSB2
+	ora #kBus24Bit_Sprites_MSBX
+.noMSB2
+	ora #$f	; Last palette is all black, for shadows
+	sta SpriteFrameDataColourDisplayShadow,x
+
+	dex
+	bpl .l1
 	rts

@@ -27,6 +27,7 @@ class CMusicStudioDoc : public CDocument , public MemoryHook
 public:
 
 	static const int kMIDIHeader = 0x6468544d;
+	static const int kMIDITrack = 0x6b72544d;
 	static const int kGoatTrackerV1 = 0x21535447;
 	static const int kGoatTrackerV2 = 0x35535447;
 
@@ -114,9 +115,16 @@ public:
 
 	void UpgradeOldV4InstrumentData(void);
 
-	void OptimiseTables(const bool assumeAllEnvelopesUsed = false);
+	void OptimiseTables(const bool assumeAllEnvelopesUsed = false , const bool spotDuplicates = true);
 
 	int getNextFreeTableControl(const int tableIndex);
+
+	void ClearDocument(void);
+	void SetDefaultData(void);
+
+
+	int GetComplexityScore(void);
+	int GetNumEnvelopes(void);
 
 protected:
 	CMultiDocTemplate* mDocTemplateExtended;
@@ -146,7 +154,7 @@ public:
 
 	void ClearCapturedSIDData(void);
 
-	void ProcessSIDCaptureData(void);
+	void ProcessSIDCaptureData(const std::set<int> &forceNoteTable);
 
-	int GetInstrument(const unsigned char *SIDBytes);
+	int GetInstrument(const unsigned char SIDBytes[][MusicStudio1::kSIDVoice_Size] , const int maxWaveTableEntries , const std::set<int> &forceNoteTable);
 };

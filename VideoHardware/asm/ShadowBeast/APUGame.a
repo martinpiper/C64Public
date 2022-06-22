@@ -22,33 +22,18 @@ frameStart0
 	; Copy blimps and moon data
 	+MAPU_LoadEADDRFromB1
 
-!macro MAPUCopySpriteWithAddX {
-		+MAPU kAPU_ExternalMEWR
-		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
-		+MAPU kAPU_ExternalMEWR
-		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
-		+MAPU kAPU_ExternalMEWR
-		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
-		+MAPU kAPU_ExternalMEWR | kAPU_IDataSelectMemAddReg3
-		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
-}
 !macro MAPUCopySprite {
 	!for .i , 4 {
 		+MAPU kAPU_ExternalMEWR
 		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
 	}
 }
-!macro MAPU_LoadXReg {
-	+MAPU kAPU_IDataRegLoad3
-	+MAPU kAPU_Incr_ADDRB1
-}
-	+MAPU_LoadXReg
+
 !for .i , kAPUData_Blimp1DataNum {
-	+MAPUCopySpriteWithAddX
+	+MAPUCopySprite
 }
-	+MAPU_LoadXReg
 !for .i , kAPUData_Blimp2DataNum {
-	+MAPUCopySpriteWithAddX
+	+MAPUCopySprite
 }
 !for .i , kAPUData_MoonDataNum {
 	+MAPUCopySprite
@@ -135,7 +120,7 @@ APUData_Start
 	!by $80
 
 	; Next RHRV to wait for
-	!by $88 , $01 , 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 0
 	+MAPUEmitChangePalette 102 , 119 , 136
 	+MAPUEmitChangeXScroll ~APU_Scroll0
 	+MAPUEmitChangeXScrollChars ~APU_Scroll0Chars
@@ -147,19 +132,17 @@ APUData_Start
 	; Blimps and moon sprite update
 	+MLittleEndian16Bit kBus24Bit_Sprites
 
-APUData_Blimp1X !by 0
 APUData_Blimp1
 	!fill kAPUData_Blimp1DataNum * 4 , 0
-APUData_Blimp2X !by 0
 APUData_Blimp2
 	!fill kAPUData_Blimp2DataNum * 4 , 0
 APUData_Moon
 	!fill kAPUData_MoonDataNum * 4 , 0
 
-	!by $88 , $01 , 37
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 37 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll1
 
-	!by $88 , $01 , 78
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 78 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll2
 
 	; Tree area
@@ -167,66 +150,66 @@ APUData_Moon
 	; Sprites infront of chars, normal priorities
 	+MAPU_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Background
 
-	+MLittleEndian16Bit kBus24Bit_SpritesControlLo
-	!by 0
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+	!by kBus24Bit_VideoLayer_LayersEnable_234
 
 	+MLittleEndian16Bit kBus24Bit_Sprites
 APUData_GameSprites
 	!fill kMaxSprites * 4 , 0
 
-	+MLittleEndian16Bit kBus24Bit_SpritesControlLo
-	!by kBus24Bit_SpritesControlLoEnable
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+	!by kBus24Bit_VideoLayer_LayersEnable_Default
 
-	!by $88 , $01 , 92
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 92 -1
 	+MAPUEmitChangePalette 119 , 119 , 136
-	!by $88 , $01 , 97
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 97 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll3
-	!by $88 , $01 , 106
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 106 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll4
 
 
-	!by $88 , $01 , 112
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 112 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll5
 
 
-	!by $88 , $01 , 119
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 119 -1
 	+MAPUEmitChangePalette 136 , 119 , 136
-	!by $88 , $01 , 134
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 134 -1
 	+MAPUEmitChangePalette 153 , 119 , 136
 
-	!by $88 , $01 , 143
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 143 -1
 	+MAPUEmitChangePalette 170 , 119 , 136
 
-	!by $88 , $01 , 151
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 151 -1
 	+MAPUEmitChangePalette 187 , 119 , 136
-	!by $88 , $01 , 158
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 158 -1
 	+MAPUEmitChangePalette 204 , 119 , 136
-	!by $88 , $01 , 164
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 164 -1
 	+MAPUEmitChangePalette 221 , 119 , 136
 
 
-	!by $88 , $01 , 170
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 170 -1
 	+MAPUEmitChangePalette 238 , 119 , 136
-	!by $88 , $01 , 174
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 174 -1
 	+MAPUEmitChangePalette 255 , 119 , 136
-	!by $88 , $01 , 184
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 184 -1
 	+MAPUEmitChangePalette 255 , 98 , 118
-	!by $88 , $01 , 194
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 194 -1
 	+MAPUEmitChangePalette 255 , 85 , 106
 	; Mountains moved away from the clouds to give a full screen and make more room for the tree sprites
-	!by $88 , $01 , 186 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 186 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll6
-	!by $88 , $01 , 188 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 188 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll7
-	!by $88 , $01 , 193 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 193 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll8
 	; Wall
 	+MAPUEmitChangeXScrollChars ~APU_Scroll1Chars
-	!by $88 , $01 , 198 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 198 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll9
-	!by $88 , $01 , 205 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 205 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll10
-	!by $88 , $01 , 210 + 25
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 210 + 25 -1
 	+MAPUEmitChangeXScroll ~APU_Scroll11
 
 

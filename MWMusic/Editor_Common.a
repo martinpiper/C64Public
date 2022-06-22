@@ -1,0 +1,15 @@
+!zn
+Editor_Colourise
+	ldx #0
+.cl1
+	lda ColourData,x
+	sta COLOURRAM,x
+	lda ColourData + $100,x
+	sta COLOURRAM + $100,x
+	lda ColourData + $200,x
+	sta COLOURRAM + $200,x
+	lda ColourData + $2e8,x
+	sta COLOURRAM + $2e8,x
+	dex
+	bne .cl1
+	rts

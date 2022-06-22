@@ -169,7 +169,7 @@ bool CMusicStudioDoc::LoadMWMusicFile(CArchive &ar)
 					if (env != lastEnv)
 					{
 						lastEnv = env;
-						blockText += L"ENV:" + GetNum(lastEnv) + L"\r\n";
+						blockText += L"ENV:" + GetHexNum(lastEnv) + L"\r\n";
 					}
 				}
 			}
@@ -178,7 +178,7 @@ bool CMusicStudioDoc::LoadMWMusicFile(CArchive &ar)
 			if (lengthByte != lastDur)
 			{
 				lastDur = lengthByte;
-				blockText += L"DUR:" + GetNum(lastDur) + L"\r\n";
+				blockText += L"DUR:" + GetHexNum(lastDur) + L"\r\n";
 			}
 			if (i >= sequenceBlock.size())
 			{

@@ -100,6 +100,8 @@ addForcedMovementTime
 	jsr .getRandomTilePosition
 	adc TileScreen_invXFine
 	sta AnimationEngine_posX,x
+	lda #0
+	sta AnimationEngine_posXHi,x
 
 	lda #1
 	sta AnimationEngine_posY,x
@@ -114,6 +116,8 @@ addForcedMovementTime
 	jsr .getRandomTilePosition
 	adc TileScreen_invXFine
 	sta AnimationEngine_posX,x
+	lda #0
+	sta AnimationEngine_posXHi,x
 
 	lda #254
 	sta AnimationEngine_posY,x
@@ -123,8 +127,10 @@ addForcedMovementTime
 	+MCharacterLogic_allocateAnimation CharacterLogic_typeToRight
 	+MCharacterLogic_completeAllocation kCharacterLogic_directionRight , CharacterLogic_typeToRightFlips
 
-	lda #kScreenSpriteOffScreen_left+1
+	lda #<kScreenSpriteOffScreen_left+1
 	sta AnimationEngine_posX,x
+	lda #>kScreenSpriteOffScreen_left+1
+	sta AnimationEngine_posXHi,x
 
 	jsr .getRandomTilePosition
 	adc TileScreen_invYFine
@@ -135,8 +141,10 @@ addForcedMovementTime
 	+MCharacterLogic_allocateAnimation CharacterLogic_typeToLeft
 	+MCharacterLogic_completeAllocation kCharacterLogic_directionLeft , CharacterLogic_typeToLeftFlips
 
-	lda #kScreenSpriteOffScreen_right-1
+	lda #<kScreenSpriteOffScreen_right-1
 	sta AnimationEngine_posX,x
+	lda #>kScreenSpriteOffScreen_right-1
+	sta AnimationEngine_posXHi,x
 
 	jsr .getRandomTilePosition
 	adc TileScreen_invYFine
@@ -174,7 +182,7 @@ CharacterLogic_Update
 	ldx #kAnimationEngine_maxSlots-1
 .l1
 	lda CharacterLogic_type,x
-	bmi .notValidType
+	+lbmi .notValidType
 
 	lda CharacterLogic_moveCounter,x
 	beq .potentiallyChangeDirection
@@ -207,15 +215,31 @@ CharacterLogic_Update
 
 .moveRight
 	inc AnimationEngine_posX,x
+	bne .noMSB1
+	inc AnimationEngine_posXHi,x
+.noMSB1
+	lda AnimationEngine_posXHi,x
+	and #1
+	cmp #>kScreenSpriteOffScreen_right
+	bne .notValidType
 	lda AnimationEngine_posX,x
-	cmp #kScreenSpriteOffScreen_right
+	cmp #<kScreenSpriteOffScreen_right
 	bne .notValidType
 	jmp .deleteCharacter
 
 .moveLeft
 	dec AnimationEngine_posX,x
 	lda AnimationEngine_posX,x
-	cmp #kScreenSpriteOffScreen_left
+	cmp #$ff
+	bne .noMSB2
+	dec AnimationEngine_posXHi,x
+.noMSB2
+	lda AnimationEngine_posXHi,x
+	and #1
+	cmp #>kScreenSpriteOffScreen_left
+	bne .notValidType
+	lda AnimationEngine_posX,x
+	cmp #<kScreenSpriteOffScreen_left
 	bne .notValidType
 	jmp .deleteCharacter
 
@@ -236,5 +260,5 @@ CharacterLogic_Update
 
 .notValidType
 	dex
-	bpl .l1
+	+lbpl .l1
 	rts

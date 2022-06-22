@@ -1,9 +1,28 @@
+// NOTE: ConvDelta2.bat needs these values set correctly for the number of rames used:
+	set START=0
+	set STEP=1
+	set END=99
+
 // cls && Conv.bat && ConvDelta.bat && cls && ConvPrint.bat
 // cls && Conv.bat && ConvDelta.bat && BuildIt.bat && cls && ConvPrint.bat
 // cls && ConvDeltaOpt.bat && cls && ConvPrint.bat
 // cls && Conv.bat && ConvDeltaHMSequence.bat
 // cls && Conv2.bat && ConvDelta2.bat && BuildIt2.bat
 // cls && Conv2_11.bat && ConvDelta2_11.bat && BuildIt2_11.bat
+
+
+* Using REU http://www.zimmers.net/anonftp/pub/cbm/documents/chipdata/programming.reu
+	Try to use the REU to accelerate the copying
+	But EasyFlash cannot be used due to its registers at $df00 conflicting with the REU registers, will need to use gmod2
+	Alternatively, just write out the REU RAM file directly so it contains all the needed frame data
+	To get the best benefit of compression DeltaCompression.exe should be altered to:
+		Store most of the new data in REU memory, the whole file effectively becomes the dictionary, where it can be copied into the C64 memory quickly later on
+		Separate frame data for:
+			Skip code
+			Block copy from C64 to REU temporary and back to another C64 area (this is if the frame data is not present in REU frame data)
+			Block copy from REU to C64
+	REU for MDeltaDecompression_CopyColours
+
 
 
 * MashSamples

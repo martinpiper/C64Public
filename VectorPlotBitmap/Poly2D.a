@@ -163,16 +163,16 @@ Poly2D_scanQuad
 
 	lda Poly2D_vertexBufferX, x
 	sta ZPPoly2D_x2
+	sec
+	sbc Poly2D_vertexBufferX, y
 
-	lda Poly2D_vertexBufferX, y
-
+	; Swap with x/y regs
 	ldy ZPPoly2D_y2
 	ldx ZPPoly2D_y1
 	sty ZPPoly2D_y1
 	stx ZPPoly2D_y2
 
-	sec
-	bcs +
+	jmp +
 
 Poly2D_loadVertsIntoRegs
 	lda Poly2D_vertexBufferY, x
@@ -190,10 +190,10 @@ Poly2D_loadVertsIntoRegs
 	; Calc ZPPoly2D_dx
 	lda Poly2D_vertexBufferX, y
 	sta ZPPoly2D_x2
-+
+
 	; Note carry
 	sbc Poly2D_vertexBufferX, x
-
++
 	; Used for self modifying decr direction
 	ldx #$ca ; dex
 

@@ -125,17 +125,21 @@ MapTile_DoorSwitchOnFacingUp		= 43
 MaxInterestingPlaces = 48
 
 ; Score panel graphics
-ScorePanelNumChars			= 45
+ScorePanelNumChars			= 72
 
-ScorePanel_EmptyChar		= 0
-
+ScorePanel_EmptyChar			= 0
 Score_ZeroCharacter				= 7
 ScorePanel_RadarChar			= 20
+ScorePanel_StayChar				= 30
+ScorePanel_FollowPlayerChar		= 31
+ScorePanel_DestroyChar			= 32
+ScorePanel_CapturedChar			= 33
 ScorePanelEnergyCharacterRed	= 34
 ScorePanelEnergyCharacterYellow	= 35
 ScorePanelEnergyCharacterGreen	= 36
 ScorePanelCharBatteryBar		= 44
 ScorePanelCharBatteryArrow		= 40
+ScorePanel_CharacterA			= 46
 
 ; Battery and energy bar display
 PlayerHealthMax				= 6
@@ -160,10 +164,36 @@ ScorePanel_Captured_Addr			= SCREENRAM + (ScorePanel_Captured_YPos * VIC2ScreenC
 ScorePanel_Captured_ColourAddr		= COLOURRAM + (ScorePanel_Captured_YPos * VIC2ScreenCharsWidth) + ScorePanel_Captured_XPos
 ScorePanel_CapturedIndicator_Addr	= SCREENRAM + (ScorePanel_CapturedIndicator_YPos * VIC2ScreenCharsWidth) + ScorePanel_Captured_XPos
 
-ScorePanel_StayChar			= 30
-ScorePanel_FollowPlayerChar	= 31
-ScorePanel_DestroyChar		= 32
-ScorePanel_CapturedChar		= 33
+
+; Hint defines
+MapTutorialHint_LineLength			= 27
+MapTutorialHint_Size				= 10
+MapTutorialHint_ToCheck				= 0
+MapTutorialHint_ToCheck_MapX				= %00000001
+MapTutorialHint_ToCheck_MapY				= %00000010
+MapTutorialHint_ToCheck_RunningProbe		= %00000100
+MapTutorialHint_ToCheck_CapturedListCount	= %00001000
+MapTutorialHint_ToCheck_AddrForValue		= %00010000
+MapTutorialHint_ToCheck_ForcePosition		= %00100000
+MapTutorialHint_ToCheck_SetTime				= %01000000
+MapTutorialHint_ToCheck_Delete				= %10000000
+MapTutorialHint_TextAddrLo			= 1
+MapTutorialHint_TextAddrHi			= 2
+MapTutorialHint_MapX				= 3
+MapTutorialHint_MapY				= 4
+MapTutorialHint_RunningProbe		= 5
+MapTutorialHint_CapturedListCount	= 6
+MapTutorialHint_AddrForValueLo		= 7
+MapTutorialHint_AddrForValueHi		= 8
+MapTutorialHint_AddrForValue		= 9
+
+ScorePanel_Hint_XPos		= 8
+ScorePanel_Hint_YPos		= 21
+ScorePanel_Hint_Width		= 27
+ScorePanel_Hint_Lines		= 3
+ScorePanel_Hint_Addr		= SCREENRAM + (ScorePanel_Hint_YPos * VIC2ScreenCharsWidth) + ScorePanel_Hint_XPos
+ScorePanel_Hint_Backup_Addr = $400
+
 
 ; Enable this to allow full colour scrolling
 CharColoursForEveryCharacter = 1

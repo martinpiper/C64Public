@@ -1,0 +1,88 @@
+;..\acme.exe -v4 -f cbm -o bin\blank.mus.prg MusicPlayerData_Blank.a
+!ifndef MusicInit {
+!source "../stdlib/stdlib.a"
+!initmem $ff
+* = $4400
+!source "MusicPlayer_Defs.a"
+}
+
+MusicPlayerDataStart = *
+MusicPlayerDataVersion !by 1
+
+vibratoPattern1 	!by $00,$04,$03,$02,$01,$04,$03,$02
+	!by $01,$03,$02,$01,$03,$02,$02,$01
+vibratoPattern2 	!by $00,$05,$05,$04,$02,$04,$04,$03
+	!by $01,$03,$02,$00,$01,$01,$00,$00
+
+BEAT_LENGTH		!by $0c				;SET WITHIN EDITOR USING KEY 'b' AS VALUE BETWEEN $00 AND $0F, & DISPLAYED IN EDITOR AS 'beat0'
+BEATS_IN_BAR	!by $04				;SET WITHIN EDITOR USING KEY 'shift b' AS VALUE BETWEEN $00 AND $0F, & DISPLAYED IN EDITOR AS 'bar0'			
+MusicPlayerData_somePadding !fill 5 , 0	; This is unused, so can be used for extra data
+
+effect_AttackDecay 	!by $00
+effect_SustainReleas 	!by $00
+effect_Control1 	!by $00
+effect_Special	 	!by $00
+effect_PulseWidth 	!by $00
+effect_PulseDepth 	!by $00
+effect_TopBottom 	!by $00
+effect_AttackTime 	!by $00
+
+!fill ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2) - 8 , 0
+
+* = effect_AttackDecay + ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2)
+
+effect_AttackControl 	!by $00
+effect_Note1 	!by $00
+effect_Note2 	!by $00
+effect_Note3	!by $00
+effect_Note4	!by $00
+effect_Trlnote 	!by $00
+effect_Vibrato 	!by $00
+effect_VibratoDelay	!by $00
+
+!fill ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2) - 8 , 0
+
+* = effect_AttackControl + ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2)
+
+; 3xlo 3xhi tempo1 tempo2
+tuneInfo
+!for .i , kMusicPlayer_NumTunes {
+!set .ii = .i - 1
+	!by <(tunes_start + (((.ii*3)+0) * kMusicPlayer_TunesVoiceSize))
+	!by <(tunes_start + (((.ii*3)+1) * kMusicPlayer_TunesVoiceSize))
+	!by <(tunes_start + (((.ii*3)+2) * kMusicPlayer_TunesVoiceSize))
+	!by >(tunes_start + (((.ii*3)+0) * kMusicPlayer_TunesVoiceSize))
+	!by >(tunes_start + (((.ii*3)+1) * kMusicPlayer_TunesVoiceSize))
+	!by >(tunes_start + (((.ii*3)+2) * kMusicPlayer_TunesVoiceSize))
+	!by $01, $08
+}
+
+* = tuneInfo + (kMusicPlayer_TunesSize * kMusicPlayer_NumTunes)
+
+sequenceLo
+!for .i , kMusicPlayer_NumSequences {
+!set .ii = .i - 1
+	!by <(sequences_start + (.ii * kMusicPlayer_SequenceSize))
+}
+
+sequenceHi
+!for .i , kMusicPlayer_NumSequences {
+!set .ii = .i - 1
+	!by >(sequences_start + (.ii * kMusicPlayer_SequenceSize))
+}
+
++DoAlignToSequences
+sequences_start
+
+* = sequences_start + kMusicPlayer_NumSequences * kMusicPlayer_SequenceSize
+
+; Track data
++DoAlignToPage
+tunes_start
+
+* = tunes_start + kMusicPlayer_NumTunes * kMusicPlayer_TunesVoiceSize * 3
+MusicPlayerDataEnd = *
+
+tune0_0 = tunes_start
+tune0_1 = tunes_start + kMusicPlayer_TunesVoiceSize
+tune0_2 = tunes_start + (kMusicPlayer_TunesVoiceSize*2)

@@ -1,3 +1,44 @@
+* Demo1 could use scaled sprites for the clouds, using the layer setup for Demo9
+	This removes the need for the mode7 layer
+	Would then need a separate mode7 demo
+
+
+
+
+* Demo6: Using tiles and two chars layers, plus sprites, it should be possible to just about time the raster splits using the CPU instead of APU?
+	This would make it possible to run the demo on the current built hardware
+	Call it Demo6CPU
+	It would be possible to have full trees, plus parallax background, plus full logos (or other trees layer behind the main trees)
+		And of course the fence
+	** Except that, doh, the background colour (which is a separate layer in the current demos) would need to be updated in the palettes used for each layer. *sigh*
+		This is trickier than just updating the background colour... Hmph
+	Done: Use the original resolution SotB logos, not the 256 horizontal squished versions
+	
+	
+
+
+
+* https://www.spriters-resource.com/arcade/streetfighter2/sheet/117307/
+
+
+
+
+* main7.a
+	While writing to StackedSpriteData with MEmitSpriteFrameOffsetXY
+	Calculate the difference to the previous sprite
+	If it is > 16 and if the X store index < 24*4 then store that as the last best possible point for a simple multiplex point
+		Then possile to pick the next restart point after another 24 sprites
+	The index sort from the C64 multiplexor can be used on the Y positions of the animation entries
+	Then try waiting for that position using MBus24Bit_WaitUntilRasterY
+	Then output the next part of the sprites
+
+
+
+* There may be a bug when including the ShadowBeast/beast_attract_playfield_1_1024.png
+	The palettes seem to go wrong. May be better to create a separate char palette and include that
+
+
+
 * main8.a created from main7.a to separate out the RaspberryPi example
 
 

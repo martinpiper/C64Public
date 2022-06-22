@@ -1,0 +1,28 @@
+https://ausretrogamer.com/2022-reset64-4kb-craptastic-game-competition/
+
+Design:
+
+A simple turned based two player gun projectile firing game where the elevation and velocity are chosen by timing a joystick button press.
+The guns are located either side of the screen on a randomly generated landscape.
+A gun is destroyed by a direct hit or if their supporting landscape characters are destroyed.
+
+Sprite background collision used to detect character hits and dfestroy portions of the landscape.
+Sprite to sprite collisions used for the projectile and the guns.
+
+Optional:
+Done: Gun aim animation
+
+At the start of the game, each player has the option to place their gun to within a few characters of the screen edge. The ground is flattened under the gun to the highest point. This has a time period of a few seconds.
+
+Each player has a specific amount of time to drop a certain number of landscape pieces at their sides of the screen. This is to allow strategic walls to be built etc.
+
+Random pickups sometimes appear, one at a time, that can be hit for bonuses:
+	Volley mode, where a player has the option of sending more than one projectile in their turn.
+	Spread shot, more than one projectile...
+	Bigger projectile, larger explosion
+
+Done: Save bytes, don't include the fingerprint 
+Dene: Music
+Done: SoundFX
+
+Done: Turbo tape?

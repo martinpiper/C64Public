@@ -1,0 +1,332 @@
+;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+; Enable this to send graphics data from code, however this only works if the data is small :)
+;IncludeGraphicsData = 1
+copySprites_defined=1
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+; 23 * 2 because we ignore the last "half" sprite
+kBus24Bit_SpritesMaxNum = 46
+!source "BombJack/stdlib/Video_Macros.a"
+; We have two sprites layers
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!macro MAllocateAnimPos .type , .x , .y {
+	ldy #.type
+	jsr AnimationEngine_Allocate
+	lda #<.x
+	sta AnimationEngine_posX,x
+	lda #>.x
+	sta AnimationEngine_posXHi,x
+	lda #255-.y
+	sta AnimationEngine_posY,x
+}
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+!ifdef IncludeGraphicsData {
+	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
+}
+
+	jsr Bus24Bit_Init
+
+	jsr Video_DisableDisplay
+;	jsr DisplayData
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+;	lda #$0f
+	sta CIA2PortBRS232
+
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #255
+	sta CIA2PortBRS232
+
+	jsr DisplayData
+
+	jsr AnimationEngine_Init
+
+	+MAllocateAnimPos kAnimationType_cammy_idle1 , 260 , 200
+	+MAllocateAnimPos kAnimationType_cammy_idle2 , 60 , 200
+	; TODO: Sprite extent needs to know the bounding box size to flip the coords properly
+	lda #kAnimationEngine_flipX
+	sta AnimationEngine_flips,x
+
+	jsr Video_WaitVBlank
+
+.l1
+
+	; Simple scroll demo
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+
+	jsr Video_SetAddressTileScrollRegisters
+	lda .tiles
+	sta CIA2PortBRS232
+	lda .tiles+1
+	sta CIA2PortBRS232
+
+
+	jsr copySprites
+
+
+
+	; Later on in the frame
+;	inc AnimationEngine_posY + kAnimationEngine_maxSlots-1
+;	inc AnimationEngine_posX + kAnimationEngine_maxSlots-1
+;	bne .ol1
+;	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-1
+;.ol1
+
+
+	jsr AnimationEngine_Update
+	jsr AnimationEngine_RenderSprites
+
+	inc .sm1+1
+.sm1 lda #0
+	and #1
+	bne .oc2
+	inc .tiles
+	bne .oc2
+	inc .tiles+1
+.oc2
+
+
+
+	jmp .l1
+.tiles !by 0,0
+
+.waitVBlankSetPalAddress
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	inc VIC2BorderColour
+.setPalAddress
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette + (255*2)
+	jmp Bus24Bit_SetAddressBus
+
+
+!zn
+FillMemory
+	ldx #8*4
+	ldy #0
+.fl1
+	sta CIA2PortBRS232
+	dey
+	bne .fl1
+	dex
+	bne .fl1
+	rts
+
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!macro SpriteOutput .x , .y , .s0 {
+	ldx #.x
+	ldy #<(-.y)
+	jsr .s0
+}
+
+
+DisplayData
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+	inc VIC2BorderColour
+
+
+	+MBus24Bit_SetAddress_AXY 1 , $a000
+	jsr Video_clearByte
+	; Scrolls
+	jsr Video_clearFourBytes
+
+!ifdef IncludeGraphicsData {
+	+MRLEScreenDataToDefaultCharScreen .Chars_map , .Chars_map2
+	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+	+MDecompressRLEToEBBSAddr .Chars2_map , $04 , $4000
+	+MDecompressRLEToEBBSAddr .Chars2_map2 , $04 , $8000
+	+MDecompressRLEToEBBSAddr .Chars2_plane0 , $08 , kBus24Bit_CharScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .Chars2_plane1 , $08 , kBus24Bit_CharScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .Chars2_plane2 , $08 , kBus24Bit_CharScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .Chars2_plane3 , $08 , kBus24Bit_CharScreenPlanes_3
+
+	+MRLEScreenDataToDefaultTileScreen .Tiles_map
+	+MRLEPlanesDataToDefaultTileScreen .Tiles_plane0 , .Tiles_plane1 , .Tiles_plane2 , .Tiles_plane3
+
+	+MRLEPlanesDataToDefaultSprite .Sprites_plane0 , .Sprites_plane1 , .Sprites_plane2 , .Sprites_plane3
+}
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo10PaletteData.bin"
+	!fill 512 , 0
+
+
+!ifdef IncludeGraphicsData {
+.Chars_map
+	!bin "tmp/Demo10Chars_map.cmp"
+.Chars_map2
+	!bin "tmp/Demo10Chars_map.cmp2"
+.Chars_plane0
+	!bin "tmp/Demo10Chars_plane0.cmp"
+.Chars_plane1
+	!bin "tmp/Demo10Chars_plane1.cmp"
+.Chars_plane2
+	!bin "tmp/Demo10Chars_plane2.cmp"
+.Chars_plane3
+	!bin "tmp/Demo10Chars_plane3.cmp"
+
+.Chars2_map
+	!bin "tmp/Demo10Chars2_map.cmp"
+.Chars2_map2
+	!bin "tmp/Demo10Chars2_map.cmp2"
+.Chars2_plane0
+	!bin "tmp/Demo10Chars2_plane0.cmp"
+.Chars2_plane1
+	!bin "tmp/Demo10Chars2_plane1.cmp"
+.Chars2_plane2
+	!bin "tmp/Demo10Chars2_plane2.cmp"
+.Chars2_plane3
+	!bin "tmp/Demo10Chars2_plane3.cmp"
+
+.Tiles_map
+	!bin "tmp/Demo10Tiles_map.cmp"
+.Tiles_plane0
+	!bin "tmp/Demo10Tiles_plane0.cmp"
+.Tiles_plane1
+	!bin "tmp/Demo10Tiles_plane1.cmp"
+.Tiles_plane2
+	!bin "tmp/Demo10Tiles_plane2.cmp"
+.Tiles_plane3
+	!bin "tmp/Demo10Tiles_plane3.cmp"
+
+
+.Sprites_plane0
+	!bin "tmp/Demo10Sprites_plane0.cmp"
+.Sprites_plane1
+	!bin "tmp/Demo10Sprites_plane1.cmp"
+.Sprites_plane2
+	!bin "tmp/Demo10Sprites_plane2.cmp"
+.Sprites_plane3
+	!bin "tmp/Demo10Sprites_plane3.cmp"
+}
+
+!zn
+kBus24Bit_SpritesB = $a000
+Video_SetAddressSpritesB
+	jsr Bus24Bit_Reset
+	lda #kBus24Bit_Sprites_EBBS
+	sta CIA2PortBRS232
+	lda #<kBus24Bit_SpritesB
+	sta CIA2PortBRS232
+	lda #>kBus24Bit_SpritesB
+	sta CIA2PortBRS232
+	rts
+
+copySprites
+!if 1 {
+	jsr Video_SetAddressSprites
+	; 23 because we ignore the last "half" sprite
+!for .i , 23 * 4 {
+	lda StackedSpriteData + .i - 1
+	sta CIA2PortBRS232
+}
+}
+
+!if 1 {
+	jsr Video_SetAddressSpritesB
+!for .i , 23 * 4 {
+	lda StackedSpriteData + (23*4) + .i - 1
+	sta CIA2PortBRS232
+}
+}
+rts
+
+StackedSpriteData
+	; To handle more than kBus24Bit_SpritesMaxNum
+	!fill 256 , 0
+
+kStackedSprites_supportFlipX = 1
+!source "asm/StackedSprites.a"
+
+!source "tmp/Demo10SpritesSheet.txt.a"
+
+!source "asm\AnimationEngine.a"
+
+
+!zn
+AnimationType_tableLoHi
+	+MAnimationType_Create ~kAnimationType_cammy_idle1			, AnimationFrames_cammy_idle1
+	+MAnimationType_Create ~kAnimationType_cammy_idle2			, AnimationFrames_cammy_idle2
+
+
+AnimationFrames_cammy_idle1
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle1 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle2 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle3 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle4 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle5 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle6 , 5
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle7 , 5
+	+MAnimationFrame_DisplaySpeedGoto	EmitSpriteFramecammy_idle8 , 5,AnimationFrames_cammy_idle1
+
+AnimationFrames_cammy_idle2
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle1 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle2 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle3 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle4 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle5 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle6 , 6
+	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle7 , 6
+	+MAnimationFrame_DisplaySpeedGoto	EmitSpriteFramecammy_idle8 , 5,AnimationFrames_cammy_idle2

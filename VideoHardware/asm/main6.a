@@ -1,4 +1,5 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -78,12 +79,64 @@ mainLoop
 ;	+WaitForFire_A
 
 mainLoopGame
+	; Hardware updates
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
+	jsr UpdateCommonScrolls
+	jsr UpdateTree
 
-!source "asm/main6CommonScrolls.a"
+	jsr MusicPoll
 
-+MSubU8FromAddrS16 APU_Scroll0Chars , 1
+	; Move logic
+	jsr Move_Scrolls
+	jsr Move_Blimps
+	jsr Move_Tree
+
+	jmp mainLoopGame
+	rts
+
+MusicDataStart
+MusicDataStart_afterHeader = MusicDataStart + 4
+	!bin "tmp/target/SotBexportedMusicEvents.cmp"
+MusicDataEnd
+
+!source "asm/ShadowBeast/DisplayScreen.a"
+!source "asm/ShadowBeast/APUTitle.a"
+!source "asm/ShadowBeast/DisplayData.a"
+
+UpdateCommonScrolls
+	!source "asm/main6CommonScrolls.a"
+	rts
+
+UpdateTree
+	; TODO: Find the right time to update this
+	+MAPU_DataUpdateNumBytes APUData_Tree1Data , kAPUData_Tree1Num * 4
+
+	+MAPU_DataUpdateNumBytes APUData_Tree2aData , kAPUData_Tree2aNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree2bData , kAPUData_Tree2bNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree2cData , kAPUData_Tree2cNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree2dData , kAPUData_Tree2dNum * 4
+
+	+MAPU_DataUpdateNumBytes APUData_Tree3aData , kAPUData_Tree3aNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree3bData , kAPUData_Tree3bNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree3cData , kAPUData_Tree3cNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree3dData , kAPUData_Tree3dNum * 4
+
+	+MAPU_DataUpdateNumBytes APUData_Tree4aData , kAPUData_Tree4aNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree4bData , kAPUData_Tree4bNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree4cData , kAPUData_Tree4cNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree4dData , kAPUData_Tree4dNum * 4
+
+	+MAPU_DataUpdateNumBytes APUData_Tree5aData , kAPUData_Tree5aNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree5bData , kAPUData_Tree5bNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree5cData , kAPUData_Tree5cNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree5dData , kAPUData_Tree5dNum * 4
+	+MAPU_DataUpdateNumBytes APUData_Tree5eData , kAPUData_Tree5eNum * 4
+	rts
+
+
+Move_Scrolls
+	+MSubU8FromAddrS16 APU_Scroll0Chars , 1
 
 	+MAddU8ToAddr16 6 , APU_Scroll1Chars , APU_Scroll1Chars+1
 
@@ -112,23 +165,16 @@ mainLoopGame
 	+MAddU8ToAddr16 3 , APU_Scroll9 , APU_Scroll9 + 1
 	+MAddU8ToAddr16 4 , APU_Scroll10 , APU_Scroll10 + 1
 	+MAddU8ToAddr16 5 , APU_Scroll11 , APU_Scroll11 + 1
-
-!source "asm/main6CommonBlimps.a"
-	dec APUData_TreeX
-	+MAPU_DataUpdateNumBytes APUData_TreeX , 1
-
-	jsr MusicPoll
-
-
-	jmp mainLoopGame
 	rts
 
-MusicDataStart
-MusicDataStart_afterHeader = MusicDataStart + 4
-	!bin "tmp/target/SotBexportedMusicEvents.cmp"
-MusicDataEnd
 
-!source "asm/ShadowBeast/DisplayScreen.a"
-!source "asm/ShadowBeast/APUTitle.a"
-!source "asm/ShadowBeast/DisplayData.a"
+Move_Blimps
+!source "asm/main6CommonBlimps.a"
+	rts
 
+
+Move_Tree
+	+MSubU8FromAddr16 1 , APUData_TreeX , APUData_TreeX+1
+	+MAndMem 1 , APUData_TreeX+1
+	jsr SetupTree
+	rts

@@ -1,0 +1,614 @@
+!zn
+Editor_HandleKeys
+
+	jsr getkey
+	cmp #0
+	beq .ll1
+	cmp #$ff
+	beq .ll1
+
+	cmp #$91
+	bne .notUp
+	jsr GUI_Move_Up
+.ll1	jmp .l1
+.notUp
+	cmp #$11
+	bne .notDown
+	jsr GUI_Move_Down
+	jmp .l1
+.notDown
+	cmp #$9d
+	bne .notLeft
+	jsr GUI_Move_Left
+	jmp .l1
+.notLeft
+	cmp #$1d
+	bne .notRight
+	jsr GUI_Move_Right
+	jmp .l1
+.notRight
+
+	cmp #' '
+	bne .notSpace
+
+	lda myPlayFlag
+	eor #$ff
+	sta myPlayFlag
+	bne .ol1
+;	lda #0
+	sta SIDVolumeFilter
+	jmp .l1
+.ol1
+	lda #$f
+	sta SIDVolumeFilter
+	jmp .l1
+.notSpace
+
+	cmp #'T'
+	bne .notTT
+	inc Editor_currentTempoIndex
+	lda Editor_currentTempoIndex
+	cmp #tempo_readoutLen
+	bcc .ok2
+	lda #0
+	sta Editor_currentTempoIndex
+.ok2
+	jsr Editor_UpdateNewTempo
+	jmp .l1
+.notTT
+
+	cmp #'t'
+	bne .notT
+	dec Editor_currentTempoIndex
+	bpl .ok1
+	lda #tempo_readoutLen-1
+	sta Editor_currentTempoIndex
+.ok1
+	jsr Editor_UpdateNewTempo
+	jmp .l1
+.notT
+
+	cmp #$0d
+	bne .notReturn
+
+	sei
+	jsr MusicStop
+	cli
+
+	jsr EstimateMusicSize
+
+	sei
+	lda ScreenNumber_track
+	sta ScreenNumber_trackPlaying
+	inc clearedEditor_CalculateMovingAverage
+	jsr MusicInit
+	lda #0
+	sta timeFrames
+	sta timeSeconds
+	sta timeMinutes
+	lda #$ff
+	sta myPlayFlag
+	+MACROAckRasterIRQ_A
+	cli
+	jmp .l1
+.notReturn
+
+	cmp #'0'
+	bne .not0
+
+	jsr GUI_GetHighlightedValueAddress
+	beq .notHighlightedBit1
+
+	sta .smhbc1+1
+	stx .smhbc1+2
+	lda #0
+.smhbc1	sta $1234
+
+.not0
+
+	cmp #'1'
+	bne .not1
+
+	lda #%10000
+.commonBitTwiddle
+	sta .smbt1+1
+
+	jsr GUI_GetHighlightedValueAddress
+	beq .notHighlightedBit1
+
+	sta .smhb1+1
+	stx .smhb1+2
+	sta .smhb2+1
+	stx .smhb2+2
+.smhb1	lda $1234
+.smbt1	eor #1
+.smhb2	sta $1234
+
+.notHighlightedBit1
+	jmp .l1
+
+.not1
+
+	cmp #'2'
+	bne .not2
+	lda #%100000
+	jmp .commonBitTwiddle
+.not2
+
+	cmp #'4'
+	bne .not4
+	lda #%1000000
+	jmp .commonBitTwiddle
+.not4
+
+	cmp #'8'
+	bne .not8
+	lda #%10000000
+	jmp .commonBitTwiddle
+.not8
+
+	cmp #'<'
+	beq .isLT
+	cmp #','
+	bne .notLT
+.isLT
+
+	jsr GUI_GetHighlightedValueAddress
+	beq .notHighlighted
+
+	sta .smh1+1
+	stx .smh1+2
+.smh1	dec $1234
+
+.notHighlighted
+	jmp .l1
+
+.notLT
+	cmp #'>'
+	beq .isGT
+	cmp #'.'
+	bne .notGT
+.isGT
+
+	jsr GUI_GetHighlightedValueAddress
+	beq .notHighlighted
+
+	sta .smh2+1
+	stx .smh2+2
+.smh2	inc $1234
+	jmp .notHighlighted
+
+.notGT
+
+	; Handle switching to different effects etc
+	cmp #'-'
+	bne .notMinus
+
+	lda Editor_theColumn
+	bmi .noColumn
+	cmp #0
+	bne .notEffectsd0
+
+	dec ScreenNumber_effect
+
+	jmp .l1
+.notEffectsd0
+
+	cmp #1
+	bne .notEffectsd1
+
+	dec ScreenNumber_sequence
+
+	jmp .l1
+.notEffectsd1
+
+	dec ScreenNumber_track
+
+.noColumn	jmp .l1
+
+.notMinus
+
+	cmp #'='
+	beq .isPlus
+	cmp #'+'
+	bne .notPlus
+
+.isPlus
+	lda Editor_theColumn
+	bmi .noColumn
+	cmp #0
+	bne .notEffectsi0
+
+	inc ScreenNumber_effect
+
+	jmp .l1
+.notEffectsi0
+
+	cmp #1
+	bne .notEffectsi1
+
+	inc ScreenNumber_sequence
+
+	jmp .l1
+.notEffectsi1
+
+	inc ScreenNumber_track
+
+.notPlus
+
+	; Scroll up/down sequence
+	cmp #'q'
+	bne .notQ
+
+	lda Editor_theColumn
+	cmp #2
+	bcs .doTrackUp
+
+	lda ScreenNumber_sequenceStp
+	sec
+	sbc #$08
+	bcs .ok3
+	lda #0
+.ok3
+	sta ScreenNumber_sequenceStp
+	jmp .l1
+
+.doTrackUp
+	lda ScreenNumber_trackStp
+	sec
+	sbc #$08
+	bcs .ok4
+	lda #0
+.ok4
+	sta ScreenNumber_trackStp
+	jmp .l1
+
+.notQ
+
+	cmp #'a'
+	bne .notA
+
+	lda Editor_theColumn
+	cmp #2
+	bcs .doTrackDown
+
+	lda ScreenNumber_sequenceStp
+	clc
+	adc #$08
+	cmp #kMusicPlayer_SequenceSize-16
+	bcc .noClamp1
+	lda #kMusicPlayer_SequenceSize-16
+.noClamp1
+	sta ScreenNumber_sequenceStp
+	jmp .l1
+
+.doTrackDown
+	lda ScreenNumber_trackStp
+	clc
+	adc #$08
+	cmp #kMusicPlayer_TunesVoiceSize-16
+	bcc .noClamp2
+	lda #kMusicPlayer_TunesVoiceSize-16
+.noClamp2
+	sta ScreenNumber_trackStp
+	jmp .l1
+
+.notA
+
+	; Adjust the sequence value by 12 for d/u
+	cmp #'d'
+	bne .notD
+	jsr GUI_GetHighlightedValueAddress
+	beq .lll1
+	sta $fb
+	stx $fc
+	ldy #0
+	lda ($fb),y
+	sec
+	sbc #12
+	sta ($fb),y
+.lll1	jmp .l1
+.notD
+	
+	; Adjust the sequence value by 12 for d/u
+	cmp #'u'
+	bne .notU
+	jsr GUI_GetHighlightedValueAddress
+	beq .lll1
+	sta $fb
+	stx $fc
+	ldy #0
+	lda ($fb),y
+	clc
+	adc #12
+	sta ($fb),y
+	jmp .l1
+.notU
+
+	cmp #'c'
+	bne .notC
+
+	jsr getSeqTrackBuffer
+	lda Editor_theColumn
+	beq .doEffect1
+
+	inc VIC2BorderColour
+
+.cl2
+	lda ($fb),y
+	sta copyBuffer,y
+	dey
+	bpl .cl2
+
+	dec VIC2BorderColour
+
+	jmp .l1
+.doEffect1
+	inc VIC2BorderColour
+.cl3
+	lda ($fb),y
+	sta copyBuffer,y
+	lda ($fd),y
+	sta copyBuffer+(kMusicPlayer_EffectsSize / 2),y
+	dey
+	bpl .cl3
+	dec VIC2BorderColour
+
+	jmp .l1
+.notC
+
+	cmp #'r'
+	bne .notR
+
+	jsr getSeqTrackBuffer
+	lda Editor_theColumn
+	beq .doEffect2
+
+.cl22
+	lda copyBuffer,y
+	sta ($fb),y
+	dey
+	bpl .cl22
+
+	jmp .l1
+.doEffect2
+.cl32
+	lda copyBuffer,y
+	sta ($fb),y
+	lda copyBuffer+(kMusicPlayer_EffectsSize/2),y
+	sta ($fd),y
+	dey
+	bpl .cl32
+
+	jmp .l1
+.notR
+
+	; Delete
+	cmp #$14
+	bne .notDel
+
+	lda Editor_theColumn
+	bmi .llll1
+	beq .llll1
+
+	jsr getSeqTrackBuffer
+	sty .smdel1+1
+	ldy GUI_cursorValue
+.dell1
+.smdel1	cpy #0
+	bcs .llll1
+	iny
+	lda ($fb),y
+	dey
+	sta ($fb),y
+	iny
+	jmp .smdel1
+
+.llll1 jmp .l1
+.notDel
+
+	; Insert
+	cmp #$94
+	bne .notInsert
+
+	lda Editor_theColumn
+	bmi .llll1
+	beq .llll1
+
+	jsr getSeqTrackBuffer
+.insertl1
+	cpy GUI_cursorValue
+	beq .delAddZero
+	dey
+	lda ($fb),y
+	iny
+	sta ($fb),y
+	dey
+	jmp .insertl1
+.delAddZero
+	lda #0
+	sta ($fb),y
+	jmp .l1
+.notInsert
+
+	cmp #'s'
+	bne .notS
+
+	jsr Storage_Init
+	jsr GetFilenamePrompt
+	bcs .ll1_1
+	jsr Storage_SavingMessage
+	jsr Storage_Scratch
+	jsr Storage_SaveMusic
+	jsr Editor_clearScreenDisplay
+
+	jmp .l1
+
+.notS
+
+
+	cmp #'l'
+	bne .notL
+
+	jsr Storage_Init
+	jsr GetFilenamePrompt
+	bcs .ll1_1
+	jsr Storage_LoadingMessage
+	jsr Storage_LoadMusic
+	jsr Editor_clearScreenDisplay
+
+	jsr PostLoadProcessMusic
+
+	lda #0
+	sta ScreenNumber_track
+	sta ScreenNumber_trackPlaying
+	jsr MusicInit
+	jsr EstimateMusicSize
+.ll1_1	jmp .l1
+
+.notL
+
+
+	cmp #$13
+	bne .notHome
+
+	ldy Editor_theColumn
+	bmi .ll1_1
+
+	lda columnTopsLo,y
+	ldx columnTopsHi,y
+	jsr GUI_SetHighlighted
+
+	lda Editor_theColumn
+	cmp #1
+	bne .notSequence2
+
+	lda #0
+	sta ScreenNumber_sequenceStp
+	jmp .l1
+
+.notSequence2
+
+	cmp #2
+	bcc .notTrack0
+
+	lda #0
+	sta ScreenNumber_trackStp
+.all1	jmp .l1
+
+.notTrack0
+
+	jmp .l1
+
+.notHome
+
+	cmp #$85
+	bne .notF1
+
+	lda #VIC2Colour_Yellow
+	sta ScreenIndex_voices_currentSequenceColour
+
+	lda editorVoiceMuteFlags
+	eor #1
+	sta editorVoiceMuteFlags
+	beq .all1
+
+	lda #0
+	sta SIDVoice1Control
+	lda #VIC2Colour_Red
+	sta ScreenIndex_voices_currentSequenceColour
+
+	jmp .l1
+.notF1
+
+	cmp #$86
+	bne .notF3
+
+	lda #VIC2Colour_Yellow
+	sta ScreenIndex_voices_currentSequenceColour+1
+
+	lda editorVoiceMuteFlags+1
+	eor #1
+	sta editorVoiceMuteFlags+1
+	beq .all1
+
+	lda #VIC2Colour_Red
+	sta ScreenIndex_voices_currentSequenceColour+1
+	lda #0
+	sta SIDVoice2Control
+
+	jmp .l1
+.notF3
+
+	cmp #$87
+	bne .notF5
+
+	lda #VIC2Colour_Yellow
+	sta ScreenIndex_voices_currentSequenceColour+2
+
+	lda editorVoiceMuteFlags+2
+	eor #1
+	sta editorVoiceMuteFlags+2
+	beq .all1
+
+	lda #VIC2Colour_Red
+	sta ScreenIndex_voices_currentSequenceColour+2
+	lda #0
+	sta SIDVoice3Control
+
+	jmp .l1
+.notF5
+
+	cmp #'b'
+	bne .notB
+	ldx BEAT_LENGTH
+	inx
+	txa
+	and #$f
+	sta BEAT_LENGTH
+	jmp .l1
+.notB
+
+	cmp #'B'
+	bne .notBB
+	ldx BEATS_IN_BAR
+	inx
+	txa
+	and #$f
+	sta BEATS_IN_BAR
+	jmp .l1
+.notBB
+
+	cmp #'m'
+	bne .notM
+
+	jsr GUI_GetHighlighted
+	ldy Editor_mode
+	sta Editor_modes_highlightLo,y
+	txa
+	sta Editor_modes_highlightHi,y
+
+	lda Editor_mode
+	clc
+	adc #1
+	and #1
+	sta Editor_mode
+
+	jsr Editor_clearScreenDisplay
+
+
+	ldy Editor_mode
+	lda Editor_modes_highlightLo,y
+	ldx Editor_modes_highlightHi,y
+	jsr GUI_SetHighlighted
+
+	jmp .l1
+.notM
+
+	; Debug: Display the key codes on the screen
+.sm1	ldy #0
+;	sta $400,y
+	inc .sm1+1
+
+.l1
+	rts

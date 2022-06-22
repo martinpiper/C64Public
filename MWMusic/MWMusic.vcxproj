@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{922749E5-4655-457A-B684-E6BF97B1BEB3}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>BuildIt.bat n</NMakeBuildCommandLine>
+    <NMakeOutput>MWMusicEditor.prg</NMakeOutput>
+    <NMakeCleanCommandLine>BuildIt.bat n</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat n</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BuildIt.bat n</NMakeBuildCommandLine>
+    <NMakeOutput>MWMusicEditor.prg</NMakeOutput>
+    <NMakeCleanCommandLine>BuildIt.bat n</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt.bat n</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="ReadMe.txt" />
+    <Text Include="TechDoc.txt" />
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\MusicEditor\GetKey.a" />
+    <None Include="..\stdlib\Initialise.a" />
+    <None Include="..\stdlib\MemoryCopy.a" />
+    <None Include="..\stdlib\PETSCII.a" />
+    <None Include="..\stdlib\stdlib.a" />
+    <None Include="BuildDemos.bat" />
+    <None Include="BuildIt.bat" />
+    <None Include="Demo.a" />
+    <None Include="Editor.a" />
+    <None Include="Editor_Common.a" />
+    <None Include="Editor_Data.a" />
+    <None Include="Editor_Events.a" />
+    <None Include="Editor_Internals.a" />
+    <None Include="Editor_IRQ.a" />
+    <None Include="Editor_Keys.a" />
+    <None Include="Editor_Layouts.a" />
+    <None Include="Editor_Macros.a" />
+    <None Include="Editor_Player.a" />
+    <None Include="features\ExpectedSIDOutput.feature" />
+    <None Include="features\ExpectedSIDOutput2.feature" />
+    <None Include="features\ExpectedSIDOutput3.feature" />
+    <None Include="features\OldAndNewPerformance.feature" />
+    <None Include="GUI.a" />
+    <None Include="GUI_Defs.a" />
+    <None Include="MusicPlayer.a" />
+    <None Include="MusicPlayerData.a" />
+    <None Include="MusicPlayerData_Blank.a" />
+    <None Include="MusicPlayerData_Citadel.a" />
+    <None Include="MusicPlayerData_Snare.a" />
+    <None Include="MusicPlayerData_Warbles.a" />
+    <None Include="MusicPlayer_Defs.a" />
+    <None Include="OriginalData\armalytemusic.tas" />
+    <None Include="OriginalData\Citadel.tas" />
+    <None Include="OriginalData\DoubleDragon3.tas" />
+    <None Include="OriginalData\FinalBlow.tas" />
+    <None Include="OriginalData\Snare.tas" />
+    <None Include="OriginalData\Walkers_Warbles.tas" />
+    <None Include="RunTests.bat" />
+    <None Include="Storage.a" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

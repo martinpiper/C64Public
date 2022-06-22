@@ -276,6 +276,10 @@ public:
 	afx_msg void OnBnClickedInsertEnvelope();
 	afx_msg void OnFileExporttoOric();
 	afx_msg void OnUpdateFileExporttoOric(CCmdUI *pCmdUI);
+	CEdit mEnvelopeNumDecimal;
+	afx_msg void OnEditClearalldata();
+	afx_msg void OnEditSetdefaultdata();
+	afx_msg void OnFileExporttoMIDI();
 };
 
 #ifndef _DEBUG  // debug version in MusicStudioView.cpp

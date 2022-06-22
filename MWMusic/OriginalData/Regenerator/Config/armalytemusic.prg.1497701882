@@ -1,0 +1,78 @@
+:CODE START
+C000
+:CODE END
+CF82
+:DATA BYTES
+C057-C059
+C4B2-C81F
+CC74-CCDD
+CCDD-CD36
+CD36-CF82
+C81F-CC74
+CF82-D000
+:WORDS
+:POINTERS
+:HILOLOOKUP
+:LOHILOOKUP
+:DATA TEXT
+:BLANK LINES
+C555
+:REMOVED BYTES
+:FULL COMMENTS
+C4E7 Track state 3xlo then 3xhi
+C4EF 
+CC74 Track data
+C765 3xlo 3xhi tempo1 tempo2
+C615 Voice effect data, the first bank
+C6BD More voice effect data, the second bank of it
+C058 negative no volume fade otherwise this sets the speed of the volume fade down
+C4F2 Voice states
+CD66 Other tune tracks start around here
+:SIDE COMMENTS
+C4F2 voice effect x 8 calculation result
+:USER LABELS
+C4EE tempo2
+C4E7 tracksLo
+C4EA tracksHi
+C4ED tempo1
+C555 notesLo
+C556 notesLo1
+C5B5 notesHi
+C5B6 notesHi1
+C785 sequenceLo
+C7D2 sequenceHi
+C81F sequences
+C765 tuneInfo
+CD36 track2
+CCDD track1
+CC74 track0
+C058 fadeFlagSpeed
+C057 playFlag
+C059 MusicPlay
+C000 MusicInit
+C4EF offsetSIDVice
+C4F2 effectOffset
+C615 effect_AttackDecay
+C616 effect_SustainReleas
+C617 effect_Control1
+C618 effect_Special
+C61A effect_PulseWidth
+C61B effect_PulseDepth
+C61C effect_TopBottom
+C6BD effect_AttackTime
+C6BE effect_AttackNote
+C6BF effect_AttackControl
+C6C0 effect_Control2
+C6C1 effect_Vibrato
+C6C2 effect_Note2
+C4DF vibratoDelays
+C4BF vibratoPattern1
+C4CF vibratoPattern2
+:DISABLED HILO LABELS
+:USER HILO
+:TAB SIZE
+0008
+:LOAD OFFSET
+0000
+:SYSTEM
+Commodore 64

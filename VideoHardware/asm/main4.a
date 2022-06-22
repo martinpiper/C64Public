@@ -1,4 +1,5 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -43,6 +44,12 @@ start
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	jsr DisplayScreen
+
+!ifdef kBus24Bit_VideoLayer_HasOverscan {
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+	sta CIA2PortBRS232
+}
 
 mainLoop
 ;	+WaitForFire_A

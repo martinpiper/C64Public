@@ -11,19 +11,20 @@ TapeTool will most often be used with ACME to assemble the MartyLoad tape turbo 
 The ExampleBuild.bat file shows how to run the examples given below from a batch file.
 
 First make sure the "_config.a" file only has the following lines enabled:
-	OpenBorders = 1 
-	MainLoad_EnableScreen = 1 
-	EnableBlockChecksum = 1 
-	EnableBlockCompression = 1 
-	TapeTurboSpeed = $80 
-	NovaishLoad = 1 
+	OpenBorders = 1
+	MainLoad_EnableScreen = 1
+	EnableBlockChecksum = 1
+	EnableBlockCompression = 1
+	TapeTurboSpeed = $80
+	NovaishLoad = 1
+	BitmapDisplay = 1
 This config file tells the tape turbo code how to build. It enables the border opening code in the Nova load style loader.
 It also enables extended error checksums for file data. It sets the tape turbo speed to be $80 and also defines the different
 turbo tape byte codes used. The turbo byte codes don't really need to be changed but they can be configured if required.
 The block compression is also enabled.
 
 Now assemble the code using:
->	acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a
+>	acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a
 This creates three files.
 "Loaders.bin" the assembled code.
 "Loaders.map" the map file of symbols used.
@@ -85,7 +86,7 @@ also closed and the correct file length set with the 'c' parameter.
 
 
 So in summary the following lines are executed:
-acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a
+acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a
 TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin c
 TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd c
 TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c

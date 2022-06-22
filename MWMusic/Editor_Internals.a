@@ -1,0 +1,776 @@
+!zn
+Editor_Init
+	jsr InitKeyboard
+	sei
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreenLowerCase_A
+	+MACRODisableUpperLowerCaseChange_A
+
+	lda #<IrqTopOfScreen
+	sta IRQServiceRoutineLo
+	lda #>IrqTopOfScreen
+	sta IRQServiceRoutineHi
+	lda #1
+	sta VIC2InteruptControl
+	lda #$0
+	sta VIC2Raster
+
+	lda #0
+	sta ScreenNumber_trackPlaying
+	jsr MusicInit
+	jsr EstimateMusicSize
+
+	+MACROAckAllIRQs_A
+	cli
+
+	lda Editor_modes_highlightLo
+	ldx Editor_modes_highlightHi
+	jsr GUI_SetHighlighted
+
+	; Turn on key repeat for all keys
+	lda #$ff
+	sta EZPFlagFlagRepeatKeys
+
+	jsr PostLoadProcessMusic
+
+	lda #8
+	sta ZPCurrentFileDeviceNumber
+	lda #0
+	sta ZPDisplaySystemErrorSwitch
+	rts
+
+!zn
+Editor_UpdateInternalData
+
+	lda ScreenNumber_effect
+	and #kMusicPlayer_NumEffects-1
+	sta ScreenNumber_effect
+	asl
+	tax
+	lda effect_Tab1,x
+	sta Screen_main_offsets_effect
+	sta columnAddressNoTweakLo
+	lda effect_Tab1+1,x
+	sta Screen_main_offsets_effect+1
+	sta columnAddressNoTweakHi
+	lda effect_Tab2,x
+	sta Screen_main_offsets_effect2
+	sta currentSelectedColumnAddress2
+	lda effect_Tab2+1,x
+	sta Screen_main_offsets_effect2+1
+	sta currentSelectedColumnAddress2+1
+
+	lda ScreenNumber_sequence
+	and #kMusicPlayer_NumSequences-1
+	sta ScreenNumber_sequence
+	tax
+	lda sequenceLo,x
+	sta columnAddressNoTweakLo+1
+	clc
+	adc ScreenNumber_sequenceStp
+	sta Screen_main_offsets_sequence
+	lda sequenceHi,x
+	sta columnAddressNoTweakHi+1
+	adc #0
+	sta Screen_main_offsets_sequence+1
+
+	lda ScreenNumber_track
+	and #kMusicPlayer_NumTunes-1
+	sta ScreenNumber_track
+	asl
+	asl
+	asl
+	tax
+	lda tuneInfo,x
+	sta columnAddressNoTweakLo+2
+	clc
+	adc ScreenNumber_trackStp
+	sta Screen_main_offsets_tracks
+	lda tuneInfo+3,x
+	sta columnAddressNoTweakHi+2
+	adc #0
+	sta Screen_main_offsets_tracks+1
+
+	lda tuneInfo+1,x
+	sta columnAddressNoTweakLo+3
+	clc
+	adc ScreenNumber_trackStp
+	sta Screen_main_offsets_tracks+2
+	lda tuneInfo+4,x
+	sta columnAddressNoTweakHi+3
+	adc #0
+	sta Screen_main_offsets_tracks+3
+
+	lda tuneInfo+2,x
+	sta columnAddressNoTweakLo+4
+	clc
+	adc ScreenNumber_trackStp
+	sta Screen_main_offsets_tracks+4
+	lda tuneInfo+5,x
+	sta columnAddressNoTweakHi+4
+	adc #0
+	sta Screen_main_offsets_tracks+5
+
+	; For direct tempo update
+	txa
+	clc
+	adc #6
+	adc #<tuneInfo
+	sta ScreenIndex_trackTempo1
+	lda #>tuneInfo
+	adc #0
+	sta ScreenIndex_trackTempo1+1
+
+	lda ScreenIndex_trackTempo1
+	clc
+	adc #1
+	sta ScreenIndex_trackTempo2
+	lda ScreenIndex_trackTempo1+1
+	adc #0
+	sta ScreenIndex_trackTempo2+1
+
+	jsr Editor_CalculateTempoReadout
+
+	rts
+
+
+!zn
+Editor_ResetHighlights
+
+	lda #VIC2Colour_DarkGrey
+	sta Screen_main_offsets_colour
+	sta Screen_main_offsets_colour+1
+	sta Screen_main_offsets_colour+2
+	sta Screen_main_offsets_colour+3
+	sta Screen_main_offsets_colour+4
+
+	sta Screen_vibratos_offsets_colour_vibratos
+	sta Screen_vibratos_offsets_colour_vibratos+1
+
+	lda #-1
+	sta Editor_theColumn
+
+	rts
+
+
+!zn
+Editor_HandleHighlights
+	jsr GUI_GetHighlighted
+	beq .notH1
+	sta $fb
+	stx $fc
+	ldy #kGUI_Element_Offset_extData
+	lda ($fb),y
+	bmi .notH1
+	sta Editor_theColumn
+	tay
+
+	lda Editor_mode
+	beq .isMainMode
+
+	; Vibrato mode
+	lda #VIC2Colour_LightGrey
+	sta Screen_vibratos_offsets_colour_vibratos,y
+
+	ldy #kGUI_Element_Offset_index
+	lda ($fb),y
+	sta GUI_cursorValue
+
+	rts
+
+.isMainMode
+	lda #VIC2Colour_LightGrey
+	sta Screen_main_offsets_colour,y
+
+	lda Editor_theColumn
+	cmp #1
+	bne .notSequence1
+	ldy #kGUI_Element_Offset_index
+	lda ($fb),y
+	clc
+	adc ScreenNumber_sequenceStp
+	sta GUI_cursorValue
+	jmp .notH1
+.notSequence1
+	cmp #2
+	bcc .notTrack1
+	ldy #kGUI_Element_Offset_index
+	lda ($fb),y
+	clc
+	adc ScreenNumber_trackStp
+	sta GUI_cursorValue
+	jmp .notH1
+.notTrack1
+	lda ScreenNumber_effect
+	sta GUI_cursorValue
+	jmp .notH1
+
+.notH1
+	rts
+
+
+!zn
+Editor_RenderExtraData
+
+	lda timeSeconds
+	+MDisplayDecimalAt_A 3 , 6 , $80
+	lda timeMinutes
+	+MDisplayDecimalAt_A 0 , 6 , $80
+
+	; Metronome
+	lda BAR_COUNT
+	+MDisplayDecimalAt_A 12 , 5 , $80
+	lda BEAT_COUNT
+	+MDisplayDecimalAt_A 15 , 5 , $80
+	lda NOTE_COUNT
+	+MDisplayDecimalAt_A 18 , 5 , $80
+
+	lda myPlayFlag
+	beq .noPlay
+	; Average and max scanline display
+	jsr Editor_CalculateMovingAverage
+	+MDisplayDecimalAt_A 0 , 4 , $80
+	jsr Editor_CalculateMaximum
+	+MDisplayDecimalAt_A 3 , 4 , $80
+.noPlay
+
+	; Real tempo display
+	ldx Editor_currentTempoIndex	;0-15 depending on position in tempo table
+	
+;NEW CODE	
+	lda	BEAT_LENGTH
+	cmp	#6
+	bne	.readout8
+	lda	tempo_readout6,x
+	jmp	.treadout
+.readout8	cmp	#8
+	bne	.readout12
+	lda	tempo_readout8,x
+	jmp	.treadout
+.readout12	cmp	#12
+	bne	.readout16
+	lda tempo_readout12,x
+	jmp	.treadout
+.readout16							;default for anything other than special cases
+	lda tempo_readout16,x
+.treadout
+;END OF NEW CODE
+	+MDisplayDecimal3At_A 25 , 4 , $80
+	
+	; Display the highlighted sequence note
+	lda Editor_theColumn
+	cmp #1
+	bne .notNote
+	jsr GUI_GetHighlightedValueAddress
+	beq .notNote
+	sta $fb
+	stx $fc
+	ldy #0
+	lda ($fb),y
+	+MDisplayNoteAt 17 , 6 , 0
+.notNote
+
+
+	; Displaying the current notes being played for each channel
+	lda voices_currentNote
+	+MDisplayNoteAt 29 , 6 , $80
+	lda voices_currentNote + 1
+	+MDisplayNoteAt 29 + 4 , 6 , $80
+	lda voices_currentNote + 2
+	+MDisplayNoteAt 29 + 8 , 6 , $80
+
+	rts
+
+
+currentSelectedColumnAddress2 !word 0
+columnAddressNoTweakLo !by 0 , 0 , 0 , 0 , 0
+columnAddressNoTweakHi !by 0 , 0 , 0 , 0 , 0
+
+copyBuffer
+	!fill $100 , 0
+
+
+usedEffects		!fill kMusicPlayer_NumEffects , 0
+usedSequences	!fill kMusicPlayer_NumSequences , 0
+musicSize		!word 0
+
+EstimateMusicSize
+	lda #<MusicPlayer_Size
+	sta musicSize
+	lda #>MusicPlayer_Size
+	sta musicSize+1
+
+	lda #40		; vibratoPattern1 etc
+	jsr .addA
+
+
+	ldx #0
+	txa
+.em1
+	sta usedEffects,x
+	inx
+	cpx #kMusicPlayer_NumEffects
+	bne .em1
+
+	tax
+.em2
+	sta usedSequences,x
+	inx
+	cpx #kMusicPlayer_NumSequences
+	bne .em2
+
+	; Flag which tracks use which sequences
+	ldx #0
+.em3
+	ldy #kMusicPlayer_TunesVoiceSize
+	lda tuneInfo,x
+	sta $fb
+	lda tuneInfo+3,x
+	sta $fc
+	jsr .addSizeTrack
+	lda tuneInfo+1,x
+	sta $fb
+	lda tuneInfo+4,x
+	sta $fc
+	jsr .addSizeTrack
+	lda tuneInfo+2,x
+	sta $fb
+	lda tuneInfo+5,x
+	sta $fc
+	jsr .addSizeTrack
+
+	lda #kMusicPlayer_TunesSize
+	jsr .addA
+
+	txa
+	clc
+	adc #kMusicPlayer_TunesSize
+	tax
+	cpx #kMusicPlayer_NumTunes * kMusicPlayer_TunesSize
+	bne .em3
+
+	ldx #0
+.em4
+	lda usedSequences,x
+	beq .em5
+	lda sequenceLo,x
+	sta $fb
+	lda sequenceHi,x
+	sta $fc
+	ldy #kMusicPlayer_SequenceSize
+	jsr .addSizeSequence
+	lda #2	; For the index table
+	jsr .addA
+.em5
+	inx
+	cpx #kMusicPlayer_NumSequences
+	bne .em4
+
+	ldx #0
+.em6
+	lda usedEffects,x
+	beq .em7
+	lda #kMusicPlayer_EffectsSize
+	jsr .addA
+.em7
+	inx
+	cpx #kMusicPlayer_NumEffects
+	bne .em6
+
+	rts
+
+.nextIsEffect !by 0
+.addSizeSequence
+	stx .smtx12+1
+	sty .smemz12+1
+	ldy #0
+	sty .nextIsEffect
+.emzl12
+	lda .nextIsEffect
+	beq .emnotEffect1
+	lda #0
+	sta .nextIsEffect
+	lda ($fb),y
+	and #kMusicPlayer_NumEffects-1
+	tax
+	lda #1
+	sta usedEffects,x
+.emnotEffect1
+	lda ($fb),y
+	cmp #$ff	; It's the end of the track
+	bcs .emzl22
+	bpl .nemseq12
+	inc .nextIsEffect
+.nemseq12
+	iny
+.smemz12	cpy #0
+	bne .emzl12
+
+.emzl22
+	tya
+	jsr .addA
+	lda #1
+	jsr .addA
+.smtx12	ldx #0
+	rts
+
+.addA
+	clc
+	adc musicSize
+	sta musicSize
+	lda musicSize+1
+	adc #0
+	sta musicSize+1
+	rts
+
+; Entry:
+; fb/fc = lo/hi for the block
+; Y = Size of the block
+.addSizeTrack
+	stx .smtx1+1
+	sty .smemz1+1
+	ldy #0
+.emzl1
+	lda ($fb),y
+	cmp #$ff	; It's the end of the track
+	bcs .emzl2
+	cmp #$40
+	bcc .nemseq1
+	iny
+.nemseq1
+	iny
+	lda ($fb),y
+	tax
+	lda #1
+	sta usedSequences,x
+	iny
+.smemz1	cpy #0
+	bcc .emzl1
+
+.emzl2
+	tya
+	jsr .addA
+	lda #1
+	jsr .addA
+.smtx1	ldx #0
+	rts
+
+
+
+!zn
+.upgradeV0
+;	inc VIC2BorderColour
+
+	; Shift up the vibrato tables
+	ldx #15
+.ul1
+	lda vibratoPattern2-1,x
+	sta vibratoPattern2,x
+	lda vibratoPattern1-1,x
+	sta vibratoPattern1,x
+	dex
+	bpl .ul1
+
+	lda #$0c
+	sta BEAT_LENGTH
+	lda #$04
+	sta BEATS_IN_BAR
+
+	lda #1
+	sta MusicPlayerDataVersion
+	rts
+
+.upgradeV1
+;	inc VIC2BorderColour
+
+	ldx #0
+.ul2
+	lda sequenceLo,x
+	sta $fb
+	lda sequenceHi,x
+	sta $fc
+
+	ldy #0
+.ul3
+	lda ($fb),y
+	cmp #$ff
+	beq .ul4
+
+	and #%00111111
+	clc
+	adc #1
+	and #%00111111
+	sta .smnewDelay+1
+
+	lda ($fb),y
+	and #%11000000
+.smnewDelay	ora #0
+	sta ($fb),y
+	iny	; Skip delay
+
+	and #%10000000
+	beq .notVoiceChange
+	iny	; Skip voice change
+.notVoiceChange
+	iny	; Skip note
+	cpy #kMusicPlayer_SequenceSize
+	bne .ul3
+
+.ul4
+	inx
+	cpx #kMusicPlayer_NumSequences
+	bne .ul2
+
+	lda #2
+	sta MusicPlayerDataVersion
+	rts
+
+PostLoadProcessMusic
+
+	; Perform upgrades
+	lda MusicPlayerDataVersion
+	bne .notV0
+	jsr .upgradeV0
+.notV0
+	lda MusicPlayerDataVersion
+	cmp #1
+	bne .notV1
+	jsr .upgradeV1
+.notV1
+	lda MusicPlayerDataVersion
+	cmp #2
+	bne .notV2
+;	jsr .upgradeV2
+.notV2
+
+	ldx #0
+.pll1
+	lda sequenceLo,x
+	sta $fb
+	lda sequenceHi,x
+	sta $fc
+	ldy #kMusicPlayer_SequenceSize
+	jsr .trimZeros
+	inx
+	cpx #kMusicPlayer_NumSequences
+	bne .pll1
+
+	ldx #0
+.pll2
+	ldy #kMusicPlayer_TunesVoiceSize
+	lda tuneInfo,x
+	sta $fb
+	lda tuneInfo+3,x
+	sta $fc
+	jsr .trimZeros
+	lda tuneInfo+1,x
+	sta $fb
+	lda tuneInfo+4,x
+	sta $fc
+	jsr .trimZeros
+	lda tuneInfo+2,x
+	sta $fb
+	lda tuneInfo+5,x
+	sta $fc
+	jsr .trimZeros
+	txa
+	clc
+	adc #kMusicPlayer_TunesSize
+	tax
+	cpx #kMusicPlayer_NumTunes * kMusicPlayer_TunesSize
+	bne .pll2
+
+	jsr Editor_CalculateTempoReadout
+
+	rts
+
+; Entry:
+; fb/fc = lo/hi for the block
+; Y = Size of the block
+.trimZeros
+	sty .smtz1+1
+	ldy #0
+.tzl1
+	lda ($fb),y
+	cmp #$ff	; It's the end of the block
+	bcs .tzl2
+	iny
+.smtz1	cpy #0
+	bne .tzl1
+	rts
+.tzl2
+	iny
+	beq .tzl4	; Paranoia for wrap-around, this should never happen though since the block size is generally 128 bytes
+	lda #0
+.tzl3
+	cpy .smtz1+1
+	bcs .tzl4
+	sta ($fb),y
+	iny
+	jmp .tzl3
+.tzl4
+	rts
+
+
+
+!zn
+; Exit:
+; A/X = lo/hi of the specific buffer
+; Y = Byte size -1 for the buffer type
+getSeqTrackBuffer
+	ldx Editor_theColumn
+	bpl .setupColumn
+	ldx #0
+.setupColumn
+	lda columnAddressNoTweakLo,x
+	sta $fb
+	lda columnAddressNoTweakHi,x
+	sta $fc
+
+	lda currentSelectedColumnAddress2
+	sta $fd
+	lda currentSelectedColumnAddress2+1
+	sta $fe
+
+	lda .bufferSizeTab,x
+	tay
+	dey
+	rts
+
+.bufferSizeTab
+	; For effects, two buffers are copied for 8 bytes each
+	!by kMusicPlayer_EffectsSize / 2 , kMusicPlayer_SequenceSize , kMusicPlayer_TunesVoiceSize , kMusicPlayer_TunesVoiceSize , kMusicPlayer_TunesVoiceSize
+
+
+!zn
+.clearScrPos = 7 + (8 * VIC2ScreenCharsWidth)
+Editor_clearScreenDisplay
+	; Clear the buffer
+	ldx #32
+.gfcl1
+	lda #' '
+!for .i , 16 {
+	sta SCREENRAM + .clearScrPos + (.i * VIC2ScreenCharsWidth),x
+}
+	dex
+	bpl .gfcl1
+
+	jsr Editor_Colourise
+	rts
+
+
+
+!zn
+Editor_CalculateTempoReadout
+	ldy #0
+
+	ldx #0
+	stx Editor_currentTempoIndex
+.l1
+	lda ScreenIndex_trackTempo1
+	sta $fb
+	lda ScreenIndex_trackTempo1+1
+	sta $fc
+	lda ($fb),y
+	cmp tempo1_table,x
+	bne .o1
+
+	lda ScreenIndex_trackTempo2
+	sta $fb
+	lda ScreenIndex_trackTempo2+1
+	sta $fc
+	lda ($fb),y
+	cmp tempo2_table,x
+	bne .o1
+
+	stx Editor_currentTempoIndex
+	rts
+
+.o1
+	inx
+	cpx #tempo_readoutLen
+	bne .l1
+
+	rts
+
+
+
+!zn
+Editor_UpdateNewTempo
+	ldx Editor_currentTempoIndex	;0-15 (16 tempos in each table)
+
+	lda ScreenIndex_trackTempo1
+	sta $fb
+	lda ScreenIndex_trackTempo1+1
+	sta $fc
+	lda tempo1_table,x
+	sta ($fb),y
+	sta tempo1	; Update the tune info tempo1 straight into the playing tune as well
+
+	lda ScreenIndex_trackTempo2
+	sta $fb
+	lda ScreenIndex_trackTempo2+1
+	sta $fc
+	lda tempo2_table,x
+	sta ($fb),y
+	sta tempo2	; Update the tune info tempo2 straight into the playing tune as well
+
+	rts
+
+
+!zn
+clearedEditor_CalculateMovingAverage !by 1
+Editor_ClearMovingAverage
+	lda #0
+Editor_ClearMovingAverageTo
+	ldx #movingAverageSize
+.l1
+	sta movingAverage-1,x
+	dex
+	bne .l1
+	lda #0
+	sta clearedEditor_CalculateMovingAverage
+	rts
+
+
+
+!zn
+; Exit:
+; A = Calculated moving average
+Editor_CalculateMovingAverage
+	ldx #movingAverageSize
+	lda #0
+	ldy #0
+.l1
+	clc
+	adc movingAverage-1,x
+	bcc .l2
+	iny
+.l2
+	dex
+	bne .l1
+
+	sty $fb
+
+	; Divide the sum
+!for .i , movingAverageShift {
+	lsr $fb
+	ror
+}
+	rts
+
+!zn
+; Exit:
+; A = Calculated maximum
+Editor_CalculateMaximum
+	ldx #movingAverageSize
+	lda #0
+.l1
+	cmp movingAverage-1,x
+	bcs .l2
+	lda movingAverage-1,x
+.l2
+	dex
+	bne .l1
+
+	rts

@@ -77,6 +77,62 @@ All references to CartFile1_ values must be in the GenericSpecificCode block, el
 
 TODO items:
 
+* For the last door, will need a hint that the door can only be opened by an enemy, not the player
+	Captured or not captured... If only they would follow your commands...
+
+
+
+
+* DisplayTitleScreen can be used with completely standalone code for the title screen, no need to reuse the game multiplexor code at all if we don't want to. :)
+	This makes the whole title screen code easier to maintain as there won't be so much referencing of Scroller internals
+	Currently the title screen gets the common game code, including the multiplexor and IRQ handler, from "Citadel2Entry.a" along with: Citadel2Entry_Title.a Citadel2Entry_Title_Stubs.a
+	It would be easier to remove TitleScreenAnimationHook and just use DecompressTitleScreenCode while extracting GenericSpecificCode_End from the game compilation
+		* DecompressTitleScreenCode might need updating to copy more data, like the conditional code at: !ifdef CartFile1_Size_Citadel2_Game2_dec {
+
+
+
+
+
+* If we are using the IRQ vector, with the Scroller_UseKernal, add data check for RNXPCompressionDecompress_GetDictEntryAndWrite not getting corrupted by the kernal vectors
+	Note: Scroller_EarlyStartHook already does some code backup for the vecotrs
+	The PreBoot.a "*=(13*40)+15" seems to push the code start for the decompression beyond the vectors, by accident
+	Note: InitBank0Data
+		; Blank sprite num 20 data in this bank
+	Note: Search for "memory map"
+
+
+
+
+* When ScrollerDemoInitOneTimeData is called, the game sprites lookup table might not be correct
+	This actually needs to be called at the start of the level once the game sprites are available
+
+	
+	
+
+* Title screen Arcade/Strategy indicator in a different position from the music/sound display
+	Always display these, with a joystick direction indicator
+	Music/sfx/music+sfx option can tri-state toggle on one direction
+	Arcade/Strategy can toggle on another direction
+	Tutorial hints or normal
+		Normal mode changes the question mark map tile to be a normal empty map tile when loading the map
+
+
+
+* Tutorial text window needs a more fancy effect. A bounding box, animated text colour, grey wipe effect?
+
+
+
+* Also the score panel memory access whilst the tutorial text is displayed will need to be fixed, currently the direct access draws over the tutorial text
+
+
+
+
+* These need macros: MapTerminalToDoor MapAutoDoor
+	These do have some structural define offsets
+
+
+
+
 * When teleporting to near the edges of the map, ensure the map coordinates are not out of range.
 	For example the first level 1 teleport shows corrupt blocks on the bottom edge of the screen
 

@@ -1,6 +1,8 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 
 !to "bin/main.prg", cbm
@@ -82,6 +84,10 @@ mainLoop
 .sx1
 	lda SpriteAnimationTab,y
 	sta APURealSpriteDataStart + 3,x
+	txa
+	and #7
+	ora SpriteAnimationTabHi,y
+	sta APURealSpriteDataStart + 1,x
 	iny
 	iny
 	inx
@@ -93,10 +99,16 @@ mainLoop
 
 	jmp mainLoop
 
-.animationFrame !by 0
+.animationFrame !by 96
 SpriteAnimationTab
-	!for .i , 512 {
-		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+	!for .i , 256 {
+		!set .val = <(170 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!by .val
+	}
+SpriteAnimationTabHi
+	!for .i , 256 {
+		!set .val = >(170 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!by .val << 4
 	}
 
 
@@ -171,11 +183,13 @@ APUCode_Start
 	+MAPU
 	+MAPU
 	+MAPU
+	+MAPU
+	+MAPU
 	; Enable sprites
 	+MAPU kAPU_ExternalMEWR | kAPU_SelectEBS2EADDR2 | kAPU_IDataSelectReg2
 }
 
-	; Then reset address back to $9820
+	; Then reset address back to kBus24Bit_Sprites
 	+MAPU kAPU_Load_EADDRLo | kAPU_IDataSelectReg0
 	+MAPU kAPU_Load_EADDRHi | kAPU_IDataSelectReg1
 
@@ -214,31 +228,33 @@ APUWaitValues
 !for .y , 6 {
 !set .yy = .y - 1
 	; Next RHRV to wait for
-	!by $88 , $01 , $20 + .yy
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_SpriteIndex_0 , $21 + .yy
 	; Disable sprites
-	!by 0
+;	!by kBus24Bit_VideoLayer_LayersEnable_None
+	!by kBus24Bit_VideoLayer_LayersEnable_234
 }
 !for .y , 6 {
 !set .yy = .y - 1
 	; Next RHRV to wait for
 	; Note different xpos for this half of the sprites
-	!by $48 , $00 , $30 + .yy
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_SpriteIndex_12 , $31 + .yy
 	; Disable sprites
-	!by 0
+;	!by kBus24Bit_VideoLayer_LayersEnable_None
+	!by kBus24Bit_VideoLayer_LayersEnable_234
 }
 
 APUOtherData
 	; Enable sprites value
-	!by $10
+	!by kBus24Bit_VideoLayer_LayersEnable_Default
 
-	; Set address to $9a00
-	!by $01 , $00 , $9a
+	!by $01
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
 
 	; Sprite registers address
-	!by $20 , $98
+	+MLittleEndian16Bit kBus24Bit_Sprites
 
 	; Next RHRV to wait for
-	!by $88 , $01 , $00
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_SpriteIndex_0 , $00
 
 
 	; Sprite data

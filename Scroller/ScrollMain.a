@@ -29,16 +29,17 @@ InitBank0Data
 	jsr BeforeScorePanelDataHook
 }
 
+Bank0ScorePanelChars = $800
 	ldx #0
 .cch2
 !ifdef Scroller_UseDemoScorePanel {
 !for .t1 , 8 {
 	lda ScorePanelChars+((.t1-1)*$100),x
-	sta $800+((.t1-1)*$100),x
+	sta Bank0ScorePanelChars+((.t1-1)*$100),x
 }
 } else {
 	lda #0
-	sta $800,x
+	sta Bank0ScorePanelChars,x
 }
 	dex
 	bne .cch2
@@ -57,6 +58,7 @@ InitBank0Data
 	sta COLOURRAM+((20 + .t1 - 1 + Scroller_AdditionalCharLines)*40),x
 }
 } else {
+	; This just creates a pattern in the score panel area. Useful for debugging.
 	txa
 	ora #$20
 !if Scroller_AdditionalCharLines < 1 {
@@ -82,9 +84,10 @@ InitBank0Data
 	jsr RunJump_InitTimer
 }
 
+Bank0PanelBlankSpriteData = $680
 
 	; Blank sprites frames in the unused area of the score panel screen
-	lda #20
+	+MVIC2SpriteIndex_A Bank0PanelBlankSpriteData
 	ldx #7
 .spr2
 	sta SCREENRAM + SPRITEFRAMESCROFF,x
@@ -93,11 +96,11 @@ InitBank0Data
 	dex
 	bpl .spr2
 
-	; Blank sprite num 20 data in this bank
-	ldx #63
+	; Blank sprite data in this bank
+	ldx #VIC2MemorySetup_SpriteSize-1
 	lda #0
 .spr1
-	sta $0500,x
+	sta Bank0PanelBlankSpriteData,x
 	dex
 	bpl .spr1
 
@@ -110,8 +113,8 @@ InitBank0Data
 !zn
 ClearGameScreens
 	; Clear the screens
-	ldx #ClearGameScreensChar
-	txa
+	ldx #0
+	lda #ClearGameScreensChar
 .clm1
 	sta $c800,x
 	sta $c900,x

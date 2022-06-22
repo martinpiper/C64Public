@@ -55,6 +55,8 @@ const int kSIDVoiceControl_Mask_Sawtooth	= 1<<5;
 const int kSIDVoiceControl_Mask_Pulse		= 1<<6;
 const int kSIDVoiceControl_Mask_Noise		= 1<<7;
 
+const int kSIDVoiceControl_Mask_ValidWaveform = kSIDVoiceControl_Mask_Triangle | kSIDVoiceControl_Mask_Sawtooth | kSIDVoiceControl_Mask_Pulse | kSIDVoiceControl_Mask_Noise;
+
 
 const int kTableIndex_Wave		= 0;
 const int kTableIndex_Note		= 1;
@@ -324,7 +326,7 @@ public:
 	bool mDrumGateLengthUsed;
 
 	/// Returns true if something was changed
-	bool OptimiseTables(const bool assumeAllEnvelopesUsed = false);
+	bool OptimiseTables(const bool assumeAllEnvelopesUsed = false , const bool spotDuplicates = true);
 
 	void RemoveTableByteAt(const int table, const int position);
 	void AddTableByteAt(const int table, const int position);
@@ -344,6 +346,12 @@ public:
 	void MarkExecutedTableBytes(unsigned char* tableControl,unsigned char* tableValue,bool* tableUsed,bool* tableUsedJump,int start);
 	int TableMaxPos(const int table);
 	int WriteTable(FILE *fp,const int table,const char *name);
+
+	std::string mLastDebugOutput;
+	const std::string &getLastDebugOutput()
+	{
+		return mLastDebugOutput;
+	}
 
 private:
 };

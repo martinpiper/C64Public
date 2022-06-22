@@ -1,0 +1,83 @@
+;MWMusicEditor test code
+
+!source "../stdlib/stdlib.a"
+!source "../stdlib/PETSCII.a"
+!to "MWMusicEditor.prg", cbm
+!sl "MWMusicEditor.map"
+!sal
+!svl "MWMusicEditor.lbl"
+!pdb "MWMusicEditor.pdb"
+!cpu 6510
+!ct pet
+; Fill any unused sequence/tune data with $ff
+!zn
+!initmem $ff
+
+movingAverageShift = 7
+movingAverageSize = (1 << movingAverageShift)
+
+!source "GUI_Defs.a"
+!source "MusicPlayer_Defs.a"
+
+!source "Editor_Macros.a"
+
+
+*=$400
+	!bin "Graphics/editor.prg" , VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , $62
+
+*=$800
+ColourData
+	!bin "Graphics/editor.prg" , VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , $44a
+
+*=$c00
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+	+InitKERNALIO_AXY
+	+MACROCIAIRQControlDisable_A
+
+	jsr Editor_Colourise
+	jsr Editor_Init
+
+	; Enter the main loop, read keyboard etc
+.l1
+	jsr Editor_UpdateInternalData
+
+	jsr Editor_ResetHighlights
+	jsr Editor_HandleHighlights
+
+	ldy Editor_mode
+	lda Editor_modesLo,y
+	ldx Editor_modesHi,y
+	jsr GUI_Render
+
+	lda #<Screen_headers
+	ldx #>Screen_headers
+	jsr GUI_Render
+
+	jsr Editor_RenderExtraData
+
+	+MACROWaitForTheLastScan_A
+	jsr Editor_HandleKeys
+
+	jmp .l1
+
+
+
+!source "../stdlib/Initialise.a"
+!source "../MusicEditor/GetKey.a"
+!source "FingerPrint.a"
+
+!source "Editor_Internals.a"
+!source "Editor_Common.a"
+!source "Editor_Keys.a"
+!source "Editor_Layouts.a"
+!source "Editor_Data.a"
+!source "Editor_Events.a"
+!source "Editor_IRQ.a"
+
+!source "Storage.a"
+!source "GUI.a"
+
+!source "Editor_Player.a"
+
+

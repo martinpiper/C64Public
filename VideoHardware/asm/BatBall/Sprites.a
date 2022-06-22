@@ -8,11 +8,11 @@ CopySpriteFrameData
 !set .i = .ii - 1
 	lda SpriteFrameDataFrame + .i
 	sta CIA2PortBRS232
-	lda SpriteFrameDataColour + .i
+	lda SpriteFrameDataColourDisplay + .i
 	sta CIA2PortBRS232
 	lda SpriteFrameDataY + .i
 	sta CIA2PortBRS232
-	lda SpriteFrameDataX + .i
+	lda SpriteFrameDataXDisplay + .i
 	sta CIA2PortBRS232
 }
 
@@ -21,15 +21,13 @@ CopySpriteFrameData
 !set .i = .ii - 1
 	lda SpriteFrameDataFrame + .i
 	sta CIA2PortBRS232
-	lda #$f	; Last palette is all black, for shadows
+	lda SpriteFrameDataColourDisplayShadow + .i
 	sta CIA2PortBRS232
 	lda SpriteFrameDataY + .i
 	sec
 	sbc #4
 	sta CIA2PortBRS232
-	lda SpriteFrameDataX + .i
-	clc
-	adc #4
+	lda SpriteFrameDataXDisplayShadow + .i
 	sta CIA2PortBRS232
 }
 
@@ -104,6 +102,11 @@ SpriteFrameDataX
 	!by 128
 	!fill kMaxSprites , 0
 
+SpriteFrameDataXDisplay
+	!fill kMaxSprites , 0
+SpriteFrameDataXDisplayShadow
+	!fill kMaxSprites , 0
+
 SpriteFrameDataYLo
 	!fill kMaxSprites , 0
 
@@ -124,6 +127,11 @@ SpriteFrameDataFrame
 	!fill kMaxSprites , 0
 
 SpriteFrameDataColour
+	!fill kMaxSprites , 0
+
+SpriteFrameDataColourDisplay
+	!fill kMaxSprites , 0
+SpriteFrameDataColourDisplayShadow
 	!fill kMaxSprites , 0
 
 SpriteFrameDataIsBall

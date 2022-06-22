@@ -1,4 +1,13 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+;MusicData = 1
+; Enable this to send graphics data from code and remove the demo code
+;IncludeGraphicsData = 1
+;; Include various graphics data in the build
+;IncludeGraphicsData_L1 = 1
+;IncludeGraphicsData_L2 = 1
+;IncludeGraphicsData_L3 = 1
+;IncludeGraphicsData_L4 = 1
 
 !source "stdlib/stdlib.a"
 !source "stdlib/PETSCII.a"
@@ -14,12 +23,15 @@
 !cpu 6510
 !ct pet
 
-zeroPage_Temp0	= $2
-zeroPage_Temp1	= $3
-zeroPage_Temp2	= $4
-zeroPage_Temp3	= $5
-zeroPage_Temp4	= $6
-zeroPage_Temp5	= $7
+; Music.a uses the start of zeropage, yes shoot me
+zeroPage_Temp0	= $10
+zeroPage_Temp1	= $11
+zeroPage_Temp2	= $12
+zeroPage_Temp3	= $13
+zeroPage_Temp4	= $14
+zeroPage_Temp5	= $15
+zeroPage_Temp6	= $16
+zeroPage_Temp7	= $17
 
 !zn
 *=$200
@@ -29,46 +41,100 @@ start
 	
 !source "tmp/FingerPrint.a"
 !source "stdlib/LongBranches.a"
+!source "stdlib/Comparisons.a"
 !source "BombJack/stdlib/Bus24Bit.a"
 !source "BombJack/stdlib/Video.a"
 !source "BombJack/stdlib/HardwareTest.a"
+!ifdef MusicData {
 !source "BombJack/stdlib/Music.a"
+}
 
 Initialise_NoPreserveStack = 1
 Initialise_NoIRQServiceRoutine = 1
 Initialise_NoMACROWaitForTheLastScan = 1
 !source "stdlib/Initialise.a"
 
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
 !zn
 mainLoop
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+!ifdef MusicData {
 	jsr MusicInit
+}
 
 	jsr Bus24Bit_Init
 
 	jsr Video_DisableDisplay
-;	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | 0x01	; Add overscan bit
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+	sta CIA2PortBRS232
+
 	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
-	; Output wider overscan borders
-;	lda #$d2
-;	sta CIA2PortBRS232
-	jsr Video_InitDisplaySpritesScrollsBackground
 	jsr Video_SetAddressTileBackgroundRegister
 	lda #255
 	sta CIA2PortBRS232
 
-;	jsr DisplayData
+	jsr DisplayData
+
+!ifdef IncludeGraphicsData {
+.l1
+	jsr Video_SetAddressSprites2
+	+MBus24Bit_Send8BitValue 1
+	+MBus24Bit_Send8BitValue 128
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 255
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 0
+
+	lda #0
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+
+	+WaitForFire_A
+
+	jsr Video_SetAddressSprites2
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 128
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 128
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 32
+	+MBus24Bit_Send8BitValue 0
+
+	+WaitForFire_A
+
+	jmp .l1
+}
+
+!ifndef IncludeGraphicsData {
+;	jsr GameSpriteWorldInit
 
 	jsr Video_WaitVBlank
 	jsr SetScreenScrolls
 	jsr UpdateSprites2
-	jsr CopySprites2
+;	jsr CopySprites2
+	jsr UpdateSprites2B
+;	jsr CopySprites2B
 
 ;	+WaitForFire_A
+;	jmp .gotFire2	; Debug to go to the second part
 
 .l1
 
@@ -78,13 +144,21 @@ mainLoop
 
 	jsr SetScreenScrolls
 
+	; Stage
+	lda doCopySprites2B
+	beq .o0
+	jsr CopySprites2B
+	jsr UpdateSprites2B
+	jmp .o3
+.o0
+	; Next stage
 	lda doCopySprites2
 	beq .o1
 	jsr CopySprites2
 	jsr UpdateSprites2
+	jmp .o3
 .o1
-	lda doCopySprites2
-	bne .o3
+	; Next stage
 	jsr CopySprites1
 	jsr UpdateSprites1
 .o3
@@ -102,20 +176,50 @@ mainLoop
 	+MAddAToAddr16 LogoPosX , LogoPosX+1
 	inc LogoVelTabCnt
 .o2
+!ifdef MusicData {
 	jsr MusicPoll
+}
 
 	; Single step the animation
 ;	+WaitForFire_A
 
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	beq .gotFire2
+
+
 	jmp .l1
+
+.gotFire2
+	jmp GameSpriteWorldInit
+}
 
 !zn
 SetScreenScrolls
-	jsr Video_SetAddressCharScrollRegisters
 	inc BackgroundBounce
 	ldx BackgroundBounce
-	lda #0
+	cpx #128
+	bne .notSwitch
+
+	jsr Video_SetAddressVideoPriorityRegister
+	; Alternate the tiles priority to move the logo infront/behind the scaled sprites
+	inc .sm1+1
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
+.sm1	lda #0
+	and #1
+	bne .notSwitch
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel3
+
+.notSwitch
+	jsr Video_SetAddressCharScrollRegisters
+;	+MBus24Bit_SendLE16BitValue -48
+	lda BackgroundBounceTabX,x
+	sec
+	sbc #112
 	sta CIA2PortBRS232
+	lda #0
+	sbc #0
 	sta CIA2PortBRS232
 	lda BackgroundBounceTabY,x
 	sta CIA2PortBRS232
@@ -124,7 +228,15 @@ SetScreenScrolls
 
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_FastSpeedCopy LogoPosX , 2
-	+MBus24Bit_SendLE16BitValue -130
+;	+MBus24Bit_SendLE16BitValue -130
+	lda BackgroundBounceTabYSmall,x
+	sec
+	sbc #130+16
+	sta CIA2PortBRS232
+	lda #0
+	sbc #0
+	sta CIA2PortBRS232
+
 	rts
 
 LogoVelTabDelay !by 150
@@ -135,19 +247,29 @@ LogoVelTab
 }
 	!by 0
 
-LogoPosX +MLittleEndian16Bit -350
+LogoPosX +MLittleEndian16Bit -398
 
 !zn
 doCopySprites2 !by 2
 CopySprites2
-	+MBus24Bit_SetAddress_AXY $01 , $9200
+	jsr Video_SetAddressSprites2
 	+MBus24Bit_FastSpeedCopy Sprite2_data , (8 * 8) + 3	; Include "End of list"
+;	+MBus24Bit_FastSpeedCopy Sprite2B_data , (30 * 8) + 3	; Include "End of list"
 
 	lda Sprite2_count + 7
 	cmp #$ff
 	bne .o1
 	dec doCopySprites2
 .o1
+	rts
+
+doCopySprites2B !by 200
+CopySprites2B
+	jsr Video_SetAddressSprites2
+	+MBus24Bit_FastSpeedCopy Sprite2B_data , (30 * 8) + 3	; Include "End of list"
+
+	dec doCopySprites2B
+
 	rts
 
 UpdateSprites2
@@ -184,6 +306,70 @@ UpdateSprites2
 
 	rts
 
+
+UpdateSprites2B
+!macro MHandleSpriteB .i , .y {
+	ldx Sprite2B_count + .i
+
+	lda Sprite2B_data + 0 + (.i * 8)
+	and #!kBus24Bit_Sprites2_MSBX
+	ora SpriteXTabBHi,x
+	sta Sprite2B_data + 0 + (.i * 8)
+
+	lda SpriteYTabB,x
+	clc
+	adc #.y
+	sta Sprite2B_data + 1 + (.i * 8)
+	lda SpriteXTabB,x
+	sta Sprite2B_data + 3 + (.i * 8)
+	lda SpriteScaleTabB,x
+	sta Sprite2B_data + 5 + (.i * 8)
+	sta Sprite2B_data + 6 + (.i * 8)
+	tay
+	lda SpriteYExtentLookup,y
+	sta Sprite2B_data + 2 + (.i * 8)
+
+	inc Sprite2B_count + .i
+}
+
+	+MHandleSpriteB 0 , 0
+	+MHandleSpriteB 1 , 0
+	+MHandleSpriteB 2 , 0
+	+MHandleSpriteB 3 , 0
+	+MHandleSpriteB 4 , 0
+	+MHandleSpriteB 5 , 0
+	+MHandleSpriteB 6 , 0
+	+MHandleSpriteB 7 , 0
+
+	+MHandleSpriteB 8 , 30
+	+MHandleSpriteB 9 , 30
+	+MHandleSpriteB 10 , 30
+	+MHandleSpriteB 11 , 30
+	+MHandleSpriteB 12 , 30
+	+MHandleSpriteB 13 , 30
+	+MHandleSpriteB 14 , 30
+	+MHandleSpriteB 15 , 30
+
+	+MHandleSpriteB 16 , 60
+	+MHandleSpriteB 17 , 60
+	+MHandleSpriteB 18 , 60
+	+MHandleSpriteB 19 , 60
+	+MHandleSpriteB 20 , 60
+	+MHandleSpriteB 21 , 60
+	+MHandleSpriteB 22 , 60
+	+MHandleSpriteB 23 , 60
+
+	+MHandleSpriteB 24 , 90
+	+MHandleSpriteB 25 , 90
+	+MHandleSpriteB 26 , 90
+	+MHandleSpriteB 27 , 90
+	+MHandleSpriteB 28 , 90
+	+MHandleSpriteB 29 , 90
+;	+MHandleSpriteB 30 , 90
+;	+MHandleSpriteB 31 , 90
+
+	rts
+
 !macro SpriteOutput2x2 .xPos , .yPos , .s0 , .s1 , .s2 , .s3 {
 	ldx .xPos
 	ldy .yPos
@@ -209,7 +395,7 @@ UpdateSprites2
 
 !zn
 sprites1PosXTarget
-	!by 130 , 150 , 170 , 190
+	!by 178 , 198 , 218 , 238
 sprites1PosYCount
 	!by 0 , 50 , 100 , 150
 sprites1PosX
@@ -227,9 +413,9 @@ CopySprites1
 	+SpriteOutput2x2 sprites1PosX + 3 , sprites1PosY + 3 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
 
 	; Single update a particular Sprite2
-	lda #$01
+	lda #kBus24Bit_Sprites2_EBBS
 	ldx singleSprite2UpdateLo
-	ldy #>$9200
+	ldy #>kBus24Bit_Sprites2
 	jsr Bus24Bit_SetAddressBus
 !for .ii , 8 {
 	lda Sprite2_data + .ii -1 ,x
@@ -297,10 +483,12 @@ divBy16TabMin1
 	!by .i
 }
 
+!ifdef MusicData {
 MusicDataStart
 MusicDataStart_afterHeader = MusicDataStart + 4
 	!bin "tmp/target/MusicMW2000Events.cmp"
 MusicDataEnd
+}
 
 Sprite2_delay
 	!by 0
@@ -324,8 +512,7 @@ Sprite2_data
 !for .ii , 8 {
 !set .i = .ii-1
 !set .xpos = $37 + (.i * 32.5)
-;!set .xpos = $11a - (.i * 32.5)
-	!by ((.i/4)+1) | ((>.xpos)<<4)  , 0 , 0x20 , <.xpos , 0x20 , 0x20 , 0x20 , .i
+	!by ((.i/4)+kVarsEmitSpriteFrame_scaled_0_0_0_colour) | ((>.xpos)<<4)  , 0 , 0x20 , <.xpos , 0x20 , 0x20 , 0x20 , kVarsEmitSpriteFrame_scaled_0_0_0_tileIndex + .i
 }
 	; End of list
 	!fill 3 , 0
@@ -335,18 +522,102 @@ SpriteYTab
 		!by 64 - (64 * cos( (float(.i) / 192) * 3.14159265 )) + (58 * sin( (float(.i) / 64) * 3.14159265 ))
 	}
 
+; With VIDCLK as input
+;kBaseScale = 34
+;kBaseScaleMax = 18
+;kPulseScaleMax = 12
+
+; With 14.31818 MHz as input
+kBaseScale = 32
+kBaseScaleMax = 26
+kPulseScaleMax = 20
+
 SpriteScaleTab
 	!for .i , 255 {
-		!by 34 + (18.0 * sin( (float(.i) / 128.0) * 3.14159265 ))
+		!by kBaseScale + (float(kBaseScaleMax) * sin( (float(.i) / 128.0) * 3.14159265 ))
 	}
-	!by 34
+	!by kBaseScale
 
 SpriteScalePulseTab
 	!for .i , 62 {
-		!by 34 - (12.0 * sin( (float(.i) / 32.0) * 3.14159265 ))
+		!by kBaseScale - (float(kPulseScaleMax) * sin( (float(.i) / 32.0) * 3.14159265 ))
 	}
-	!by 34
-	!by 34
+	!by kBaseScale
+	!by kBaseScale
+
+
+
+Sprite2B_count
+	!by 0
+	!by 5
+	!by 10
+	!by 15
+	!by 20
+	!by 25
+	!by 30
+	!by 35
+
+	!by 0	+1
+	!by 5	+1
+	!by 10	+1
+	!by 15	+1
+	!by 20	+1
+	!by 25	+1
+	!by 30	+1
+	!by 35	+1
+
+	!by 0	+2
+	!by 5	+2
+	!by 10	+2
+	!by 15	+2
+	!by 20	+2
+	!by 25	+2
+	!by 30	+2
+	!by 35	+2
+
+;	!by 0	+2
+	!by 5	+2
+	!by 10	+2
+	!by 15	+2
+	!by 20	+2
+	!by 25	+2
+	!by 30	+2
+	!by 35	+2
+	
+Sprite2B_data
+!for .ii , 30 {
+!set .i = .ii-1
+!set .xpos = $37 + (.i * 32.5)
+	!by (((.i&7)/4)+kVarsEmitSpriteFrame_scaled_0_0_0_colour)  , 0 , 0x20 , <.xpos , 0x20 , 0x20 , 0x20 , kVarsEmitSpriteFrame_scaled_0_0_0_tileIndex + (.i & 7)
+}
+	; End of list
+	!fill 3 , 0
+
+SpriteXTabB
+	!for .i , 256 {
+!set .xpos = 170 + (150 * sin( (float(.i) / 64) * 3.14159265 ))
+		!by <.xpos
+	}
+
+SpriteXTabBHi
+	!for .i , 256 {
+!set .xpos = 170 + (150 * sin( (float(.i) / 64) * 3.14159265 ))
+!if (>.xpos) = 0 {
+		!by 0
+} else {
+		!by kBus24Bit_Sprites2_MSBX
+}
+	}
+
+SpriteYTabB
+	!for .i , 256 {
+		!by 50 + (20 * cos( (float(.i) / 64) * 3.14159265 ))
+	}
+
+SpriteScaleTabB
+	!for .i , 256 {
+		!by 48 + (float(8) * cos( (float(.i + 64) / 64.0) * 3.14159265 ))
+	}
 
 
 ; Using the sprite scale, assume it is 32x32 pixels, and produce the Y extent from this lookup table
@@ -366,13 +637,21 @@ SpriteYExtentLookup
 
 BackgroundBounce !by 0
 
+BackgroundBounceTabX
+	!for .i , 256 {
+		!by 64 + (40.0 * cos( (float(-.i) / 128.0) * 3.14159265 )) + (24.0 * sin( (float(.i - 123) / 64.0) * 3.14159265 ))
+	}
+
 BackgroundBounceTabY
 	!for .i , 256 {
 ;		!by 30 + (12.0 * cos( (float(-.i) / 32.0) * 3.14159265 )) + (8.0 * sin( (float(.i - 123) / 64.0) * 3.14159265 ))
 		!by 30 + (12.0 * cos( (float(-.i) / 128.0) * 3.14159265 ))
 	}
 
-
+BackgroundBounceTabYSmall
+	!for .i , 256 {
+		!by 16 + (12.0 * cos( (float(-.i) / 128.0) * 3.14159265 ))
+	}
 
 !macro MEmitSpriteFrame_Preserve {
 }
@@ -389,3 +668,1033 @@ BackgroundBounceTabY
 	rts
 }
 !source "tmp\Demo9Sprites1Sheet.txt.a"
+!source "tmp\Demo9Sprites2Sheet.txtVars.a"
+
+!ifndef IncludeGraphicsData {
+
+; Constants for the 3D world
+kEntries = 128
+kFarPoint = -8
+;kFarPoint = 0
+kNearPoint = 128
+kMaxSwing = 128
+kMultiplier = 8
+;kMultiplier = 1
+kScaledSpriteSeparationValue = 45	; TODO: Figure out the proper maths for this based on when the sprite is normal size (no scale, just $20 x $20)
+kMaxGameSprites = 24
+MaxGameSprites !by kMaxGameSprites
+
+GameSpriteData
+	; Setup the player character
+	!by kVarsEmitSpriteFrame_scaled_32_64_0_colour , 128 , 32 , 128 , 32 , 32 , 32 , kVarsEmitSpriteFrame_scaled_32_64_0_tileIndex
+	!by kVarsEmitSpriteFrame_scaled_32_96_0_colour , 128 + 32 , 32 , 128, 32 , 32 , 32 , kVarsEmitSpriteFrame_scaled_32_96_0_tileIndex
+	!fill (kMaxGameSprites+1) * 8 , 0
+
+GameSpriteWorld_X
+;	!by 0 , 0 , 0
+;	!by 9 , 48, 96 , 112
+;	!by -6 , -28, -46 , -112
+;	!by -1 , -38, -66 , -42
+	!fill kMaxGameSprites , 0
+GameSpriteWorld_Y
+;	!by 0 , 0 , 0
+;	!by 0 , 1 , 2
+	!fill kMaxGameSprites , 0
+GameSpriteWorld_Z
+;	!by 0 , 0 , 0
+;	!by 1 , 1 , 1
+;	!by 2 , 2 , 2
+;	!by 0 , 5, 10
+;	!by 0 , 10, 50 , 40	; Near large(ish) bunch to test edge of screen rejection
+;	!by 100 , 250, 110 , 50
+;	!by 130 ,  45, 210 , 10
+;	!by 170 ,  35,  90 , 20
+	!fill kMaxGameSprites , 255
+GameSpriteWorld_SortIndex
+	!fill kMaxGameSprites , 0
+GameSpriteWorld_IsBullet
+	!fill kMaxGameSprites , 0
+GameSpriteWorld_Frame
+;	!by 0 , 1 , 2 , 3
+;	!by 4 , 5 , 6 , 7
+;	!by 0 , 1 , 2 , 3
+;	!by 4 , 5 , 6 , 7
+	!fill kMaxGameSprites , 0
+GameSpriteWorld_Palette
+;	!by 0 , 1 , 2 , 3
+;	!by 0 , 1 , 2 , 3
+;	!by 0 , 1 , 2 , 3
+;	!by 0 , 1 , 2 , 3
+	!fill kMaxGameSprites , 0
+
+SortTemp0 = zeroPage_Temp0
+SortTemp1 = zeroPage_Temp1
+SortTemp2 = zeroPage_Temp2
+SortTemp3 = zeroPage_Temp3
+SortTemp4 = zeroPage_Temp4
+SortTemp5 = zeroPage_Temp5
+SortTemp6 = zeroPage_Temp6
+SortTemp7 = zeroPage_Temp7
+
+!source "stdlib/QuickSort.a"
+
+QuickSort_Sortlo !fill kMaxGameSprites , 0
+QuickSort_Sorthi !fill kMaxGameSprites , 0
+
+GameSpriteWorld_Sort
+	+QuickSort_SortRTS 1 , kMaxGameSprites , MaxGameSprites , GameSpriteWorld_SortIndex , GameSpriteWorld_Z , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLength , ~QuickSort_sortstart
+
+
+!zn
+.viewPosX !by 0
+.viewPosY !by -100
+.playerViewScale !by 24
+.playerNumBullets !by 0
+.playerBulletCooldown !by 0
+GameSpriteWorldInit
+;	jsr Video_SetAddressCharScrollRegisters
+;	+MBus24Bit_SendLE16BitValue -48
+
+	+QuickSort_TableInit kMaxGameSprites , SortTemp0 , SortTemp1 , SortBlockByteLength , QuickSort_Sortlo , QuickSort_Sorthi , QuickSort_sortstart
+	+QuickSort_Init MaxGameSprites , GameSpriteWorld_SortIndex
+
+.gameLoop1
+
+	; setup the player position
+	; TODO: Perhaps every shot pushes the player closer to the screen (scales bigger temporarily)
+	; Remove any X/Y MSB
+	lda GameSpriteData + 0
+	and #$f
+	sta GameSpriteData + 0
+	lda GameSpriteData + 8 + 0
+	and #$f
+	sta GameSpriteData + 8 + 0
+
+	lda #128
+	sec
+	sbc .viewPosX
+	clc
+	adc #48
+	sta GameSpriteData + 3
+	sta GameSpriteData + 8 + 3
+	bcc .noPlayerMSBX
+	lda GameSpriteData + 0
+	ora #$10
+	sta GameSpriteData + 0
+	lda GameSpriteData + 8 + 0
+	ora #$10
+	sta GameSpriteData + 8 + 0
+.noPlayerMSBX
+
+	; And some optimised/hacky Y pos maths
+	ldy .playerViewScale
+	cpy #$40
+	bcs .playerScaleOK
+	iny
+	sty .playerViewScale
+.playerScaleOK
+	tya
+	lsr
+	tay
+	sty GameSpriteData + 5
+	sty GameSpriteData + 6
+	sty GameSpriteData + 8 + 5
+	sty GameSpriteData + 8 + 6
+	lda Sprite2Tab_ScaleToYSize,y
+	sta GameSpriteData + 2
+	sta GameSpriteData + 8 + 2
+	lda #128
+	sec
+	sbc .viewPosY
+	sec
+	sbc #32
+	sta GameSpriteData + 1
+	bcs .noPlayerMSBY
+	lda GameSpriteData + 0
+	ora #$20
+	sta GameSpriteData + 0
+.noPlayerMSBY
+	lda #128
+	sec
+	sbc .viewPosY
+	sec
+	sbc #32
+	sta SortTemp0
+	; Carry for hi
+	lda #0
+	sbc #0
+	sta SortTemp1
+	lda SortTemp0
+	clc
+	adc GameSpriteData + 2
+	sta GameSpriteData + 8 + 1
+	; Carry for hi
+	lda SortTemp1
+	adc #0
+	sta SortTemp1
+	beq .noPlayerMSBY2
+	lda GameSpriteData + 8 + 0
+	ora #$20
+	sta GameSpriteData + 8 + 0
+.noPlayerMSBY2
+
+	jsr GameSpriteWorld_Sort
+
+	; Update the world to the sprites
+	+MWordValueToAddress_A GameSpriteData + (2*8) , SortTemp0	; Leaving space for the player character, who isn't part of the world
+	lda #0
+	sta SortTemp2
+.ul1
+	ldy SortTemp2
+	ldx GameSpriteWorld_SortIndex,y
+	; Since the world is sorted, then once we get too far away all the entries dollowing it are also going to be too far away, so output the end of the sprite list
+	lda GameSpriteWorld_Z,x
+	cmp #kEntries
+	+lbcs .eul1
+
+	stx .smx1+1
+
+	asl
+	tax
+	; Scale X and Y
+	lda Sprite2Tab_ScaleYSize,x
+	ldy #5
+	sta (SortTemp0),y
+	ldy #6
+	sta (SortTemp0),y
+
+	; Y pixel size
+	lda Sprite2Tab_ScaleYSize+1,x
+	ldy #2
+	sta (SortTemp0),y
+	; Full size
+	sta SortTemp6
+	; Half size
+	lsr
+	sta SortTemp7
+
+	; X Scale extent
+	lda #$20
+	ldy #4
+	sta (SortTemp0),y
+
+.smx1	ldx #0
+	; Frame
+	lda GameSpriteWorld_Frame,x
+	ldy #7
+	sta (SortTemp0),y
+
+	; Palette
+	lda GameSpriteWorld_Palette,x
+	ldy #0
+	sta (SortTemp0),y
+
+	; Setup X pos
+	+MWordValueToAddress_A 128+58 , SortTemp3
+	; Adjust for half size
+	+MSubU8AddrToAddr16 SortTemp7 , SortTemp3 , SortTemp4
+
+	lda GameSpriteWorld_X,x
+	beq .nox
+	bpl .isPosX2
+	; Inverted, no need iny/+1
+	eor #$ff
+	tay
+	lda Sprite2Tab_PerspectiveTabLo,y
+	sta .smxp3i+1
+	lda Sprite2Tab_PerspectiveTabHi,y
+	sta .smxp3i+2
+	ldy GameSpriteWorld_Z,x
+.smxp3i lda $1234,y
+	sta SortTemp5
+	+MSubU8AddrToAddr16 SortTemp5 , SortTemp3 , SortTemp4
+	jmp .nox
+.isPosX2
+	tay
+	lda Sprite2Tab_PerspectiveTabLo-1,y
+	sta .smxp+1
+	lda Sprite2Tab_PerspectiveTabHi-1,y
+	sta .smxp+2
+	ldy GameSpriteWorld_Z,x
+.smxp lda $1234,y
+	+MAddAToAddr16 SortTemp3 , SortTemp4
+.nox
+
+	; Double accumulate the view position
+	; TODO: This is slightly less accurate, with a larger table the index could be accumulated instead
+	lda .viewPosX
+	+M_ASR
+	beq .nox2
+	bpl .isPosX1
+	; Inverted, no need iny/+1
+	eor #$ff
+	tay
+	lda Sprite2Tab_PerspectiveTabLo,y
+	sta .smxp2i+1
+	lda Sprite2Tab_PerspectiveTabHi,y
+	sta .smxp2i+2
+	ldy GameSpriteWorld_Z,x
+.smxp2i lda $1234,y
+	sta SortTemp5
+	+MSubU8AddrToAddr16 SortTemp5 , SortTemp3 , SortTemp4
+	jmp .nox2
+
+.isPosX1
+	tay
+	lda Sprite2Tab_PerspectiveTabLo-1,y
+	sta .smxp2+1
+	lda Sprite2Tab_PerspectiveTabHi-1,y
+	sta .smxp2+2
+	ldy GameSpriteWorld_Z,x
+.smxp2 lda $1234,y
+	+MAddAToAddr16 SortTemp3 , SortTemp4
+
+.nox2
+	ldy #3
+	lda SortTemp3
+	sta (SortTemp0),y
+	lda SortTemp4
+	beq .isX00xx
+	cmp #$ff
+	beq .isXffxx
+	cmp #1
+	beq .isX01xx
+	jmp .reallyOffScreen
+.isX01xx
+	lda SortTemp3
+	cmp #<(kBus24Bit_VideoLayer_XPos_OverscanExtent_Wide_right-6)	; TODO: Will need tweaking depending on screen borders
+	+lbcs .reallyOffScreen
+	jmp .addXMSB
+.isXffxx
+	lda SortTemp3
+	clc
+	adc SortTemp6
+	; No carry indicates the sprite is still far inside the left edge
+	+lbcc .reallyOffScreen
+	; Just inside the left edge, still remove
+	cmp #$18	; TODO: Will need tweaking depending on screen borders
+	+lbcc .reallyOffScreen
+.addXMSB
+	ldy #0
+	lda (SortTemp0),y
+	ora #$10
+	sta (SortTemp0),y
+.isX00xx
+.notMSB1
+
+	; Setup Y pos
+	+MWordValueToAddress_A 128 , SortTemp3
+	; Adjust for half size
+	+MSubU8AddrToAddr16 SortTemp7 , SortTemp3 , SortTemp4
+
+	lda GameSpriteWorld_Y,x
+	beq .noy
+	bpl .isPosY2
+	; Inverted, no need iny/+1
+	eor #$ff
+	tay
+	lda Sprite2Tab_PerspectiveTabLo,y
+	sta .smyp3i+1
+	lda Sprite2Tab_PerspectiveTabHi,y
+	sta .smyp3i+2
+	ldy GameSpriteWorld_Z,x
+.smyp3i lda $1234,y
+	sta SortTemp5
+	+MSubU8AddrToAddr16 SortTemp5 , SortTemp3 , SortTemp4
+	jmp .noy
+.isPosY2
+	tay
+	lda Sprite2Tab_PerspectiveTabLo-1,y
+	sta .smyp+1
+	lda Sprite2Tab_PerspectiveTabHi-1,y
+	sta .smyp+2
+	ldy GameSpriteWorld_Z,x
+.smyp lda $1234,y
+	+MAddAToAddr16 SortTemp3 , SortTemp4
+.noy
+
+	; Double accumulate the view position
+	; TODO: This is slightly less accurate, with a larger table the index could be accumulated instead
+	lda .viewPosY
+	+M_ASR
+	beq .noy2
+	bpl .isPosY1
+	; Inverted, no need iny/+1
+	eor #$ff
+	tay
+	lda Sprite2Tab_PerspectiveTabLo,y
+	sta .smypi+1
+	lda Sprite2Tab_PerspectiveTabHi,y
+	sta .smypi+2
+	ldy GameSpriteWorld_Z,x
+.smypi lda $1234,y
+	sta SortTemp5
+	+MSubU8AddrToAddr16 SortTemp5 , SortTemp3 , SortTemp4
+	jmp .noy2
+
+.isPosY1
+	tay
+	lda Sprite2Tab_PerspectiveTabLo-1,y
+	sta .smyp2+1
+	lda Sprite2Tab_PerspectiveTabHi-1,y
+	sta .smyp2+2
+	ldy GameSpriteWorld_Z,x
+.smyp2 lda $1234,y
+	+MAddAToAddr16 SortTemp3 , SortTemp4
+
+.noy2
+	ldy #1
+	lda SortTemp3
+	sta (SortTemp0),y
+	lda SortTemp4
+	beq .isY00xx
+	cmp #$ff
+	beq .isYffxx
+	jmp .reallyOffScreen
+.isY00xx
+	lda SortTemp3
+	cmp #224	; TODO: Will need tweaking depending on screen borders
+	bcs .reallyOffScreen
+	jmp .notMSBY1
+.isYffxx
+	lda SortTemp3
+	clc
+	adc SortTemp6
+	; No carry indicates the sprite is still far inside the top edge
+	bcc .reallyOffScreen
+	; Just inside the left edge, still remove
+	cmp #$18	; TODO: Will need tweaking depending on screen borders
+	bcc .reallyOffScreen
+.addYMSB
+	ldy #0
+	lda (SortTemp0),y
+	ora #$20
+	sta (SortTemp0),y
+.notMSBY1
+
+	+MAddU8ToAddr16 8 , SortTemp0 , SortTemp0+1
+
+.reallyOffScreen
+	inc SortTemp2
+	lda SortTemp2
+	cmp #kMaxGameSprites
+	+lbne .ul1
+
+
+.eul1
+	; End of list
+	lda #0
+	ldy #2
+	sta (SortTemp0),y
+
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressSprites2
+	+MBus24Bit_FastSpeedCopy GameSpriteData , ((kMaxGameSprites+3) * 8) + 3	; Include "End of list"
+
+!ifdef MusicData {
+	jsr MusicPoll
+}
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Left
+	bne .notLeft
+	lda .viewPosX
+	cmp #127
+	beq .notLeft
+	inc .viewPosX
+.notLeft
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Right
+	bne .notRight
+	lda .viewPosX
+	cmp #-127
+	beq .notRight
+	dec .viewPosX
+.notRight
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Up
+	bne .notUp
+	lda .viewPosY
+	cmp #127
+	beq .notUp
+	inc .viewPosY
+.notUp
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Down
+	bne .notDown
+	lda .viewPosY
+	cmp #-127
+	beq .notDown
+	dec .viewPosY
+.notDown
+
+	; Move stuff towards the player, or move the bullets...
+	ldx #kMaxGameSprites-1
+.worldUpdate1
+	lda GameSpriteWorld_Z,x
+	cmp #$ff
+	beq .worldUpdate2
+	lda GameSpriteWorld_IsBullet,x
+	bne .doBullet
+	dec GameSpriteWorld_Z,x
+	jmp .worldUpdate2
+.doBullet
+	lda GameSpriteWorld_Z,x
+	clc
+	adc #4
+	sta GameSpriteWorld_Z,x
+	cmp #128
+	bcc .worldUpdate2
+
+	; Kills the bullet
+	lda #$ff
+	sta GameSpriteWorld_Z,x
+	dec .playerNumBullets
+
+.worldUpdate2
+	dex
+	bpl .worldUpdate1
+
+	lda .playerBulletCooldown
+	beq .cool
+	dec .playerBulletCooldown
+	jmp .notGotFire1
+.cool
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .notGotFire1
+	lda .playerViewScale
+	cmp #$30
+	bcc .notGotFire1
+
+	; Maximum number of active bullets?
+	lda .playerNumBullets
+	cmp #4
+	bcs .notGotFire1
+
+	; Can we spawn a bullet?
+	ldx GameSpriteWorld_SortIndex + kMaxGameSprites - 1
+	lda GameSpriteWorld_Z,x
+	cmp #$ff
+	bne .notGotFire1
+
+	lda .playerViewScale
+	sec
+	sbc #10
+	sta .playerViewScale
+
+	lda #8
+	sta .playerBulletCooldown
+
+	inc .playerNumBullets
+
+	lda #4
+	sta GameSpriteWorld_IsBullet,x
+	sta GameSpriteWorld_Z,x
+	lda .viewPosX
+	eor #$ff
+	sta GameSpriteWorld_X,x
+	lda .viewPosY
+	eor #$ff
+	sta GameSpriteWorld_Y,x
+	lda #kVarsEmitSpriteFrame_scaled_160_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_160_32_0_colour
+	sta GameSpriteWorld_Palette,x
+
+.notGotFire1
+
+
+	; Check to see if we can spawn a new object right at the far end of the world, leaving space for some bullets
+	ldx GameSpriteWorld_SortIndex + kMaxGameSprites - 5
+	lda GameSpriteWorld_Z,x
+	cmp #$ff
+	+lbne .notFree
+;	jmp .doThing	; Debug
+	; Names list: https://twitter.com/MartinPiper/status/1533084835245223936
+.timeWaste	lda #50
+	beq .textPos
+	dec .timeWaste+1
+	jmp .notFree
+.doTimeWaste
+	lda #100
+	sta .timeWaste+1
+	jmp .nextChar
+.textPos	ldy .displayNames
+	beq .noMoreText	; End of the list
+	cpy #kCarriageReturn
+	beq .carriageReturn
+	cpy #kDoTimeWaste
+	beq .doTimeWaste
+	cpy #kResetTextPos
+	beq .resetTextPos
+
+	cpy #' '
+	beq .nextCharPosDiv2
+
+	lda .charConvTab,y
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_32_128_0_colour
+	sta GameSpriteWorld_Palette,x
+
+	; Letters!
+	lda #128
+	sta GameSpriteWorld_Z,x
+	lda #0
+	sta GameSpriteWorld_IsBullet,x
+.smcx1	lda #-127
+	sta GameSpriteWorld_X,x
+.smcy1	lda #-127
+	sta GameSpriteWorld_Y,x
+	jmp .nextCharPos
+
+.nextCharPosDiv2
+	lda .smcx1+1
+	clc
+	adc #kScaledSpriteSeparationValue-6
+	sta .smcx1+1
+	jmp .posCheck
+
+	; Next letter...
+	; Position
+.nextCharPos
+	lda .smcx1+1
+	clc
+	adc #kScaledSpriteSeparationValue-3
+	sta .smcx1+1
+.posCheck
+	bvc .osxp1	; overflow clear, not carry!
+.carriageReturn
+	lda #-127
+	sta .smcx1+1
+
+	lda .smcy1+1
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta .smcy1+1
+	bvc .osxp1	; overflow clear, not carry!
+
+.resetTextPos
+	lda #-127
+	sta .smcx1+1
+	lda #-127
+	sta .smcy1+1
+
+.osxp1
+.nextChar
+	; Setup next letter to display
+	inc .textPos+1
+	bne .otp1
+	inc .textPos+2
+.otp1
+
+	jmp .notFree
+.noMoreText
+
+	; Randomly choose something or nothing
+	jsr Rand
+	and #3
+	bne .os1
+	jsr ScaledSetupPosition
+	lda #kVarsEmitSpriteFrame_scaled_0_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_0_32_0_colour
+	sta GameSpriteWorld_Palette,x
+	jmp .notFree
+.os1
+
+	jsr Rand
+	and #3
+	bne .os2
+	jsr ScaledSetupPosition
+	lda #kVarsEmitSpriteFrame_scaled_32_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_32_32_0_colour
+	sta GameSpriteWorld_Palette,x
+	jmp .notFree
+.os2
+
+	jsr Rand
+	and #3
+	bne .os3
+	jsr ScaledSetupPosition
+	lda #kVarsEmitSpriteFrame_scaled_64_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_64_32_0_colour
+	sta GameSpriteWorld_Palette,x
+	jmp .notFree
+.os3
+
+	jsr Rand
+	and #3
+	bne .os4
+
+	jsr ScaledSetupPositionWithoutY
+	lda #127
+	sta GameSpriteWorld_Y,x
+	lda #kVarsEmitSpriteFrame_scaled_0_128_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_0_128_0_colour
+	sta GameSpriteWorld_Palette,x
+
+	; Other sprites in this group
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 1
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_Y,x
+	sec
+	sbc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_X,x
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_0_96_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_0_96_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 2
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_Y,x
+	sec
+	sbc #kScaledSpriteSeparationValue*2
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_X,x
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_0_64_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_0_64_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	jmp .notFree
+.os4
+
+	jsr Rand
+	and #3
+	+lbne .os5
+
+	jsr ScaledSetupPosition
+	lda GameSpriteWorld_X,x
+	cmp #127-kScaledSpriteSeparationValue
+	bcc .okPos1
+	lda #127-kScaledSpriteSeparationValue
+	sta GameSpriteWorld_X,x
+.okPos1
+	lda GameSpriteWorld_Y,x
+	cmp #127-kScaledSpriteSeparationValue
+	bcc .okPos2
+	lda #127-kScaledSpriteSeparationValue
+	sta GameSpriteWorld_Y,x
+.okPos2
+	lda #kVarsEmitSpriteFrame_scaled_96_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_96_32_0_colour
+	sta GameSpriteWorld_Palette,x
+
+	; Other sprites in this group
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 1
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_X,x
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Y,x
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_128_32_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_128_32_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 2
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_X,x
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Y,x
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_96_64_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_96_64_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 3
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_X,x
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Y,x
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_128_64_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_128_64_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	jmp .notFree
+.os5
+
+	jsr Rand
+	and #3
+	bne .os6
+
+	jsr ScaledSetupPositionWithoutY
+	lda GameSpriteWorld_X,x
+	cmp #127-kScaledSpriteSeparationValue
+	bcc .okPos3
+	lda #127-kScaledSpriteSeparationValue
+	sta GameSpriteWorld_X,x
+.okPos3
+	lda #127
+	sta GameSpriteWorld_Y,x
+	lda #kVarsEmitSpriteFrame_scaled_192_32_0_tileIndex
+	sta GameSpriteWorld_Frame,x
+	lda #kVarsEmitSpriteFrame_scaled_192_32_0_colour
+	sta GameSpriteWorld_Palette,x
+
+	; Other sprites in this group
+	ldy GameSpriteWorld_SortIndex + kMaxGameSprites - 5 + 1
+	lda #0
+	sta GameSpriteWorld_IsBullet,y
+	lda GameSpriteWorld_X,x
+	clc
+	adc #kScaledSpriteSeparationValue
+	sta GameSpriteWorld_X,y
+	lda GameSpriteWorld_Y,x
+	sta GameSpriteWorld_Y,y
+	lda GameSpriteWorld_Z,x
+	sta GameSpriteWorld_Z,y
+	lda #kVarsEmitSpriteFrame_scaled_224_32_0_tileIndex
+	sta GameSpriteWorld_Frame,y
+	lda #kVarsEmitSpriteFrame_scaled_224_32_0_colour
+	sta GameSpriteWorld_Palette,y
+
+	jmp .notFree
+.os6
+
+.notFree
+
+	; Seeds the random number generator
+	dec .seedCount
+	bne .o2
+.smc1	lda #0
+.smc2	ldy #0
+	inc .smc1+1
+	bne .o1
+	inc .smc2+1
+.o1
+	jsr Seed
+.o2
+
+
+	jmp .gameLoop1
+
+.charConvTab
+	!fill 'a' , 0
+!for .i , 26 {
+	!by kVarsEmitSpriteFrame_scaled_32_128_0_tileIndex + .i -1
+}
+kCarriageReturn = 1
+kDoTimeWaste = 2
+kResetTextPos = 3
+
+.displayNames
+	!by kCarriageReturn
+	!by kCarriageReturn
+	!tx " this" , kCarriageReturn
+	!tx "  is" , kCarriageReturn
+	!tx " mega" , kCarriageReturn
+	!tx " wang" , kCarriageReturn
+	!by kDoTimeWaste
+!if 0 {
+	!by kResetTextPos
+	!tx "thank" , kCarriageReturn
+	!tx "you" , kCarriageReturn
+	!tx "to my" , kCarriageReturn
+	!by kDoTimeWaste
+	!tx "twitter" , kCarriageReturn
+	!tx "fam" , kCarriageReturn
+	!by kDoTimeWaste
+	!by kResetTextPos
+	; Names removed...
+}
+	!by 0	; End of text...
+
+.seedCount !by 0
+
+ScaledSetupPosition
+	jsr Rand
+	sta GameSpriteWorld_Y,x
+ScaledSetupPositionWithoutY
+	jsr Rand
+	and #63
+	clc
+	adc #128
+	sta GameSpriteWorld_Z,x
+	jsr Rand
+	sta GameSpriteWorld_X,x
+	lda #0
+	sta GameSpriteWorld_IsBullet,x
+	rts
+
+
+!source "..\BerzerkRedux\Rand.a"
+
+Sprite2Tab_ScaleToYSize
+!for .zz , 256 {
+!set .z = .zz-1
+!if .z <= 1 {
+!set .z = 1
+}
+!set .realSize = (32*32) / .z
+!set .realSize = <.realSize
+!if .realSize < 1 {
+!set .realSize = 1
+}
+	!by .realSize
+}
+
+Sprite2Tab_ScaleYSize
+!for .zz , kEntries {
+!set .z = kNearPoint - ((kEntries-.zz) + kFarPoint)
+!set .size = (kMultiplier * 96) / .z
+!if .size <= 0 {
+!set .size = 1
+}
+!set .invscale = (32 * 32) / .size
+!if .invscale <= 1 {
+!set .invscale = 1
+}
+; Need to calculate the height based on the scale
+!set .realSize = (32*32) / int(.invscale)
+; Using *32 (<<5) means it's not possible for the sprite to go below 4 pixels wide if the X end point is set to be 0x20.
+; This is because (32*32) / 255 ~= 4
+; Mitigations are to set the end point to be 0x10 and draw half the sprite, which should suffice in most cases.
+; This particular numeric range was chosen to give the sprite "scale up", where it gets larger, a little more accuracy.
+; However the Y height can be reduced to be smaller than 4 pixels
+!if .invscale >= 255 {
+!set .invscale = 255
+}
+!if .realSize < 1 {
+!set .realSize = 1
+}
+	!by .invscale
+	!by .realSize
+}
+
+Sprite2Tab_PerspectiveTabLo
+!for .i , kMaxSwing {
+	!by < (Sprite2Tab_Perspective + ((.i-1)*kEntries))
+}
+Sprite2Tab_PerspectiveTabHi
+!for .i , kMaxSwing {
+	!by > (Sprite2Tab_Perspective + ((.i-1)*kEntries))
+}
+!align 255 , 0
+Sprite2Tab_Perspective
+!for .i , kMaxSwing {
+!for .zz , kEntries {
+!set .z = kNearPoint - ((kEntries-.zz) + kFarPoint)
+	!by ((kMultiplier * 255 * .i) / kMaxSwing) / .z
+}
+}
+
+} ;< !ifndef IncludeGraphicsData {
+
+!zn
+DisplayData
+	jsr Video_SetAddressPalette
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	jsr Bus24Bit_CopySmallDataAgain
+	inc VIC2BorderColour
+
+!ifdef IncludeGraphicsData_L1 {
+	+MDecompressRLEToEBBSAddr .Sprites2Data0 , $08 , $2000
+	+MDecompressRLEToEBBSAddr .Sprites2Data1 , $08 , $4000
+	+MDecompressRLEToEBBSAddr .Sprites2Data2 , $08 , $8000
+	+MDecompressRLEToEBBSAddr .Sprites2Data3 , $08 , $0000
+}
+
+!ifdef IncludeGraphicsData_L2 {
+	+MRLEScreenDataToDefaultCharScreen .Chars_map , .Chars_map2
+	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+}
+
+!ifdef IncludeGraphicsData_L3 {
+	+MRLEScreenDataToDefaultTileScreen .Tiles_map
+	+MRLEPlanesDataToDefaultTileScreen .Tiles_plane0 , .Tiles_plane1 , .Tiles_plane2 , .Tiles_plane3
+}
+
+!ifdef IncludeGraphicsData_L4 {
+	+MRLEPlanesDataToDefaultSprite .Sprites_plane0 , .Sprites_plane1 , .Sprites_plane2 , .Sprites_plane3
+}
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo9PaletteData.bin"
+	!fill 256,0
+
+!ifdef IncludeGraphicsData_L1 {
+.Sprites2Data0 !bin "tmp/Demo9Sprites20.cmp"
+.Sprites2Data1 !bin "tmp/Demo9Sprites21.cmp"
+.Sprites2Data2 !bin "tmp/Demo9Sprites22.cmp"
+.Sprites2Data3 !bin "tmp/Demo9Sprites23.cmp"
+}
+
+!ifdef IncludeGraphicsData_L2 {
+.Chars_map
+	!bin "tmp/Demo9Chars_map.cmp"
+.Chars_map2
+	!bin "tmp/Demo9Chars_map.cmp2"
+.Chars_plane0
+	!bin "tmp/Demo9Chars_plane0.cmp"
+.Chars_plane1
+	!bin "tmp/Demo9Chars_plane1.cmp"
+.Chars_plane2
+	!bin "tmp/Demo9Chars_plane2.cmp"
+.Chars_plane3
+	!bin "tmp/Demo9Chars_plane3.cmp"
+}
+
+!ifdef IncludeGraphicsData_L3 {
+.Tiles_map
+	!bin "tmp/Demo9Tiles_map.cmp"
+.Tiles_plane0
+	!bin "tmp/Demo9Tiles_plane0.cmp"
+.Tiles_plane1
+	!bin "tmp/Demo9Tiles_plane1.cmp"
+.Tiles_plane2
+	!bin "tmp/Demo9Tiles_plane2.cmp"
+.Tiles_plane3
+	!bin "tmp/Demo9Tiles_plane3.cmp"
+}
+
+!ifdef IncludeGraphicsData_L4 {
+.Sprites_plane0
+	!bin "tmp/Demo9Sprites10.cmp"
+.Sprites_plane1
+	!bin "tmp/Demo9Sprites11.cmp"
+.Sprites_plane2
+	!bin "tmp/Demo9Sprites12.cmp"
+.Sprites_plane3
+	!bin "tmp/Demo9Sprites13.cmp"
+}

@@ -83,7 +83,7 @@ Feature: Test sorting library
   Examples:
     | type    | cyclesInitGT  | cyclesInitLT  | cycles1 | cycles2 | cycles3 |
     | Bubble  | 98            | 98            | 198     | 2227    | 186     |
-    | Quick   | 348           | 348           | 199     | 1227    | 201     |
+    | Quick   | 382           | 382           | 199     | 1227    | 201     |
 
 
 

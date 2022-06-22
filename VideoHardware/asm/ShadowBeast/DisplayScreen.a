@@ -6,12 +6,6 @@ DisplayScreen
 	jsr Video_DisableDisplay
 	jsr Video_InitDisplaySpritesScrollsBackground
 
-	; Blimp positions
-	lda #0
-	sta zeroPage_Temp0
-	sta zeroPage_Temp1
-	sta zeroPage_Temp2
-
 	jsr SetupBlimps
 	jsr SetupMoon
 	jsr SetupTree
@@ -21,15 +15,18 @@ DisplayScreen
 	jsr Video_SetAddressVideoPriorityRegister
 	; Layer order
 	; Sprites behind chars
-	lda #%11100001
+;	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Background
 	; Sprites behind clouds
-	lda #%11001001
-	sta CIA2PortBRS232
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Background
 
 	inc VIC2BorderColour
 
 	jsr Video_SetAddressTileBackgroundRegister
 	lda #$00
+	sta CIA2PortBRS232
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
 	sta CIA2PortBRS232
 
 	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
@@ -43,9 +40,12 @@ DisplayScreen
 !source "asm/ShadowBeast/CommonBlimpsMoon.a"
 
 !zn
-SetupTree
-Sprite_TreeX = 65
+Sprite_TreeX = 200
 Sprite_TreeY = 91
+APUData_TreeX
+	+MLittleEndian16Bit Sprite_TreeX
+
+SetupTree
 
 	; Setup some sprites into the APU data
 	ldx #0
@@ -54,84 +54,84 @@ Sprite_TreeY = 91
 	; First chunk, all at once
 
 	; 4
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame32_96	, Sprite_TreeX + 32 , Sprite_TreeY
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame48_96	, Sprite_TreeX + 32 + 16 , Sprite_TreeY
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame64_96	, Sprite_TreeX + 32 + 32 , Sprite_TreeY
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame80_96	, Sprite_TreeX + 32 + 48 , Sprite_TreeY
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame32_96	, 32 , Sprite_TreeY , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame48_96	, 32 + 16 , Sprite_TreeY , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame64_96	, 32 + 32 , Sprite_TreeY , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame80_96	, 32 + 48 , Sprite_TreeY , APUData_TreeX
 
 	; 8
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame0_112	, Sprite_TreeX + 0		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame16_112	, Sprite_TreeX + 16		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame32_112	, Sprite_TreeX + 32		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame48_112	, Sprite_TreeX + 48		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame64_112	, Sprite_TreeX + 64		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame80_112	, Sprite_TreeX + 80		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame96_112	, Sprite_TreeX + 96		, Sprite_TreeY + 16
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame112_112	, Sprite_TreeX + 112	, Sprite_TreeY + 16
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame0_112	, 0		, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame16_112	, 16	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame32_112	, 32	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame48_112	, 48	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame64_112	, 64	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame80_112	, 80	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame96_112	, 96	, Sprite_TreeY + 16 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame112_112	, 112	, Sprite_TreeY + 16 , APUData_TreeX
 
 	; 8
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame0_128	, Sprite_TreeX + 0		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame16_128	, Sprite_TreeX + 16		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame32_128	, Sprite_TreeX + 32		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame48_128	, Sprite_TreeX + 48		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame64_128	, Sprite_TreeX + 64		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame80_128	, Sprite_TreeX + 80		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame96_128	, Sprite_TreeX + 96		, Sprite_TreeY + 32
-	+EmitSprite APUData_Tree1Data , EmitSpriteFrame112_128	, Sprite_TreeX + 112	, Sprite_TreeY + 32
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame0_128	, 0		, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame16_128	, 16	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame32_128	, 32	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame48_128	, 48	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame64_128	, 64	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame80_128	, 80	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame96_128	, 96	, Sprite_TreeY + 32 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree1Data , EmitSpriteFrame112_128	, 112	, Sprite_TreeY + 32 , APUData_TreeX
 
 	; Setup more sprites into the APU data, multiplexing
 	ldx #0
-	+EmitSprite APUData_Tree2aData , EmitSpriteFrame0_144	, Sprite_TreeX + 0		, Sprite_TreeY + 48
-	+EmitSprite APUData_Tree2aData , EmitSpriteFrame16_144	, Sprite_TreeX + 16		, Sprite_TreeY + 48
+	+EmitSpriteWithAdd APUData_Tree2aData , EmitSpriteFrame0_144	, 0		, Sprite_TreeY + 48 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree2aData , EmitSpriteFrame16_144	, 16	, Sprite_TreeY + 48 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree2bData , EmitSpriteFrame32_144	, Sprite_TreeX + 32		, Sprite_TreeY + 48
-	+EmitSprite APUData_Tree2bData , EmitSpriteFrame48_144	, Sprite_TreeX + 48		, Sprite_TreeY + 48
+	+EmitSpriteWithAdd APUData_Tree2bData , EmitSpriteFrame32_144	, 32	, Sprite_TreeY + 48 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree2bData , EmitSpriteFrame48_144	, 48	, Sprite_TreeY + 48 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree2cData , EmitSpriteFrame64_144	, Sprite_TreeX + 64		, Sprite_TreeY + 48
-	+EmitSprite APUData_Tree2cData , EmitSpriteFrame80_144	, Sprite_TreeX + 80		, Sprite_TreeY + 48
+	+EmitSpriteWithAdd APUData_Tree2cData , EmitSpriteFrame64_144	, 64	, Sprite_TreeY + 48 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree2cData , EmitSpriteFrame80_144	, 80	, Sprite_TreeY + 48 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree2dData , EmitSpriteFrame96_144	, Sprite_TreeX + 96		, Sprite_TreeY + 48
-	+EmitSprite APUData_Tree2dData , EmitSpriteFrame112_144	, Sprite_TreeX + 112	, Sprite_TreeY + 48
+	+EmitSpriteWithAdd APUData_Tree2dData , EmitSpriteFrame96_144	, 96	, Sprite_TreeY + 48 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree2dData , EmitSpriteFrame112_144	, 112	, Sprite_TreeY + 48 , APUData_TreeX
 
 	ldx #0
-	+EmitSprite APUData_Tree3aData , EmitSpriteFrame0_160	, Sprite_TreeX + 0		, Sprite_TreeY + 64
-	+EmitSprite APUData_Tree3aData , EmitSpriteFrame16_160	, Sprite_TreeX + 16		, Sprite_TreeY + 64
+	+EmitSpriteWithAdd APUData_Tree3aData , EmitSpriteFrame0_160	, 0		, Sprite_TreeY + 64 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree3aData , EmitSpriteFrame16_160	, 16	, Sprite_TreeY + 64 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree3bData , EmitSpriteFrame32_160	, Sprite_TreeX + 32		, Sprite_TreeY + 64
-	+EmitSprite APUData_Tree3bData , EmitSpriteFrame48_160	, Sprite_TreeX + 48		, Sprite_TreeY + 64
+	+EmitSpriteWithAdd APUData_Tree3bData , EmitSpriteFrame32_160	, 32	, Sprite_TreeY + 64 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree3bData , EmitSpriteFrame48_160	, 48	, Sprite_TreeY + 64 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree3cData , EmitSpriteFrame64_160	, Sprite_TreeX + 64		, Sprite_TreeY + 64
-	+EmitSprite APUData_Tree3cData , EmitSpriteFrame80_160	, Sprite_TreeX + 80		, Sprite_TreeY + 64
+	+EmitSpriteWithAdd APUData_Tree3cData , EmitSpriteFrame64_160	, 64	, Sprite_TreeY + 64 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree3cData , EmitSpriteFrame80_160	, 80	, Sprite_TreeY + 64 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree3dData , EmitSpriteFrame96_160	, Sprite_TreeX + 96		, Sprite_TreeY + 64
-	+EmitSprite APUData_Tree3dData , EmitSpriteFrame112_160	, Sprite_TreeX + 112	, Sprite_TreeY + 64
+	+EmitSpriteWithAdd APUData_Tree3dData , EmitSpriteFrame96_160	, 96	, Sprite_TreeY + 64 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree3dData , EmitSpriteFrame112_160	, 112	, Sprite_TreeY + 64 , APUData_TreeX
 
 	ldx #0
-	+EmitSprite APUData_Tree4aData , EmitSpriteFrame0_176	, Sprite_TreeX + 0		, Sprite_TreeY + 80
-	+EmitSprite APUData_Tree4aData , EmitSpriteFrame16_176	, Sprite_TreeX + 16		, Sprite_TreeY + 80
+	+EmitSpriteWithAdd APUData_Tree4aData , EmitSpriteFrame0_176	, 0		, Sprite_TreeY + 80 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree4aData , EmitSpriteFrame16_176	, 16	, Sprite_TreeY + 80 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree4bData , EmitSpriteFrame32_176	, Sprite_TreeX + 32		, Sprite_TreeY + 80
-	+EmitSprite APUData_Tree4bData , EmitSpriteFrame48_176	, Sprite_TreeX + 48		, Sprite_TreeY + 80
+	+EmitSpriteWithAdd APUData_Tree4bData , EmitSpriteFrame32_176	, 32	, Sprite_TreeY + 80 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree4bData , EmitSpriteFrame48_176	, 48	, Sprite_TreeY + 80 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree4cData , EmitSpriteFrame64_176	, Sprite_TreeX + 64		, Sprite_TreeY + 80
-	+EmitSprite APUData_Tree4cData , EmitSpriteFrame80_176	, Sprite_TreeX + 80		, Sprite_TreeY + 80
+	+EmitSpriteWithAdd APUData_Tree4cData , EmitSpriteFrame64_176	, 64	, Sprite_TreeY + 80 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree4cData , EmitSpriteFrame80_176	, 80	, Sprite_TreeY + 80 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree4dData , EmitSpriteFrame96_176	, Sprite_TreeX + 96		, Sprite_TreeY + 80
-	+EmitSprite APUData_Tree4dData , EmitSpriteFrame112_176	, Sprite_TreeX + 112	, Sprite_TreeY + 80
+	+EmitSpriteWithAdd APUData_Tree4dData , EmitSpriteFrame96_176	, 96	, Sprite_TreeY + 80 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree4dData , EmitSpriteFrame112_176	, 112	, Sprite_TreeY + 80 , APUData_TreeX
 
 	ldx #0
-	+EmitSprite APUData_Tree5aData , EmitSpriteFrame32_192	, Sprite_TreeX + 32		, Sprite_TreeY + 96
-	+EmitSprite APUData_Tree5aData , EmitSpriteFrame48_192	, Sprite_TreeX + 48		, Sprite_TreeY + 96
+	+EmitSpriteWithAdd APUData_Tree5aData , EmitSpriteFrame32_192	, 32	, Sprite_TreeY + 96 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree5aData , EmitSpriteFrame48_192	, 48	, Sprite_TreeY + 96 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree5bData , EmitSpriteFrame64_192	, Sprite_TreeX + 64		, Sprite_TreeY + 96
-	+EmitSprite APUData_Tree5bData , EmitSpriteFrame80_192	, Sprite_TreeX + 80		, Sprite_TreeY + 96
+	+EmitSpriteWithAdd APUData_Tree5bData , EmitSpriteFrame64_192	, 64	, Sprite_TreeY + 96 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree5bData , EmitSpriteFrame80_192	, 80	, Sprite_TreeY + 96 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree5cData , EmitSpriteFrame64_208	, Sprite_TreeX + 64		, Sprite_TreeY + 112
-	+EmitSprite APUData_Tree5cData , EmitSpriteFrame80_208	, Sprite_TreeX + 80		, Sprite_TreeY + 112
+	+EmitSpriteWithAdd APUData_Tree5cData , EmitSpriteFrame64_208	, 64	, Sprite_TreeY + 112 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree5cData , EmitSpriteFrame80_208	, 80	, Sprite_TreeY + 112 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree5dData , EmitSpriteFrame48_224	, Sprite_TreeX + 48		, Sprite_TreeY + 128
-	+EmitSprite APUData_Tree5dData , EmitSpriteFrame64_224	, Sprite_TreeX + 64		, Sprite_TreeY + 128
+	+EmitSpriteWithAdd APUData_Tree5dData , EmitSpriteFrame48_224	, 48	, Sprite_TreeY + 128 , APUData_TreeX
+	+EmitSpriteWithAdd APUData_Tree5dData , EmitSpriteFrame64_224	, 64	, Sprite_TreeY + 128 , APUData_TreeX
 	ldx #0
-	+EmitSprite APUData_Tree5eData , EmitSpriteFrame80_224	, Sprite_TreeX + 80		, Sprite_TreeY + 128
+	+EmitSpriteWithAdd APUData_Tree5eData , EmitSpriteFrame80_224	, 80	, Sprite_TreeY + 128 , APUData_TreeX
 
 	rts

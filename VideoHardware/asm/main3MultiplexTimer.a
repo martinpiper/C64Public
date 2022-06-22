@@ -1,6 +1,8 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 
 !to "bin/main.prg", cbm
@@ -73,8 +75,8 @@ mainLoop
 	ldy .animationFrame
 
 !macro MSetSpritesBand .ypos , .offset , .mul {
-	jsr Video_SetAddressSpritesControl
-	lda #$00
+	jsr Video_SetAddressVideoLayersEnable
+	lda #kBus24Bit_VideoLayer_LayersEnable_234
 	sta CIA2PortBRS232
 
 	jsr Video_SetAddressSprites
@@ -83,6 +85,7 @@ mainLoop
 	lda #.i
 	sta CIA2PortBRS232
 	lda #.i & 0x07
+	ora SpriteAnimationTabHi + <((.i * .mul) + .offset),y
 	sta CIA2PortBRS232
 	lda #.ypos
 	sta CIA2PortBRS232
@@ -90,8 +93,8 @@ mainLoop
 	sta CIA2PortBRS232
 }
 
-	jsr Video_SetAddressSpritesControl
-	lda #$10
+	jsr Video_SetAddressVideoLayersEnable
+	lda #kBus24Bit_VideoLayer_LayersEnable_Default
 	sta CIA2PortBRS232
 }
 	+MSetSpritesBand 224 , 0 , 4
@@ -113,13 +116,19 @@ mainLoop
 
 .animationFrame !by 0
 SpriteAnimationTab
+	!for .j , 2 {
 	!for .i , 256 {
-		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!set .val = <(170 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!by .val
 	}
+	}
+SpriteAnimationTabHi
+	!for .j , 2 {
 	!for .i , 256 {
-		!by <(128 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!set .val = >(170 + (100 * sin( (float(.i) / 128) * 3.14159265 )) - (50 * sin( (float(.i) / 64) * 3.14159265 )))
+		!by .val << 4
 	}
-
+	}
 
 !source "asm/BatBall/Levels.a"
 !source "asm/BatBall/DisplayScreen.a"

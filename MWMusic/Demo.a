@@ -1,0 +1,292 @@
+;Demo test code
+
+!source "../stdlib/stdlib.a"
+!source "../stdlib/PETSCII.a"
+!to "Demo.prg", cbm
+!sl "Demo.map"
+!sal
+!svl "Demo.lbl"
+!pdb "Demo.pdb"
+!cpu 6510
+!ct pet
+
+!zn
+!initmem 0
+
+!source "GUI_Defs.a"
+!source "MusicPlayer_Defs.a"
+
+!source "Editor_Macros.a"
+
+
+*=$400
+	!bin "Graphics/demo.prg" , VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , $62
+
+*=$800
+ColourData
+	!bin "Graphics/demo.prg" , VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , $44a
+
+*=$c00
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+	+InitKERNALIO_AXY
+	+MACROCIAIRQControlDisable_A
+
+	jsr Editor_Colourise
+
+	jsr InitKeyboard
+	sei
+	+MACROWaitForTheLastScan_A
+	+SetDefaultScreenLowerCase_A
+	+MACRODisableUpperLowerCaseChange_A
+
+	lda #0
+	jsr MusicInit
+
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM + 5 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 6 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 7 + (10 * VIC2ScreenCharsWidth)
+
+	; Enter the main loop, read keyboard etc
+.l1
+	lda VIC2ScreenControlV
+	bmi .l1
+	+MACROWaitForRaster VIC2SpriteYBorderTop-1
+
+	+DelayFor 55
+
+!for .i , (5*8) + 1 {
+	!if (.i & 7) = 2 {
+		+DelayFor 12
+	} else {
+		+DelayFor 55
+	}
+	lda TopColTab + .i-1
+	sta VIC2ScreenColour
+}
+
+	jsr SCNKEY
+;	inc VIC2ScreenColour
+
+	ldx lastRaster
+	lda toScans,x
+	.scanDisplayPos = SCREENRAM + 35 + (8 * VIC2ScreenCharsWidth)
+	sta .scanDisplayPos
+	sta .scanDisplayPos+1
+	lda toScans+8,x
+	sta .scanDisplayPos + (1 * VIC2ScreenCharsWidth)
+	sta .scanDisplayPos + (1 * VIC2ScreenCharsWidth) + 1
+	lda toScans+16,x
+	sta .scanDisplayPos + (2 * VIC2ScreenCharsWidth)
+	sta .scanDisplayPos + (2 * VIC2ScreenCharsWidth) + 1
+	lda toScans+24,x
+	sta .scanDisplayPos + (3 * VIC2ScreenCharsWidth)
+	sta .scanDisplayPos + (3 * VIC2ScreenCharsWidth) + 1
+	lda toScans+32,x
+	sta .scanDisplayPos + (4 * VIC2ScreenCharsWidth)
+	sta .scanDisplayPos + (4 * VIC2ScreenCharsWidth) + 1
+
+;	inc VIC2ScreenColour
+
+	+MACROWaitForRaster VIC2SpriteYBorderTop-1 + (16*8)
+	+DelayFor 55
+
+!for .i , 9*8 {
+	!if (.i & 7) = 2 {
+		+DelayFor 12
+	} else {
+		+DelayFor 55
+	}
+	lda BotColTab + .i-1
+	sta VIC2ScreenColour
+}
+
+
+	+MACROWaitForRaster 0
+	jsr MusicPlay
+	ldx VIC2Raster
+	inx	; One extra for zero based...
+	stx lastRaster
+
+	lda playFlag
+	bmi .isPlaying
+	jsr ButtonsClear
+.isPlaying
+
+	; Slow down the colour bar scrolls, less headache inducing
+.smtoggle1	lda #0
+	beq .ot1
+	jsr ColTabUpdates2
+	jmp .ot2
+.ot1
+	jsr ColTabUpdates1
+.ot2
+	lda .smtoggle1+1
+	eor #1
+	sta .smtoggle1+1
+
+	jsr getkey
+	cmp #0
+	beq .ll1
+	cmp #$ff
+	beq .ll1
+
+	cmp #'1'
+	bne .not1
+	lda #0
+	jsr MusicInit
+
+	jsr ButtonsClear
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM + 5 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 6 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 7 + (10 * VIC2ScreenCharsWidth)
+
+	jmp .ll1
+.not1
+
+	cmp #'2'
+	bne .not2
+	lda #1
+	jsr MusicInit
+
+	jsr ButtonsClear
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM + 12 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 13 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 14 + (10 * VIC2ScreenCharsWidth)
+
+	jmp .ll1
+.not2
+
+	cmp #'3'
+	bne .not3
+	lda #2
+	jsr MusicInit
+
+	jsr ButtonsClear
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM + 19 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 20 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 21 + (10 * VIC2ScreenCharsWidth)
+
+	jmp .ll1
+.not3
+
+	cmp #'4'
+	bne .not4
+	lda #3
+	jsr MusicInit
+
+	jsr ButtonsClear
+	lda #VIC2Colour_Yellow
+	sta COLOURRAM + 26 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 27 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 28 + (10 * VIC2ScreenCharsWidth)
+
+	jmp .ll1
+.not4
+
+	cmp #3
+	bne .notRunStop
+	lda #8
+	sta fadeFlagSpeed
+	jmp .ll1
+.notRunStop
+
+;	sta SCREENRAM
+
+.ll1
+	jmp .l1
+
+ButtonsClear
+	lda #VIC2Colour_LightGrey
+	sta COLOURRAM + 5 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 6 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 7 + (10 * VIC2ScreenCharsWidth)
+
+	sta COLOURRAM + 12 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 13 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 14 + (10 * VIC2ScreenCharsWidth)
+
+	sta COLOURRAM + 19 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 20 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 21 + (10 * VIC2ScreenCharsWidth)
+
+	sta COLOURRAM + 26 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 27 + (10 * VIC2ScreenCharsWidth)
+	sta COLOURRAM + 28 + (10 * VIC2ScreenCharsWidth)
+	rts
+
+
+!source "../stdlib/Initialise.a"
+GetKey_NoFireButtonDebounce
+!source "../MusicEditor/GetKey.a"
+!source "FingerPrint.a"
+
+!source "Editor_Common.a"
+
+
+!zn
+ColTabUpdates1
+	dec .smc1+1
+.smc1	ldx #0
+	ldy #0
+.cf1
+	inx
+	txa
+	and #31
+	tax
+	lda TopTabCols,x
+	sta TopColTab,y
+	iny
+	cpy #5*8
+	bne .cf1
+	rts
+
+!zn
+ColTabUpdates2
+	inc .smc2+1
+.smc2	ldx #0
+	ldy #0
+.cf2
+	inx
+	txa
+	and #7
+	tax
+	lda BotTabCols,x
+	sta BotColTab,y
+	iny
+	cpy #9*8
+	bne .cf2
+	rts
+
+TopColTab
+	!fill 5*8 , 0
+	!by VIC2Colour_DarkGrey
+
+BotColTab
+	!fill 9*8 , 3
+
+
+toScans
+	+MScans_E
+	+MScans_table
+	+MScans_F
+
+
+lastRaster	!by 0
+
+TopTabCols
+	!by $0, $2, $a, $7, $1, $7, $a, $2
+	!by $0, $6, $4, $3, $1, $3, $e, $6
+	!by $0, $0, $b, $b, $5, $5, $d, $d
+	!by $1, $1, $d, $d, $5, $5, $b, $b
+
+BotTabCols
+	!by $6, $c, $7, $1, $7, $c, $6, $6
+
+!align 255,0
+!source "MusicPlayer.a"
+!source "t.a"

@@ -831,6 +831,28 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				else if ( argv[0][1] == 'c' )
 				{
 					mTurboGotSync = false;
+					int RAMC64[65536];	// Yes this should be bytes, but I'm going to get really annoyed with all the conversion so just use ints :)
+					memset(RAMC64 , 0 , sizeof(RAMC64));
+
+					// Setup some known values for the kernal loader comparisons
+					RAMC64[0x029f] = 0x31;
+					RAMC64[0x02a0] = 0xea;
+					// During loading the IRQ is set to $f92c
+					RAMC64[0x0314] = 0x2c;
+					RAMC64[0x0315] = 0xf9;
+
+					bool gotTapeHeader1 = false;
+					int fileHeaderStatus = 0x89;
+					int fileHeaderPointer = 0x33c;
+					bool gotTapeHeader2 = false;
+					int fileDataStatus = 0x89;
+					int fileDataPointer = 0;
+					bool gotFileData1 = false;
+					bool gotFileData2 = false;
+					bool gotLoadError = false;
+					bool displayedGuess = false;
+
+					mChecksumRegister = 0;
 
 					// Commodore format
 					while ( rep > 0 )
@@ -962,7 +984,122 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								gotOneGoodByte = true;
 								printf( " $%02x" , theByte );
 
-								mChecksumRegister = mChecksumRegister ^ theByte;
+								if (!displayedGuess)
+								{
+									if (!gotTapeHeader1)
+									{
+										if (fileHeaderStatus == 0x80)
+										{
+											mChecksumRegister = mChecksumRegister ^ theByte;
+											RAMC64[fileHeaderPointer] = theByte;
+											fileHeaderPointer++;
+										}
+										else
+										{
+											if (theByte == fileHeaderStatus)
+											{
+												fileHeaderStatus--;
+											}
+											else
+											{
+												printf("\n** Partial header, ignored, reset state **\n");
+												fileHeaderStatus = 0x89;
+												fileHeaderPointer = 0x33c;
+											}
+										}
+									}
+									else if (!gotTapeHeader2)
+									{
+										if (fileHeaderStatus == 0x00)
+										{
+											// Verify the loaded header
+											if (RAMC64[fileHeaderPointer] != theByte)
+											{
+												printf("\n** Would be a header load error **\n");
+												gotTapeHeader1 = false;
+												gotTapeHeader2 = false;
+												gotFileData1 = false;
+												gotFileData2 = false;
+												gotLoadError = false;
+												mChecksumRegister = 0;
+												fileDataStatus = 0x89;
+												fileHeaderPointer = 0x33c;
+												mChecksumRegister = 0;
+											}
+											else
+											{
+												fileHeaderPointer++;
+											}
+										}
+										else
+										{
+											if (theByte == fileHeaderStatus)
+											{
+												fileHeaderStatus--;
+											}
+											else
+											{
+												printf("\n** Partial verify header, ignored, reset state **\n");
+												fileHeaderStatus = 0x09;
+												fileHeaderPointer = 0x33c;
+											}
+										}
+									}
+									else if (!gotFileData1)
+									{
+										if (fileDataStatus == 0x80)
+										{
+											RAMC64[fileDataPointer] = theByte;
+											fileDataPointer++;
+										}
+										else
+										{
+											if (theByte == fileDataStatus)
+											{
+												fileDataStatus--;
+											}
+											else
+											{
+												printf("\n** Partial data header, ignored, reset state **\n");
+												fileDataStatus = 0x89;
+											}
+										}
+									}
+									else if (!gotFileData2)
+									{
+										if (fileDataStatus == 0x00)
+										{
+											if (RAMC64[fileDataPointer] != theByte)
+											{
+												printf("\n** Would be a data load error **\n");
+												gotTapeHeader1 = false;
+												gotTapeHeader2 = false;
+												gotFileData1 = false;
+												gotFileData2 = false;
+												gotLoadError = true;
+												fileDataStatus = 0x89;
+												fileHeaderPointer = 0x33c;
+												mChecksumRegister = 0;
+											}
+											else
+											{
+												fileDataPointer++;
+											}
+										}
+										else
+										{
+											if (theByte == fileDataStatus)
+											{
+												fileDataStatus--;
+											}
+											else
+											{
+												printf("\n** Partial data verify header, ignored, reset state **\n");
+												fileDataStatus = 0x09;
+											}
+										}
+									}
+								}
 							}
 							else if ( ( p1 == kLong ) && ( p2 == kShort ) )
 							{
@@ -970,6 +1107,40 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								{
 									printf( " EOD\n" );
 									gotOneGoodByte = false;
+
+									if (!displayedGuess)
+									{
+										if (!gotTapeHeader1)
+										{
+											if (fileHeaderStatus == 0x80)
+											{
+												gotTapeHeader1 = true;
+												fileHeaderStatus = 0x09;
+												fileHeaderPointer = 0x33c;
+											}
+										}
+										else if (!gotTapeHeader2)
+										{
+											if (fileHeaderStatus == 0x00)
+											{
+												gotTapeHeader2 = true;
+												fileDataPointer = ProcessTapeHeader(RAMC64);
+												mChecksumRegister = 0;
+
+												printf("\nThe code will attempt to load to address $%04x\n" , fileDataPointer);
+											}
+										}
+										else if (!gotFileData1)
+										{
+											gotFileData1 = true;
+											fileDataPointer = ProcessTapeHeader(RAMC64);
+										}
+										else if (!gotFileData2)
+										{
+											// File data completed
+											gotFileData2 = true;
+										}
+									}
 								}
 							}
 							else
@@ -983,6 +1154,44 @@ int C64Tape::HandleParams( int argc , char ** argv )
 						{
 							printf( "End of file reached.                                    \n" );
 							break;
+						}
+
+						if (!displayedGuess)
+						{
+							bool earlyOut = false;
+							if (RAMC64[0x0315] == RAMC64[0x02a0])
+							{
+								printf("\nThis load will early out due to IRQ hi address match. ($%02x)\n" , RAMC64[0x02a0]);
+								int value = GetAddressFromAddress(RAMC64, 0x314);
+								if (value != 0 && value <= fileHeaderPointer)
+								{
+									printf("\nWill probably attempt to auto-start (as IRQ) loaded code at $%04x\n" , value);
+								}
+								earlyOut = true;
+							}
+							if (earlyOut || gotLoadError || gotFileData1)
+							{
+								// TODO: Process loaded data and guess what is going to happen
+								// Some loaders rely on triggering an early out during data load phase 1, so we check for that here
+								int value = GetAddressFromAddress(RAMC64, 0x302);
+								if (earlyOut && value != 0)
+								{
+									printf("\nWill probably attempt to auto-start vector $0302 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x29f);
+								if (value != 0 && value <= fileHeaderPointer)
+								{
+									printf("\nWill probably attempt to auto-start (as restored IRQ) loaded code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+
+								if (earlyOut || gotLoadError || (gotFileData1 && gotFileData2))
+								{
+								}
+							}
 						}
 
 						rep--;
@@ -1739,7 +1948,7 @@ ocn[r] [bytes]: Write tape bytes in kernal format. If 'r' is supplied the checks
 ocb1 <file name> [TapeRelocatedStart address to load data] [nameStart offset] [nameEnd offset] [tapeHeader offset] [tapeHeaderEnd offset] [startBlock offset] [TapeTurboEndOfExtendedZeroPageCodeAndIRQ offset]: Writes a turbo tape boot loader kernal file from \"file name\" with tape header containing user data without the second data block to improve loading speed. If the values are missing then the loaded label values are used.\n\n\
 Turbo format writes:\n\
 otl[rep] : Write a turbo format leader. Typical values for rep are: $6a10 10 seconds for the start of the tape. $2 between blocks. $c0 before the file to account for the tape motor starting.\n\n\
-ote[rep] : Write a kernal format end-of-data marker. There usually needs to be only one.\n\n\
+ote[rep] : Write a turbo format end-of-data marker. There usually needs to be only one.\n\n\
 otn[r] [bytes] : Write tape bytes in turbo format.  If 'r' is supplied the checksum will be reset.\n\n\
 otf[b][r] <file name> <file name byte> [start offset] [end offset] [load address] : Writes turbo data. If 'b' is added it will write checksum blocks rather than a whole file checksum. The checksum register is always reset. The start offset, end offset and load are optional and if the file is a PRG format file the load address is taken from the first two bytes. If 'r' is added after 'b' then the blocks will be compressed with RLE encoding.\n\n\
 otft <file name> [start offset] [end offset] : Writes turbo data with a tiny header without a filename or a load address. The checksum register is always reset. The start offset and end offset are optional, they are calculated assuming a PRG format file.\n\n\
@@ -1866,4 +2075,19 @@ void C64Tape::FlushStreams(void)
 	sStreamPriority = 0;
 
 	mStreams.clear();
+}
+
+int C64Tape::ProcessTapeHeader(int * RAMC64)
+{
+	if (RAMC64[0x33c] == 0x01)
+	{
+		return 0x801; // Default BASIC address...
+	}
+	else if (RAMC64[0x33c] == 0x03)
+	{
+		// Force load address file header
+		return GetAddressFromAddress(RAMC64, 0x33d);
+	}
+	printf("\n**Unknown tape header type**\n");
+	return 0;
 }

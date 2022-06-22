@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="features">
+      <UniqueIdentifier>{182005fb-e794-424a-addb-0e299270c596}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stdlib">
+      <UniqueIdentifier>{72933cdc-e5ad-40ff-a33c-586baaf2613e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OriginalData">
+      <UniqueIdentifier>{1d078842-974a-4384-bd18-6eb694a2f42f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Data">
+      <UniqueIdentifier>{c2e7cebe-eef2-4f76-a3e5-51098856c0bd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Done.txt" />
+    <Text Include="TODO.txt" />
+    <Text Include="ReadMe.txt" />
+    <Text Include="TechDoc.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="MusicPlayer.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\stdlib\Initialise.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\MemoryCopy.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\PETSCII.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\stdlib.a">
+      <Filter>Source Files\stdlib</Filter>
+    </None>
+    <None Include="RunTests.bat" />
+    <None Include="BuildIt.bat" />
+    <None Include="features\ExpectedSIDOutput.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\ExpectedSIDOutput2.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="features\ExpectedSIDOutput3.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="GUI.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="GUI_Defs.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="MusicPlayer_Defs.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\MusicEditor\GetKey.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="OriginalData\armalytemusic.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="OriginalData\DoubleDragon3.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="OriginalData\FinalBlow.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="OriginalData\Citadel.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="OriginalData\Snare.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="Editor_Internals.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Keys.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Macros.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Storage.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Layouts.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Data.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Player.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Events.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_IRQ.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="OriginalData\Walkers_Warbles.tas">
+      <Filter>OriginalData</Filter>
+    </None>
+    <None Include="MusicPlayerData.a">
+      <Filter>Source Files\Data</Filter>
+    </None>
+    <None Include="MusicPlayerData_Blank.a">
+      <Filter>Source Files\Data</Filter>
+    </None>
+    <None Include="MusicPlayerData_Citadel.a">
+      <Filter>Source Files\Data</Filter>
+    </None>
+    <None Include="MusicPlayerData_Snare.a">
+      <Filter>Source Files\Data</Filter>
+    </None>
+    <None Include="MusicPlayerData_Warbles.a">
+      <Filter>Source Files\Data</Filter>
+    </None>
+    <None Include="Demo.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="Editor_Common.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="features\OldAndNewPerformance.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="BuildDemos.bat" />
+  </ItemGroup>
+</Project>

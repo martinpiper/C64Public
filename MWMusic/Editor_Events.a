@@ -1,0 +1,36 @@
+!zn
+OnSequenceUp
+	dec ScreenNumber_sequenceStp
+	bpl .ok1
+	lda #0
+	sta ScreenNumber_sequenceStp
+.ok1
+	rts
+
+OnSequenceDown
+	inc ScreenNumber_sequenceStp
+	lda ScreenNumber_sequenceStp
+	cmp #kMusicPlayer_SequenceSize-16
+	bcc .ok2
+	lda #kMusicPlayer_SequenceSize-16
+	sta ScreenNumber_sequenceStp
+.ok2
+	rts
+
+OnTrackUp
+	dec ScreenNumber_trackStp
+	bpl .ok5
+	lda #0
+	sta ScreenNumber_trackStp
+.ok5
+	rts
+
+OnTrackDown
+	inc ScreenNumber_trackStp
+	lda ScreenNumber_trackStp
+	cmp #kMusicPlayer_TunesVoiceSize-16
+	bcc .ok6
+	lda #kMusicPlayer_TunesVoiceSize-16
+	sta ScreenNumber_trackStp
+.ok6
+	rts

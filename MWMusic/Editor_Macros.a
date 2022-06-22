@@ -1,0 +1,97 @@
+!macro MDisplayNoteAt .x , .y , .or {
+	cmp #12*9
+	bcs .notNote
+	sta .sm1+1
+	lda #<noteToText
+	sta $fb
+	lda #>noteToText
+	sta $fc
+	ldy #3
+.np1
+.sm1	lda #0
+	clc
+	adc $fb
+	sta $fb
+	bcc .np2
+	inc $fc
+.np2
+	dey
+	bne .np1
+.np3
+	lda ($fb),y
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + (.y * 40),y
+	iny
+	cpy #3
+	bne .np3
+.notNote
+}
+
+!macro MDisplayDecimalAt_A .x , .y , .or {
+	tax
+
+	lda toDecimal_Tens,x
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + (.y * 40)
+	lda toDecimal_Units,x
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + 1 + (.y * 40)
+}
+
+
+!macro MDisplayDecimal3At_A .x , .y , .or {
+	tax
+
+	lda #' '
+	cpx #100
+	bcc .o1
+	lda toDecimal_Hundreds,x
+.o1
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + 0 + (.y * 40)
+
+	lda #' '
+	cpx #10
+	bcc .o2
+	lda toDecimal_Tens,x
+.o2
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + 1 + (.y * 40)
+
+	lda toDecimal_Units,x
+!if .or != 0 {
+	ora #.or
+}
+	sta SCREENRAM + .x + 2 + (.y * 40)
+}
+
+
+!macro MScans {
+	!by $20 , $64 , $6f , $62 , $f8 , $f7 , $e3 , $a0
+}
+!macro MScans_F {
+	!fill 8 , $a0
+}
+!macro MScans_E {
+	!fill 8 , $20
+}
+
+!macro MScans_table {
+	+MScans_E
+	+MScans_E
+	+MScans_E
+	+MScans
+	+MScans_F
+	+MScans_F
+	+MScans_F
+}

@@ -37,10 +37,16 @@ RNXPCompressionDecompress_GetByte	lda $1234
 	+MDecompressRLEToEBBSAddr .plane3 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_3
 }
 
+!ifdef kBus24Bit_VideoLayer_HasOverscan {
+!macro MRLEScreenDataToDefaultCharScreen .data , .data2 {
+	+MDecompressRLEToEBBSAddr .data , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap
+	+MDecompressRLEToEBBSAddr .data2 , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap
+}
+} else {
 !macro MRLEScreenDataToDefaultCharScreen .data {
 	+MDecompressRLEToEBBSAddr .data , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap
 }
-
+}
 !macro MRLEPlanesDataToDefaultTileScreen .plane0 , .plane1 , .plane2 , .plane3 {
 	+MDecompressRLEToEBBSAddr .plane0 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_0
 	+MDecompressRLEToEBBSAddr .plane1 , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_1

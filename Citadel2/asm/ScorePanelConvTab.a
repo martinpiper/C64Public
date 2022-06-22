@@ -1,0 +1,25 @@
+!to "bin/ScorePanelConvTab.ct", plain
+
+!source "../stdlib/stdlib.a"
+!source "asm/DataDefs.a"
+
+!initmem ScorePanel_EmptyChar
+*=0
+
+*=32
+!by ScorePanel_EmptyChar
+
+; 0
+*=48
+!for .i, 10 {!byte .i-1+ Score_ZeroCharacter}
+
+; A
+*=65
+!for .i, 26 {!byte .i-1+ ScorePanel_CharacterA}
+
+; a
+*=97
+!for .i, 26 {!byte .i-1+ ScorePanel_CharacterA}
+
+*=255
+!by 0

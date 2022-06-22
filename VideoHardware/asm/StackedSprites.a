@@ -1,38 +1,110 @@
 !zn
 ; Sprite emit macros, customised for this application allow the ImageToBitplane tool to output optimised sprite drawing
-; A = Y pos
-; X = X pos
 ; Y = Preserved
-EmitSpriteFrame_temp	!by 0
 EmitSpriteFrame_count	!by 0
-EmitSpriteFrame_flips	!by 0
-!macro MEmitSpriteFrame frame,palette {
-	pha
-	sta StackedSpriteData+2,y
-	txa
-	sta StackedSpriteData+3,y
-	lda #frame
-	sta StackedSpriteData,y
-	lda #palette
-	ora EmitSpriteFrame_flips
-	sta StackedSpriteData+1,y
-	iny
-	iny
-	iny
-	iny
-	pla
+
+!macro MEmitSpriteFrameOffsetXY .frame , .colour , .x , .y {
+	lda AnimationEngine_posY,y
+!if .y != 0 {
+!if .y < 0 {
+	clc
+	adc #-.y
+} else {
+	sec
+	sbc #.y
 }
-!macro MEmitSpriteFrame_Preserve {
-	sty EmitSpriteFrame_temp
-	ldy EmitSpriteFrame_count
 }
-!macro MEmitSpriteFrame_RestoreExit {
-	sty EmitSpriteFrame_count
-	ldy EmitSpriteFrame_temp
-	rts
+	sta StackedSpriteData+2,x
+
+	lda AnimationEngine_flips,y
+	sta .msbX+1
+
+!if .x = 0 {
+	lda AnimationEngine_posX,y
+	sta StackedSpriteData+3,x
+	lda AnimationEngine_posXHi,y
+} else {
+!if .x < 0 {
+!ifdef kStackedSprites_supportFlipX {
+	lda .msbX+1
+	and #kAnimationEngine_flipX
+	beq .noFlipX
+
+	lda AnimationEngine_posX,y
+	clc
+	adc #-.x
+	sta StackedSpriteData+3,x
+	lda AnimationEngine_posXHi,y
+	adc #0
+	jmp .endXCalcMSB
 }
 
-!source "tmp/spriteSheet.txt.a"
+.noFlipX
+	lda AnimationEngine_posX,y
+	sec
+	sbc #-.x
+	sta StackedSpriteData+3,x
+	lda AnimationEngine_posXHi,y
+	sbc #0
+} else {
+!ifdef kStackedSprites_supportFlipX {
+	lda .msbX+1
+	and #kAnimationEngine_flipX
+	beq .noFlipX2
+
+	lda AnimationEngine_posX,y
+	sec
+	sbc #.x
+	sta StackedSpriteData+3,x
+	lda AnimationEngine_posXHi,y
+	sbc #0
+	jmp .endXCalcMSB
+}
+
+.noFlipX2
+	lda AnimationEngine_posX,y
+	clc
+	adc #.x
+	sta StackedSpriteData+3,x
+	lda AnimationEngine_posXHi,y
+	adc #0
+}
+}
+.endXCalcMSB
+	and #1
+	beq .noMSB
+	lda .msbX+1
+	ora #kBus24Bit_Sprites_MSBX
+	sta .msbX+1
+.noMSB
+	lda #.frame
+	sta StackedSpriteData,x
+	lda #.colour
+.msbX	ora #0
+	sta StackedSpriteData+1,x
+	inx
+	inx
+	inx
+	inx
+}
+
+!macro MEmitSpriteFrameOffsetX .frame , .colour , .x {
+	+MEmitSpriteFrameOffsetXY .frame , .colour , .x , 0
+}
+
+!macro MEmitSpriteFrameOffsetY .frame , .colour , .y {
+	+MEmitSpriteFrameOffsetXY .frame , .colour , 0 , .y
+}
+
+!macro MEmitSpriteFrame .frame, .colour {
+	+MEmitSpriteFrameOffsetXY .frame , .colour , 0 , 0
+}
+
+!macro MEmitSpriteFrame_Preserve {
+}
+!macro MEmitSpriteFrame_RestoreExit {
+	rts
+}
 
 !macro MAnimationType_Create ~.kAnimationTypeEnum , .address {
 	.kAnimationTypeEnum = * - AnimationType_tableLoHi
@@ -43,7 +115,7 @@ EmitSpriteFrame_flips	!by 0
 	!by 0
 }
 
-
+!ifndef copySprites_defined {
 !zn
 copySprites
 	jsr Video_SetAddressSprites
@@ -54,4 +126,6 @@ copySprites
 	rts
 
 StackedSpriteData
-	!fill kBus24Bit_SpritesMaxNum * 4
+	; To handle more than kBus24Bit_SpritesMaxNum
+	!fill 256 , 0
+}

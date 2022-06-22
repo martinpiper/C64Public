@@ -1,4 +1,5 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -57,13 +58,10 @@ mainLoop
 mainLoopGame
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
-
-!source "asm/main6CommonScrolls.a"
-
+	jsr UpdateCommonScrolls
 	jsr CopySpriteFrameData
 
-!source "asm/main6CommonBlimps.a"
-
+	jsr Move_Blimps
 
 	jsr MusicPoll
 
@@ -88,3 +86,10 @@ MusicDataEnd
 !source "asm/ShadowBeast/AnimationData.a"
 !source "tmp/ShadowBeastSprites2Sheet.txt.a"
 
+UpdateCommonScrolls
+	!source "asm/main6CommonScrolls.a"
+	rts
+
+Move_Blimps
+!source "asm/main6CommonBlimps.a"
+	rts

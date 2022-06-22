@@ -3,9 +3,12 @@
 	inc .alternate3+1
 	and #7
 	+lbne .o3
-	inc APUData_Blimp1X
-	dec APUData_Blimp2X
-	+MAPU_DataUpdateNumBytes APUData_Blimp1X , 1
-	+MAPU_DataUpdateNumBytes APUData_Blimp2X , 1
+	+MAddU8ToAddr16 1 , APUData_Blimp1X , APUData_Blimp1X+1
+	+MSubU8FromAddr16 1 , APUData_Blimp2X , APUData_Blimp2X+1
+
+	+MAndMem 1 , APUData_Blimp1X+1
+	+MAndMem 1 , APUData_Blimp2X+1
+
+	jsr SetupBlimps
 .o3
 

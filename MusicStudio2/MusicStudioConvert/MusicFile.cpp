@@ -162,6 +162,11 @@ public:
 		return false;
 	}
 
+	virtual unsigned char GetDataByte0(void)
+	{
+		return mNote;
+	}
+
 private:
 	unsigned char mNote;
 };
@@ -1677,6 +1682,7 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 									const bool runningInEditor
 									)
 {
+	mLastDebugOutput.clear();
 	codeSize = 0;
 	trackSize = 0;
 	blockSize = 0;
@@ -1707,6 +1713,7 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 	DeleteFileA("t.map");
 	DeleteFileA("t.sid");
 	DeleteFileA("t.prg");
+	DeleteFileA("t.tap");
 
 	// Produce ASM output
 	FILE *fp;
@@ -2092,20 +2099,40 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 	const char *argv[] = {acmeCommandLine,theCommand,0};
 	intptr_t ret = _spawnvp(_P_WAIT,acmeCommandLine,argv);
 #else
+	// Using pipes to get stdout/stderr
+	// https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output?redirectedfrom=MSDN
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+	HANDLE g_hChildStd_IN_Rd = NULL;
+	HANDLE g_hChildStd_IN_Wr = NULL;
+	HANDLE g_hChildStd_OUT_Rd = NULL;
+	HANDLE g_hChildStd_OUT_Wr = NULL;
+	CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0);
+	SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
+
+	CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0);
+	SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0);
+
 	STARTUPINFOA			si;
 	PROCESS_INFORMATION		pi;
 	
 	memset( &si, 0, sizeof(si) );
 	si.cb = sizeof(si);
+	si.hStdError = g_hChildStd_OUT_Wr;
+	si.hStdOutput  = g_hChildStd_OUT_Wr;
+	si.hStdInput = g_hChildStd_IN_Rd;
+	si.dwFlags |= STARTF_USESTDHANDLES;
 
 	std::string path = acmeCommandLine;
 	path += " ";
 	path += theCommand;
 
-	// We create the new process
+	// We create the new process, with inherited handles for the pipes
 	BOOL ret2;
 	DWORD theLastError = 0;
-	if ( !(ret2 = CreateProcessA(NULL,(LPSTR) path.c_str(),NULL,NULL,FALSE,CREATE_NO_WINDOW,NULL,NULL,&si,&pi )) )
+	if ( !(ret2 = CreateProcessA(NULL,(LPSTR) path.c_str(),NULL,NULL,TRUE,CREATE_NO_WINDOW,NULL,NULL,&si,&pi )) )
 	{
 		theLastError= GetLastError();
 	}
@@ -2115,6 +2142,27 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
+
+		CloseHandle(g_hChildStd_OUT_Wr);
+		CloseHandle(g_hChildStd_IN_Rd);
+
+		DWORD dwRead;
+		CHAR chBuf[1024];
+		BOOL bSuccess = TRUE;
+		while (bSuccess)
+		{ 
+			bSuccess = ReadFile( g_hChildStd_OUT_Rd, chBuf, sizeof(chBuf)-2, &dwRead, NULL);
+			if( !bSuccess || dwRead == 0 )
+			{
+				break;
+			}
+			chBuf[dwRead] = '\0';
+
+			mLastDebugOutput += chBuf;
+		}
+
+		CloseHandle(g_hChildStd_IN_Wr);
+		CloseHandle(g_hChildStd_OUT_Rd);
 	}
 #endif
 
@@ -2146,8 +2194,8 @@ bool MusicFile::OptimiseAndWrite(	const char *acmeCommandLine,
 
 	if (theLastError)
 	{
-		char error[MAX_PATH + 128];
- 		sprintf(error,"Command \"%s\" failed with error code %x. Please send the music file and an explanation of what you were trying to do to martin.piper@gmail.com\n",path.c_str(),theLastError);
+		char error[8192];
+ 		sprintf(error,"Command \"%s\" failed with error code %x. Please send the music file and an explanation of what you were trying to do to martin.piper@gmail.com\nDebug text follows...\n%s",path.c_str(),theLastError , mLastDebugOutput.c_str());
 		MessageBoxA(0,error,"Error!",MB_OK);
 		return false;
 	}
@@ -2495,7 +2543,7 @@ int MusicFile::WriteTable(FILE *fp,const int table,const char *name)
 	return (maxPos+1)*2;
 }
 
-bool MusicFile::OptimiseTables(const bool assumeAllEnvelopesUsed)
+bool MusicFile::OptimiseTables(const bool assumeAllEnvelopesUsed , const bool spotDuplicates)
 {
 	bool changed = false;
 	int i,j;
@@ -2735,25 +2783,33 @@ bool MusicFile::OptimiseTables(const bool assumeAllEnvelopesUsed)
 		} while(optimised);
 	}
 
-	// Spot adjacent duplicate commands in some tables (command sensitive) and if they are
-	// not directly jumped into then pack them together.
-	for (i=0;i<kMaxTableEntries-1;i++)
+	if (spotDuplicates)
 	{
-		// Wave commands testing
-		if (mTablesUsedBytes[0][i] && !mTablesUsedByJump[0][i+1])
+		// Spot adjacent duplicate commands in some tables (command sensitive) and if they are
+		// not directly jumped into then pack them together.
+		for (i=0;i<kMaxTableEntries-1;i++)
 		{
-			if (mTablesControls[0][i] == mTablesControls[0][i+1])
+			// Wave commands testing
+			if (mTablesUsedBytes[0][i] && !mTablesUsedByJump[0][i+1])
 			{
-				if ( (int(mTablesValues[0][i]) + int(mTablesValues[0][i+1]+1)) <= 255 )
+				if (mTablesControls[0][i] == mTablesControls[0][i+1])
 				{
-					mTablesValues[0][i] += mTablesValues[0][i+1]+1;
-					RemoveTableByteAt(0,i+1);
-					i--;
-					changed = true;
-					continue;
+					if ( (int(mTablesValues[0][i]) + int(mTablesValues[0][i+1]+1)) <= 255 )
+					{
+						mTablesValues[0][i] += mTablesValues[0][i+1]+1;
+						RemoveTableByteAt(0,i+1);
+						i--;
+						changed = true;
+						continue;
+					}
 				}
 			}
 		}
+	}
+
+	if (!spotDuplicates)
+	{
+		return changed;
 	}
 
 	// For tables entries that jump within their own sequence spot two or more sequences and merge them.

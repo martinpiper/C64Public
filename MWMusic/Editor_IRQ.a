@@ -1,0 +1,152 @@
+!zn
+IrqTopOfScreen
+	inc VIC2BorderColour
+	lda myPlayFlag
+	beq .noPlay
+	jsr MusicPlay
+.noPlay
+	lda VIC2Raster
+	sta lastRaster
+	dec VIC2BorderColour
+	
+	ldx myPlayFlag
+	beq .noPlay2
+	ldx clearedEditor_CalculateMovingAverage
+	beq .noClear
+	jsr Editor_ClearMovingAverageTo
+.noClear
+	; Populate the rest of the table gradually over time
+.smidx	ldx #0
+	sta movingAverage,x
+
+	inc .smidx+1
+	lda .smidx+1
+	and #movingAverageSize-1
+	sta .smidx+1
+.noPlay2
+
+	ldx lastRaster
+	cpx #4*8
+	bcc .okValue1
+	ldx #(4*8)-1		;max scanlines allowed to be displayed is 31
+.okValue1
+	lda toScans,x
+	sta SCREENRAM + (3 * VIC2ScreenCharsWidth) + 7
+	sta SCREENRAM + (3 * VIC2ScreenCharsWidth) + 8
+	sta SCREENRAM + (3 * VIC2ScreenCharsWidth) + 9
+	lda toScans+8,x
+	sta SCREENRAM + (4 * VIC2ScreenCharsWidth) + 7
+	sta SCREENRAM + (4 * VIC2ScreenCharsWidth) + 8
+	sta SCREENRAM + (4 * VIC2ScreenCharsWidth) + 9
+	lda toScans+16,x
+	sta SCREENRAM + (5 * VIC2ScreenCharsWidth) + 7
+	sta SCREENRAM + (5 * VIC2ScreenCharsWidth) + 8
+	sta SCREENRAM + (5 * VIC2ScreenCharsWidth) + 9
+	lda toScans+24,x
+	sta SCREENRAM + (6 * VIC2ScreenCharsWidth) + 7
+	sta SCREENRAM + (6 * VIC2ScreenCharsWidth) + 8
+	sta SCREENRAM + (6 * VIC2ScreenCharsWidth) + 9
+
+	
+;FILL RASTER TABLE
+
+	lda	FLAG256FRAMES
+	bmi	rasterend					;already filled 256-byte table
+	ldx	TRK_FRAMECOUNT
+	cpx	#$FF						
+	bcs rasterend
+	lda	lastRaster
+	sta	editor_rastercount,x
+rasterend	stx FLAG256FRAMES
+
+
+;INSERT METRONOME CODE HERE TO BYPASS ITS SCANLINE CONTRIBUTION	
+
+	lda	myPlayFlag
+	beq .skipMetronomeUpdate
+	lda playFlag					;init to $FF by MusicInit when track starts, and set to $00 by MusicStop
+	beq .skipMetronomeUpdate
+
+	bit startFlag					;init to $FF, and tested to set D418 to maximum volume once, in sync with 1st note sounding (after pre-reads)
+	bmi .skipMetronomeUpdate		;only start metronome after reaching first new note
+	
+	INC TRK_FRAMECOUNT				;EVERY INTERRUPT FRAME, TO PROVIDE READOUT IN 1/50 SECOND INCREMENTS
+	lda tempo1Counter
+	bne .skipMetronomeUpdate
+	
+	INC NOTE_COUNT					;CURRENT TEMPO MEANS NOTES DEC THIS FRAME, ALSO JUMPS HERE ON VERY FIRST PLAYBACK FRAME & SETS NOTE TO #1
+	LDA NOTE_COUNT
+	CMP	BEAT_LENGTH					;TYPICALLY $0C FOR CROTCHET
+	BCC .skipMetronomeUpdate		;NOT YET A COMPLETE BEAT (I.E. $01 TO $0B)
+	BEQ .skipMetronomeUpdate		;IF $0C
+	LDA #$01						;ONCE IT REACHES $0D THEN RETURN IT TO $01
+	STA NOTE_COUNT					;NOTE ALWAYS STARTS AT #1
+	INC BEAT_COUNT					;START OF NEW BEAT
+	LDA BEAT_COUNT
+	CMP BEATS_IN_BAR				;TYPICALLY FOUR
+	BCC .skipMetronomeUpdate		;NOT YET A COMPLETE BAR
+	BEQ	.skipMetronomeUpdate		
+	LDA	#$01						;SHOULD ALWAYS START ON BEAT 1 (NOT 0)
+	STA BEAT_COUNT					;START OF NEW BAR
+	INC BAR_COUNT
+.skipMetronomeUpdate	
+
+
+
+	
+	ldx #2
+editor_readouts
+	lda voices_currentSequence,x	;always read by .getNextTrackByte
+	bmi	editor_readouts2			;ignore when reading FE or FF track byte
+	sta editor_currentSeq,x
+editor_readouts2	
+	lda	voices_sequenceIndex,x		;NEW SEQSTEP NUMBER
+	sta editor_currentSeqStp,x		;NEW SEQSTEP NUMBER
+	lda	trackIndex,x				;NEW TRKSTEP NUMBER
+	sta editor_currentTrkStp,x		;NEW TRKSTEP NUMBER	
+	dex
+	bpl editor_readouts	
+
+
+;REAL TIME CLOCK	
+	lda playFlag
+	beq .not50Frames
+
+	lda myPlayFlag
+	beq .not50Frames
+
+	inc timeFrames
+	lda timeFrames
+	cmp #50
+	bne .not50Frames
+	lda #0
+	sta timeFrames
+
+	inc timeSeconds
+	lda timeSeconds
+	cmp #60
+	bne .not50Frames
+
+	lda #0
+	sta timeSeconds
+	inc timeMinutes
+
+.not50Frames
+
+	+MACROAckRasterIRQ_A
+	jmp DefaultIRQServiceRoutine
+
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00	;9 dummy bytes, to place editor_rastercount on page boundary
+	
+editor_rastercount
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 25
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 50
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 75
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 100
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 125
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 150
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 175
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 200
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 225
+	!by $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 250
+	!by $00,$00,$00,$00,$00,$00,$00	;256 byte table ~ 5 seconds storage

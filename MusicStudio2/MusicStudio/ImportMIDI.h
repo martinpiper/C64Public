@@ -55,3 +55,4 @@ public:
 	int mBytesUsed14;
 	int mBytesUsed15;
 };
+

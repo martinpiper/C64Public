@@ -86,6 +86,7 @@ MazeSolve_step implemented - It seems to pass the first real side-by-side valida
 	 Last line displays only 4 pixels from the top of the char due to the bottom border. Which means 3 full lines for the score panel.
 	 First character should be all transparent colour (8 zero bytes)
 	 See ScorePanel.ctm edited with http://www.subchristsoftware.com/charpad.htm
+		CharPad 2.0 310715
 	See:
 		ScorePanelNumChars
 		ScorePanelChars
@@ -1129,7 +1130,7 @@ Also tweaked the enemy start positions
 
 
 
-* Perhpas move the decompress code $200?
+* Perhaps move the decompress code $200?
 	DecompressionCode_Start = 0222
 	DecompressionCode_End = 3e8
 	DecompressionCode_Size = 01c6
@@ -1712,3 +1713,78 @@ Also tweaked the enemy start positions
 	This fixes the flickering even in the teleport trap room :)
 	Maximum number of enemies has almost been doubled as well :)
 	Oh happy happy joy joy
+
+
+
+
+* Clear sprite for InitBank0Data
+	This sprite data can be moved to just before the blank screen. Look for:
+		; Blank sprites frames in the unused area of the score panel screen
+		sta $0500,x
+		lda #20
+	This is the highest screen position: SCREENRAM+(19+Scroller_AdditionalCharLines)*40
+		Which is: $6f8
+		So closest sprite is: $680 = sprite 26
+	Replace $0500 with a proper label
+		Bank0PanelBlankSpriteData
+
+
+
+
+* Tutorial text window in strategy/arcade mode to show how to use various map objects, or what to do next, or how to solve the sliding puzzle
+	Need to find some spare memory to backup the displayed data underneath the window popup, probably somewhere in $400-$700
+	Will need some chars for the window and text... hmph.
+		Score panel has lots of space free for text!
+	Screen split instead?
+		Score panel, with text, can show hints of what to do next
+			Added text chars to Citadel2\ScorePanel.ctm
+		Or display text in sprites overlayed on the game screen?
+	Start of the first level, at specific map tiles that look like question marks...
+		Once the task is done, remove the question marks, make them dim or return to empty tile...
+		Hint that the first enemy can be captured. How to start the capture probe.
+		Move the capture probe over the enemy
+		Release fire to capture
+		Function keys, highlight the capture slots
+		F1 order stay
+		F1 order go
+		F5 order hunt
+			Will need another enemy in the room that doesn't move much
+			The score panel needs to change the D to a H
+			"destroy mode" -> "hunt mode"
+			EnemyFlags_Destroy -> EnemyFlags_Hunt
+			.doDestroy -> .doHunt
+		F3 order follow, once entering the room
+			Hold fire and order the enemy around
+				Will need a bigger area in the map...
+		F7 order assimilate
+			Note health
+			Collect the pickup
+		Recharge energy at the map tile below by hovering on the charging point
+			Will need a ? tile just above
+	Use the computer to open the door, or install the upgrade
+		Have a very simple one step shuffle on the last column for the first couple of tries
+
+	Next room, have two enemies that can be captured
+	Hint capture both
+	Use them to hunt for the large number of other enemies in the room
+	Use space to toggle which one is active. Set both to hunt.
+	Have an enemy only door
+		Hint that the door can only be opened by an enemy
+		Order follow through the door then follow with the player
+	Hint about teleport to the left, hold fire to activate
+		ScorePanel_CharacterA
+		CaptureProbe_CapturedListCount
+	Implemented in asm\TutorialHint.a
+
+	Note the memory layout for these might need to be adjusted if more score panel characters are needed:
+		BackupAnimationMem
+		TraceBackResultBuffer
+		ScorePanel_Hint_Backup_Addr
+	
+	Hint text MapTutorialHint* moved into asm\DataScorePanel.a
+
+
+
+* Fade down and up can use the spare time in the frame calculation is also used  For the maze solving.
+	Each interrupt frame on each frame Can we set the total number fades done for each frame said it fade up of a down hes not done too quickly.
+	Instead opted for improving the colour fade

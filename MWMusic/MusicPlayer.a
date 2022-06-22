@@ -1,0 +1,997 @@
+; MusicPlayer3_3c.a with new $08 chord speed parameter, low pw option, $80 random pwm, $40 stepped pwm, $01 attack pwm specials
+; Split PWM routine for lower peak overheads
+; 06/08/0C/10 tempo tables
+; Seqread split into four, spread across 4 frames (including ADSR bug, delay before 1st note is heard is 115mS)
+; MusicInit notelengths set to 3
+; notelength = '2 &' pre-read channel 2 sequence & store nextnote values into buffers
+; notelength = '1' pre-read channel 1 sequence
+; notelength = '1 &' pre-read channel 0 sequence
+; notelength =0 copy nextnote buffers into current_voice and SID hardware
+; D418 only set to maximum volume when 1st notelength = 0, to avoid 115mS pre-click
+; metronome bypassed during pre-reads & note count init to 2 to compensate
+; channel preflags added so pre-reads only happen once per note
+; varispeed chord special rewritten for both frame and note duration options, with interleaved trill option.
+; seq stp and trk step readouts added to editor to more easily track down anomalies with existing tracks.
+; added new $09 wavecycle special, for tremolo and echo repeats.
+; added new $0D wavedrum special, for pure drum sounds.
+; added new $88 arpeggio, $89 one-shot wavecycle & $8D one-shot wavedrum specials.
+; moved metronome interrupt code from MusicPlayer.a to Editor_IRQ.a, to remove its scanline contribution.
+; modified remaining editor mute code ~6 cycles x 3 channels = 18 cycles
+; optimised PWM routine, replacing pha/pla with zero page  - typically 1 less scanline average.
+; refined attack specials code
+
+; **** ZP ABSOLUTE ADRESSES ****
+;
+a56 = $56
+a57 = $57
+a58 = $58
+a59 = $59
+;
+; **** ZP POINTERS ****
+;
+p56 = $56				;track bytes
+p58 = $58				;sequence bytes
+;
+; **** FIELDS ****
+;
+fD400 = $D400
+fD401 = $D401
+fD402 = $D402
+fD403 = $D403
+fD404 = $D404
+fD405 = $D405
+fD406 = $D406
+;
+; **** ABSOLUTE ADRESSES ****
+;
+aD40B = $D40B
+aD412 = $D412
+aD417 = $D417
+aD418 = $D418
+
+	jmp MusicInit
+	jmp MusicPlay
+	jmp MusicStop
+
+	
+	
+
+MusicInit 	asl						;ENTER WITH A = TUNE NUMBER
+	asl
+	asl
+	tax
+	ldy #$00
+bC006	lda tuneInfo,x
+	sta tracksLo,y
+	inx
+	iny
+	cpy #$08
+	bne bC006
+	
+	ldx #$02						;FOR ALL THREE CHANNELS
+bC014	lda #$00
+	sta trackloopFlag,x
+	sta voices_sequenceIndex,x
+	lda	#$03						;NEW VERSION TO SPLIT SEQ/TRK READS ACROSS FOUR FRAMES
+	sta voices_noteLength,x			;1ST CALL DEC TO 2
+	sta voices_originalNoteLength,x
+	lda #$FF
+	sta voices_currentEffect,x
+	sta trackIndex,x
+	jsr .getNextTrackByte			;GET FIRST SEQ DATA FOR THIS NEW TRACK (sequence repeats and sequence number)
+	dex
+	bpl bC014
+	
+	lda #$00						;INITIALISE TRACK VARIABLES
+	sta tempo1Counter
+	sta tempo2Counter
+!ifdef editorVoiceMuteFlags {
+	lda	#$01						;offset to compensate for split newnote
+	STA NOTE_COUNT					;1ST TUNE INTERRUPT RAISES THIS TO #$01 I.E. 1ST DEC OF NOTELENGTH
+	LDA	#$00						;1st note occurs after frames in rep-load algorithm
+	STA TRK_FRAMECOUNT				;METRONOME - INITIALISE ALL ON-SCREEN COUNTERS
+	STA	FLAG256FRAMES				; for raster table readout
+	LDA	#$01						;ALWAYS START ON BAR 1/BEAT 1 
+	STA BEAT_COUNT
+	STA BAR_COUNT
+	LDA #$00
+
+	ldx #$FF
+.clraster
+	sta editor_rastercount,x
+	dex
+	bne .clraster
+		
+}
+	sta FadeCount
+
+	; Properly clear the SID
+	ldx #$17
+.cls1
+	sta fD400,x
+	dex
+	bpl .cls1
+	
+	lda #$10
+	sta CurrentVolume
+	lda #$FF
+	sta fadeFlagSpeed
+	sta playFlag
+	sta	startFlag
+	rts
+
+playFlag 	!by $FF					;init to $FF, and tested by interrupt routine to see if music should be playing
+startFlag	!by $FF					;init to $FF, and tested to set D418 to maximum volume once, in sync with 1st note sounding (after pre-reads)
+fadeFlagSpeed 	!by $FF				; negative no volume fade otherwise this sets the speed of the volume fade down
+
+
+
+
+MusicPlay 	bit playFlag
+	bmi bC05F						;if music should be playing
+	rts								;otherwise ignore music routine
+
+bC05F	bit fadeFlagSpeed			;are we part way through a fade?
+	bmi MusicPlayOn					;no, so jump to continue the tune
+	dec FadeCount
+	bmi bC06C
+	jmp MusicPlayOn
+
+bC06C	lda fadeFlagSpeed
+	sta FadeCount
+	dec CurrentVolume
+	beq MusicStop					;if fade has resulted in 0 volume 
+	lda CurrentVolume				;otherwise get current volume value
+	sta aD418    					;update hardware Volume (& Filter Mode)
+	jmp MusicPlayOn					;& carry on playing music
+
+
+MusicStop	lda #$00
+	sta playFlag					;stop interrupt
+	sta	voices_preflag
+	sta	voices_preflag+1
+	sta	voices_preflag+2
+	sta aD418    					;Select Volume to zero and Filter off
+	rts 
+
+	
+
+;DEC NOTELENGTH, THEN EITHER SEQREAD FOLLOWED AT NORMAL FRAME SPECIALS, OR (IF ANY NOTELENGTH=0), PERFORM ANY NEWVOICEINIT AND ATK FRAME SPECIALS
+;--------------------------------------------------------------------------------------------------------------------------------------------------
+MusicPlayOn
+	ldx #$02
+.voiceLoop1	lda offsetSIDVoice,x	;$00, $07 0r $0E
+	sta .currentVoiceSIDIndex
+	lda tempo1Counter
+	beq .handleNoteDelayStep		;init to 0 by Musicinit, otherwise set by .handleTempos at end of every interrupt call (after specials)
+
+Pre2	lda	#2							
+	cmp	voices_noteLength, x
+	bne Pre0
+	cpx	#2
+	bne	PreOut
+	bit	voices_preflag+2
+	bmi	PreOut						;already done pre-read for ch2
+	lda	#$FF
+	sta	voices_preflag+2	
+	jmp	.handleNextNote				;pre-read for chan2 on 2 '&' (the inbetween frame)
+
+Pre0	lda	#1
+	cmp	voices_noteLength, x
+	bne	PreOut
+	cpx	#0
+	bne	PreOut
+	bit	voices_preflag+0
+	bmi	PreOut						;already done pre-read for ch0
+	lda	#$FF
+	sta	voices_preflag+0	
+	jmp	.handleNextNote				;pre-read for chan0 on 1 '&' (the inbetween frame)
+	
+	
+.handleNoteDelayStep				;always on 1st frame of new track; otherwise on frames as determined by .handleTempos
+	inc	voices_noteCount,x
+	dec voices_noteLength,x			;ON NEW TRACK, INIT TO 3, SO DEC TO 2 HERE FIRST TIME ROUND
+	bne Pre1
+	jmp	NewNote1					;always write new note data when notelength drops to  0
+
+Pre1	lda	#1
+	cmp	voices_noteLength,x
+	bne PreOut
+	cpx	#1
+	bne	PreOut
+	bit	voices_preflag+1
+	bmi	PreOut						;already done pre-read for ch1
+	lda	#$FF
+	sta	voices_preflag+1	
+	jmp	.handleNextNote				;pre-read for chan1 on '1'
+
+PreOut
+jmp .handleEffectUpdate				;otherwise continue existing note
+
+
+	
+
+;------------------------------------------------------------------------------------------
+.handleNextNote
+	lda voices_currentSequence,x	;read by .getNextTrackByte 
+	bpl handleSequence				;NORMAL NOTE
+	cmp #$FF
+	bne handleSequence
+	lda #$00						;FF = LOOP TRACK, SO RESET SEQ POINTER on this channel for next SEQ read
+	sta voices_sequenceIndex,x
+	lda #$FF
+	sta trackIndex,x
+	jsr .getNextTrackByte			;START OF NEXT SEQUENCE (get sequence repeats and sequence number)
+
+handleSequence	tay					;enters with voices_currentSequence in A
+	lda sequenceLo,y
+	sta a58
+	lda sequenceHi,y
+	sta a59
+	ldy voices_sequenceIndex,x
+	lda #$FF
+	sta	voices_NextVoice,x			;set minus before reading next byte pair of trio
+	sta	voices_NextgateMask,x		;leave gate high during ADS envelope sections
+	lda (p58),y						;READ FIRST OF EITHER TWO OR THREE BYTES
+	sta seqread_byte1,x
+	and #$3F
+	bne .gotLength
+	lda #$40						; this converts any old style $80 duration notes into $40
+.gotLength
+	sta voices_NextnoteLength,x		;BYTE 1 ALWAYS HAS DURATION IN LOW NIBBLE
+	lda #$00
+	sta	voices_NextBendByte,x		;reset bend value
+	lda seqread_byte1,x
+	and #$40
+	beq bC0FA						;IF BYTE 1 ONLY CONTAINS A DURATION
+	lda #$FE
+	sta	voices_NextgateMask,x		;IF BYTE 1 HAS $40 BIT SET, force gate low to enter envelope release; otherwise leave gate high
+bC0FA	lda seqread_byte1,x
+	bpl bC110						;IF BYTE 1 HAS $80 BIT SET, IT IS A VOICE BYTE
+	iny
+	inc voices_sequenceIndex,x
+	lda (p58),y						;SO READ BYTE 2 (VOICE NUMBER)
+	bmi bC10D						;IF BYTE 2 HAS $80 BIT SET, THIS IS A BEND
+	sta voices_NextVoice,x			;OTHERWISE, NEW VOICE FOR NEXT NOTE
+	jmp bC110
+bC10D	sta voices_NextBendByte,x	;store byte 2 as bend value if its $80 bit is set
+
+bC110	iny
+	inc voices_sequenceIndex,x
+	lda (p58),y						;NOW READ BYTE 2 (IF NO NEW VOICE) OR BYTE 3 (NEW VOICE THEN NOTE VALUE)
+	sta voices_NextnoteByte,x		;note byte with $80 bit - check for legato later on
+	and #$7F						;valid note values are $00 to $5F
+	sta voices_NextnoteValue,x
+
+	inc voices_sequenceIndex,x
+	ldy voices_sequenceIndex,x
+	lda (p58),y
+	cmp #$FF						;END OF SEQUENCE?
+	bne .seqend
+	lda #$00						;yes, so reset sequence pointers
+	sta voices_sequenceIndex,x
+	dec voices_sequenceRepeat,x
+	bne .seqend
+	jsr .getNextTrackByte			;READ SEQ DATA FOR START OF NEXT SEQUENCE  (get sequence repeats and sequence number)
+
+.seqend		
+	jmp .handleEffectUpdate			;NEW - IGNORE NEW NOTE, AS SEQREAD NOW HAPPENS PRIOR TO NOTELENGTH = 0
+
+
+
+
+
+
+; NEW NOTE/NEW VOICE/NEW ENVELOPE (TO BE CARRIED OUT AFTER 3 SEQREADS FOR DIFFERENT CHANNELS ON DIFFERENT PREVIOUS FRAMES)
+;-------------------------------------------------------------------------------------------------------------------------
+NewNote1	
+	bit startFlag
+	bpl NewNote2					;volume already set to maximum
+	lda #$0F
+	sta	startFlag
+	sta aD418    					;Set volume to maximum & Filter Mode off immediately before 1st note plays
+
+NewNote2	
+	lda voices_currentSequence,x	;always read by .getNextTrackByte
+	
+	cmp #$FE						;IS IT FE TRACK END?
+	bne NewNote3
+	lda #$00						;YES, SO CLEAR GATES AND DEACTIVATE ALL WAVEFORMS
+	sta fD404
+	sta aD40B
+	sta aD412
+	sta playFlag
+	rts
+
+NewNote3
+	lda	voices_NextnoteValue,x		;pick up from previous seqreads on previous frames
+	sta	voices_currentNote,x
+	tay
+	lda notesLo,y					;get Lo & Hi bytes for this note, to initialise new note frequency
+	sta voices_noteLo,x
+	lda notesHi,y
+	sta voices_noteHi,x
+	
+	lda	voices_NextnoteByte,x
+	sta notebyteAsRead,x			;note byte with $80 bit - check for legato later on
+	lda	voices_NextgateMask,x	
+	sta voices_gateMask,x			;IF BYTE 1 HAS $40 BIT SET, force gate low to enter envelope release; otherwise leave gate high
+	lda voices_NextnoteLength,x
+	sta voices_noteLength,x
+	sta voices_originalNoteLength,x
+	lda	voices_NextBendByte,x
+	sta voices_BendByte,x
+
+	lda voices_NextVoice,x			;byte 2 is < #$7F, so it's a new VCE command
+	bmi bC13B						;still init to $FF, so no new voice command
+	cmp voices_currentEffect,x
+	beq bC138						;SAME VCE AS BEFORE, SO IGNORE NEW VCE READ	
+	sta notebyteAsRead,x			;change note byte with $80 still bit to new VCE number
+bC138	sta voices_currentEffect,x
+bC13B	lda notebyteAsRead,x
+	bmi SameVoice					;if it's NOT a new voice, & legato bit remains set, carry on with same envelope
+
+	
+NewVoice	lda voices_currentEffect,x
+	asl
+	asl
+	asl
+	sta effectOffset,x				;Voice effect x 8 calculation result
+	tay
+	lda effect_Control1,y			;main waveform for this VCE
+	sta voices_ctrlone,x
+	lda effect_Special,y			;various effects to be added
+	sta voices_special,x
+	lda effect_PulseWidth,y
+	sta voices_pulsewidth,x
+	lda effect_AttackTime,y
+	sta voices_attackTime,x
+	lda effect_AttackDecay,y
+	sta	a56
+	lda effect_SustainReleas,y
+	sta	a57
+
+	lda effect_VibratoDelay,y		;SKIPS THIS IF LEGATO!!!!
+	sta voices_fxDelay,x
+
+
+	ldy .currentVoiceSIDIndex		;$00, $07 or $0E
+	lda #$00
+	sta	Pw_ReadFlag,x
+	sta Pw_CurrentUpDown,x			;default to increasing pulsewidth
+	sta Pw_CurrentLoByte,x
+	lda	voices_pulsewidth,x			;NEW CODE TO ALLOW LOW BYTE TO BE SET FOR NARROWER INITIAL PULSE WIDTH
+	sta fD402,y  					;Voice 1: Pulse Waveform Width e.g. $81 to low byte
+	sta fD403,y  					;Voice 1: Pulse Waveform Width e.g. $81 > $01 to high nibble. So $81 is stored as $0181
+	lda	a56							;temp AD
+	sta fD405,y  					;Voice 1: Attack / Decay Cycle Control
+	lda	a57							;temp SR
+	sta fD406,y  					;Voice 1: Sustain / Release Cycle Control
+
+	
+
+SameVoice	
+	lda #$00
+	sta	voices_preflag,x			;clear pre-read flag once new note has happened, to allow another pre-read next time
+	sta voices_framecount,x			;INIT to 0 EACH NEW NON-LEGATO NOTE, inc each frame
+	sta	voices_noteCount,x			;init new note to zero length
+	sta voices_ChordCount,x			;NEW - INIT TO 0 EACH NEW NON-LEGATO NOTE ONLY
+	sta voices_vibratoPattern2,x
+	jmp Atk_Frame_Specials			;IGNORE S/H-PWM, PWM, VIBRATO, BENDS, TRILLS, AND CHORDS ON THIS 1ST FRAME
+
+
+
+
+;EVERY FRAME EXCEPT 1ST ONE OF NEW NOTE (S/H-PWM, PWM, VIBRATO, BENDS, TRILLS, AND CHORDS)
+;--------------------------------------------------------------------------------------------------------------
+.handleEffectUpdate	ldy effectOffset,x
+
+	lda voices_special,x			;PULSE WIDTH SPECIALS
+	and #$40						;s/h or attack pwm?
+	beq pwm							;no, so do normal pulse width update
+	lda voices_special,x			;$40 STEPPED PWM or $41 ATTACK PWM
+	and #$01
+	beq	sh_pwm
+	lda	voices_fxDelay, x			;$41 ATTACK PWM during fxdelay countdown only
+	bne	pwm							;continue attack PWM
+	jmp vibrato						;otherwise ignore any further PWM
+sh_pwm	lda	voices_fxDelay, x
+	beq	sh_pwm2
+	jmp vibrato						;ignore pulse width update if shpwm is active but fxdelay not yet reached 0
+sh_pwm2
+	lda effect_VibratoDelay,y		;s/h pwm, so re-load VCE fxdelay value
+	sta voices_fxDelay,x			;then carry on with normal pulse width update
+
+;--------------------------------------------------------------------------------------------------------------
+pwm
+	lda effect_PulseDepth,y			;initial PWM values
+	sta Pw_Depth,x
+	beq	vibrato						;ignore PWM altogether if zero depth
+	
+	lda Pw_ReadFlag,x
+	bmi pwm1
+	lda effect_TopBottom,y			;only need to do this once for a new voice, NOT every frame!
+	and #$0F
+	sta Pw_Bottom,x
+	lda effect_TopBottom,y
+	lsr
+	lsr
+	lsr
+	lsr
+	sta Pw_Top,x
+	lda	#$FF
+	sta	Pw_ReadFlag,x
+	
+pwm1	
+	lda Pw_CurrentUpDown,x			;0= increasing (default); 1= decreasing
+	bne bC200
+	clc
+	lda Pw_CurrentLoByte,x
+	adc Pw_Depth,x
+	sta a58							;temp PW low byte
+	lda voices_pulsewidth,x			;00 to 08
+	adc #$00
+;	and #$0F						;top four bits irrelevant (unused bits, so AND #$0F is unecessary)
+	sta a59							;temp PW high byte
+	cmp Pw_Top,x
+	bne pwm2
+	inc Pw_CurrentUpDown,x			;change direction
+	jmp pwm2
+
+bC200	sec
+	lda Pw_CurrentLoByte,x
+	sbc Pw_Depth,x
+	sta	a58
+	lda voices_pulsewidth,x
+	sbc #$00
+	and #$0F						;top four bits irrelevant
+	sta	a59
+	cmp Pw_Bottom,x
+	bne pwm2
+	dec Pw_CurrentUpDown,x			;change direction
+
+pwm2
+	ldy .currentVoiceSIDIndex	;$00, $07 0r $0E
+	lda voices_special,x			;PULSE WIDTH SPECIALS
+	cmp #$C0						;$C0 RANDOM PWM?
+	bne pwmnorm						;no, so do normal pulse width update
+	lda	voices_framecount, x		;pseudo-random
+	and #$0F
+	jmp	pwm_rnd	
+pwmnorm
+	lda	a59							;retrieve temp PW high byte
+pwm_rnd	sta voices_pulsewidth,x
+	sta fD403,y  					;Voice 1: Pulse Waveform Width - High-Nybble
+	lda	a58							;retrieve temp PW low byte
+	sta Pw_CurrentLoByte,x
+	sta fD402,y  					;Voice 1: Pulse Waveform Width - Low-Byte
+
+	
+;--------------------------------------------------------------------------------------------------------------	
+vibrato	
+	lda voices_fxDelay,x			;START OF VIBRATO CODE (init to vibrato delay)
+	beq .handleVibrato
+	dec voices_fxDelay,x			;always counts down from vibrato delay to 0 (currently every frame EXCEPT FIRST of new note!! e.g. 2, 1, 0
+	jmp bendcode
+
+.handleVibrato	lda voices_attackTime,x
+	bmi	bC23C
+	jmp bendcode					;still in atktime, so ignore vibrato
+
+bC23C	ldy effectOffset,x
+	lda effect_Vibrato,y			;current VCE vibrato parameter value
+	bne .haveVibratoEffect
+	jmp bendcode					;no vibrato, so skip vibrato code
+	
+.haveVibratoEffect	and #$0F		; only lower nibble of pre-SNARE VIBRATO is actually an offset into the vibrato table, so this line is removed in later versions
+	tay								;y now holds vibrato offset
+	lda voices_vibratoPattern2,x	;init to 0 by SameVoice
+	bmi vibcalc						;note fractions already calculated, so just do final notetable calculations
+
+;--------------------------------------------------------------------------------------------------------------	
+	lda vibratoPattern1,y			;ONE-SHOT NOTE FRACTION CALCULATIONS
+	sta voices_vibratoPattern1,x	;get speed value from table
+	lda vibratoPattern2,y
+	sta voices_vibratoPattern2,x	;get depth value from table (number of steps to divide semitone difference into)
+	lda #$00
+	sta fC52E,x
+	sta fC531,x
+	lda voices_currentNote,x
+	tay
+	lda notesLo,y
+	sta voices_noteLo,x
+	lda notesHi,y
+	sta voices_noteHi,x
+
+	sec
+	lda notesLo1,y				;from notetable
+	sbc notesLo,y
+	sta vib_stepsizeLoByte,x	;difference in low byte between this note and adjacent one
+	lda notesHi1,y
+	sbc notesHi,y
+	sta vib_stepsizeHiByte,x	;difference in high byte between this note and adjacent one
+	
+vibloop	dec voices_vibratoPattern2,x
+	bmi bendcode				;only do this multi-step divide routine once
+	lsr vib_stepsizeHiByte,x	;16-bit divide
+	ror vib_stepsizeLoByte,x
+	jmp vibloop					;divide notetable difference by depth value (higher value = smaller final difference)
+
+;--------------------------------------------------------------------------------------------------------------		
+vibcalc
+	lda vibratoUpDown,x			;00 = going up/FF = going down
+	bmi bC2AF
+	clc							;add final difference to notetable value
+	lda voices_noteLo,x
+	adc vib_stepsizeLoByte,x
+	sta voices_noteLo,x
+	lda voices_noteHi,x
+	adc vib_stepsizeHiByte,x
+	sta voices_noteHi,x
+	jmp jC2C2
+
+bC2AF	sec						;subtract final difference from notetable value
+	lda voices_noteLo,x
+	sbc vib_stepsizeLoByte,x
+	sta voices_noteLo,x
+	lda voices_noteHi,x
+	sbc vib_stepsizeHiByte,x
+	sta voices_noteHi,x
+	
+jC2C2	lda fC52E,x				;init to 0
+	bmi bC2E2
+	inc fC531,x					;init to 0
+	lda fC531,x
+	cmp voices_vibratoPattern1,x	;has it reached top/bottom of frequency variance?
+	bcc bendcode				;no
+	lda #$FF					;yes, so change direction of frequency shift
+	sta fC52E,x					;init to 0
+	lda vibratoUpDown,x
+	eor #$FF
+	sta vibratoUpDown,x			;& swap vibrato direction
+	jmp bendcode
+
+bC2E2	dec fC531,x
+	bne bendcode
+	lda #$00
+	sta fC52E,x					;END OF VIBRATO CODE
+
+
+;--------------------------------------------------------------------------------------------------------------	
+bendcode	lda voices_BendByte,x	;BEND UP OR DOWN BYTE BEEN READ?
+	beq bC320						;NO
+	cmp #$C0
+	bcc bC309						
+	and #$3F						;BEND UP VALUE
+	clc
+	adc voices_noteLo,x				;add to current lo/hi pitch values
+	sta voices_noteLo,x
+	lda voices_noteHi,x
+	adc #$00
+	sta voices_noteHi,x
+	jmp bC320
+
+bC309	and #$3F					;BEND DOWN VALUE
+	sta a56							;temp Bend
+	sec
+	lda voices_noteLo,x
+	sbc a56							;temp Bend						;subtract from current lo/hi pitch values
+	sta voices_noteLo,x
+	lda voices_noteHi,x
+	sbc #$00
+	sta voices_noteHi,x
+
+
+;--------------------------------------------------------------------------------------------------------------
+bC320	ldy effectOffset,x		;START OF VCE SPECIALS CODE (Voice effect x 8 calculation result)
+
+bC33D	lda voices_special,x	;TRILL SPECIAL (using trlnote)
+	and #$02
+	beq bC36C
+	
+	lda voices_framecount,x
+	and #$01
+	bne bC351					;only on alternate calls i.e. not on 0, 2, 4, 6 but on 1,3,5,7
+	lda voices_currentNote,x
+	jmp jC35C
+bC351	lda effect_Trlnote,y
+	bpl jC35C
+	and #$7F
+	clc
+	adc voices_currentNote,x	;interval trill note
+jC35C	tay						;fixed trill note 
+	lda notesLo,y
+	sta voices_noteLo,x
+	lda notesHi,y
+	sta voices_noteHi,x
+	ldy effectOffset,x
+
+
+;--------------------------------------------------------------------------------------------------------------	
+bC36C	lda voices_special,x	;DRUM SPECIAL (pitch bend, alternate 81 ctrl value)
+	and #$04
+	beq chord
+		
+	lda	voices_special, x
+	and #$0F
+	cmp	#$0D					;drum with cyclic Wavectrl?
+	beq	drumRelease
+	
+	lda voices_framecount,x
+	and #$01
+	bne drumNoise				;only on alternate calls
+	lda effect_Control1,y		;normal ctrl for this VCE on framecount 0, 2, 4, 6, 8...
+	jmp jC33A
+drumNoise
+	lda #$81				;drums have noise waveform on framecount 1, 3, 5, 7...
+jC33A	sta voices_ctrlone,x
+
+drumRelease
+	lda voices_originalNoteLength,x	;current note duration read from byte 1 of seq read e.g. $0C
+	sec
+	sbc #$01
+	cmp voices_noteLength,x
+	bcc drumPitch
+	lda #$FE
+	sta voices_gateMask,x		;after 1st note dec (typically 2 frames), force and keep gate low to enter envelope Release phase
+
+drumPitch
+	lda	voices_special, x		;DRUM PITCHBEND	
+	and	#$30
+	bne	drumPitch1
+	ldy effectOffset,x
+	lda	voices_noteHi,x			;04/06/0D/8D drums
+;	cmp	effect_AttackControl,y
+	beq	dP2						;stay at this final
+	sbc	effect_AttackTime,y
+dP2	sta	voices_noteHi,x
+	jmp	chord
+drumPitch1						;14,16,24,26,34,36 drums
+	dec voices_noteHi,x
+	bpl chord
+	inc voices_noteHi,x
+
+
+;--------------------------------------------------------------------------------------------------------------
+chord	lda voices_special,x	;CHORD SPECIAL
+	and #$08
+	beq	Atk_Frame_Specials
+
+	ldy effectOffset,x			;new one frame check
+	lda effect_VibratoDelay,y	;e.g. duration 2
+	bne	multiframe_chord
+	
+	lda voices_special,x		;single frame one-shot?
+	bmi	chord_offset_single		;yes
+	lda	voices_framecount,x		;normal chord/wavecycle
+	jmp	chord_offset3
+
+chord_offset_single				;ATTACK WAVECYCLE ($89 = 80+08+01)	single frame	
+	lda	voices_framecount,x
+	cmp	#$04
+	bcc	chord_offset3
+	lda	#$03
+	sta	voices_framecount,x		;continue with cycle 4 offset	
+	lda voices_framecount,x		;fxdelay=0 is chord change every frame
+	jmp	chord_offset3
+	
+multiframe_chord	
+	cmp	voices_noteCount,x		;has it reached chord change time yet?
+	bcc	nextchordnote
+	beq	nextchordnote
+	lda voices_framecount,x
+	and #$01
+	beq chord_offset			;re-load current chord note on frames 0,2,4,6...
+	jmp	specials_end			;in case of active trill, don't bother on 1,3,5,7...
+
+nextchordnote
+	lda	#$00
+	sta	voices_noteCount,x
+	inc	voices_ChordCount,x		;and move to next note in chord
+
+chord_offset
+	lda voices_special,x
+	bmi	chord_offset2
+	lda	voices_ChordCount,x		;normal chord/wavecycle
+	jmp	chord_offset3
+
+chord_offset2					;ATTACK WAVECYCLE ($89 = 80+08+01)		
+	lda	voices_ChordCount,x		;INIT TO 0 EACH NEW NOTE, inc each time voices_fxDelay =0 (I.E. EVERY FRAME WITH fxdelay=0, ALTERATE FRAMES IF fxdelay=1, etc.
+	cmp	#$04
+	bcc	chord_offset3
+	lda	#$03
+	sta	voices_ChordCount,x		;continue with cycle 4 offset
+
+chord_offset3
+	and	#$03
+	sta	a56						;chord offset 0,1,2,3,0,1,2,3 etc for relevant note
+	clc 
+	tya
+	adc a56
+	tay
+	jmp	chordout 
+
+
+chordout						;enters with y = 0,1,2,3
+	lda voices_special,x		;WAVECYCLE SPECIAL ($09)
+	and #$01
+	beq note1234				;normal chord
+	lda effect_Note1,y			;get next waveform/gate value
+	sta voices_ctrlone,x
+	jmp	specials_end
+
+
+
+;-------------------------------------------------------------------------------------------------------
+Atk_Frame_Specials	ldy effectOffset,x		;ATK WAVE SPECIAL (run on 1st frame of each note - previous PWM, VIBRATO, BEND, TRILL AND CHORD code not needed on 1st note frame)
+
+	lda voices_special,x
+	and #$10
+	beq bC3AD
+	lda voices_attackTime,x
+	bmi bC3AD					;attack finished, so ignore setting normal ctrl value
+	beq	s10
+	lda effect_AttackControl,y	;during atk portion use atkctrl
+	jmp jC3AA
+s10	lda effect_Control1,y		;attack specials have just finished, so set to normal ctrl value, just once (so legato can work later on)
+jC3AA	sta voices_ctrlone,x
+
+
+
+bC3AD	lda voices_special,x	;ATK NOTE SPECIAL (y is still Voice effect x 8 calculation result)
+	and #$20
+	beq specials_end
+	lda voices_attackTime,x
+	bmi specials_end
+	beq	s20						;atktime has just finished
+
+
+note1234	lda effect_Note1,y	;get atknote or chord note from vce	(note 1, note 2, note 3, or note 4 parameters)
+	bpl bC3CF					;if fixed attack note or normal note read from sequence
+	and #$7F					;otherwise interval to current note
+	cmp #$40
+	bcs downinterval
+	clc							;up interval
+	adc voices_currentNote,x
+	jmp bC3CF
+	
+downinterval	and #$3F		;down interval 
+	sta	a56						;temp note interval
+	sec 
+	lda voices_currentNote,X
+	sbc	a56						;temp note interval
+	jmp bC3CF
+
+
+s20	lda voices_currentNote,x
+bC3CF	tay						;enter with A = this frame's notevalue, $00 to $5F
+	lda notesLo,y
+	sta voices_noteLo,x
+	lda notesHi,y
+	sta voices_noteHi,x
+
+specials_end	ldy .currentVoiceSIDIndex		;$00, $07 0r $0E
+
+!ifdef editorVoiceMuteFlags {
+;BYPASS THIS SECTION FOR LOWEST SCANLINES
+	lda editorVoiceMuteFlags,x
+	bne .skipFlags2
+}
+
+	lda notebyteAsRead,x
+	bmi bC3F4					;legato, so ignore gate off to continue with same envelope
+	lda voices_framecount,x 
+	bne bC3F4					;on all frames subsequent to initial one
+	lda voices_ctrlone,x
+	and #$FE					;force gate low before 1st frame note	
+	sta fD404,y  				;Voice 1: Control Register
+bC3F4	lda voices_ctrlone,x
+	and voices_gateMask,x		;immediately force gate high again if #$FF (new note) to force new envelope/ force gate low if #$FE (Release command or Drum special after two frames)
+	sta fD404,y  				;Voice 1: Control Register
+	lda voices_noteHi,x
+	sta fD401,y  				;Voice 1: Frequency Control - High-Byte
+	lda voices_noteLo,x
+	sta fD400,y  				;Voice 1: Frequency Control - Low-Byte
+
+!ifdef editorVoiceMuteFlags {
+.skipFlags2
+}
+
+	lda voices_attackTime,x
+	bmi	atkphase
+	dec voices_attackTime,x
+atkphase	inc voices_framecount,x	;every interrupt
+	dex
+	bmi .handleTempos				;AFTER ALL THREE CHANNELS HAVE BEEN PROCESSED
+	jmp .voiceLoop1					;OTHERWISE JUMP BACK TO PROCESS NEXT CHANNEL
+
+	
+
+.handleTempos						;FINAL ROUTINE DURING EVERY INTERRUPT
+	dec tempo2Counter
+	bpl .doTempo1Counter
+	lda tempo2
+	sta tempo2Counter
+	jmp .resetTempo1
+
+.doTempo1Counter
+	dec tempo1Counter				;E.G. 01 = EVERY 2ND FRAME
+	bpl .ret1
+.resetTempo1
+	lda tempo1
+	sta tempo1Counter
+.ret1	rts							;end of interrupt routine
+
+
+
+
+
+
+.getNextTrackByte					;enter with x = 2, 1, 0 (channel)
+	lda tracksLo,x					;READ NEXT TRACK BYTE FOR THIS CHANNEL
+	sta a56
+	lda tracksHi,x
+	sta a57
+jC446	inc trackIndex,x			;to 0 on first call of new sequence
+	ldy trackIndex,x
+	lda (p56),y
+	bpl bC463
+	cmp #$FD						;is it a fade command?
+	beq bC457
+	jmp jC4AE						;if it's FE or FF
+
+bC457	inc trackIndex,x			;yes, it's a fade command
+	iny
+	lda (p56),y
+	sta fadeFlagSpeed
+	jmp jC446						;so read following 'fade speed' byte and then jump back to read the next track byte for this channel
+
+bC463	sta tempseqRepeat			;track byte for this channel is < $80
+	and #$40
+	bne bC470
+	lda tempseqRepeat
+	jmp jC4A5
+
+bC470	lda trackloopFlag,x			;if $4N loop command (init to 0 by MusicInit)
+	bmi bC48F
+	lda #$FF
+	sta trackloopFlag,x				;entering new loop
+	lda tempseqRepeat
+	and #$3F
+	sta trackloopNum,x					;how many times to loop?
+	inc trackIndex,x
+	iny
+	tya
+	sta trackloopIndex,x									
+	lda (p56),y
+	jmp jC4A5
+
+bC48F	dec trackloopNum,x				;already in loop
+	bne bC49C
+	lda #$00
+	sta trackloopFlag,x
+	jmp jC446
+
+bC49C	lda trackloopIndex,x
+	sta trackIndex,x
+	tay
+	lda (p56),y
+jC4A5	sta voices_sequenceRepeat,x		;store sequence repeat number
+	inc trackIndex,x
+	iny
+	lda (p56),y							;now read next byte in this channel for which sequence to loop
+jC4AE	sta voices_currentSequence,x	;can also be FE or FF from track read.
+	rts
+
+	
+	
+	
+	
+	
+!ifdef editorVoiceMuteFlags {
+TRK_FRAMECOUNT	!by $00				;DISPLAYED IN EDITOR AS 'frm00', READING $00 TO $FF
+FLAG256FRAMES	!by $01				;init to 0, set to $FF when framecount first reaches $FF, to prevent raster table overflow
+
+NOTE_COUNT		!by $01				;DISPLAYED IN EDITOR AS BAR:BEAT:NOTE AS THREE DECIMAL DIGITS
+BEAT_COUNT		!by $01	
+BAR_COUNT		!by $01		
+
+
+
+;END OF ALL METRONOME CODE
+}
+
+CurrentVolume	!by $10
+FadeCount	!by $00
+tempo1Counter	!by $00
+tempo2Counter	!by $01
+.currentVoiceSIDIndex	!by $00		;$00, $07 or $0E
+tempseqRepeat	!by $01
+
+; Track state 3xlo then 3xhi
+tracksLo 	!by <tune0_0, <tune0_1, <tune0_2
+tracksHi 	!by >tune0_0, >tune0_1, >tune0_2
+tempo1	!by $01
+tempo2	!by $08
+
+offsetSIDVoice 	!by $00,$07,$0E
+
+; Voice states
+effectOffset 	+MusicPlayer_reserveVoiceStates		; Voice effect x 8 calculation result
+trackIndex	+MusicPlayer_reserveVoiceStates
+trackloopFlag	+MusicPlayer_reserveVoiceStates
+trackloopNum	+MusicPlayer_reserveVoiceStates
+trackloopIndex	+MusicPlayer_reserveVoiceStates
+voices_sequenceIndex	+MusicPlayer_reserveVoiceStates
+voices_currentSequence	+MusicPlayer_reserveVoiceStates
+voices_sequenceRepeat	+MusicPlayer_reserveVoiceStates
+seqread_byte1	+MusicPlayer_reserveVoiceStates
+voices_originalNoteLength	+MusicPlayer_reserveVoiceStates
+voices_noteLength	+MusicPlayer_reserveVoiceStates
+voices_ctrlone	+MusicPlayer_reserveVoiceStates
+voices_currentNote	+MusicPlayer_reserveVoiceStates
+voices_currentEffect	+MusicPlayer_reserveVoiceStates
+voices_gateMask	+MusicPlayer_reserveVoiceStates
+Pw_Depth	+MusicPlayer_reserveVoiceStates
+Pw_Top	+MusicPlayer_reserveVoiceStates
+Pw_Bottom	+MusicPlayer_reserveVoiceStates
+Pw_CurrentUpDown	+MusicPlayer_reserveVoiceStates
+Pw_ReadFlag	+MusicPlayer_reserveVoiceStates
+voices_BendByte	+MusicPlayer_reserveVoiceStates
+vibratoUpDown	+MusicPlayer_reserveVoiceStates
+voices_fxDelay	+MusicPlayer_reserveVoiceStates
+voices_vibratoPattern2	+MusicPlayer_reserveVoiceStates
+fC52E	+MusicPlayer_reserveVoiceStates
+fC531	+MusicPlayer_reserveVoiceStates
+voices_vibratoPattern1	+MusicPlayer_reserveVoiceStates
+vib_stepsizeLoByte	+MusicPlayer_reserveVoiceStates
+vib_stepsizeHiByte	+MusicPlayer_reserveVoiceStates
+voices_noteLo	+MusicPlayer_reserveVoiceStates
+voices_noteHi	+MusicPlayer_reserveVoiceStates
+notebyteAsRead	+MusicPlayer_reserveVoiceStates
+Pw_CurrentLoByte	+MusicPlayer_reserveVoiceStates
+voices_pulsewidth	+MusicPlayer_reserveVoiceStates
+voices_special	+MusicPlayer_reserveVoiceStates
+voices_attackTime	+MusicPlayer_reserveVoiceStates
+voices_framecount	+MusicPlayer_reserveVoiceStates
+voices_ChordCount	+MusicPlayer_reserveVoiceStates
+voices_noteCount	+MusicPlayer_reserveVoiceStates
+voices_preflag	+MusicPlayer_reserveVoiceStates
+voices_NextVoice	+MusicPlayer_reserveVoiceStates
+voices_NextgateMask	+MusicPlayer_reserveVoiceStates
+voices_NextnoteLength	+MusicPlayer_reserveVoiceStates
+voices_NextBendByte	+MusicPlayer_reserveVoiceStates
+voices_NextnoteByte	+MusicPlayer_reserveVoiceStates
+voices_NextnoteValue	+MusicPlayer_reserveVoiceStates
+
+notesLo	!by $16
+notesLo1 	!by $26,$38,$4A,$5D,$73,$89,$A0,$B9
+	!by $D4,$EF,$0D,$2C,$4D,$70,$95,$BC
+	!by $E7,$12,$41,$73,$A8,$DF,$1A,$58
+	!by $9B,$E1,$2B,$7A,$CE,$26,$84,$E7
+	!by $50,$BF,$36,$B2,$37,$C3,$58,$F5
+	!by $9C,$4D,$09,$CF,$A1,$80,$6C,$66
+	!by $6F,$88,$B1,$EC,$39,$9B,$12,$9F
+	!by $43,$01,$D9,$CD,$DF,$10,$63,$D9
+	!by $74,$38,$25,$3F,$88,$03,$B3,$9C
+	!by $BF,$21,$C7,$B3,$EA,$71,$4B,$7F
+	!by $11,$07,$67,$38,$7F,$45,$8F,$67
+	!by $D5,$E3,$97,$FF,$23,$0F,$CF
+notesHi	!by $01
+notesHi1 	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $01,$01,$02,$02,$02,$02,$02,$02
+	!by $02,$03,$03,$03,$03,$03,$04,$04
+	!by $04,$04,$05,$05,$05,$06,$06,$06
+	!by $07,$07,$08,$08,$09,$09,$0A,$0A
+	!by $0B,$0C,$0D,$0D,$0E,$0F,$10,$11
+	!by $12,$13,$14,$15,$17,$18,$1A,$1B
+	!by $1D,$1F,$20,$22,$24,$27,$29,$2B
+	!by $2E,$31,$34,$37,$3A,$3E,$41,$45
+	!by $49,$4E,$52,$57,$5C,$62,$68,$6E
+	!by $75,$7C,$83,$8B,$93,$9C,$A5,$AF
+	!by $B9,$C4,$D0,$DC,$EA,$F8,$FF
+
+	; This trailing 0 is important, else we get strange high pitched hissing sound at the start of the Armalyte tune.
+	; Technically this indicates a really old bug in the original code where the vibratoPattern1 is accidently being read sometimes.
+	; This has only become apparent when the data is detached from this player.
+	!by 0

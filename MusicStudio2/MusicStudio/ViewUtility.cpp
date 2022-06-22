@@ -26,10 +26,10 @@ void SetNumToEdit(CEdit &edit,const unsigned char num)
 	{
 		return;
 	}
-	edit.SetWindowText(GetNum(num));
+	edit.SetWindowText(GetHexNum(num));
 }
 
-CString GetNum(const unsigned char num)
+CString GetHexNum(const unsigned char num)
 {
 	CString newNum;
 	newNum.Format(_T("%02X"),num);

@@ -1,0 +1,70 @@
+!align 255,0
+;*=$3e00
+MusicPlayer_Start = *
+!source "MusicPlayer.a"
+MusicPlayer_End = *
+MusicPlayer_Size = MusicPlayer_End - MusicPlayer_Start
+
+* = $4400
+;!source "MusicPlayerData_Blank.a"
+!source "MusicPlayerData.a"
+;!source "MusicPlayerData_Citadel.a"
+;!source "MusicPlayerData_Snare.a"
+;!source "MusicPlayerData_Warbles.a"
+
+; Check the editor data locations are correct and maintain compatibility with older data
+!if MusicPlayerDataEnd > BASICROM {
+	!error "Expanded data cannot go beyond BASICROM"
+}
+
+!if MusicPlayerDataVersion != $4400 {
+!error "MusicPlayerDataVersion  =$4400"
+}
+
+!if vibratoPattern1 != $4401 {
+!error "vibratoPattern1  =$4401"
+}
+
+!if vibratoPattern2 != $4411 {
+!error "vibratoPattern2  =$4411"
+}
+
+!if BEAT_LENGTH != $4421 {
+!error "BEAT_LENGTH  =$4421"
+}
+
+!if BEATS_IN_BAR != $4422 {
+!error "BEATS_IN_BAR  =$4422"
+}
+
+!if effect_AttackDecay  != $4428 {
+!error "effect_AttackDecay  =$4428"
+}
+
+!if effect_AttackControl  != $4528 {
+!error "effect_AttackControl  =$4528"
+}
+
+!if tuneInfo  != $4628 {
+!error "tuneInfo  =$4628"
+}
+
+!if sequenceLo  != $46a8 {
+!error "sequenceLo  =$46a8"
+}
+
+!if sequenceHi  != $4728 {
+!error "sequenceHi  =$4728"
+}
+
+!if sequences_start  != $4800 {
+!error "sequences_start  =$4800"
+}
+
+!if tunes_start  != $8800 {
+!error "tunes_start  =$8800"
+}
+
+!if MusicPlayerDataEnd  != $a000 {
+!error "MusicPlayerDataEnd  =$a000"
+}

@@ -1,0 +1,97 @@
+!zn
+effect_Tab1
+!for .i , kMusicPlayer_NumEffects {
+	!word effect_AttackDecay + ((.i-1) * kMusicPlayer_EffectsSize / 2)
+}
+effect_Tab2
+!for .i , kMusicPlayer_NumEffects {
+	!word effect_AttackControl + ((.i-1) * kMusicPlayer_EffectsSize / 2)
+}
+
+noteToText
+!for .o , 10 {
+	!tx "c-"
+	!by '0' + (.o-1)
+	!tx "c#"
+	!by '0' + (.o-1)
+	!tx "d-"
+	!by '0' + (.o-1)
+	!tx "d-"
+	!by '0' + (.o-1)
+	!tx "e-"
+	!by '0' + (.o-1)
+	!tx "f-"
+	!by '0' + (.o-1)
+	!tx "f#"
+	!by '0' + (.o-1)
+	!tx "g-"
+	!by '0' + (.o-1)
+	!tx "g#"
+	!by '0' + (.o-1)
+	!tx "a-"
+	!by '0' + (.o-1)
+	!tx "a#"
+	!by '0' + (.o-1)
+	!tx "b-"
+	!by '0' + (.o-1)
+}
+
+
+toDecimal_Units
+!for .i , 26 {
+	!tx "0123456789"
+}
+
+toDecimal_Tens
+!for .x , 3 {
+!for .i , 10 {
+!for .j , 10 {
+	!by '0' + (.i-1)
+}
+}
+}
+
+toDecimal_Hundreds
+!for .i , 3 {
+!for .j , 100 {
+	!by '0' + (.i-1)
+}
+}
+
+toScans
+	+MScans_table
+
+
+editorVoiceMuteFlags
+	!by 0 , 0 , 0
+
+
+Editor_mode	!by 0
+Editor_modesLo	!by <Screen_main , <Screen_vibratos
+Editor_modesHi	!by >Screen_main , >Screen_vibratos
+Editor_modes_highlightLo	!by <topOfEffect , <topOfVibrato1
+Editor_modes_highlightHi	!by >topOfEffect , >topOfVibrato1
+
+Editor_theColumn !by -1
+
+timeFrames !by 0
+timeSeconds !by 0
+timeMinutes !by 0
+lastRaster !by 0
+myPlayFlag !by $ff
+
+tempo_beatlength	!by $06,$08,$0C,$10
+beatlength_index	!by $02					;default to beatlength = $0C
+
+tempo1_table	!by $0F,$03,$02,$02,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01,$01,$00
+tempo2_table	!by $0F,$0A,$07,$0A,$06,$0D,$09,$0C,$02,$02,$04,$06,$08,$0C,$01,$00
+
+tempo_readout6	!by $1F,$5F,$83,$8F,$93,$96,$9A,$9E,$A7,$AC,$CF,$DF,$E7,$F1,$FB,$00
+tempo_readout8	!by $17,$49,$64,$6B,$6F,$74,$74,$78,$7D,$83,$9E,$A7,$B1,$B1,$BC,$00
+tempo_readout12	!by $10,$30,$41,$47,$49,$4B,$4D,$4F,$52,$56,$67,$6F,$73,$78,$7D,$FA
+tempo_readout16	!by $0C,$23,$31,$34,$37,$38,$39,$3B,$3F,$40,$4D,$51,$56,$58,$5E,$BC
+tempo_readoutLen = * - tempo_readout16
+
+Editor_currentTempoIndex !by 0
+
+movingAverage !fill movingAverageSize , 0

@@ -260,6 +260,44 @@ extern "C" void *AllocatePlayer(const char *flags,const char *filename)
 	return (void *) player;
 }
 
+extern "C" int PlayerGetMaxSong(void *handle)
+{
+	ConsolePlayer *player = (ConsolePlayer *)handle;
+	if (!player)
+	{
+		return 0;
+	}
+
+	return player->m_engine.info().tuneInfo->songs;
+}
+
+extern "C" int PlayerGetCurrentSong(void *handle)
+{
+	ConsolePlayer *player = (ConsolePlayer *)handle;
+	if (!player)
+	{
+		return 0;
+	}
+
+	return player->m_engine.info().tuneInfo->currentSong;
+}
+
+extern "C" int PlayerSetCurrentSong(void *handle , int song)
+{
+	ConsolePlayer *player = (ConsolePlayer *)handle;
+	if (!player)
+	{
+		return 0;
+	}
+
+	player->stop();
+	player->m_track.selected = song;
+	player->m_tune.selectSong(song);
+	player->open();
+	return 0;
+}
+
+
 extern "C" bool PlayerPlay(void *handle)
 {
 	ConsolePlayer *player = (ConsolePlayer *)handle;

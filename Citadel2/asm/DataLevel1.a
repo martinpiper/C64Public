@@ -1,9 +1,13 @@
 !to "DataLevel1.prg", cbm
+!sal
 !sl "DataLevel1.map"
+!svl "DataLevel1.lbl"
+
 
 !source "../stdlib/stdlib.a"
 !source "asm/DataDefs.a"
 !source "asm/MazeSolveDefs.a"
+!source "DataAutoDefsScorePanel.a"
 
 
 * = LevelDataStart
@@ -24,6 +28,7 @@ CharColours
 ;!align 255,0
 MapData
 !by MazeWidth,MazeHeight
+MapDataTiles
 !bin "Level1.ctm" , (MazeWidth*MazeHeight) ,  $14 + (numMapUsedChars * 9) + (numMapUsedTiles*4*4 * 2) , 2
 MapDataEnd
 
@@ -31,7 +36,7 @@ MapDataEnd
 NumInterestingPlaces !by calcedNumPlaces
 ; A list of interesting coordinates to route to
 InterestingPlacesX
-!by 1,		4
+!by 2,		4
 !by	1,		4
 !by 1,		8,		10,		1,		6
 !by 19,		23,		23,		19
@@ -44,7 +49,7 @@ calcedNumPlaces = * - InterestingPlacesX
 !fill MaxInterestingPlaces - (* - InterestingPlacesX),0
 
 InterestingPlacesY
-!by 2,		3
+!by 5,		5
 !by 12,		10
 !by 23,		20,		23,		21,		21
 !by 19,		19,		23,		23
@@ -55,6 +60,8 @@ InterestingPlacesY
 
 InterestingPlacesZone !fill MaxInterestingPlaces , 0xff
 
+MapTutorialHintNum !by calcedMapTutorialHintNum
+MapTutorialHintAddr +MLittleEndian16Bit MapTutorialHint
 
 
 ; Holds the coordinates of terminals, their related doors and the door type
@@ -234,8 +241,9 @@ EnemyFlags
 
 ; Map tile positions
 EnemyPositionsX
-	!by 8	; Default start position
-;	!by 10
+;	!by 8	; Default start position
+	!by 1	; Teleport
+;	!by 10	; Beside door to the trap room
 ;	!by 12	; Teleport to the trap room
 ;	!by 38
 
@@ -252,7 +260,8 @@ EnemyPositionsX
 	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsX),-1	; Fill the rest with nothing
 
 EnemyPositionsY
-	!by 3
+;	!by 3
+	!by 23
 ;	!by 23
 ;	!by 23
 ;	!by 7
@@ -448,6 +457,69 @@ MapAnimationData_15
 
 MapAnimationData_16
 	!by MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , MapTile_ComputerTerminalOnFacingUp , -1
+
+
+; Other dynamic data, like map hints
+; Bit field for the below to the consider for their current state. MSB = Delete once satisfied. If = 0 then skip entirely.
+; The hint text to display if the current state is correct
+; == EnemyPositionsX (with EnemyPositionsXLo check)
+; == EnemyPositionsY (with EnemyPositionsYLo check)
+; == CaptureProbe_RunningProbe
+; == CaptureProbe_CapturedListCount
+MapTutorialHint
+	!by MapTutorialHint_ToCheck_Delete | MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_RunningProbe
+	+MLittleEndian16Bit MapTutorialHint_StartTheCapture
+	!by 6 , 6
+	!by -1
+	!by 0
+	!by 0,0,0
+
+	!by MapTutorialHint_ToCheck_Delete | MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_CapturedListCount
+	+MLittleEndian16Bit MapTutorialHint_CaptureTheEnemy1
+	!by 6 , 6
+	!by 0
+	!by 0
+	!by 0,0,0
+
+	!by MapTutorialHint_ToCheck_Delete | MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_CapturedListCount
+	+MLittleEndian16Bit MapTutorialHint_CommandCaptured
+	!by 6 , 5
+	!by 0
+	!by 1
+	!by 0,0,0
+
+	!by MapTutorialHint_ToCheck_Delete | MapTutorialHint_ToCheck_CapturedListCount | MapTutorialHint_ToCheck_SetTime
+	+MLittleEndian16Bit MapTutorialHint_CommandCapturedCycle
+	!by 0 , 0
+	!by 0
+	!by 2
+	!by 0,0,0
+
+	!by MapTutorialHint_ToCheck_Delete | MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_ForcePosition
+	+MLittleEndian16Bit MapTutorialHint_ChargingStation
+	!by 4 , 5
+	!by 0
+	!by 0
+	!by 0,0,0
+
+	!by MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_AddrForValue | MapTutorialHint_ToCheck_ForcePosition
+	+MLittleEndian16Bit MapTutorialHint_Terminal
+	!by 1 , 2
+	!by 0
+	!by 0
+	+MLittleEndian16Bit MapDataTiles + 4 + (8 * MazeWidth)
+	!by MapTile_HorizontalDoor
+
+	!by MapTutorialHint_ToCheck_MapX | MapTutorialHint_ToCheck_MapY | MapTutorialHint_ToCheck_AddrForValue | MapTutorialHint_ToCheck_ForcePosition
+	+MLittleEndian16Bit MapTutorialHint_DoorLocked
+	!by 4 , 7
+	!by 0
+	!by 0
+	+MLittleEndian16Bit MapDataTiles + 4 + (8 * MazeWidth)
+	!by MapTile_HorizontalDoor
+
+calcedMapTutorialHintNum = (* - MapTutorialHint) / MapTutorialHint_Size
+
 
 
 LevelDataEnd = *

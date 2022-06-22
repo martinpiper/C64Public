@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>-remotemonitor -cartcrt $(ProjectDir)\AnimationBitmap.crt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-reu -remotemonitor -cartcrt $(ProjectDir)\AnimationBitmap.crt</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

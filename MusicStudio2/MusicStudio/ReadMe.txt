@@ -34,9 +34,16 @@ MIDI files can also be imported into tracker blocks. A dialog will be displayed 
 When importing MIDI files make sure that at least one MIDI channel is marked for importing otherwise you will not see any music.
 
 
-The File->Rip SID... option will prompt for a SID or PRG file. The notes values in the SID file will then be entered into the tracker display. Envelope information is currently not supported.
+The menu File->Rip SID... option will prompt for a SID or PRG file. The notes values in the SID file will then be entered into the tracker display. Envelope and instrument information is approximately extracted.
+Example of using rip SID file... https://youtu.be/HKkapWwicA4
+1. Choose menu File->New
+2. Next choose File->Rip SID... (The menu may need to be expanded using the double chevrons at the bottom of the menu)
+3. Next choose the SID file to rip data from
+4. The rip SID options dialog will allow the track to be chosen, and also the "Force note for instruments" edit box will be allow instruments (envelopes) to be flagged to capture note table entries.
+4.1	The usual method will be to leave this blank, listen to the captured SID data, identify which envelopes are good candidates for note table entries (usually the percussion instruments, like snare drums), then using a new file enter the enevelopes in a comma separated list.
 
-It can also export data to C64 native PRG format as well as SID files using the menu "File->Export to C64". This exported data is heavily optimised compared to the wasted space of the C64 editor. Even unused portions of code from the player routine are removed, for example if the music uses fewer effects the code size will be reduced. This optimisation is due to using assembly source files and the ACME assembler included with this package.
+
+The file menu can also export data to C64 native PRG format as well as SID files using the menu "File->Export to C64". This exported data is heavily optimised compared to the wasted space of the C64 editor. Even unused portions of code from the player routine are removed, for example if the music uses fewer effects the code size will be reduced. This optimisation is due to using assembly source files and the ACME assembler included with this package.
 
 - Output SID file: Uses the source file "HeaderSID.a". Choosing the menu option "View->Extended view" information about TITLE, AUTHOR and RELEASED can be set that will be included in the .sid file header, too.
 
@@ -46,6 +53,17 @@ It can also export data to C64 native PRG format as well as SID files using the 
 
 Using sound effects in games is supported with 'Include sound effect code' option. Try to export a tune as 'Output standalone PRG' with sound FX option enabled and run on C64/emulator to see how it works. Envelopes also can be marked to export as effects with the 'Force used' option in the envelope editing section. 
 
+
+
+
+Exporting to MIDI with menu "File->Export to C64" will produce a three track, using three channels, MIDI file with default instrument (usually a piano). The blocks will be transposed and repeated, the track export finishes with the first end of track marker.
+
+
+
+
+Export to Oric with menu "File->Export to Oric" can be used, which creates a self running Oric TAP file.
+	The conversion is preliminary. More work needs to be done on the instruments export.
+	Oricutron was used to test this output. http://www.petergordon.org.uk/oricutron/
 
 
 Using relocated user modules:
@@ -532,11 +550,7 @@ These options can be concatenated together and are executed in sequence. For exa
 New in this release
 -------------------
 
-* Export to Oric can be used, which creates a self running Oric TAP file.
-	The conversion is preliminary. More work needs to be done on the instruments export.
-	Oricutron was used to test this output. http://www.petergordon.org.uk/oricutron/
-
-
+* Exporting to MIDI
 
 
 Credits:

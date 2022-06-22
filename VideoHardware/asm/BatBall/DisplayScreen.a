@@ -21,7 +21,15 @@ DisplayScreen
 	jsr Video_SetAddressTileBackgroundRegister
 	lda #0
 	sta CIA2PortBRS232
+	jsr Video_SetAddressVideoLayersEnable
+	lda #%0011
+	sta CIA2PortBRS232
 	inc VIC2BorderColour
+
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue 0
+
 
 !if 1 {
 	lda #1
@@ -121,7 +129,7 @@ DisplayScreenAgain
 !for .yy , 32 {
 !set .y = .yy -1
 	lda #kBus24Bit_CharScreenMap_EBBS
-	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * 64)
+	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * kBus24Bit_CharScreenWidth)
 	jsr Bus24Bit_SetAddressBus
 	+MWordValueTo_AX MainScreen + (.y * 32)
 	ldy #32
@@ -129,7 +137,7 @@ DisplayScreenAgain
 	inc VIC2BorderColour
 
 	lda #kBus24Bit_CharScreenMap_EBBS
-	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * 64)
+	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * kBus24Bit_CharScreenWidth)
 	jsr Bus24Bit_SetAddressBus
 	+MWordValueTo_AX MainScreen + (.y * 32) + (32*32)
 	ldy #32

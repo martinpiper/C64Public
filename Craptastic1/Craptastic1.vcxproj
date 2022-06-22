@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\BerzerkRedux\Rand.a" />
+    <None Include="..\IRQTape\ScrollerMusicLoader.a" />
+    <None Include="..\IRQTape\TapeTool\Loaders.a" />
+    <None Include="..\stdlib\BASICEntry80d.a" />
+    <None Include="..\stdlib\BASICEntry810.a" />
+    <None Include="..\stdlib\BASICEntry900.a" />
+    <None Include="..\stdlib\BubbleSort.a" />
+    <None Include="..\stdlib\Comparisons.a" />
+    <None Include="..\stdlib\Initialise.a" />
+    <None Include="..\stdlib\LongBranches.a" />
+    <None Include="..\stdlib\MemoryCopy.a" />
+    <None Include="..\stdlib\PETSCII.a" />
+    <None Include="..\stdlib\QuickSort.a" />
+    <None Include="..\stdlib\SampleInit.a" />
+    <None Include="..\stdlib\stdlib.a" />
+    <None Include="..\stdlib\VideoModes.a" />
+    <None Include="..\stdlib\VideoModes_Macros.a" />
+    <None Include="Craptastic1.a" />
+    <None Include="BuildIt.bat" />
+    <None Include="_config.a" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{74571111-EF48-45E5-AE0F-4F819F638E3D}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BuildIt.bat</NMakeBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)\Craptastic1.prg</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <OutDir>$(ProjectDir)</OutDir>
+    <IntDir>$(ProjectDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PreBuildEvent>
+      <Command>BuildIt.bat</Command>
+    </PreBuildEvent>
+    <BuildLog>
+      <Path>$(ProjectDir)\temp.log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

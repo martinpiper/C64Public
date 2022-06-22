@@ -1,0 +1,876 @@
+;Craptastic1 test code
+
+!initmem 0
+!to "Craptastic1.prg", cbm
+!sl "Craptastic1.map"
+!sal
+!svl "Craptastic1.lbl"
+!pdb "Craptastic1.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "stdlib/LongBranches.a"
+
+zeroPage_Temp0 = $fb
+zeroPage_Temp1 = $fc
+zeroPage_Temp2 = $fd
+zeroPage_Temp3 = $fe
+zeroPage_Temp4 = $ff
+
+; If we want more, we might have to do some flickering or a very simple multiplexor
+kMaxSprites = 8
+
+	
+*=$900
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	+M_RAMTAS
+	+InitKERNALStringDisplay_AXY
+	jsr CINT
+	+MACRODisableCursorFlash_A
+	+SetDefaultScreenLowerCase_A
+	+MVIC2SpriteEnableAll_A
+
+	lda SpriteMulticolours+1
+	sta VIC2ExtraSpriteColour1
+	lda SpriteMulticolours+2
+	sta VIC2ExtraSpriteColour2
+
+	lda #0
+	jsr MusicInit
+
+	sei
+	+MACROCIAIRQControlDisable_A
+	lda #100
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQMid , IRQServiceRoutineLo
+	+MACROAckAllIRQs_A
+	lda #%1
+	sta VIC2InteruptControl
+	cli
+
+.mainLoop
+	jsr CLRSCR
+	jsr SpritesClear
+	jsr SpritesDraw
+
+	lda #VIC2Colour_Orange
+	sta VIC2BorderColour
+	lda #VIC2Colour_Brown
+	sta VIC2ScreenColour
+
+	+MSetTextCursor 10 , 2
+	+MBASICTextPrint .title
+	+MSetTextCursor 10 , 4
+	+MBASICTextPrint .pressfire
+
+.titleLoop
+	; Churns the random number generator while waiting for fire
+	jsr GetRND
+	+WaitForFireLoop_A .titleLoop
+
+	; Draw landscape
+	lda SpriteMulticolours
+	sta VIC2BorderColour
+	sta VIC2ScreenColour
+
+	lda #VIC2Colour_Green
+	sta EZPCurrentCharColourCode
+	jsr CLRSCR
+
+	lda #VIC2ScreenCharsHeight-1
+	ldx #VIC2ScreenCharsWidth-1
+.cl1
+	sta	LandColumnHeightTab,x
+	dex
+	bpl .cl1
+.drawColumns
+	jsr GetRND
+	and #$3f
+	cmp #VIC2ScreenCharsWidth
+	bcs .drawColumns	; Tries again
+	jsr DrawLandColumn
+	bcs .enoughLand
+	jmp .drawColumns
+.enoughLand
+
+	; Level the edges
+!macro MDoLeftForColoumn .col {
+.levelColLoop
+	lda LandColumnHeightTab+.col
+	ldx LandColumnHeightTab+.col+1
+	ldy LandColumnHeightTab+.col+2
+	jsr FindMinAXY
+	cmp LandColumnHeightTab+.col
+	bne .diffCol0
+	cmp LandColumnHeightTab+.col+1
+	bne .diffCol1
+	cmp LandColumnHeightTab+.col+2
+	bne .diffCol2
+	jmp .diffColEnd
+.diffCol0
+	lda #.col
+	jsr DrawLandColumn
+	jmp .levelColLoop
+.diffCol1
+	lda #.col+1
+	jsr DrawLandColumn
+	jmp .levelColLoop
+.diffCol2
+	lda #.col+2
+	jsr DrawLandColumn
+	jmp .levelColLoop
+.diffColEnd
+}
+	+MDoLeftForColoumn 0
+	+MDoLeftForColoumn 37
+
+
+	; Setup player positions
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft , Sprite_XPosLo , Sprite_XPosHi
+	lda LandColumnHeightTab
+	jsr GetSpriteYPos
+	sta Sprite_YPos
+	lda #Sprite_PlayerLeft
+	sta Sprite_Frame
+	lda #VIC2Colour_Yellow
+	sta Sprite_Colour
+	lda #1
+	sta Sprite_IsMulticolour
+	sta Sprite_IsEnabled
+
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft + (37 * 8) , Sprite_XPosLo+1 , Sprite_XPosHi+1
+	lda LandColumnHeightTab+37
+	jsr GetSpriteYPos
+	sta Sprite_YPos+1
+	lda #Sprite_PlayerRight
+	sta Sprite_Frame+1
+	lda #VIC2Colour_Yellow
+	sta Sprite_Colour+1
+	lda #1
+	sta Sprite_IsMulticolour+1
+	sta Sprite_IsEnabled+1
+
+
+	+MACROWaitForTheLastScan_A
+	jsr SpritesDraw
+
+.gameLoop
+	; Process player 1
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft + VIC2SpriteSizeX , Sprite_XPosLo+2 , Sprite_XPosHi+2
+	lda Sprite_YPos
+	clc
+	adc #VIC2SpriteSizeY
+	sec
+	sbc #12
+	sta Sprite_YPos+2
+	lda #Sprite_ArrowHorizontal
+	sta Sprite_Frame+2
+	lda #VIC2Colour_White
+	sta Sprite_Colour+2
+	lda #1
+	sta Sprite_IsMulticolour+2
+	sta Sprite_IsEnabled+2
+
+
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft + VIC2SpriteSizeX - 12 , Sprite_XPosLo+3 , Sprite_XPosHi+3
+	lda Sprite_YPos
+	clc
+	adc #VIC2SpriteSizeY
+	sta zeroPage_Temp3
+	sta Sprite_YPos+3
+	lda #Sprite_ArrowVertical
+	sta Sprite_Frame+3
+	lda #VIC2Colour_White
+	sta Sprite_Colour+3
+	lda #1
+	sta Sprite_IsMulticolour+3
+	sta Sprite_IsEnabled+3
+
+
+	lda #1
+	sta PlayerDirection
+
+	jsr PlayerLaunchControl
+	+lbmi .endGame1
+
+	; Process player 2
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft + (37 * 8) - VIC2SpriteSizeX , Sprite_XPosLo+2 , Sprite_XPosHi+2
+	lda Sprite_YPos + 1
+	clc
+	adc #VIC2SpriteSizeY
+	sec
+	sbc #12
+	sta Sprite_YPos+2
+	lda #Sprite_ArrowHorizontal
+	sta Sprite_Frame+2
+	lda #VIC2Colour_White
+	sta Sprite_Colour+2
+	lda #1
+	sta Sprite_IsMulticolour+2
+	sta Sprite_IsEnabled+2
+
+
+	+MWordValueToAddressLoHi_A VIC2SpriteXBorderLeft + (37 * 8) - VIC2SpriteSizeX + 12 , Sprite_XPosLo+3 , Sprite_XPosHi+3
+	lda Sprite_YPos + 1
+	clc
+	adc #VIC2SpriteSizeY
+	sta zeroPage_Temp3
+	sta Sprite_YPos+3
+	lda #Sprite_ArrowVertical
+	sta Sprite_Frame+3
+	lda #VIC2Colour_White
+	sta Sprite_Colour+3
+	lda #1
+	sta Sprite_IsMulticolour+3
+	sta Sprite_IsEnabled+3
+
+
+	lda #-1
+	sta PlayerDirection
+
+	jsr PlayerLaunchControl
+	+lbmi .endGame2
+
+;	+MDebugBreak
+
+	jmp .gameLoop
+.endGame1
+	+MSetTextCursor 12 , 10
+	+MBASICTextPrint .player1Wins
+	jmp .commonWin
+.endGame2
+	+MSetTextCursor 12 , 10
+	+MBASICTextPrint .player2Wins
+.commonWin
+	lda #10
+	sta zeroPage_Temp0
+.cwl1
+	ldy #10
+.cwl2
+	+MACROWaitForTheLastScanPlus1_A
+	+MACROWaitForTheLastScan_A
+	dey
+	bne .cwl2
+	inc VIC2BorderColour
+	dec zeroPage_Temp0
+	bne .cwl1
+
+	jmp .mainLoop
+
+.title
+!pet CHR_White , "Gun shooty game V0.2" , 0
+
+.pressfire
+!pet CHR_Yellow , "Press fire to play" , 0
+
+.player1Wins
+!pet CHR_White , " Player 1 Wins! " , 0
+
+.player2Wins
+!pet CHR_White , " Player 2 Wins! " , 0
+
+!zn
+; Exit:
+; A = -1	Player killed
+; A = 1		Landscape hit
+; A = 0		Out of bounds
+PlayerLaunchControl
+	; Generic code
+	lda Sprite_XPosLo+3
+	sta zeroPage_Temp2
+	lda Sprite_XPosHi+3
+	sta zeroPage_Temp3
+
+	lda Sprite_YPos+2
+	sta zeroPage_Temp4
+
+	; TODO: Could randomise the starting velocities
+	+MWordValueToAddress_A 1 , AccurateVelX
+	+MWordValueToAddress_A 1 , AccurateVelY
+
+.playerLoopY
+	inc AccurateVelY
+	lda AccurateVelY
+	cmp #64
+	bcc .okv1
+	lda #1
+	sta AccurateVelY
+.okv1
+	lda zeroPage_Temp4
+	sec
+	sbc AccurateVelY
+	sta Sprite_YPos+2
+
+	lda AccurateVelY
+	asl
+	asl
+	tay
+	lda PlayerDirection
+	bmi .doNeg4
+
+	lda #Sprite_PlayerLeft
+	clc
+	adc PlayerElevationTab,y
+	sta Sprite_Frame
+	jmp .notNeg4
+
+.doNeg4
+	lda #Sprite_PlayerRight
+	clc
+	adc PlayerElevationTab,y
+	sta Sprite_Frame+1
+
+.notNeg4
+
+	+MACROWaitForTheLastScan_A
+	jsr SpritesDraw
+	+WaitForFireLoop_A .playerLoopY
+
+	; Calculate a tweak Y offset for the projectile starting position to align with the gun barrel end
+	lda AccurateVelY
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	sta ProjectileYTweak
+	lda #8
+	sec
+	sbc ProjectileYTweak
+	sta ProjectileYTweak
+
+	+MAddr16ToAddr16_A AccurateVelY , zeroPage_Temp0
+	jsr MultiplyBy2
+	+MAddr16ToAddr16_A zeroPage_Temp0 , AccurateVelY
+
+.playerLoopX
+	inc AccurateVelX
+	lda AccurateVelX
+	cmp #64
+	bcc .okv2
+	lda #1
+	sta AccurateVelX
+.okv2
+	lda AccurateVelX
+	ldy PlayerDirection
+	bmi .doNeg2
+	+MAddAFrom16ToAddr16 zeroPage_Temp2 , zeroPage_Temp3 , Sprite_XPosLo+3 , Sprite_XPosHi+3
+	jmp .notNeg2
+.doNeg2
+	+MSubAFrom16ToAddr16 zeroPage_Temp2 , zeroPage_Temp3 , Sprite_XPosLo+3 , Sprite_XPosHi+3
+.notNeg2
+	+MACROWaitForTheLastScan_A
+	jsr SpritesDraw
+
+	+WaitForFireLoop_A .playerLoopX
+	+MAddr16ToAddr16_A AccurateVelX , zeroPage_Temp0
+;	jsr MultiplyBy2
+	+MAddr16ToAddr16_A zeroPage_Temp0 , AccurateVelX
+
+.launchProjectile
+	lda #6
+	sta DoSFX
+	; Clear the other sprite
+	lda #0
+	sta Sprite_IsEnabled+3
+
+
+	; Setup projectile
+	+MAddr16LoHiToAddr16LoHi_A Sprite_XPosLo+2 , Sprite_XPosHi+2 , zeroPage_Temp0 , zeroPage_Temp1
+	ldy PlayerDirection
+	bpl .notNeg3
+	+MAddU8ToAddr16 20 , zeroPage_Temp0 , zeroPage_Temp1
+.notNeg3
+	jsr MultiplyBy32
+	+MAddr16ToAddr16_A zeroPage_Temp0 , AccuratePosX
+
+	lda zeroPage_Temp4
+	sec
+	sbc #11
+	clc
+	adc ProjectileYTweak
+	sta zeroPage_Temp0
+	lda #0
+	sta zeroPage_Temp1
+	jsr MultiplyBy32
+	+MAddr16ToAddr16_A zeroPage_Temp0 , AccuratePosY
+
+	lda #Sprite_Projectile
+	sta Sprite_Frame+2
+	lda #VIC2Colour_White
+	sta Sprite_Colour+2
+	lda #0
+	sta Sprite_IsMulticolour+2
+
+	lda #2
+	sta .smIgnoreCollisions+1
+	lda #0
+	sta VIC2SpriteSpriteCollision
+	sta VIC2SpriteBackgroundCollision
+
+.projectileMoveLoop
+	lda PlayerDirection
+	bmi .doNeg1
+	+MAdd16STo16S AccuratePosX , AccurateVelX , AccuratePosX
+	jmp .notNeg1
+.doNeg1
+	+MSub16STo16S AccuratePosX , AccurateVelX , AccuratePosX
+.notNeg1
+	+MSub16STo16S AccuratePosY , AccurateVelY , AccuratePosY
+	+MSubU8FromAddr16 1 , AccurateVelY , AccurateVelY+1
+
+	+MAddr16ToAddr16_A AccuratePosX , zeroPage_Temp0
+	jsr DivideBy32
+	lda zeroPage_Temp1
+	cmp #2
+	+lbcs .outOfBounds
+	+MAddr16LoHiToAddr16LoHi_A zeroPage_Temp0 , zeroPage_Temp1 , Sprite_XPosLo+2 , Sprite_XPosHi+2
+	+MAddr16ToAddr16_A AccuratePosY , zeroPage_Temp0
+	jsr DivideBy32
+	lda zeroPage_Temp1
+	beq .okYPos1
+	; Display the projectile, now an arrow, at the top of the screen so the player can see where it is...
+	lda #Sprite_ArrowVerticalSmall
+	sta Sprite_Frame+2
+	lda #VIC2SpriteYBorderTop
+	sta Sprite_YPos+2
+	jmp .showSprites1
+.okYPos1
+	lda zeroPage_Temp0
+	sta Sprite_YPos+2
+	lda #Sprite_Projectile
+	sta Sprite_Frame+2
+.showSprites1
+	+MACROWaitForTheLastScan_A
+
+	; Backup the previous frame collisions
+	lda VIC2SpriteSpriteCollision
+	sta .smSSCol+1
+	lda VIC2SpriteBackgroundCollision
+	sta .smSBCol+1
+
+	jsr SpritesDraw
+
+	; After the draw and any MSB adjustment, really kill any spurious collisions...
+	lda VIC2SpriteSpriteCollision
+	lda VIC2SpriteBackgroundCollision
+	lda #0
+	sta VIC2SpriteSpriteCollision
+	sta VIC2SpriteBackgroundCollision
+
+.smIgnoreCollisions	lda #0
+	beq .testCollisions
+	; Ack anything that happened previously
+	lda VIC2SpriteSpriteCollision
+	lda VIC2SpriteBackgroundCollision
+	dec .smIgnoreCollisions+1
+	jmp .projectileMoveLoop
+
+.testCollisions
+;	jmp .gotCollisionSprite	; Debug
+.smSSCol	lda #0
+	; Only the projectile
+	and #%100
+	bne .gotCollisionSprite
+
+.smSBCol	lda #0
+	; Only the projectile
+	and #%100
+	bne .gotCollisionBackground
+
+	jmp .projectileMoveLoop
+
+.gotCollisionSprite
+	; Setup explosion
+	lda PlayerDirection
+	bmi .notPosExplosion
+
+	lda #Sprite_ExplosionStart
+	sta Sprite_Frame+1
+	lda #VIC2Colour_Yellow
+	sta Sprite_Colour+1
+	lda #1
+	sta Sprite_IsMulticolour+1
+
+	lda #4
+	sta DoSFX
+
+;	lda Sprite_XPosLo+1
+;	sta Sprite_XPosLo+3
+;	lda Sprite_XPosHi+1
+;	sta Sprite_XPosHi+3
+;	lda Sprite_YPos+1
+;	sta Sprite_YPos+3
+	jmp .oex1
+
+.notPosExplosion
+	lda #Sprite_ExplosionStart
+	sta Sprite_Frame+0
+	lda #VIC2Colour_Yellow
+	sta Sprite_Colour+0
+	lda #1
+	sta Sprite_IsMulticolour+0
+
+;	lda Sprite_XPosLo
+;	sta Sprite_XPosLo+3
+;	lda Sprite_XPosHi
+;	sta Sprite_XPosHi+3
+;	lda Sprite_YPos
+;	sta Sprite_YPos+3
+
+.oex1
+
+	lda #50
+	sta zeroPage_Temp3
+.exl1
+	+MACROWaitForTheLastScan_A
+	jsr SpritesDraw
+
+	lda PlayerDirection
+	bmi .notPosExplosion2
+
+	inc Sprite_Frame+1
+	lda Sprite_Frame+1
+	cmp #Sprite_ExplosionEnd+1
+	bne .exl2
+
+	lda #5
+	sta DoSFX
+
+	lda #Sprite_ExplosionStart
+	sta Sprite_Frame+1
+.exl2
+	jmp .oex2
+
+.notPosExplosion2
+	inc Sprite_Frame+0
+	lda Sprite_Frame+0
+	cmp #Sprite_ExplosionEnd+0
+	bne .exl3
+	lda #Sprite_ExplosionStart
+	sta Sprite_Frame+0
+.exl3
+
+.oex2
+	dec zeroPage_Temp3
+	bne .exl1
+
+	lda #-1
+	rts
+
+.gotCollisionBackground
+	+MAddr16LoHiToAddr16LoHi_A Sprite_XPosLo+2 , Sprite_XPosHi+2 , zeroPage_Temp0 , zeroPage_Temp1
+	+MSubU8FromAddr16 VIC2SpriteXBorderLeft-4 , zeroPage_Temp0 , zeroPage_Temp1
+	jsr DivideBy8
+	lda zeroPage_Temp0
+	sta zeroPage_Temp2
+
+	lda #0
+	sta zeroPage_Temp1
+	lda Sprite_YPos+2
+	sec
+	sbc #VIC2SpriteYBorderTop-4
+	sta zeroPage_Temp0
+	jsr DivideBy8
+
+	lda zeroPage_Temp0
+	cmp #VIC2ScreenCharsHeight
+	bcc .oky1
+	lda #VIC2ScreenCharsHeight-1
+.oky1
+	sta zeroPage_Temp3
+
+	clc
+	ldy #0
+	ldx zeroPage_Temp3
+	jsr PLOT
+	ldy zeroPage_Temp2
+	lda #' '
+	cpy #VIC2ScreenCharsWidth
+	bcs .osp0
+	sta (ZPCurrentScreenLineAddressLo),y
+.osp0
+	iny
+	cpy #VIC2ScreenCharsWidth
+	bcs .osp1
+	sta (ZPCurrentScreenLineAddressLo),y
+.osp1
+	dey
+	dey
+	cpy #VIC2ScreenCharsWidth
+	bcs .osp2
+	sta (ZPCurrentScreenLineAddressLo),y
+.osp2
+	clc
+	ldy #0
+	ldx zeroPage_Temp3
+	inx
+	jsr PLOT
+	ldy zeroPage_Temp2
+	lda #' '
+	cpy #VIC2ScreenCharsWidth
+	bcs .osp3
+	sta (ZPCurrentScreenLineAddressLo),y
+.osp3
+	clc
+	ldy #0
+	ldx zeroPage_Temp3
+	dex
+	jsr PLOT
+	ldy zeroPage_Temp2
+	lda #' '
+	cpy #VIC2ScreenCharsWidth
+	bcs .osp4
+	sta (ZPCurrentScreenLineAddressLo),y
+.osp4
+
+	; TODO: Could animate a second explosion here from the projectile position, to help hide the character removal
+
+	lda #1
+	rts
+.outOfBounds
+	lda #0
+	rts
+
+PlayerDirection		!by 1
+AccuratePosX		!word 0
+AccuratePosY		!word 0
+AccurateVelX		!word 0
+AccurateVelY		!word 0
+ProjectileYTweak	!by 0
+
+!zn
+GetSpriteYPos
+	jsr MultiplyBy8
+	lda zeroPage_Temp0
+	clc
+	adc #VIC2SpriteYBorderTop-VIC2SpriteSizeY
+	rts
+
+!zn
+; Entry:
+; A = column index
+; Exit:
+; Carry set = Could not place
+; Carry clear = Could place
+DrawLandColumn
+	; Hunt for the next free vertical space at this column, from the bottom upwards
+	sta .smc1+1
+	lda #VIC2ScreenCharsHeight-1
+	sta .smypos1+1
+.testColumn
+	clc
+.smypos1	ldx #0
+	ldy #0
+	jsr PLOT
+.smc1	ldy #0
+	lda (ZPCurrentScreenLineAddressLo),y
+	cmp #' '
+	beq .okPos
+	dec .smypos1+1
+	lda .smypos1+1
+	; This stops the landscape once one of the columns gets to a certain position
+	cmp #5
+	bne .testColumn
+
+	; Indicate failure to place
+	sec
+	rts
+.okPos
+	lda #160
+	sta (ZPCurrentScreenLineAddressLo),y
+	lda ZPCurrentScreenLine
+	sta LandColumnHeightTab,y
+	; Indicate placed
+	clc
+	rts
+
+LandColumnHeightTab
+	!fill VIC2ScreenCharsWidth , VIC2ScreenCharsHeight-1
+
+!zn
+GetRND
+	jsr RNDWithParam
+	lda ZPRNDSeed0
+	eor ZPRNDSeed1
+	eor ZPRNDSeed2
+	eor ZPRNDSeed3
+	eor ZPRNDSeed4
+	rts
+
+!zn
+MultiplyBy8
+	sta zeroPage_Temp0
+	lda #0
+	sta zeroPage_Temp1
+
+!for .i , 3 {
+	asl zeroPage_Temp0
+	rol zeroPage_Temp1
+}
+	rts
+
+!zn
+DivideBy32
+!for .i , 5 {
+	+M_ASRAddr_A zeroPage_Temp1
+	ror zeroPage_Temp0
+}
+	rts
+
+DivideBy8
+!for .i , 3 {
+	+M_ASRAddr_A zeroPage_Temp1
+	ror zeroPage_Temp0
+}
+	rts
+
+!zn
+MultiplyBy2
+	asl zeroPage_Temp0
+	rol zeroPage_Temp1
+	rts
+
+!zn
+MultiplyBy32
+!for .i , 5 {
+	asl zeroPage_Temp0
+	rol zeroPage_Temp1
+}
+	rts
+
+!zn
+FindMinAXY
+	sta zeroPage_Temp0
+	cpy zeroPage_Temp0
+	bcs .o1
+	sty zeroPage_Temp0
+.o1
+	cpx zeroPage_Temp0
+	bcs .o2
+	stx zeroPage_Temp0
+.o2
+	lda zeroPage_Temp0
+	rts
+!zn
+Sprite_XPosLo
+	!fill kMaxSprites , 0
+Sprite_XPosHi
+	!fill kMaxSprites , 0
+Sprite_YPos
+	!fill kMaxSprites , 0
+Sprite_Colour
+	!fill kMaxSprites , 0
+Sprite_Frame
+	!fill kMaxSprites , 0
+Sprite_IsMulticolour
+	!fill kMaxSprites , 0
+Sprite_IsEnabled
+	!fill kMaxSprites , 0
+
+SpritesClear
+	ldx #kVIC2NumSprites-1
+	lda #0
+.cs1
+	sta Sprite_XPosLo,x
+	sta Sprite_XPosHi,x
+	sta Sprite_YPos,x
+	sta Sprite_Colour,x
+	sta Sprite_Frame,x
+	sta Sprite_IsMulticolour,x
+	dex
+	bpl .cs1
+	rts
+
+SpritesDraw
+	lda #0
+	sta VIC2SpriteEnable
+	ldx #0
+	ldy #0
+.l1
+	lda Sprite_XPosLo,x
+	sta VIC2Sprite0X,y
+	lda Sprite_YPos,x
+	sta VIC2Sprite0Y,y
+	lda Sprite_Colour,x
+	sta VIC2Sprite0Colour,x
+	lda Sprite_Frame,x
+	sta SPRITEFRAME,x
+
+	lda Sprite_XPosHi,x
+	ror
+	ror .smMSB+1
+
+	lda Sprite_IsMulticolour,x
+	ror
+	ror .smMC+1
+
+	lda Sprite_IsEnabled,x
+	ror
+	ror .smEn+1
+
+	iny
+	iny
+	inx
+	cpx #kVIC2NumSprites
+	bne .l1
+
+.smMSB	lda #0
+	sta VIC2SpriteXMSB
+.smMC	lda #0
+	sta VIC2SpriteMulticolour
+.smEn	lda #0
+	sta VIC2SpriteEnable
+	rts
+
+SpriteMulticolours
+	!bin "Sprites.spd", 3 , $06
+
+
+!zn
+DoSFX !by 0
+IRQMid
+	inc VIC2BorderColour
+	ldy DoSFX
+	beq .noSFX1
+	lda #$40
+	ldx #1
+	jsr MusicSFX
+	lda #0
+	sta DoSFX
+.noSFX1
+	jsr MusicPlay
+	dec VIC2BorderColour
+	+MACROAckRasterIRQ_A
+	jmp MinimalIRQServiceRoutine
+
+
+PlayerElevationTab
+!for .ii , 256 {
+!set .i = .ii -1
+!set .x = .i & 15
+!set .y = (.i/16) & 15
+	!by (6 * (15-.y)) / 15
+}
+
+*=$3800
+SpriteStart_index = (* & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
+Sprite_Projectile			= SpriteStart_index + 0
+Sprite_ArrowVerticalSmall	= SpriteStart_index + 1
+Sprite_ArrowHorizontal		= SpriteStart_index + 2
+Sprite_ArrowVertical		= SpriteStart_index + 3
+Sprite_ExplosionStart		= SpriteStart_index + 4
+Sprite_ExplosionEnd			= SpriteStart_index + 16
+Sprite_PlayerLeft			= SpriteStart_index + 17
+Sprite_PlayerRight			= SpriteStart_index + 24
+
+!bin "Sprites.spd", 32 * VIC2MemorySetup_SpriteSize , $09
+
+; Export at $4000 with no sound effect code
+*=$4000
+MusicInit
+MusicPlay	= *+3
+MusicStop	= *+6
+MusicSFX	= *+9
+!bin "music.prg", , $02

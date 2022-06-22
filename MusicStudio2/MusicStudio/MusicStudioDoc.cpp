@@ -35,7 +35,12 @@ CMusicStudioDoc::CMusicStudioDoc() : mUsing6581(false) , mTrackerBlockEditState(
 		RUNTIME_CLASS(CMusicStudioDoc),
 		RUNTIME_CLASS(CChildFrame), // custom MDI child frame
 		RUNTIME_CLASS(CMusicStudioView2));
-		
+
+	ClearDocument();
+}
+
+void CMusicStudioDoc::ClearDocument(void)
+{
 	ZeroMemory(mTracks,sizeof(mTracks));
 	ZeroMemory(mTablesControls,sizeof(mTablesControls));
 	ZeroMemory(mTablesValues,sizeof(mTablesValues));
@@ -44,6 +49,7 @@ CMusicStudioDoc::CMusicStudioDoc() : mUsing6581(false) , mTrackerBlockEditState(
 	ZeroMemory(mBlockTrackerErrorRows,sizeof(mBlockTrackerErrorRows));
 
 	mZeroPageStart = 0xfb;
+	mTrackerBlockEditState = false;
 
 	int i;
 
@@ -51,6 +57,14 @@ CMusicStudioDoc::CMusicStudioDoc() : mUsing6581(false) , mTrackerBlockEditState(
 	{
 		mBlockTrackerTempos[i] = 2;
 		mBlockTrackerLengths[i] = 64;
+		mBlocks[i].Empty();
+		mBlockErrorReport[i].clear();
+		for (int j = 0 ; j < kMaxInternalTrackerRows ; j++)
+		{
+			mBlockTrackerRows[i][j][0].Empty();
+			mBlockTrackerRows[i][j][1].Empty();
+			mBlockTrackerRows[i][j][2].Empty();
+		}
 	}
 
 	for (i=0;i<MusicStudio1::MusicFile::kMaxTracks;i++)
@@ -67,6 +81,30 @@ CMusicStudioDoc::CMusicStudioDoc() : mUsing6581(false) , mTrackerBlockEditState(
 	{
 		mTracks[i][0] = MusicStudio1::kMusicPlayer_StopTrack;
 	}
+
+	for (i = 0 ; i < MusicStudio1::MusicFile::kMaxEnvelopes ; i++)
+	{
+		mEnvelopes[i] = MusicStudio1::Envelope();
+		mEnvelopeNames[i].Empty();
+	}
+
+	for (i = 0 ; i < MusicStudio1::MusicFile::kOldMaxDrums ; i++)
+	{
+		mDrums[i] = MusicStudio1::DrumData();
+		mDrumNames[i].Empty();
+	}
+
+	for (i = 0 ; i < MusicStudio1::MusicFile::kMaxExtendedArpeggios ; i++)
+	{
+		mExtendedArpeggios[i] = MusicStudio1::ExtendedArpeggio();
+		mExtendedArpeggiosNames[i].Empty();
+	}
+
+	mTitleInfo.Empty();
+	mAuthorInfo.Empty();
+	mReleasedInfo.Empty();
+	mGenericInfo.Empty();
+
 }
 
 CMusicStudioDoc::~CMusicStudioDoc()
@@ -78,16 +116,22 @@ BOOL CMusicStudioDoc::OnNewDocument()
 	if (!CDocument::OnNewDocument())
 		return FALSE;
 
+	ClearDocument();
+
+	UpdateDocumentDataToInternalFile();
+	return TRUE;
+}
+
+void CMusicStudioDoc::SetDefaultData(void)
+{
 	// Initialise some blank data like the old music editor did
-#ifdef _DEBUG
-//#if 0
 	mTracks[0][0] = 0;
 	mTracks[0][1] = MusicStudio1::kMusicPlayer_LoopTrack;
 	mTracks[1][0] = MusicStudio1::kMusicPlayer_StopTrack;
 	mTracks[2][0] = MusicStudio1::kMusicPlayer_StopTrack;
 
 	mBlocks[0] = _T("ENV:01\r\nDUR:10\r\nC-4\r\nENV:02\r\nC-4\r\nENV:03\r\nC-4\r\nENV:04\r\nC-4\r\nENV:05\r\nC-4\r\n");
-//	mBlocks[0] = _T("ENV:01\r\nDUR:10\r\nC-4\r\n");
+	//	mBlocks[0] = _T("ENV:01\r\nDUR:10\r\nC-4\r\n");
 
 	CStringA ansiBlock(mBlocks[0]);
 	int byteSize = 0;
@@ -174,12 +218,7 @@ BOOL CMusicStudioDoc::OnNewDocument()
 	mExtendedArpeggios[2].mArpeggios[2] = 4;
 	mExtendedArpeggios[2].mArpeggios[3] = 256 - 3 - 3 - 4;
 	mExtendedArpeggios[2].mLength = 4;
-#endif // <ifdef _DEBUG
-
-	UpdateDocumentDataToInternalFile();
-	return TRUE;
 }
-
 
 
 
@@ -866,10 +905,10 @@ void CMusicStudioDoc::UpgradeOldV4InstrumentData(void)
 	OptimiseTables(true);
 }
 
-void CMusicStudioDoc::OptimiseTables(const bool assumeAllEnvelopesUsed)
+void CMusicStudioDoc::OptimiseTables(const bool assumeAllEnvelopesUsed , const bool spotDuplicates)
 {
 	UpdateDocumentDataToInternalFile();
-	if ( mMusicFile.OptimiseTables(assumeAllEnvelopesUsed) )
+	if ( mMusicFile.OptimiseTables(assumeAllEnvelopesUsed , spotDuplicates) )
 	{
 		SetModifiedFlag();
 	}
@@ -1135,7 +1174,7 @@ void CMusicStudioDoc::UpdateTrackerBlockToInternal(const int currentBlock)
 				lastDurationRelease = thisDurationRelease;
 				CString durationCommand;
 				// While sluring we can ignore the release duration
-				if (!(lastDuration&1) && (isSluring || usedEffectSlur || (lastDurationRelease*2) == lastDuration) || ((i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty()))
+				if ((lastDuration/2) > 0 && !(lastDuration&1) && (isSluring || usedEffectSlur || (lastDurationRelease*2) == lastDuration) || ((lastDuration/2) > 0 && (i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty()))
 				{
 					durationCommand.Format(_T("DUR:%x\r\n"),lastDuration/2);
 				}
@@ -1258,13 +1297,24 @@ static const double kOneFrame = 1.0f / kFPS;
 // Most music routines will complete SID writes within this fraction of a frame
 static const double kFrameFraction = kOneFrame / 4.0f;
 
-static CString PitchToNote(double pitch)
+static int PitchToNoteNum(double pitch)
 {
 	// Log base 2 and adjust for the note index
 	double octave = (log(pitch) / log(2.0f)) - 8.0f;
 	octave *= 12.0f;
+	int realNoteNumber = int(octave);
+	return realNoteNumber;
+}
 
-	CString note(MusicStudio1::BlockEntry::GetNoteFromNumber(int(octave)).c_str());
+static CString PitchToNote(double pitch)
+{
+	int realNoteNumber = PitchToNoteNum(pitch);
+	if(realNoteNumber <= 0)
+	{
+		return CString("===");
+	}
+
+	CString note(MusicStudio1::BlockEntry::GetNoteFromNumber(realNoteNumber).c_str());
 
 	return note;
 }
@@ -1279,7 +1329,28 @@ static int CleanControl(int control , const bool addGate = false)
 	return control;
 }
 
-void CMusicStudioDoc::ProcessSIDCaptureData(void)
+/*
+//Examples
+C:\Users\Martin Piper\Downloads\Wizball.sid
+C:\Downloads\wizball-c64-[SID-ID5917].sid
+C:\CCS64\Games\Turrican_3.sid
+	2 : 3,5,a
+C:\Users\Martin Piper\Downloads\Walkers_Warbles.sid
+	1 : 4,5,9
+	2 : 03 04 05 09 0A
+C:\Users\Martin Piper\Downloads\Citadel.sid
+C:\Downloads\HYBRIS.sid
+C:\Users\Martin Piper\Downloads\Double_Dragon_3.sid
+
+
+C:\Users\Martin Piper\Downloads\Armalyte.sid
+C:\Users\Martin Piper\Downloads\Secret_Project.sid
+C:\Users\Martin Piper\Downloads\Dominion.sid
+C:\Downloads\Wizball_Highscore_Tune.sid
+C:\Users\Martin Piper\Downloads\Music_Select_System_2.sid
+	3 : 02 04 05 07 0A 0C 0E 10 13 17 18 19 1B 1E 1F
+*/
+void CMusicStudioDoc::ProcessSIDCaptureData(const std::set<int> &forceNoteTable)
 {
 	// Process the ripped music events into the document
 
@@ -1301,7 +1372,8 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 		}
 	}
 
-	const double kMaxSecondsPerBlock = 4;
+	const double kMaxSecondsPerBlock = 3;
+	const int kMaxWaveTableEntriesPerInstrument = 10;
 
 	// MPi: TODO: Calculate sensible block sizes based on analysis for the ripped SID
 	// Some default values
@@ -1326,6 +1398,10 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 		}
 	}
 	// Parse events and maintain SID state
+	unsigned char SIDBytesForHistory[0x20];
+	ZeroMemory(SIDBytesForHistory,sizeof(SIDBytesForHistory));
+	unsigned char SIDBytesHistory[kMaxWaveTableEntriesPerInstrument][0x20];
+	ZeroMemory(SIDBytesHistory,sizeof(SIDBytesHistory));
 	unsigned char SIDBytes[0x20];
 	ZeroMemory(SIDBytes,sizeof(SIDBytes));
 	unsigned char previousSIDBytes[0x20];
@@ -1341,10 +1417,35 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 	double startBlockTime = nowTime;
 	int blockOffset = 0;
 	int trackOffset = 0;
+	bool hardResetDone[kSIDMaxVoice];
+	ZeroMemory(hardResetDone,sizeof(hardResetDone));
 	CString lastNote[kSIDMaxVoice];
 	CString lastEnvelope[kSIDMaxVoice];
-	while (ProcessEvents(SIDBytes,st,en,nowTime + kFrameFraction))
+	int lastEnvelopeNum[kSIDMaxVoice];
+	ZeroMemory(lastEnvelopeNum,sizeof(lastEnvelopeNum));
+	int orForIterations = 10;
+	while (orForIterations > 0)
 	{
+		orForIterations--;
+		bool gotEvents = ProcessEvents(SIDBytesForHistory,st,en,nowTime + kFrameFraction);
+		if (gotEvents)
+		{
+			orForIterations = 10;
+		}
+		for (int i = 1 ; i < kMaxWaveTableEntriesPerInstrument ; i++)
+		{
+			memcpy(SIDBytesHistory[i-1] , SIDBytesHistory[i] , sizeof(SIDBytesHistory[0]));
+		}
+
+		if (blockOffset >= MusicStudio1::MusicFile::kMaxBlocks - 6 || trackOffset >= MusicStudio1::MusicFile::kMaxTrackLength - 3)
+		{
+			orForIterations = -1;
+			break;
+		}
+
+		memcpy(SIDBytesHistory[kMaxWaveTableEntriesPerInstrument-1] , SIDBytesForHistory , sizeof(SIDBytesHistory[0]));
+		memcpy(SIDBytes , SIDBytesHistory[0] , sizeof(SIDBytes));
+
 		// Progress onto new blocks when they reach their end times
 		if ( (nowTime - startBlockTime) >= kMaxSecondsPerBlock )
 		{
@@ -1375,6 +1476,14 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 		}
 		for (chan=0;chan<kSIDMaxVoice;chan++)
 		{
+			unsigned char currentVoice[kMaxWaveTableEntriesPerInstrument][kSIDVoice_Size];
+			for (int depth = 0 ; depth < kMaxWaveTableEntriesPerInstrument ; depth++)
+			{
+				for (int voiceEntries = 0 ; voiceEntries < kSIDVoice_Size ; voiceEntries++)
+				{
+					currentVoice[depth][voiceEntries] = SIDBytesHistory[depth][(chan*kSIDVoice_Size) + voiceEntries];
+				}
+			}
 			int realBlockIndex = blockOffset + chan;
 			// Ignore hard resets for notes
 			if (SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Test)
@@ -1382,41 +1491,89 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 				continue;
 			}
 
-			if ((SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate) && !(previousSIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate))
+			bool outputSomething = false;
+			if ((SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_ValidWaveform) && (SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate) && !(previousSIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate))
 			{
 				// Gate on this frame
 				lastNote[chan] = PitchToNote(double(int(SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqLo]) | (int(SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqHi]) << 8)));
 				mBlockTrackerRows[realBlockIndex][currentRow][0] = lastNote[chan];
-				int instrument = GetInstrument(SIDBytes + (chan*kSIDVoice_Size));
-				lastEnvelope[chan] = CString(RNReplicaNet::ToString(instrument).c_str());
-				mBlockTrackerRows[realBlockIndex][currentRow][1] = lastEnvelope[chan];
+				if (lastNote[chan].GetAt(0) != '=')
+				{
+					int instrument = GetInstrument(currentVoice , kMaxWaveTableEntriesPerInstrument , forceNoteTable);
+					if (instrument >= 0)
+					{
+						lastEnvelope[chan] = CString(RNReplicaNet::ToString(instrument).c_str());
+						lastEnvelopeNum[chan] = instrument;
+						mBlockTrackerRows[realBlockIndex][currentRow][1] = lastEnvelope[chan];
+					}
+					else
+					{
+						lastEnvelope[chan] = CString("1");
+						lastEnvelopeNum[chan] = 1;
+
+						orForIterations = -1;
+					}
+				}
+				outputSomething = true;
 			}
 			else if (!(SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate) && (previousSIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceControl] & kSIDVoiceControl_Mask_Gate))
 			{
-				// Release on this frame
-				mBlockTrackerRows[realBlockIndex][currentRow][0] = "===";
+				if (!mEnvelopes[lastEnvelopeNum[chan]].mActiveTableNote)
+				{
+					// Release on this frame
+					mBlockTrackerRows[realBlockIndex][currentRow][0] = CString("===");
+					outputSomething = true;
+				}
 			}
-			else if ( (SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqLo] != previousSIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqLo]) || (SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqHi] != previousSIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqHi]) )
+
+			if ( !outputSomething )
 			{
 				// Note change
 				CString newNote = PitchToNote(double(int(SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqLo]) | (int(SIDBytes[(chan*kSIDVoice_Size)+kSIDVoiceFreqHi]) << 8)));
-				if (newNote != lastNote[chan])
+				if (!mEnvelopes[lastEnvelopeNum[chan]].mActiveTableNote && newNote != lastNote[chan])
 				{
 					lastNote[chan] = newNote;
 					mBlockTrackerRows[realBlockIndex][currentRow][0] = lastNote[chan];
-					if (lastEnvelope[chan].IsEmpty())
+					if (lastNote[chan].GetAt(0) != '=')
 					{
-						int instrument = GetInstrument(SIDBytes + (chan*kSIDVoice_Size));
-						lastEnvelope[chan] = CString(RNReplicaNet::ToString(instrument).c_str());
+						if (lastEnvelope[chan].IsEmpty())
+						{
+							int instrument = GetInstrument(currentVoice , kMaxWaveTableEntriesPerInstrument , forceNoteTable);
+							if (instrument >= 0)
+							{
+								lastEnvelope[chan] = CString(RNReplicaNet::ToString(instrument).c_str());
+								lastEnvelopeNum[chan] = instrument;
+							}
+							else
+							{
+								lastEnvelope[chan] = CString("1");
+								lastEnvelopeNum[chan] = 1;
+
+								orForIterations = -1;
+							}
+						}
+						mBlockTrackerRows[realBlockIndex][currentRow][1] = lastEnvelope[chan];
 					}
-					mBlockTrackerRows[realBlockIndex][currentRow][1] = lastEnvelope[chan];
 				}
+			}
+
+			if (!hardResetDone[chan])
+			{
+				mBlockTrackerRows[realBlockIndex][0][2] = CString("HRD");
+				if (mBlockTrackerRows[realBlockIndex][0][0].GetAt(0) == '=')
+				{
+					mBlockTrackerRows[realBlockIndex][0][0].Empty();
+					mBlockTrackerRows[realBlockIndex][0][1].Empty();
+				}
+				hardResetDone[chan] = true;
 			}
 		}
 		
 		memcpy(previousSIDBytes,SIDBytes,sizeof(previousSIDBytes));
 		nowTime += kOneFrame;
 	}
+
+	OptimiseTables(true);
 
 	for (i=0;i<MusicStudio1::MusicFile::kMaxBlocks;i++)
 	{
@@ -1426,38 +1583,77 @@ void CMusicStudioDoc::ProcessSIDCaptureData(void)
 	UpdateDocumentDataToInternalFile();
 }
 
-int CMusicStudioDoc::GetInstrument(const unsigned char *SIDBytes)
+int CMusicStudioDoc::GetInstrument(const unsigned char SIDBytes[][MusicStudio1::kSIDVoice_Size] , const int maxWaveTableEntries , const std::set<int> &forceNoteTable)
 {
 	int i;
 	int maxInstrument = 0;
 	int maxTableWave = 0;
 	int maxTablePulse = 0;
+	int maxTableNote = 0;
 
-	for (i = 1 ; i < MusicStudio1::MusicFile::kMaxEnvelopes ; i++)
+	for (i = 1 ; i < MusicStudio1::MusicFile::kMaxEnvelopes - maxWaveTableEntries ; i++)
 	{
 		if (mEnvelopes[i].mTableWave > 0 && i > maxInstrument)
 		{
 			maxInstrument = i;
 		}
-		if (mEnvelopes[i].mAttackDecay == SIDBytes[kSIDVoiceAttackDecay] &&
-			mEnvelopes[i].mSustainRelease == SIDBytes[kSIDVoiceSustainRelease] &&
-			mEnvelopes[i].mActiveTableWave &&
-			mTablesControls[kTableIndex_Wave][mEnvelopes[i].mTableWave] == CleanControl(SIDBytes[kSIDVoiceControl] , true)
-			)
+		bool stillValid = true;
+		int pulseTableOffset = 0;
+		for (int tableElementIndex = 0 ; tableElementIndex < maxWaveTableEntries && stillValid; tableElementIndex++)
 		{
-			if (SIDBytes[kSIDVoiceControl] & kSIDVoiceControl_Mask_Pulse)
+			if ( !(SIDBytes[tableElementIndex][kSIDVoiceControl] & MusicStudio1::kSIDVoiceControl_Mask_ValidWaveform))
 			{
-				if (mEnvelopes[i].mActiveTablePulse &&
-					mTablesControls[kTableIndex_Pulse][mEnvelopes[i].mTablePulse] == (SIDBytes[kSIDVoicePulseWidthHi] & 0x0f) &&
-					mTablesValues[kTableIndex_Pulse][mEnvelopes[i].mTablePulse] == SIDBytes[kSIDVoicePulseWidthLo])
+				break;
+			}
+			if (mEnvelopes[i].mAttackDecay == SIDBytes[0][kSIDVoiceAttackDecay] &&
+				mEnvelopes[i].mSustainRelease == SIDBytes[0][kSIDVoiceSustainRelease] &&
+				mEnvelopes[i].mActiveTableWave &&
+				CleanControl(mTablesControls[kTableIndex_Wave][mEnvelopes[i].mTableWave + tableElementIndex],true) == CleanControl(SIDBytes[tableElementIndex][kSIDVoiceControl] , true)
+				)
+			{
+				if(mEnvelopes[maxInstrument].mActiveTableNote)
 				{
-					return i;
+					int noteNum = PitchToNoteNum(double(int(SIDBytes[tableElementIndex][kSIDVoiceFreqLo]) | (int(SIDBytes[tableElementIndex][kSIDVoiceFreqHi]) << 8)));
+					if (mTablesControls[kTableIndex_Note][mEnvelopes[i].mTableNote + tableElementIndex] == 0x10 && mTablesValues[kTableIndex_Note][mEnvelopes[i].mTableNote + tableElementIndex] == noteNum)
+					{
+						stillValid = true;
+					}
+					else
+					{
+						stillValid = false;
+						break;
+					}
+				}
+				if (SIDBytes[tableElementIndex][kSIDVoiceControl] & kSIDVoiceControl_Mask_Pulse)
+				{
+					if (mEnvelopes[i].mActiveTablePulse &&
+						mTablesControls[kTableIndex_Pulse][mEnvelopes[i].mTablePulse + pulseTableOffset] == max(1,SIDBytes[tableElementIndex][kSIDVoicePulseWidthHi] & 0x0f) &&
+						mTablesValues[kTableIndex_Pulse][mEnvelopes[i].mTablePulse + pulseTableOffset] == SIDBytes[tableElementIndex][kSIDVoicePulseWidthLo])
+					{
+						pulseTableOffset++;
+						stillValid = true;
+					}
+					else
+					{
+						stillValid = false;
+						break;
+					}
+				}
+				else
+				{
+					stillValid = true;
 				}
 			}
 			else
 			{
-				return i;
+				stillValid = false;
+				break;
 			}
+		}
+
+		if (stillValid)
+		{
+			return i;
 		}
 	}
 
@@ -1471,57 +1667,96 @@ int CMusicStudioDoc::GetInstrument(const unsigned char *SIDBytes)
 		{
 			maxTablePulse = i;
 		}
+		if ( (mTablesControls[kTableIndex_Note][i] == 0xff))
+		{
+			maxTableNote = i;
+		}
 	}
 
 	// Create a new instrument
 	maxInstrument++;
 	maxTableWave++;
 	maxTablePulse++;
-	mEnvelopeNames[maxInstrument] = "Created";
-	mEnvelopes[maxInstrument].mAttackDecay = SIDBytes[kSIDVoiceAttackDecay];
-	mEnvelopes[maxInstrument].mSustainRelease = SIDBytes[kSIDVoiceSustainRelease];
-	mEnvelopes[maxInstrument].mActiveTableWave = true;
-	for (i = 1 ; i < MusicStudio1::MusicFile::kMaxTableEntries ; i++)
+	maxTableNote++;
+
+	bool needNoteTable = false;
+	if (forceNoteTable.find(maxInstrument) != forceNoteTable.end())
 	{
-		if ( mTablesControls[kTableIndex_Wave][i] == CleanControl(SIDBytes[kSIDVoiceControl] , true) )
+		needNoteTable = true;
+	}
+
+	if (maxInstrument >= 250 || maxTableWave >= 255 - maxWaveTableEntries || maxTablePulse >= 255 - maxWaveTableEntries || maxTableNote >= 255 - maxWaveTableEntries)
+	{
+		return -1;
+	}
+
+	mEnvelopeNames[maxInstrument] = "Created";
+	mEnvelopes[maxInstrument].mAttackDecay = SIDBytes[0][kSIDVoiceAttackDecay];
+	mEnvelopes[maxInstrument].mSustainRelease = SIDBytes[0][kSIDVoiceSustainRelease];
+	mEnvelopes[maxInstrument].mActiveTableWave = true;
+
+	int waveLoopPos = maxTableWave;
+	int noteLoopPos = maxTableNote;
+	bool needPulseActive = false;
+	for (int tableElementIndex = 0 ; tableElementIndex < maxWaveTableEntries ; tableElementIndex++)
+	{
+		if ( !(SIDBytes[tableElementIndex][kSIDVoiceControl] & MusicStudio1::kSIDVoiceControl_Mask_ValidWaveform))
 		{
-			mEnvelopes[maxInstrument].mTableWave = i;
 			break;
 		}
-	}
-	if (mEnvelopes[maxInstrument].mTableWave == 0)
-	{
-		mEnvelopes[maxInstrument].mTableWave = maxTableWave;
-		mTablesControls[kTableIndex_Wave][maxTableWave] = CleanControl(SIDBytes[kSIDVoiceControl] , true);
-		mTablesValues[kTableIndex_Wave][maxTableWave] = 0;
-		mTablesControls[kTableIndex_Wave][maxTableWave+1] = 0xff;
-		mTablesValues[kTableIndex_Wave][maxTableWave+1] = 0;
-	}
-	if (SIDBytes[kSIDVoiceControl] & kSIDVoiceControl_Mask_Pulse)
-	{
-		mEnvelopes[maxInstrument].mActiveTablePulse = true;
-
-		for (i = 1 ; i < MusicStudio1::MusicFile::kMaxTableEntries ; i++)
+		if ( SIDBytes[tableElementIndex][kSIDVoiceControl] & MusicStudio1::kSIDVoiceControl_Mask_Pulse)
 		{
-			if ( mTablesControls[kTableIndex_Pulse][i] == (SIDBytes[kSIDVoicePulseWidthHi] & 0x0f) &&
-				mTablesControls[kTableIndex_Pulse][i] == SIDBytes[kSIDVoicePulseWidthLo])
+			needPulseActive = true;
+		}
+		mEnvelopes[maxInstrument].mTableWave = maxTableWave;
+		mTablesControls[kTableIndex_Wave][maxTableWave + tableElementIndex] = CleanControl(SIDBytes[tableElementIndex][kSIDVoiceControl] , tableElementIndex==0);
+		// Set the loop to where the gate is first switched off, if it exists
+		if ((waveLoopPos == maxTableWave) && !(mTablesControls[kTableIndex_Wave][maxTableWave + tableElementIndex] & MusicStudio1::kSIDVoiceControl_Mask_Gate))
+		{
+			waveLoopPos = maxTableWave + tableElementIndex;
+			noteLoopPos = maxTableNote + tableElementIndex;
+		}
+		mTablesValues[kTableIndex_Wave][maxTableWave + tableElementIndex] = 0;
+		mTablesControls[kTableIndex_Wave][maxTableWave+1 + tableElementIndex] = 0xff;
+		mTablesValues[kTableIndex_Wave][maxTableWave+1 + tableElementIndex] = waveLoopPos;
+
+		if (needNoteTable)
+		{
+			mEnvelopes[maxInstrument].mActiveTableNote = true;
+			mEnvelopes[maxInstrument].mTableNote = maxTableNote;
+
+			mTablesControls[kTableIndex_Note][maxTableNote+ tableElementIndex] = 0x10;
+			mTablesValues[kTableIndex_Note][maxTableNote + tableElementIndex] = PitchToNoteNum(double(int(SIDBytes[tableElementIndex][kSIDVoiceFreqLo]) | (int(SIDBytes[tableElementIndex][kSIDVoiceFreqHi]) << 8)));
+			mTablesControls[kTableIndex_Note][maxTableNote+1 + tableElementIndex] = 0xff;
+			mTablesValues[kTableIndex_Note][maxTableNote+1 + tableElementIndex] = noteLoopPos;
+		}
+	}
+
+	if (needPulseActive)
+	{
+		int pulseTableOffset = 0;
+		for (int tableElementIndex = 0 ; tableElementIndex < maxWaveTableEntries ; tableElementIndex++)
+		{
+			if ( !(SIDBytes[tableElementIndex][kSIDVoiceControl] & MusicStudio1::kSIDVoiceControl_Mask_ValidWaveform))
 			{
-				mEnvelopes[maxInstrument].mTablePulse = i;
 				break;
 			}
-		}
+			if (SIDBytes[tableElementIndex][kSIDVoiceControl] & kSIDVoiceControl_Mask_Pulse)
+			{
+				mEnvelopes[maxInstrument].mActiveTablePulse = true;
+				mEnvelopes[maxInstrument].mTablePulse = maxTablePulse;
 
-		if (mEnvelopes[maxInstrument].mTablePulse == 0)
-		{
-			mEnvelopes[maxInstrument].mTablePulse = maxTablePulse;
-			mTablesControls[kTableIndex_Pulse][maxTablePulse] = SIDBytes[kSIDVoicePulseWidthHi] & 0x0f;
-			mTablesValues[kTableIndex_Pulse][maxTablePulse] = SIDBytes[kSIDVoicePulseWidthLo];
-			mTablesControls[kTableIndex_Pulse][maxTablePulse+1] = 0xff;
-			mTablesValues[kTableIndex_Pulse][maxTablePulse+1] = 0;
+				// Just to make sure the pulse we get is roughly audible
+				mTablesControls[kTableIndex_Pulse][maxTablePulse + pulseTableOffset] = max(1,SIDBytes[tableElementIndex][kSIDVoicePulseWidthHi] & 0x0f);
+				mTablesValues[kTableIndex_Pulse][maxTablePulse + pulseTableOffset] = SIDBytes[tableElementIndex][kSIDVoicePulseWidthLo];
+				mTablesControls[kTableIndex_Pulse][maxTablePulse+1 + pulseTableOffset] = 0xff;
+				mTablesValues[kTableIndex_Pulse][maxTablePulse+1 + pulseTableOffset] = maxTablePulse;
+				pulseTableOffset++;
+			}
 		}
 	}
 
-	OptimiseTables(true);
+	OptimiseTables(true , false);
 
 	return maxInstrument;
 }
@@ -1537,4 +1772,31 @@ int CMusicStudioDoc::getNextFreeTableControl(const int tableIndex)
 		}
 	}
 	return 1;
+}
+
+int CMusicStudioDoc::GetComplexityScore(void)
+{
+	int complexity = GetNumEnvelopes() * 10;
+
+	for (int i=0;i<MusicStudio1::MusicFile::kMaxBlocks;i++)
+	{		
+		complexity += mBlocks[i].GetLength();
+	}
+
+	return complexity;
+}
+
+int CMusicStudioDoc::GetNumEnvelopes(void)
+{
+	int num = 0;
+
+	for (int i=0;i<MusicStudio1::MusicFile::kMaxEnvelopes;i++)
+	{		
+		if (mEnvelopes[i].mIsUsed || mEnvelopes[i].mActiveTableWave || mEnvelopes[i].mWaveControl)
+		{
+			num++;
+		}
+	}
+
+	return num;
 }

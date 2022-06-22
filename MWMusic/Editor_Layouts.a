@@ -1,0 +1,181 @@
+!zn
+Screen_main_offsets_effect2
+	!word effect_AttackControl+8	; A hack for the split effect data
+Screen_main_offsets
+Screen_main_offsets_effect
+	!word effect_AttackDecay+8
+Screen_main_offsets_sequence
+	!word sequences_start
+Screen_main_offsets_tracks
+	!word tune0_0
+	!word tune0_1
+	!word tune0_2
+
+Screen_main_offsets_colour
+Screen_main_offsets_colour_effect
+	!by VIC2Colour_DarkGrey
+Screen_main_offsets_colour_sequence
+	!by VIC2Colour_DarkGrey
+Screen_main_offsets_colour_tracks
+	!by VIC2Colour_LightGrey
+	!by VIC2Colour_DarkGrey
+	!by VIC2Colour_DarkGrey
+
+ScreenNumber_sequenceStp	!by 0
+ScreenNumber_trackStp		!by 0
+
+
+ScreenNumber_effect			!by 0
+ScreenIndex_effect			!word ScreenNumber_effect
+
+ScreenNumber_sequence		!by 0
+ScreenIndex_sequence		!word ScreenNumber_sequence
+
+ScreenNumber_track			!by 0
+ScreenIndex_track			!word ScreenNumber_track
+
+ScreenNumber_trackPlaying	!by 0
+ScreenIndex_trackPlaying	!word ScreenNumber_trackPlaying
+
+ScreenIndex_trackTempo1		!word tuneInfo + 6
+ScreenIndex_trackTempo2		!word tuneInfo + 7
+
+ScreenIndex_voices_sequenceIndex	!word voices_sequenceIndex , voices_sequenceIndex + 1 , voices_sequenceIndex + 2
+
+editor_currentSeq !by 0 , 0 , 0
+ScreenIndex_voices_currentSequence	!word editor_currentSeq , editor_currentSeq + 1 , editor_currentSeq + 2
+
+
+editor_currentSeqStp	!by 0 , 0 , 0																						;NEW SEQSTEP NUMBER
+ScreenIndex_voices_currentSeqStep	!word editor_currentSeqStp , editor_currentSeqStp + 1 , editor_currentSeqStp + 2		;NEW SEQSTEP NUMBER
+
+editor_currentTrkStp	!by 0 , 0 , 0																						;NEW TRKSTEP NUMBER
+ScreenIndex_voices_currentTrkStep	!word editor_currentTrkStp , editor_currentTrkStp + 1 , editor_currentTrkStp + 2		;NEW TRKSTEP NUMBER
+
+
+ScreenIndex_effectIndex		!word voices_currentEffect , voices_currentEffect + 1 , voices_currentEffect + 2
+
+ScreenIndex_voices_currentSequenceColour	!by VIC2Colour_Yellow , VIC2Colour_Yellow , VIC2Colour_Yellow
+
+
+ScreenIndex_musicSizeLo		!word musicSize
+ScreenIndex_musicSizeHi		!word musicSize+1
+
+ScreenIndex_BEAT_LENGTH		!word BEAT_LENGTH
+ScreenIndex_BEATS_IN_BAR	!word BEATS_IN_BAR
+ScreenIndex_TRK_FRAMECOUNT	!word TRK_FRAMECOUNT
+
+
+columnTopsLo	!by <topOfEffect , <topOfSequence , <topOfTrack0 , <topOfTrack1 , <topOfTrack2
+columnTopsHi	!by >topOfEffect , >topOfSequence , >topOfTrack0 , >topOfTrack1 , >topOfTrack2
+
+Screen_main
+topOfEffect
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor , 8 , 9 , Screen_main_offsets_effect ,  0 , 2 , Screen_main_offsets_colour_effect , 0 , 0 , topOfEffect + kGUI_Element__size , 0 , topOfSequence , 0 , 0
+!for .i , 7 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor , 8 , 9 + .i , Screen_main_offsets_effect ,  .i , 2 , Screen_main_offsets_colour_effect , 0 , topOfEffect + ((.i-1) * kGUI_Element__size) , topOfEffect + ((.i+1) * kGUI_Element__size) , 0 , topOfSequence + (.i * kGUI_Element__size) , 0 , 0
+}
+!for .i , 7 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor , 8 , 9 + 7 + .i , Screen_main_offsets_effect2 ,  .i-1 , 2 , Screen_main_offsets_colour_effect , 0 , topOfEffect + ((.i-1+7) * kGUI_Element__size) , topOfEffect + ((.i+8) * kGUI_Element__size) , 0 , topOfSequence + ((.i-1+8) * kGUI_Element__size) , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor , 8 , 9 + 15 , Screen_main_offsets_effect2 ,  7 , 2 , Screen_main_offsets_colour_effect , 0 , topOfEffect + (14 * kGUI_Element__size) , 0 , 0 , topOfSequence + (15 * kGUI_Element__size) , 0 , 0
+
+topOfSequence
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 16 , 9 , Screen_main_offsets_sequence ,  0 , 2 , Screen_main_offsets_colour_sequence , 1 , 0 , topOfSequence + kGUI_Element__size , topOfEffect , topOfTrack0 , OnSequenceUp , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 16 , 9 + .i , Screen_main_offsets_sequence ,  .i , 2 , Screen_main_offsets_colour_sequence , 1 , topOfSequence + ((.i-1) * kGUI_Element__size) , topOfSequence + ((.i+1) * kGUI_Element__size) , topOfEffect + (.i * kGUI_Element__size) , topOfTrack0 + (.i * kGUI_Element__size) , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 16 , 9 + 15 , Screen_main_offsets_sequence ,  15 , 2 , Screen_main_offsets_colour_sequence , 1 , topOfSequence + (14 * kGUI_Element__size) , 0 , topOfEffect + (15 * kGUI_Element__size) , topOfTrack0 + (15 * kGUI_Element__size) , 0 , OnSequenceDown
+
+topOfTrack0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 , Screen_main_offsets_tracks + 0 ,  0 , 2 , Screen_main_offsets_colour_tracks + 0 , 2 , 0 , topOfTrack0 + kGUI_Element__size , topOfSequence , topOfTrack1 , OnTrackUp , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 + .i , Screen_main_offsets_tracks + 0 ,  .i , 2 , Screen_main_offsets_colour_tracks + 0 , 2 , topOfTrack0 + ((.i-1) * kGUI_Element__size) , topOfTrack0 + ((.i+1) * kGUI_Element__size) , topOfSequence + (.i * kGUI_Element__size) , topOfTrack1 + (.i * kGUI_Element__size) , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 + 15 , Screen_main_offsets_tracks + 0 ,  15 , 2 , Screen_main_offsets_colour_tracks + 0 , 2 , topOfTrack0 + (14 * kGUI_Element__size) , 0 , topOfSequence + (15 * kGUI_Element__size) , topOfTrack1 + (15 * kGUI_Element__size) , 0 , OnTrackDown
+
+topOfTrack1
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 29 , 9 , Screen_main_offsets_tracks + 2 ,  0 , 2 , Screen_main_offsets_colour_tracks + 1 , 3 , 0 , topOfTrack1 + kGUI_Element__size , topOfTrack0 , topOfTrack2 , OnTrackUp , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 29 , 9 + .i , Screen_main_offsets_tracks + 2 ,  .i , 2 , Screen_main_offsets_colour_tracks + 1 , 3 , topOfTrack1 + ((.i-1) * kGUI_Element__size) , topOfTrack1 + ((.i+1) * kGUI_Element__size) , topOfTrack0 + (.i * kGUI_Element__size) , topOfTrack2 + (.i * kGUI_Element__size) , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 29 , 9 + 15 , Screen_main_offsets_tracks + 2 ,  15 , 2 , Screen_main_offsets_colour_tracks + 1 , 3 , topOfTrack1 + (14 * kGUI_Element__size) , 0 , topOfTrack0 + (15 * kGUI_Element__size) , topOfTrack2 + (15 * kGUI_Element__size) , 0 , OnTrackDown
+
+topOfTrack2
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 , Screen_main_offsets_tracks + 4 ,  0 , 2 , Screen_main_offsets_colour_tracks + 2 , 4 , 0 , topOfTrack2 + kGUI_Element__size , topOfTrack1 , 0 , OnTrackUp , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 + .i , Screen_main_offsets_tracks + 4 ,  .i , 2 , Screen_main_offsets_colour_tracks + 2 , 4 , topOfTrack2 + ((.i-1) * kGUI_Element__size) , topOfTrack2 + ((.i+1) * kGUI_Element__size) , topOfTrack1 + (.i * kGUI_Element__size) , 0 , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 + 15 , Screen_main_offsets_tracks + 4 ,  15 , 2 , Screen_main_offsets_colour_tracks + 2 , 4 , topOfTrack2 + (14 * kGUI_Element__size) , 0 , topOfTrack1 + (15 * kGUI_Element__size) , 0 , 0 , OnTrackDown
+
+	+MGUI_Elements_End
+
+
+
+Screen_vibratos_offsets_colour_vibratos
+	!by VIC2Colour_DarkGrey
+	!by VIC2Colour_DarkGrey
+
+Screen_vibratos_offsets_vibratos
+	!word vibratoPattern1
+	!word vibratoPattern2
+
+Screen_vibratos
+topOfVibrato1
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 , Screen_vibratos_offsets_vibratos + 0 ,  0 , 2 , Screen_vibratos_offsets_colour_vibratos + 0 , 0 , 0 , topOfVibrato1 + kGUI_Element__size , 0 , topOfVibrato2 , 0 , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 + .i , Screen_vibratos_offsets_vibratos + 0 ,  .i , 2 , Screen_vibratos_offsets_colour_vibratos + 0 , 0 , topOfVibrato1 + ((.i-1) * kGUI_Element__size) , topOfVibrato1 + ((.i+1) * kGUI_Element__size) , 0 , topOfVibrato2 + (.i * kGUI_Element__size) , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 23 , 9 + 15 , Screen_vibratos_offsets_vibratos + 0 ,  15 , 2 , Screen_vibratos_offsets_colour_vibratos + 0 , 0 , topOfVibrato1 + (14 * kGUI_Element__size) , 0 , 0 , topOfVibrato2 + (15 * kGUI_Element__size) , 0 , 0
+
+topOfVibrato2
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 , Screen_vibratos_offsets_vibratos + 2 ,  0 , 2 , Screen_vibratos_offsets_colour_vibratos + 1 , 1 , 0 , topOfVibrato2 + kGUI_Element__size , topOfVibrato1 , 0 , 0 , 0
+!for .i , 14 {
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 + .i , Screen_vibratos_offsets_vibratos + 2 ,  .i , 2 , Screen_vibratos_offsets_colour_vibratos + 1 , 1 , topOfVibrato2 + ((.i-1) * kGUI_Element__size) , topOfVibrato2 + ((.i+1) * kGUI_Element__size) , topOfVibrato1 + (.i * kGUI_Element__size) , 0 , 0 , 0
+}
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Cursor | kGUI_ElementType_Extra_Number , 35 , 9 + 15 , Screen_vibratos_offsets_vibratos + 2 ,  15 , 2 , Screen_vibratos_offsets_colour_vibratos + 1 , 1 , topOfVibrato2 + (14 * kGUI_Element__size) , 0 , topOfVibrato1 + (15 * kGUI_Element__size) , 0 , 0 , 0
+
+	+MGUI_Elements_End
+
+
+
+Screen_headers
+; Header values, not directly editable although they could be
+; Effect
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 8 , 8 , ScreenIndex_effect ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 16 , 8 , ScreenIndex_sequence ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 33 , 8 , ScreenIndex_track ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+	+MGUI_Element kGUI_ElementType_HexDisplay , 26 , 2 , ScreenIndex_trackPlaying ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+;	+MGUI_Element kGUI_ElementType_DecimalDisplay , 25 , 4 , Editor_currentTempoIndex ,  0 , 1 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay , 26 , 5 , ScreenIndex_trackTempo1 ,  0 , 1 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay , 26 , 6 , ScreenIndex_trackTempo2 ,  0 , 1 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+	
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 29 , 2 , ScreenIndex_voices_currentSequence+0 ,  0 , 2 , ScreenIndex_voices_currentSequenceColour+0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 33 , 2 , ScreenIndex_voices_currentSequence+2 ,  0 , 2 , ScreenIndex_voices_currentSequenceColour+1 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 37 , 2 , ScreenIndex_voices_currentSequence+4 ,  0 , 2 , ScreenIndex_voices_currentSequenceColour+2 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 29 , 5 , ScreenIndex_voices_currentSeqStep+0 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0	;NEW SEQSTEP NUMBER
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 33 , 5 , ScreenIndex_voices_currentSeqStep+2 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 37 , 5 , ScreenIndex_voices_currentSeqStep+4 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 29 , 3 , ScreenIndex_voices_currentTrkStep+0 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0	;NEW TRKSTEP NUMBER
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 33 , 3 , ScreenIndex_voices_currentTrkStep+2 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 37 , 3 , ScreenIndex_voices_currentTrkStep+4 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0	
+	
+	
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 29 , 4 , ScreenIndex_effectIndex+0 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 33 , 4 , ScreenIndex_effectIndex+2 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 37 , 4 , ScreenIndex_effectIndex+4 ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 3 , 2 , ScreenIndex_musicSizeLo ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 1 , 2 , ScreenIndex_musicSizeHi ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	
+
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 17 , 4 , ScreenIndex_TRK_FRAMECOUNT ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 17 , 3 , ScreenIndex_BEAT_LENGTH ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+	+MGUI_Element kGUI_ElementType_HexDisplay | kGUI_ElementType_Reverse , 17 , 2 , ScreenIndex_BEATS_IN_BAR ,  0 , 2 , 0 , -1 , 0 , 0 , 0 , 0 , 0 , 0
+
+
+	+MGUI_Elements_End

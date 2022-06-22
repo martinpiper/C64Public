@@ -11,13 +11,21 @@ kAnimationEngine_flipY = %10000000
 	!by >(.t+2) , <(.t+2)
 }
 
+!macro MAnimationFrame_DisplaySpeed .address , .speed {
+!for .i , .speed {
+	+MAnimationFrame_Display .address
+}
+}
+
 !macro MAnimationFrame_DisplayStop .address {
 	!by >.address , <.address
-	!by 0
+	; To avoid reading off the end of the animation data, two bytes are needed
+	!by 0 , 0
 }
 
 !macro MAnimationFrame_Delete .address {
-	!by 0
+	; To avoid reading off the end of the animation data, two bytes are needed
+	!by 0 , 0
 }
 
 !macro MAnimationFrame_DisplayGoto .address , .then {
@@ -25,11 +33,21 @@ kAnimationEngine_flipY = %10000000
 	!by >.then , <.then
 }
 
+!macro MAnimationFrame_DisplaySpeedGoto .address , .speed , .then {
+!if .speed > 1 {
+!for .i , .speed - 1 {
+	+MAnimationFrame_Display .address
+}
+}
+	+MAnimationFrame_DisplayGoto .address , .then
+}
+
 AnimationEngine_frameLo					!fill kAnimationEngine_maxSlots , 0
 ; Also used as an "active" slot flag
 AnimationEngine_frameHi					!fill kAnimationEngine_maxSlots , 0
 
 AnimationEngine_posX					!fill kAnimationEngine_maxSlots , 0
+AnimationEngine_posXHi					!fill kAnimationEngine_maxSlots , 0
 AnimationEngine_posY					!fill kAnimationEngine_maxSlots , 0
 
 AnimationEngine_framesPositionLo		!fill kAnimationEngine_maxSlots , 0
@@ -117,26 +135,23 @@ AnimationEngine_MutateToTypeIfDifferent
 
 !zn
 AnimationEngine_RenderSprites
-	lda #0
-	sta EmitSpriteFrame_count
 	ldy #kAnimationEngine_maxSlots-1
+	; X = Sprite register store index
+	ldx #0
 .l1
 	lda AnimationEngine_frameHi,y
 	beq .noEntry
 	sta .smJSR1+2
 	lda AnimationEngine_frameLo,y
 	sta .smJSR1+1
-	lda AnimationEngine_flips,y
-	sta EmitSpriteFrame_flips
-	lda AnimationEngine_posY,y
-	ldx AnimationEngine_posX,y
 .smJSR1 jsr $1234
 .noEntry
 	dey
 	bpl .l1
 
+	stx EmitSpriteFrame_count
+
 	; Clear any remaining hardware sprites, since we do not want them hanging around on the screen after the animation is deleted
-	ldx EmitSpriteFrame_count
 	lda #0
 .cl1
 	cpx #kBus24Bit_SpritesMaxNum*4	; max 24 hardware sprites

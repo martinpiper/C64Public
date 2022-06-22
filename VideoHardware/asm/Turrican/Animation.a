@@ -135,7 +135,8 @@ AnimationFrames_Process
 }
 	+MSignExtend24Bit
 
-	+MAddU8ToAddr16 112 , zeroPage_Temp0 , zeroPage_Temp1
+;	+MAddU8ToAddr16 112 , zeroPage_Temp0 , zeroPage_Temp1
+	+MAddU8ToAddr16 160 , zeroPage_Temp0 , zeroPage_Temp1
 !macro MDivideCameraMove {
 	; Divide down
 	lda zeroPage_Temp1

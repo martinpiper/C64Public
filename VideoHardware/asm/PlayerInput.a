@@ -16,20 +16,22 @@ AllocatePlayer
 	; Allocate and remember the player index
 	ldy #kAnimationType_playerRunLeft
 	jsr AnimationEngine_Allocate
-	lda #120
+	lda #160
 	sta AnimationEngine_posX,x
-	lda #128
+	lda #0
+	sta AnimationEngine_posXHi,x
+	lda #120
 	sta AnimationEngine_posY,x
 	lda #kAnimationEngine_flipX
 	sta AnimationEngine_flips,x
 	stx playerAnimationIndex
 	rts
 
-; For wrap around screen position testing, these numbers may look a bit odd, but they are the result of a 256 wide sprite scan line
-kScreenSpriteOffScreen_right	= 243
-kScreenSpriteOffScreen_left		= 244
+; For wrap around screen position testing, these numbers may look a bit odd, but they are the result of a wide sprite scan line
+kScreenSpriteOffScreen_right	= $148
+kScreenSpriteOffScreen_left		= $1f8
 
-!macro MoveAnimationsForBy .animationPos , .by {
+!macro MoveAnimationsForBy .animationPos , .animationPosHi , .by {
 	; Update position for all other sprites except the player
 	ldx #kAnimationEngine_maxSlots-1
 .l1
@@ -37,33 +39,69 @@ kScreenSpriteOffScreen_left		= 244
 	beq .nl1
 	lda AnimationEngine_frameHi,x
 	beq .nl1
+
 	lda .animationPos,x
 !if .by < 0 {
 	sec
 	sbc #1
-	!if .animationPos = AnimationEngine_posX {
-		cmp #kScreenSpriteOffScreen_left
-		bne .il1
-	} else {
-		bcs .il1
+
+	!if .animationPos = AnimationEngine_posY {
+		bcc .deleteIt
 	}
+
 } else {
 	clc
 	adc #1
-	!if .animationPos = AnimationEngine_posX {
-		cmp #kScreenSpriteOffScreen_right
-		bne .il1
-	} else {
-		bcc .il1
+
+	!if .animationPos = AnimationEngine_posY {
+		bcs .deleteIt
 	}
 }
-	; Delete it
+.il1
+	sta .animationPos,x
+!if .animationPosHi != 0 {
+!if .by < 0 {
+	bcs .noHi
+	dec .animationPosHi,x
+.noHi
+} else {
+	bcc .noHi
+	inc .animationPosHi,x
+.noHi
+}
+}
+
+!if .by < 0 {
+	!if .animationPos = AnimationEngine_posX {
+		lda .animationPosHi,x
+		and #1
+		cmp #>kScreenSpriteOffScreen_left
+		bne .nl1
+		lda .animationPos,x
+		cmp #<kScreenSpriteOffScreen_left
+		bne .nl1
+	} else {
+		jmp .nl1
+	}
+} else {
+	!if .animationPos = AnimationEngine_posX {
+		lda .animationPosHi,x
+		and #1
+		cmp #>kScreenSpriteOffScreen_right
+		bne .nl1
+		lda .animationPos,x
+		cmp #<kScreenSpriteOffScreen_right
+		bne .nl1
+	} else {
+		jmp .nl1
+	}
+}
+
+.deleteIt
 	lda #0
 	sta AnimationEngine_frameHi,x
 	sta AnimationEngine_framesPositionHi,x
-	jmp .nl1
-.il1
-	sta .animationPos,x
+
 .nl1
 	dex
 	bpl .l1
@@ -172,7 +210,7 @@ HandleJoystick
 	jmp .notUp
 .isUp
 
-	+MoveAnimationsForBy AnimationEngine_posY , -1
+	+MoveAnimationsForBy AnimationEngine_posY , 0 , -1
 
 	ldx playerAnimationIndex
 	ldy #kAnimationType_playerRunUp
@@ -192,7 +230,7 @@ HandleJoystick
 	jmp .notDown
 .isDown
 
-	+MoveAnimationsForBy AnimationEngine_posY , 1
+	+MoveAnimationsForBy AnimationEngine_posY , 0 , 1
 
 	ldx playerAnimationIndex
 	ldy #kAnimationType_playerRunDown
@@ -212,7 +250,7 @@ HandleJoystick
 	jmp .notLeft
 .isLeft
 
-	+MoveAnimationsForBy AnimationEngine_posX , 1
+	+MoveAnimationsForBy AnimationEngine_posX , AnimationEngine_posXHi , 1
 
 	ldx playerAnimationIndex
 	ldy #kAnimationType_playerRunLeft
@@ -234,7 +272,7 @@ HandleJoystick
 	jmp .notRight
 .isRight
 
-	+MoveAnimationsForBy AnimationEngine_posX , -1
+	+MoveAnimationsForBy AnimationEngine_posX , AnimationEngine_posXHi , -1
 
 	ldx playerAnimationIndex
 	ldy #kAnimationType_playerRunLeft

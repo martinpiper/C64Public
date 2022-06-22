@@ -1,0 +1,261 @@
+!zn
+TutorialHint_countDisplay !by 0
+
+TutorialHint_Init
+	lda #0
+	sta TutorialHint_countDisplay
+	lda #-1
+	sta .oldXPos
+	sta .oldYPos
+	rts
+
+.oldXPos !by -1
+.oldYPos !by -1
+TutorialHint_PositionCheck
+	lda TutorialHint_countDisplay
+	beq .checkForHints
+
+	; TODO: Perhaps check the currently displayed hint, if the conditions have not yet been met then continue to display it by incrementing the count?
+
+	rts
+
+.checkForHints
+
+	lda EnemyPositionsX
+	cmp .oldXPos
+	bne .different
+	lda EnemyPositionsY
+	cmp .oldYPos
+	bne .different
+
+	rts
+
+.different
+	; TODO: Check the lo positions for mostly inside the tile... Same as the recharge tile.
+	lda EnemyPositionsX
+	sta .oldXPos
+	lda EnemyPositionsY
+	sta .oldYPos
+
+	; Check for any hint to display
+	ldx MapTutorialHintNum
+	+MAddr16ToAddr16_A MapTutorialHintAddr , tempWork0
+.ch1
+
+	jsr .testCurrentHint
+	bcc .displayHint
+
+	+MAddU8ToAddr16 MapTutorialHint_Size , tempWork0 , tempWork1
+	dex
+	bne .ch1
+
+	rts
+
+.displayHint
+	+MAddr16ToAddr16_A tempWork0 , .currentHintLo
+
+	; Backup the score panel data
+!for .y , ScorePanel_Hint_Lines {
+!set .yy = .y - 1
+	+MWordValueTo_XY ScorePanel_Hint_Addr + (.yy * VIC2ScreenCharsWidth)
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY ScorePanel_Hint_Backup_Addr + (.yy * ScorePanel_Hint_Width * 2)
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY ScorePanel_Hint_Width
+	jsr MemoryCopy_ForSize
+
+	+MWordValueTo_XY (ScorePanel_Hint_Addr & $3ff) + COLOURRAM + (.yy * VIC2ScreenCharsWidth)
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY ScorePanel_Hint_Backup_Addr + (.yy * ScorePanel_Hint_Width * 2) + ScorePanel_Hint_Width
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY ScorePanel_Hint_Width
+	jsr MemoryCopy_ForSize
+}
+
+	lda #25
+	sta TutorialHint_countDisplay
+
+	ldy #MapTutorialHint_ToCheck
+	lda (tempWork0),y
+	and #MapTutorialHint_ToCheck_SetTime
+	beq .notTimed
+	lda #250
+	sta TutorialHint_countDisplay
+.notTimed
+
+	; Display the text
+	ldy #MapTutorialHint_TextAddrLo
+	lda (tempWork0),y
+	sta tempWork2
+	ldy #MapTutorialHint_TextAddrHi
+	lda (tempWork0),y
+	sta tempWork3
+
+	lda #CartFile1_Bank_DataScorePanel_prg
+	jsr CartSelectBank_8K_NoSEI
+
+	+MWordValueToAddress_A ScorePanel_Hint_Addr , tempWork4
+	+MWordValueToAddress_A ScorePanel_Hint_Addr , tempWork6
+	lda tempWork7
+	and #3
+	ora #>COLOURRAM
+	sta tempWork7
+
+	ldx #ScorePanel_Hint_Lines
+.cl1
+	ldy #ScorePanel_Hint_Width-1
+.cl2
+	lda (tempWork2),y
+	sta (tempWork4),y
+	lda #VIC2Colour_White
+	sta (tempWork6),y
+	dey
+	bpl .cl2
+
+	+MAddU8ToAddr16 ScorePanel_Hint_Width , tempWork2 , tempWork3
+	+MAddU8ToAddr16 VIC2ScreenCharsWidth , tempWork4 , tempWork5
+	+MAddU8ToAddr16 VIC2ScreenCharsWidth , tempWork6 , tempWork7
+
+	dex
+	bne .cl1
+
+	jsr CartKillBank
+
+	rts
+
+.currentHintLo !by 0 , 0
+
+; Return:
+; CC = Successful check
+; CS = Failed check
+.testCurrentHintNoPosition
+	ldy #MapTutorialHint_ToCheck
+	lda (tempWork0),y
+	sta tempWork2
+	and #MapTutorialHint_ToCheck_ForcePosition
+	bne .testCurrentHint
+	lda tempWork2
+	and #MapTutorialHint_ToCheck_SetTime
+	bne .ch2
+	jmp .ch4
+
+.testCurrentHint
+	ldy #MapTutorialHint_ToCheck
+	lda (tempWork0),y
+	sta tempWork2
+	beq .ch2
+
+	and #MapTutorialHint_ToCheck_MapX
+	beq .ch3
+	ldy #MapTutorialHint_MapX
+	lda (tempWork0),y
+	cmp EnemyPositionsX
+	bne .ch2
+.ch3
+
+	lda #MapTutorialHint_ToCheck_MapY
+	bit tempWork2
+	beq .ch4
+	ldy #MapTutorialHint_MapY
+	lda (tempWork0),y
+	cmp EnemyPositionsY
+	bne .ch2
+.ch4
+
+	lda #MapTutorialHint_ToCheck_RunningProbe
+	bit tempWork2
+	beq .ch5
+	ldy #MapTutorialHint_RunningProbe
+	lda (tempWork0),y
+	cmp CaptureProbe_RunningProbe
+	bne .ch2
+.ch5
+
+	lda #MapTutorialHint_ToCheck_CapturedListCount
+	bit tempWork2
+	beq .ch6
+	ldy #MapTutorialHint_CapturedListCount
+	lda (tempWork0),y
+	cmp CaptureProbe_CapturedListCount
+	bne .ch2
+.ch6
+
+	lda #MapTutorialHint_ToCheck_AddrForValue
+	bit tempWork2
+	beq .ch7
+	ldy #MapTutorialHint_AddrForValueLo
+	lda (tempWork0),y
+	sta .sma1+1
+	ldy #MapTutorialHint_AddrForValueHi
+	lda (tempWork0),y
+	sta .sma1+2
+	ldy #MapTutorialHint_AddrForValue
+	lda (tempWork0),y
+.sma1	cmp $1234
+	bne .ch2
+
+.ch7
+
+	clc
+	rts
+
+.ch2
+	sec
+	rts
+
+TutorialHint_FrameUpdate
+	lda TutorialHint_countDisplay
+	bne .processHint
+
+	rts
+
+.processHint
+	+MAddr16ToAddr16_A .currentHintLo , tempWork0
+	jsr .testCurrentHintNoPosition
+	bcs .doTimeout
+
+	rts
+
+.doTimeout
+	; TODO: While this is counting down it could animate the display to show the hint text closing...
+	dec TutorialHint_countDisplay
+	+lbne .exitHint
+
+	bcc .noClear
+
+	lda #MapTutorialHint_ToCheck_Delete
+	bit tempWork2
+	beq .noClear
+	lda #0
+	ldy #MapTutorialHint_ToCheck
+	sta (tempWork0),y
+.noClear
+
+
+
+	; Cause a rescan of the current position
+	lda #-1
+	sta .oldXPos
+	sta .oldXPos
+	; Restore the score panel data
+!for .y , ScorePanel_Hint_Lines {
+!set .yy = .y - 1
+	+MWordValueTo_XY ScorePanel_Hint_Backup_Addr + (.yy * ScorePanel_Hint_Width * 2)
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY ScorePanel_Hint_Addr + (.yy * VIC2ScreenCharsWidth)
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY ScorePanel_Hint_Width
+	jsr MemoryCopy_ForSize
+
+	+MWordValueTo_XY ScorePanel_Hint_Backup_Addr + (.yy * ScorePanel_Hint_Width * 2) + ScorePanel_Hint_Width
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY (ScorePanel_Hint_Addr & $3ff) + COLOURRAM + (.yy * VIC2ScreenCharsWidth)
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY ScorePanel_Hint_Width
+	jsr MemoryCopy_ForSize
+}
+
+.exitHint
+
+	rts
+

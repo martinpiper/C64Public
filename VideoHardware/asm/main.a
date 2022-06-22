@@ -1,6 +1,9 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 
 !to "bin/main.prg", cbm
@@ -22,7 +25,7 @@ zeroPage_Temp1	= $11
 ;Mode7LayersEnable = 1
 
 ; Define this to include graphics data and not include music
-IncludeGraphicsData = 1
+;IncludeGraphicsData = 1
 
 !zn
 *=$200
@@ -35,6 +38,7 @@ Initialise_NoIRQServiceRoutine = 1
 !source "stdlib/Initialise.a"
 !source "BombJack/stdlib/Bus24Bit.a"
 !source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
 !source "BombJack/stdlib/Music.a"
 
 !zn
@@ -42,6 +46,10 @@ start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+!ifdef IncludeGraphicsData {
+	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
+}
 	jsr Bus24Bit_Init
 	jsr Video_DisableDisplay
 	jsr Video_InitDisplaySpritesScrollsBackground
@@ -66,8 +74,11 @@ start
 	lda #16
 	sta CIA2PortBRS232
 
-	; Enable screen, tiles, border shrink
-	lda #$f0
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+	sta CIA2PortBRS232
+
+	lda #kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 
 	jsr Video_WaitVBlank
@@ -105,6 +116,7 @@ setupFrame
 !source "asm/PlayerInput.a"
 !source "asm/Mode7.a"
 !source "asm/StackedSprites.a"
+!source "tmp/spriteSheet.txt.a"
 !source "asm/AnimationData.a"
 !source "asm/CharacterLogic.a"
 !source "asm/CharacterLogicData.a"
@@ -134,7 +146,7 @@ InitGraphicsMemory
 
 	; Maps
 	+MRLEScreenDataToDefaultTileScreen .tilesMap
-	+MRLEScreenDataToDefaultCharScreen .charsMap
+	+MRLEScreenDataToDefaultCharScreen .charsMap , .charsMap2
 
 	; Chars
 	+MRLEPlanesDataToDefaultCharScreen .plane0 , .plane1 , .plane2 , .plane3
@@ -179,7 +191,12 @@ InitGraphicsMemory
 	!bin "tmp/status_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x20'
 
 .charsMap
-	!bin "tmp/status_map.cmp"; to 24bit bus at '0x9000' and addressEx '0x01'
+	!bin "tmp/status_map.cmp"; to 24bit bus at '0x4000' and addressEx '0x80'
+.charsMap2
+	!bin "tmp/status_map.cmp2"; to 24bit bus at '0x8000' and addressEx '0x80'
 .tilesMap
 	!bin "tmp/map.cmp"; to 24bit bus at '0x2000' and addressEx '0x80'
 }
+
+
+EndMainMemory

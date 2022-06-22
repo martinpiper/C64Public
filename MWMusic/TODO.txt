@@ -1,0 +1,32 @@
+* Add some code to do a data integrity check on the expanded data, especially for misaligned sequences
+
+
+
+* Compactor to scan the output tune and write out defines for the music player code to detect, this is so it can remove redundant code
+* Can also reduce unused effect bytes
+* Also remove unused vibrato table entries
+
+
+
+* Compactor can store effects data linearly, instead of multiplying by 8 in two effect banks.
+	This will allow easier removal of unused effect data as well as reduce CPU cycles
+	A special define can switch to the new data storage mode
+
+
+
+
+* Find UI space to include the per channel sequence step position during playing for more accurate debugging
+* Find space for the global position for the cursor position in the sequence or track according
+
+
+
+* Use more readable labels in player sources
+
+
+
+* Either that or the ability to hit, say, Return while on a value to allow you to explicitly enter a number: highlight value, hit return, type FC, then enter to confirm.
+
+
+
+* Triggering a single Sequence or setting a dummy note/duration to try out with a selected Voice would require running a single Track channel while muting the other two. Since you've already suggested adding selective Mutes for each Trk channel, we could certainly extend this function for sequence testing, by automatically muting two of the three Trk channels and running the sequence in isolation in the third.
+	Yes, this would certainly be useful in the case of the sequence test, but it doesn't really make sense to test the current Vce without adding the ability to define its test note & duration (in other words a short sequence of one note), and in the real world I normally fine-tune voices by running them in a sequence alongside other sounds to hear how they fit together. Indeed, with drum tracks the Vce may change many times during a sequence (e.g Kick, hi-hat, hi-hat, hi-hat, Snare, hi-hat, hi-hat, hi-hat), so hearing that in context also makes far more sense than a simple 'trigger Vce' command.

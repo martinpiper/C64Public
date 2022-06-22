@@ -10,6 +10,7 @@
 !initmem $f2	; JAM
 
 !source "../stdlib/stdlib.a"
+!source "../stdlib/LongBranches.a"
 
 InvalidAddress = $7fff
 
@@ -179,8 +180,20 @@ TitleScreenAnimationHook_Enable = 1
 Scroller_NoInitialiseMachine = 1
 Initialise_NoIRQServiceRoutine = 1
 
+*=$200
+CoreSpecificCode_Start = *
 !source "asm/PreBoot.a"
+; This colour area of the screen is already set to be white by the cartridge boot, so this just changes the displayed loading message to include "<<>>"
+*=(13*40)+15
+!scr "<<loading>>"
 !source "asm/DecompCode.a"
+CoreSpecificCode_End = *
+
+; This is some initially spare memory
+*=$f00
+!source "FingerPrint.a"
+
+
 
 Scroller_EarlyStartHook_Enable = 1
 !source "ScrollEntryCommon.a"

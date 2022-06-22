@@ -109,6 +109,8 @@ BeforeScrollers
 .loffScreen jmp .offScreen
 ; Bullets movement and render bullets to screen
 AfterScrollers
+	jsr TutorialHint_FrameUpdate
+
 	lda DisplayingSubGame
 	beq .os1
 	rts

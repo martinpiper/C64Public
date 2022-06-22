@@ -1,5 +1,28 @@
 !zn
 AnimTestSpriteScreenEdge
+!ifdef kBus24Bit_VideoLayer_HasOverscan {
+	lda zeroPage_Temp5
+	beq .onScrXNoMSB
+	cmp #1
+	bne .offScr
+	lda zeroPage_Temp4
+	cmp #<(320+16)
+	bcs .offScr
+
+	; MSBX
+	lda SpriteFrameDataColour,x
+	ora #$10
+	sta SpriteFrameDataColour,x
+	jmp .onScrX
+
+.onScrXNoMSB
+	; Clear MSBX
+	lda SpriteFrameDataColour,x
+	and #$ef
+	sta SpriteFrameDataColour,x
+}
+
+!ifndef kBus24Bit_VideoLayer_HasOverscan {
 	lda zeroPage_Temp5
 	bne .overScrRightTest
 	lda zeroPage_Temp4
@@ -14,6 +37,7 @@ AnimTestSpriteScreenEdge
 	lda zeroPage_Temp4
 	cmp #245
 	bcc .offScr
+}
 
 .onScrX
 	lda zeroPage_Temp3

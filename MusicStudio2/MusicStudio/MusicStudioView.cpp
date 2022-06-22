@@ -12,6 +12,11 @@
 #include "MainFrm.h"
 #include "ExportToC64.h"
 #include "Instrument.h"
+#include "RipSID.h"
+#include "RNPlatform/Inc/StringUtils.h"
+#include "RNPlatform/Inc/MessageHelper.h"
+#include "RNPlatform/Inc/PlatformInfo.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -94,6 +99,9 @@ BEGIN_MESSAGE_MAP(CMusicStudioView, CFormView)
 	ON_BN_CLICKED(IDC_BUTTON7, &CMusicStudioView::OnBnClickedInsertEnvelope)
 	ON_COMMAND(ID_FILE_EXPORTTOORIC, &CMusicStudioView::OnFileExporttoOric)
 	ON_UPDATE_COMMAND_UI(ID_FILE_EXPORTTOORIC, &CMusicStudioView::OnUpdateFileExporttoOric)
+	ON_COMMAND(ID_EDIT_CLEARALLDATA, &CMusicStudioView::OnEditClearalldata)
+	ON_COMMAND(ID_EDIT_SETDEFAULTDATA, &CMusicStudioView::OnEditSetdefaultdata)
+	ON_COMMAND(ID_FILE_EXPORTTOMIDI, &CMusicStudioView::OnFileExporttoMIDI)
 END_MESSAGE_MAP()
 
 // CMusicStudioView construction/destruction
@@ -176,6 +184,7 @@ void CMusicStudioView::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT59, mBlockEditTrackerTempoEdit2);
 	DDX_Control(pDX, IDC_EDIT60, mBlockEditTrackerTempoEdit3);
 	DDX_Control(pDX, IDC_EDIT8, mDynamicHelp);
+	DDX_Control(pDX, IDC_EDIT9, mEnvelopeNumDecimal);
 }
 
 BOOL CMusicStudioView::PreCreateWindow(CREATESTRUCT& cs)
@@ -441,6 +450,7 @@ void CMusicStudioView::OnDeltaposSpin2(NMHDR *pNMHDR, LRESULT *pResult)
 		envelopeNum = MusicStudio1::MusicFile::kMaxEnvelopes-1;
 	}
 	SetNumToEdit(mEnvelopeNum,envelopeNum);
+	mEnvelopeNumDecimal.SetWindowText(CString(RNReplicaNet::ToString(envelopeNum).c_str()));
 }
 
 void CMusicStudioView::OnBlockNumChange()
@@ -525,10 +535,13 @@ void CMusicStudioView::CommonSaveC64File(const char *address,const bool includeS
 	CStringA title(GetDocument()->mTitleInfo,32);
 	CStringA author(GetDocument()->mAuthorInfo,32);
 	CStringA released(GetDocument()->mReleasedInfo,32);
-	if (!theFile.OptimiseAndWrite("..\\..\\acme.exe","--lib ..\\MusicStudioConvert\\ --lib ..\\..\\ ..\\MusicStudioConvert\\",address,codeSize,trackSize,blockSize,envelopeSize,tableSize,requestedSong,includeSoundEffectCode,title,author,released,GetDocument()->mUsing6581,runningInEditor))
+	if (!theFile.OptimiseAndWrite("..\\..\\acme.exe","--msvc -v3 --lib ..\\MusicStudioConvert\\ --lib ..\\..\\ ..\\MusicStudioConvert\\",address,codeSize,trackSize,blockSize,envelopeSize,tableSize,requestedSong,includeSoundEffectCode,title,author,released,GetDocument()->mUsing6581,runningInEditor))
 	{
-		CString text(_T("There was a build error. Please send the music file and an explanation of what you were trying to do to martin.piper@gmail.com"));
+		CString text(_T("There was a build error. Please send the music file and an explanation of what you were trying to do to martin.piper@gmail.com\nDebug text follows...\n"));
 		((CMainFrame*)theApp.m_pMainWnd)->m_wndOutput.AddString(text);
+
+		CString debugOut(theFile.getLastDebugOutput().c_str());
+		((CMainFrame*)theApp.m_pMainWnd)->m_wndOutput.AddString(debugOut);
 		return;
 	}
 
@@ -1827,13 +1840,17 @@ void CMusicStudioView::OnBnClickedPlayEnvelope()
 	// Cache the result of the last SFX play so we don't spam the machine too much
 	if (!mLastPlayWasSFX)
 	{
+		bool backupmTrackerBlockEditState = GetDocument()->mTrackerBlockEditState;
+		GetDocument()->mTrackerBlockEditState = false;
 		int i,j;
 		// Create a temporary block with all the envelopes used
 		const int kNumBackupBlocks = 5;
 		CString backupBlock[kNumBackupBlocks];
+		bool backupmBlockLastEditedAsTracker[kNumBackupBlocks];
 		for (i=0;i<kNumBackupBlocks;i++)
 		{
 			backupBlock[i] = GetDocument()->mBlocks[i];
+			backupmBlockLastEditedAsTracker[i] = GetDocument()->mBlockLastEditedAsTracker[i];
 		}
 		CString tempBlock;
 
@@ -1842,6 +1859,7 @@ void CMusicStudioView::OnBnClickedPlayEnvelope()
 
 		for (j=0;j<kNumBackupBlocks-1;j++)
 		{
+			GetDocument()->mBlockLastEditedAsTracker[j] = false;
 			tempBlock = _T("DUR:02\r\n");
 			CString temp;
 			for (i = (j * MusicStudio1::MusicFile::kMaxEnvelopes) / (kNumBackupBlocks-1);i<((j+1) * MusicStudio1::MusicFile::kMaxEnvelopes) / (kNumBackupBlocks-1);i++)
@@ -1884,6 +1902,7 @@ void CMusicStudioView::OnBnClickedPlayEnvelope()
 		}		
 		for (i=0;i<kNumBackupBlocks;i++)
 		{
+			GetDocument()->mBlockLastEditedAsTracker[i] = backupmBlockLastEditedAsTracker[i];
 			GetDocument()->mBlocks[i] = backupBlock[i];
 
 			CStringA ansiBlock(GetDocument()->mBlocks[i]);
@@ -1891,6 +1910,7 @@ void CMusicStudioView::OnBnClickedPlayEnvelope()
 			int totalDuration = 0;
 			GetDocument()->mMusicFile.SetBlockFromText(i,ansiBlock,GetDocument()->mBlockErrorReport[i],byteSize,totalDuration);
 		}
+		GetDocument()->mTrackerBlockEditState = backupmTrackerBlockEditState;
 
 		PlayerMute(mPlayerHandle,0,false);
 		PlayerMute(mPlayerHandle,1,false);
@@ -2818,9 +2838,10 @@ void CMusicStudioView::OnFileRipSID()
 	CStringA path(dlg.GetPathName());
 #else
 	// Hard coded debugging to save my poor little fingers from having to do the same thing over and over whilst testing
-//	CStringA path("C:\\Downloads\\Wizball_guitar.sid");
-	CStringA path("C:\\Downloads\\Wizball_Highscore_Tune.sid");
-//	CStringA path("C:\\Downloads\\Wizball_title.sid");
+	//
+//	CStringA path("C:\\Users\\Martin Piper\\Downloads\\Secret_Project.sid");
+//	CStringA path("C:\\Users\\Martin Piper\\Downloads\\Wizball.sid");
+	CStringA path("C:\\CCS64\\Games\\Turrican_3.sid");
 #endif
 
 	GetDocument()->ClearCapturedSIDData();
@@ -2830,18 +2851,134 @@ void CMusicStudioView::OnFileRipSID()
 	sprintf(params,"-f%d",gSoftFrequency);
 	mPlayerHandle = AllocatePlayer(params,path);
 
+	CRipSID ripSID;
+	ripSID.mMaxSongs = PlayerGetMaxSong(mPlayerHandle);
+	ripSID.mTrackNumber = PlayerGetCurrentSong(mPlayerHandle);
+	ripSID.DoModal();
+
+	std::set<int> forceNoteTable;
+	int tokens = 0;
+	CString tok = ripSID.mForceNoteInstruments.Tokenize(_T(", ") , tokens);
+	while (!tok.IsEmpty())
+	{
+		int theNum = 0;
+		_stscanf(tok,_T("%x"),&theNum);
+		forceNoteTable.insert(theNum);
+//		forceNoteTable.insert(_ttoi(tok));
+		tok = ripSID.mForceNoteInstruments.Tokenize(_T(", ") , tokens);
+	}
+
+	PlayerSetCurrentSong(mPlayerHandle , ripSID.mTrackNumber);
+
 	sThreadRunning = true;
 	sThreadKillMusic = false;
 	CreateThread(0,0,sPlayerPlayThread,mPlayerHandle,0,0);
+
+	int tmpFlag = _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG );
+	int tmpFlag2 = tmpFlag & ~_CRTDBG_CHECK_ALWAYS_DF;
+	_CrtSetDbgFlag( tmpFlag2 );
 
 	MessageBox(_T("Press OK to stop ripping this SID."));
 
 	OnBnClickedStop();
 
-	GetDocument()->ProcessSIDCaptureData();
+	_CrtCheckMemory();
+	// Restore the old debug state if it was changed
+//	_CrtSetDbgFlag( tmpFlag );
+
+
+	GetDocument()->ClearDocument();
+	GetDocument()->ProcessSIDCaptureData(forceNoteTable);
+	int baselineScore = GetDocument()->GetComplexityScore();
+
+	if (ripSID.mAutoDetectPercussion)
+	{
+		int consideringEnvelope = 0;
+		while (consideringEnvelope < MusicStudio1::MusicFile::kMaxEnvelopes)
+		{
+			if (forceNoteTable.find(consideringEnvelope) != forceNoteTable.end() || !(GetDocument()->mEnvelopes[consideringEnvelope].mActiveTableWave || GetDocument()->mEnvelopes[consideringEnvelope].mWaveControl) || GetDocument()->mEnvelopes[consideringEnvelope].mActiveTableNote)
+			{
+				consideringEnvelope++;
+				continue;
+			}
+			// Check for percussion sounding instruments
+			int mergedControl = 0;
+			int wavePos = GetDocument()->mEnvelopes[consideringEnvelope].mTableWave;
+			while (wavePos < MusicStudio1::MusicFile::kMaxTableEntries)
+			{
+				int control = GetDocument()->mTablesControls[MusicStudio1::kTableIndex_Wave][wavePos];
+				if (control == 0xff)
+				{
+					break;
+				}
+				mergedControl |= control;
+				wavePos++;
+			}
+			if ((mergedControl & MusicStudio1::kSIDVoiceControl_Mask_Noise) && (mergedControl & (MusicStudio1::kSIDVoiceControl_Mask_Pulse | MusicStudio1::kSIDVoiceControl_Mask_Triangle | MusicStudio1::kSIDVoiceControl_Mask_Sawtooth)))
+			{
+				// Probably percussion?
+				// TODO: Any other checks needed?
+			}
+			else
+			{
+				// Skip it
+				consideringEnvelope++;
+				continue;
+			}
+
+			int numEnvelopesBefore = GetDocument()->GetNumEnvelopes();
+
+
+			forceNoteTable.insert(consideringEnvelope);
+
+			GetDocument()->ClearDocument();
+			GetDocument()->ProcessSIDCaptureData(forceNoteTable);
+			int newScore = GetDocument()->GetComplexityScore();
+
+			int numEnvelopesAfter = GetDocument()->GetNumEnvelopes();
+
+			// Don't allow a new note based envelope to increase the total number of envelopes
+			if (newScore >= baselineScore || numEnvelopesAfter > numEnvelopesBefore)
+			{
+				forceNoteTable.erase(consideringEnvelope);
+			}
+			else
+			{
+				baselineScore = newScore;
+			}
+
+			consideringEnvelope++;
+		}
+
+		// Run the final conversion again with the optimal list
+		GetDocument()->ClearDocument();
+		GetDocument()->ProcessSIDCaptureData(forceNoteTable);
+		GetDocument()->GetComplexityScore();
+	}
+
 	GetDocument()->ClearCapturedSIDData();
 
+	// Add tune information
+	GetDocument()->mGenericInfo.Append(CString("File: ") + CString(path));
+	GetDocument()->mGenericInfo.Append(CString("\r\nTune: ") + CString(RNReplicaNet::ToString(ripSID.mTrackNumber).c_str()));
+	if (ripSID.mAutoDetectPercussion)
+	{
+		GetDocument()->mGenericInfo.Append(CString("\r\nAuto detect percussion instruments"));
+	}
+	GetDocument()->mGenericInfo.Append(CString("\r\nForce notes instruments: "));
+	std::set<int>::iterator st = forceNoteTable.begin();
+	while (st != forceNoteTable.end())
+	{
+		int env = *st++;
+
+		GetDocument()->mGenericInfo.Append( GetHexNum(env) );
+		GetDocument()->mGenericInfo.Append( _T(" ") );
+	}
+
+	SetHelpState(kBlock);
+	CommonSetModified();
 	RedrawView();
+	OnEditOptimise();
 }
 
 
@@ -3085,3 +3222,210 @@ void CMusicStudioView::OnBnClickedInsertEnvelope()
 }
 
 
+
+
+void CMusicStudioView::OnEditClearalldata()
+{
+	int ret = MessageBox(_T("This will clear all data") , _T("Are you sure?") , MB_YESNO | MB_ICONEXCLAMATION | MB_DEFBUTTON2);
+	if (ret != IDYES)
+	{
+		return;
+	}
+
+	GetDocument()->ClearDocument();
+
+	GetDocument()->UpdateDocumentDataToInternalFile();
+	CommonSetModified();
+	RedrawView();
+}
+
+
+void CMusicStudioView::OnEditSetdefaultdata()
+{
+	int ret = MessageBox(_T("This will clear all data and set default values") , _T("Are you sure?") , MB_YESNO | MB_ICONEXCLAMATION | MB_DEFBUTTON2);
+	if (ret != IDYES)
+	{
+		return;
+	}
+
+	GetDocument()->ClearDocument();
+	GetDocument()->SetDefaultData();
+
+	GetDocument()->UpdateDocumentDataToInternalFile();
+	CommonSetModified();
+	RedrawView();
+}
+
+// Yuck
+template <typename T>
+static T MakeBigEndian(const T value)
+{
+	T ret = value;
+	if (sizeof(T) > 1 && RNReplicaNet::PlatformInfo::IsLittleEndian())
+	{
+		// Anything larger than one byte
+		for (size_t i = 0 ; i < sizeof(T) ; i++)
+		{
+			((unsigned char*)&ret)[i] = ((const unsigned char*)&value)[sizeof(T) - 1 - i];
+		}
+	}
+	return ret;
+}
+
+static void WriteVTime(RNReplicaNet::DynamicMessageHelper &fileData , int delta)
+{
+	unsigned char toOutput = 0;
+	while (delta > 0)
+	{
+		toOutput = (delta & 0x7f) | 0x80;
+		fileData << toOutput;
+		delta = delta >> 7;
+	}
+	toOutput = delta & 0x7f;
+	fileData << toOutput;
+}
+
+void CMusicStudioView::OnFileExporttoMIDI()
+{
+	CommonPreExport();
+
+	OnBnClickedStop();
+
+	// http://midi.teragonaudio.com/tech/midifile/ppqn.htm
+	// "PPQN clock ticks at the above tempo should be 500,000 / 96"
+	const short kTicksPerQuarter = 500000 / 96 / 2;
+
+	RNReplicaNet::DynamicMessageHelper theFile;
+	theFile << CMusicStudioDoc::kMIDIHeader;
+	theFile << MakeBigEndian((int) 6);
+	theFile << MakeBigEndian((short) 1);
+	theFile << MakeBigEndian((short) MusicStudio1::MusicFile::kMaxTracks);
+	theFile << MakeBigEndian(kTicksPerQuarter);
+
+	GetDocument()->UpdateDocumentDataToInternalFile();
+	MusicStudio1::MusicFile &music = GetDocument()->mMusicFile;
+	music.Optimise();
+
+	for (int track = 0 ; track < MusicStudio1::MusicFile::kMaxTracks ; track++)
+	{
+		RNReplicaNet::DynamicMessageHelper theTrack;
+		int lastTimeInFrames = 0;
+		int currentTimeInFrames = 0;
+		int trackIndex = 0;
+		int currentSustain = 0 , currentRelease = 0;
+		int currentEnvelope = 0;
+		int currentTranspose = 0;
+		int currentRepeat = 0;
+		// Loop until the end of the track
+		while (music.mTracks[track][trackIndex] < MusicStudio1::kMusicPlayer_StopTrack)
+		{
+			int theBlockIndex = music.mTracks[track][trackIndex];
+			trackIndex++;
+			if (theBlockIndex >= MusicStudio1::kMusicPlayer_TransposeBlock && theBlockIndex < MusicStudio1::kMusicPlayer_TransposeBlockNeg)
+			{
+				currentTranspose = theBlockIndex - MusicStudio1::kMusicPlayer_TransposeBlock;
+				continue;
+			}
+			if (theBlockIndex >= MusicStudio1::kMusicPlayer_TransposeBlockNeg && theBlockIndex < MusicStudio1::kMusicPlayer_StopTrack)
+			{
+				currentTranspose = -(theBlockIndex - MusicStudio1::kMusicPlayer_TransposeBlockNeg);
+				continue;
+			}
+			if (theBlockIndex >= MusicStudio1::kMusicPlayer_RepeatBlock && theBlockIndex < MusicStudio1::kMusicPlayer_TransposeBlock)
+			{
+				currentRepeat = theBlockIndex - MusicStudio1::kMusicPlayer_RepeatBlock;
+				continue;
+			}
+
+			if (theBlockIndex < MusicStudio1::MusicFile::kMaxBlocks)
+			{
+				do
+				{
+					std::list<MusicStudio1::BlockEntry*> &theBlock = music.mBlocks[theBlockIndex];
+					std::list<MusicStudio1::BlockEntry*>::iterator st = theBlock.begin();
+					while (st != theBlock.end())
+					{
+						MusicStudio1::BlockEntry *entry = *st++;
+						std::string command = entry->GetCommandName();
+						if (command.compare("Duration") == 0)
+						{
+							currentSustain = entry->GetDataByte0();
+							currentRelease = currentSustain;
+							continue;
+						}
+						if (command.compare("DurationTicks") == 0)
+						{
+							currentSustain = entry->GetDataByte1();
+							currentRelease = entry->GetDataByte0() - entry->GetDataByte1();
+							continue;
+						}
+						if (command.compare("Envelope") == 0)
+						{
+							currentEnvelope = entry->GetDataByte0();
+							continue;
+						}
+						if (command.compare("RestNote") == 0 || command.compare("RestNoteRelease") == 0)
+						{
+							currentTimeInFrames += currentSustain;
+							currentTimeInFrames += currentRelease;
+							continue;
+						}
+						if (entry->IsNote())
+						{
+							WriteVTime(theTrack , currentTimeInFrames - lastTimeInFrames);
+							lastTimeInFrames = currentTimeInFrames;
+							char theNote = (char) (entry->GetDataByte0() + currentTranspose);
+							theTrack << (char) (0x90 | track);
+							theTrack << theNote;
+							theTrack << (char) 127;
+							currentTimeInFrames += currentSustain;
+
+							WriteVTime(theTrack , currentTimeInFrames - lastTimeInFrames);
+							lastTimeInFrames = currentTimeInFrames;
+							theTrack << (char) (0x80 | track);
+							theTrack << theNote;
+							theTrack << (char) 127;
+							currentTimeInFrames += currentRelease;
+							continue;
+						}
+					}
+					currentRepeat--;
+				} while (currentRepeat >= 0);
+			}
+
+		}
+
+		// Write a final note off at the end of the track
+		WriteVTime(theTrack , currentTimeInFrames - lastTimeInFrames);
+		lastTimeInFrames = currentTimeInFrames;
+		theTrack << (char) (0x80 | track);
+		theTrack << 0;
+		theTrack << (char) 127;
+
+		// End of track
+		theTrack << (char) 0x00;
+		theTrack << (char) 0xff;
+		theTrack << (char) 0x2f;
+		theTrack << (char) 0x00;
+
+		theFile << CMusicStudioDoc::kMIDITrack;
+		// Again endian yuck
+		theFile << MakeBigEndian(theTrack.GetSize());
+		theFile.AddData(theTrack.GetBuffer(),theTrack.GetSize());
+	}
+
+	CFileDialog getFile(FALSE);
+	INT_PTR ret = getFile.DoModal();
+
+	if (ret != IDOK)
+	{
+		return;
+	}
+
+	CString realPathName = getFile.GetPathName();
+	_tremove(realPathName);
+
+	CT2CA theNameANSI(realPathName);
+	std::string theName(theNameANSI);
+	theFile.Write(theName.c_str() , true);
+}

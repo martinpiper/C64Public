@@ -1,6 +1,8 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 
 !to "bin/main.prg", cbm
@@ -79,6 +81,8 @@ mainLoopGame
 	inc SpriteFrameDataX
 	inc SpriteFrameDataX+1
 .notRight
+
+	jsr AnimationFrames_ProcessForDisplay
 
 	jmp mainLoopGame
 	rts

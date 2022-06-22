@@ -550,17 +550,31 @@ MultiplexExt_LastIRQ
 .noLessTime1
 	cmp #4
 	bne .noLessTimeEnd
+!ifdef IRQOpenBorders {
 	lda #<BottomBorderLessTime
 	sta Scroller_IRQVectorLo
 	lda #>BottomBorderLessTime
 	sta Scroller_IRQVectorHi
 } else {
+	lda #<BottomBorder
+	sta Scroller_IRQVectorLo
+	lda #>BottomBorder
+	sta Scroller_IRQVectorHi
+}
+} else {
 	cmp #5
 	bne .noLessTimeEnd
+!ifdef IRQOpenBorders {
 	lda #<BottomBorderLessTime
 	sta Scroller_IRQVectorLo
 	lda #>BottomBorderLessTime
 	sta Scroller_IRQVectorHi
+} else {
+	lda #<BottomBorder
+	sta Scroller_IRQVectorLo
+	lda #>BottomBorder
+	sta Scroller_IRQVectorHi
+}
 }
 } else {
 	lda #<ScorePanel1

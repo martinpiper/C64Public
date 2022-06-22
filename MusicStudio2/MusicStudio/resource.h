@@ -49,6 +49,7 @@
 #define IDD_MUSICSTUDIO_FORM2           313
 #define IDD_CONFIGURATION               315
 #define IDD_IMPORTMIDI                  316
+#define IDD_RIPSID                      317
 #define IDC_EDIT1                       1004
 #define IDC_SPIN1                       1005
 #define IDC_EDIT61                      1005
@@ -165,13 +166,16 @@
 #define ID_HELP_CONFIGURATION32777      32777
 #define ID_FILE_RIPSID                  32778
 #define ID_FILE_EXPORTTOORIC            32779
+#define ID_EDIT_CLEARALLDATA            32780
+#define ID_EDIT_SETDEFAULTDATA          32781
+#define ID_FILE_EXPORTTOMIDI            32782
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        317
-#define _APS_NEXT_COMMAND_VALUE         32780
+#define _APS_NEXT_RESOURCE_VALUE        318
+#define _APS_NEXT_COMMAND_VALUE         32783
 #define _APS_NEXT_CONTROL_VALUE         1095
 #define _APS_NEXT_SYMED_VALUE           312
 #endif

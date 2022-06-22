@@ -1,0 +1,118 @@
+MARTIN WALKER MUSIC EDITOR
+--------------------------
+
+Essentially, all the music editor is doing is changing various bytes in the default music data file & triggering the music routine itself on demand, nothing complex.
+
+
+Details of screen areas (derived from hi-res screenshot)
+
+
+Remote		?
+Retrig		?
+
+ 00:00		real time clock
+
+
+scans		number of scanlines currently consumed by music routine
+
+
+sync:		number of music routine calls (1 every 1/50Hz) before flashing metronome bar
+
+metronome bar	flash different colour (white) every Sync number of 50Hz calls.
+
+nt		current note selected in sequence (calculated from note number and translated into not name via text readout table
+
+stp		current sequence step number
+
+
+play		displays currently playing track number once triggered
+
+03 05 12	Current sequences playing (useful for tracking down out of sync channels)
+
+
+tmpo		global tempo value for current track (?? number of 50Hz calls before decrementing note duration ??)
+
+stp		current track step number (all three channel step numbers move in sync)
+
+
+
+VOICE 		Each 'instrument' comprises 16 data bytes, and this column displays the 16 bytes belonging to this chosen voice. I believe I allowed for up to a maximum of 32 instruments in the editor.
+
+
+SEQCE		Each sequence of notes can contain anything from three to 128 bytes. The first byte has its bit 7 set ($80) indicating the start of a sequence, with the voice number added in (e.g. $83 means the start of a sequence with voice 3), followed by the length of the note (byte 2), and the pitch of the note (byte 3 $00-$5F IIRC, being the offset in the note table that determines the low/high bytes for each SID frequency register to set the desired pitch.
+
+Subsequent notes to the first, only use two bytes (length, then pitch), and the final byte of each sequence is set to $FF. Basically, the editor defaults to all sequences being 128 bytes (or perhaps 64, I can't quite remember)
+
+
+TRACK		SID supports three separate music tracks, with the format:
+
+		1st byte: how many times to play the sequence
+
+		2nd byte: which sequence
+
+		3rd byte: how many times to play the next sequence
+
+		4th byte: which sequence etc. etc.
+
+The final byte of each track is once again set to $FF to loop back to the beginning, or $FE to End (you can just see from the Zzap screenshot that the first track reads 02, 03, FF, which means plays sequence 03 twice and then loop back to the beginning.
+
+I'd added an automatic fade routine specifically for Armalyte, using a new $FD track end byte for fade, instead of $FE for End track and the bog standard $FF for loop to start. However, the code addition just looks for this new $FD value as an option, with no changes to voice, sequence, or track data formats.
+
+I used $0C note length for a crotchet, so $06 becomes a quaver, $03 a semiquaver etc. related to the tempo value.
+
+
+
+Key commands (as far as I can remember, and cross-referenced against Walkers Way re-read)
+-----------------------------------------------------------------------------------------
+
+
+1, 2, 4 & 8	flip associated bit in byte currently being edited ($10, $20, $40, & $80)
+
+0		change currently selected byte to $00
+
+Insert		insert zero value byte at current step position, moving the following bytes one further down
+
+Delete		delete byte at current step position, moving the following bytes one further up
+
+Crsr up/down	decrease/increase step number in currently selected data column (16 bytes are displayed in each data column, so once stp value moves beyond $0F the 		currently displayed data is all moved up one row
+
+Crsr left/right	move to next column in left or right direction.
+
+Clr		zero byte
+
++/-		increment/decrement current voice, seqce or track (depending on which column is currently being edited)
+
+space		play/stop current track
+
+
+
+Details of initial blank music file
+-----------------------------------
+
+32 voices, each of 16 bytes.
+
+128 sequences, each of 128 bytes.
+
+16 tracks, each containing three channels of 128 bytes.
+
+
+
+Compactor
+---------
+
+Separate to the editor, I then created a separate 'compile' utility that:
+
+a) scanned through the voice columns to find the first with all 16 zero entries so all the subsequent ones could be stripped out before delivery.
+
+b) scanned through the seqce columns to find each $FF that signified the end byte of that sequence, modifying the existing sequencer offsets (defaulting to 128 bytes) to the correct length and discarding the redundant zeros following this byte.
+
+c) scanned through each track to find either $FF or $FE that signified the loop or end point of that track, other again using these values to discard the redundant zeros and modify the pointer table.
+
+
+
+Details of compactor routine (taken from Walkers Way diary of a game)
+--------------------------------------------------------------------
+
+"Yesterday and today were spent on the final piece of coding for the editor - the compactor! After my dummy run mentioncd earlier, I knew that automation was needed to squeeze together all of the sequences used for each piece, especially since these first two commissions each used 60-70 of them!
+
+The compactor has to search through the selected music track to find which sequences it uses. If the particular sequence has been previously found and compacted then it is ignored, otherwise its data is located in memory. Then the compactor shunts this new sequence information onto the end of the other compacted data until it recognises the end ofthe sequence by the appropriate byte values. Finally it stores the new end location of the compacted data and then continues through the track (I hope you all followed that - I may be asking questions later!) It took a lot of work to perfect a bug - free version, but it now takes a fraction of a second to do what took three hours by hand. Not a bad saving as long as I do it regularly!"

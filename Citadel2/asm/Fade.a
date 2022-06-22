@@ -8,10 +8,14 @@
 .fadeSpeed = 4
 .fadeSpeedDown = 4
 
-.fadeCharStrip=8
+.fadeCharStrip=32
 
 ;						$00, $01, $02, $03, $04, $05, $06, $07, $08, $09, $0a, $0b, $0c, $0d, $0e, $0f
 .fadeDownTab		!by $00, $0d, $09, $0c, $02, $08, $00, $0f, $02, $00, $08, $09, $04, $03, $04, $05
+
+; Each colour steps down to the next one, with MC bits considered
+.fadeDownTabMC		!by VIC2Colour_Black , VIC2Colour_Yellow , VIC2Colour_Blue , VIC2Colour_Blue , VIC2Colour_Blue , VIC2Colour_Purple , VIC2Colour_Black , VIC2Colour_Cyan
+					!by VIC2Colour_Black , VIC2Multicolour_Yellow , VIC2Multicolour_Blue , VIC2Multicolour_Blue , VIC2Multicolour_Blue , VIC2Multicolour_Purple , VIC2Colour_Black , VIC2Multicolour_Cyan
 
 .fadeUpTab
 	!by 0,VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_Blue
@@ -112,7 +116,7 @@ Fade_Stop
 
 	; Sprite common colours
 	lda VIC2ExtraSpriteColour1
-	and #15
+	and #$f
 	tax
 	lda .fadeDownTab,x
 	sta VIC2ExtraSpriteColour1
@@ -121,7 +125,7 @@ Fade_Stop
 .ls1
 
 	lda VIC2ExtraSpriteColour2
-	and #15
+	and #$f
 	tax
 	lda .fadeDownTab,x
 	sta VIC2ExtraSpriteColour2
@@ -138,7 +142,7 @@ Fade_Stop
 	sta AnimationEnemyFlags,x
 
 	lda AnimationSpriteColour,x
-	and #15
+	and #$f
 	tay
 	lda .fadeDownTab,y
 	sta AnimationSpriteColour,x
@@ -156,19 +160,29 @@ Fade_Stop
 .doChars
 
 !if 1 {
+	; Make the chars section animate faster
+	lda #0
+	sta .fadeDelay
 
 	lda smFadeStart+1
 	clc
 	adc #.fadeCharStrip
 	sta .sm3+1
 
-	lda #0
-	sta .fadeDelay
 smFadeStart	ldx #0
 .l5
-	sta COLOURRAM+$000,x
-	sta COLOURRAM+$100,x
-	sta COLOURRAM+$200,x
+!macro MCalcFadeStrip .addr , .colTab {
+	lda .addr,x
+	and #$f
+	tay
+	lda .colTab,y
+	sta .addr,x
+}
+
+	+MCalcFadeStrip COLOURRAM+$000 , .fadeDownTabMC
+	+MCalcFadeStrip COLOURRAM+$100 , .fadeDownTabMC
+	+MCalcFadeStrip COLOURRAM+$200 , .fadeDownTabMC
+
 	inx
 .sm3	cpx #8
 	bne .l5
@@ -177,8 +191,14 @@ smFadeStart	ldx #0
 	clc
 	adc #.fadeCharStrip
 	sta smFadeStart+1
+	beq .fadeIters1
 
+	rts
+
+.fadeIters1
+	lda .fadeSteps
 	beq .lFade_Stop
+	dec .fadeSteps
 	rts
 }
 .lFade_Stop

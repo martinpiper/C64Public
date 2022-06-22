@@ -1,21 +1,23 @@
-CaptureProbe_LastClickTimer	!by -1
-CaptureProbe_RunningProbe	!by -1
-CaptureProbe_LockedAnim		!by -1
-CaptureProbe_BreakLockDelay	!by 0
+CaptureProbe_LastClickTimer			!by -1
+CaptureProbe_RunningProbe			!by -1
+CaptureProbe_LockedAnim				!by -1
+CaptureProbe_BreakLockDelay			!by 0
 CaptureProbe_LockedAnimIgnoreTime	!by 0
 
 ; UI tweakable constants
 CaptureProbe_ClickInterval				= 15
-CaptureProbe_SnapBox					= 6
+CaptureProbe_SnapBox					= 12
 CaptureProbe_MoveSpeed					= 4
 CaptureProbe_BreakLockDelayLimit		= 25
 CaptureProbe_LockedAnimIgnoreTimeDelay	= 4
 
 CaptureProbe_CapturedList_max = 3
+CaptureProbe_CapturedListCount			!by 0
 ; List of captured enemy IDs (-1 based)
-CaptureProbe_CapturedList				!fill CaptureProbe_CapturedList_max , -1
+CaptureProbe_CapturedList				!fill CaptureProbe_CapturedList_max , 0
 ; List of corresponding animation index values
 CaptureProbe_CapturedListAnimations		!fill CaptureProbe_CapturedList_max , -1
+
 
 !zn {
 CaptureProbe_Init
@@ -24,6 +26,9 @@ CaptureProbe_Init
 	lda #-1
 	sta CaptureProbe_RunningProbe
 	sta CaptureProbe_LockedAnim
+
+	lda #0
+	sta CaptureProbe_CapturedListCount
 
 	ldx #CaptureProbe_CapturedList_max-1
 .l1
@@ -111,7 +116,7 @@ CaptureProbe_GeneralTick
 
 	; Update the captured list by removing any dead enemies
 	ldx #0
-	stx .smCount+1
+	stx CaptureProbe_CapturedListCount
 .l1
 	ldy CaptureProbe_CapturedList,x
 	beq .l2b
@@ -121,13 +126,13 @@ CaptureProbe_GeneralTick
 	sta CaptureProbe_CapturedList,x
 	jmp .l2b
 .l2
-	inc .smCount+1
+	inc CaptureProbe_CapturedListCount
 .l2b
 	inx
 	cpx #CaptureProbe_CapturedList_max
 	bne .l1
 
-.smCount	lda #0
+	lda CaptureProbe_CapturedListCount
 	cmp #2
 	bcc .onlyOneOrLess
 
@@ -149,7 +154,7 @@ CaptureProbe_GeneralTick
 
 
 	; Compact the list by moving the values down if possible
-	; This is iterative, over several frame if needed
+	; This is iterative, over several frames if needed
 	ldx #0
 .l3
 	lda CaptureProbe_CapturedList,x
@@ -284,7 +289,7 @@ CaptureProbe_RunCapture
 	; Now capture it
 	sty CaptureProbe_CapturedList
 	lda EnemyFlags-1,y
-	ora #EnemyFlags_IsCaptured
+	ora #EnemyFlags_IsCaptured | EnemyFlags_StayHere
 	sta EnemyFlags-1,y
 	sta AnimationEnemyFlags,x
 
@@ -302,7 +307,7 @@ CaptureProbe_RunCapture
 	lda AnimationSpriteColourBackup,x
 	sta AnimationSpriteColour,x
 
-.smAnim lda $1234,y
+;.smAnim lda $1234,y
 
 .nothingOld
 

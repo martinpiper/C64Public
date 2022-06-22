@@ -116,10 +116,14 @@ DisplayScreen
 
 
 SetMaskingCharScreen
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue 0
+
 !for .yy , 32 {
 !set .y = .yy -1
 	lda #kBus24Bit_CharScreenMap_EBBS
-	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * 64)
+	+MWordValueTo_XY kBus24Bit_CharScreenMap + (.y * kBus24Bit_CharScreenWidth)
 	jsr Bus24Bit_SetAddressBus
 	+MWordValueTo_AX CharScreen + (.y * 32)
 	ldy #32
@@ -128,7 +132,7 @@ SetMaskingCharScreen
 	; Luckily palette 15 colour 15 is black :)
 
 	lda #kBus24Bit_CharScreenMap_EBBS
-	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * 64)
+	+MWordValueTo_XY kBus24Bit_CharColourMap + (.y * kBus24Bit_CharScreenWidth)
 	jsr Bus24Bit_SetAddressBus
 	ldy #32
 	lda #$0f
@@ -233,7 +237,7 @@ TileScrollUpdates
 .delayTime !by 5
 
 !macro MDoShipFrame .x , .y {
-	+MLittleEndian16Bit -40 + (208 * .x)
+	+MLittleEndian16Bit -40 + (208 * .x) - 48
 	+MLittleEndian16Bit -136 + (112 * .y)
 }
 

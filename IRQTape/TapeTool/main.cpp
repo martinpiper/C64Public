@@ -31,18 +31,18 @@ Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocl$6a10 ocn $89 $88 $87 $86 $8
 
 // Using the assembled output and label file for offsets:
 // With TinyHeader = 1
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // No checksum blocks
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otf "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otf "..\R.MUS8000.PRG" 1 otl$c0 otf "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otf "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otf "..\R.MUS8000.PRG" 1 otl$c0 otf "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // For LoTD (Scroller_LOTD defined in _config.a)
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\LotDComp.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\LotDComp.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 
 // Without TinyHeader
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // No checksum blocks
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otf "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otf "..\R.MUS8000.PRG" 1 otl$c0 otf "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otf "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otf "..\R.MUS8000.PRG" 1 otl$c0 otf "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // For the BASIC run test without TinyHeader
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "HelloWorldBasic.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfb "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "HelloWorldBasic.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 
 // Writes the full kernal boot loader in one option using the label file offsets
 Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin c
@@ -58,15 +58,15 @@ m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCo
 
 // Using RLE compressed blocks, for the sprite data
 m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && C:\VICE\x64.exe test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfb "..\R.MUS8000.PRG" 1 otl$c0 otfb "..\TestMultiplexor.prg" 2 otl$c0 c && copy /y Loaders.lbl test.lbl && C:\VICE\x64.exe test.tap
 
 
 // With IgnoreSecondLoader and SmallLoader defined this will ignore the main second loader and just write the multiplexor demo.
 // The fastest (reliable) speed in this configuration is TapeTurboSpeed = $30
 // This results is about 985248 / 144 = 6842 bits per second, or 855 bytes per second.
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "..\TestMultiplexor.prg" $101 $4896 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "..\TestMultiplexor.prg" $101 $4896 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 // Without TinyHeader
-..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "..\TestMultiplexor.prg" $ff $101 $4896 $900 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
+..\..\acme.exe --lib  ../ --lib ../../  -v4 --msvc _config.a  Loaders.a && Debug\TapeTool.exe m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otf "..\TestMultiplexor.prg" $ff $101 $4896 $900 otl$c0 c && copy /y Loaders.lbl test.lbl && test.tap
 
 
 // With loading screen

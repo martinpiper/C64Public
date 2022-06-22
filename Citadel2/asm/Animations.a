@@ -1334,6 +1334,7 @@ AnimationInit2
 }
 
 	jsr EnemyProcessActivationInit
+	jsr TutorialHint_Init
 
 	jsr EnemyMapClear
 	jsr AnimationClear

@@ -1,0 +1,399 @@
+!zn
+!ifndef kGUI_ZP {
+kGUI_ZP = $f7
+}
+
+kGUI_ZP_element		= kGUI_ZP
+kGUI_ZP_screen		= kGUI_ZP_element + 2
+kGUI_ZP_value		= kGUI_ZP_element + 4
+
+GUI_cursorValue	!by 0
+
+; Entry:
+; A/X = lo/hi of element list created by MGUI_Element terminated by MGUI_Elements_End
+GUI_Render
+	sta kGUI_ZP_element
+	stx kGUI_ZP_element+1
+
+	inc .strobe
+
+	; Loop through all elements until the end of list element is encountered
+.l1
+	ldy #kGUI_Element_Offset_Type
+	lda (kGUI_ZP_element),y
+	bne .gotType
+	rts
+
+.gotType
+	sta .thisType
+
+	; Calculate the screen coordinates
+	ldy #kGUI_Element_Offset_Y
+	lda (kGUI_ZP_element),y
+	tax
+
+	lda GUI_ScreenTabYLo,x
+	sta kGUI_ZP_screen
+	lda GUI_ScreenTabYHi,x
+	sta kGUI_ZP_screen+1
+	
+	ldy #kGUI_Element_Offset_X
+	lda (kGUI_ZP_element),y
+	jsr .adjustPositionByA
+
+	lda #0
+	sta .reverseModifier
+	lda #kGUI_ElementType_Reverse
+	bit .thisType
+	beq .notReverse
+	lda #$80
+	sta .reverseModifier
+.notReverse
+
+	; Adjust the screen position with the number of digits
+	ldy #kGUI_Element_Offset_numDigits
+	lda (kGUI_ZP_element),y
+	sta .numDigits
+
+	lda #-1
+	sta .charColour
+	; Indirect through the colour address
+	ldy #kGUI_Element_Offset_colourAddress+1
+	lda (kGUI_ZP_element),y
+	beq .noColour
+	sta kGUI_ZP_value+1
+	dey
+	lda (kGUI_ZP_element),y
+	sta kGUI_ZP_value
+	ldy #0
+	lda (kGUI_ZP_value),y
+	sta .charColour
+.noColour
+
+	lda #0
+	sta .isHighlighted
+	lda kGUI_ZP_element
+	cmp .highlighted
+	bne .nh1
+	lda kGUI_ZP_element+1
+	cmp .highlighted+1
+	bne .nh1
+
+	lda #1
+	sta .isHighlighted
+
+	lda #kGUI_ElementType_Strobe
+	bit .thisType
+	beq .nh1
+
+	lda .strobe
+	and #%1111
+	sta .charColour
+.nh1
+
+	lda #kGUI_ElementType_Cursor
+	bit .thisType
+	beq .nc1
+
+	lda .isHighlighted
+	beq .nh2
+	ldy .numDigits
+	lda #'<' | $80
+	sta (kGUI_ZP_screen),y
+
+	jsr .addYellowColour
+
+	lda #kGUI_ElementType_Extra_Number
+	bit .thisType
+	beq .nc1
+
+	lda GUI_cursorValue
+	lsr
+	lsr
+	lsr
+	lsr
+	and #%1111
+	tax
+	lda .numToHex,x
+	ora #$80
+	iny
+	sta (kGUI_ZP_screen),y
+
+	lda GUI_cursorValue
+	and #%1111
+	tax
+	lda .numToHex,x
+	ora #$80
+	iny
+	sta (kGUI_ZP_screen),y
+
+	jmp .nc1
+.nh2
+	ldy .numDigits
+;	lda (kGUI_ZP_screen),y
+;	cmp #'<' | $80
+;	bne .nc1
+	lda #' '
+	sta (kGUI_ZP_screen),y
+	iny
+	sta (kGUI_ZP_screen),y
+	iny
+	sta (kGUI_ZP_screen),y
+.nc1
+
+
+	; Indirect through the value address
+	ldy #kGUI_Element_Offset_valueAddress
+	lda (kGUI_ZP_element),y
+	sta kGUI_ZP_value
+	iny
+	lda (kGUI_ZP_element),y
+	sta kGUI_ZP_value+1
+	ldy #0
+	lda (kGUI_ZP_value),y
+	pha
+	iny
+	lda (kGUI_ZP_value),y
+	sta kGUI_ZP_value+1
+	pla
+	sta kGUI_ZP_value
+
+	ldy #kGUI_Element_Offset_index
+	lda (kGUI_ZP_element),y
+	clc
+	adc kGUI_ZP_value
+	sta kGUI_ZP_value
+	bcc .noC2
+	inc kGUI_ZP_value+1
+.noC2
+
+	lda .isHighlighted
+	beq .nh4
+	lda kGUI_ZP_value
+	sta .highlightedValueAddress
+	lda kGUI_ZP_value+1
+	sta .highlightedValueAddress+1
+.nh4
+
+
+	; Choose what to render
+	lda #kGUI_ElementType_HexDisplay
+	bit .thisType
+	beq .notHex
+
+	jsr .adjustForNumDigits
+
+.dh1
+	; Only supports .numDigits = 1 or 2 at the moment
+	ldy #0
+	lda (kGUI_ZP_value),y
+	and #%1111
+	tax
+	lda .numToHex,x
+	jsr .reverseRenderDigit
+
+	dec .numDigits
+	beq .ler1
+
+	ldy #0
+	lda (kGUI_ZP_value),y
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	lda .numToHex,x
+	jsr .reverseRenderDigit
+
+.ler1
+	jmp .endRender
+.notHex
+	lda #kGUI_ElementType_DecimalDisplay
+	bit .thisType
+	beq .notDecimal
+	; TODO
+	jmp .endRender
+.notDecimal
+.endRender
+
+
+	lda #kGUI_ElementType_Cursor
+	bit .thisType
+	beq .nc2
+
+	lda .isHighlighted
+	beq .nh3
+	ldy #0
+	lda #'>' | $80
+	sta (kGUI_ZP_screen),y
+	jsr .addYellowColour
+	jmp .nc2
+.nh3
+	ldy #0
+;	lda (kGUI_ZP_screen),y
+;	cmp #'>' | $80
+;	bne .nc2
+	lda #' '
+	sta (kGUI_ZP_screen),y
+.nc2
+
+	lda kGUI_ZP_element
+	clc
+	adc #kGUI_Element__size
+	sta kGUI_ZP_element
+	bcc .noC1
+	inc kGUI_ZP_element+1
+.noC1
+	jmp .l1
+
+	rts
+
+.adjustPositionByA
+	clc
+	adc kGUI_ZP_screen
+	sta kGUI_ZP_screen
+	bcc .noC3
+	inc kGUI_ZP_screen+1
+.noC3
+	rts
+
+.adjustForNumDigits
+	lda .numDigits
+	sec
+	sbc #1
+	jmp .adjustPositionByA
+
+.reverseRenderDigit
+	ora .reverseModifier
+	ldy #0
+	sta (kGUI_ZP_screen),y
+
+	; Check for colour
+	lda .charColour
+	bmi .noColour2
+	lda kGUI_ZP_screen+1
+	pha
+	and #%11
+	ora #>COLOURRAM
+	sta kGUI_ZP_screen+1
+	lda .charColour
+	sta (kGUI_ZP_screen),y
+	pla
+	sta kGUI_ZP_screen+1
+.noColour2
+
+	dec kGUI_ZP_screen
+	lda kGUI_ZP_screen
+	cmp #$ff
+	bne .rrd1
+	dec kGUI_ZP_screen+1
+.rrd1
+	rts
+
+.addYellowColour
+	lda kGUI_ZP_screen+1
+	pha
+	and #%11
+	ora #>COLOURRAM
+	sta kGUI_ZP_screen+1
+	lda #VIC2Colour_Yellow
+	sta (kGUI_ZP_screen),y
+	pla
+	sta kGUI_ZP_screen+1
+	rts
+
+.numToHex			!tx "0123456789abcdef"
+.thisType			!by 0
+.reverseModifier	!by 0
+.numDigits			!by 0
+.charColour			!by -1
+.strobe				!by 0
+.isHighlighted		!by 0
+
+GUI_ScreenTabYLo
+!for .y , VIC2ScreenCharsHeight {
+	!by <(SCREENRAM + ((.y-1) * VIC2ScreenCharsWidth))
+}
+GUI_ScreenTabYHi
+!for .y , VIC2ScreenCharsHeight {
+	!by >(SCREENRAM + ((.y-1) * VIC2ScreenCharsWidth))
+}
+
+
+.highlighted				!word 0
+; This is set after a render pass calculates the element's real value address
+.highlightedValueAddress	!word 0
+; Entry:
+; A/X = lo/hi of element to be highlighted
+GUI_SetHighlighted
+	sta .highlighted
+	stx .highlighted+1
+	lda #0
+	sta .highlightedValueAddress+1
+	rts
+
+GUI_GetHighlighted
+	lda .highlighted
+	ldx .highlighted+1
+	rts
+
+.setupElementFromHighlight
+	lda .highlighted
+	sta kGUI_ZP_element
+	lda .highlighted+1
+	sta kGUI_ZP_element+1
+	rts
+
+.commonElementMoveTo
+	lda #0
+	sta .highlightedValueAddress+1
+	lda (kGUI_ZP_element),y
+	beq .noMove1
+	sta .highlighted+1
+	dey
+	lda (kGUI_ZP_element),y
+	sta .highlighted
+.noMove1
+	rts
+
+.commonElementHandleEvent
+	lda (kGUI_ZP_element),y
+	beq .noEvent1
+	sta .smEvent+2
+	dey
+	lda (kGUI_ZP_element),y
+	sta .smEvent+1
+.smEvent jsr $1234
+.noEvent1
+	rts
+
+
+GUI_Move_Up
+	jsr .setupElementFromHighlight
+	ldy #kGUI_Element_Offset_onUp+1
+	jsr .commonElementHandleEvent
+	ldy #kGUI_Element_Offset_up+1
+	jmp .commonElementMoveTo
+
+GUI_Move_Down
+	jsr .setupElementFromHighlight
+	ldy #kGUI_Element_Offset_onDown+1
+	jsr .commonElementHandleEvent
+	ldy #kGUI_Element_Offset_down+1
+	jmp .commonElementMoveTo
+
+GUI_Move_Left
+	jsr .setupElementFromHighlight
+	ldy #kGUI_Element_Offset_left+1
+	jmp .commonElementMoveTo
+
+GUI_Move_Right
+	jsr .setupElementFromHighlight
+	ldy #kGUI_Element_Offset_right+1
+	jmp .commonElementMoveTo
+
+
+GUI_GetHighlightedValueAddress
+	lda .highlightedValueAddress
+	ldx .highlightedValueAddress+1
+	rts

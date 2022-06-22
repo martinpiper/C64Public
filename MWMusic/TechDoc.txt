@@ -1,0 +1,71 @@
+Sequence data:
+Length byte:
+0-$3f = note length (ANDed with $3f)
+$40 = bit mask for gate release, no note attack, i.e. legato
+$80 = bit mask for new voice, reads the next byte for the voice(effect)/bend to use
+
+Voice byte:
+0-$1f = voice (effect)
+$80 = bit mask for bend instead of voice change
+
+Note byte:
+Any old value ANDed with $7f
+
+
+
+
+Track data:
+	4X loop X times when 40 is encountered
+		Repeat		< $40 of course
+		Sequence	Can be >= $40 since it's a sequence number
+	40 loop back
+
+
+
+Effect data:
+	Old version:
+		effect_AttackDecay
+		effect_SustainReleas
+		effect_Control1
+		effect_Special
+		effect_Unused1
+		effect_PulseWidth
+		effect_PulseDepth
+		effect_TopBottom
+
+		effect_AttackTime
+		effect_AttackNote
+		effect_AttackControl
+		effect_Control2
+		effect_Vibrato
+		effect_Note2
+		effect_FiltRes
+		effect_FiltTwo
+
+	New version:
+		effect_AttackDecay
+		effect_SustainReleas
+		effect_Control1
+		effect_Special
+		effect_PulseWidth
+		effect_PulseDepth
+		effect_TopBottom
+		effect_AttackTime
+
+		effect_AttackControl
+		effect_Note1
+		effect_Note2
+		effect_Note3
+		effect_Note4
+		effect_Trlnote
+		effect_Vibrato
+		effect_VibratoDelay
+
+	 
+	Upgrade path:
+		The unused byte effect_Unused1 after effect_Special can be shifted up by 1 place
+		effect_AttackTime shifts into the first bank, effect_AttackControl shifts to the start of the second bank
+
+		The upper nybble of effect_Vibrato is indexed into vibratoDelays and then stored into effect_VibratoDelay
+		The lower nybble of effect_Vibrato is mapped into its new position
+		effect_Note2 maps to effect_Note1

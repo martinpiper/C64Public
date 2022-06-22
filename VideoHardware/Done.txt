@@ -151,7 +151,7 @@
 
 
 
-* For @BatBall
+* For @Demo3
 	https://www.spriters-resource.com/arcade/arkanoid/
 
 
@@ -402,7 +402,7 @@
 		Turbo edition https://github.com/ianhan/BitmapFonts/blob/main/32X32-F6.png
 		https://github.com/ianhan/BitmapFonts/blob/main/32X32-F7.png
 		https://github.com/ianhan/BitmapFonts/blob/main/Cool-Cat-Font.png
-		https://github.com/ianhan/BitmapFonts/blob/main/FRESH.png
+		Character set: https://github.com/ianhan/BitmapFonts/blob/main/FRESH.png
 	Mods:
 		* https://modarchive.org/index.php?request=view_player&query=83123
 		https://modarchive.org/index.php?request=view_player&query=82719
@@ -425,3 +425,79 @@
 	The pulse will need to use slightly less scale, since all of the sprites are on the same line.
 		Perhaps have a narrower pulse that sometimes ripples across...
 		This would happen as the regular sprites are updated for the "2000" part of the logo
+
+
+
+* main9.a
+	* Done: Add overscan mode, for Sprites2 compatibility
+	* Done: Sprite registers at 9800 not 9820
+	* Done: Fix main logo right pixel edge issue by bringing in the border like before
+	* Done: Add 0x9e09 and 0x9e0a init in code
+	* Add wider background?
+	* Done: Update logo scroll positions
+
+
+
+
+* main6*.a
+	SotB demos need updating to overscan hardware
+	APU needs a carry bit output after the add, to allow the tree calculations in the title screen APUTitle.a
+	Or this calculation goes into the CPU and it stored to the APU data area off-screen
+	* For kAPUData_Tree1Num with MAPUCopySpriteWithAddX and APUMultiplexStrip
+		Will need to add X first, to allow the bit to be added to the sprite colour register
+		Or the X pos can remain the same going down the screen...
+		* Using overscan extent $30 does hide the sprites on the left/right border edges in asm\ShadowBeast\DisplayScreen.a
+			But the screen is quite narrow
+			The hardware simulation does correctly render with the captured data compared to the emulation, which is good
+	* Looking at !macro EmitSprite asm\ShadowBeast\CommonBlimpsMoon.a
+		It might be possible to store a sprite MSBX and non-MSBX byte value
+		This could be conditionally used by having an optional kAPU_Incr_ADDRB1 based on selecting the high result from the add and using kAPU_SkipIfEQ
+		Or there could be a new 16-bit add added to the APU, which adds to a 16 bit value in a register pair...
+	* Done: I think, on balance of the complexity, this data should be calculated by the CPU and the data uploaded to the APU for fast copying
+		Use MAPU_DataUpdateNumBytes to transfer the calculated data at the right time
+		Hardware simulation matches software emulation
+	* Done: Tidy "Sprites behind chars" so that it uses MBus24Bit_VideoLayer_EmitPriority_NearToFar_A
+	* Done: Game APU code
+
+
+
+
+* Using scaled sprites, some kind of "3D" shooter?
+	But the "3D" is just using scaling and some adjusted movement using a perspective table
+	No rotation, but can have some translation
+	Non-scaled sprites in the background providing background effects?
+	The perspective table (like the BDD Sprites2 road demo swing table) can use an appropriate zoom level with some accuracy for fractions of a 32x32 pixel sprite without zoom.
+	This means it would be quite easy to transform objects in 3D X&Y screen coordinates
+	Added GameSpriteWorldInit, the 3D maths is incomplete
+		; Setup X pos
+		There needs to be an additional of a perspective correct view X/Y translation as well
+		Plus edge of screen checks
+		* X coordinates done, need Y
+		* Done Y coordinates: https://twitter.com/MartinPiper/status/1526553547315089411
+	* Tidy code, use macros
+	* Add sprites from suitable game, possibles are:
+		https://www.spriters-resource.com/fullview/1443/
+		https://www.spriters-resource.com/fullview/35153/
+		https://www.spriters-resource.com/genesis_32x_scd/superthunderblade/sheet/167431/
+	** Needs to use compressed graphics
+		e.g. 
+			+MRLEScreenDataToDefaultCharScreen .Chars_map , .Chars_map2
+			+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
+
+
+
+
+* Demo9: Could use the use txtVars.a output to produce a table of entities to spawn...
+	The player sprites already use "kVarsEmitSpriteFrame_scaled_32_**_0_tileIndex" etc
+	Done: Why is kVarsEmitSpriteFrame_scaled_0_64_0_tileIndex undefined?!
+		indexPick and tileHasData check is wrong as it's not supporting 32x32 sprites
+	Added better sprites for the game section
+
+
+
+
+* Demo9: Add extra chars: kVarsEmitSpriteFrame_scaled_32_128_0_tileIndex=23
+	kVarsEmitSpriteFrame_scaled_32_128_0_colour=7
+	* Bounce sine scale scroll with names of followers.
+		See: "; Letters!"
+	Also new background: https://opengameart.org/content/seamless-space-backgrounds

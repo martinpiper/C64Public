@@ -5,7 +5,7 @@ Feature: Testing the AnimationEngine
   Scenario: AnimationEngine allocation
     Given I have a simple overclocked 6502 system
     * That does fail on BRK
-    When I enable unitialised memory read protection with immediate fail
+    When I enable uninitialised memory read protection with immediate fail
 
     And I load prg "bin/main.prg"
     And I load labels "tmp/main.map"

@@ -1,0 +1,56 @@
+!zn
+
+; Constants
+kGUI_ElementType_HexDisplay			= 1
+kGUI_ElementType_DecimalDisplay		= 2
+kGUI_ElementType_Reverse			= 4
+kGUI_ElementType_Cursor				= 8
+kGUI_ElementType_Extra_Number		= 16
+kGUI_ElementType_Strobe				= 32
+
+; Structures
+kGUI_Element_Offset_Type			= 0
+kGUI_Element_Offset_X				= 1
+kGUI_Element_Offset_Y				= 2
+kGUI_Element_Offset_valueAddress	= 3		; 2 bytes
+kGUI_Element_Offset_index			= 5
+kGUI_Element_Offset_numDigits		= 6
+kGUI_Element_Offset_extData			= 7
+kGUI_Element_Offset_colourAddress	= 8		; 2 bytes
+kGUI_Element_Offset_up				= 10	; 2 bytes
+kGUI_Element_Offset_down			= 12	; 2 bytes
+kGUI_Element_Offset_left			= 14	; 2 bytes
+kGUI_Element_Offset_right			= 16	; 2 bytes
+kGUI_Element_Offset_onUp			= 18	; 2 bytes
+kGUI_Element_Offset_onDown			= 20	; 2 bytes
+kGUI_Element__size					= 22
+
+!macro MGUI_Element .typeFlags , .x , .y , .valueAddress , .index , .numDigits , .colourAddress , .extData , .up , .down , .left , .right , .onUp , .onDown {
+!if (.typeFlags & (kGUI_ElementType_HexDisplay | kGUI_ElementType_DecimalDisplay)) = 0 {
+	!error "Type missing"
+}
+!if .numDigits <= 0 {
+	!error ".numDigits must be > 0"
+}
+!if .valueAddress < 0 {
+	!error ".valueAddress must be > 0"
+}
+
+	!by .typeFlags
+	!by .x , .y
+	!word .valueAddress
+	!by .index
+	!by .numDigits
+	!by .extData
+	!word .colourAddress
+	!word .up
+	!word .down
+	!word .left
+	!word .right
+	!word .onUp
+	!word .onDown
+}
+
+!macro MGUI_Elements_End {
+	!by 0
+}

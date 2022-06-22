@@ -1,0 +1,1582 @@
+;
+; **** ZP ABSOLUTE ADRESSES **** 
+;
+a02 = $02
+a03 = $03
+a04 = $04
+a05 = $05
+aFC = $FC
+aFD = $FD
+aFE = $FE
+aFF = $FF
+;
+; **** ZP POINTERS **** 
+;
+p02 = $02
+p04 = $04
+pFC = $FC
+pFE = $FE
+pFF = $FF
+;
+; **** FIELDS **** 
+;
+f5C32 = $5C32
+f5C36 = $5C36
+f5C39 = $5C39
+f5C3C = $5C3C
+f5C3F = $5C3F
+f5C42 = $5C42
+f5C45 = $5C45
+f5C48 = $5C48
+f5C57 = $5C57
+f5C5A = $5C5A
+f5C61 = $5C61
+f5C72 = $5C72
+f5C73 = $5C73
+f5C74 = $5C74
+f5C75 = $5C75
+f5D72 = $5D72
+f5D73 = $5D73
+f5D74 = $5D74
+f5D75 = $5D75
+f5D76 = $5D76
+f5D77 = $5D77
+f5D78 = $5D78
+f5D79 = $5D79
+f5E72 = $5E72
+f5E75 = $5E75
+f5E78 = $5E78
+f5E7B = $5E7B
+f5E7E = $5E7E
+f5E81 = $5E81
+f5E84 = $5E84
+f5E87 = $5E87
+f5E8A = $5E8A
+f5E95 = $5E95
+fD400 = $D400
+fD401 = $D401
+fD402 = $D402
+fD403 = $D403
+fD405 = $D405
+fD406 = $D406
+;
+; **** ABSOLUTE ADRESSES **** 
+;
+a07FE = $07FE
+a07FF = $07FF
+a5B5F = $5B5F
+a5C35 = $5C35
+a5C3E = $5C3E
+a5C4B = $5C4B
+a5C4C = $5C4C
+a5C4D = $5C4D
+a5C4E = $5C4E
+a5C4F = $5C4F
+a5C50 = $5C50
+a5C51 = $5C51
+a5C52 = $5C52
+a5C53 = $5C53
+a5C54 = $5C54
+a5C55 = $5C55
+a5C56 = $5C56
+a5C5D = $5C5D
+a5C5E = $5C5E
+a5C5F = $5C5F
+a5C60 = $5C60
+a5C64 = $5C64
+a5C65 = $5C65
+a5C66 = $5C66
+a5C67 = $5C67
+a5C68 = $5C68
+a5C69 = $5C69
+a5C6A = $5C6A
+a5C6B = $5C6B
+a5C6C = $5C6C
+a5C6D = $5C6D
+a5C6E = $5C6E
+a5C6F = $5C6F
+a5C70 = $5C70
+a5C71 = $5C71
+aD404 = $D404
+aD407 = $D407
+aD408 = $D408
+aD40B = $D40B
+aD412 = $D412
+aD418 = $D418
+;
+; **** POINTERS **** 
+;
+p5812 = $5812
+;
+; **** EXTERNAL JUMPS **** 
+;
+e5800 = $5800
+e5852 = $5852
+e585F = $585F
+e5886 = $5886
+e5912 = $5912
+e596B = $596B
+e5992 = $5992
+e59FF = $59FF
+e5A77 = $5A77
+e5AF9 = $5AF9
+e5B10 = $5B10
+e5B26 = $5B26
+e5B35 = $5B35
+e5B50 = $5B50
+e5BA9 = $5BA9
+e5C09 = $5C09
+e5C0F = $5C0F
+e5C15 = $5C15
+e5C1B = $5C1B
+e5C23 = $5C23
+
+	* = $0800
+
+j0800	JMP j0C09
+
+	JMP j0C0F
+
+	JMP j0C15
+
+	JMP j0C1B
+
+	JMP j0B50
+
+	JMP j0C23
+
+p0812	INC a0C66
+	BIT a0C60
+	BMI b0838
+	BVC b0852
+	LDA #$00
+	STA a0C66
+	LDX #$02
+b0823	STA f0C3C,X
+	STA f0C3F,X
+	STA f0C42,X
+	STA f0C45,X
+	DEX 
+	BPL b0823
+	STA a0C60
+	JMP b0852
+
+b0838	BVC b084F
+	LDA #$00
+	STA aD404    ;Voice 1: Control Register
+	STA aD40B    ;Voice 2: Control Register
+	STA aD412    ;Voice 3: Control Register
+	LDA #$0F
+	STA aD418    ;Select Filter Mode and Volume
+	LDA #$80
+	STA a0C60
+b084F	JMP j0B26
+
+b0852	LDX #$02
+	DEC a0C5D
+	BPL b085F
+	LDA a0C5E
+	STA a0C5D
+b085F	LDA f0C32,X
+	STA a0C35
+	TAY 
+	LDA a0C5D
+	CMP a0C5E
+	BNE b0883
+	LDA f0E84,X
+	STA a02
+	LDA f0E87,X
+	STA a03
+	DEC f0C42,X
+	BMI b0886
+	JMP j096B
+
+	JMP j0B10
+
+b0883	JMP j0992
+
+b0886	LDY f0C3C,X
+	LDA (p02),Y
+	CMP #$FF
+	BNE b08A0
+	LDA #$00
+	STA f0C42,X
+	STA f0C3C,X
+	STA f0C3F,X
+	JMP b0886
+
+	JMP j0B10
+
+b08A0	TAY 
+	LDA f0E8A,Y
+	STA a04
+	LDA f0EA4,Y
+	STA a05
+	LDY f0C3F,X
+	LDA #$FF
+	STA a0C4B
+	LDA (p04),Y
+	STA f0C36,X
+	STA a0C4C
+	AND #$1F
+	STA f0C42,X
+	LDA #$47
+	SEC 
+	SBC a0C3E
+	CMP #$0F
+	BCC b08CC
+	LDA #$0F
+b08CC	STA aD418    ;Select Filter Mode and Volume
+	BIT a0C4C
+	BVS b090F
+	INC f0C3F,X
+	LDA a0C4C
+	BPL b08E7
+	INY 
+	LDA (p04),Y
+	AND #$1F
+	STA f0C48,X
+	INC f0C3F,X
+b08E7	INY 
+	LDA (p04),Y
+	STA f0C45,X
+	ASL 
+	TAY 
+	LDA a0C69
+	BPL b0912
+	LDA f0C72,Y
+	STA a0C4D
+	LDA f0C73,Y
+	LDY a0C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	STA f0C61,X
+	LDA a0C4D
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+	JMP b0912
+
+b090F	DEC a0C4B
+b0912	LDY a0C35
+	LDA f0C48,X
+	STX a0C4E
+	ASL 
+	ASL 
+	ASL 
+	TAX 
+	LDA f0D74,X
+	STA a0C4F
+	LDA a0C69
+	BPL b094B
+	LDA f0D74,X
+	AND a0C4B
+	STA aD404,Y  ;Voice 1: Control Register
+	LDA f0D72,X
+	STA fD402,Y  ;Voice 1: Pulse Waveform Width - Low-Byte
+	LDA f0D73,X
+	STA fD403,Y  ;Voice 1: Pulse Waveform Width - High-Nybble
+	LDA f0D75,X
+	STA fD405,Y  ;Voice 1: Attack / Decay Cycle Control
+	LDA f0D76,X
+	STA fD406,Y  ;Voice 1: Sustain / Release Cycle Control
+b094B	LDX a0C4E
+	LDA a0C4F
+	STA f0C39,X
+	INC f0C3F,X
+	LDY f0C3F,X
+	LDA (p04),Y
+	CMP #$FF
+	BNE b0968
+	LDA #$00
+	STA f0C3F,X
+	INC f0C3C,X
+b0968	JMP j0B10
+
+j096B	LDA a0C69
+	BMI b0973
+	JMP j0B10
+
+b0973	LDY a0C35
+	LDA f0C36,X
+	AND #$20
+	BNE j0992
+	LDA f0C42,X
+	BNE j0992
+	LDA f0C39,X
+	AND #$FE
+	STA aD404,Y  ;Voice 1: Control Register
+	LDA #$00
+	STA fD405,Y  ;Voice 1: Attack / Decay Cycle Control
+	STA fD406,Y  ;Voice 1: Sustain / Release Cycle Control
+j0992	LDA a0C69
+	BMI b099A
+	JMP j0B10
+
+b099A	LDA f0C48,X
+	ASL 
+	ASL 
+	ASL 
+	TAY 
+	STY a0C5F
+	LDA f0D79,Y
+	STA a0C64
+	LDA f0D78,Y
+	STA a0C51
+	LDA f0D77,Y
+	STA a0C50
+	BEQ b0A27
+	LDA a0C66
+	AND #$07
+	CMP #$04
+	BCC b09C3
+	EOR #$07
+b09C3	STA a0C56
+	LDA f0C45,X
+	ASL 
+	TAY 
+	SEC 
+	LDA f0C74,Y
+	SBC f0C72,Y
+	STA a0C52
+	LDA f0C75,Y
+	SBC f0C73,Y
+b09DB	LSR 
+	ROR a0C52
+	DEC a0C50
+	BPL b09DB
+	STA a0C53
+	LDA f0C72,Y
+	STA a0C54
+	LDA f0C73,Y
+	STA a0C55
+	LDA f0C36,X
+	AND #$1F
+	CMP #$08
+	BCC b0A18
+	LDY a0C56
+j09FF	DEY 
+	BMI b0A18
+	CLC 
+	LDA a0C54
+	ADC a0C52
+	STA a0C54
+	LDA a0C55
+	ADC a0C53
+	STA a0C55
+	JMP j09FF
+
+b0A18	LDY a0C35
+	LDA a0C54
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+	LDA a0C55
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+b0A27	LDA a0C51
+	BEQ b0A8E
+	LDY a0C5F
+	AND #$1F
+	DEC f0C57,X
+	BPL b0A8E
+	STA f0C57,X
+	LDA a0C51
+	AND #$E0
+	STA a0C65
+	LDA f0C5A,X
+	BNE b0A60
+	LDA a0C65
+	CLC 
+	ADC f0D72,Y
+	PHA 
+	LDA f0D73,Y
+	ADC #$00
+	AND #$0F
+	PHA 
+	CMP #$0E
+	BNE b0A77
+	INC f0C5A,X
+	JMP b0A77
+
+b0A60	SEC 
+	LDA f0D72,Y
+	SBC a0C65
+	PHA 
+	LDA f0D73,Y
+	SBC #$00
+	AND #$0F
+	PHA 
+	CMP #$08
+	BNE b0A77
+	DEC f0C5A,X
+b0A77	STX a0C4E
+	LDX a0C35
+	PLA 
+	STA f0D73,Y
+	STA fD403,X  ;Voice 1: Pulse Waveform Width - High-Nybble
+	PLA 
+	STA f0D72,Y
+	STA fD402,X  ;Voice 1: Pulse Waveform Width - Low-Byte
+	LDX a0C4E
+b0A8E	LDA a0C64
+	AND #$01
+	BEQ b0ACA
+	LDA f0C61,X
+	BEQ b0ACA
+	LDA f0C42,X
+	BEQ b0ACA
+	LDA f0C36,X
+	AND #$1F
+	SEC 
+	SBC #$01
+	CMP f0C42,X
+	LDY a0C35
+	BCC b0ABF
+	LDA f0C61,X
+	DEC f0C61,X
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA f0C39,X
+	AND #$FE
+	BNE b0AC7
+b0ABF	LDA f0C61,X
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA #$80
+b0AC7	STA aD404,Y  ;Voice 1: Control Register
+b0ACA	LDA a0C64
+	AND #$02
+	BEQ b0ADF
+	LDA f0C61,X
+	BEQ b0ADF
+	INC f0C61,X
+	LDY a0C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+b0ADF	LDA a0C64
+	AND #$04
+	BEQ j0B10
+	LDA a0C66
+	AND #$01
+	BEQ b0AF6
+	LDA f0C45,X
+	CLC 
+	ADC #$18
+	JMP j0AF9
+
+b0AF6	LDA f0C45,X
+j0AF9	ASL 
+	TAY 
+	LDA f0C72,Y
+	STA a0C4D
+	LDA f0C73,Y
+	LDY a0C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA a0C4D
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+j0B10	LDY #$FF
+	LDA a0C67
+	BNE b0B1D
+	LDA a0C68
+	BMI b0B1D
+	INY 
+b0B1D	STY a0C69
+	DEX 
+	BMI j0B26
+	JMP b085F
+
+j0B26	LDA #$FF
+	STA a0C69
+	LDA a0C67
+	BNE b0B35
+	BIT a0C68
+	BPL b0B36
+b0B35	RTS 
+
+b0B36	BVC b0B3B
+	JSR s0BA9
+b0B3B	DEC a0C6B
+	BPL b0B35
+	LDA a0C71
+	AND #$0F
+	STA a0C6B
+	LDA a0C6A
+	CMP a0C6C
+	BNE b0B5F
+j0B50	LDX #$00
+	STX aD404    ;Voice 1: Control Register
+	STX aD40B    ;Voice 2: Control Register
+	DEX 
+	STX a0C68
+	JMP j0800
+
+b0B5F	DEC a0C6A
+	ASL 
+	TAY 
+	BIT a0C71
+	BMI b0B89
+	BVS b0B77
+	LDA f0C72,Y
+	STA fD400    ;Voice 1: Frequency Control - Low-Byte
+	LDA f0C73,Y
+	STA fD401    ;Voice 1: Frequency Control - High-Byte
+b0B77	TYA 
+	SEC 
+	SBC a0C6D
+	TAY 
+	LDA f0C72,Y
+	STA aD407    ;Voice 2: Frequency Control - Low-Byte
+	LDA f0C73,Y
+	STA aD408    ;Voice 2: Frequency Control - High-Byte
+b0B89	BIT a0C6E
+	BPL b0B99
+	LDA a0C6F
+	EOR #$01
+	STA aD404    ;Voice 1: Control Register
+	STA a0C6F
+b0B99	BVC b0BA6
+	LDA a0C70
+	EOR #$01
+	STA aD40B    ;Voice 2: Control Register
+	STA a0C70
+b0BA6	JMP b0B35
+
+s0BA9	LDA #$00
+	STA aD404    ;Voice 1: Control Register
+	STA aD40B    ;Voice 2: Control Register
+	STA a0C6B
+	LDA a0C68
+	AND #$0F
+	STA a0C68
+	ASL 
+	ASL 
+	ASL 
+	ASL 
+	TAY 
+	LDA f0E72,Y
+	STA a0C71
+	LDA f0E75,Y
+	STA a0C6A
+	LDA f0E78,Y
+	STA a0C6C
+	LDA f0E7B,Y
+	STA a0C6E
+	AND #$3F
+	STA a0C6D
+	LDA f0E7E,Y
+	STA a0C6F
+	LDA f0E81,Y
+	STA a0C70
+	LDX #$00
+b0BEC	LDA f0E75,Y
+	STA fD400,X  ;Voice 1: Frequency Control - Low-Byte
+	INY 
+	INX 
+	CPX #$0E
+	BNE b0BEC
+	LDA a0C71
+	AND #$30
+	LDY #$EE
+	CMP #$20
+	BEQ b0C05
+	LDY #$CE
+b0C05	STY b0B5F
+	RTS 
+
+j0C09	LDA #$40
+	STA a0C60
+	RTS 
+
+j0C0F	LDA #$C0
+	STA a0C60
+	RTS 
+
+j0C15	LDA #$00
+	STA a0C67
+	RTS 
+
+j0C1B	LDA #$FF
+	STA a0C67
+	JMP j0B50
+
+j0C23	LDX a0C67
+	BEQ b0C2C
+	STX a0C68
+	RTS 
+
+b0C2C	ORA #$40
+	STA a0C68
+	RTS 
+
+f0C32	.BYTE $00,$07,$0E
+a0C35	.BYTE $00
+f0C36	.BYTE $05,$05,$05
+f0C39	.BYTE $41,$00,$41
+f0C3C	.BYTE $00,$00
+a0C3E	.BYTE $00
+f0C3F	.BYTE $17,$15,$15
+f0C42	.BYTE $03,$00,$00
+f0C45	.BYTE $3A,$01,$41
+f0C48	.BYTE $00,$0F,$00
+a0C4B	.BYTE $FF
+a0C4C	.BYTE $05
+a0C4D	.BYTE $04
+a0C4E	.BYTE $00
+a0C4F	.BYTE $41
+a0C50	.BYTE $FF
+a0C51	.BYTE $41
+a0C52	.BYTE $3B
+a0C53	.BYTE $00
+a0C54	.BYTE $04
+a0C55	.BYTE $1F
+a0C56	.BYTE $00
+f0C57	.BYTE $00,$01,$00
+f0C5A	.BYTE $01,$01,$00
+a0C5D	.BYTE $00
+a0C5E	.BYTE $01
+a0C5F	.BYTE $00
+a0C60	.BYTE $00
+f0C61	.BYTE $1F,$01,$2E
+a0C64	.BYTE $00
+a0C65	.BYTE $40
+a0C66	.BYTE $78
+a0C67	.BYTE $01
+a0C68	.BYTE $10
+a0C69	.BYTE $FF
+a0C6A	.BYTE $07
+a0C6B	.BYTE $1F
+a0C6C	.BYTE $01
+a0C6D	.BYTE $00
+a0C6E	.BYTE $40
+a0C6F	.BYTE $94
+a0C70	.BYTE $00
+a0C71	.BYTE $FF
+f0C72	.BYTE $16
+f0C73	.BYTE $01
+f0C74	.BYTE $27
+f0C75	.BYTE $01,$38,$01,$4B,$01,$5F,$01,$73
+	.BYTE $01,$8A,$01,$A1,$01,$BA,$01,$D4
+	.BYTE $01,$F0,$01,$0E,$02,$2D,$02,$4E
+	.BYTE $02,$71,$02,$96,$02,$BD,$02,$E7
+	.BYTE $02,$13,$03,$42,$03,$74,$03,$A9
+	.BYTE $03,$E0,$03,$1B,$04,$5A,$04,$9B
+	.BYTE $04,$E2,$04,$2C,$05,$7B,$05,$CE
+	.BYTE $05,$27,$06,$85,$06,$E8,$06,$51
+	.BYTE $07,$C1,$07,$37,$08,$B4,$08,$37
+	.BYTE $09,$C4,$09,$57,$0A,$F5,$0A,$9C
+	.BYTE $0B,$4E,$0C,$09,$0D,$D0,$0D,$A3
+	.BYTE $0E,$82,$0F,$6E,$10,$68,$11,$6E
+	.BYTE $12,$88,$13,$AF,$14,$EB,$15,$39
+	.BYTE $17,$9C,$18,$13,$1A,$A1,$1B,$46
+	.BYTE $1D,$04,$1F,$DC,$20,$D0,$22,$DC
+	.BYTE $24,$10,$27,$5E,$29,$D6,$2B,$72
+	.BYTE $2E,$38,$31,$26,$34,$42,$37,$8C
+	.BYTE $3A,$08,$3E,$B8,$41,$A0,$45,$B8
+	.BYTE $49,$20,$4E,$BC,$52,$AC,$57,$E4
+	.BYTE $5C,$70,$62,$4C,$68,$84,$6E,$18
+	.BYTE $75,$10,$7C,$70,$83,$40,$8B,$70
+	.BYTE $93,$40,$9C,$78,$A5,$58,$AF,$C8
+	.BYTE $B9,$E0,$C4,$98,$D0,$08,$DD,$30
+	.BYTE $EA,$20,$F8,$2E,$FD,$00,$07,$0E
+	.BYTE $00,$03,$03,$03,$26,$18,$0F,$00
+	.BYTE $00,$00,$82,$02,$05,$41,$41,$04
+	.BYTE $22,$3A,$01,$02,$05,$0F,$FF,$82
+	.BYTE $C1,$00,$41,$00,$41,$00,$00,$27
+	.BYTE $01,$03,$00,$00,$01,$00,$00,$01
+	.BYTE $00,$01,$10,$40,$07,$1F,$01,$00
+	.BYTE $40,$94,$00,$FF,$FF,$00,$00,$00
+	.BYTE $00,$00,$00,$00,$00
+f0D72	.BYTE $40
+f0D73	.BYTE $0A
+f0D74	.BYTE $41
+f0D75	.BYTE $17
+f0D76	.BYTE $65
+f0D77	.BYTE $02
+f0D78	.BYTE $41
+f0D79	.BYTE $00,$00,$08,$41,$08,$08,$00,$00
+	.BYTE $01,$00,$08,$41,$09,$39,$00,$41
+	.BYTE $00,$00,$02,$81,$08,$0A,$00,$00
+	.BYTE $01,$40,$01,$41,$49,$87,$02,$00
+	.BYTE $00,$00,$08,$41,$02,$00,$00,$00
+	.BYTE $00,$00,$08,$41,$03,$0A,$00,$00
+	.BYTE $01,$80,$08,$41,$56,$87,$03,$00
+	.BYTE $00,$80,$06,$81,$02,$09,$00,$00
+	.BYTE $01,$00,$02,$81,$09,$A9,$00,$00
+	.BYTE $01,$80,$03,$41,$49,$39,$02,$00
+	.BYTE $00,$80,$07,$41,$47,$29,$02,$00
+	.BYTE $00,$80,$06,$11,$06,$7B,$00,$00
+	.BYTE $01,$C0,$0E,$41,$90,$F0,$01,$E8
+	.BYTE $02,$80,$0D,$41,$17,$65,$02,$41
+	.BYTE $04,$00,$00,$00,$00,$00,$00,$00
+	.BYTE $00,$00,$0D,$00,$02,$57,$0C,$00
+	.BYTE $28,$13,$60,$10,$00,$04,$11,$0F
+	.BYTE $00,$08,$07,$80,$00,$11,$0F,$00
+	.BYTE $16,$A4,$10,$24,$00,$04,$00,$0A
+	.BYTE $00,$08,$09,$00,$02,$15,$0B,$00
+	.BYTE $20,$23,$2A,$F9,$80,$00,$81,$95
+	.BYTE $00,$28,$00,$00,$02,$81,$AD,$40
+	.BYTE $5F,$62,$40,$06,$80,$00,$41,$0C
+	.BYTE $00,$02,$14,$14,$02,$13,$0D,$00
+	.BYTE $60,$91,$70,$33,$80,$02,$41,$0B
+	.BYTE $00,$00,$32,$80,$02,$41,$0B,$00
+	.BYTE $40,$A0,$32,$54,$00,$08,$11,$04
+	.BYTE $F0,$C2,$49,$00,$08,$11,$04,$F0
+	.BYTE $59,$A0,$1A,$06,$40,$00,$81,$0A
+	.BYTE $00,$00,$18,$00,$08,$81,$09,$00
+	.BYTE $32,$14,$20,$00,$00,$04,$51,$0F
+	.BYTE $70
+f0E72	.BYTE $00,$00,$00
+f0E75	.BYTE $00,$00,$00
+f0E78	.BYTE $00,$00,$00
+f0E7B	.BYTE $00,$00,$00
+f0E7E	.BYTE $00,$00,$00
+f0E81	.BYTE $00,$00,$00
+f0E84	.BYTE $BE,$EC,$1A
+f0E87	.BYTE $0E,$0E,$0F
+f0E8A	.BYTE $48,$49,$6D,$8F,$B1,$D5,$F7,$2D
+	.BYTE $63,$A6,$F5,$44,$86,$B3,$D5,$04
+	.BYTE $55,$A6,$F7,$48,$78,$B0,$01,$52
+	.BYTE $84,$B1
+f0EA4	.BYTE $0F,$0F,$0F,$0F,$0F,$0F,$0F,$10
+	.BYTE $10,$10,$10,$11,$11,$11,$11,$12
+	.BYTE $12,$12,$12,$13,$13,$13,$14,$14
+	.BYTE $14,$14,$01,$04,$01,$04,$09,$0A
+	.BYTE $09,$0A,$09,$0A,$0C,$0F,$10,$0F
+	.BYTE $10,$17,$17,$17,$17,$09,$0A,$09
+	.BYTE $0A,$0C,$0F,$10,$0F,$10,$17,$17
+	.BYTE $17,$17,$09,$0A,$09,$0A,$0C,$0F
+	.BYTE $10,$0F,$10,$17,$17,$17,$17,$FF
+	.BYTE $19,$19,$06,$07,$01,$04,$06,$07
+	.BYTE $06,$07,$0D,$11,$12,$15,$16,$06
+	.BYTE $07,$06,$07,$06,$07,$06,$07,$0D
+	.BYTE $11,$12,$15,$16,$06,$07,$06,$07
+	.BYTE $06,$07,$06,$07,$0D,$11,$12,$15
+	.BYTE $16,$06,$07,$06,$07,$FF,$02,$05
+	.BYTE $02,$08,$02,$05,$0B,$08,$0B,$08
+	.BYTE $0E,$13,$14,$13,$14,$19,$19,$18
+	.BYTE $18,$0B,$08,$0B,$08,$0E,$13,$14
+	.BYTE $13,$14,$19,$19,$18,$18,$0B,$08
+	.BYTE $0B,$08,$0E,$13,$14,$13,$14,$19
+	.BYTE $19,$18,$18,$FF,$FF,$82,$00,$3D
+	.BYTE $05,$3D,$05,$3A,$05,$41,$05,$41
+	.BYTE $05,$31,$05,$2E,$05,$2E,$05,$35
+	.BYTE $05,$3D,$05,$3A,$05,$41,$05,$41
+	.BYTE $05,$31,$05,$2E,$05,$2E,$02,$35
+	.BYTE $FF,$85,$00,$3A,$05,$41,$05,$46
+	.BYTE $05,$44,$05,$2E,$05,$35,$05,$3A
+	.BYTE $05,$38,$05,$3A,$05,$41,$05,$46
+	.BYTE $05,$44,$05,$2E,$05,$35,$05,$3A
+	.BYTE $05,$38,$FF,$85,$00,$23,$05,$27
+	.BYTE $05,$2A,$05,$27,$05,$2A,$05,$2F
+	.BYTE $05,$2A,$05,$2F,$05,$33,$05,$2F
+	.BYTE $05,$33,$05,$36,$05,$33,$05,$36
+	.BYTE $05,$3B,$05,$36,$FF,$82,$00,$3B
+	.BYTE $05,$3B,$05,$38,$05,$3F,$05,$3F
+	.BYTE $05,$2F,$05,$2C,$05,$2C,$05,$33
+	.BYTE $05,$42,$05,$3F,$05,$46,$05,$46
+	.BYTE $05,$36,$05,$33,$05,$33,$02,$3A
+	.BYTE $FF,$85,$00,$38,$05,$3F,$05,$44
+	.BYTE $05,$42,$05,$2C,$05,$33,$05,$38
+	.BYTE $05,$36,$05,$3F,$05,$46,$05,$4B
+	.BYTE $05,$49,$05,$33,$05,$3A,$05,$3F
+	.BYTE $05,$3D,$FF,$85,$05,$2E,$02,$3A
+	.BYTE $02,$2E,$02,$46,$02,$3A,$02,$3A
+	.BYTE $02,$2E,$05,$3A,$02,$2E,$02,$46
+	.BYTE $05,$3A,$02,$2E,$02,$3A,$05,$2E
+	.BYTE $02,$3A,$02,$2E,$02,$46,$02,$3A
+	.BYTE $02,$3A,$02,$2E,$05,$3A,$02,$2E
+	.BYTE $02,$46,$05,$3A,$02,$2E,$02,$3A
+	.BYTE $FF,$85,$05,$2C,$02,$38,$02,$2C
+	.BYTE $02,$44,$02,$38,$02,$38,$02,$2C
+	.BYTE $05,$38,$02,$2C,$02,$44,$05,$38
+	.BYTE $02,$2C,$02,$38,$05,$33,$02,$3F
+	.BYTE $02,$33,$02,$4B,$02,$3F,$02,$3F
+	.BYTE $02,$33,$05,$3F,$02,$33,$02,$4B
+	.BYTE $05,$3F,$02,$33,$02,$3F,$FF,$82
+	.BYTE $0E,$44,$02,$38,$02,$38,$02,$44
+	.BYTE $02,$38,$02,$44,$02,$44,$02,$38
+	.BYTE $02,$44,$02,$44,$02,$38,$02,$44
+	.BYTE $02,$38,$02,$44,$02,$44,$02,$38
+	.BYTE $82,$00,$3A,$02,$3D,$02,$41,$02
+	.BYTE $3A,$02,$46,$02,$41,$02,$44,$02
+	.BYTE $41,$02,$46,$02,$3A,$02,$44,$02
+	.BYTE $3A,$02,$41,$02,$3A,$02,$3D,$02
+	.BYTE $3C,$FF,$82,$0A,$16,$02,$22,$02
+	.BYTE $16,$02,$16,$82,$03,$3A,$82,$0A
+	.BYTE $16,$02,$22,$02,$22,$02,$16,$82
+	.BYTE $03,$3A,$82,$0A,$16,$02,$20,$82
+	.BYTE $03,$3A,$82,$0A,$1D,$82,$03,$3A
+	.BYTE $02,$22,$82,$0A,$16,$02,$22,$02
+	.BYTE $16,$02,$16,$82,$03,$3A,$82,$0A
+	.BYTE $16,$02,$22,$02,$22,$02,$16,$82
+	.BYTE $03,$3A,$82,$0A,$16,$02,$20,$82
+	.BYTE $03,$3A,$02,$3A,$02,$37,$02,$33
+	.BYTE $FF,$82,$0A,$14,$02,$20,$02,$14
+	.BYTE $02,$14,$82,$03,$3A,$82,$0A,$14
+	.BYTE $02,$20,$02,$20,$02,$14,$82,$03
+	.BYTE $3A,$82,$0A,$14,$02,$1E,$82,$03
+	.BYTE $3A,$82,$0A,$1B,$82,$03,$3A,$02
+	.BYTE $22,$82,$0A,$1B,$02,$27,$02,$1B
+	.BYTE $02,$1B,$82,$03,$3A,$82,$0A,$1B
+	.BYTE $02,$27,$02,$27,$02,$1B,$82,$03
+	.BYTE $3A,$82,$0A,$1B,$02,$25,$82,$03
+	.BYTE $3A,$02,$3A,$02,$37,$02,$33,$FF
+	.BYTE $82,$00,$3A,$02,$3D,$02,$41,$02
+	.BYTE $3A,$02,$46,$02,$41,$02,$44,$02
+	.BYTE $41,$02,$46,$02,$3A,$02,$44,$02
+	.BYTE $3A,$02,$41,$02,$3A,$02,$3D,$02
+	.BYTE $3C,$02,$2E,$02,$31,$02,$35,$02
+	.BYTE $2E,$02,$3A,$02,$35,$02,$38,$02
+	.BYTE $35,$02,$46,$02,$3A,$02,$44,$02
+	.BYTE $3A,$02,$41,$02,$3A,$02,$3D,$02
+	.BYTE $3C,$FF,$85,$00,$16,$05,$16,$85
+	.BYTE $03,$3A,$85,$00,$16,$05,$16,$05
+	.BYTE $16,$05,$16,$82,$03,$3A,$02,$3A
+	.BYTE $85,$00,$16,$05,$16,$85,$03,$3A
+	.BYTE $85,$00,$16,$05,$16,$05,$16,$05
+	.BYTE $16,$82,$03,$3A,$02,$3A,$FF,$85
+	.BYTE $00,$3A,$05,$3A,$05,$3A,$05,$3D
+	.BYTE $05,$46,$05,$46,$05,$46,$05,$49
+	.BYTE $05,$2E,$05,$31,$05,$35,$05,$31
+	.BYTE $05,$35,$05,$3A,$05,$35,$05,$3A
+	.BYTE $FF,$88,$00,$3D,$08,$41,$05,$41
+	.BYTE $08,$3A,$08,$3A,$05,$3D,$82,$05
+	.BYTE $2E,$02,$31,$02,$35,$02,$31,$02
+	.BYTE $35,$02,$3A,$02,$35,$02,$3A,$02
+	.BYTE $3D,$02,$3A,$02,$3D,$02,$41,$02
+	.BYTE $3D,$02,$41,$02,$46,$02,$46,$FF
+	.BYTE $82,$00,$18,$02,$18,$82,$03,$3A
+	.BYTE $82,$00,$1A,$02,$18,$02,$18,$82
+	.BYTE $03,$3A,$82,$00,$1F,$02,$18,$02
+	.BYTE $18,$82,$03,$3A,$82,$00,$1A,$02
+	.BYTE $18,$02,$18,$82,$03,$3A,$82,$00
+	.BYTE $1F,$02,$1B,$02,$1B,$82,$03,$3A
+	.BYTE $82,$00,$1D,$02,$1B,$02,$1B,$82
+	.BYTE $03,$3A,$82,$00,$22,$02,$1B,$02
+	.BYTE $1B,$82,$03,$3A,$82,$00,$1D,$82
+	.BYTE $03,$3A,$02,$3A,$02,$43,$02,$41
+	.BYTE $FF,$82,$00,$16,$02,$16,$82,$03
+	.BYTE $3A,$82,$00,$18,$02,$16,$02,$16
+	.BYTE $82,$03,$3A,$82,$00,$1D,$02,$16
+	.BYTE $02,$16,$82,$03,$3A,$82,$00,$18
+	.BYTE $02,$16,$02,$16,$82,$03,$3A,$82
+	.BYTE $00,$1D,$02,$1F,$02,$1F,$82,$03
+	.BYTE $3A,$82,$00,$21,$02,$1F,$02,$1F
+	.BYTE $82,$03,$3A,$82,$00,$26,$02,$1F
+	.BYTE $02,$1F,$82,$03,$3A,$82,$00,$21
+	.BYTE $82,$03,$3A,$02,$3A,$02,$43,$02
+	.BYTE $41,$FF,$82,$01,$18,$82,$05,$3C
+	.BYTE $02,$3F,$02,$43,$82,$01,$18,$02
+	.BYTE $18,$82,$05,$43,$02,$3F,$82,$01
+	.BYTE $18,$82,$05,$3C,$02,$3F,$02,$43
+	.BYTE $82,$01,$18,$02,$18,$82,$05,$43
+	.BYTE $02,$3F,$82,$01,$1B,$82,$05,$3F
+	.BYTE $02,$42,$02,$46,$82,$01,$1B,$02
+	.BYTE $1B,$82,$05,$46,$02,$42,$82,$01
+	.BYTE $1B,$82,$05,$3F,$02,$42,$02,$46
+	.BYTE $82,$01,$1B,$02,$1B,$82,$05,$46
+	.BYTE $02,$42,$FF,$82,$01,$16,$82,$05
+	.BYTE $3A,$02,$3D,$02,$41,$82,$01,$16
+	.BYTE $02,$16,$82,$05,$41,$02,$3D,$82
+	.BYTE $01,$16,$82,$05,$3A,$02,$3D,$02
+	.BYTE $41,$82,$01,$16,$02,$16,$82,$05
+	.BYTE $41,$02,$3D,$82,$01,$1F,$82,$05
+	.BYTE $43,$02,$46,$02,$4A,$82,$01,$1F
+	.BYTE $02,$1F,$82,$05,$4A,$02,$46,$82
+	.BYTE $01,$1F,$82,$05,$43,$02,$46,$02
+	.BYTE $4A,$82,$01,$1F,$02,$1F,$82,$05
+	.BYTE $4A,$02,$46,$FF,$85,$0B,$4B,$02
+	.BYTE $48,$05,$4B,$02,$48,$02,$4A,$02
+	.BYTE $4B,$05,$4F,$05,$4D,$05,$4B,$02
+	.BYTE $4A,$02,$48,$05,$4B,$02,$46,$02
+	.BYTE $49,$05,$3F,$02,$3A,$02,$3D,$05
+	.BYTE $4B,$02,$46,$02,$49,$05,$3F,$02
+	.BYTE $3A,$02,$3D,$FF,$85,$0B,$49,$02
+	.BYTE $46,$05,$49,$02,$46,$02,$48,$02
+	.BYTE $49,$05,$4D,$05,$4B,$05,$49,$02
+	.BYTE $48,$02,$46,$02,$37,$02,$3A,$02
+	.BYTE $3E,$02,$3A,$02,$3E,$02,$43,$02
+	.BYTE $3E,$02,$43,$02,$46,$02,$43,$02
+	.BYTE $46,$02,$4A,$02,$46,$02,$4A,$02
+	.BYTE $4F,$02,$4F,$FF,$82,$01,$18,$82
+	.BYTE $0E,$3C,$02,$3F,$02,$43,$82,$01
+	.BYTE $18,$02,$18,$82,$0E,$43,$02,$3F
+	.BYTE $82,$01,$18,$82,$0E,$3C,$02,$3F
+	.BYTE $02,$43,$82,$01,$18,$02,$18,$82
+	.BYTE $0E,$43,$02,$3F,$82,$01,$1B,$82
+	.BYTE $0E,$3F,$02,$42,$02,$46,$82,$01
+	.BYTE $1B,$02,$1B,$82,$0E,$46,$02,$42
+	.BYTE $82,$01,$1B,$82,$0E,$3F,$02,$42
+	.BYTE $02,$46,$82,$01,$1B,$02,$1B,$82
+	.BYTE $0E,$46,$02,$42,$FF,$82,$01,$16
+	.BYTE $82,$0E,$3A,$02,$3D,$02,$41,$82
+	.BYTE $01,$16,$02,$16,$82,$0E,$41,$02
+	.BYTE $3D,$82,$01,$16,$82,$0E,$3A,$02
+	.BYTE $3D,$02,$41,$82,$01,$16,$02,$16
+	.BYTE $82,$0E,$41,$02,$3D,$82,$01,$1F
+	.BYTE $82,$0E,$43,$02,$46,$02,$4A,$82
+	.BYTE $01,$1F,$02,$1F,$82,$0E,$4A,$02
+	.BYTE $46,$82,$01,$1F,$82,$0E,$43,$02
+	.BYTE $46,$02,$4A,$82,$01,$1F,$02,$1F
+	.BYTE $82,$0E,$4A,$02,$46,$FF,$85,$05
+	.BYTE $4B,$02,$46,$02,$49,$05,$3F,$02
+	.BYTE $3A,$02,$3D,$05,$4B,$02,$46,$02
+	.BYTE $49,$05,$3F,$02,$3A,$02,$3D,$05
+	.BYTE $4B,$02,$46,$02,$49,$05,$3F,$02
+	.BYTE $3A,$02,$3D,$05,$4B,$02,$46,$02
+	.BYTE $49,$05,$3F,$02,$3A,$02,$3D,$FF
+	.BYTE $85,$00,$1B,$05,$1B,$85,$03,$3A
+	.BYTE $85,$00,$1B,$05,$1B,$05,$1B,$05
+	.BYTE $1B,$82,$03,$3A,$02,$3A,$85,$00
+	.BYTE $1B,$05,$1B,$85,$03,$3A,$85,$00
+	.BYTE $1B,$05,$1B,$05,$1B,$05,$1B,$82
+	.BYTE $03,$3A,$02,$3A,$FF,$85,$0F,$00
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$FF
+	JMP e5C09
+
+	JMP e5C0F
+
+	JMP e5C15
+
+	JMP e5C1B
+
+	JMP e5B50
+
+	JMP e5C23
+
+	INC a5C66
+	BIT a5C60
+	BMI b150B
+	BVC b1525
+	LDA #$00
+	STA a5C66
+	LDX #$02
+b14F6	STA f5C3C,X
+	STA f5C3F,X
+	STA f5C42,X
+	STA f5C45,X
+	DEX 
+	BPL b14F6
+	STA a5C60
+	JMP e5852
+
+b150B	BVC b1522
+	LDA #$00
+	STA aD404    ;Voice 1: Control Register
+	STA aD40B    ;Voice 2: Control Register
+	STA aD412    ;Voice 3: Control Register
+	LDA #$0F
+	STA aD418    ;Select Filter Mode and Volume
+	LDA #$80
+	STA a5C60
+b1522	JMP e5B26
+
+b1525	LDX #$02
+	DEC a5C5D
+	BPL b1532
+	LDA a5C5E
+	STA a5C5D
+b1532	LDA f5C32,X
+	STA a5C35
+	TAY 
+	LDA a5C5D
+	CMP a5C5E
+	BNE b1556
+	LDA f5E84,X
+	STA a02
+	LDA f5E87,X
+	STA a03
+	DEC f5C42,X
+	BMI b1559
+	JMP e596B
+
+	JMP e5B10
+
+b1556	JMP e5992
+
+b1559	LDY f5C3C,X
+	LDA (p02),Y
+	CMP #$FF
+	BNE b1573
+	LDA #$00
+	STA f5C42,X
+	STA f5C3C,X
+	STA f5C3F,X
+	JMP e5886
+
+	JMP e5B10
+
+b1573	TAY 
+	LDA f5E8A,Y
+	STA a04
+	LDA f5E95,Y
+	STA a05
+	LDY f5C3F,X
+	LDA #$FF
+	STA a5C4B
+	LDA (p04),Y
+	STA f5C36,X
+	STA a5C4C
+	AND #$1F
+	STA f5C42,X
+	LDA #$47
+	SEC 
+	SBC a5C3E
+	CMP #$0F
+	BCC b159F
+	LDA #$0F
+b159F	STA aD418    ;Select Filter Mode and Volume
+	BIT a5C4C
+	BVS b15E2
+	INC f5C3F,X
+	LDA a5C4C
+	BPL b15BA
+	INY 
+	LDA (p04),Y
+	AND #$1F
+	STA f5C48,X
+	INC f5C3F,X
+b15BA	INY 
+	LDA (p04),Y
+	STA f5C45,X
+	ASL 
+	TAY 
+	LDA a5C69
+	BPL b15E5
+	LDA f5C72,Y
+	STA a5C4D
+	LDA f5C73,Y
+	LDY a5C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	STA f5C61,X
+	LDA a5C4D
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+	JMP e5912
+
+b15E2	DEC a5C4B
+b15E5	LDY a5C35
+	LDA f5C48,X
+	STX a5C4E
+	ASL 
+	ASL 
+	ASL 
+	TAX 
+	LDA f5D74,X
+	STA a5C4F
+	LDA a5C69
+	BPL b161E
+	LDA f5D74,X
+	AND a5C4B
+	STA aD404,Y  ;Voice 1: Control Register
+	LDA f5D72,X
+	STA fD402,Y  ;Voice 1: Pulse Waveform Width - Low-Byte
+	LDA f5D73,X
+	STA fD403,Y  ;Voice 1: Pulse Waveform Width - High-Nybble
+	LDA f5D75,X
+	STA fD405,Y  ;Voice 1: Attack / Decay Cycle Control
+	LDA f5D76,X
+	STA fD406,Y  ;Voice 1: Sustain / Release Cycle Control
+b161E	LDX a5C4E
+	LDA a5C4F
+	STA f5C39,X
+	INC f5C3F,X
+	LDY f5C3F,X
+	LDA (p04),Y
+	CMP #$FF
+	BNE b163B
+	LDA #$00
+	STA f5C3F,X
+	INC f5C3C,X
+b163B	JMP e5B10
+
+	LDA a5C69
+	BMI b1646
+	JMP e5B10
+
+b1646	LDY a5C35
+	LDA f5C36,X
+	AND #$20
+	BNE b1665
+	LDA f5C42,X
+	BNE b1665
+	LDA f5C39,X
+	AND #$FE
+	STA aD404,Y  ;Voice 1: Control Register
+	LDA #$00
+	STA fD405,Y  ;Voice 1: Attack / Decay Cycle Control
+	STA fD406,Y  ;Voice 1: Sustain / Release Cycle Control
+b1665	LDA a5C69
+	BMI b166D
+	JMP e5B10
+
+b166D	LDA f5C48,X
+	ASL 
+	ASL 
+	ASL 
+	TAY 
+	STY a5C5F
+	LDA f5D79,Y
+	STA a5C64
+	LDA f5D78,Y
+	STA a5C51
+	LDA f5D77,Y
+	STA a5C50
+	BEQ b16FA
+	LDA a5C66
+	AND #$07
+	CMP #$04
+	BCC b1696
+	EOR #$07
+b1696	STA a5C56
+	LDA f5C45,X
+	ASL 
+	TAY 
+	SEC 
+	LDA f5C74,Y
+	SBC f5C72,Y
+	STA a5C52
+	LDA f5C75,Y
+	SBC f5C73,Y
+b16AE	LSR 
+	ROR a5C52
+	DEC a5C50
+	BPL b16AE
+	STA a5C53
+	LDA f5C72,Y
+	STA a5C54
+	LDA f5C73,Y
+	STA a5C55
+	LDA f5C36,X
+	AND #$1F
+	CMP #$08
+	BCC b16EB
+	LDY a5C56
+	DEY 
+	BMI b16EB
+	CLC 
+	LDA a5C54
+	ADC a5C52
+	STA a5C54
+	LDA a5C55
+	ADC a5C53
+	STA a5C55
+	JMP e59FF
+
+b16EB	LDY a5C35
+	LDA a5C54
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+	LDA a5C55
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+b16FA	LDA a5C51
+	BEQ b1761
+	LDY a5C5F
+	AND #$1F
+	DEC f5C57,X
+	BPL b1761
+	STA f5C57,X
+	LDA a5C51
+	AND #$E0
+	STA a5C65
+	LDA f5C5A,X
+	BNE b1733
+	LDA a5C65
+	CLC 
+	ADC f5D72,Y
+	PHA 
+	LDA f5D73,Y
+	ADC #$00
+	AND #$0F
+	PHA 
+	CMP #$0E
+	BNE b174A
+	INC f5C5A,X
+	JMP e5A77
+
+b1733	SEC 
+	LDA f5D72,Y
+	SBC a5C65
+	PHA 
+	LDA f5D73,Y
+	SBC #$00
+	AND #$0F
+	PHA 
+	CMP #$08
+	BNE b174A
+	DEC f5C5A,X
+b174A	STX a5C4E
+	LDX a5C35
+	PLA 
+	STA f5D73,Y
+	STA fD403,X  ;Voice 1: Pulse Waveform Width - High-Nybble
+	PLA 
+	STA f5D72,Y
+	STA fD402,X  ;Voice 1: Pulse Waveform Width - Low-Byte
+	LDX a5C4E
+b1761	LDA a5C64
+	AND #$01
+	BEQ b179D
+	LDA f5C61,X
+	BEQ b179D
+	LDA f5C42,X
+	BEQ b179D
+	LDA f5C36,X
+	AND #$1F
+	SEC 
+	SBC #$01
+	CMP f5C42,X
+	LDY a5C35
+	BCC b1792
+	LDA f5C61,X
+	DEC f5C61,X
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA f5C39,X
+	AND #$FE
+	BNE b179A
+b1792	LDA f5C61,X
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA #$80
+b179A	STA aD404,Y  ;Voice 1: Control Register
+b179D	LDA a5C64
+	AND #$02
+	BEQ b17B2
+	LDA f5C61,X
+	BEQ b17B2
+	INC f5C61,X
+	LDY a5C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+b17B2	LDA a5C64
+	AND #$04
+	BEQ b17E3
+	LDA a5C66
+	AND #$01
+	BEQ b17C9
+	LDA f5C45,X
+	CLC 
+	ADC #$18
+	JMP e5AF9
+
+b17C9	LDA f5C45,X
+	ASL 
+	TAY 
+	LDA f5C72,Y
+	STA a5C4D
+	LDA f5C73,Y
+	LDY a5C35
+	STA fD401,Y  ;Voice 1: Frequency Control - High-Byte
+	LDA a5C4D
+	STA fD400,Y  ;Voice 1: Frequency Control - Low-Byte
+b17E3	LDY #$FF
+	LDA a5C67
+	BNE b17F0
+	LDA a5C68
+	BMI b17F0
+	INY 
+b17F0	STY a5C69
+	DEX 
+	BMI b17F9
+	JMP e585F
+
+b17F9	LDA #$FF
+	STA a5C69
+	LDA a5C67
+	BNE b1808
+	BIT a5C68
+	BPL b1809
+b1808	RTS 
+
+b1809	BVC b180E
+	JSR e5BA9
+b180E	DEC a5C6B
+	BPL b1808
+	LDA a5C71
+	AND #$0F
+	STA a5C6B
+	LDA a5C6A
+	CMP a5C6C
+	BNE b1832
+	LDX #$00
+	STX aD404    ;Voice 1: Control Register
+	STX aD40B    ;Voice 2: Control Register
+	DEX 
+	STX a5C68
+	JMP e5B35
+
+b1832	DEC a5C6A
+	ASL 
+	TAY 
+	BIT a5C71
+	BMI b185C
+	BVS b184A
+	LDA f5C72,Y
+	STA fD400    ;Voice 1: Frequency Control - Low-Byte
+	LDA f5C73,Y
+	STA fD401    ;Voice 1: Frequency Control - High-Byte
+b184A	TYA 
+	SEC 
+	SBC a5C6D
+	TAY 
+	LDA f5C72,Y
+	STA aD407    ;Voice 2: Frequency Control - Low-Byte
+	LDA f5C73,Y
+	STA aD408    ;Voice 2: Frequency Control - High-Byte
+b185C	BIT a5C6E
+	BPL b186C
+	LDA a5C6F
+	EOR #$01
+	STA aD404    ;Voice 1: Control Register
+	STA a5C6F
+b186C	BVC b1879
+	LDA a5C70
+	EOR #$01
+	STA aD40B    ;Voice 2: Control Register
+	STA a5C70
+b1879	JMP e5B35
+
+	LDA #$00
+	STA aD404    ;Voice 1: Control Register
+	STA aD40B    ;Voice 2: Control Register
+	STA a5C6B
+	LDA a5C68
+	AND #$0F
+	STA a5C68
+	ASL 
+	ASL 
+	ASL 
+	ASL 
+	TAY 
+	LDA f5E72,Y
+	STA a5C71
+	LDA f5E75,Y
+	STA a5C6A
+	LDA f5E78,Y
+	STA a5C6C
+	LDA f5E7B,Y
+	STA a5C6E
+	AND #$3F
+	STA a5C6D
+	LDA f5E7E,Y
+	STA a5C6F
+	LDA f5E81,Y
+	STA a5C70
+	LDX #$00
+b18BF	LDA f5E75,Y
+	STA fD400,X  ;Voice 1: Frequency Control - Low-Byte
+	INY 
+	INX 
+	CPX #$0E
+	BNE b18BF
+	LDA a5C71
+	AND #$30
+	LDY #$EE
+	CMP #$20
+	BEQ b18D8
+	LDY #$CE
+b18D8	STY a5B5F
+	RTS 
+
+	LDA #$40
+	STA a5C60
+	RTS 
+
+	LDA #$C0
+	STA a5C60
+	RTS 
+
+	LDA #$00
+	STA a5C67
+	RTS 
+
+	LDA #$FF
+	STA a5C67
+	JMP e5B50
+
+	LDX a5C67
+	BEQ b18FF
+	STX a5C68
+	RTS 
+
+b18FF	ORA #$40
+	STA a5C68
+	RTS 
+
+	.BYTE $00,$07,$0E,$00,$02,$82,$05,$41
+	.BYTE $41,$41,$03,$03,$03,$33,$48,$21
+	.BYTE $00,$00,$03,$14,$3A,$3A,$00,$06
+	.BYTE $0B,$FF,$02,$74,$00,$41,$FF,$41
+	.BYTE $06,$00,$74,$03,$02,$00,$01,$00
+	.BYTE $11,$01,$00,$00,$01,$00,$00,$03
+	.BYTE $1D,$1F,$00,$40,$AD,$01,$10,$FF
+	.BYTE $07,$1F,$01,$00,$40,$94,$00,$FF
+	.BYTE $16,$01,$27,$01,$38,$01,$4B,$01
+	.BYTE $5F,$01,$73,$01,$8A,$01,$A1,$01
+	.BYTE $BA,$01,$D4,$01,$F0,$01,$0E,$02
+	.BYTE $2D,$02,$4E,$02,$71,$02,$96,$02
+	.BYTE $BD,$02,$E7,$02,$13,$03,$42,$03
+	.BYTE $74,$03,$A9,$03,$E0,$03,$1B,$04
+	.BYTE $5A,$04,$9B,$04,$E2,$04,$2C,$05
+	.BYTE $7B,$05,$CE,$05,$27,$06,$85,$06
+	.BYTE $E8,$06,$51,$07,$C1,$07,$37,$08
+	.BYTE $B4,$08,$37,$09,$C4,$09,$57,$0A
+	.BYTE $F5,$0A,$9C,$0B,$4E,$0C,$09,$0D
+	.BYTE $D0,$0D,$A3,$0E,$82,$0F,$6E,$10
+	.BYTE $68,$11,$6E,$12,$88,$13,$AF,$14
+	.BYTE $EB,$15,$39,$17,$9C,$18,$13,$1A
+	.BYTE $A1,$1B,$46,$1D,$04,$1F,$DC,$20
+	.BYTE $D0,$22,$DC,$24,$10,$27,$5E,$29
+	.BYTE $D6,$2B,$72,$2E,$38,$31,$26,$34
+	.BYTE $42,$37,$8C,$3A,$08,$3E,$B8,$41
+	.BYTE $A0,$45,$B8,$49,$20,$4E,$BC,$52
+	.BYTE $AC,$57,$E4,$5C,$70,$62,$4C,$68
+	.BYTE $84,$6E,$18,$75,$10,$7C,$70,$83
+	.BYTE $40,$8B,$70,$93,$40,$9C,$78,$A5
+	.BYTE $58,$AF,$C8,$B9,$E0,$C4,$98,$D0
+	.BYTE $08,$DD,$30,$EA,$20,$F8,$2E,$FD
+	.BYTE $00,$07,$0E,$00,$03,$03,$03,$26
+	.BYTE $18,$0F,$00,$00,$00,$82,$02,$05
+	.BYTE $41,$41,$04,$22,$3A,$01,$02,$05
+	.BYTE $0F,$FF,$82,$C1,$00,$41,$00,$41
+	.BYTE $00,$00,$27,$01,$03,$00,$00,$01
+	.BYTE $00,$00,$01,$00,$01,$10,$40,$07
+	.BYTE $1F,$01,$00,$40,$94,$00,$FF,$FF
+	.BYTE $00,$00,$00,$00,$00,$00,$00,$00
+	.BYTE $C0,$00,$41,$17,$65,$02,$41,$00
+	.BYTE $00,$08,$41,$08,$08,$00,$00,$01
+	.BYTE $00,$08,$41,$09,$39,$00,$41,$00
+	.BYTE $00,$02,$81,$08,$0A,$00,$00,$01
+	.BYTE $40,$01,$41,$49,$87,$02,$00,$00
+	.BYTE $00,$08,$41,$02,$00,$00,$00,$00
+	.BYTE $00,$08,$41,$03,$0A,$00,$00,$01
+	.BYTE $80,$08,$41,$56,$87,$03,$00,$00
+	.BYTE $80,$06,$81,$02,$09,$00,$00,$01
+	.BYTE $00,$02,$81,$09,$A9,$00,$00,$01
+	.BYTE $80,$03,$41,$49,$39,$02,$00,$00
+	.BYTE $80,$07,$41,$47,$29,$02,$00,$00
+	.BYTE $80,$06,$11,$06,$7B,$00,$00,$01
+	.BYTE $C0,$0E,$41,$90,$F0,$01,$E8,$02
+	.BYTE $00,$0A,$41,$17,$65,$02,$41,$04
+	.BYTE $00,$00,$00,$00,$00,$00,$00,$00
+	.BYTE $00,$0D,$00,$02,$57,$0C,$00,$28
+	.BYTE $13,$60,$10,$00,$04,$11,$0F,$00
+	.BYTE $08,$07,$80,$00,$11,$0F,$00,$16
+	.BYTE $A4,$10,$24,$00,$04,$00,$0A,$00
+	.BYTE $08,$09,$00,$02,$15,$0B,$00,$20
+	.BYTE $23,$2A,$F9,$80,$00,$81,$95,$00
+	.BYTE $28,$00,$00,$02,$81,$AD,$40,$5F
+	.BYTE $62,$40,$06,$80,$00,$41,$0C,$00
+	.BYTE $02,$14,$14,$02,$13,$0D,$00,$60
+	.BYTE $91,$70,$33,$80,$02,$41,$0B,$00
+	.BYTE $00,$32,$80,$02,$41,$0B,$00,$40
+	.BYTE $A0,$32,$54,$00,$08,$11,$04,$F0
+	.BYTE $C2,$49,$00,$08,$11,$04,$F0,$59
+	.BYTE $A0,$1A,$06,$40,$00,$81,$0A,$00
+	.BYTE $00,$18,$00,$08,$81,$09,$00,$32
+	.BYTE $14,$20,$00,$00,$04,$51,$0F,$70
+	.BYTE $00,$00,$00,$00,$00,$00,$00,$00
+	.BYTE $00,$00,$00,$00,$00,$00,$00,$00
+	.BYTE $00,$00,$A0,$A6,$AC,$5E,$5E,$5E
+	.BYTE $B2,$B3,$ED,$27,$61,$B0,$FF,$51
+	.BYTE $75,$9B,$CD,$5E,$5E,$5E,$5F,$5F
+	.BYTE $5F,$5F,$60,$60,$60,$60,$0A,$01
+	.BYTE $02,$01,$03,$FF,$04,$04,$05,$04
+	.BYTE $06,$FF,$0A,$07,$08,$07,$09,$FF
+	.BYTE $FF,$85,$00,$16,$02,$1A,$02,$16
+	.BYTE $02,$1B,$02,$16,$02,$1D,$05,$16
+	.BYTE $02,$16,$02,$1A,$02,$16,$02,$14
+	.BYTE $02,$16,$02,$11,$02,$20,$05,$16
+	.BYTE $02,$1A,$02,$16,$02,$1B,$02,$16
+	.BYTE $02,$1D,$05,$16,$02,$16,$02,$1A
+	.BYTE $02,$16,$02,$14,$02,$16,$02,$11
+	.BYTE $02,$20,$FF,$85,$00,$1B,$02,$1F
+	.BYTE $02,$1B,$02,$20,$02,$1B,$02,$22
+	.BYTE $05,$1B,$02,$1B,$02,$1F,$02,$1B
+	.BYTE $02,$19,$02,$1B,$02,$16,$02,$25
+	.BYTE $05,$1B,$02,$1F,$02,$1B,$02,$20
+	.BYTE $02,$1B,$02,$22,$05,$1B,$02,$1B
+	.BYTE $02,$1F,$02,$1B,$02,$19,$02,$1B
+	.BYTE $02,$16,$02,$25,$FF,$85,$00,$1D
+	.BYTE $02,$21,$02,$1D,$02,$22,$02,$1D
+	.BYTE $02,$24,$05,$1D,$02,$1D,$02,$21
+	.BYTE $02,$1D,$02,$1B,$02,$1D,$02,$18
+	.BYTE $02,$27,$05,$1B,$02,$1F,$02,$1B
+	.BYTE $02,$20,$02,$1B,$02,$22,$05,$1B
+	.BYTE $02,$1B,$02,$1F,$02,$1B,$02,$19
+	.BYTE $02,$1B,$02,$16,$02,$25,$FF,$82
+	.BYTE $0E,$3A,$82,$05,$35,$02,$32,$02
+	.BYTE $2E,$82,$03,$3A,$82,$05,$41,$02
+	.BYTE $3E,$02,$3A,$82,$03,$3A,$82,$05
+	.BYTE $35,$02,$32,$02,$2E,$82,$06,$3A
+	.BYTE $02,$41,$02,$3E,$02,$3A,$82,$0E
+	.BYTE $3A,$82,$05,$35,$02,$32,$02,$2E
+	.BYTE $82,$03,$3A,$82,$05,$41,$02,$3E
+	.BYTE $02,$3A,$82,$03,$3A,$82,$05,$35
+	.BYTE $02,$32,$02,$2E,$82,$06,$3A,$02
+	.BYTE $41,$02,$3E,$02,$3A,$FF,$82,$0E
+	.BYTE $3F,$82,$05,$3A,$02,$37,$02,$33
+	.BYTE $82,$03,$3F,$82,$05,$46,$02,$43
+	.BYTE $02,$3F,$82,$03,$3F,$82,$05,$3A
+	.BYTE $02,$37,$02,$33,$82,$06,$3F,$02
+	.BYTE $46,$02,$43,$02,$3F,$82,$0E,$3F
+	.BYTE $82,$05,$3A,$02,$37,$02,$33,$82
+	.BYTE $03,$3F,$82,$05,$46,$02,$43,$02
+	.BYTE $3F,$82,$03,$3F,$82,$05,$3A,$02
+	.BYTE $37,$02,$33,$82,$06,$3F,$02,$46
+	.BYTE $02,$43,$02,$3F,$FF,$82,$0E,$41
+	.BYTE $82,$05,$3C,$02,$39,$02,$35,$82
+	.BYTE $03,$41,$82,$05,$48,$02,$45,$02
+	.BYTE $41,$82,$03,$41,$82,$05,$3C,$02
+	.BYTE $39,$02,$35,$82,$06,$41,$02,$48
+	.BYTE $02,$45,$02,$41,$82,$0E,$3F,$82
+	.BYTE $05,$3A,$02,$37,$02,$33,$82,$03
+	.BYTE $3F,$82,$05,$46,$02,$43,$02,$3F
+	.BYTE $82,$03,$3F,$82,$05,$3A,$02,$37
+	.BYTE $02,$33,$82,$06,$3F,$82,$01,$46
+	.BYTE $82,$06,$43,$82,$01,$3F,$FF,$82
+	.BYTE $0B,$3A,$02,$32,$05,$3A,$05,$3E
+	.BYTE $05,$3F,$0B,$3E,$0B,$3F,$05,$38
+	.BYTE $05,$37,$02,$35,$05,$44,$05,$43
+	.BYTE $02,$41,$02,$3C,$02,$3E,$05,$3A
+	.BYTE $05,$3F,$FF,$85,$07,$3F,$02,$43
+	.BYTE $02,$41,$02,$46,$05,$48,$05,$49
+	.BYTE $02,$3A,$05,$3C,$05,$3D,$0B,$46
+	.BYTE $0B,$43,$05,$46,$05,$43,$05,$3F
+	.BYTE $02,$37,$02,$33,$02,$37,$02,$33
+	.BYTE $FF,$85,$0B,$41,$05,$3F,$05,$3C
+	.BYTE $05,$39,$02,$35,$02,$40,$02,$3F
+	.BYTE $02,$3C,$02,$3A,$02,$39,$02,$38
+	.BYTE $02,$35,$02,$30,$02,$33,$02,$2D
+	.BYTE $02,$2E,$05,$3F,$05,$3D,$05,$3A
+	.BYTE $05,$37,$02,$33,$02,$46,$02,$44
+	.BYTE $02,$41,$FF,$85,$0F,$00,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05,$01,$05,$01,$05,$01
+	.BYTE $05,$01,$05
+	ORA (pFF,X)
+	CMP #$01
+	BEQ b1DD3
+	LDA #<p0812
+	LDX #>p0812
+	STA a07FE
+	STX a07FF
+	JMP j0800
+
+b1DD3	LDA #$D3
+	LDX #$14
+	LDY #$00
+	STA aFC
+	STX aFD
+	STY aFE
+	LDA #$58
+	LDX #$08
+	STA aFF
+b1DE5	LDA (pFC),Y
+	STA (pFE),Y
+	INY 
+	BNE b1DE5
+	INC aFD
+	INC aFF
+	DEX 
+	BPL b1DE5
+	LDA #<p5812
+	LDX #>p5812
+	STA a07FE
+	STX a07FF
+	JMP e5800
+
+	JMP (a07FE)
+

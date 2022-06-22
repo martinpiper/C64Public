@@ -59,6 +59,8 @@ EnemyAddPlayerAggression
 
 
 EnemyProcessActivation
+	jsr TutorialHint_PositionCheck
+
 	lda DisplayingSubGame
 	beq .os1
 .exit2

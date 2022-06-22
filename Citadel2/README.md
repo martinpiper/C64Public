@@ -62,7 +62,7 @@ The currently captured enemy can be ordered to do different actions with the fun
 
 	* F1 - Orders Stay or continue moving, it toggles the order
 	* F3 - Follow the player, the point to be followed is two squares along the last direction the player fired.
-	* F5 - Destroy mode, shoots at other enemies
+	* F5 - Hunt mode, shoots at other enemies
 	* F7 - Assimilate, depending on the enemy health and the capture cost an amount of energy is returned to the player and the target is destroyed
 
 
@@ -416,3 +416,10 @@ Pickups are automatically added instead of waiting to be installed by accessing 
 The player moves around the map aligned to the map blocks and with four-way movement.
 Pickups are stored in the inventory and can be installed when accessing a terminal.
 A terminal sub-game needs to be completed before an inventory item is installed or door is activated.
+
+
+
+# Day 21
+
+Added a quick tutorial/hint display in ther score panel. At certain places in the map and with certain game events, a hint will be displayed.
+This is mostly to help the player learn the controls for the capture probe, how to open doors, or use power recharge stations.

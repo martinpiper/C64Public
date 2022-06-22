@@ -1,0 +1,369 @@
+* Disassemble armalytemusic.prg
+
+
+
+* Convert to ACME
+
+
+
+* Assemble from source player + data
+
+
+
+* Check binary exact files
+
+
+
+* Create BDD6502 test cases for expected SID register writes across multiple frames and tunes
+	ExpectedSIDOutput*.feature
+
+
+
+* Connect lo/hi values for:
+	Done - Sequences
+	Done - Tune data
+
+
+
+* Sequences are not stored consecutively in memory, sort them
+
+
+
+* Expand data so that we have:
+	32 voice effects
+	128 sequences of 128 bytes
+	16 tunes each containing 3 channels of 128 bytes
+
+
+
+* Create very simple C64 based editor for the expanded data, mostly tweaking hex values
+	* Done - Main page display - Saved as a C64\ExternalTools\petscii_20171107_windows64\windows64\runme.bat edited file in Graphics\editor.c
+	* Done - Binary data exported to editor.prg and then imported from editor.prg
+	* Simple editing cursor that describes what actions to take and for what memory location
+		* Done - X/Y Location
+		* Done - Indirected optional colour, for easier highlighting of columns
+		* Done - Will need an indrected base address plus local optional offset, for easier scrolling of data from the indrected offset
+		* Done - Number format hex
+			* Done - Number of digits to display (max 2)
+		* Done - Reverse chars flag
+		* Done - Cursor display or colour flash for location
+		* Done - Store highlighted extension value for column colour updating
+		* Done - Up/down/left/right links
+		* Done - Cursor up/down/left/right to move the editing cursor in those directions
+		* Done - With the </> to edit the value in single steps
+		* Done - With the +/- to change the selected effect/sequence/track
+		* Done - 1, 2, 4, & 8 flip bits $10, $20, $40, and $80
+
+
+
+* Auto repeat on all keys
+
+
+
+* For scrolling the columns, could use another key combo?
+	q/a							= Scroll up/down the sequence
+	w/s							= Scroll up/down the tracks
+
+	
+	
+* Separate player and data sources
+
+
+
+* Could we instead please have:
+	Return/Enter                                       = Start/restart current track
+	Spacebar                                            =stop all music
+
+
+
+* I think Q/A could work in place of the Page Up/Down keys; perhaps we could do away with W/S and just make Q/A page up/down in whatever column you are in?
+
+
+
+* Add sequence stp display above the current sequence display
+
+
+
+* Bottom/top of an element generates a suitable optional scroll up/down event
+
+
+
+* Track index for each channel displayed below the current sequence for each channel
+
+
+* Dynamic index depending on the track or block edit cursor position to the right of the "play" entry
+
+
+
+* Tweaked the q/a keys to move in steps of 8 not 16 rows.
+
+
+
+* Extra track/sequence step display and relevant layout changes
+
+
+
+* Change current track tempo
+	't' will increment the value from 0-f and it can cycle around?
+	It is just a single hex digit, so the range is limited.
+
+
+
+* Note display
+	* Current cursor sequence position
+	* Per channel sequence playing note
+
+
+
+* Sequence editor
+	D                Down 1 octave for current parameter (subtracts 12 from currently highlighted note value)
+	U                Up 1 octave for current parameter (adds 12 from currently highlighted note value)
+
+
+
+
+* Block copying
+	C                Copy current column into buffer
+	R                Replace current column with buffer
+
+
+
+* 1.The unused bytes at the end of all sequences and track channels should be $00 (not $FF), largely because the final byte of a sequence or track channel is invariably $FF, so we need zeros following to make the end points stand out.
+
+
+
+* Delete a byte and shift the block contents up
+
+
+
+* Insert a byte and shift the block contents down
+
+
+
+* Number format decimal - Time since the start of the music
+	* Number of digits to display
+
+
+
+* Scan lines indicator
+
+
+
+* <space> Pause/unpause the music
+
+
+
+* Both tempo editable
+
+
+
+* Finish Citadel.prg regenerator work. Looks like the data can be swapped into the Armalyte player without a problem.
+	Done - Sequences and tracks starting blocks need labels
+	Done - Files are binary exact, create: MusicPlayerData_Citadel.a
+	Done - Then these can be added to the sequence and track lookup tables
+	Done - Then (like Armalyte) the sequence data can be shuffled around so that the sequences in the table are all in ascending memory order
+	Done - Then add in the expanded data padding macros to preapre it for the editor
+	..\acme.exe -v4 -f cbm -o Citadel.d.prg MusicPlayerData_Citadel.a
+	Citadel.d.prg works as a drop in replacement for the editor
+	Don't forget to use the monitor to call PostLoadProcessMusic after loading
+
+
+
+* Data storage - Technically in an emulator we can use the monitor to save and load or use the snapshot save/load, however on a real C64
+	* Save on key 'S' to disk drive 8
+		Statically named filename? Overwrite existing file?
+	* Load on key 'L' from disk drive 8
+		Statically named filename?
+
+
+
+- Tune shows track being played
+- Both of those tempo values have their own spot
+- Shows SEQ/VCE/NOT
+- STP value shown next to cursor
+
+
+
+* 3. Could I request that CBM Home (hopefully also Home on the PC keyboard) return the cursor to the very topmost $00 step in the current column?
+
+
+
+
+* Voice muting? Red coloured box crosshatch
+	F1/F3/F5 - Toggle channel 1/2/3 mute
+
+
+
+
+* Display estimate of compressed music size (plus player code) for all tracks and used sequence data as 4 byte hex value during editing
+	Re-use the "retrig" button space?
+
+
+
+* Save/load filename entry
+
+
+
+
+* Consider the feasibility for having a C64 based compressor
+	I'm leaning towards a PC based compressor
+	Debug\CompactorTool.exe -i bin\armalyte.mus.prg -o t.a
+	..\acme.exe -f cbm -o t.prg --cpu 6502 -v4 --setpc $c000 MusicPlayer_Defs.a MusicPlayer.a t.a
+	Run this to open the emulator:
+		t.prg
+	On C64 with OriginalData\t.d64 mounted:
+		new
+		load "ba.quick play",8
+		run
+
+
+
+* Numpty voice issue fixed
+
+
+
+* Snare music import
+
+
+
+* Attempt to resurrect other MW music that use this style of player
+	* Use this extra data to find extra code functionality
+* New music player voice effects added
+
+
+
+* Fixed the voice special effect $8 for chord
+
+
+
+* Fixed Citadel with MW remixed instruments
+
+
+
+* Do not need to output vibratoDelays for optimised player files now
+	Also effects labels have changed.
+	Check the whole optimised music output process
+
+
+
+* Sync flashing block metronome display
+	Incr/decr the sync value, and have it flash yellow during the music playback in sync with the sync value?
+	m/M = incr/decr metronome timing?
+	13,3 for 8,2
+	Added MW metronome code instead :)
+		b							= Set beat length
+		B							= Set bar length
+
+
+
+* Add jump table for:
+	MusicInit
+	MusicPlay
+	MusicStop
+
+
+
+
+* Directory listing
+	Use "$" during a filename prompt to display the directory
+
+
+
+* Fixed the metronome update to once per interrupt not thrice.
+
+
+
+* Add a music editor data version byte as the first byte in memory
+
+
+
+* Store metronome values in MusicPlayerData_somePadding, for V1+ files
+
+
+
+* Write some code that upgrades all old music data with 1 longer lengths.
+	The music data will then be considered to the version 2 when it is saved and won't be upgraded the next time it is loaded.
+	* This can be in: PostLoadProcessMusic
+	* V0 corresponds to old original style, the vibratoPattern1/vibratoPattern2 tables will need to be shifted up by 1 and 1 written to the file format version
+		* Also store sensible defaults in metronome
+		BEAT_LENGTH		!by $0c
+		BEATS_IN_BAR	!by $04
+	* V1 needs all the note delays to be incremented by 1 and 2 written to the file format version
+
+
+
+* Fixed the "thump" at the start of the music and fixed the 0 duration to be $40 instead
+
+
+
+* Snare music sequences needed to be sorted in memory
+
+
+
+* Compactor will need to read the data version byte and only compact >=V2 files
+	* Data table offsets have changed for vibratoPattern1 and vibratoPattern2 have changed, compactor will need to be updated
+
+
+
+
+* Vibrato editor mode for the table data
+	Switch the main editor and vibrato view on a certain key
+
+
+
+* Also, could you please swap on-screen positions of beat & bar to 
+	bar: 4
+	beat:C
+
+
+
+* These can replace the current tmp1:1 and temp2:8 displays with one along the lines    tempo:125
+	tempo1_table    !by $0F,$03,$02,$02,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01,$01,$00
+	tempo2_table    !by $0F,$0A,$07,$0A,$06,$0D,$09,$0C,$02,$02,$04,$06,$08,$0C,$01,$00
+	tempo_readout    !by $10,$30,$41,$47,$49,$4B,$4D,$4F,$52,$56,$67,$6F,$73,$78,$7D,$FA
+	tempos (calculated from hex values above, but preferred on screen in decimal, with leading zero suppression)
+	After load and after switching the current track calculate into Editor_currentTempoIndex
+	Then use this to update the tempos
+	Default tempo for unused tracks is still tmp1: 1, tmp2: 1, which gives a decimal readout of 125, so I suggest the existing t key command decs the current tempo table offset, and the T command incs it, since most of the time the tempo is far more likely to be reduced from the default.
+
+
+
+* Maybe I should display "Saving... Please do not remove the disc!"
+	and a "Save completed!" prompt
+
+
+
+* Runstop key to exit load/save filename prompt
+
+
+
+* original Walkers Warbles music
+	http://csdb.dk/release/?id=24920
+	http://csdb.dk/release/?id=30872
+
+
+
+* Added code to display what looks like the original MW demo disk
+
+
+
+
+* For the compactor output file, write a MW Warbles like standalone player with numbers choosing the track etc
+
+
+
+* Added OldAndNewPerformance.feature performance test feature
+
+
+
+
+* Compacting snarev2.mus produces the wrong output track data
+	Parsing the track any 4X command is not parsed correctly which results in bad track information??
+	Hmm, commenting out the RemoveSequence() and everything is fine. So it must be something to do with renumbering the tracks?
+
+
+
+* Add moving average and peak raster line display to the editor
+	The raster time (lastRaster) update into the table should be in IrqTopOfScreen
+	The calculation and display can be in the mainline while the player is enabled (myPlayFlag)
+	Replace RETRIG

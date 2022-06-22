@@ -127,6 +127,10 @@
       <Filter>Resource Files\assets</Filter>
     </None>
     <None Include="BuildIt9.bat" />
+    <None Include="BuildIt10.bat" />
+    <None Include="assets\convert10.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -366,6 +370,24 @@
     <Library Include="tmp\Demo9Sprites1Sheet.txt.a">
       <Filter>tmp</Filter>
     </Library>
+    <Library Include="asm\main10.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="tmp\Demo10SpritesSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="..\stdlib\QuickSort.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="..\stdlib\Comparisons.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="tmp\Demo9Sprites1Sheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo9Sprites2Sheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -390,6 +412,15 @@
     </Text>
     <Text Include="..\..\BombJack\TODO.txt">
       <Filter>Header Files\BombJack</Filter>
+    </Text>
+    <Text Include="tmp\Demo10SpritesSheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\Demo9Sprites1Sheet.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\Demo9Sprites2Sheet.txt">
+      <Filter>tmp</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

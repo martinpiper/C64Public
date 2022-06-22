@@ -8,7 +8,7 @@ extern void GetNumFromEdit(CEdit &edit,int &val);
 extern void SetNumToEdit(CEdit &edit,const unsigned char num);
 
 extern void SetNumToEdit(CEdit &edit,const unsigned char num,LPCTSTR separator,const unsigned char num2);
-extern CString GetNum(const unsigned char num);
+extern CString GetHexNum(const unsigned char num);
 
 #define IgnoreAnyUpdates() ScopedUpdate _scopedUpdate(&mIgnoreAnyUpdates);
 class ScopedUpdate

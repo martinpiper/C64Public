@@ -6,7 +6,7 @@ DisplayScreen
 	jsr Video_InitDisplaySpritesScrollsBackground
 	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
 	; Allows decompression to be seen on the screen
-;	jsr Video_EnableDisplay
+	jsr Video_EnableDisplay
 
 	jsr DisplayData
 
@@ -23,7 +23,7 @@ DisplayScreen
 	sta CIA2PortBRS232
 	jsr CopyTileScrolls
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink | kVideo_EnableDisplay_Tiles_BorderYShrink
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink; | kVideo_EnableDisplay_Tiles_BorderYShrink
 	jsr Video_EnableDisplay
 
 	jsr Bus24Bit_Reset

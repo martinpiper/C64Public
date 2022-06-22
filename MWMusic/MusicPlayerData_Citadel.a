@@ -1,0 +1,479 @@
+;..\acme.exe -v4 -f cbm -o bin\citadel.mus.prg MusicPlayerData_Citadel.a
+!ifndef MusicInit {
+!source "../stdlib/stdlib.a"
+!initmem $ff
+* = $4400
+!source "MusicPlayer_Defs.a"
+}
+
+MusicPlayerDataStart = *
+MusicPlayerDataVersion !by 1
+
+vibratoPattern1 	!by $00,$04,$03,$02,$01,$04,$03,$02
+	!by $01,$03,$02,$01,$03,$02,$02,$01
+vibratoPattern2 	!by $00,$05,$05,$04,$02,$04,$04,$03
+	!by $01,$03,$02,$00,$01,$01,$00,$00
+
+BEAT_LENGTH		!by $0c				;SET WITHIN EDITOR USING KEY 'b' AS VALUE BETWEEN $00 AND $0F, & DISPLAYED IN EDITOR AS 'beat0'
+BEATS_IN_BAR	!by $04				;SET WITHIN EDITOR USING KEY 'shift b' AS VALUE BETWEEN $00 AND $0F, & DISPLAYED IN EDITOR AS 'bar0'			
+MusicPlayerData_somePadding !fill 5 , 0	; This is unused, so can be used for extra data
+
+effect_AttackDecay 	!by $00
+effect_SustainReleas 	!by $00
+effect_Control1 	!by $00
+effect_Special	 	!by $00
+effect_PulseWidth 	!by $00
+effect_PulseDepth 	!by $00
+effect_TopBottom 	!by $00
+effect_AttackTime 	!by $00
+	!by $0F , $0C , $11 , $37 , $00 , $00 , $00 , $03
+	!by $0B , $07 , $11 , $27 , $00 , $00 , $00 , $02
+	!by $04 , $24 , $41 , $30 , $00 , $30 , $64 , $02
+	!by $0D , $ED , $41 , $30 , $04 , $1B , $F6 , $01
+	!by $0A , $0A , $81 , $24 , $00 , $00 , $00 , $01
+	!by $0A , $29 , $41 , $30 , $01 , $30 , $F9 , $03
+	!by $01 , $9F , $41 , $00 , $00 , $19 , $31 , $00
+	!by $0A , $E9 , $41 , $30 , $04 , $30 , $F9 , $03
+	!by $0A , $09 , $41 , $30 , $04 , $30 , $F9 , $03
+	!by $0D , $ED , $41 , $30 , $04 , $60 , $F5 , $01
+	!by $0F , $8F , $41 , $02 , $00 , $09 , $10 , $00
+	!by $0D , $AD , $41 , $02 , $00 , $09 , $10 , $00
+	!by $0A , $0A , $41 , $30 , $0B , $30 , $F9 , $01
+	!by $0A , $8A , $41 , $30 , $00 , $41 , $64 , $04
+	!by $09 , $8A , $41 , $30 , $02 , $80 , $F9 , $02
+
+
+
+* = effect_AttackDecay + ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2)
+
+effect_AttackControl 	!by $00
+effect_Note1 	!by $00
+effect_Note2 	!by $00
+effect_Note3	!by $00
+effect_Note4	!by $00
+effect_Trlnote 	!by $00
+effect_Vibrato 	!by $00
+effect_VibratoDelay	!by $00
+	!by $81 , $44 , $00 , $00 , $00 , $44 , $00 , $00
+	!by $00 , $30 , $00 , $81 , $00 , $47 , $00 , $00
+	!by $81 , $43 , $00 , $00 , $00 , $00 , $00 , $00
+	!by $81 , $47 , $00 , $00 , $00 , $00 , $06 , $00
+	!by $00 , $49 , $00 , $00 , $00 , $00 , $00 , $00
+	!by $81 , $46 , $00 , $00 , $00 , $00 , $03 , $00
+	!by $00 , $00 , $00 , $00 , $00 , $00 , $03 , $00
+	!by $81 , $47 , $00 , $00 , $00 , $00 , $0A , $02
+	!by $81 , $46 , $00 , $00 , $00 , $00 , $03 , $00
+	!by $81 , $47 , $00 , $00 , $00 , $00 , $03 , $00
+	!by $00 , $00 , $00 , $00 , $00 , $87 , $00 , $00
+	!by $00 , $00 , $00 , $00 , $00 , $87 , $00 , $00
+	!by $81 , $47 , $00 , $00 , $00 , $00 , $06 , $00
+	!by $15 , $8C , $00 , $00 , $00 , $00 , $0D , $32
+	!by $15 , $8C , $00 , $00 , $00 , $00 , $0D , $0A
+
+* = effect_AttackControl + ((kMusicPlayer_NumEffects * kMusicPlayer_EffectsSize) / 2)
+
+; 3xlo 3xhi tempo1 tempo2
+tuneInfo
+	!by <track_cb6f , <track_cb8e , <track_cbd3 , >track_cb6f , >track_cb8e , >track_cbd3 , $02 , $06
+	!by <track_cbfc , <track_cc5b , <track_ccc6 , >track_cbfc , >track_cc5b , >track_ccc6 , $01 , $01
+	!by <track_cd07 , <track_cd18 , <track_cd29 , >track_cd07 , >track_cd18 , >track_cd29 , $01 , $01
+	!by <track_cd3e , <track_cd9d , <track_cdf4 , >track_cd3e , >track_cd9d , >track_cdf4 , $01 , $01
+
+tune3_0 = track_cd3e
+!for .i , kMusicPlayer_NumTunes-4 {
+	!by <(tune3_0 + (((.i*3)+0) * kMusicPlayer_TunesVoiceSize))
+	!by <(tune3_0 + (((.i*3)+1) * kMusicPlayer_TunesVoiceSize))
+	!by <(tune3_0 + (((.i*3)+2) * kMusicPlayer_TunesVoiceSize))
+	!by >(tune3_0 + (((.i*3)+0) * kMusicPlayer_TunesVoiceSize))
+	!by >(tune3_0 + (((.i*3)+1) * kMusicPlayer_TunesVoiceSize))
+	!by >(tune3_0 + (((.i*3)+2) * kMusicPlayer_TunesVoiceSize))
+	!by $01, $08
+}
+
+* = tuneInfo + (kMusicPlayer_TunesSize * kMusicPlayer_NumTunes)
+
+sequenceLo
+	!by <sequence_c910,<sequence_cb15,<sequence_ffff1,<sequence_c819,<sequence_c8b3,<sequence_c7de,<sequence_ffff2,<sequence_c7c7
+	!by <sequence_c979,<sequence_c809,<sequence_c928,<sequence_c8da,<sequence_c7f7,<sequence_c8bd,<sequence_c841,<sequence_c86b
+	!by <sequence_c875,<sequence_c84f,<sequence_c85d,<sequence_c89f,<sequence_c89b,<sequence_c91c,<sequence_c88d,<sequence_c87f
+	!by <sequence_c811,<sequence_c8c1,<sequence_c82b,<sequence_c8ff,<sequence_c96c,<sequence_c952,<sequence_c906,<sequence_c837
+	!by <sequence_c941,<sequence_cb1f,<sequence_ca5a,<sequence_cb31,<sequence_cb43,<sequence_cb4d,<sequence_ca29,<sequence_ca41
+	!by <sequence_c9a8,<sequence_c988,<sequence_c980,<sequence_ca53,<sequence_c997,<sequence_c98f,<sequence_ca48,<sequence_c9df
+	!by <sequence_c9f5,<sequence_c9d1,<sequence_c9e7,<sequence_c9bd,<sequence_ca0f,<sequence_c99e,<sequence_c9a2,<sequence_c9b6
+	!by <sequence_ca4f,<sequence_ca77,<sequence_ca68,<sequence_cade,<sequence_ca84,<sequence_caeb,<sequence_ca8e,<sequence_cb11
+	!by <sequence_ca80,<sequence_cb19,<sequence_ca95,<sequence_cabd,<sequence_cac4,<sequence_cab4,<sequence_caf5,<sequence_cad4
+	!by <sequence_cb5e
+
+!for .i , kMusicPlayer_NumSequences - (* - sequenceLo) {
+	!by <(sequence_cb5e + (.i * kMusicPlayer_SequenceSize))
+}
+
+sequenceHi
+	!by >sequence_c910,>sequence_cb15,>sequence_ffff1,>sequence_c819,>sequence_c8b3,>sequence_c7de,>sequence_ffff2,>sequence_c7c7
+	!by >sequence_c979,>sequence_c809,>sequence_c928,>sequence_c8da,>sequence_c7f7,>sequence_c8bd,>sequence_c841,>sequence_c86b
+	!by >sequence_c875,>sequence_c84f,>sequence_c85d,>sequence_c89f,>sequence_c89b,>sequence_c91c,>sequence_c88d,>sequence_c87f
+	!by >sequence_c811,>sequence_c8c1,>sequence_c82b,>sequence_c8ff,>sequence_c96c,>sequence_c952,>sequence_c906,>sequence_c837
+	!by >sequence_c941,>sequence_cb1f,>sequence_ca5a,>sequence_cb31,>sequence_cb43,>sequence_cb4d,>sequence_ca29,>sequence_ca41
+	!by >sequence_c9a8,>sequence_c988,>sequence_c980,>sequence_ca53,>sequence_c997,>sequence_c98f,>sequence_ca48,>sequence_c9df
+	!by >sequence_c9f5,>sequence_c9d1,>sequence_c9e7,>sequence_c9bd,>sequence_ca0f,>sequence_c99e,>sequence_c9a2,>sequence_c9b6
+	!by >sequence_ca4f,>sequence_ca77,>sequence_ca68,>sequence_cade,>sequence_ca84,>sequence_caeb,>sequence_ca8e,>sequence_cb11
+	!by >sequence_ca80,>sequence_cb19,>sequence_ca95,>sequence_cabd,>sequence_cac4,>sequence_cab4,>sequence_caf5,>sequence_cad4
+	!by >sequence_cb5e
+
+!for .i , kMusicPlayer_NumSequences - (* - sequenceHi) {
+	!by >(sequence_cb5e + (.i * kMusicPlayer_SequenceSize))
+}
+
++DoAlignToSequences
+sequences_start
+sequence_c910 	!by $A3,$04,$10,$23,$18,$23,$15,$11
+	!by $16,$11,$15,$FF
++DoAlignToSequences
+sequence_cb15 	!by $91,$00,$00,$FF
++DoAlignToSequences
+sequence_ffff1	!by $ff
++DoAlignToSequences
+sequence_c819 	!by $81,$06,$28,$01,$1C,$01,$1C,$05
+	!by $1C,$05,$1C,$02,$28,$02,$1C,$05
+	!by $1C,$FF
++DoAlignToSequences
+sequence_c8b3 	!by $97,$05,$4D,$0B,$45,$17,$45,$0B
+	!by $4D,$FF
++DoAlignToSequences
+sequence_c7de 	!by $A3,$07,$47,$23,$40,$11,$47,$51
+	!by $49,$11,$4A,$11,$4C,$A3,$07,$4C
+	!by $23,$58,$23,$5B,$51,$54,$51,$56
+	!by $FF
++DoAlignToSequences
+sequence_ffff2	!by $ff
++DoAlignToSequences
+sequence_c7c7 	!by $A3,$07,$1C,$23,$1F,$23,$21,$11
+	!by $22,$11,$21,$23,$1C,$23,$1F,$23
+	!by $1C,$11,$28,$91,$01,$2D,$FF
++DoAlignToSequences
+sequence_c979 	!by $85,$09,$10,$8B,$08,$1D,$FF
++DoAlignToSequences
+sequence_c809 	!by $85,$09,$10,$05,$10,$05,$10,$FF
++DoAlignToSequences
+sequence_c928 	!by $A3,$07,$4C,$23,$4F,$11,$4E,$51
+	!by $4C,$23,$58,$23,$4C,$23,$58,$11
+	!by $56,$0B,$55,$85,$05,$4D,$23,$4D
+	!by $FF
++DoAlignToSequences
+sequence_c8da 	!by $8B,$0A,$1C,$05,$1C,$0B,$23,$85
+	!by $05,$49,$91,$04,$1F,$8B,$05,$4B
+	!by $05,$46,$8B,$0A,$21,$05,$1C,$11
+	!by $28,$05,$22,$8B,$01,$2F,$85,$0A
+	!by $21,$8B,$01,$2F,$FF
++DoAlignToSequences
+sequence_c7f7 	!by $81,$03,$34,$01,$34,$01,$34,$05
+	!by $34,$05,$34,$02,$34,$02,$34,$05
+	!by $34,$FF
++DoAlignToSequences
+sequence_c8bd 	!by $85,$02,$2D,$FF
++DoAlignToSequences
+sequence_c841 	!by $80,$0B,$C0,$00,$C7,$00,$CC,$00
+	!by $D3,$00,$CC,$00,$C8,$FF
++DoAlignToSequences
+sequence_c86b 	!by $80,$0C,$BC,$00,$C3,$00,$C8,$00
+	!by $C1,$FF
++DoAlignToSequences
+sequence_c875 	!by $80,$0C,$B7,$00,$BE,$00,$C3,$00
+	!by $BC,$FF
++DoAlignToSequences
+sequence_c84f 	!by $80,$0C,$BE,$00,$C5,$00,$CA,$00
+	!by $D1,$00,$CA,$00,$C3,$FF
++DoAlignToSequences
+sequence_c85d 	!by $80,$0B,$C5,$00,$CC,$00,$D1,$00
+	!by $CA,$00,$CF,$00,$D1,$FF
++DoAlignToSequences
+sequence_c89f 	!by $91,$06,$10,$11,$10,$11,$13,$11
+	!by $13,$11,$15,$0B,$15,$05,$17,$11
+	!by $18,$11,$18,$FF
++DoAlignToSequences
+sequence_c89b 	!by $91,$06,$10,$FF
++DoAlignToSequences
+sequence_c91c 	!by $A3,$04,$10,$23,$16,$23,$13,$11
+	!by $14,$11,$13,$FF
++DoAlignToSequences
+sequence_c88d 	!by $80,$0B,$B8,$00,$BF,$00,$C4,$00
+	!by $BD,$00,$BF,$00,$C4,$FF
++DoAlignToSequences
+sequence_c87f 	!by $80,$0C,$B7,$00,$BE,$00,$C3,$00
+	!by $BC,$00,$BE,$00,$C3,$FF
++DoAlignToSequences
+sequence_c811 	!by $85,$06,$18,$05,$18,$05,$18,$FF
++DoAlignToSequences
+sequence_c8c1 	!by $91,$04,$1C,$11,$23,$11,$1F,$11
+	!by $1F,$11,$21,$11,$21,$05,$22,$8B
+	!by $05,$42,$85,$04,$21,$8B,$01,$2C
+	!by $FF
++DoAlignToSequences
+sequence_c82b 	!by $81,$06,$28,$01,$1C,$01,$1C,$05
+	!by $28,$05,$1C,$FF
++DoAlignToSequences
+sequence_c8ff 	!by $85,$04,$1C,$8B,$05,$4D,$FF
++DoAlignToSequences
+sequence_c96c 	!by $91,$04,$10,$11,$13,$11,$16,$05
+	!by $10,$8B,$05,$4D,$FF
++DoAlignToSequences
+sequence_c952 	!by $91,$04,$10,$11,$13,$11,$16,$11
+	!by $13,$11,$10,$11,$13,$11,$16,$11
+	!by $19,$11,$10,$11,$13,$11,$16,$11
+	!by $13,$FF
++DoAlignToSequences
+sequence_c906 	!by $81,$02,$29,$01,$29,$01,$29,$0B
+	!by $29,$FF
++DoAlignToSequences
+sequence_c837 	!by $81,$06,$28,$01,$1C,$01,$1C,$0B
+	!by $1C,$FF
++DoAlignToSequences
+sequence_c941 	!by $81,$02,$30,$01,$2E,$01,$2E,$01
+	!by $2E,$01,$2E,$01,$2E,$85,$01,$2B
+	!by $FF
++DoAlignToSequences
+sequence_cb1f 	!by $82,$0D,$11,$02,$11,$02,$11,$02
+	!by $11,$85,$04,$11,$82,$0D,$0F,$02
+	!by $0F,$FF
++DoAlignToSequences
+sequence_ca5a 	!by $80,$0C,$BA,$00,$C1,$00,$C6,$00
+	!by $BF,$00,$C1,$00,$C6,$FF
++DoAlignToSequences
+sequence_cb31 	!by $82,$0D,$14,$02,$14,$02,$14,$02
+	!by $14,$85,$04,$14,$82,$0D,$14,$02
+	!by $14,$FF
++DoAlignToSequences
+sequence_cb43 	!by $85,$0D,$16,$05,$16,$05,$16,$05
+	!by $18,$FF
++DoAlignToSequences
+sequence_cb4d 	!by $82,$06,$27,$82,$0F,$29,$02,$1D
+	!by $02,$1D,$05,$1D,$02,$29,$02,$27
+	!by $FF
++DoAlignToSequences
+sequence_ca29 	!by $A3,$0E,$3B,$23,$37,$91,$D0,$3D
+	!by $11,$BE,$05,$3D,$05,$3D,$05,$3D
+	!by $05,$3D,$81,$0F,$3D,$09,$49,$FF
++DoAlignToSequences
+sequence_ca41 	!by $82,$06,$21,$82,$0F,$2D,$FF
++DoAlignToSequences
+sequence_c9a8 	!by $80,$0B,$BB,$00,$C0,$00,$C7,$00
+	!by $CA,$00,$C3,$00,$C7,$FF
++DoAlignToSequences
+sequence_c988 	!by $85,$09,$18,$8B,$08,$16,$FF
++DoAlignToSequences
+sequence_c980 	!by $85,$09,$0C,$05,$0C,$05,$0C,$FF
++DoAlignToSequences
+sequence_ca53 	!by $85,$04,$18,$8B,$05,$4D,$FF
++DoAlignToSequences
+sequence_c997 	!by $85,$09,$21,$8B,$08,$1F,$FF
++DoAlignToSequences
+sequence_c98f 	!by $85,$09,$15,$05,$15,$05,$15,$FF
++DoAlignToSequences
+sequence_ca48 	!by $85,$04,$15,$8B,$05,$4D,$FF
++DoAlignToSequences
+sequence_c9df 	!by $85,$04,$1C,$05,$29,$05,$23,$FF
++DoAlignToSequences
+sequence_c9f5 	!by $85,$0F,$3E,$05,$C0,$8B,$02,$2A
+	!by $05,$2A,$05,$2A,$85,$0E,$BD,$05
+	!by $BE,$97,$05,$47,$A3,$0E,$3B,$23
+	!by $34,$FF
++DoAlignToSequences
+sequence_c9d1 	!by $82,$0F,$37,$02,$2D,$02,$2E,$02
+	!by $31,$03,$B9,$01,$BA,$FF
++DoAlignToSequences
+sequence_c9e7 	!by $82,$0F,$34,$02,$31,$02,$34,$02
+	!by $37,$03,$34,$01,$B3,$FF
++DoAlignToSequences
+sequence_c9bd 	!by $82,$02,$31,$02,$31,$02,$31,$02
+	!by $31,$02,$2F,$02,$2F,$85,$01,$2D
+	!by $8B,$05,$46,$FF
++DoAlignToSequences
+sequence_ca0f 	!by $91,$0E,$32,$11,$34,$11,$37,$11
+	!by $34,$91,$D6,$37,$11,$B9,$05,$39
+	!by $05,$39,$05,$39,$05,$39,$8B,$0F
+	!by $37,$FF
++DoAlignToSequences
+sequence_c99e 	!by $82,$0D,$28,$FF
++DoAlignToSequences
+sequence_c9a2 	!by $85,$0F,$34,$0B,$32,$FF
++DoAlignToSequences
+sequence_c9b6 	!by $85,$0D,$2D,$8B,$05,$4D,$FF
++DoAlignToSequences
+sequence_ca4f 	!by $82,$0D,$21,$FF
++DoAlignToSequences
+sequence_ca77 	!by $85,$04,$10,$1D,$10,$A3,$05,$44
+	!by $FF
++DoAlignToSequences
+sequence_ca68 	!by $91,$0F,$3F,$11,$4B,$A3,$0E,$4A
+	!by $23,$47,$23,$46,$23,$3F,$FF
++DoAlignToSequences
+sequence_cade 	!by $8B,$0E,$37,$0B,$38,$0B,$35,$0B
+	!by $2C,$97,$0F,$2B,$FF
++DoAlignToSequences
+sequence_ca84 	!by $80,$0B,$C1,$00,$C4,$00,$CB,$00
+	!by $C8,$FF
++DoAlignToSequences
+sequence_caeb 	!by $85,$0E,$3A,$05,$3C,$05,$3A,$05
+	!by $38,$FF
++DoAlignToSequences
+sequence_ca8e 	!by $97,$0E,$3C,$97,$0F,$3F,$FF
++DoAlignToSequences
+sequence_cb11 	!by $97,$09,$11,$FF
++DoAlignToSequences
+sequence_ca80 	!by $97,$02,$2E,$FF
++DoAlignToSequences
+sequence_cb19	!by $85,$09,$11,$11,$11,$FF
++DoAlignToSequences
+sequence_ca95 	!by $91,$0E,$43,$11,$41,$8B,$0F,$3C
+	!by $97,$0E,$3F,$97,$0E,$41,$05,$43
+	!by $05,$44,$05,$43,$05,$41,$05,$43
+	!by $05,$44,$05,$46,$05,$48,$FF
++DoAlignToSequences
+sequence_cabd 	!by $97,$0E,$48,$97,$0F,$48,$FF
++DoAlignToSequences
+sequence_cac4 	!by $97,$0E,$41,$97,$0F,$41,$91,$0E
+	!by $48,$91,$0F,$48,$8B,$0F,$54,$FF
++DoAlignToSequences
+sequence_cab4 	!by $91,$0E,$46,$91,$0F,$3F,$0B,$3E
+	!by $FF
++DoAlignToSequences
+sequence_caf5 	!by $82,$0D,$11,$02,$11,$02,$11,$02
+	!by $11,$85,$04,$11,$05,$0F,$85,$04
+	!by $11,$91,$05,$4D,$8B,$07,$41,$05
+	!by $C8,$1D,$C6,$FF
++DoAlignToSequences
+sequence_cad4 	!by $8B,$07,$3C,$05,$C1,$11,$CD,$0B
+	!by $D4,$FF
++DoAlignToSequences
+sequence_cb5e 	!by $82,$0F,$29,$02,$2B,$02,$2C,$02
+	!by $2E,$02,$2F,$02,$30,$85,$BF,$2C
+	!by $FF
+
+* = sequences_start + kMusicPlayer_NumSequences * kMusicPlayer_SequenceSize
+
+; Track data
++DoAlignToPage
+tunes_start
+track_cb6f 	!by $01,$07,$01,$05,$01,$07,$09,$0C
+	!by $01,$09,$42,$09,$0C,$01,$18,$40
+	!by $09,$0C,$01,$18,$44,$09,$03,$01
+	!by $09,$40,$0F,$1A,$01,$1F,$FF
+
++DoAlignToSequences
+track_cb8e 	!by $43,$06,$0E,$06,$11,$06,$12,$05
+	!by $0F,$04,$10,$40,$06,$0E,$09,$0F
+	!by $06,$17,$03,$16,$03,$17,$0C,$0E
+	!by $06,$11,$05,$0F,$04,$10,$0C,$0E
+	!by $06,$12,$05,$0F,$04,$10,$10,$14
+	!by $04,$13,$42,$06,$0E,$06,$11,$06
+	!by $12,$06,$17,$40,$04,$04,$42,$01
+	!by $04,$0C,$0D,$40,$02,$19,$02,$0B
+	!by $0F,$1B,$01,$1E,$FF
+
++DoAlignToSequences
+track_cbd3 	!by $03,$00,$01,$15,$02,$00,$04,$04
+	!by $01,$0A,$01,$05,$01,$14,$01,$04
+	!by $01,$14,$01,$09,$02,$14,$01,$04
+	!by $06,$0D,$01,$20,$01,$15,$01,$00
+	!by $01,$15,$05,$00,$01,$1D,$01,$1C
+	!by $FF
+
++DoAlignToSequences
+track_cbfc 	!by $01,$08,$42,$03,$09,$01,$08,$03
+	!by $09,$01,$08,$03,$2A,$01,$29,$03
+	!by $2D,$01,$2C,$40,$44,$01,$2D,$01
+	!by $2C,$40,$42,$03,$09,$01,$08,$03
+	!by $09,$01,$08,$03,$2A,$01,$29,$03
+	!by $2D,$01,$2C,$40,$0C,$17,$12,$35
+	!by $01,$36,$0C,$28,$42,$06,$35,$01
+	!by $36,$40,$42,$03,$2D,$01,$2C,$03
+	!by $2A,$01,$29,$40,$03,$2D,$01,$2C
+	!by $42,$01,$2D,$01,$2C,$40,$18,$0E
+	!by $2A,$35,$01,$36,$48,$06,$37,$01
+	!by $33,$06,$37,$05,$33,$40,$FF
+
++DoAlignToSequences
+track_cc5b 	!by $01,$08,$42,$09,$28,$01,$1A,$09
+	!by $0E,$01,$08,$01,$0D,$0C,$0F,$01
+	!by $1A,$09,$11,$01,$2C,$40,$43,$01
+	!by $31,$01,$2F,$40,$01,$32,$01,$31
+	!by $01,$30,$01,$34,$01,$30,$01,$26
+	!by $10,$08,$04,$31,$01,$0D,$0C,$0F
+	!by $01,$1A,$06,$27,$01,$32,$01,$31
+	!by $01,$0D,$0C,$0F,$01,$1A,$42,$01
+	!by $31,$01,$32,$40,$42,$01,$31,$01
+	!by $2E,$40,$42,$06,$35,$01,$31,$06
+	!by $35,$01,$32,$40,$30,$35,$30,$38
+	!by $30,$38,$42,$06,$35,$01,$31,$06
+	!by $35,$01,$32,$40,$30,$38,$30,$35
+	!by $30,$35,$FF
+
++DoAlignToSequences
+track_ccc6 	!by $01,$2F,$42,$08,$1B,$04,$2B,$04
+	!by $2E,$40,$06,$2E,$01,$33,$42,$08
+	!by $1B,$04,$2B,$04,$2E,$40,$10,$2F
+	!by $42,$04,$2E,$04,$2B,$40,$06,$2E
+	!by $01,$33,$44,$01,$2F,$01,$32,$40
+	!by $08,$2F,$FD,$73,$48,$01,$2D,$01
+	!by $2C,$40,$08,$2F,$48,$01,$2D,$01
+	!by $2C,$40,$44,$01,$2F,$01,$32,$40
+	!by $FF
+
++DoAlignToSequences
+track_cd07 	!by $06,$16,$06,$17,$06,$22,$06,$28
+	!by $50,$06,$16,$06,$11,$04,$14,$40
+	!by $FF
+
++DoAlignToSequences
+track_cd18 	!by $01,$3A,$01,$1E,$03,$17,$0C,$16
+	!by $50,$06,$16,$06,$17,$0C,$16,$40
+	!by $FF
+
++DoAlignToSequences
+track_cd29 	!by $01,$39,$01,$1E,$06,$0D,$01,$1E
+	!by $FD,$79,$50,$01,$39,$01,$1E,$06
+	!by $0D,$01,$1E,$40,$FF
+
++DoAlignToSequences
+track_cd3e 	!by $44,$01,$40,$0C,$16,$40,$30,$0F
+	!by $42,$12,$3C,$04,$16,$40,$42,$0C
+	!by $3C,$04,$22,$06,$0F,$18,$3C,$0C
+	!by $0F,$04,$22,$06,$0F,$04,$22,$06
+	!by $0F,$0C,$3C,$40,$30,$0F,$42,$12
+	!by $3C,$04,$16,$40,$42,$0C,$0F,$04
+	!by $22,$06,$0F,$01,$04,$04,$0D,$0C
+	!by $0F,$04,$22,$06,$0F,$04,$22,$06
+	!by $0F,$0C,$3C,$40,$30,$0F,$42,$12
+	!by $3C,$04,$16,$40,$48,$0C,$0F,$04
+	!by $22,$06,$0F,$18,$3C,$0C,$0F,$04
+	!by $22,$06,$0F,$0C,$3C,$40,$FF
+
++DoAlignToSequences
+track_cd9d 	!by $44,$18,$0F,$40,$42,$01,$40,$0C
+	!by $16,$40,$42,$01,$40,$12,$0F,$40
+	!by $01,$3E,$02,$42,$01,$45,$01,$3E
+	!by $01,$42,$02,$43,$01,$44,$42,$01
+	!by $40,$0C,$16,$40,$01,$40,$0C,$0F
+	!by $04,$16,$0C,$0F,$01,$47,$42,$01
+	!by $3B,$01,$3D,$18,$3C,$01,$3B,$01
+	!by $3E,$03,$3D,$40,$42,$01,$40,$0C
+	!by $16,$40,$01,$46,$0C,$0F,$01,$47
+	!by $01,$3E,$01,$42,$04,$43,$FD,$7F
+	!by $48,$07,$25,$01,$48,$40,$FF
+
++DoAlignToSequences
+track_cdf4 	!by $42,$01,$3F,$02,$01,$09,$0F,$01
+	!by $41,$01,$04,$40,$43,$03,$3F,$01
+	!by $41,$40,$03,$3F,$01,$21,$48,$04
+	!by $21,$03,$23,$01,$24,$40,$42,$01
+	!by $3F,$02,$01,$09,$0F,$01,$46,$40
+	!by $42,$01,$3F,$02,$01,$09,$0F,$01
+	!by $46,$40,$60,$04,$21,$03,$23,$01
+	!by $24,$40,$FF
+
+* = tunes_start + kMusicPlayer_NumTunes * kMusicPlayer_TunesVoiceSize * 3
+MusicPlayerDataEnd = *
+
+tune0_0 = track_cb6f
+tune0_1 = track_cb8e
+tune0_2 = track_cbd3

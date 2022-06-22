@@ -27,6 +27,44 @@ TitleScreenBallSprites
 !bin "TitleScreen.spd" , 8*64 , $9
 
 
+!ct "bin/ScorePanelConvTab.ct" {
+; Note: MapTutorialHint_LineLength
+MapTutorialHint_StartTheCapture
+	!tx "to start the capture probe "
+	!tx "while stationary quickly   "
+	!tx "double press and hold fire "
+
+MapTutorialHint_CaptureTheEnemy1
+	!tx "move the capture cursor    "
+	!tx "over the enemy to the left "
+	!tx "then release fire          "
+
+MapTutorialHint_CommandCaptured
+	!tx "try commanding the enemy   "
+	!tx "f1 stop or go   f3 follow  "
+	!tx "f5 hunt  f7 assimilate     "
+
+MapTutorialHint_CommandCapturedCycle
+	!tx "cycle the captured enemies "
+	!tx "by using the space bar     "
+	!tx "                           "
+
+MapTutorialHint_ChargingStation
+	!tx "hover here to charge       "
+	!tx "the gauges show remaining  "
+	!tx "charge for this station    "
+
+MapTutorialHint_DoorLocked
+	!tx "this door is locked        "
+	!tx "find the console above and "
+	!tx "to the left to open it     "
+
+MapTutorialHint_Terminal
+	!tx "use terminal to open door  "
+	!tx "while stationary hold fire "
+	!tx "and press up               "
+
+}
 ; The end of the data files in memory
 MarkEndData = *
 

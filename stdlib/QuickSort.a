@@ -9,7 +9,7 @@
 }
 	+MWordValueToAddress_A .QuickSort_QuickSort_sortstart , .SortTemp0
 
-	ldy #$00
+	ldy #0
 .l2
 	lda .SortTemp0
 	sta .QuickSort_Sortlo,y
@@ -24,7 +24,7 @@
 	inc .SortTemp1
 .over
 	iny
-	cpy #SortHardMaxEntries-1
+	cpy #.SortHardMaxEntries
 	bne .l2
 }
 
@@ -75,7 +75,7 @@
 }
 
 
-!macro QuickSort_SortRTS .comparison , .SortMaxEntries , .SortIndexTable , .SortValueTable , .SortTemp0 , .SortTemp1 , .QuickSort_Sortlo , .QuickSort_Sorthi , ~.SortBlockByteLength , ~.QuickSort_sortstart {
+!macro QuickSort_SortRTS .comparison , .SortHardMaxEntries , .SortMaxEntries , .SortIndexTable , .SortValueTable , .SortTemp0 , .SortTemp1 , .QuickSort_Sortlo , .QuickSort_Sorthi , ~.SortBlockByteLength , ~.QuickSort_sortstart {
 	lda .SortMaxEntries
 	cmp #$02
 	bcs .someEntries
@@ -136,6 +136,7 @@
 	+QuickSort_SortBlock  .comparison ,  6 , .back5	, ~.back6        , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison ,  7 , .back6	, ~.back7        , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison ,  8 , .back7	, ~.back8        , .SortIndexTable , .SortValueTable
+!if .SortHardMaxEntries >= 8 {
 	+QuickSort_SortBlock  .comparison ,  9 , .back8	, ~.back9        , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison , 10 , .back9	, ~.back10       , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison , 11 , .back10 , ~.back11      , .SortIndexTable , .SortValueTable
@@ -144,6 +145,72 @@
 	+QuickSort_SortBlock  .comparison , 14 , .back13 , ~.back14      , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison , 15 , .back14 , ~.back15      , .SortIndexTable , .SortValueTable
 	+QuickSort_SortBlock  .comparison , 16 , .back15 , ~.back16      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 16 {
+	+QuickSort_SortBlock  .comparison , 17 , .back16 , ~.back17      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 18 , .back17 , ~.back18      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 19 , .back18 , ~.back19      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 20 , .back19 , ~.back20      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 21 , .back20 , ~.back21      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 22 , .back21 , ~.back22      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 23 , .back22 , ~.back23      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 24 , .back23 , ~.back24      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 24 {
+	+QuickSort_SortBlock  .comparison , 25 , .back24 , ~.back25      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 26 , .back25 , ~.back26      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 27 , .back26 , ~.back27      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 28 , .back27 , ~.back28      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 29 , .back28 , ~.back29      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 30 , .back29 , ~.back30      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 31 , .back30 , ~.back31      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 32 , .back31 , ~.back32      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 32 {
+	+QuickSort_SortBlock  .comparison , 33 , .back32 , ~.back33      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 34 , .back33 , ~.back34      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 35 , .back34 , ~.back35      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 36 , .back35 , ~.back36      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 37 , .back36 , ~.back37      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 38 , .back37 , ~.back38      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 39 , .back38 , ~.back39      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 40 , .back39 , ~.back40      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 40 {
+	+QuickSort_SortBlock  .comparison , 41 , .back40 , ~.back41      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 42 , .back41 , ~.back42      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 43 , .back42 , ~.back43      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 44 , .back43 , ~.back44      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 45 , .back44 , ~.back45      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 46 , .back45 , ~.back46      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 47 , .back46 , ~.back47      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 48 , .back47 , ~.back48      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 48 {
+	+QuickSort_SortBlock  .comparison , 49 , .back48 , ~.back49      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 50 , .back49 , ~.back50      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 51 , .back50 , ~.back51      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 52 , .back51 , ~.back52      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 53 , .back52 , ~.back53      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 54 , .back53 , ~.back54      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 55 , .back54 , ~.back55      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 56 , .back55 , ~.back56      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 56 {
+	+QuickSort_SortBlock  .comparison , 57 , .back56 , ~.back57      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 58 , .back57 , ~.back58      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 59 , .back58 , ~.back59      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 60 , .back59 , ~.back60      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 61 , .back60 , ~.back61      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 62 , .back61 , ~.back62      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 63 , .back62 , ~.back63      , .SortIndexTable , .SortValueTable
+	+QuickSort_SortBlock  .comparison , 64 , .back63 , ~.back64      , .SortIndexTable , .SortValueTable
+; One more
+	+QuickSort_SortBlock  .comparison , 65 , .back64 , ~.back65      , .SortIndexTable , .SortValueTable
+}
+!if .SortHardMaxEntries >= 64 {
+!error "Expand the above unrolled code to support more entries"
+}
 
 	rts
 }

@@ -333,10 +333,11 @@ BOOL CMusicStudioApp::InitInstance()
 	// Causes the file to be opened when the application starts.
 	// Useful when debugging and when you don't want to keep on going to the menu.
 //	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\moz_k299.mid") );
-//	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
+	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
 //	OpenDocumentFile( _T("C:\\Downloads\\GTC_Citadel_2.sng") );
 //	OpenDocumentFile( _T("C:\\work\\C64\\MWMusic\\bin\\warbles2.mus.prg") );
-	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\OriginalC64Music\\P.AIR WOLF.PRG") );
+//	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\OriginalC64Music\\P.AIR WOLF.PRG") );
+//	OnFileNew();
 	
 #endif
 

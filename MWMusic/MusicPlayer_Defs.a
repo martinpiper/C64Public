@@ -1,0 +1,25 @@
+kMusicPlayer_NumEffects		= 32
+kMusicPlayer_EffectsSize	= 16
+kMusicPlayer_NumSequences	= 128
+kMusicPlayer_SequenceSize	= 128
+kMusicPlayer_NumTunes		= 16
+kMusicPlayer_TunesSize		= 8
+kMusicPlayer_TunesVoiceSize	= 128
+kMusicPlayer_NumChannels	= 3
+
+
+!macro DoAlignTo .boundary {
+	!align .boundary-1 , 0 , $ff
+}
+
+!macro DoAlignToPage  {
+	+DoAlignTo $100
+}
+
+!macro DoAlignToSequences  {
+	+DoAlignTo kMusicPlayer_SequenceSize
+}
+
+!macro MusicPlayer_reserveVoiceStates {
+	!fill 3 , 0
+}

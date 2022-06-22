@@ -59,7 +59,11 @@ DisplayData
 
 
 !ifdef kDoChars {
+!ifdef kBus24Bit_VideoLayer_HasOverscan {
+	+MRLEScreenDataToDefaultCharScreen .Chars_map , .Chars_map2
+} else {
 	+MRLEScreenDataToDefaultCharScreen .Chars_map
+}
 	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
 }
 
@@ -102,7 +106,10 @@ DisplayData
 !ifdef kDoChars {
 .Chars_map
 	!bin "tmp/TurricanStatus_map.cmp"
-.kCharsMapSizeHi = >(* - .Chars_map)
+!ifdef kBus24Bit_VideoLayer_HasOverscan {
+.Chars_map2
+	!bin "tmp/TurricanStatus_map.cmp2"
+}
 .Chars_plane0
 	!bin "tmp/TurricanStatus_plane0.cmp"
 .Chars_plane1

@@ -230,7 +230,11 @@ MainSecondLoaderStart
 
 	; Check what was just loaded
 	ldx FileNameByte
+!ifdef StartOnFilenameNumber {
+	cpx #StartOnFilenameNumber
+} else {
 	cpx #5	; For the code we want to load an start
+}
 	beq .startLoadedCode
 
 	; Prepare the IRQ loader to load the next file
@@ -243,8 +247,10 @@ MainSecondLoaderStart
 	beq .SkipFileLoaded
 	cpx #1
 	beq .InitMusic
+!ifdef BitmapDisplay {
 	cpx #2
 	beq .displayBitmap
+}
 	; Add extra cases here for file name bytes we want to handle
 	jmp .SkipFileLoaded
 .lSkipFileLoaded jmp .SkipFileLoaded
@@ -310,11 +316,13 @@ UnusedSpace = $0334
 .restoreStateEnd
 }
 
+!ifdef BitmapDisplay {
 .displayBitmap
 	jsr DisplayBitmapScreen
 	; Quickly copy the sprite to the other VIC bank
 	+DisplayTextAt_AX $200 , $23f , $8200
 	jmp .SkipFileLoaded
+}
 
 	; Some small functions to flag updates close to where they are branched from
 .InitMusic
@@ -530,6 +538,7 @@ DisplayTextScreen
 }
 	rts
 
+!ifdef BitmapDisplay {
 DisplayBitmapScreen
 	lda #kVIC2ScreenControlHBits_40Columns | kVIC2ScreenControlHBits_Multicolour
 	sta VIC2ScreenControlH
@@ -540,7 +549,7 @@ DisplayBitmapScreen
 	lda #VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Bitmap
 	sta VIC2ScreenControlV
 	rts
-
+}
 
 ; Must be the last bit of memory since this table is not allocated. Why bother to load a table
 ; full of zeros? :)

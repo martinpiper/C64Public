@@ -1,7 +1,3 @@
-*=$f00
-!source "FingerPrint.a"
-
-*=$200
 	sei
 
 	lda #Scroller_ProcessorPort
@@ -15,6 +11,3 @@
 	inx
 	bne .cl1
 	jmp $400
-
-*=(13*40)+15
-!scr "<<loading>>"

@@ -29,6 +29,14 @@ public:
 
 	int HandleParams( int argc , char ** argv );
 
+	int GetAddressFromAddress(int * RAMC64, int address)
+	{
+		int value = RAMC64[address] | (RAMC64[address+1] << 8);
+		return value;
+	}
+
+	int ProcessTapeHeader(int * RAMC64);
+
 	void DisplayHelp(void);
 
 private:

@@ -11,7 +11,7 @@ QuickSort_Sorthi !fill SortHardMaxEntries , 0
 
 !zn
 SortSortGT
-	+QuickSort_SortRTS 1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthGT , ~QuickSort_sortstartGT
+	+QuickSort_SortRTS 1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthGT , ~QuickSort_sortstartGT
 	rts
 
 SortInitGT
@@ -20,7 +20,7 @@ SortInitGT
 	rts
 
 SortSortLT
-	+QuickSort_SortRTS -1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthLT , ~QuickSort_sortstartLT
+	+QuickSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthLT , ~QuickSort_sortstartLT
 
 SortInitLT
 	+QuickSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLengthLT , QuickSort_Sortlo , QuickSort_Sorthi , QuickSort_sortstartLT

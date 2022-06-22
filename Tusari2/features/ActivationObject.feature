@@ -6,7 +6,7 @@ Feature: ActivationObject tests
 
   Scenario: Enemy activation allocation test
     When I enable trace with indent
-    When I enable unitialised memory read protection
+    When I enable uninitialised memory read protection
     Given I have a simple overclocked 6502 system
 
     And I run the command line: ..\acme.exe -v4 --msvc --lib ../ --lib ../Scroller/ -o test.prg --labeldump test.lbl -f cbm ActivationObjectTest.a
