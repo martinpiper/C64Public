@@ -226,3 +226,8 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 		The code will attempt to load to address $0302
 		This load will early out due to IRQ hi address match. ($ea)
 		Will probably attempt to auto-start vector $0302 code at $0304
+
+
+
+* **Unknown tape header type** is displayed because ProcessTapeHeader(RAMC64) is called  more than once which tries to process the overwritten tape buffer.
+	Instead the returned values need a backup...

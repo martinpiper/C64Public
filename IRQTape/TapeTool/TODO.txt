@@ -2,6 +2,18 @@ TapeTool TODO file started 12 September 2012
 A tool to provide a command line interface that enables C64 format TAP files to be created with kernal and turbo data.
 ********************************************
 
+// TODO: Test for inverted start/end (negative length)
+
+
+
+// TODO: When reading data check the data length is not more than the end (length)
+
+
+
+// TODO: Validate checksum in header and data
+
+
+
 * Add some more _config.a options that enable/disable various chunks of code (like the scrolling message, bitmap loading etc)
 	This makes the loader smaller
 

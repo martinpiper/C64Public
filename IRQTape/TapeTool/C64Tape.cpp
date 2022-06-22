@@ -16,6 +16,7 @@ TapeHeaderByteEx3	= %01101001	; Used for very short headers after the sync
 #include <set>
 #include <vector>
 #include <string>
+#include <limits>
 #include <algorithm>
 #include "C64Tape.h"
 #include "../../Compression/CompressRLE.h"
@@ -846,6 +847,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					int fileHeaderPointer = 0x33c;
 					bool gotTapeHeader2 = false;
 					int fileDataStatus = 0x89;
+					int fileDataPointerOld = 0;
 					int fileDataPointer = 0;
 					bool gotFileData1 = false;
 					bool gotFileData2 = false;
@@ -1118,6 +1120,11 @@ int C64Tape::HandleParams( int argc , char ** argv )
 												fileHeaderStatus = 0x09;
 												fileHeaderPointer = 0x33c;
 											}
+											else
+											{
+												fileHeaderStatus = 0x89;
+												fileHeaderPointer = 0x33c;
+											}
 										}
 										else if (!gotTapeHeader2)
 										{
@@ -1125,15 +1132,34 @@ int C64Tape::HandleParams( int argc , char ** argv )
 											{
 												gotTapeHeader2 = true;
 												fileDataPointer = ProcessTapeHeader(RAMC64);
+												// TODO: Test for inverted start/end (negative length)
+												// TODO: When reading data check the data length is not more than the end (length)
+												// TODO: Validate checksum in header and data
+												fileDataPointerOld = fileDataPointer;
 												mChecksumRegister = 0;
 
 												printf("\nThe code will attempt to load to address $%04x\n" , fileDataPointer);
+
+												if (RAMC64[0x33c] != 0x03)
+												{
+													printf("\nThis will most likely not auto-execute due to loading into BASIC program memory\n");
+													displayedGuess = true;
+												}
 											}
 										}
 										else if (!gotFileData1)
 										{
-											gotFileData1 = true;
-											fileDataPointer = ProcessTapeHeader(RAMC64);
+											if (fileDataStatus == 0x80)
+											{
+												gotFileData1 = true;
+												fileDataPointer = fileDataPointerOld;
+												fileDataStatus = 0x09;
+											}
+											else
+											{
+												fileDataPointer = fileDataPointerOld;
+												fileDataStatus = 0x89;
+											}
 										}
 										else if (!gotFileData2)
 										{
@@ -1158,12 +1184,13 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 						if (!displayedGuess)
 						{
+							int maxLoadedData = std::max(fileHeaderPointer , fileDataPointer);
 							bool earlyOut = false;
 							if (RAMC64[0x0315] == RAMC64[0x02a0])
 							{
 								printf("\nThis load will early out due to IRQ hi address match. ($%02x)\n" , RAMC64[0x02a0]);
-								int value = GetAddressFromAddress(RAMC64, 0x314);
-								if (value != 0 && value <= fileHeaderPointer)
+								int value = GetAddressFromAddress(RAMC64, 0x0314);
+								if (value != 0 && value <= maxLoadedData)
 								{
 									printf("\nWill probably attempt to auto-start (as IRQ) loaded code at $%04x\n" , value);
 								}
@@ -1171,31 +1198,51 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							}
 							if (earlyOut || gotLoadError || gotFileData1)
 							{
-								// TODO: Process loaded data and guess what is going to happen
+								// Process loaded data and guess what is going to happen
 								// Some loaders rely on triggering an early out during data load phase 1, so we check for that here
-								int value = GetAddressFromAddress(RAMC64, 0x302);
-								if (earlyOut && value != 0)
+								int value = GetAddressFromAddress(RAMC64, 0x0302);
+								if (value != 0 && value <= maxLoadedData)
 								{
 									printf("\nWill probably attempt to auto-start vector $0302 code at $%04x\n" , value);
 									displayedGuess = true;
 								}
 
-								value = GetAddressFromAddress(RAMC64, 0x29f);
-								if (value != 0 && value <= fileHeaderPointer)
+								value = GetAddressFromAddress(RAMC64, 0x029f);
+								if (value != 0 && value <= maxLoadedData)
 								{
-									printf("\nWill probably attempt to auto-start (as restored IRQ) loaded code at $%04x\n" , value);
+									printf("\nWill probably attempt to auto-start (as restored IRQ vector $0314 from $029f) loaded code at $%04x\n" , value);
 									displayedGuess = true;
 								}
 
+								value = GetAddressFromAddress(RAMC64, 0x0314);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start as IRQ $0314 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x0326);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start vector $0326 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
 
 								if (earlyOut || gotLoadError || (gotFileData1 && gotFileData2))
 								{
+									// Used for cases where loaded data (into some vectors) will only trigger if there is or isn't a load error
+
 								}
 							}
 						}
 
 						rep--;
 					} //< while ( rep > 0 )
+
+					if (!displayedGuess)
+					{
+						printf("\nUnable to detect any auto-run code, please send this TAP file to martin.piper@gmail.com so it can be analysed to help improve this detection code.\n");
+					}
 				}
 				break;
 			}
