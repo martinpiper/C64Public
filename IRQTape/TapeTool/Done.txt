@@ -231,3 +231,8 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 
 * **Unknown tape header type** is displayed because ProcessTapeHeader(RAMC64) is called  more than once which tries to process the overwritten tape buffer.
 	Instead the returned values need a backup...
+
+
+
+* Original Tusari.TAP had a missing EOD for the second tape header... Which still loads on the C64.
+	TODO: The missing EOD might also be OK for the second data block... Needs investigation.

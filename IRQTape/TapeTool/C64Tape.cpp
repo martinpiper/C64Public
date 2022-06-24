@@ -869,6 +869,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 						}
 
 						int numRead = fread( &in1 , 1 , 1 , mTapeFile );
+						bool fakeSecondHeaderEOD = false;
 
 						if ( numRead )
 						{
@@ -880,18 +881,41 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								if (gotOneGoodByte)
 								{
 									printf( "\nSkipping offset $%x short pulse at $%x\n" , ftell( mTapeFile ) , mObservedShortPulse );
+
+									if (gotTapeHeader1 && !gotTapeHeader2 && fileHeaderPointer == 0x33c + 0xc1)
+									{
+										printf("\nNo EOD found after second tape header, but proceed with the load.\n");
+										fakeSecondHeaderEOD = true;
+									}
 								}
 								gotOneGoodByte = false;
-								continue;
-							}
-							numRead = fread( &in2 , 1 , 1 , mTapeFile );
-							if ( !numRead )
-							{
-								printf( "End of file reached mid kernal pulse.                       \n" );
-								break;
-							}
 
-							PulseTypes p2 = CommodoreReadPulse( in2 );
+								if (!fakeSecondHeaderEOD)
+								{
+									continue;
+								}
+							}
+							PulseTypes p2;
+							if (!fakeSecondHeaderEOD)
+							{
+								numRead = fread( &in2 , 1 , 1 , mTapeFile );
+								if ( !numRead )
+								{
+									printf( "End of file reached mid kernal pulse.                       \n" );
+									break;
+								}
+
+								p2 = CommodoreReadPulse( in2 );
+							}
+							bool reportValue = true;
+							if (fakeSecondHeaderEOD)
+							{
+								fakeSecondHeaderEOD = false;
+								gotOneGoodByte = true;
+								reportValue = false;
+								p1 = kLong;
+								p2 = kShort;
+							}
 
 							if ( ( p1 == kLong ) && ( p2 == kMedium ) )
 							{
@@ -1107,7 +1131,10 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							{
 								if ( gotOneGoodByte )
 								{
-									printf( " EOD\n" );
+									if (reportValue)
+									{
+										printf( " EOD\n" );
+									}
 									gotOneGoodByte = false;
 
 									if (!displayedGuess)
