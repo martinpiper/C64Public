@@ -236,3 +236,27 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 
 * Original Tusari.TAP had a missing EOD for the second tape header... Which still loads on the C64.
 	TODO: The missing EOD might also be OK for the second data block... Needs investigation.
+
+
+
+* Should be possible to loop through all files and only write problematic TAP paths to a file list by detecting "gmail.com" in the output
+	UnitTest_FullRead.bat
+
+
+
+* Problems:
+	Sometimes a tape just contains turbo data, or doesn't contain jernal data, so there cannot be any auto-boot code
+	Also detect loading into BASIC memory, precisely detect loading >= 0x0400
+	* E:\Ultimate tape archive\Ultimate_Tape_Archive_V3.0\Ultimate_Tape_Archive_V3.0\Dancing_Monster_(1983_Commodore)_[1686]\Dancing_Monster.tap
+		Stack $0202 slide!!!
+
+
+
+* Problems:
+	E:\Ultimate tape archive\Ultimate_Tape_Archive_V3.0\Ultimate_Tape_Archive_V3.0\Punchy_(1983_Mr._Micro)_[92]\Punchy.tap
+		Interesting, overwrites $328 with $f6e1 which disables the stop key...
+		Seems to start code at: E144   6C 14 00   JMP ($0014)
+		Via SYS command at $e12a?
+		Loaded vector $332/$333 is different, $fd22
+			Which gets read by: FB72   B1 AC      LDA ($AC),Y
+			Which seems to execute a run after a decent number of blocks are loaded...?!

@@ -161,7 +161,7 @@ EnableBlockCompression = 1 will need to be enabled (in _config.a) to handle this
 *Using TapeTool to reverse engineer tape files.
 TapeTool can also read kernal or turbo format data. This allows existing TAP files to be read and help debug them.
 For example:
-Execute: TapeTool.exe r "FileABCDEF Data01234567.tap" bc1000
+Execute: TapeTool.exe r "FileABCDEF Data01234567.tap" bc5000
 Reads the example file "FileABCDEF Data01234567.tap" and displays upto 1000 kernal format bytes.
 You should see something like:
 	New data at offset $6a2c short pulse at $31

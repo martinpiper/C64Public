@@ -842,6 +842,8 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					RAMC64[0x0314] = 0x2c;
 					RAMC64[0x0315] = 0xf9;
 
+					bool gotAnyGoodKernalBytes = false;
+
 					bool gotTapeHeader1 = false;
 					int fileHeaderStatus = 0x89;
 					int fileHeaderPointer = 0x33c;
@@ -853,6 +855,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					bool gotFileData2 = false;
 					bool gotLoadError = false;
 					bool displayedGuess = false;
+					int maxLoadedData = 0;
 
 					mChecksumRegister = 0;
 
@@ -1008,6 +1011,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									printf( "\nNew data at offset $%x short pulse at $%x\n" , ftell( mTapeFile ) , mObservedShortPulse );
 								}
 								gotOneGoodByte = true;
+								gotAnyGoodKernalBytes = true;
 								printf( " $%02x" , theByte );
 
 								if (!displayedGuess)
@@ -1167,7 +1171,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 												printf("\nThe code will attempt to load to address $%04x\n" , fileDataPointer);
 
-												if (RAMC64[0x33c] != 0x03)
+												if (RAMC64[0x33c] != 0x03 || fileDataPointer >= 0x0400)
 												{
 													printf("\nThis will most likely not auto-execute due to loading into BASIC program memory\n");
 													displayedGuess = true;
@@ -1211,7 +1215,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 						if (!displayedGuess)
 						{
-							int maxLoadedData = std::max(fileHeaderPointer , fileDataPointer);
+							maxLoadedData = std::max(maxLoadedData,std::max(fileHeaderPointer , fileDataPointer));
 							bool earlyOut = false;
 							if (RAMC64[0x0315] == RAMC64[0x02a0])
 							{
@@ -1223,14 +1227,22 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								}
 								earlyOut = true;
 							}
+
+							int value = GetAddressFromAddress(RAMC64, 0x0332);
+							if (value != 0 && value == 0xfd22 && maxLoadedData >= 0x0810)
+							{
+								printf("\nWill probably attempt to auto-start BASIC with RUN using SAVE vector corruption $0332 code at $%04x\n" , value);
+								displayedGuess = true;
+							}
+
 							if (earlyOut || gotLoadError || gotFileData1)
 							{
 								// Process loaded data and guess what is going to happen
 								// Some loaders rely on triggering an early out during data load phase 1, so we check for that here
-								int value = GetAddressFromAddress(RAMC64, 0x0302);
+								value = GetAddressFromAddress(RAMC64, 0x0302);
 								if (value != 0 && value <= maxLoadedData)
 								{
-									printf("\nWill probably attempt to auto-start vector $0302 code at $%04x\n" , value);
+									printf("\nWill probably attempt to auto-start BASIC line input/decode vector $0302 code at $%04x\n" , value);
 									displayedGuess = true;
 								}
 
@@ -1251,7 +1263,46 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								value = GetAddressFromAddress(RAMC64, 0x0326);
 								if (value != 0 && value <= maxLoadedData)
 								{
-									printf("\nWill probably attempt to auto-start vector $0326 code at $%04x\n" , value);
+									printf("\nWill probably attempt to auto-start CHROUT vector $0326 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x0328);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start STOP vector $0328 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x0324);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start CHRIN vector $0324 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								// Tests a whole range of stacked values during tape load conditions
+								for (int sp = 0x01f0 ; sp <= 0x01ff && !displayedGuess; sp++)
+								{
+									value = GetAddressFromAddress(RAMC64, sp);
+									if (value != 0 && value >= fileDataPointerOld && value <= maxLoadedData)
+									{
+										printf("\nWill probably attempt to auto-start from stack slide $%04x code at $%04x\n" , sp , value);
+										displayedGuess = true;
+									}
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x0300);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start BASIC error message vector $0300 code at $%04x\n" , value);
+									displayedGuess = true;
+								}
+
+								value = GetAddressFromAddress(RAMC64, 0x032c);
+								if (value != 0 && value <= maxLoadedData)
+								{
+									printf("\nWill probably attempt to auto-start BASIC CLALL message vector $032c code at $%04x\n" , value);
 									displayedGuess = true;
 								}
 
@@ -1266,9 +1317,9 @@ int C64Tape::HandleParams( int argc , char ** argv )
 						rep--;
 					} //< while ( rep > 0 )
 
-					if (!displayedGuess)
+					if (gotAnyGoodKernalBytes && !displayedGuess)
 					{
-						printf("\nUnable to detect any auto-run code, please send this TAP file to martin.piper@gmail.com so it can be analysed to help improve this detection code.\n");
+						printf("\nUnable to detect any auto-run code, from kernal data, please send this TAP file to martin.piper@gmail.com so it can be analysed to help improve this detection code.\n");
 					}
 				}
 				break;
