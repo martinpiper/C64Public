@@ -289,3 +289,8 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 			** Better fix, ignore the EOD and advance the file data header check for both bit errors
 		* This processes read file data and stores it
 			FB3F   A5 BD      LDA $BD
+
+
+
+* Need to support the short kernal header variant: TapeTool\Kernal short headers check.txt
+	Note the header lengths also don't need to match

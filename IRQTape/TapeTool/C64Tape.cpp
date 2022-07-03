@@ -1031,6 +1031,16 @@ int C64Tape::HandleParams( int argc , char ** argv )
 								{
 									if (!gotTapeHeader1)
 									{
+										// Check for short kernal header
+										if ((fileHeaderStatus == 0x89) && ((theByte & 0xf0) == 0x80) )
+										{
+											fileHeaderStatus = theByte & 0x8f;
+											if ( (theByte & 0x0f) != 0x09 )
+											{
+												printf("\n** Kernal header1 length != 0x09 : $%02x **\n" , theByte & 0x0f);
+											}
+										}
+
 										if (fileHeaderStatus == 0x80)
 										{
 											mChecksumRegister = mChecksumRegister ^ theByte;
@@ -1039,7 +1049,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 										}
 										else
 										{
-											if (theByte == fileHeaderStatus)
+											if ((theByte == fileHeaderStatus) || (fileHeaderStatus != 0x89))
 											{
 												fileHeaderStatus--;
 											}
@@ -1053,6 +1063,16 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									}
 									else if (!gotTapeHeader2)
 									{
+										// Check for short kernal header
+										if ((fileHeaderStatus == 0x09) && ((theByte & 0xf0) == 0x00) )
+										{
+											fileHeaderStatus = theByte & 0x0f;
+											if ( (theByte & 0x0f) != 0x09 )
+											{
+												printf("\n** Kernal header2 length != 0x09 : $%02x **\n" , theByte & 0x0f);
+											}
+										}
+
 										if (fileHeaderStatus == 0x00)
 										{
 											// Verify the loaded header
@@ -1076,7 +1096,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 										}
 										else
 										{
-											if (theByte == fileHeaderStatus)
+											if ((theByte == fileHeaderStatus) || (fileHeaderStatus != 0x09))
 											{
 												fileHeaderStatus--;
 											}
@@ -1090,6 +1110,16 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									}
 									else if (!gotFileData1)
 									{
+										// Check for short kernal header
+										if ((fileDataStatus == 0x89) && ((theByte & 0xf0) == 0x80) )
+										{
+											fileDataStatus = theByte & 0x8f;
+											if ( (theByte & 0x0f) != 0x09 )
+											{
+												printf("\n** Kernal data header1 length != 0x09 : $%02x **\n" , theByte & 0x0f);
+											}
+										}
+
 										if (fileDataStatus == 0x80)
 										{
 											RAMC64[fileDataPointer] = theByte;
@@ -1097,7 +1127,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 										}
 										else
 										{
-											if (theByte == fileDataStatus)
+											if ((theByte == fileDataStatus) || (fileDataStatus != 0x89))
 											{
 												fileDataStatus--;
 											}
@@ -1110,6 +1140,16 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									}
 									else if (!gotFileData2)
 									{
+										// Check for short kernal header
+										if ((fileDataStatus == 0x09) && ((theByte & 0xf0) == 0x00) )
+										{
+											fileDataStatus = theByte & 0x0f;
+											if ( (theByte & 0x0f) != 0x09 )
+											{
+												printf("\n** Kernal data header2 length != 0x09 : $%02x **\n" , theByte & 0x0f);
+											}
+										}
+
 										if (fileDataStatus == 0x00)
 										{
 											if (RAMC64[fileDataPointer] != theByte)
@@ -1131,7 +1171,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 										}
 										else
 										{
-											if (theByte == fileDataStatus)
+											if ((theByte == fileDataStatus) || (fileDataStatus != 0x09))
 											{
 												fileDataStatus--;
 											}
