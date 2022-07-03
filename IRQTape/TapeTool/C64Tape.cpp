@@ -856,6 +856,7 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					bool gotLoadError = false;
 					bool displayedGuess = false;
 					int maxLoadedData = 0;
+					bool ignoreEODOnce = false;
 
 					mChecksumRegister = 0;
 
@@ -957,6 +958,13 @@ int C64Tape::HandleParams( int argc , char ** argv )
 										printf( "Unknown pulse pair type encountered %d:%d       \n" , p1 , p2 );
 										// Rewind one pulse and try again
 										fseek( mTapeFile , -1 , SEEK_CUR );	// Rewind to try to regain tape byte sync
+
+										// Bogymen.tap fix. This seems to display load error on new Vice versions, but loads "OK" on older Vice versions
+										if (!gotFileData1 && fileDataStatus != 0x80 && fileDataStatus != 0x00)
+										{
+											fileDataStatus--;
+											ignoreEODOnce = true;
+										}
 										break;
 									}
 									times--;
@@ -995,6 +1003,11 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									printf( "Unknown parity bit pair type encountered %d:%d\n" , p1 , p2 );
 									// Rewind one pulse and try again
 									fseek( mTapeFile , -1 , SEEK_CUR );	// Rewind to try to regain tape byte sync
+									if (!gotFileData1 && fileDataStatus != 0x80 && fileDataStatus != 0x00)
+									{
+										fileDataStatus--;
+										ignoreEODOnce = true;
+									}
 									continue;
 								}
 
@@ -1135,6 +1148,12 @@ int C64Tape::HandleParams( int argc , char ** argv )
 							{
 								if ( gotOneGoodByte )
 								{
+									if (ignoreEODOnce)
+									{
+										printf( " ignored EOD\n" );
+										ignoreEODOnce = false;
+										continue;
+									}
 									if (reportValue)
 									{
 										printf( " EOD\n" );

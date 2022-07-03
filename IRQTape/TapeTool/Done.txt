@@ -260,3 +260,32 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 		Loaded vector $332/$333 is different, $fd22
 			Which gets read by: FB72   B1 AC      LDA ($AC),Y
 			Which seems to execute a run after a decent number of blocks are loaded...?!
+
+
+
+
+* Debug: "C:\Users\Martin Piper\Downloads\ForMartin\ForMartin\Bogymen.tap"
+	The first data block (after tape header) seems to always read $89 $88 $87 $86 $85 $84 $83 *rare parity error* $82 ** $c1 ** $fe $c1 $fe $4a
+	Why $c1? Check what the C64 says...
+		* $fa55 is the "store received byte from tape" routine
+			FA55   85 BD      STA $BD
+		C64 reads 51 89 88 87 86 85 84 83 82 7d?!! c1 fe c1 fe 4a
+		* This reads and process header bytes, but only once?!
+			FA9C   A5 BD      LDA $BD
+			It seems the logic for detecting the header only detects the first $89 value then counts the bytes?!
+			This seems to happen because the first $89 value is then processed by:
+				FAA5   29 0F      AND #$0F
+				FAA7   85 AA      STA $AA
+				FAA9   C6 AA      DEC $AA
+			Use: w aa
+			Shows that this is triggered:
+				FA70   A9 0F      LDA #$0F
+				FA72   24 AA      BIT $AA
+				Which then goes back to: FAA9   C6 AA      DEC $AA
+				To count bytes in the header, not validate them
+				This indicates a "standard" kernal header could be shorter than the "$89 $88 $87 $86 $85 $84 $83 $82 $81" observed in most tapes. Interesting.
+				** Proven: Checked by creating a tape like this... TapeTool\Kernal short headers check.txt
+			** Fix to get the 7d reading, like the C64 does, but the next c1 isn't read: if ( ( p1 == kLong ) || ( p2 == kLong ) ) then start to read the bits again without resetting parity
+			** Better fix, ignore the EOD and advance the file data header check for both bit errors
+		* This processes read file data and stores it
+			FB3F   A5 BD      LDA $BD

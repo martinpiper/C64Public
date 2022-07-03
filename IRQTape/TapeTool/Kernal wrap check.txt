@@ -1,4 +1,4 @@
-test1.tap is a "legal" first file buffer that loads a couple of zeros into $0400 and ignores the rest of the padding data. The load doesn't complte, the screen remains disabled, but the $0400 data can be seen in the MC monitor.
+test1.tap is a "legal" first file buffer that loads a couple of zeros into $0400 and ignores the rest of the padding data. The load doesn't complete, the screen remains disabled, but the $0400 data can be seen in the MC monitor.
 
 test2.tap demonstrates that the load (store) at $fb41 doesn't even trigger after the filename is displayed. Can be verified by using "bk fb41" after the filename is displayed. The scren is not ebabled but by using monitor "sc" the "loading" message can be seen.
 
