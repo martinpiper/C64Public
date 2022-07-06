@@ -1380,6 +1380,12 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					{
 						printf("\nUnable to detect any auto-run code, from kernal data, please send this TAP file to martin.piper@gmail.com so it can be analysed to help improve this detection code.\n");
 					}
+					else if (!gotAnyGoodKernalBytes && !displayedGuess)
+					{
+						printf("\nUnable to detect any kernal data.\n");
+					}
+
+
 				}
 				break;
 			}
