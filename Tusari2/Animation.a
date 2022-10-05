@@ -76,6 +76,10 @@ AnimationInit2
 	ldy #Scroller_RunJumpDemo_timerLen
 	jsr ScoreInit
 
+	; TODO: This stops the in-game music. Normally this would be a choice from the title screen code
+	; Will also need to handle more SFX channels with music off... See Citadel2 code that also uses MusicPlayerStop
+	jsr MusicPlayerStop
+
 	rts
 
 
@@ -86,8 +90,8 @@ Animation_FindFreeSlot
 	lda Animation_FramesHi,y
 	beq .foundFree
 	dey
-	; Never consider the two player animation slots
-	cpy #1
+	; Never consider the three player animation slots
+	cpy #2
 	bne .ff1
 	sec
 	rts
@@ -163,9 +167,9 @@ Animation_UpdateTick
 	cmp #kEndAnim_Delete
 	beq .discard
 	; Otherwise it's kEndAnim_Loop
-	lda #0
-	tay
+	lda #1
 	sta Animation_Index,x
+	ldy #0
 	lda (tempWork0),y
 	sta AnimationSpriteFrame,x
 	jmp .doTick

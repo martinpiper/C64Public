@@ -390,7 +390,7 @@
 
 
 
-* MegaWang 3000 Turbo Edition: https://twitter.com/too_late_nate/status/1446606425925554181
+* MegaWang 2000 Turbo Edition: https://twitter.com/too_late_nate/status/1446606425925554181
 	Logos:
 		https://github.com/ianhan/BitmapFonts/blob/main/bb_font.png
 		https://github.com/ianhan/BitmapFonts/blob/main/font-pack/Charset-DNS_Kefrens%20The%20Wall%20Font.png
@@ -501,3 +501,27 @@
 	* Bounce sine scale scroll with names of followers.
 		See: "; Letters!"
 	Also new background: https://opengameart.org/content/seamless-space-backgrounds
+
+
+
+
+
+* Hook into kernal screen draw and copy over the screen?
+	* Copy kernal into RAM
+	* Stop $01 access from disabling the ROM in RAM?
+		file:///C:/work/C64Docs/unusedino.de/ec64/technical/aay/c64/zp01.htm
+		$FDD7
+		Probably no need as it's not used after main power on reset
+	* Hook screen updates
+		file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c64/romlisting.htm
+		EA1C
+		E9FF
+		E9C8
+	* Then A000   .WD $E394   ; RESET
+		jmp ($a000)
+	* Switch out kernal to show RAM
+	** Easier alternative, code at $c000, point $0314 IRQ vector to code, jmp ($a000)
+		The IRQ is still preserved after the "reset"
+		Will need something to preserve the IRQ after runstop-restore
+	* Can use the original kernal data, compressed, or add a new charset in the remaining space...
+	** @Demo11

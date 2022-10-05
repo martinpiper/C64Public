@@ -1,11 +1,17 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
-;MusicData = 1
+; Define this to display the static logo
+;kJustForLogo = 1
+
+MusicData = 1
+;IncludeMusicData = 1
+;IncludeMusicDataDecomp = 1
 ; Enable this to send graphics data from code and remove the demo code
 ;IncludeGraphicsData = 1
 ;; Include various graphics data in the build
 ;IncludeGraphicsData_L1 = 1
-;IncludeGraphicsData_L2 = 1
+;IncludeGraphicsData_L2a = 1
+;IncludeGraphicsData_L2b = 1
 ;IncludeGraphicsData_L3 = 1
 ;IncludeGraphicsData_L4 = 1
 
@@ -61,11 +67,117 @@ RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
 mainLoop
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+!ifdef IncludeMusicData {
+!ifdef IncludeMusicDataDecomp {
+	jsr HardwareTest_VideoPattern0
+}
+!ifndef IncludeMusicDataDecomp {
+	jsr HardwareTest_VideoInit
+	jsr HardwareTest_VideoInitDisplay
+}
+}
 !ifdef MusicData {
 	jsr MusicInit
 }
 
 	jsr Bus24Bit_Init
+
+!ifdef IncludeMusicData {
+
+!ifdef IncludeMusicDataDecomp {
+	jsr MusicSampleData
+}
+
+!ifdef MusicData {
+.l1
+
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	inc VIC2BorderColour
+	jsr MusicPoll
+	dec VIC2BorderColour
+
+	+WaitForFireLoop_A .l1
+
+	jsr Audio_SetAddr_LoopControl
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
+.l2
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+
+	lda #%0001
+	ldx #0
+	ldy #$ff
+	jsr .commonSetVoice
+
+.notLeft
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+
+	lda #%0010
+	ldx #1
+	ldy #$c0
+	jsr .commonSetVoice
+
+.notRight
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+
+	lda #%0100
+	ldx #2
+	ldy #$80
+	jsr .commonSetVoice
+
+.notUp
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+
+	lda #%1000
+	ldx #3
+	ldy #$40
+	jsr .commonSetVoice
+
+.notDown
+
+	jmp .l2
+
+.commonSetVoice
+	sta .smVA1+1
+
+	jsr Audio_SetAddr_LoopControl
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
+	jsr Audio_SetAddr_Channel_X
+
+;	+MBus24Bit_Send8BitValue $ff
+	sty CIA2PortBRS232
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 30000
+	+MBus24Bit_SendLE16BitValue 1650
+	+MBus24Bit_SendLE16BitValue 8192
+	+MBus24Bit_SendLE16BitValue 8192
+
+	jsr Audio_SetAddr_LoopControl
+
+	; Check for loop or not on fire
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+.smVA1 lda #0
+	+MBus24Bit_Send8BitValueFromA
+	jmp .doActive
+
+.notFire
+	+MBus24Bit_Send8BitValue 0
+
+.doActive
+	lda .smVA1+1
+	+MBus24Bit_Send8BitValueFromA
+
+	rts
+}
+}
 
 	jsr Video_DisableDisplay
 	jsr Video_InitDisplaySpritesScrollsBackground
@@ -86,6 +198,8 @@ mainLoop
 
 !ifdef IncludeGraphicsData {
 .l1
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue 0
 	jsr Video_SetAddressSprites2
 	+MBus24Bit_Send8BitValue 1
 	+MBus24Bit_Send8BitValue 128
@@ -108,6 +222,8 @@ mainLoop
 
 	+WaitForFire_A
 
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue 256
 	jsr Video_SetAddressSprites2
 	+MBus24Bit_Send8BitValue 0
 	+MBus24Bit_Send8BitValue 128
@@ -123,6 +239,7 @@ mainLoop
 	jmp .l1
 }
 
+!ifndef IncludeMusicData {
 !ifndef IncludeGraphicsData {
 ;	jsr GameSpriteWorldInit
 
@@ -193,7 +310,9 @@ mainLoop
 .gotFire2
 	jmp GameSpriteWorldInit
 }
+}
 
+!ifndef IncludeMusicData {
 !zn
 SetScreenScrolls
 	inc BackgroundBounce
@@ -212,6 +331,12 @@ SetScreenScrolls
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel3
 
 .notSwitch
+
+!ifdef kJustForLogo {
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel3
+}
+
 	jsr Video_SetAddressCharScrollRegisters
 ;	+MBus24Bit_SendLE16BitValue -48
 	lda BackgroundBounceTabX,x
@@ -228,7 +353,9 @@ SetScreenScrolls
 
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_FastSpeedCopy LogoPosX , 2
-;	+MBus24Bit_SendLE16BitValue -130
+!ifdef kJustForLogo {
+	+MBus24Bit_SendLE16BitValue -144
+}
 	lda BackgroundBounceTabYSmall,x
 	sec
 	sbc #130+16
@@ -446,6 +573,9 @@ UpdateSprites1
 	inc sprites1PosYCount,x
 	ldy sprites1PosYCount,x
 	lda Sprites1BounceTabY,y
+!ifdef kJustForLogo {
+	lda #117
+}
 	sta sprites1PosY,x
 
 	dex
@@ -454,6 +584,9 @@ UpdateSprites1
 	ldx singleSprite2UpdateLo
 	ldy singleSprite2UpdateAnimCount
 	lda SpriteScalePulseTab,y
+!ifdef kJustForLogo {
+	lda #32
+}
 	sta Sprite2_data + 5,x
 	sta Sprite2_data + 6,x
 	tay
@@ -483,12 +616,16 @@ divBy16TabMin1
 	!by .i
 }
 
+} ;< !ifndef IncludeMusicData {
+
 !ifdef MusicData {
 MusicDataStart
 MusicDataStart_afterHeader = MusicDataStart + 4
 	!bin "tmp/target/MusicMW2000Events.cmp"
 MusicDataEnd
 }
+
+!ifndef IncludeMusicData {
 
 Sprite2_delay
 	!by 0
@@ -618,6 +755,7 @@ SpriteScaleTabB
 	!for .i , 256 {
 		!by 48 + (float(8) * cos( (float(.i + 64) / 64.0) * 3.14159265 ))
 	}
+} ;< !ifndef IncludeMusicData {
 
 
 ; Using the sprite scale, assume it is 32x32 pixels, and produce the Y extent from this lookup table
@@ -634,6 +772,7 @@ SpriteYExtentLookup
 		!by .realSize
 	}
 
+!ifndef IncludeMusicData {
 
 BackgroundBounce !by 0
 
@@ -650,8 +789,10 @@ BackgroundBounceTabY
 
 BackgroundBounceTabYSmall
 	!for .i , 256 {
-		!by 16 + (12.0 * cos( (float(-.i) / 128.0) * 3.14159265 ))
+		!by 16 + (12.5 * cos( (float(-.i) / 128.0) * 3.14159265 ))
 	}
+
+}
 
 !macro MEmitSpriteFrame_Preserve {
 }
@@ -670,6 +811,7 @@ BackgroundBounceTabYSmall
 !source "tmp\Demo9Sprites1Sheet.txt.a"
 !source "tmp\Demo9Sprites2Sheet.txtVars.a"
 
+!ifndef IncludeMusicData {
 !ifndef IncludeGraphicsData {
 
 ; Constants for the 3D world
@@ -774,7 +916,7 @@ GameSpriteWorldInit
 	sec
 	sbc .viewPosX
 	clc
-	adc #48
+	adc #32
 	sta GameSpriteData + 3
 	sta GameSpriteData + 8 + 3
 	bcc .noPlayerMSBX
@@ -1090,6 +1232,24 @@ GameSpriteWorldInit
 	jsr Video_WaitVBlank
 	jsr Video_SetAddressSprites2
 	+MBus24Bit_FastSpeedCopy GameSpriteData , ((kMaxGameSprites+3) * 8) + 3	; Include "End of list"
+
+	jsr Video_SetAddressCharScrollRegisters
+	lda .viewPosX
+	eor #$ff
+	+M_ASR
+	+M_ASR
+	clc
+	adc #64
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue 0
+	lda .viewPosY
+	eor #$ff
+	+M_ASR
+	+M_ASR
+	clc
+	adc #64
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue 0
 
 !ifdef MusicData {
 	jsr MusicPoll
@@ -1616,6 +1776,7 @@ Sprite2Tab_Perspective
 }
 
 } ;< !ifndef IncludeGraphicsData {
+} ;< !ifndef IncludeMusicData {
 
 !zn
 DisplayData
@@ -1633,8 +1794,10 @@ DisplayData
 	+MDecompressRLEToEBBSAddr .Sprites2Data3 , $08 , $0000
 }
 
-!ifdef IncludeGraphicsData_L2 {
+!ifdef IncludeGraphicsData_L2a {
 	+MRLEScreenDataToDefaultCharScreen .Chars_map , .Chars_map2
+}
+!ifdef IncludeGraphicsData_L2b {
 	+MRLEPlanesDataToDefaultCharScreen .Chars_plane0 , .Chars_plane1 , .Chars_plane2 , .Chars_plane3
 }
 
@@ -1649,6 +1812,13 @@ DisplayData
 
 	rts
 
+!ifdef IncludeMusicDataDecomp {
+MusicSampleData
+	+MDecompressRLEToEBBSAddr .MusicSampleData0 , $04 , $0000
+	rts
+.MusicSampleData0 !bin "tmp/target/MusicMW2000Samples.cmp"
+}
+
 GamePalette
 	!bin "tmp/Demo9PaletteData.bin"
 	!fill 256,0
@@ -1660,11 +1830,14 @@ GamePalette
 .Sprites2Data3 !bin "tmp/Demo9Sprites23.cmp"
 }
 
-!ifdef IncludeGraphicsData_L2 {
+!ifdef IncludeGraphicsData_L2a {
 .Chars_map
 	!bin "tmp/Demo9Chars_map.cmp"
 .Chars_map2
 	!bin "tmp/Demo9Chars_map.cmp2"
+}
+
+!ifdef IncludeGraphicsData_L2b {
 .Chars_plane0
 	!bin "tmp/Demo9Chars_plane0.cmp"
 .Chars_plane1

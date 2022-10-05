@@ -1,3 +1,32 @@
+* Demo9: Space Harrier music choice: https://twitter.com/MartinPiper/status/1546801837755355141
+	https://www.youtube.com/watch?v=Hzgrb-mjLaM
+	* This one: https://modarchive.org/index.php?request=view_player&query=57939
+	* Done: Scroll background for movement...
+	* Score panel etc...
+	* Explosions
+	* Tile screen animation for the perspective background?
+		Without APU
+	** Code in Demo9\RenderFloor currently generates a tile/chars screen that uses quite a lot of chars.
+		Really this needs the APU to set the horizontal scroll plus palette to animate the floor.
+		** The code can generate the palette change animation table though :)
+
+
+
+
+
+
+* From very old dream
+	Horizontally scrolling parallax landscape.
+	Sky is halfway between day and sunset, rich golden red hues on the horizon.
+	Clouds in background
+	Desert sandstone coloured tall rock features, two layers
+	Light white/grey coloured spaceship, squashed horizontal ovoid shape in two halves.
+		https://www.google.com/search?q=tall+rocks+desert+sandstone&newwindow=1&rlz=1C1CHZL_enSG779SG779&sxsrf=ALiCzsb7I3AY0oLMfA2Oy1dFbrpJdpiJXw:1656857273966&source=lnms&tbm=isch&sa=X&ved=2ahUKEwioloiq8tz4AhWQ2HMBHfaEAc4Q_AUoAXoECAEQAw&biw=1280&bih=601&dpr=1.5
+	
+	
+	
+
+
 * Demo1 could use scaled sprites for the clouds, using the layer setup for Demo9
 	This removes the need for the mode7 layer
 	Would then need a separate mode7 demo

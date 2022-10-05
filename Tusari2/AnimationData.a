@@ -1,5 +1,3 @@
-!source "Animation_macros.a"
-
 !zn
 	+StartAnim ~AnimationFrames_MainCharTorsoStandLeft , 1
 	+DoFrame 153
@@ -20,6 +18,18 @@
 	+DoFrame $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1
 	+StartAnim ~AnimationFrames_MainCharLegsRight , 2
 	+DoFrame $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5
+
+
+	+StartAnim ~AnimationFrames_MainCharSwordSwipeLeft , 3
+!for .i , 1 {
+	+DoFrame 211 , 212 , 213
+}
+	+EndAnimDelete
+	+StartAnim ~AnimationFrames_MainCharSwordSwipeRight , 3
+!for .i , 1 {
+	+DoFrame 235 , 236 , 237
+}
+	+EndAnimDelete
 
 	+StartAnim ~AnimationFrames_Bat , 6
 	+DoFrame $5b , $5c , $5d , $5e , $5f , $60
@@ -182,11 +192,15 @@ AnimationTick_bat
 	bmi .rejectRoutine
 	; The char effects index
 	tay
+	lda CharEffectsChar,y
+	cmp #5
+	beq .instantDeath1
 	lda #-1
 	sta CharEffectsTime,y	; Kill the char effect
 	; Decrease bat health
 	dec Animation_GeneralStorage0,x
 	bpl .noExplode
+.instantDeath1
 	jsr AnimationDelete_bat
 	jsr Animation_makeExplode
 	+MWordValueTo_AX .scoreForBat
@@ -463,6 +477,7 @@ AnimationTick_fireball
 	and #1
 	sta AnimationXPosHi,x
 	rts
+
 
 
 !set kMapPlacement_currentIndex = 0

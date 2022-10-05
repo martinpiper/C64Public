@@ -776,7 +776,8 @@ Feature: Smoke test
     Given a user port to 24 bit bus is installed
 #    And enable user port bus debug output
 #    And enable APU mode
-#    Given add a StaticColour layer for palette index '0x7f'
+	# Use with kJustForLogo instead of "Chars V4.0 layer"
+#    Given add a StaticColour layer for palette index '0x01'
 #    Given add a GetBackground layer fetching from layer index '1'
 #    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
 #    And the layer has 16 colours
@@ -821,6 +822,7 @@ Feature: Smoke test
     Given write data from file "tmp/Demo9Tiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
     Given write data from file "tmp/Demo9Tiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
 	#  Music
+	# Can be replaced with "IncludeMusicData = 1" to have a minimal music demo
     Given write data from file "tmp/target/MusicMW2000Samples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
 
     And I load prg "bin/main.prg"
@@ -942,3 +944,103 @@ Feature: Smoke test
     Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
     When I execute the procedure at mainLoop until return
+
+
+
+
+# Run with Convert11.bat
+  @Demo11
+  Scenario: Smoke test for Demo11
+    Given clear all external devices
+    Given a new audio expansion
+    Given a new video display with overscan and 16 colours
+#	And enable video display bus debug output
+    Given video display processes 24 pixels per instruction
+    Given video display refresh window every 32 instructions
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
+    Given video display add joystick to port 1
+    Given video display add CIA1 timers with raster offset 0 , 0
+#    Given video display saves debug BMP images to leaf filename "tmp/frames/Demo11-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I enable trace
+    Given I have a simple overclocked 6502 system
+    Given a ROM from file "C:\VICE\C64\kernal" at $e000
+    Given a ROM from file "C:\VICE\C64\basic" at $a000
+    Given add a C64 VIC
+    When I enable uninitialised memory read protection with immediate fail
+    * That does fail on BRK
+    Given a user port to 24 bit bus is installed
+#    And enable user port bus debug output
+#    And enable APU mode
+#    Given add a StaticColour layer for palette index '0x7f'
+#    Given add a GetBackground layer fetching from layer index '1'
+#    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+#    And the layer has 16 colours
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    And the layer has overscan
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    And the layer has overscan
+    Given add a Sprites2 layer with registers at '0x9200' and addressEx '0x08' and running at 14.31818MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    And the layer has overscan
+
+    # Send any graphics data
+    Given write data from file "C:\VICE\C64\chargen" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "C:\VICE\C64\chargen" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "C:\VICE\C64\chargen" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "C:\VICE\C64\chargen" to 24bit bus at '0x0000' and addressEx '0x20'
+
+
+    Given show video window
+
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    When I execute the procedure at start for no more than 0 instructions until PC = $E5CF
+
+    When I hex dump memory between $400 and $800
+
+#    Given property "bdd6502.bus24.trace" is set to string "true"
+#    Given I enable trace
+
+    # Execute a screen draw to fake whatever the real C64 code and its IRQ does at this point
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+    Given render a video display frame
+    When I execute the procedure at RenderScreenChunk until return
+
+    Given render a video display frame
+    When rendering the video until window closed
+

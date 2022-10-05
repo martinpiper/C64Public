@@ -17,6 +17,13 @@ oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
 
 TODO
 
+* When exporting and importing blocks, or editing blocks, allow envelopes to use names instead of just numbers.
+	Then when loading a block attempt to match names
+	Allow imported blocked to have an envelope to loaded envelope remap window which shows number and name of the envelopes
+
+
+
+
 * Rip SID options for
 	FPS
 	Block length
@@ -69,7 +76,8 @@ TODO
 
 * Tempo options
 	* Sequence tempo - For counterA from valueA to 0, when counterA is >= valueB then process updates every valueC frames
-	* Table tempo - At .VoiceTableHandling with similar independant counters in a similar configuration to the above
+	* Table tempo - At .VoiceTableHandling with similar independent counters in a similar configuration to the above
+	* Swing tempo, allow different tempos in a sequence like. This would be used as a multiplier for frame skip count to allow subtle variation in note timings: 8 8 8 8 7 9
 
 
 

@@ -9,16 +9,16 @@ Feature: Solving simple mazes
   Scenario: An invalid maze that tests parsing of data values
     Given a maze:
     """
-	0#@X0159
-	"""
+    0#@X0159
+    """
     And a starting point @ and a target point X
 
 
   Scenario: An invalid maze that tests parsing of data values with blocking
     Given a maze where numbers signify a block at that time index:
     """
-	#@X0159
-	"""
+    #@X0159
+    """
     And a starting point @ and a target point X
 
 
@@ -26,9 +26,9 @@ Feature: Solving simple mazes
     Given a maze:
     """
     ########
-	#@    X#
-	########
-	"""
+    #@    X#
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then the cheapest route is RRRRR
@@ -40,11 +40,11 @@ Feature: Solving simple mazes
   Scenario: A simple maze
     Given a maze:
     """
-	########
-	#@####X#
-	#      #
-	########
-	"""
+    ########
+    #@####X#
+    #      #
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then the cheapest route is DRRRRRU
@@ -56,12 +56,12 @@ Feature: Solving simple mazes
   Scenario: A simple maze 2
     Given a maze:
     """
-	########
-	#@####X#
-	# #### #
-	#      #
-	########
-	"""
+    ########
+    #@####X#
+    # #### #
+    #      #
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then the cheapest route is DDRRRRRUU
@@ -73,12 +73,12 @@ Feature: Solving simple mazes
   Scenario: A simple maze 3
     Given a maze:
     """
-	########
-	#@#  #X#
-	# # ## #
-	#      #
-	########
-	"""
+    ########
+    #@#  #X#
+    # # ## #
+    #      #
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then the cheapest route is DDRRRRRUU
@@ -90,12 +90,12 @@ Feature: Solving simple mazes
   Scenario: A simple maze 4
     Given a maze:
     """
-	########
-	#@#  #X#
-	# # ## #
-	#   #  #
-	########
-	"""
+    ########
+    #@#  #X#
+    # # ## #
+    #   #  #
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then there is no route
@@ -105,12 +105,12 @@ Feature: Solving simple mazes
   Scenario: A simple maze 5
     Given a maze:
     """
-	########
-	#@#  #X#
-	# # ## #
-	#   #  #
-	########
-	"""
+    ########
+    #@#  #X#
+    # # ## #
+    #   #  #
+    ########
+    """
     And a starting point @ and a target point X
     When the unit plots a route
     Then there is no route

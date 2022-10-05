@@ -1,0 +1,210 @@
+;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+; Enable this to send graphics data from code, however this only works if the data is small :)
+IncludeGraphicsData = 1
+;IncludeGraphicsData_L1=1
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+; 23 * 2 because we ignore the last "half" sprite
+kBus24Bit_SpritesMaxNum = 46
+!source "BombJack/stdlib/Video_Macros.a"
+; We have two sprites layers
+!source "BombJack/stdlib/APU_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $fb
+zeroPage_Temp1	= $fc
+zeroPage_Temp2	= $fd
+zeroPage_Temp3	= $fe
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/HardwareTest.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!macro MAllocateAnimPos .type , .x , .y {
+	ldy #.type
+	jsr AnimationEngine_Allocate
+	lda #<.x
+	sta AnimationEngine_posX,x
+	lda #>.x
+	sta AnimationEngine_posXHi,x
+	lda #255-.y
+	sta AnimationEngine_posY,x
+}
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+!ifdef IncludeGraphicsData {
+;	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
+}
+
+	jsr Bus24Bit_Init
+
+	jsr Video_DisableDisplay
+;	jsr DisplayData
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+;	lda #$0f
+	sta CIA2PortBRS232
+
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
+	jsr Video_SetAddressTileBackgroundRegister
+	lda #255
+	sta CIA2PortBRS232
+
+	jsr DisplayData
+
+	; Clear colours
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap
+	lda #0
+	tay
+	ldx #32
+	jsr Bus24Bit_WriteAForYThenX
+
+	jmp HighRAMMain
+
+RNXPCompressionDecompress_WriteBytesmAddr = $02
+!source "asm/DecompressRLECommon.a"
+
+
+DisplayData
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+	inc VIC2BorderColour
+
+
+	+MBus24Bit_SetAddress_AXY 1 , $a000
+	jsr Video_clearByte
+	; Scrolls
+	jsr Video_clearFourBytes
+
+!ifdef IncludeGraphicsData {
+	+MDecompressRLEToEBBSAddr .Chars_plane0 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .Chars_plane0 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .Chars_plane0 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .Chars_plane0 , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_3
+}
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo10PaletteData.bin"
+	!fill 512 , 0
+
+
+!ifdef IncludeGraphicsData {
+.Chars_plane0
+	!bin "tmp/Demo11Chars_plane0.cmp"
+}
+
+*=$c000
+HighRAMMain
+	; Enter C64 kernal. Like $FCE2 but with the IRQ hook
+	ldx #$ff
+	sei
+	txs
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	cld
+	jsr IOINIT
+	jsr RAMTAS
+	jsr RESTOR
+	jsr CINT
+
+	jsr RenderScreenInit
+	+MWordValueToAddress_A RenderScreenIRQ , IRQServiceRoutineLo
+
+	cli
+	jmp (BASICROM)
+
+.doneLines !by 0
+RenderScreenInit
+	+MWordValueToAddress_A SCREENRAM , zeroPage_Temp0
+	+MWordValueToAddress_A kBus24Bit_CharScreenMap + 2  + ( 2 * kBus24Bit_CharScreenWidth), zeroPage_Temp2
+	lda #VIC2ScreenCharsHeight
+	sta .doneLines
+	rts
+
+RenderScreenLine
+	lda .doneLines
+	bne .cl1
+
+	jsr RenderScreenInit
+
+.cl1
+	; Setup the ExtBus address
+	jsr Bus24Bit_Init
+	jsr Bus24Bit_Reset
+	lda #kBus24Bit_CharScreenMap_EBBS
+	+MBus24Bit_Send8BitValueFromA
+	lda zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+	lda zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	ldy #0
+.cl2
+	lda (zeroPage_Temp0),y
+	+MBus24Bit_Send8BitValueFromA
+	iny
+	cpy #VIC2ScreenCharsWidth
+	bne .cl2
+
+	+MAddU8ToAddr16 VIC2ScreenCharsWidth , zeroPage_Temp0 , zeroPage_Temp1
+	+MAddU8ToAddr16 kBus24Bit_CharScreenWidth , zeroPage_Temp2 , zeroPage_Temp3
+
+	dec .doneLines
+
+	rts
+
+; These obviously do not want to be in cleared memory with BASIC running
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+RenderScreenChunk
+;	jsr Video_WaitVBlank
+	jsr RenderScreenLine
+	jsr RenderScreenLine
+;	jsr RenderScreenLine
+;	jsr RenderScreenLine
+;	jsr RenderScreenLine
+	rts
+
+RenderScreenIRQ
+	jsr RenderScreenChunk
+	jmp DefaultIRQServiceRoutine

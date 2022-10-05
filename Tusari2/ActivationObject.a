@@ -134,10 +134,6 @@ ActivationObject_Spawn
 .noSpawn2
 	rts
 
-!ifndef lbeq {
-!source "stdlib/LongBranches.a"
-}
-
 !zn
 scrollerRealMovementXPixelsNeg !by 0
 scrollerRealMovementYPixelsNeg !by 0

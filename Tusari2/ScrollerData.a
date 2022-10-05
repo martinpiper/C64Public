@@ -71,6 +71,7 @@ MapDataEnd
 ; Define these to point the entry points of the included music routine.
 MusicPlayerInit		= $8000
 MusicPlayerPlay		= $8003
+MusicPlayerStop		= $8006
 MusicPlayerPlaySFX	= $8009
 }
 !align 255,0

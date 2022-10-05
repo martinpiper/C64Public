@@ -47,6 +47,12 @@ echo Convert music
 cd ..\tmp
 if not exist target mkdir target
 java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\fnkyldrt.mod" "target/MusicMW2000" 1 1
+rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "C:\Users\Martin Piper\Downloads\lotus2-title.mod" "target/MusicMW2000" 3 5
 rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --playmod "target/MusicMW2000"
+..\..\bin\LZMPi.exe -cr target\MusicMW2000Samples.bin target\MusicMW2000Samples.cmp
+
+
+java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\Demo9\spacehar.mod" "target/MusicMW2000_game" 1 1
+rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --playmod "target/MusicMW2000_game"
 
 popd

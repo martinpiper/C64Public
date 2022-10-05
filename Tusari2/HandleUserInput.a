@@ -347,7 +347,7 @@ HandleJoystick
 
 .endY
 
-	; TODO: Calculate larger push scroll values if the player is close to the screen edges
+	; This calculates larger push scroll values if the player is close to the screen edges
 	; Handle the X position now
 	lda AnimationXPosHi
 	lsr
@@ -434,8 +434,138 @@ HandleJoystick
 	rts
 
 
-.lnoBulletAllocated jmp .noBulletAllocated
+Player_swordYPosAdjust = -4
+AnimationTick_swordMovement
+!for .i , 1 {
+	!by Player_swordYPosAdjust , Player_swordYPosAdjust , Player_swordYPosAdjust
+	!by 10+Player_swordYPosAdjust , 10+Player_swordYPosAdjust , 10+Player_swordYPosAdjust
+	!by 16+Player_swordYPosAdjust , 16+Player_swordYPosAdjust , 16+Player_swordYPosAdjust
+}
+.lrejectRoutinePS jmp .rejectRoutinePS
+AnimationTick_sword
+	; Calculate some offsets for the sword sparkle effects, so we get some nice variation instead of just the sprite position
+	lda Animation_Index,x
+	asl
+	and #%00000110
+	sta .smPSXTweak+1
+
+.smPSXTweak2	lda #0
+	bpl .isPlus1
+	lda #0
+	sec
+	sbc .smPSXTweak+1
+	sbc #1
+	sta .smPSXTweak+1
+.isPlus1
+	+MSpritePosToCharacterLookup .lrejectRoutinePS , AnimationXPosLo , AnimationXPosHi , AnimationYPos , BulletScreenBankHi , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	; Check if we have a char effect here already
+	lda (tempWork0),y
+	+lbpl .rejectRoutinePS
+
+	; TODO: Need the above to store the X/Y values suitable for CharEffectsX/CharEffectsY to use
+	; 	lda CharEffects_SpriteYPosToScreenCharPos,y		+lbmi .noBulletAllocated	lda CharEffects_SpriteXPosToScreenCharPos,y		+lbmi .noBulletAllocated
+
+	lda AnimationYPos,x
+	sec
+	sbc topScreenScrollY
+;	sbc #20
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	+lbmi .rejectRoutinePS
+	sta .smPSY+1
+
+	lda topScreenScrollX
+	lsr
+	sta .smaPS+1
+
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	sec
+.smaPS	sbc #0
+	clc
+.smPSXTweak	adc #0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	+lbmi .rejectRoutinePS
+	sta .smPSX+1
+
+	; Preserve the animation
+	stx .smTmpX+1
+
+	jsr AllocateCharacterEffect
+	bcs .rejectRoutinePS2
+
+	lda #0
+	sta CharEffectsXVel,x
+	lda #0
+	sta CharEffectsYVel,x
+.smPSX lda #0
+	sta CharEffectsX,x
+.smPSY lda #0
+	sta CharEffectsY,x
+	lda #5
+	sta CharEffectsTime,x
+	lda #VIC2Colour_White
+	sta CharEffectsCol,x
+	lda #5
+	sta CharEffectsChar,x
+
+.rejectRoutinePS2
+.smTmpX ldx #0
+
+
+.rejectRoutinePS
+	ldy Animation_Index,x
+	lda AnimationTick_swordMovement-1,y
+	clc
+	adc AnimationYPos + 1
+	sta AnimationYPos,x
+ 	rts
+
 .fireDagger
+	lda Animation_FramesHi + 2
+	+lbne .noFree
+
+	lda AnimPlayer_lastDirectionSet
+	+lbeq .noFree
+	bmi .swordLeft
+
+.swordRight
+	lda #1
+	sta .smPSXTweak2+1
+	ldy #2
+	+MWordValueTo_AX AnimationFrames_MainCharSwordSwipeRight
+	jsr Animation_ForceSet
+	+MAnimation_SetFuncs AnimationTick_sword , 0
+	lda AnimationYPos + 1
+	clc
+	adc AnimationTick_swordMovement
+	sta AnimationYPos + 2
+	+MAddU8From16ToAddr16 20 , AnimationXPosLo + 1 , AnimationXPosHi + 1 , AnimationXPosLo + 2 , AnimationXPosHi + 2
+	lda #VIC2Colour_White
+	sta AnimationSpriteColour,y
+	jmp .noFree
+
+.swordLeft
+	lda #-1
+	sta .smPSXTweak2+1
+	ldy #2
+	+MWordValueTo_AX AnimationFrames_MainCharSwordSwipeLeft
+	jsr Animation_ForceSet
+	+MAnimation_SetFuncs AnimationTick_sword , 0
+	lda AnimationYPos + 1
+	clc
+	adc AnimationTick_swordMovement
+	sta AnimationYPos + 2
+	+MSubU8FromAddr16ToAddr16 20 , AnimationXPosLo + 1 , AnimationXPosHi + 1 , AnimationXPosLo + 2 , AnimationXPosHi + 2
+	lda #VIC2Colour_White
+	sta AnimationSpriteColour,y
+	
+.noFree
+	; TODO: Choose to fire the daggers
+	jmp .noBulletAllocated
 
 	lda AnimationYPos
 	sec
@@ -443,7 +573,7 @@ HandleJoystick
 	sbc #20
 	tay
 	lda CharEffects_SpriteYPosToScreenCharPos,y
-	bmi .lnoBulletAllocated
+	+lbmi .noBulletAllocated
 	sta .smcyp1+1
 
 	lda topScreenScrollX
@@ -458,7 +588,7 @@ HandleJoystick
 .sma	sbc #0
 	tay
 	lda CharEffects_SpriteXPosToScreenCharPos,y
-	bmi .lnoBulletAllocated
+	+lbmi .noBulletAllocated
 	sta .smcxp1+1
 
 	jsr AllocateCharacterEffect

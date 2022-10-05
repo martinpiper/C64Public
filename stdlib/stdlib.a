@@ -1082,6 +1082,22 @@ RasterLinesPALC64		= 312
 	beq .ft2
 }
 
+!macro WaitForPortBitsLoop_A .port , .value , .notTo {
+	lda .port
+	and #.value
+	bne .notTo
+.ft2
+	lda .port
+	and #.value
+	beq .ft2
+}
+
+!macro TestForPortBitsLoop_A .port , .value , .notTo {
+	lda .port
+	and #.value
+	bne .notTo
+}
+
 !macro SetDefaultScreen_A {
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
@@ -1367,6 +1383,16 @@ RasterLinesPALC64		= 312
 	bcs .o1
 	dec .hi
 .o1
+}
+
+!macro MSubU8FromAddr16ToAddr16 .value , .lo , .hi , .destLo , .destHi {
+	lda .lo
+	sec
+	sbc #.value
+	sta .destLo
+	lda .hi
+	sbc #0
+	sta .destHi
 }
 
 !macro MAndMem .value , .addr {

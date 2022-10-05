@@ -5,6 +5,18 @@
 * C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe
 
 
+* ; Will also need to handle more SFX channels with music off... See Citadel2 code that also uses MusicPlayerStop
+	And AnimationStopMusic SFX_Voices SFX_VoiceLowerReset SFX_VoiceUpperWrap
+	Also need to handle the music conversion better: MusicAndSFX_TusariLevel1.prg
+		Need some obvious effects linked it to test the build pipeline for using the export command line arguments
+		See: C:\Work\C64\Citadel2\Sound\buildSound.bat
+
+
+
+
+* "; Kill the char effect" to common macro code
+
+
 
 * Late jump, for a few frames after starting to fall, allow a jump.
 
@@ -21,6 +33,20 @@
 
 
 * Sword, press space to switch?
+	Short range slash - Sprite
+	High damage
+	Covers +/- 45 degrees from the joystick 8-way direction
+	Blocks (parry) all damage from the area covered while slashing
+	Upgrade with slightly longer range multiple sword effect?
+	Done: For simple collision detection can emit animated chars, like the daggers, which will also cause damage to enemies
+		These do not need to be deleted on collision to enable them to kill other enemies... Ignore "; Kill the char effect" and CharEffectsTime write
+	The last sword swipe direction can be stored to help push the player away from hit enemies
+	>> Added sprite simple animation for .swordRight and .swordLeft
+	Done: * Need to move the sword frames up and down depending on the animation frame
+
+
+
+* Daggers, starts with one, upgrade to 2 then 3 then directional 8-way spread shot +/ 45 degrees?
 
 
 
@@ -60,3 +86,7 @@
 * For the init and tick (AnimationTypes_tickLo etc) here is a possible optimisation where the type is multiplied by 3 and a linear block of memory consisting of "jmp $1234" is created instead
 	Making it very quick to index into the array and call the function, especially if aligned to a page boundary.
 	The test needs to update the scroller mapH/L/pixel scroll values using the correct internal routine from the Scroller source
+
+
+
+* ; TODO: This stops the in-game music. Normally this would be a choice from the title screen code
