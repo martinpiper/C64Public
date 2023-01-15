@@ -1,6 +1,9 @@
-;BASICStarter
-;This is designed to start BASIC code after many horrible things have been done to zero page or the interupts.
-;In essence it completely restores the machine to a known state before starting the loaded BASIC code.
+; BASICStarter
+; This is designed to start BASIC code after many horrible things have been done to zero page or the interupts.
+; In essence it completely restores the machine to a known state before starting the loaded BASIC code.
+
+; This example code is compressed by LZMPi.exe which decompresses the data and start the code at $400
+; The BASIC code is already located at $801, the machine zeropage state is initialised, then the BASIC warm start is called to start the real code.
 
 !source "../stdlib/stdlib.a"
 !to "BASICStarter.prg", cbm
@@ -10,12 +13,17 @@
 !ct pet
 
 *=$400
+start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	lda #ProcessorPortDefault
 	sta ZPProcessorPort
+
+	; Initaliase IO devices
 	jsr $fda3
+
+	; Replaces RAMTAS
 	lda #$00
 	tay
 .l1
@@ -24,10 +32,13 @@
 	sta $0300,y
 	iny
 	bne .l1
+
+	; Tape buffer setup
 	ldx #$3c
 	ldy #$03
 	stx $b2
 	sty $b3
+	; Setup OS memory pointers for top and bottom of memory, and screen memory
 	ldx #0
 	ldy #$a0
 	jsr $fd8d
@@ -44,30 +55,48 @@
 .casBufCode
 !pseudopc $33c {
 .casBufStart
+	; Restore IO
 	jsr $fd15
-	jsr $ff5b	; Screen on
+	; IO init, screen on
+	jsr $ff5b
 
 	cli
 
 	; Start BASIC
+	; Reset IO
 	jsr $ffcc
+
+	; Current input device file number
 	lda #$00
 	sta $13
+
+	; Resets stack and BASIC code pointers
 	jsr $a67a
 
-	jsr $a871
-
+	; Initialise vectors
 	jsr $e453
 
+	; Backup the first couple of bytes of our BASIC code
 	lda TheBASICStart
 	sta .casBufStart
 	lda TheBASICStart+1
 	sta .casBufStart+1
 
+	; Init BASIC memory, finds bottom and top of memory
 	jsr $e3bf
 
+	; Prints BASIC startup messages, which also does a NEW
 	jsr $e422
 
+	; This is optional
+!if 1 {
+	; Display "READY." from a474
+	lda #$76   ; low a376
+	ldy #$a3   ; hi a376
+	jsr $ab1e
+}
+
+	; Setup the BASIC code start and end pointers, pretends that we just loaded the data
 	ldx #<TheBASICStart
 	ldy #>TheBASICStart
 	stx ZPStartBasicLo
@@ -77,17 +106,22 @@
 	stx ZPStartVariableLo
 	sty ZPStartVariableHi
 
+	; Restore the first couple of bytes of our BASIC code, defeating the previous NEW
 	lda .casBufStart
 	sta TheBASICStart
 	lda .casBufStart+1
 	sta TheBASICStart+1
 
+	; The tail end of the NEW command, which also does a CLR and initialises the BASIC code start pointers to the start of the loaded program and resets the stack pointer
 	jsr $a659
-
+	; Starts the BASIC code and doesn't return, executes the next statement
 	jmp $a7ae
 .casBufEnd
 }
 
+!if .casBufEnd > ZPExTapeIOBufferEnd {
+!error "Too much code in the tape buffer"
+}
 
 !source "../stdlib/Initialise.a"
 

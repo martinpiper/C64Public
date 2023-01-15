@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{661d73da-9ebb-43a7-9d83-f65b97838a68}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{ead44c55-8706-4d90-a540-8486156a70c0}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{d598663e-97a2-4a29-9431-190862255ef0}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="BASICStarter.a">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BuildIt.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProject.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFully.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\CleanProjectFullyWithAttrib.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\DoBackup.bat">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
