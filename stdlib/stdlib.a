@@ -32,10 +32,13 @@ ProcessorPortDefault			= %110111
 ProcessorPortAllRAMWithIO		= %100101
 ProcessorPortAllRAM				= %100000
 ProcessorPortKERNALWithIO		= %100110
+ProcessorPortCharROMBASICKERNAL	= %110011
+
 
 ; $02 - $06 are unused (apparently).
 
 ; $07 - $2a are only really used during BASIC execution.
+ZPFileNumberCurrentInputDevice	= $13
 
 ; By default contains $0801
 ZPStartBasicLo					= $2b
@@ -209,12 +212,20 @@ CIA1      = $DC00
 CIA2      = $DD00
 KERNALROM = $E000
 
-BASICTextPrint = $ab1e
+BASICTailNEWCLRInitStack	= $a659
+BASICResetStackAndCode		= $a67a
+BASICExecuteNextStatement	= $a7ae
+BASICTextPrint				= $ab1e
+
 
 ; KERNAL routines
 
 RND			= $e097
 RNDWithParam	= $e0be
+
+KERNALInitZPVectors			= $e453
+KERNALBASICInit				= $e3bf
+KERNALBASICStartupMessages	= $e422
 
 CLRSCR		= $e544
 HEADERex	= $F76A
@@ -249,11 +260,15 @@ RAMTAS  = $FF87
 	sta $0300,y
 	iny
 	bne .cl1
+	; Tape buffer setup
 	ldx #$3c
 	ldy #$03
 	stx $b2
 	sty $b3
-	jsr $fd90
+	; Setup OS memory pointers for top and bottom of memory, and screen memory
+	ldx #0
+	ldy #$a0
+	jsr $fd8d
 }
 RDTIM   = $FFDE
 READST  = $FFB7
@@ -319,10 +334,10 @@ VIC2SpriteXMSB					= $d010
 ; 6 1 = Extended background mode on
 ; 7 Read: Current raster line position bit 9. Write: Bit 9 of raster line position to generate next interrupt.
 ; Default: $1b, %00011011
-kVIC2ScreenControlVBits_25Rows		= %1000
-kVIC2ScreenControlVBits_ScreenOn	= %10000
-kVIC2ScreenControlVBits_Bitmap		= %100000
-kVIC2ScreenControlVBits_Extended	= %1000000
+kVIC2ScreenControlVBits_25Rows		= %00001000
+kVIC2ScreenControlVBits_ScreenOn	= %00010000
+kVIC2ScreenControlVBits_Bitmap		= %00100000
+kVIC2ScreenControlVBits_Extended	= %01000000
 kVIC2ScreenControlVBits_RasterHi	= %10000000
 VIC2ScreenControlVDefault		= %00011011
 VIC2ScreenControlV				= $d011
@@ -821,6 +836,17 @@ RasterLinesPALC64		= 312
 	jmp .l1
 }
 
+!macro MBPH {
+.bph	nop
+}
+
+!macro MBPHAssertLessThanA .value {
+	cmp #.value
+	+IfURegLessThanVal .o1
+	+MBPH
+.o1
+}
+
 !macro MACROAckRasterIRQ_A {
 	lda #1
 	sta VIC2InteruptStatus				; Ack Raster interupt
@@ -1098,6 +1124,12 @@ RasterLinesPALC64		= 312
 	bne .notTo
 }
 
+!macro LTestForPortBitsLoop_A .port , .value , .notTo {
+	lda .port
+	and #.value
+	+lbne .notTo
+}
+
 !macro SetDefaultScreen_A {
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
@@ -1340,6 +1372,14 @@ RasterLinesPALC64		= 312
 	sta .c + 2
 }
 
+!macro MIncAddr16 .lo , .hi {
+	inc .lo
+	bne .o1
+	inc .hi
+.o1
+}
+
+
 !macro MAddAToAddr16 .lo , .hi {
 	clc
 	adc .lo
@@ -1532,11 +1572,15 @@ RasterLinesPALC64		= 312
 	sta .dst + 1
 }
 
-!macro MWaitValueToMemoryCC .val , .addr {
-	lda #.val
+!macro MWaitAToMemoryCC .addr {
 .l1
 	cmp .addr
 	bcc .l1
+}
+
+!macro MWaitValueToMemoryCC .val , .addr {
+	lda #.val
+	+MWaitAToMemoryCC .addr
 }
 
 
@@ -1551,4 +1595,13 @@ RasterLinesPALC64		= 312
 
 !macro MCheckNotInMemoryRange_C64Cartridge_Lo_8K {
 	+MCheckNotInMemoryRange C64Cartridge_Lo_8K , (C64Cartridge_Lo_8K + kSize_8K)
+}
+
+
+
+!macro MStopInitStack_X {
+	sei
+	cld
+	ldx #$ff
+	txs
 }

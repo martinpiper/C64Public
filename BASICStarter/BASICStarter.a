@@ -21,27 +21,10 @@ start
 	sta ZPProcessorPort
 
 	; Initaliase IO devices
-	jsr $fda3
+	jsr IOINIT
 
 	; Replaces RAMTAS
-	lda #$00
-	tay
-.l1
-	sta $0002,y
-	sta $0200,y
-	sta $0300,y
-	iny
-	bne .l1
-
-	; Tape buffer setup
-	ldx #$3c
-	ldy #$03
-	stx $b2
-	sty $b3
-	; Setup OS memory pointers for top and bottom of memory, and screen memory
-	ldx #0
-	ldy #$a0
-	jsr $fd8d
+	+M_RAMTAS
 
 	; This is needed because the BASIC init will kill the screen
 	ldx #.casBufEnd - .casBufStart
@@ -56,25 +39,20 @@ start
 !pseudopc $33c {
 .casBufStart
 	; Restore IO
-	jsr $fd15
+	jsr RESTOR
 	; IO init, screen on
-	jsr $ff5b
-
-	cli
+	jsr CINT
 
 	; Start BASIC
 	; Reset IO
-	jsr $ffcc
+	jsr CLRCHN
 
 	; Current input device file number
 	lda #$00
-	sta $13
-
-	; Resets stack and BASIC code pointers
-	jsr $a67a
+	sta ZPFileNumberCurrentInputDevice
 
 	; Initialise vectors
-	jsr $e453
+	jsr KERNALInitZPVectors
 
 	; Backup the first couple of bytes of our BASIC code
 	lda TheBASICStart
@@ -83,17 +61,17 @@ start
 	sta .casBufStart+1
 
 	; Init BASIC memory, finds bottom and top of memory
-	jsr $e3bf
+	jsr KERNALBASICInit
 
 	; Prints BASIC startup messages, which also does a NEW
-	jsr $e422
+	jsr KERNALBASICStartupMessages
 
 	; This is optional
 !if 1 {
 	; Display "READY." from a474
 	lda #$76   ; low a376
 	ldy #$a3   ; hi a376
-	jsr $ab1e
+	jsr BASICTextPrint
 }
 
 	; Setup the BASIC code start and end pointers, pretends that we just loaded the data
@@ -113,9 +91,9 @@ start
 	sta TheBASICStart+1
 
 	; The tail end of the NEW command, which also does a CLR and initialises the BASIC code start pointers to the start of the loaded program and resets the stack pointer
-	jsr $a659
+	jsr BASICTailNEWCLRInitStack
 	; Starts the BASIC code and doesn't return, executes the next statement
-	jmp $a7ae
+	jmp BASICExecuteNextStatement
 .casBufEnd
 }
 

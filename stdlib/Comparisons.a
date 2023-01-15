@@ -4,25 +4,30 @@
 ; Unsigned
 
 !macro IfURegLessThanVal .goto {
+!previouscontext
    bcc .goto
 }
 
 !macro IfURegEqualToVal .goto {
+!previouscontext
    beq .goto
 }
 
 !macro IfURegGreaterThanVal .goto {
+!previouscontext
    beq .skip
    bcs .goto
 .skip
 }
 
 !macro IfURegLessThanOrEqualToVal .goto {
+!previouscontext
    bcc .goto
    beq .goto
 }
 
 !macro IfURegGreaterThanOrEqualToVal .goto {
+!previouscontext
    bcs .goto
 }
 
@@ -30,24 +35,29 @@
 ; Signed
 
 !macro IfRegLessThanVal .goto {
+!previouscontext
    bmi .goto
 }
 
 !macro IfRegEqualToVal .goto {
+!previouscontext
    beq .goto
 }
 
 !macro IfRegGreaterThanVal .goto {
+!previouscontext
    beq .skip
    bpl .goto
 .skip
 }
 
 !macro IfRegLessThanOrEqualToVal .goto {
+!previouscontext
    bmi .goto
    beq .goto
 }
 
 !macro IfRegGreaterThanOrEqualToVal .goto {
+!previouscontext
    bpl .goto
 }

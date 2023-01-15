@@ -1,33 +1,39 @@
 !macro lbmi .target {
+!previouscontext
 	bpl *+5
 	jmp .target
 }
 
 !macro lbpl .target {
+!previouscontext
 	bmi +
 	jmp .target
 +
 }
 
 !macro lbeq .target {
+!previouscontext
 	bne +
 	jmp .target
 +
 }
 
 !macro lbne .target {
+!previouscontext
 	beq +
 	jmp .target
 +
 }
 
 !macro lbcs .target {
+!previouscontext
 	bcc +
 	jmp .target
 +
 }
 
 !macro lbcc .target {
+!previouscontext
 	bcs +
 	jmp .target
 +
