@@ -270,6 +270,28 @@ RAMTAS  = $FF87
 	ldy #$a0
 	jsr $fd8d
 }
+
+; Only initialise the first two pages of zeropage, skipping 0/1
+!macro M_RAMTAS_LOW_STACK {
+	lda #$00
+	tay
+.cl1
+	sta $0002,y
+	sta $0100,y
+	iny
+	bne .cl1
+}
+
+; Only initialise the first page of zeropage, skipping 0/1
+!macro M_RAMTAS_LOW {
+	lda #$00
+	ldy #$02
+.cl1
+	sta $00,y
+	iny
+	bne .cl1
+}
+
 RDTIM   = $FFDE
 READST  = $FFB7
 RESTOR  = $FF8A
@@ -508,6 +530,8 @@ VIC2SpriteXBorderLeft38 = 31
 VIC2SpriteXBorderRight = 256+88
 ; The right most sprite position for a 38 column wide screen where it is completely hidden by the border
 VIC2SpriteXBorderRight38 = VIC2SpriteXBorderRight-8
+; Middle X for a 38 column wide screen
+VIC2SpriteXBorderMiddle38 = ((VIC2SpriteXBorderRight38 - VIC2SpriteSizeX) + VIC2SpriteXBorderLeft) / 2
 ; The top most position for a 25 row screen where the sprite is completely visible
 VIC2SpriteYBorderTop = 50
 ; The top most position for a 24 row screen where the sprite is completely visible
@@ -826,6 +850,8 @@ CyclesPerSecondPALC64	= 985248
 CyclesPerRasterPALC64	= 63
 RasterLinesPALC64		= 312
 
+CyclesPerRasterNTSCC64	= 65
+
 
 
 
@@ -840,10 +866,21 @@ RasterLinesPALC64		= 312
 .bph	nop
 }
 
+!macro MAssertEquals .value , .expected {
+!if .value != .expected {
+	!error "Assert failed"
+}
+}
 !macro MBPHAssertLessThanA .value {
 	cmp #.value
 	+IfURegLessThanVal .o1
 	+MBPH
+.o1
+}
+!macro MDebugBreakAssertLessThanA .value {
+	cmp #.value
+	+IfURegLessThanVal .o1
+	+MDebugBreak
 .o1
 }
 
@@ -1130,24 +1167,32 @@ RasterLinesPALC64		= 312
 	+lbne .notTo
 }
 
-!macro SetDefaultScreen_A {
+!macro SetDefaultScreenNoEnable_A {
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
 	lda #CIA2PortASerialBusVICBankDefault
 	sta CIA2PortASerialBusVICBank
 	lda #VIC2ScreenControlHDefault
 	sta VIC2ScreenControlH
+}
+
+!macro SetDefaultScreen_A {
+	+SetDefaultScreenNoEnable_A
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 }
 
-!macro SetDefaultScreenLowerCase_A {
+!macro SetDefaultScreenLowerCaseNoEnable_A {
 	lda #VIC2MemorySetupDefault+%10
 	sta VIC2MemorySetup
 	lda #CIA2PortASerialBusVICBankDefault
 	sta CIA2PortASerialBusVICBank
 	lda #VIC2ScreenControlHDefault
 	sta VIC2ScreenControlH
+}
+
+!macro SetDefaultScreenLowerCase_A {
+	+SetDefaultScreenLowerCaseNoEnable_A
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 }
@@ -1284,6 +1329,13 @@ RasterLinesPALC64		= 312
 	sta .dest
 	lda .src+1
 	sta .dest+1
+}
+
+!macro MZPAddr16ToZPAddr16_A .src , .dest {
+	lda+1 .src
+	sta+1 .dest
+	lda+1 .src+1
+	sta+1 .dest+1
 }
 
 !macro MAddr16LoHiToAddr16LoHi_A .srcLo , .srcHi , .destLo , .destHi {
@@ -1604,4 +1656,59 @@ RasterLinesPALC64		= 312
 	cld
 	ldx #$ff
 	txs
+}
+
+; Placing this macro will check the stack at this point in the execution is consistent, otherwise it will BRK
+!macro MStackConsistencyCheck_AX {
+	lda .previousStack
+	beq .o1
+	
+	; Check the current stack
+	tsx
+	txa
+	cmp .previousStack
+	beq .o2
+
+	; Something went very wrong here!
+	+MDebugBreak
+.previousStack !by 0
+.o1
+
+	; First time, save the current stack
+	tsx
+	stx .previousStack
+
+.o2
+
+}
+
+
+
+!macro MGuardAgainstLowerCart .addr {
+
+!if .addr-1 >= C64Cartridge_Lo_8K {
+!if .addr-1 < VIC2_Bank3 {
+!error "Cannot be in the lower cart ROM bank memory area"
+}
+}
+
+!if .addr >= C64Cartridge_Lo_8K {
+!if .addr < VIC2_Bank3 {
+!error "Cannot be in the lower cart ROM bank memory area"
+}
+}
+
+}
+
+
+!macro MGuardAgainstUpperCart .addr {
+
+!if .addr-1 >= C64Cartridge_Hi_8K {
+!error "Cannot be in the upper cart ROM bank memory area"
+}
+
+!if .addr >= C64Cartridge_Hi_8K {
+!error "Cannot be in the upper cart ROM bank memory area"
+}
+
 }
