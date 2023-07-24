@@ -1,0 +1,36 @@
+BulletScreenBankHi !by >CharEffects_HiddenIndexLookup
+
+!zn
+!source "AnimationData_Player.a"
+!source "AnimationData_commonMakeRespawn.a"
+!source "AnimationData_Upgrades.a"
+
+!source "bin/LevelTempData.a"
+
+	; Must be the last macro to correctly terminate the last sequence
+	+EndAnimLoop
+
+kAnimation_maxActivationObjects = 64
+!set kAnimation_currentActivationObject = 0
+
+AnimationActivationObject_InitLo
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_InitHi
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_respawnTiming
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_ExtData0
+* = * + kAnimation_maxActivationObjects
+AnimationActivationObject_ExtData1
+* = * + kAnimation_maxActivationObjects
+
+	; These are used in maps to give spawn variety
+!source "bin/LevelTempActivation.a"
+
+!source "AnimationCode_commonMakeRespawn.a"
+!source "AnimationCode_Upgrades.a"
+
+!source "bin/LevelTempCode.a"
+
+!source "bin/LevelTempSplits.a"
+

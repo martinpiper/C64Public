@@ -1,4 +1,5 @@
 ;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -89,7 +90,7 @@ mainLoop
 mainLoopGame
 	; Demostrate setting and clearing the flag in APU memory to allow the frames to progress
 	+WaitForFire_A
-	lda #$02
+	lda #kBus24Bit_APU_EBBS
 	+MWordValueTo_XY apuFrameReady0
 	jsr Bus24Bit_SetAddressBus
 	; Clear the flag
@@ -97,7 +98,7 @@ mainLoopGame
 	sta CIA2PortBRS232
 
 	+WaitForFire_A
-	lda #$02
+	lda #kBus24Bit_APU_EBBS
 	+MWordValueTo_XY apuFrameReady0
 	jsr Bus24Bit_SetAddressBus
 	; Set the flag

@@ -15,7 +15,7 @@
 ;SpeedTestCode = 1
 
 ; TAG3D logo
-!if 0 {
+!if 1 {
 ScreenColour = 0
 BGColour = 9
 BGColour1Start = 0
@@ -95,7 +95,7 @@ MaxCartBank = 14
 }
 
 ; Video
-!if 1 {
+!if 0 {
 ScreenColour = 0
 BGColour = 1
 BGColour1Start = 0
@@ -183,10 +183,12 @@ Multiplex_items	= 24
 }
 
 !ifdef SpriteAnimation {
-	lda #$40 + 28
 	ldx #24
 .cf0
+	lda #$40 + 28
 	sta Multiplex_SpriteFrame-1,x
+	txa
+	sta Multiplex_Colour-1,x
 	dex
 	bne .cf0
 

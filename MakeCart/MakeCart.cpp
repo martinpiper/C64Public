@@ -1117,6 +1117,7 @@ int main( int argc , char **argv )
 -l <compression lower threshold> <compression upper threshold> <path to compression tool> <compression tool command line options before input file> <compression tool command line options before output file>\n\
 -lc Cancels any optional compression configuration\n\
 -o : Output the whole cartridge data buffer to the file.\n\
+-s <span size> : If set to more than 0 then any files larger than span size will be split (across banks) with suitable \"spanned\" labels in the index file.\n\
 " );
 
 	}

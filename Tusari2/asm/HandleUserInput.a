@@ -1,0 +1,1373 @@
+!zn
+HandleUserInput_previousFrameInput !by 0
+HandleUserInput
+	lda Player_UsingSpellCounter
+	beq .noSpellActive
+
+	; When using the spells, the player doesn't move, there is no player collision, the screen also does not scroll at all (no camera)
+	lda #0
+	sta frameTargetVelX
+	sta frameTargetVelY
+
+	dec Player_UsingSpellCounter
+	bne .handleCasting
+
+	; Ending the spell
+	lda #0
+	sta PlayerUpgrades_spellBottle
+	rts
+
+.handleCasting
+	inc Player_UsingSpellDamage
+
+	; Force takeover of any sword
+	ldy #2
+	+MWordValueTo_AX AnimationFrames_SpellEffect
+	jsr Animation_MorphToIfNeeded
+	+MAnimation_SetFuncs 0 , 0
+	inc AnimationSpriteColour+2
+
+	ldx .spellEffectFrame
+	lda .spellEffectXPosLo,x
+	sta AnimationXPosLo+2
+	lda .spellEffectXPosHi,x
+	sta AnimationXPosHi+2
+	lda .spellEffectYPos,x
+	sta AnimationYPos+2
+
+	inc .spellEffectFrame
+
+	rts
+
+.spellBottleToTime
+	!by 40 , 70 , 90
+.spellEffectFrame !by 0
+
+.noSpellActive
+	lda Scroller_KeySpacePressed
+	beq .notSpellCast
+	ldx PlayerUpgrades_spellBottle
+	beq .notSpellCast
+
+	cpx #3
+	bcc .notMax
+	ldx #3
+.notMax
+
+	lda .spellBottleToTime-1 , x
+	sta Player_UsingSpellCounter
+	lda #0
+	sta .spellEffectFrame
+
+	rts
+
+.notSpellCast
+
+	; Reset any remaining spell damage so enemies don't get damage way after any spells are cast
+	lda #0
+	sta Player_UsingSpellDamage
+
+	jsr HandleJoystick
+	jsr Camera_Update
+
+	lda RunJumpDemo_Joystick
+	sta HandleUserInput_previousFrameInput
+
+	rts
+
+!macro MSpellPositions .steps , .max , .plus , .radiusX , .radiusY {
+!for .ii , .max {
+!for .pp , .plus {
+!set .p = .pp-1
+!word VIC2SpriteXBorderMiddle38 + (.radiusX * sin( (float(.ii + (.p*.plus)) / .steps) * 2 * 3.14159265 ))
+!by <(128 + (.radiusY * cos( (float(.ii + (.p*.plus)) / .steps) * 2 * 3.14159265 )))
+}
+}
+}
+.swizzleMemory
+.spellEffectXPosLo = .swizzleMemory
+.spellEffectXPosHi = .swizzleMemory + .swizzleMemoryRowSize
+.spellEffectYPos = .swizzleMemory + (2*.swizzleMemoryRowSize)
+	+MSpellPositions 9 , 9 , 3 , 32 , 32
+	+MSpellPositions 9 , 9 , 3 , 64 , 48
+	+MSpellPositions 9 , 9 , 3 , 96 , 64
+	+MSpellPositions 9 , 9 , 3 , 128 , 80
+.swizzleMemoryRowSize = (* - .swizzleMemory) / 3
+!swizzle .swizzleMemory , .swizzleMemoryRowSize , 3
+
+!zn
+.toggle !by 0
+UserInput_playerDeltaY !by 0
+.standing !by 0	; Doubles as a Coyote time timer
+.isFallingForFrames !by 0
+.standingCoyoteTime = 20
+.upImpulse !by 0
+.jumpIndex !by -1
+.jumpIndexForce !by 0
+; This allows the feel and height of the maximum jump with "sub-pixel" accuracy to be precisely defined
+.jumpVelocities !by 4 , 4 , 4 , 4 , 4 , 3 , 4 , 3 , 3 , 3 , 3 , 3 , 2 , 3 , 2 , 2 , 3 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 1 , 2 , 1 , 2 , 1 , 1 , 2 , 1 , 1 , 1 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 1 , 0 , 0 , 0
+.jumpVelocitiesEnd
+;.fallingVelocities 1 , 1 , 2 , 1 , 2 , 2 , 2 , 2 , -1
+
+; Used to store Y from MSpritePosToCharacterLookupPosTweak
+.headScrY !by 0
+.headScrYP40 !by 0
+.headScrYM40 !by 0
+.legsScrY !by 0
+.legsScrYP40 !by 0
+.legsScrYM40 !by 0
+.legs2ScrY !by 0
+.legs2ScrYP40 !by 0
+.legs2ScrYM40 !by 0
+
+.fireHeld !by 0
+.fireHeld2 !by 0
+
+PlayerUpgrades_sword						!by 0
+PlayerUpgrades_swordMaxHeld					!by 0
+PlayerUpgrades_daggerThrowForwardTimer		!by 25
+PlayerUpgrades_daggerThrowForwardTimerCount	!by 0
+PlayerUpgrades_daggerThrowBehindTimer		!by 26	; >= 26 Indicates there is no "reverse" fire yet
+PlayerUpgrades_daggerThrowBehindTimerCount	!by 0
+PlayerUpgrades_daggerThrowUpTimer			!by 26	; >= 26 Indicates there is no "up" fire yet
+PlayerUpgrades_daggerThrowUpTimerCount		!by 0
+PlayerUpgrades_daggerThrowUpTimerCount2		!by 0
+PlayerUpgrades_daggerThrowDownTimer			!by 26	; >= 26 Indicates there is no "up" fire yet
+PlayerUpgrades_daggerThrowDownTimerCount	!by 0
+PlayerUpgrades_daggerThrowDownTimerCount2	!by 0
+PlayerUpgrades_sparkle						!by 0
+PlayerUpgrades_spellBottle					!by 0
+
+Player_UsingSpellCounter					!by 0
+Player_UsingSpellDamage						!by 0
+
+HandleJoystick
+	; Debug: See states in the border
+;	lda .standing
+;	sta VIC2BorderColour
+
+	lda .jumpIndexForce
+	beq .jumpIndexForceNot
+	dec .jumpIndexForce
+.jumpIndexForceNot
+
+	lda PlayerUpgrades_daggerThrowForwardTimerCount
+	bmi .noDec1
+	dec PlayerUpgrades_daggerThrowForwardTimerCount
+.noDec1
+	lda PlayerUpgrades_daggerThrowBehindTimerCount
+	bmi .noDec2
+	dec PlayerUpgrades_daggerThrowBehindTimerCount
+.noDec2
+	lda PlayerUpgrades_daggerThrowUpTimerCount
+	bmi .noDec3
+	dec PlayerUpgrades_daggerThrowUpTimerCount
+.noDec3
+	lda PlayerUpgrades_daggerThrowUpTimerCount2
+	bmi .noDec3b
+	dec PlayerUpgrades_daggerThrowUpTimerCount2
+.noDec3b
+	lda PlayerUpgrades_daggerThrowDownTimerCount
+	bmi .noDec4
+	dec PlayerUpgrades_daggerThrowDownTimerCount
+.noDec4
+	lda PlayerUpgrades_daggerThrowDownTimerCount2
+	bmi .noDec4b
+	dec PlayerUpgrades_daggerThrowDownTimerCount2
+.noDec4b
+
+	lda #0
+	sta AnimPlayer_directionSet
+
+	lda AnimationYPos
+	sta UserInput_playerDeltaY
+
+	+MSpritePosToCharacterLookup_Setup SpriteXPosToScreenCharPos , SpriteYPosToScreenCharPosLo , SpriteYPosToScreenCharPosHi , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosLohi , ZP_SpriteYPosToScreenCharPosHilo , ZP_SpriteYPosToScreenCharPosHihi , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteXPosToScreenCharPoshi , topScreenScrollX , topScreenScrollY
+
+	; Assume not standing
+	lda .standing
+	beq .lowerCheck1
+	dec .standing
+.lowerCheck1
+
+	ldx #1
+	+MSpritePosToCharacterLookup .rejectRoutineHead , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork2 , tempWork3 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .headScrY
+	tya
+	clc
+	adc #40
+	sta .headScrYP40
+	tya
+	sec
+	sbc #40
+	sta .headScrYM40
+.rejectRoutineHead
+	ldx #0
+	+MSpritePosToCharacterLookupPosTweak 0 , -5 , .rejectRoutineLegs , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .legsScrY
+	tya
+	clc
+	adc #40
+	sta .legsScrYP40
+	tya
+	sec
+	sbc #40
+	sta .legsScrYM40
+.rejectRoutineLegs
+
+	ldx #0
+	; 0 , 1 carefully tweaked to cause the player to land on top of platforms while jumping
+	+MSpritePosToCharacterLookupPosTweak 0 , 1 , .rejectRoutineLegs2 , AnimationXPosLo , AnimationXPosHi , AnimationYPos , ScrollerBankVisible , tempWork4 , tempWork5 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	sty .legs2ScrY
+	tya
+	clc
+	adc #40
+	sta .legs2ScrYP40
+	tya
+	sec
+	sbc #40
+	sta .legs2ScrYM40
+.rejectRoutineLegs2
+
+	; No need for fall detection when we are moving upwards due to jumping
+	ldx .jumpIndex
+	+lbpl .rejectRoutine
+
+	; Falling or standing detection code
+
+	ldy .legsScrYP40
+	lda (tempWork0),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .headNotBlockedCanJump
+}
+.doFall
+	lda #0
+	sta AnimPlayerCrouchingOffsetYPos
+	sta AnimPlayerWasStanding
+	inc .isFallingForFrames
+	inc AnimationYPos
+	inc AnimationYPos
+	lda .standing
+	beq .lowerCheck2
+	dec .standing
+.lowerCheck2
+	jmp .rejectRoutine
+.headNotBlockedCanJump
+
+	; Test for single step up character while walking left/right
+
+	; Already jumping?
+	lda .jumpIndex
+	bpl .oStep2
+
+	lda #JoystickBits_Left
+	bit RunJumpDemo_Joystick
+	bne .oStep1
+
+	ldy .legsScrY
+	dey
+	lda (tempWork0),y
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcc .oStep1
+	ldy .legsScrYM40
+	dey
+	lda (tempWork0),y
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .oStep1
+
+	; Little jump
+	lda #3
+	sta .jumpIndexForce
+	jmp .oStep2
+
+.oStep1
+
+	lda #JoystickBits_Right
+	bit RunJumpDemo_Joystick
+	bne .oStep2
+
+	ldy .legsScrY
+	iny
+	lda (tempWork0),y
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcc .oStep2
+	ldy .legsScrYM40
+	iny
+	lda (tempWork0),y
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .oStep2
+
+	; Little jump
+	lda #3
+	sta .jumpIndexForce
+
+.oStep2
+
+	; Assume standing now
+	lda #.standingCoyoteTime
+	sta .standing
+
+	lda AnimPlayerWasStanding
+	bne .wasStanding
+
+	inc AnimPlayerWasStanding
+
+	lda .isFallingForFrames
+	cmp #8
+	bcc .wasStanding
+
+	lda #$0b
+	jsr SFXInit
+
+.wasStanding
+	lda #0
+	sta .isFallingForFrames
+
+.rejectRoutine
+
+	lda #JoystickBits_Right
+	bit RunJumpDemo_Joystick
+	bne .o1
+
+	lda #0
+	sta .fireHeld2
+
+	; Check screen edge range
+	lda AnimationXPosHi
+	beq .nop1
+	lda AnimationXPosLo
+	cmp #<(VIC2SpriteXBorderRight38-VIC2SpriteSizeX)
+	bcs .o1
+.nop1
+
+	ldy .headScrY
+	iny
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .headScrYP40
+	iny
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .legs2ScrY
+	iny
+	lda (tempWork4),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+	ldy .legsScrYM40
+	iny
+	lda (tempWork0),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o1
+}
+
+	jsr AnimPlayerRunRight
+
+	lda AnimationXPosLo
+	clc
+	adc #2
+	sta AnimationXPosLo
+	bcc .o1
+	lda #1
+	sta AnimationXPosHi
+.o1
+
+	lda #JoystickBits_Left
+	bit RunJumpDemo_Joystick
+	bne .o2
+
+	lda #0
+	sta .fireHeld2
+
+	; Check screen edge range
+	lda AnimationXPosHi
+	bne .nop2
+	lda AnimationXPosLo
+	cmp #<VIC2SpriteXBorderLeft38
+	bcc .o2
+.nop2
+
+	ldy .headScrY
+	dey
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .headScrYP40
+	dey
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .legs2ScrY
+	dey
+	lda (tempWork4),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+	ldy .legsScrYM40
+	dey
+	lda (tempWork0),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .o2
+}
+
+	jsr AnimPlayerRunLeft
+
+	lda AnimationXPosLo
+	sec
+	sbc #2
+	sta AnimationXPosLo
+	bcs .o2
+	lda #0
+	sta AnimationXPosHi
+.o2
+
+	lda #JoystickBits_Down
+	bit RunJumpDemo_Joystick
+	+lbne .notDown
+
+	; Enter crouch check
+	; Is standing
+	lda .standing
+	cmp #.standingCoyoteTime-1
+	bcc .noCrouch
+
+	; No left/right movement
+	lda RunJumpDemo_Joystick
+	and #JoystickBits_Left | JoystickBits_Right
+	cmp #JoystickBits_Left | JoystickBits_Right
+	bne .noCrouch
+	; Not holding fire
+	lda .fireHeld2
+	bne .overCrouch
+
+	; Enter crouch mode
+	lda #8
+	sta AnimPlayerCrouchingOffsetYPos
+	jmp .overCrouch
+
+.noCrouch
+	lda #0
+	sta AnimPlayerCrouchingOffsetYPos
+.overCrouch
+
+	; Debounce check
+	lda #JoystickBits_Down
+	bit HandleUserInput_previousFrameInput
+	+lbeq .notDown2
+
+	lda .fireHeld2
+	cmp #50
+	+lbcc .notDown2
+
+	lda #0
+	sta .fireHeld2
+
+	lda PlayerUpgrades_sparkle
+	+lbeq .notDown2
+
+	dec PlayerUpgrades_sparkle
+	jsr ScorePanel_UpdateSparkle
+
+	; Fire the special effect
+!for .ii , 9 {
+!set .y = .ii - 5
+!if .y < 0 {
+	!set .x = -.y
+} else {
+	!set .x = .y
+}
+	lda #-4 + .x
+	ldx #-1
+	ldy #(.y * 8)+8
+	jsr Player_FireSparkleSetup
+
+	lda #4 - .x
+	ldx #1
+	ldy #(.y * 8)+8
+	jsr Player_FireSparkleSetup
+}
+
+	lda #7
+	jsr SFXInit
+	jmp .notDown2
+
+.notDown
+	lda #0
+	sta AnimPlayerCrouchingOffsetYPos
+
+.notDown2
+
+	lda .jumpIndexForce
+	bne .jumpIndexForceDo
+	lda #JoystickBits_Up
+	bit RunJumpDemo_Joystick
+	bne .notUp
+
+.jumpIndexForceDo
+	lda #0
+	sta .fireHeld2
+	sta AnimPlayerCrouchingOffsetYPos
+
+	lda AnimationYPos
+	cmp #VIC2SpriteYBorderTop24
+	bcc .cancelJump
+
+	; Already jumping?
+	lda .jumpIndex
+	bpl .alreadyJumping
+
+	lda .upImpulse
+	bne .o4
+
+	lda #1
+	sta .upImpulse
+
+
+	; Not standing?
+	lda .standing
+	beq .o4
+
+	; Is standing, so start jumping then
+	lda #0
+	sta .jumpIndex
+	sta .standing	; Reset any Coyote time to avoid a double jump
+	jmp .o4
+
+.alreadyJumping
+	lda #0
+	sta .standing	; Reset any Coyote time to avoid a double jump
+
+	; If the head goes off the top of the screen then stop jumping
+	lda AnimationYPos
+	cmp #VIC2SpriteYBorderTop24
+	bcc .cancelJump
+
+	ldy .headScrYM40
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .cancelJump
+}
+	ldy .headScrY
+	lda (tempWork2),y
+!ifdef MapSolidCharsUpper {
+	cmp #MapSolidCharsUpper	; The character that is solid
+	bcs .cancelJump
+}
+	jmp .o4
+
+.notUp
+.cancelJump
+	lda #0
+	sta .upImpulse
+	; Stop jumping
+	lda #-1
+	sta .jumpIndex
+.o4
+
+	lda #JoystickBits_Fire
+	bit RunJumpDemo_Joystick
+	+lbne .notFireDown
+
+	; Handle fire held timers
+	inc .fireHeld
+	ldx .fireHeld2
+	cpx #49
+	bne .notReady1
+
+	ldx PlayerUpgrades_sparkle
+	beq .notReady1
+
+	lda #8
+	jsr SFXInit
+
+.notReady1
+	cpx #200
+	bcs .sk1
+	inc .fireHeld2
+.sk1
+
+	; Debounce check
+	lda #JoystickBits_Fire
+	bit HandleUserInput_previousFrameInput
+	+lbeq .overFireDown
+
+	; Fire something
+	lda PlayerUpgrades_sword
+	beq .noSword1
+	; Activate the sword
+	lda AnimPlayer_lastDirectionSet
+	ldx #0
+	jsr .swipeSword
+.noSword1
+
+	lda PlayerUpgrades_daggerThrowForwardTimerCount
+	bpl .noFireTime1
+
+	lda PlayerUpgrades_daggerThrowForwardTimer
+	sta PlayerUpgrades_daggerThrowForwardTimerCount
+
+	; Forward fire
+	lda #0
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSet2
+} else {
+	ldx AnimPlayer_lastDirectionSet
+}
+	ldy #0
+	jsr Player_FireDagger
+
+	lda PlayerUpgrades_daggerThrowUpTimerCount
+	bpl .noFireTime3b
+
+	lda PlayerUpgrades_daggerThrowUpTimer
+	cmp #26
+	bcs .noFireTime3b
+	sta PlayerUpgrades_daggerThrowUpTimerCount
+
+	lda #-1
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSet2
+} else {
+	ldx AnimPlayer_lastDirectionSet
+}
+	ldy #-1
+	jsr Player_FireDagger
+
+.noFireTime3b
+
+	lda PlayerUpgrades_daggerThrowDownTimerCount
+	bpl .noFireTime1
+
+	lda PlayerUpgrades_daggerThrowDownTimer
+	cmp #26
+	bcs .noFireTime1
+	sta PlayerUpgrades_daggerThrowDownTimerCount
+
+	lda #1
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSet2
+} else {
+	ldx AnimPlayer_lastDirectionSet
+}
+	ldy #1
+	jsr Player_FireDagger
+
+.noFireTime1
+
+	lda PlayerUpgrades_daggerThrowBehindTimerCount
+	bpl .noFireTime2
+
+	lda PlayerUpgrades_daggerThrowBehindTimer
+	cmp #26
+	bcs .noFireTime2
+	sta PlayerUpgrades_daggerThrowBehindTimerCount
+
+	; Reverse fire
+	lda #0
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSetM2
+} else {
+	ldx AnimPlayer_lastDirectionSetM
+}
+	ldy #0
+	jsr Player_FireDagger
+
+	; Debug: Remove reverse up/down daggers
+!if 0 {
+	lda PlayerUpgrades_daggerThrowUpTimerCount2
+	bpl .noFireTime3
+
+	lda PlayerUpgrades_daggerThrowUpTimer
+	cmp #26
+	bcs .noFireTime3
+	sta PlayerUpgrades_daggerThrowUpTimerCount2
+
+	lda #-1
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSetM2
+} else {
+	ldx AnimPlayer_lastDirectionSetM
+}
+	ldy #-1
+	jsr Player_FireDagger
+
+.noFireTime3
+
+	lda PlayerUpgrades_daggerThrowDownTimerCount2
+	bpl .noFireTime2
+
+	lda PlayerUpgrades_daggerThrowDownTimer
+	cmp #26
+	bcs .noFireTime2
+	sta PlayerUpgrades_daggerThrowDownTimerCount2
+
+	lda #1
+!ifdef CharEffects_CoordinateShiftX {
+	ldx AnimPlayer_lastDirectionSetM2
+} else {
+	ldx AnimPlayer_lastDirectionSetM
+}
+	ldy #1
+	jsr Player_FireDagger
+}
+.noFireTime2
+	jmp .overFireDown
+
+.notFireDown
+	lda #0
+	sta .fireHeld2
+
+.overFireDown
+	; Max fire held check
+	lda .fireHeld
+	cmp PlayerUpgrades_swordMaxHeld
+	bcc .notMaxFireHeld
+	lda PlayerUpgrades_swordMaxHeld
+	sta .fireHeld
+.notMaxFireHeld
+
+	lda .fireHeld
+	cmp #49
+	bne .notReadyThrow1
+
+	lda #$0a
+	jsr SFXInit
+
+.notReadyThrow1
+	lda .fireHeld
+	cmp #99
+	bne .notReadyThrow2
+	lda #$0a
+	jsr SFXInit
+.notReadyThrow2
+	lda .fireHeld
+	cmp #149	; Note: Less one due to max number check
+	bne .notReadyThrow3
+	lda #$0a
+	jsr SFXInit
+.notReadyThrow3
+
+
+	; Display the fire held strength
+	lda .fireHeld
+	cmp #150
+	bcs .displayStrength3
+	cmp #100
+	bcs .displayStrength2
+	cmp #50
+	bcs .displayStrength1
+.displayStrength0
+!ifdef kScore_IncludePanelUpdates {
+	lda #VIC2Colour_Black
+	sta Scroller_StrengthPanelPosColour
+	sta Scroller_StrengthPanelPosColour+1
+	sta Scroller_StrengthPanelPosColour+2
+}
+	jmp .doneDisplayStrength
+.displayStrength3
+!ifdef kScore_IncludePanelUpdates {
+	lda #VIC2Colour_White
+	sta Scroller_StrengthPanelPosColour+2
+}
+	jmp .doneDisplayStrength
+.displayStrength2
+!ifdef kScore_IncludePanelUpdates {
+	lda #VIC2Colour_White
+	sta Scroller_StrengthPanelPosColour+1
+}
+	jmp .doneDisplayStrength
+.displayStrength1
+!ifdef kScore_IncludePanelUpdates {
+	lda #VIC2Colour_White
+	sta Scroller_StrengthPanelPosColour+0
+}
+	jmp .doneDisplayStrength
+.doneDisplayStrength
+
+	; Release fire check
+	lda #JoystickBits_Fire
+	bit RunJumpDemo_Joystick
+	beq .o6
+
+	; Fire not pressed
+	lda .fireHeld
+	cmp #50
+	bcc .notEnoughFireHeld
+
+	cmp #150
+	bcs .throwSword3
+
+	cmp #100
+	bcs .throwSword2
+
+.throwSword1
+	lda #9
+	jsr SFXInit
+
+	lda AnimPlayer_lastDirectionSet
+	asl
+	tax
+	jsr .swipeSword
+	jmp .notEnoughFireHeld
+
+.throwSword2
+	lda #9
+	jsr SFXInit
+	lda #9
+	jsr SFXInit
+
+	lda AnimPlayer_lastDirectionSet
+	asl
+	asl
+	tax
+	jsr .swipeSword
+	jmp .notEnoughFireHeld
+
+.throwSword3
+	lda #9
+	jsr SFXInit
+	lda #9
+	jsr SFXInit
+	lda #9
+	jsr SFXInit
+
+	lda AnimPlayer_lastDirectionSet
+	asl
+	asl
+	asl
+	tax
+	jsr .swipeSword
+	jmp .notEnoughFireHeld
+
+.notEnoughFireHeld
+	lda #0
+	sta .fireHeld
+
+.o6
+
+
+	; TODO: Probably should check the head positions for solid blocks here to stop jumping happening
+	ldx .jumpIndex
+	bmi .noJumping
+	lda AnimationYPos
+	sec
+	sbc .jumpVelocities,x
+;	sbc #1
+	sta AnimationYPos
+	inx
+	cpx #.jumpVelocitiesEnd-.jumpVelocities
+	bne .noJumping
+	ldx #-1
+.noJumping
+	stx .jumpIndex
+
+	; Calculate any delta Y moved by the player
+	lda AnimationYPos
+	sec
+	sbc UserInput_playerDeltaY
+	sta UserInput_playerDeltaY
+
+	jsr AnimPlayerCheckForStand
+
+	lda AnimationYPos
+	sec
+	sbc #VIC2SpriteSizeY
+	clc
+	adc AnimPlayerCrouchingOffsetYPos
+	sta AnimationYPos+1
+	lda AnimationXPosLo
+	sta AnimationXPosLo+1
+	lda AnimationXPosHi
+	sta AnimationXPosHi+1
+
+	rts
+
+
+Player_swordYPosAdjust = -4
+AnimationTick_swordMovement
+!for .i , 1 {
+	!by Player_swordYPosAdjust , Player_swordYPosAdjust , Player_swordYPosAdjust
+	!by 10+Player_swordYPosAdjust , 10+Player_swordYPosAdjust , 10+Player_swordYPosAdjust
+	!by 16+Player_swordYPosAdjust , 16+Player_swordYPosAdjust , 16+Player_swordYPosAdjust
+}
+.lrejectRoutinePS jmp .rejectRoutinePS
+AnimationTick_sword
+	; Move the sword if needed, due to being thrown
+	lda AnimationXPosLo,x
+	clc
+	adc .swipeSwordMovementX
+	sta AnimationXPosLo,x
+	; Sign extend S8 to S16
+	lda .swipeSwordMovementX
+	and #%10000000
+	beq +
+	lda #-1
++
+	adc AnimationXPosHi,x
+	sta AnimationXPosHi,x
+
+	; Debug: remove sparkles for the sword
+!if 0 {
+	; Calculate some offsets for the sword sparkle effects, so we get some nice variation instead of just the sprite position
+	lda Animation_Index,x
+	asl
+	and #%00000110
+	sta .smPSXTweak+1
+
+.smPSXTweak2	lda #0
+	bpl .isPlus1
+	lda #0
+	sec
+	sbc .smPSXTweak+1
+	sbc #1
+	sta .smPSXTweak+1
+.isPlus1
+
+	+MSpritePosToCharacterLookup .lrejectRoutinePS , AnimationXPosLo , AnimationXPosHi , AnimationYPos , BulletScreenBankHi , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	; Check if we have a char effect here already
+	lda (tempWork0),y
+	+lbpl .rejectRoutinePS
+
+	; Store the X/Y values suitable for CharEffectsX/CharEffectsY to use
+
+	lda AnimationYPos,x
+	sec
+	sbc topScreenScrollY
+	sbc #8	; Adjust up a bit to account for the falling sparkle effect speed
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	+lbmi .rejectRoutinePS
+	sta .smPSY+1
+
+	lda topScreenScrollX
+	lsr
+	sta .smaPS+1
+
+	lda AnimationXPosHi,x
+	lsr
+	lda AnimationXPosLo,x
+	ror
+	sec
+.smaPS	sbc #0
+	clc
+.smPSXTweak	adc #0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	+lbmi .rejectRoutinePS
+	sta .smPSX+1
+
+	; Preserve the animation
+	stx .smTmpX+1
+
+	jsr AllocateCharacterEffect
+	bcs .rejectRoutinePS2
+
+	lda #0
+	sta CharEffectsXVel,x
+	lda #1	; Make the sparkle move down, which helps with the enemy hit detection
+	sta CharEffectsYVel,x
+.smPSX lda #0
+!ifdef CharEffects_CoordinateShiftX {
+	asl
+}
+	sta CharEffectsX,x
+.smPSY lda #0
+!ifdef CharEffects_CoordinateShiftY {
+	asl
+}
+	sta CharEffectsY,x
+	lda #5
+	sta CharEffectsTime,x
+	lda #VIC2Colour_White
+	sta CharEffectsCol,x
+	lda #5
+	sta CharEffectsChar,x
+
+.rejectRoutinePS2
+.smTmpX ldx #0
+}
+
+.rejectRoutinePS
+	ldy Animation_Index,x
+	lda AnimationTick_swordMovement-1,y
+	clc
+	adc AnimationYPos + 1
+	sta AnimationYPos,x
+ 	rts
+
+
+.swipeSwordMovementX !by 0
+; Entry:
+; A = Direction
+.swipeSword
+	ldy Animation_FramesHi + 2
+	beq .isFree
+	rts
+
+.isFree
+	stx .swipeSwordMovementX
+	cmp #0
+	bmi .swordLeft
+
+.swordRight
+!if 0 {
+	lda #1
+	sta .smPSXTweak2+1
+}
+	; The sword always uses this animation index
+	ldy #2
+	+MWordValueTo_AX AnimationFrames_MainCharSwordSwipeRight
+	jsr Animation_ForceSet
+	+MAnimation_SetFuncs AnimationTick_sword , 0
+	lda AnimationYPos + 1
+	clc
+	adc AnimationTick_swordMovement
+	sta AnimationYPos + 2
+	+MAddU8From16ToAddr16 20 , AnimationXPosLo + 1 , AnimationXPosHi + 1 , AnimationXPosLo + 2 , AnimationXPosHi + 2
+	lda #VIC2Colour_White
+	sta AnimationSpriteColour,y
+	rts
+
+.swordLeft
+!if 0 {
+	lda #-1
+	sta .smPSXTweak2+1
+}
+	ldy #2
+	+MWordValueTo_AX AnimationFrames_MainCharSwordSwipeLeft
+	jsr Animation_ForceSet
+	+MAnimation_SetFuncs AnimationTick_sword , 0
+	lda AnimationYPos + 1
+	clc
+	adc AnimationTick_swordMovement
+	sta AnimationYPos + 2
+	+MSubU8FromAddr16ToAddr16 20 , AnimationXPosLo + 1 , AnimationXPosHi + 1 , AnimationXPosLo + 2 , AnimationXPosHi + 2
+	lda #VIC2Colour_White
+	sta AnimationSpriteColour,y
+	rts
+
+!zn
+; Entry:
+; A = Y speed adjust, which can be different to the Y position to give different shot spread
+; X = Direction (X velocity)
+; Y = Y character position adjust
+Player_FireDagger
+	; Debug: Stop firing daggers
+;	rts
+	sta .sma3+1
+	sty .sma1+1
+	stx .sma2+1
+	lda #3
+	sta .smc1+1
+	lda #4
+	sta .smc2+1
+	cpx #0
+	bmi .daggerIsLeft
+
+	lda #1
+	sta .smc1+1
+	lda #2
+	sta .smc2+1
+
+.daggerIsLeft
+	; Fire the daggers, from the torso!
+	lda AnimationYPos+1
+	sec
+	sbc topScreenScrollY
+	clc
+	adc #8
+	clc
+.sma1	adc #0
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	+lbmi .noBulletAllocated
+	sta .smcyp1+1
+
+	lda topScreenScrollX
+	lsr
+	sta .sma+1
+
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sec
+.sma	sbc #0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	+lbmi .noBulletAllocated
+	sta .smcxp1+1
+
+	jsr AllocateCharacterEffect
+	bcc .gotBullet1
+	jmp .o5b
+.gotBullet1
+	stx .smcx1+1
+	; Claim the Y coordinate to cause the next allocate to try to find a different slot
+	lda .smcyp1+1
+!ifdef CharEffects_CoordinateShiftY {
+	asl
+}
+	sta CharEffectsY,x
+
+	jsr AllocateCharacterEffect
+	bcc .gotBullet2
+	jmp .o5b2
+.gotBullet2
+	stx .smcx2+1
+
+
+
+
+.smcx1	ldx #0
+.smcx2	ldy #0
+.sma2	lda #1
+	sta CharEffectsXVel,x
+	sta CharEffectsXVel,y
+.sma3	lda #-1
+	sta CharEffectsYVel,x
+	sta CharEffectsYVel,y
+	lda #VIC2Multicolour_Yellow
+	sta CharEffectsCol,x
+	sta CharEffectsCol,y
+	lda #30
+	sta CharEffectsTime,x
+	sta CharEffectsTime,y
+.smc1	lda #1
+	sta CharEffectsChar,x
+.smc2	lda #2
+	sta CharEffectsChar,y
+.smcxp1	lda #0
+!ifdef CharEffects_CoordinateShiftX {
+	asl
+}
+	; Move backwards into the player a bit
+	sec
+	sbc .sma2+1
+	sec
+!ifdef CharEffects_CoordinateShiftX {
+	sbc #2
+} else {
+	sbc #2
+}
+	sta CharEffectsX,x
+	clc
+!ifdef CharEffects_CoordinateShiftX {
+	adc #2
+} else {
+	adc #1
+}
+	sta CharEffectsX,y
+.smcyp1	lda #0
+!ifdef CharEffects_CoordinateShiftY {
+	asl
+}
+	sta CharEffectsY,x
+	sta CharEffectsY,y
+
+	lda #0
+	jsr SFXInit
+
+	jmp .o5b
+
+
+	; Just kill it
+.o5b2
+	ldx .smcx1+1
+	lda #-1
+	sta CharEffectsY,x
+.o5b
+
+.noBulletAllocated
+	rts
+
+
+
+!zn
+; Entry:
+; A = X position adjust
+; X = Direction (X velocity)
+; Y = Y character position adjust
+Player_FireSparkleSetup
+	sta .sma3+1
+	sty .sma1+1
+	stx .sma2+1
+
+	; Fire the sparkle, from the torso!
+	lda AnimationYPos+1
+	sec
+	sbc topScreenScrollY
+;	sec
+;	sbc #8
+	clc
+.sma1	adc #0
+	tay
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	+lbmi .noBulletAllocated
+	sta .smcyp1+1
+
+	lda topScreenScrollX
+	lsr
+	sta .sma+1
+
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+	sec
+.sma	sbc #0
+	tay
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	+lbmi .noBulletAllocated
+	sta .smcxp1+1
+
+	jsr AllocateCharacterEffect
+	bcs .noBulletAllocated
+
+	stx .smcx1+1
+
+.smcx1	ldx #0
+.sma2	lda #1
+	sta CharEffectsXVel,x
+	lda #0
+	sta CharEffectsYVel,x
+	lda #VIC2Colour_White
+	sta CharEffectsCol,x
+	lda #40
+	sta CharEffectsTime,x
+	lda #5
+	sta CharEffectsChar,x
+.smcxp1	lda #0
+!ifdef CharEffects_CoordinateShiftX {
+	asl
+}
+	clc
+.sma3 adc #0
+	sta CharEffectsX,x
+.smcyp1	lda #0
+!ifdef CharEffects_CoordinateShiftY {
+	asl
+}
+	sta CharEffectsY,x
+
+.noBulletAllocated
+	rts
+
+
+
+
+!zn
+AnimPlayer_directionSet !by -1
+AnimPlayer_lastDirectionSet !by -1
+AnimPlayer_lastDirectionSetM !by -1
+AnimPlayer_lastDirectionSet2 !by -2
+AnimPlayer_lastDirectionSetM2 !by -2
+
+AnimPlayerRunLeft
+	lda #0
+	sta AnimPlayerCrouchingOffsetYPos
+	lda #-1
+	sta AnimPlayer_directionSet
+	sta AnimPlayer_lastDirectionSet
+	lda #-3
+	sta AnimPlayer_lastDirectionSet2
+	lda #1
+	sta AnimPlayer_lastDirectionSetM
+	lda #2
+	sta AnimPlayer_lastDirectionSetM2
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsLeft
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoLeft
+	jmp Animation_MorphToIfNeeded
+
+AnimPlayerRunRight
+	lda #0
+	sta AnimPlayerCrouchingOffsetYPos
+	lda #1
+	sta AnimPlayer_directionSet
+	sta AnimPlayer_lastDirectionSet
+	lda #3
+	sta AnimPlayer_lastDirectionSet2
+	lda #-1
+	sta AnimPlayer_lastDirectionSetM
+	lda #-2
+	sta AnimPlayer_lastDirectionSetM2
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsRight
+	jsr Animation_MorphToIfNeeded
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoRight
+	jmp Animation_MorphToIfNeeded
+
+
+AnimPlayerWasStanding !by 0
+AnimPlayerCrouchingOffsetYPos !by 0
+
+AnimPlayerCheckForStand
+	lda AnimPlayer_directionSet
+	beq .tryStand
+	rts
+
+.tryStand
+	lda AnimPlayer_lastDirectionSet
+	bmi .standLeft
+
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoStandRight
+	jsr Animation_MorphToIfNeeded
+
+	lda AnimPlayerCrouchingOffsetYPos
+	beq .doStand1
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsKnealRight
+	jmp Animation_MorphToIfNeeded
+.doStand1
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsStandRight
+	jmp Animation_MorphToIfNeeded
+
+.standLeft
+
+	ldy #1
+	+MWordValueTo_AX AnimationFrames_MainCharTorsoStandLeft
+	jsr Animation_MorphToIfNeeded
+
+	lda AnimPlayerCrouchingOffsetYPos
+	beq .doStand2
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsKnealLeft
+	jmp Animation_MorphToIfNeeded
+.doStand2
+	ldy #0
+	+MWordValueTo_AX AnimationFrames_MainCharLegsStandLeft
+	jmp Animation_MorphToIfNeeded
+
+
+
+!zn
+ScorePanel_UpdateSparkle
+!ifdef kScore_IncludePanelUpdates {
+	lda PlayerUpgrades_sparkle
+	clc
+	adc #Score_ZeroCharacter
+	sta Scroller_ScorePanelSparklePos
+}
+	rts

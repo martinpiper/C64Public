@@ -981,16 +981,7 @@ HandleUserInput
 	and #Node_isBlocked_Wall | Node_isBlocked_AutoDoor
 	rts
 
-
-PlayerSpriteYPosToScreenCharPos
-!fill VIC2SpriteYBorderTop-10-4 , -1
-!for .num , 20 { !fill 8 , (.num-1) }
-!fill 256 - (* - PlayerSpriteYPosToScreenCharPos) , -1
-
-PlayerSpriteXPosToScreenCharPos
-!fill (VIC2SpriteXBorderLeft-10-2)/2 , -1
-!for .num , 40 { !fill 4 , (.num-1) }
-!fill 256 - (* - PlayerSpriteXPosToScreenCharPos) , -1
+!source "asm/PlayerSpritePosTables.a"
 
 ; Will check MapTerminalToDoor with SubGame_ExitStateX/Y and modify the map and the maze node blocked state
 .ldtEnd jmp .dtEnd

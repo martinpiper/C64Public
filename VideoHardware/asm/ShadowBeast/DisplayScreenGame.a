@@ -24,7 +24,7 @@ DisplayScreen
 	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
 	sta CIA2PortBRS232
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
 	jsr Video_EnableDisplay
 
 	jsr Bus24Bit_Reset

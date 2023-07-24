@@ -1,0 +1,375 @@
+!zn
+.chestSpawnPickupTimer !by 0
+AnimationInit_chest
+	+MAnimation_StandardInit_GeneralStorage0 AnimationFrames_chest , VIC2Colour_Orange , AnimationTick_chest , AnimationDelete_commonMakeRespawn , 5
+
+.spawnFramesTab
+	!word AnimationFrames_upgradeDagger
+	!word AnimationFrames_upgradeDaggerBehind
+	!word AnimationFrames_upgradeSword
+	!word AnimationFrames_upgradeDaggerUp
+	!word AnimationFrames_upgradeDaggerDown
+	!word AnimationFrames_upgradeSparkle
+	!word AnimationFrames_upgradeSpellBottle
+.spawnColoursTab
+	!by VIC2Colour_Yellow
+	!by VIC2Colour_White
+	!by VIC2Colour_LightBlue
+	!by VIC2Colour_LightRed
+	!by VIC2Colour_LightGrey
+	!by VIC2Colour_White
+	!by VIC2Colour_Red
+kUpgrades_spawnMaxTab = * - .spawnColoursTab
+.spawnTicksTab
+	!word AnimationTick_upgradeDaggerBounce
+	!word AnimationTick_upgradeDaggerBehindBounce
+	!word AnimationTick_upgradeSwordBounce
+	!word AnimationTick_upgradeDaggerUpBounce
+	!word AnimationTick_upgradeDaggerDownBounce
+	!word AnimationTick_upgradeSparkleBounce
+	!word AnimationTick_upgradeSpellBottleBounce
+
+
+AnimationTick_chest
+	lda .chestSpawnPickupTimer
+	beq .okToSpawnPickup
+	dec .chestSpawnPickupTimer
+	rts
+.lrejectRoutine3 jmp .rejectRoutine3
+.okToSpawnPickup
+	+MAnimation_CalculateShifted_X
+	+MAnimation_DetectBoundingBoxCollisionWithIndexShifted .isHit , 2 ,	10 , 20 , 10 , 20
+	+MSpritePosToCharacterLookupShifted .lrejectRoutine3 , AnimationXPosShifted , AnimationYPos , BulletScreenBankHi , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	lda (tempWork0),y
+	bpl .hitRoutineChest
+	tya
+	sec
+	sbc #VIC2ScreenCharsWidth
+	tay
+	lda (tempWork0),y
+	bpl .hitRoutineChest
+	jmp .rejectRoutine3
+
+.hitRoutineChest
+	; The char effects index
+	tay
+	lda #-1
+	sta CharEffectsTime,y	; Kill the char effect
+
+.isHit
+	; Limit the spawn rate of pickups
+	lda #50
+	sta .chestSpawnPickupTimer
+
+	; Once we get any pickups from the chest it doesn't respawn
+	+MAnimation_StopObjectRespawnFrom Animation_ActivationObjectIndex
+
+	dec Animation_GeneralStorage0,x
+	bne .yesAllocatePickup
+
+	; Once the chest has spawned all the pickups then remove itself
+	jmp Animation_makeExplode
+
+.yesAllocatePickup
+
+	; Get the position
+	lda AnimationXPosLo,x
+	sta .smp1+1
+	lda AnimationXPosHi,x
+	sta .smp2+1
+	lda AnimationYPos,x
+	sta .smp3+1
+
+	jsr SpawnAPickup
+
+.noAllocatePickup
+.rejectRoutine3
+	rts
+
+; Entry:
+; A/X = XPosLo/Hi
+; Y = YPos
+SpawnAPickupWithPosition
+	sta .smp1+1
+	stx .smp2+1
+	sty .smp3+1
+	rts
+
+; Entry:
+; .smp1+1 , .smp2+1 , .smp3+1 : XPosLo , XPosHi , YPos must be set
+SpawnAPickup
+	; Choose a random pickup to spawn
+	jsr Rand
+SpawnAPickupWithType
+	and #7	; This is the next highest power of 2 - 1 for kUpgrades_spawnMaxTab
+	cmp #kUpgrades_spawnMaxTab
+	bcc .okValue1
+	lda #0
+.okValue1
+	tay
+	lda .spawnColoursTab,y
+	sta .smc1+1
+	tya
+	asl
+	tay
+
+	lda .spawnFramesTab,y
+	sta .sma1+1
+	lda .spawnFramesTab + 1,y
+	sta .smx1+1
+
+	lda .spawnTicksTab,y
+	sta .sma2+1
+	lda .spawnTicksTab + 1,y
+	sta .sma3+1
+
+	; Allocate and initialise the pickup
+	jsr Animation_FindFreeSlot
+	bcc .gotAllocatePickup
+
+	rts
+
+.gotAllocatePickup
+	; Setup the frames
+.sma1	lda #0
+.smx1	ldx #0
+	jsr Animation_ForceSet
+.smp1	lda #0
+	sta AnimationXPosLo,y
+.smp2	lda #0
+	sta AnimationXPosHi,y
+.smp3	lda #0
+	sec
+	sbc #8
+	sta AnimationYPos,y
+
+	; Setup colour
+.smc1	lda #VIC2Colour_Yellow
+	sta AnimationSpriteColour,y
+
+	; Setup tick and delete
+.sma2	lda #0
+	sta Animation_TickLo,y
+.sma3	lda #0
+	sta Animation_TickHi,y
+
+	lda #0
+	sta Animation_DeleteLo,y
+	sta Animation_DeleteHi,y
+
+	; Introduce some random velocity
+	jsr Rand
+	and #15
+	sec
+	sbc #8
+	sta Animation_GeneralStorage0,y
+	jsr Rand
+	and #7
+	clc
+	adc #3
+	sta Animation_GeneralStorage1,y
+
+	lda #5
+	jsr SFXInit
+
+	rts
+
+
+!zn
+AnimationInit_upgradeDagger
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeDagger , VIC2Colour_Yellow , AnimationTick_upgradeDaggerBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeDaggerBehind
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeDaggerBehind , VIC2Colour_White , AnimationTick_upgradeDaggerBehindBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeSword
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeSword , VIC2Colour_LightBlue , AnimationTick_upgradeSwordBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeDaggerUp
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeDaggerUp , VIC2Colour_LightRed , AnimationTick_upgradeDaggerUpBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeDaggerDown
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeDaggerDown , VIC2Colour_LightGrey , AnimationTick_upgradeDaggerDownBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeSparkle
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeSparkle , VIC2Colour_White , AnimationTick_upgradeSparkleBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+AnimationInit_upgradeSpellBottle
+	+MAnimation_StandardInit_GeneralStorage01 AnimationFrames_upgradeSpellBottle , VIC2Colour_Red , AnimationTick_upgradeSpellBottleBounce , AnimationDelete_commonMakeRespawn , 0 , 0
+
+.smallBounceTab
+	!by -1 , -2 , -3 , -2 , -1 , 0
+	!by 1 , 2 , 3 , 2 , 1 , 0
+	!by 0 , 0 , 0 , 0
+
+AnimationTick_upgradeDaggerBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+	
+	lda PlayerUpgrades_daggerThrowForwardTimer
+
+	sec
+	sbc #5
+	cmp #5
+	bcs .ok1
+	lda #5
+.ok1
+	sta PlayerUpgrades_daggerThrowForwardTimer
+.upgradeRet
+	rts
+
+AnimationTick_upgradeDaggerBehindBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	lda PlayerUpgrades_daggerThrowBehindTimer
+
+	sec
+	sbc #5
+	cmp #5
+	bcs .ok2
+	lda #5
+.ok2
+	sta PlayerUpgrades_daggerThrowBehindTimer
+	rts
+
+AnimationTick_upgradeSwordBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	; Control the sword upgrade and max held
+	lda PlayerUpgrades_sword
+	beq .noSword
+	lda PlayerUpgrades_swordMaxHeld
+	clc
+	adc #50
+	cmp #150
+	bcc .maxHeld
+	lda #150
+.maxHeld
+	sta PlayerUpgrades_swordMaxHeld
+.noSword
+	inc PlayerUpgrades_sword
+	lda PlayerUpgrades_sword
+	cmp #10
+	bcc .maxSword
+	lda #10
+	sta PlayerUpgrades_sword
+.maxSword
+	rts
+
+AnimationTick_upgradeDaggerUpBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	lda PlayerUpgrades_daggerThrowUpTimer
+
+	sec
+	sbc #5
+	cmp #5
+	bcs .ok3
+	lda #5
+.ok3
+	sta PlayerUpgrades_daggerThrowUpTimer
+	rts
+
+AnimationTick_upgradeDaggerDownBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	lda PlayerUpgrades_daggerThrowDownTimer
+
+	sec
+	sbc #5
+	cmp #5
+	bcs .ok4
+	lda #5
+.ok4
+	sta PlayerUpgrades_daggerThrowDownTimer
+	rts
+
+AnimationTick_upgradeSparkleBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	inc PlayerUpgrades_sparkle
+	jsr ScorePanel_UpdateSparkle
+	rts
+
+
+AnimationTick_upgradeSpellBottleBounce
+	jsr AnimationTick_upgradeBounce
+	bcc .upgradeRet
+
+	inc PlayerUpgrades_spellBottle
+;	jsr ScorePanel_UpdateSpellBottle
+	rts
+
+
+AnimationTick_upgradeBounce
+	+MAnimation_CalculateShifted_X
+	+MAnimation_DetectBoundingBoxCollisionWithIndexShifted .isHit , 0 ,	30 , 40 , 4 , 8
+	jmp .noCollide
+.isHit
+	; Collided with the player position
+	+MAnimation_StopObjectRespawnFrom Animation_ActivationObjectIndex
+
+	jsr Animation_DeleteNoDeleteFunction
+
+	lda #6
+	jsr SFXInit
+
+	sec
+	rts
+
+.noCollide
+	ldy #0	; Sign of value below
+	lda Animation_GeneralStorage0,x
+	beq .noVel1
+	bpl .pos
+	dey	; Now neg sign
+.pos
+	clc
+	adc AnimationXPosLo,x
+	sta AnimationXPosLo,x
+	tya
+	adc AnimationXPosHi,x
+	sta AnimationXPosHi,x
+
+	lda Animation_GeneralStorage0,x
+	beq .noDecay1
+	bmi .isNeg1
+	sec
+	sbc #1
+	sta Animation_GeneralStorage0,x
+	jmp .noDecay1
+.isNeg1
+	clc
+	adc #1
+	sta Animation_GeneralStorage0,x
+
+.noDecay1
+.noVel1
+
+
+	; Don't really care how Animation_GeneralStorage2 is initialised  for this bounce
+	inc Animation_GeneralStorage2,x
+	lda Animation_GeneralStorage2,x
+	and #$0f
+	tay
+	lda AnimationYPos,x
+	clc
+	adc .smallBounceTab,y
+	sec
+	sbc Animation_GeneralStorage1,x
+	sta AnimationYPos,x
+
+	lda Animation_GeneralStorage1,x
+	beq .noDecay2
+	sec
+	sbc #1
+	sta Animation_GeneralStorage1,x
+.noDecay2
+
+	clc
+	rts

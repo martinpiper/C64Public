@@ -525,3 +525,146 @@
 		Will need something to preserve the IRQ after runstop-restore
 	* Can use the original kernal data, compressed, or add a new charset in the remaining space...
 	** @Demo11
+
+
+
+* Update music conversion code to automatically output non-looping instruments with correct values for the "stop loop" information and update the music player
+	* Updated non-looped samples to always use the first exported sample 0x80 byte
+	.sampleLoopLengthsFlag removed
+
+
+
+
+* main7.a - Demo7
+	While writing to StackedSpriteData with MEmitSpriteFrameOffsetXY
+	Calculate the difference to the previous sprite
+	** Working backwards from the end to pick the furthest down value?
+	If it is > 16 and if the X store index < 24*4 then store that as the last best possible point for a simple multiplex point
+		Then possile to pick the next restart point after another 24 sprites
+	The index sort from the C64 multiplexor can be used on the Y positions of the animation entries
+	Then try waiting for that position using MBus24Bit_WaitUntilRasterY
+	Then output the next part of the sprites
+	>> EnableMultiplexing
+	* Hmm, the sort and data shuffling actually takes quite a lot of frame time...
+		Although .bestMultiplexPos it might not be feasible...
+		Maybe the APU can calculate as it runs through the sprites instead?
+	** Or better sort the single animated source position with the maximum Y size extents factored in, not all the sprites
+		Then use some gap analysis on that instead
+	* Perhaps there is a better algorithm?
+		Split the screen into a table of 8/16 vertical lines, clear the line table
+		Loop through all sprites filling in the table by incrementing the entry for the y position
+		Find a suitable split point where there is no used space
+			Marching middle found point?
+			Or start from the bottom totalling up all the table numbers until a threshold?
+			Scan from start totalling all the entries until a threshold?
+		Then create two (or more?) chunks of sprite data to upload based on that point
+		* Scan from top down, summing the slots, to the first gap (after data)
+			Scan from the bottom, summing the slots, until the first gap where the sum is >= the top sum
+			Keep on going until there are no more gaps, choose that
+			>> GameSpriteSplitPosRaster mostly correct, but the rare frame it is far too near the top of the screen to be sensible, why?
+				0C 0C 06 02 04 02 02 04   02 02 04 02 00 00 04 04
+				Looking at this it is legitimate, there is only one gap near the top!
+				And EmitSpriteFrame_count = $88 !!! Which is still 34 sprites!!! WTF. Oh the boss is huge.
+			>> No sort APU seems to be working
+			>> Optimised by updating data to the APU directly
+			* Done: Add sprite layer disable/enable
+				Probably use the ADDR+Value macros (MAPU_ProcessRasterByte)
+			; MPi: TODO: Add double buffered sprite data
+				Like: apuFrameReady0 and MAPU_TestAndJump
+				Added: +MAPUTopAndBottomSplitsData ~StackedSpriteDataGEReal2 , ~StackedSpriteDataLTReal2 , ~StackedSpriteDataLTYPos2
+					StackedSpriteDataGEReal etc will need to be renamed to StackedSpriteDataGEReal1 etc
+				Added: apuOtherFrameData to point to the relevant ADDRB1
+				>> Done: MultiplexSwapBanks etc
+
+
+
+
+* Once cart emulation is added to BDD6502, for demo6 create a combined title screen and game demo using a large cartridge for the graphics
+	bank 0 : Code at $8007 with $8000 CBM80 startup
+		$8010	Send title screen data then load code
+		$8013	Send game data then load code
+	All entry points first copy the code into $c000 then do the necessary copies
+	C:\Work\C64\VideoHardware\tmp>dir shadow*.bin
+		Should easily fit without compression: 29 File(s)        135,648 bytes
+	C:\Work\C64\VideoHardware\tmp\target>dir sotb*samples.bin
+		2 File(s)        106,952 bytes
+		In reality 2x8 banks max
+	@Demo6C can use the random init syntax to ensure data is loaded
+		And the debug init test pattern
+
+
+
+* Demo6c : Transition to use APU colour bars...
+	Done: Also turn off the layers and the audio leaving just the background colour layer
+	Tiles layer could have a "loading..." screen in it... As the tiles do not currently change between the title and game...
+		; TODO: Display loading...
+
+
+
+
+* C64 needs CRT code ability to copy or decompress large chunks of 8K data to hardware memory locations via userport24
+	A good demo would be to send all Demo6 or Demo9 data and then start the main code.
+		Created @Demo6C
+
+
+
+
+* @Demo6*
+	Alter the configured layers to be the same as @Demo9 and alter the APU code to update the required palette entries
+	Then scaled sprites can be used for extra effects!
+		Currently:
+			GetBackground
+			Tiles
+			Chars
+			Sprites
+		Needs to be:
+			Chars
+			Tiles
+			Sprites2
+			Sprites
+	Added some scaled sprites
+
+
+
+* For APU validation when running @Demo6:
+	Enable lines:
+		And enable video display bus debug output
+		And enable user port bus debug output
+	Run: "C:\work\BombJack\output\_tidy old and new.bat"
+	Then run @Demo6
+		In file: ..\C64\VideoHardware\target\debugData.txt
+		Find and replace: d$9e0a010d -> ;d$9e0a010d
+			>> Due to recent addition of:
+			main6.a: UpdateScaledSprites lda #kBus24Bit_VideoLayer_LayersEnable_134
+				Disable the below sta. This stops the char layer from being disabled by the sprites2 disable due to the slightly different layer order
+			Look for: d$a2020160 and change to: d$a2020120 to force the vectors off for the second merge layer
+	>> In Proteus open the main BombJack project
+		Disable VSMDD2 (the default one)
+		Root sheet 12 (Sprites2 scans) DSW7 switch EBS3 instead of EBS2
+			Choose the faster clock with DSW10 (1 off / 2 on)
+				Expect warnings about sub-minimum write pulses being ignored from the scan RAMs
+		VSMDD1 append "old" to the output image filename
+		Enable VSMDD9 can use: ..\C64\VideoHardware\target\debugData.txt
+		Validate generated frames
+
+
+	>> In Proteus open the APU project
+	Then in APU data VSMDD2 use: ..\C64\VideoHardware\target\debugDataJustUserPort.txt
+		This file just has data sent from the C64 via the user port, not any graphics/sound data from the feature file during hardware setup
+		Execute for several simulated seconds, watch for RV not updating which would indicate the recorded HV data file doesn't have enough data
+	This generates the file, open it: BombJack\output\DebugAPUOutput.txt
+		Search for: d$9e000130
+		Delete all lines above that
+	Open file: c64\VideoHardware\target\debugData.txt
+		Search for: d$9e000130
+		Copy all lines above that, paste to top of DebugAPUOutput.txt
+	Find and replace: d$9e0a010d -> ;d$9e0a010d
+	Automatic data reconcile process: python C:\Work\BombJack\ReconcileData\ReconcileData.py C:\work\C64\VideoHardware\target\debugData.txt C:\work\BombJack\output\DebugAPUOutput.txt
+		Should not have any differences
+
+	In Proteus open the main BombJack project
+		VSMDD1 output name minus "old"
+	>> Enable VSMDD9 which uses output\DebugAPUOutput.txt
+		Validate generated frames
+			cd /d C:\work\BombJack\output
+			compareimages.bat 180

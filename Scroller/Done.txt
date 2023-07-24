@@ -377,3 +377,29 @@ Player1Information or Player2Information is used depending on the active players
 	Multiplex_DiscardSpritesYPos needs to be expanded to add Multiplex_DiscardSpritesYPosForSort
 	Interestingly Multiplex_DiscardSpritesYPosForSort can be used in Multiplex_Sort and the issue is fixed
 	Usage of Multiplex_SetDiscardPosition will need to be updated to include proper SetupIRQs.a calculated discard values and to include Multiplex_SetDiscardSpritesYPosForSort
+
+
+
+
+* Optionally unroll Scroller_ScrollSprites
+	Scroller_EnableScrollSpritesSpeedCode = 1
+
+
+
+* Added MStackConsistencyCheck_AX
+
+
+* Added ScrollerDemoMainline_ExitHook
+
+
+
+; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
+; MPi: TODO: Perhaps not the best idea since any games that wait for BeforeScrollers/AfterScrollers for their work will want to have as much time above for animation and sprite updates
+	> Added optional IrqTopOfScreenPos to be defined by ScrollEntry_*.a
+
+
+
+* Added Scroller_CountMusicUpdateInIRQ
+
+
+* Moved "jsr ScrollerDrawStripTopColour" to the middle of the colour scroll

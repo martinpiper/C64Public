@@ -50,6 +50,7 @@
 #define IDD_CONFIGURATION               315
 #define IDD_IMPORTMIDI                  316
 #define IDD_RIPSID                      317
+#define IDD_IMPORTREAPER                318
 #define IDC_EDIT1                       1004
 #define IDC_SPIN1                       1005
 #define IDC_EDIT61                      1005
@@ -57,6 +58,7 @@
 #define IDC_EDIT62                      1006
 #define IDC_EDIT3                       1007
 #define IDC_EDIT63                      1007
+#define IDC_EDIT76                      1008
 #define IDC_EDIT2                       1011
 #define IDC_EDIT39                      1012
 #define IDC_EDIT40                      1013
@@ -130,7 +132,9 @@
 #define IDC_CHECK2                      1062
 #define IDC_CHECK3                      1063
 #define IDC_EDIT47                      1064
+#define IDC_CHECK10                     1064
 #define IDC_EDIT48                      1065
+#define IDC_CHECK11                     1065
 #define IDC_EDIT55                      1066
 #define IDC_SPIN4                       1067
 #define IDC_SPIN5                       1068
@@ -174,7 +178,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        318
+#define _APS_NEXT_RESOURCE_VALUE        319
 #define _APS_NEXT_COMMAND_VALUE         32783
 #define _APS_NEXT_CONTROL_VALUE         1095
 #define _APS_NEXT_SYMED_VALUE           312

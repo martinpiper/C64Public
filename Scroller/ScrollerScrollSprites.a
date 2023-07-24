@@ -1,3 +1,79 @@
+!ifdef Scroller_EnableScrollSpritesSpeedCode {
+
+!zn
+Scroller_ScrollSprites
+	lda scrollerRealMovementXPixels
+	bne .someX1
+	jmp .noX1
+.someX1
+	bpl .posX1
+	jmp .negX1
+
+.posX1
+
+!for .ii , Multiplex_items {
+!set .i = .ii - 1
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero + .i
+	beq +
+}
+	lda AnimationXPosLo + .i
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo + .i
+	bcc +
+	; This ensures the 9bit wraparound happens correctly
+	lda AnimationXPosHi + .i
+	eor #1
+	sta AnimationXPosHi + .i
++
+}
+	jmp .noX1
+
+.negX1
+
+!for .ii , Multiplex_items {
+!set .i = .ii - 1
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero + .i
+	beq +
+}
+	lda AnimationXPosLo + .i
+	clc
+	adc scrollerRealMovementXPixels
+	sta AnimationXPosLo + .i
+	bcs +
+	; This ensures the 9bit wraparound happens correctly
+	lda AnimationXPosHi + .i
+	eor #1
+	sta AnimationXPosHi + .i
++
+}
+
+.noX1
+
+	lda scrollerRealMovementYPixels
+	bne .someY1
+	jmp .noY1
+.someY1
+!for .ii , Multiplex_items {
+!set .i = .ii - 1
+!ifdef Animation_ActiveNonZeroEnabled {
+	lda Animation_ActiveNonZero + .i
+	beq +
+}
+	lda AnimationYPos + .i
+	clc
+	adc scrollerRealMovementYPixels
+	sta AnimationYPos + .i
++
+}
+
+.noY1
+
+	rts
+
+} else {
 !zn
 Scroller_ScrollSprites
 	; Note: Usually it is better to optimise this by combining animation movement and screen scroll movement together.
@@ -66,3 +142,4 @@ Scroller_ScrollSprites
 .noY1
 
 	rts
+}

@@ -37,6 +37,10 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 
 echo Convert the clouds with new palette data
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 255 0 255 --palettesize 256 --loadpalette ../tmp/PaletteData.bin --image "clouds.png" --tilewh 16 16 --fitpalettes --outputtilebytes ../tmp/clouds_tiles.bin --outputscrcol ../tmp/clouds_screen.bin --nostacking --convertwritepass >..\tmp\clouds2.log
+..\..\bin\LZMPi.exe -cut tmp\target\exportedMusicSamples.bin tmp\target\exportedMusicSamples.bin1 0 32768
+..\..\bin\LZMPi.exe -cut tmp\target\exportedMusicSamples.bin tmp\target\exportedMusicSamples.bin2 32768
+..\..\bin\LZMPi.exe -cr tmp\target\exportedMusicSamples.bin1 tmp\target\exportedMusicSamples.cmp1
+..\..\bin\LZMPi.exe -cr tmp\target\exportedMusicSamples.bin2 tmp\target\exportedMusicSamples.cmp2
 
 
 

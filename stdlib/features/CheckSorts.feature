@@ -3,36 +3,42 @@ Feature: Test sorting library
   This executes unit tests for the sorting library
 
   Scenario Outline: Sort check
-
-    Given initialise sort test "<type>"
+    Given build sort test "<type>"
+    And initialise sort values
 
     When initialising the greater than sort test
     Then validate the expected ascending sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cyclesInitGT> cycles
 
     When executing the greater than sort test
     Then validate the expected ascending sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cycles1> cycles
 
     # Second iteration gives stable results for index and cycle count
     When executing the greater than sort test
     Then validate the expected ascending sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cycles1> cycles
 
 
     # Reverse order sort
     When initialising the less than sort test
     Then validate the expected ascending sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cyclesInitLT> cycles
 
     When executing the less than sort test
     Then validate the expected descending stable sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cycles2> cycles
 
 
     # Second iteration reuses the index table so it's quicker
     When executing the less than sort test
     Then validate the expected descending stable sort index table
+    Then validate the expected ascending sort values table
     Then I expect the cycle count to be no more than <cycles3> cycles
 
   Examples:

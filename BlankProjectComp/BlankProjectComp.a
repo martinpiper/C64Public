@@ -8,6 +8,7 @@
 !pdb "BlankProjectComp.pdb"
 !cpu 6510
 !ct pet
+!initmem $aa
 
 !macro Crunch .pos {
 	+MACROWaitForRaster .pos
@@ -44,6 +45,304 @@
 	inc $d020
 	jmp *-3
 }
+
+!if 0 {
+	; Setup PA2 and SERIALATN for writing
+	; Bit 2: RS232 TXD line, output bit.
+	; Bit 3: Serial bus ATN OUT; 0 = High; 1 = Low.
+	lda #%00001111
+	sta CIA2PortADDR
+
+	; Setup input of 8 bits for reading, _PC is also pulsed just like when writing
+	lda #0
+	sta CIA2PortBDDR
+
+	; Strobe PA2 low then high
+	; NOTE: PA2 is not inverted. SERIALATN is inverted.
+	lda #%0000
+	sta CIA2PortASerialBusVICBank
+	; One read since PA2 is only read when there is _PC activity... TODO: Remove this by using edge on PA2 or not incrementing when PA2 is low...
+	lda CIA2PortBRS232
+	lda #%0111
+	sta CIA2PortASerialBusVICBank
+
+	; Consume one extra????!!
+	lda CIA2PortBRS232
+
+!if 0 {
+	; Select audio stream
+;	lda #%1111
+;	sta CIA2PortASerialBusVICBank
+
+	lda #%01000000
+	sta CIA1TimerAControl
+
+	+ClearScreenAt_AX COLOURRAM , 1
+	; Debug data draw to screen
+	+MByteValueToAddress_A VIC2MemorySetupDefault+%10 , VIC2MemorySetup
+	ldx #0
+.tl1
+	lda CIA2PortBRS232
+	sta $0400,x
+	inx
+	bne .tl1
+	+WaitForFire_A
+	jmp .tl1
+}
+
+	; Bitmap refresh speed test. Uses SIDVoice3WaveformOutput as a source of data (instead of CIA2PortBRS232) to speed test bitmap drawing.
+kBitmapDrawX = 9
+kBitmapDrawWidth = 22
+kBitmapDrawY = 6
+kBitmapDrawHeight = 16
+
+;	+MByteValueToAddress_A $ff , VIC2SpriteEnable
+	+ClearScreenAt_AX COLOURRAM , 0
+!if 0 {
+	lda #1
+	sta SIDVolumeFilter
+	lda #$ff
+	lda #0
+	sta SIDVoice3FreqLo
+	lda #210
+	sta SIDVoice3FreqHi
+	lda #0
+	sta SIDVoice3AttackDecay
+	lda #$f0
+	sta SIDVoice3SustainRelease
+	lda #0
+	sta SIDVoice3PulseWidthLo
+	lda #10
+	sta SIDVoice3PulseWidthHi
+	lda #%10000001
+	sta SIDVoice3Control
+}
+
+	+MVIC2MemorySetup_ScreenBitmap_A $400 , $2000
+	sta VIC2MemorySetup
+	+MByteValueToAddress_A VIC2ScreenControlHDefault | kVIC2ScreenControlHBits_Multicolour , VIC2ScreenControlH
+	+MByteValueToAddress_A VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Bitmap , VIC2ScreenControlV
+	lda #CIA2PortASerialBusVICBank_Bank0 | %100
+	sta CIA2PortASerialBusVICBank
+
+	; Configure sample playback NMI
+	lda #0
+	sta CIA2InterruptControl
+
+	+MWordValueToAddress_A NMIEntry , KERNALNMIServiceRoutineLo
+
+	; Start the timer, load the start value and automatically restart
+	+MWordValueToAddress_A 610 , CIA2TimerALo	; Calculated rate: CyclesPerSecondPALC64 / 610 = 1615.160655737705 Hz
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+;	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+
+	jmp .l1
+
+	; NOTE: Y register is not preserved, since the Y register is not used in the mainline
+NMIEntry
+;	inc VIC2BorderColour
+;	sta $02
+
+	; Simulate tell the interface to switch to sample data
+;	ldy #%1111
+;	sty CIA2PortASerialBusVICBank
+;	ldy #%01000000
+;	sty CIA1TimerAControl
+
+;	ldy CIA2PortBRS232
+;	sty SIDVolumeFilter
+
+;	ldy #%0111
+;	sty CIA2PortASerialBusVICBank
+;	ldy #%00000000
+;	sty CIA1TimerAControl
+
+	; Exit the NMI
+;	dec VIC2BorderColour
+	ldy CIA2InterruptControl
+
+;	lda $02
+	rti
+
+	; TODO: Two options here, one unroll the loop entirely, but this approach fills RAM quickly.
+	; This doesn't leave room for two bitmaps to be updated. Which limits the bitmap size.
+	; The solution is to use cartridge banks for speed code. But this makes the sample IRQ slightly slower.
+	; Two, use an indexed copy, which saves RAM and removes the need to use cartridge banks. This means the sample IRQ can be fast.
+
+	; One: Unrolled speed code
+!if 0 {
+!macro MBitmapSpeedCopy .source , .bitmapAddr , .bitmapColourAddr , .setBank {
+	; Bitmap data
+!for .xx , kBitmapDrawWidth {
+!set .x = .xx - 1 + kBitmapDrawX
+!for .yy , kBitmapDrawHeight {
+!set .y = .yy - 1 + kBitmapDrawY
+!set .char = .bitmapAddr + (.x * 8) + (.y * 8 * VIC2ScreenCharsWidth)
+!for .bb , 8 {
+!set .b = .bb - 1
+	lda .source
+	sta .char + .b
+}
+}
+}
+
+	lda #.setBank | %100
+	sta CIA2PortASerialBusVICBank
+	+MVIC2MemorySetup_ScreenBitmap_A .bitmapColourAddr , .bitmapAddr
+	sta VIC2MemorySetup
+
+	; Colour data followed by colour RAM data, chasing the raster down the currently displayed screen
+!for .yy , kBitmapDrawHeight {
+!set .y = .yy - 1 + kBitmapDrawY
+!for .xx , kBitmapDrawWidth {
+!set .x = .xx - 1 + kBitmapDrawX
+!set .char = .bitmapColourAddr + .x + (.y * VIC2ScreenCharsWidth)
+	lda .source
+	sta .char
+!set .char = COLOURRAM + .x + (.y * VIC2ScreenCharsWidth)
+	lda .source
+	sta .char
+}
+}
+}
+}
+
+
+
+!set MInsertVolumeEveryCount = 0
+
+!macro MInsertVolumeEvery {
+!set MInsertVolumeEveryCount = MInsertVolumeEveryCount + 1
+!if MInsertVolumeEveryCount >= 24 {
+!set MInsertVolumeEveryCount = 0
+	; NOTE: Take the same time as reading the sample data, for testing
+;	lda VIC2Raster
+;	sta VIC2BorderColour
+	lda CIA2PortBRS232
+	sta SIDVolumeFilter
+}
+}
+!macro MInsertVolumeEveryForce {
+	; NOTE: Take the same time as reading the sample data, for testing
+;	lda VIC2Raster
+;	sta VIC2BorderColour
+	lda CIA2PortBRS232
+	sta SIDVolumeFilter
+}
+
+InsertVolumeEveryDelay
+	ldy #24
+.dl2
+	; NOTE: Take the same time as reading the sample data, for testing
+;	lda VIC2Raster
+;	sta VIC2BorderColour
+	lda CIA2PortBRS232
+	sta SIDVolumeFilter
+
+	ldx #24
+.dl1
+	dex
+	bne .dl1
+
+	dey
+	bne .dl2
+
+	rts
+
+
+	; Two: Indexed copy
+!if 1 {
+!macro MBitmapSpeedCopy .source , .bitmapAddr , .bitmapColourAddr , .setBank {
+	; Bitmap data
+!for .xx , kBitmapDrawWidth {
+!set .x = .xx - 1 + kBitmapDrawX
+	ldx #7
+!set .cl1 = *
+!for .yy , kBitmapDrawHeight {
+!set .y = .yy - 1 + kBitmapDrawY
+!set .char = .bitmapAddr + (.x * 8) + (.y * 8 * VIC2ScreenCharsWidth)
+	lda .source
+	sta .char , x
+}
+	+MInsertVolumeEveryForce
+	dex
+	bpl .cl1
+}
+}
+
+!macro MBitmapSpeedCopy2 .source , .bitmapAddr , .bitmapColourAddr , .setBank {
+	lda #.setBank | %100
+	sta CIA2PortASerialBusVICBank
+	+MVIC2MemorySetup_ScreenBitmap_A .bitmapColourAddr , .bitmapAddr
+	sta VIC2MemorySetup
+
+	; Colour data followed by colour RAM data, chasing the raster down the currently displayed screen
+!for .yy , kBitmapDrawHeight {
+!set .y = .yy - 1 + kBitmapDrawY
+!for .xx , kBitmapDrawWidth {
+!set .x = .xx - 1 + kBitmapDrawX
+!set .char = .bitmapColourAddr + .x + (.y * VIC2ScreenCharsWidth)
+	lda .source
+	sta .char
+	+MInsertVolumeEvery
+!set .char = COLOURRAM + .x + (.y * VIC2ScreenCharsWidth)
+	lda .source
+	sta .char
+	+MInsertVolumeEvery
+}
+}
+}
+}
+
+;kSource = SIDVoice3WaveformOutput
+kSource = CIA2PortBRS232
+
+!set MInsertVolumeEveryCount = 0
+
+.frame0Colours
+	+MBitmapSpeedCopy2 kSource , $2000 , $2400 , CIA2PortASerialBusVICBank_Bank0
+	rts
+
+* = $2000
+	!fill $2000 , 0
+* = $4000
+	!fill $2000 , 0
+
+* = $6000
+.l1
+	+MACROWaitForRaster 220
+;	inc VIC2BorderColour
+	; This memory layout means the top ~4 lines must be black because the colour (screen) is in the bitmap data
+	+MBitmapSpeedCopy kSource , $2000 , $2400 , CIA2PortASerialBusVICBank_Bank0
+;	inc VIC2BorderColour
+	jsr .frame0Colours
+	jsr InsertVolumeEveryDelay
+;	dec VIC2BorderColour
+;	dec VIC2BorderColour
+
+;	+WaitForFire_A
+
+!set MInsertVolumeEveryCount = 0
+
+	+MACROWaitForRaster 220
+;	inc VIC2BorderColour
+	+MBitmapSpeedCopy kSource , $4000 , $4400 , CIA2PortASerialBusVICBank_Bank1
+;	inc VIC2BorderColour
+	+MBitmapSpeedCopy2 kSource , $4000 , $4400 , CIA2PortASerialBusVICBank_Bank1
+	jsr InsertVolumeEveryDelay
+;	dec VIC2BorderColour
+;	dec VIC2BorderColour
+
+;	+WaitForFire_A
+
+	jmp .l1
+}
+
 
 !if 0 {
 	lda #1
@@ -84,6 +383,7 @@
 
 
 !macro RNXPCompressionIncBorder_A {}
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
 
 Decompression_OptimiseForOneEscapeBit = 1
 Decompression_OptimiseNoChangingEscape = 1
@@ -350,9 +650,9 @@ SampleEnd
 	sta SIDVoice3PulseWidthLo
 	lda #10
 	sta SIDVoice3PulseWidthHi
-	lda #%10000001
-	lda #%01000001
-	lda #%00100001
+;	lda #%10000001
+;	lda #%01000001
+;	lda #%00100001
 	lda #%00010001
 	sta SIDVoice3Control
 

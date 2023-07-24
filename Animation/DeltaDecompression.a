@@ -288,6 +288,8 @@ DeltaDecompression_AdvanceFrameAddr
 CompressedDataTemp = $7800
 !macro RNXPCompressionIncBorder_A {
 }
+!macro RNXPCompressionDecompress_WriteByteAddrHi {
+}
 
 RNXPCompressionDecompress_WriteByteAddr = $400
 RNXPCompressionDecompress_GetByteAddr = $401

@@ -38,8 +38,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>AnimationBitmap.prg</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>BuildIt2.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BuildIt2.bat</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>BuildIt2_11.bat</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt2_11.bat</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>AnimationBitmap.prg</NMakeOutput>
@@ -97,6 +97,7 @@
     <None Include="ConvFrame.bat" />
     <None Include="ConvFrame2.bat" />
     <None Include="ConvFrame2h.bat" />
+    <None Include="ConvFrameWindow.bat" />
     <None Include="ConvFrame_FO.bat" />
     <None Include="ConvPrint.bat" />
     <None Include="CreditsEvents.a" />

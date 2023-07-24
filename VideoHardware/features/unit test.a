@@ -1,0 +1,16 @@
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+
+GameSpriteRow = $8
+
+*=$400
+
+!source "asm/GapFind.a"

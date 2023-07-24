@@ -1,4 +1,6 @@
 !zn
+	+MGuardAgainstLowerCart *
+
 CartKillBank
 	+MACRO_CartKillBank
 	rts
@@ -12,3 +14,6 @@ CartSelectBank_8K
 CartSelectBank_8K_NoSEI
 	+MACRO_CartSelectBank_8K_NoSEI_A
 	rts
+
+	+MGuardAgainstLowerCart *-1
+

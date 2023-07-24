@@ -24,3 +24,40 @@ SetupAPU
 	rts
 
 
+!zn
+kRefreshAPUDataChunkLength = 16
+; Try to fix the APU data corrupton by periodically refreshing the APU data
+RefreshAPUData
+
+	jsr Bus24Bit_Reset
+	lda #kBus24Bit_APU_EBBS
+	+MBus24Bit_Send8BitValueFromA
+.smD1	lda #$00
+	+MBus24Bit_Send8BitValueFromA
+.smD2	lda #>kBus24Bit_APU_Data
+	+MBus24Bit_Send8BitValueFromA
+
+	ldx #0
+.smD3	lda APUData_Start , x
+	+MBus24Bit_Send8BitValueFromA
+	inx
+	cpx #kRefreshAPUDataChunkLength
+	bne .smD3
+
+	+MAddU8ToAddr16 kRefreshAPUDataChunkLength , .smD1 + 1 , .smD2 + 1
+	+MAddU8ToAddr16 kRefreshAPUDataChunkLength , .smD3 + 1 , .smD3 + 2
+
+	lda .smD3+2
+	cmp #>APUData_End
+	bcc .notYet
+
+	lda .smD3+1
+	cmp #<APUData_End
+	bcc .notYet
+
+	+MWordValueToAddressLoHi_A kBus24Bit_APU_Data , .smD1 + 1 , .smD2 + 1
+	+MWordValueToAddressLoHi_A APUData_Start , .smD3 + 1 , .smD3 + 2
+
+.notYet
+
+	rts

@@ -1,0 +1,260 @@
+; Routine that handle activation object processing, spawning enemies in the map etc
+
+; Trigger positions in memory into AnimationEnemyMapPlacementsX
+ActivationObjectTrigger_Left		!by 0,0
+ActivationObjectTrigger_Right		!by 0,0
+ActivationObjectTrigger_Top			!by 0,0
+ActivationObjectTrigger_Bottom		!by 0,0
+
+; Positions of the edges in map space
+ActivationObjectPosition_Left		!by 0,0
+ActivationObjectPosition_Right		!by 0,0
+ActivationObjectPosition_Top		!by 0,0
+ActivationObjectPosition_Bottom		!by 0,0
+
+; Used for colour split tests
+ActivationObjectPositionMap_Left	!by 0,0
+ActivationObjectPositionMap_Top		!by 0,0
+
+!zn
+ActivationObjectInit
+	+MWordValueToAddress_A AnimationEnemyMapPlacementsX , ActivationObjectTrigger_Left
+	+MWordValueToAddress_A AnimationEnemyMapPlacementsX , ActivationObjectTrigger_Right
+	+MWordValueToAddress_A AnimationEnemyMapPlacementsY , ActivationObjectTrigger_Top
+	+MWordValueToAddress_A AnimationEnemyMapPlacementsY , ActivationObjectTrigger_Bottom
+
+	+MWordValueToAddress_A -VIC2SpriteSizeX-1 , ActivationObjectPosition_Left
+	+MWordValueToAddress_A ((VIC2ScreenCharsWidth-2)*8) , ActivationObjectPosition_Right
+	+MWordValueToAddress_A -VIC2SpriteSizeY , ActivationObjectPosition_Top
+	+MWordValueToAddress_A (19+Scroller_AdditionalCharLines)*8 , ActivationObjectPosition_Bottom
+
+	; Adjust for the final pixel position offset
+	+MWordValueToAddress_A -1 , ActivationObjectPositionMap_Top
+
+	ldx scrollMapHX
+	cpx #0
+	beq .l2
+.l1
+	+MAddU8ToAddr16 32 , ActivationObjectPosition_Left , ActivationObjectPosition_Left+1
+	+MAddU8ToAddr16 32 , ActivationObjectPosition_Right , ActivationObjectPosition_Right+1
+	+MAddU8ToAddr16 32 , ActivationObjectPositionMap_Left , ActivationObjectPositionMap_Left+1
+	dex
+	bne .l1
+
+.l2
+	ldx scrollMapLX
+	cpx #0
+	beq .l4
+.l3
+	+MAddU8ToAddr16 8 , ActivationObjectPosition_Left , ActivationObjectPosition_Left+1
+	+MAddU8ToAddr16 8 , ActivationObjectPosition_Right , ActivationObjectPosition_Right+1
+	+MAddU8ToAddr16 8 , ActivationObjectPositionMap_Left , ActivationObjectPositionMap_Left+1
+	dex
+	bne .l3
+
+.l4
+	lda frameScrollX
+	+MAddAToAddr16 ActivationObjectPosition_Left , ActivationObjectPosition_Left+1
+	lda frameScrollX
+	+MAddAToAddr16 ActivationObjectPositionMap_Left , ActivationObjectPositionMap_Left+1
+	lda frameScrollX
+	+MAddAToAddr16 ActivationObjectPosition_Right , ActivationObjectPosition_Right+1
+
+
+	ldx scrollMapHY
+	cpx #0
+	beq .ly2
+.ly1
+	+MAddU8ToAddr16 32 , ActivationObjectPosition_Top , ActivationObjectPosition_Top+1
+	+MAddU8ToAddr16 32 , ActivationObjectPosition_Bottom , ActivationObjectPosition_Bottom+1
+	+MAddU8ToAddr16 32 , ActivationObjectPositionMap_Top , ActivationObjectPositionMap_Top+1
+	dex
+	bne .ly1
+
+.ly2
+	ldx scrollMapLY
+	cpx #0
+	beq .ly4
+.ly3
+	+MAddU8ToAddr16 8 , ActivationObjectPosition_Top , ActivationObjectPosition_Top+1
+	+MAddU8ToAddr16 8 , ActivationObjectPosition_Bottom , ActivationObjectPosition_Bottom+1
+	+MAddU8ToAddr16 8 , ActivationObjectPositionMap_Top , ActivationObjectPositionMap_Top+1
+	dex
+	bne .ly3
+
+.ly4
+	lda frameScrollY
+	+MAddAToAddr16 ActivationObjectPosition_Top , ActivationObjectPosition_Top+1
+	lda frameScrollY
+	+MAddAToAddr16 ActivationObjectPositionMap_Top , ActivationObjectPositionMap_Top+1
+	lda frameScrollY
+	+MAddAToAddr16 ActivationObjectPosition_Bottom , ActivationObjectPosition_Bottom+1
+
+	rts
+
+
+AnimationCommon_workingPositionX !by 0,0
+AnimationCommon_workingPositionY !by 0
+!zn
+AnimationCommonSetInitPosition
+	lda AnimationCommon_workingPositionX
+	sta AnimationXPosLo,y
+	lda AnimationCommon_workingPositionX+1
+	sta AnimationXPosHi,y
+	lda AnimationCommon_workingPositionY
+	sta AnimationYPos,y
+	rts
+
+!zn
+AnimationCommonInitPosition_OffsetX
+	clc
+	adc AnimationCommon_workingPositionX
+	sta AnimationCommon_workingPositionX
+	lda AnimationCommon_workingPositionX
+	adc #0
+	and #1
+	sta AnimationCommon_workingPositionX
+	rts
+
+
+
+!zn
+
+.error
+	+MDebugBreak
+; Entry:
+; A = Activiation object type
+; X = mapPlacementIndex
+; tempWork2 contains the current AnimationEnemyMapPlacement_YPos
+ActivationObject_Spawn
+;	inc VIC2BorderColour	; Debug
+	stx .smx+1
+	cmp #kAnimation_maxActivationObjects
+	bcs .error
+	tay
+	sty .smy+1
+
+	lda AnimationActivationObject_InitLo,y
+	sta .smJSRInit+1
+	lda AnimationActivationObject_InitHi,y
+	sta .smJSRInit+2
+.smJSRInit jsr $1234
+.smx	ldx #0
+	bcs .noSpawn2
+.smy	ldy #0
+	; Use the AnimationActivationObject_respawnTiming
+	; Spawn timing
+	lda AnimationActivationObject_respawnTiming,y
+	sta MapPlacement_spawnedFlag,x
+.noSpawn2
+	rts
+
+!zn
+scrollerRealMovementXPixelsNeg !by 0
+scrollerRealMovementYPixelsNeg !by 0
+ActivationObject_UpdateScreenEdges
+	lda #0
+	sec
+	sbc scrollerRealMovementXPixels
+	sta scrollerRealMovementXPixelsNeg
+	lda #0
+	sec
+	sbc scrollerRealMovementYPixels
+	sta scrollerRealMovementYPixelsNeg
+
+	+MAdd8STo16S scrollerRealMovementXPixelsNeg , ActivationObjectPosition_Left , ActivationObjectPosition_Left+1
+	+MAdd8STo16S scrollerRealMovementXPixelsNeg , ActivationObjectPosition_Right , ActivationObjectPosition_Right+1
+	+MAdd8STo16S scrollerRealMovementYPixelsNeg , ActivationObjectPosition_Top , ActivationObjectPosition_Top+1
+	+MAdd8STo16S scrollerRealMovementYPixelsNeg , ActivationObjectPosition_Bottom , ActivationObjectPosition_Bottom+1
+rts
+
+ActivationObject_UpdateScreenEdgesForNMI
+	+MAdd8STo16S scrollerRealMovementXPixelsNeg , ActivationObjectPositionMap_Left , ActivationObjectPositionMap_Left+1
+	+MAdd8STo16S scrollerRealMovementYPixelsNeg , ActivationObjectPositionMap_Top , ActivationObjectPositionMap_Top+1
+	rts
+
+!zn
+!source "ActivationObject_macros.a"
+ActivationObject_CheckScreenEdges
+	lda scrollerRealMovementXPixels
+	ora scrollerRealMovementYPixels
+	bne .gotMovement
+
+	inc .cycleEdge
+	lda .cycleEdge
+	and #15
+	cmp #1
+	bne .o1
+	jmp .testLeftEdge
+.o1
+	cmp #4
+	bne .o2
+;	jmp .testRightEdge
+.o2
+	cmp #7
+	bne .o3
+;	jmp .testTopEdge
+.o3
+	cmp #10
+	bne .o4
+;	jmp .testBottomEdge
+.o4
+
+.gotMovement
+	lda scrollerRealMovementXPixels
+	beq .noXMovement
+	bpl .ltestLeftEdge
+	; Right edge
+	jsr .testRightEdge
+	jmp .noXMovement
+.ltestLeftEdge
+	jsr .testLeftEdge
+.noXMovement
+
+	lda scrollerRealMovementYPixels
+	beq .noYMovement
+	bpl .ltestTopEdge
+	; Bottom edge
+	jsr .testBottomEdge
+	jmp .noYMovement
+.ltestTopEdge
+	jsr .testTopEdge
+.noYMovement
+
+.exitEdgeTest
+	rts
+.cycleEdge !by 0
+
+
+.testLeftEdge
+	+MActivationObject_HandleEdge MapPlacement_posXLo , MapPlacement_posXHi , MapPlacement_posYLo , MapPlacement_posYHi , ActivationObjectTrigger_Left , ActivationObjectPosition_Left , VIC2SpriteYBorderTop24-VIC2SpriteSizeY+1 , VIC2SpriteXBorderLeft38 - VIC2SpriteSizeX , 0 , AnimationCommon_workingPositionX , AnimationCommon_workingPositionY , ActivationObjectPosition_Top
+.testRightEdge
+	+MActivationObject_HandleEdge MapPlacement_posXLo , MapPlacement_posXHi , MapPlacement_posYLo , MapPlacement_posYHi , ActivationObjectTrigger_Right , ActivationObjectPosition_Right , VIC2SpriteYBorderTop24-VIC2SpriteSizeY+1 , VIC2SpriteXBorderRight38 , 0 , AnimationCommon_workingPositionX , AnimationCommon_workingPositionY , ActivationObjectPosition_Top
+
+.testTopEdge
+	+MActivationObject_HandleEdge MapPlacement_posYLo , MapPlacement_posYHi , MapPlacement_posXLo , MapPlacement_posXHi , ActivationObjectTrigger_Top , ActivationObjectPosition_Top , VIC2SpriteXBorderLeft38-VIC2SpriteSizeX , VIC2SpriteYBorderTop24 - VIC2SpriteSizeY+1 , 1 , AnimationCommon_workingPositionY , AnimationCommon_workingPositionX , ActivationObjectPosition_Left
+.testBottomEdge
+	+MActivationObject_HandleEdge MapPlacement_posYLo , MapPlacement_posYHi , MapPlacement_posXLo , MapPlacement_posXHi , ActivationObjectTrigger_Bottom , ActivationObjectPosition_Bottom , VIC2SpriteXBorderLeft38-VIC2SpriteSizeX , VIC2SpriteYBorderTop24+((19+Scroller_AdditionalCharLines)*8)+1 , 1 , AnimationCommon_workingPositionY , AnimationCommon_workingPositionX , ActivationObjectPosition_Left
+
+!zn
+.lastSpawnTimingIndex !by 0
+; Expires spawn timings
+ActivationObject_RetireSpawnTimings
+	ldx .lastSpawnTimingIndex
+	ldy #4
+.l1
+	lda MapPlacement_spawnedFlag,x
+	beq .l2
+	bmi .l2	; Negative values do not respawn, ever
+	dec MapPlacement_spawnedFlag,x
+.l2
+	inx
+!if kMapPlacement_maxIndex != 256 {
+	txa
+	and #kMapPlacement_maxIndex-1
+	tax
+}
+	dey
+	bne .l1
+	stx .lastSpawnTimingIndex
+	rts

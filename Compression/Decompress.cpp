@@ -215,6 +215,11 @@ int Decompress( const u8 * source, u32  sourceLen,u8 * dest, u32 * destLen )
 //printf("GM%d,%d\n",workLen+1,workOffset);
 
 		const u8 *workPos = dest + outLen - workOffset;
+		if (workPos < dest)
+		{
+			printf("Serious workPos error\n");
+			return GBA_E_ERROR;
+		}
 		dest[outLen] = *workPos;
 		outLen++;
 		workPos++;

@@ -37,6 +37,9 @@ SetupIRQs
 	sta NMINotTimerGenerated
 	lda #0	; No screen displayed, no hi raster
 	sta VIC2ScreenControlV
+!ifdef Scroller_CountMusicUpdateInIRQ {
+	sta Scroller_CountMusicUpdateInIRQNum
+}
 
 	+MACROAckRasterIRQ_A
 
@@ -79,7 +82,7 @@ ScrollerNMI1
 	dec VIC2BorderColour
 }
 	sta NMI_areg
-;	stx NMI_xreg
+	stx NMI_xreg
 	sty NMI_yreg
 
 !if 0 {
@@ -114,6 +117,9 @@ ScrollerNMI1
 	; Don't do any other work since we are not timer generated.
 	jmp .retNMI
 .wasTimer
+!ifdef Scroller_EnableNMI1Hook {
+	jsr ScrollerNMI1Hook
+}
 	; The NMI CIA timer setup code will need changing if the below code significantly changes cycle count.
 !ifdef IRQOpenBorders {
 !ifdef Scroller_IsHorizontal {
@@ -143,7 +149,7 @@ ScrollerNMI1
 
 .retNMI
 	lda NMI_areg
-;	ldx NMI_xreg
+	ldx NMI_xreg
 	ldy NMI_yreg
 
 !ifdef Scroller_DebugNMIBorder {
@@ -206,6 +212,10 @@ IrqTopOfScreen
 
 	cld
 
+!ifdef Scroller_EnableIrqTopOfScreenHook {
+	jsr IrqTopOfScreenHook
+}
+
 !ifdef IRQOpenBorders {
 	; Setup the NMI with a timer. An NMI is used because we don't want to mess around with
 	; having another normal IRQ in the middle of the multiplexor code.
@@ -221,7 +231,6 @@ IrqTopOfScreen
 	lda #0
 	sta CIA2TimerAControl
 
-
 !ifdef Scroller_IsHorizontal {
 	; Reset timer B count
 ;	lda #$1b	; (49 pixels * 64 cycles) - $25 for timing adjustment for the NMI
@@ -229,7 +238,7 @@ IrqTopOfScreen
 ;	lda #$c
 ;	sta CIA2TimerAHi
 
-.timerCountHorizontal = $b60 - Scroller_NMITimerAdjust
+.timerCountHorizontal = $b60 - Scroller_NMITimerAdjust - 4
 	; This opens up three more lines at the top of the screen increasing the play area slightly
 	lda #<.timerCountHorizontal	; (46 pixels * 64 cycles) - $20 for timing adjustment for the NMI
 	sta CIA2TimerALo
@@ -256,11 +265,11 @@ IrqTopOfScreen
 ; Interesting effect on the timing here and scroll value here
 ; Fine timings that place the change just beyond the right hand border of the previous line for maximum safe timing
 !ifdef Scroller_UseKernal {
-.timerCountBL = (50*64)+$37
-.timerCount = (51*64)+$22
+.timerCountBL = (50*64)+$37 - 4
+.timerCount = (51*64)+$22 - 4
 } else {
-.timerCountBL = (52*64)-$1d
-.timerCount = (52*64)+$08
+.timerCountBL = (52*64)-$1d - 4
+.timerCount = (52*64)+$08 - 4
 }
 	cmp #6
 	bne .otherValues
@@ -475,33 +484,60 @@ IrqTopOfScreen
 	sta scrollRegUsedY
 }
 
-
-!ifdef Scroller_DoMusicUpdateInIRQ {
-!ifdef Scroller_EnableSpeedCode {
-	lda ZPProcessorPort
-	pha
-	lda #CartKillBank_ProcessorPort
-	sta ZPProcessorPort
+!ifdef Scroller_CountMusicUpdateInIRQ {
+	lda MainlineIsPaused
+	bne .isPaused2
+	inc Scroller_CountMusicUpdateInIRQNum
+.isPaused2
 }
-!ifdef Scroller_DebugIRQBorder {
-	inc VIC2BorderColour
-}
-	jsr MusicPlayerPlay
-!ifdef Scroller_DebugIRQBorder {
-	dec VIC2BorderColour
-}
-!ifdef Scroller_EnableSpeedCode {
-	pla
-	sta ZPProcessorPort
-}
-}
-
 
 !ifdef Scroller_DebugIRQBorder {
 	dec VIC2BorderColour
 }
 
 	jmp Multiplex_maininterEx
+
+!ifdef Scroller_CountMusicUpdateInIRQ {
+Scroller_CountMusicUpdateInIRQNum !by 0
+}
+
+!ifdef Scroller_DoMusicUpdateInIRQ {
+; This allows the top sprites to be updated before any music/sfx and reduces top of the screen sprite flicker, especially if IrqTopOfScreenPos is used
+Multiplex_EnableHookAfterTopSpritesUpdate = 1
+Multiplex_HookAfterTopSpritesUpdate
+	lda MainlineIsPaused
+	bne .isPaused
+!ifdef Scroller_EnableSpeedCode {
+	lda ZPProcessorPort
+	pha
+	lda #CartKillBank_ProcessorPort
+	sta ZPProcessorPort
+}
+!ifdef Scroller_DebugIRQBorderSound {
+	inc VIC2BorderColour
+}
+!ifdef Scroller_DebugSoundTimings {
+	inc VIC2BorderColour
+}
+
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	jsr SFXPlay
+} else {
+	jsr MusicPlayerPlay
+}
+!ifdef Scroller_DebugSoundTimings {
+	dec VIC2BorderColour
+}
+!ifdef Scroller_DebugIRQBorderSound {
+	dec VIC2BorderColour
+}
+!ifdef Scroller_EnableSpeedCode {
+	pla
+	sta ZPProcessorPort
+}
+.isPaused
+	rts
+}
 
 !zn
 MultiplexExt_LastIRQ
@@ -736,7 +772,11 @@ Multiplex_DiscardSpritesYPos=scorePanelPos1 - 1 - Scroller_SpriteDiscardAdjust -
 	lda #>BottomBorder2
 	sta Scroller_IRQVectorHi
 } else {
+!ifdef IrqTopOfScreenPos {
+	lda #IrqTopOfScreenPos
+} else {
 	lda #0
+}
 	sta VIC2Raster
 !ifdef IRQOpenBorders { } else {
 	jsr IRQKillAllSprites
@@ -902,7 +942,11 @@ BottomBorder3
 }
 }
 
+!ifdef IrqTopOfScreenPos {
+	lda #IrqTopOfScreenPos
+} else {
 	lda #0
+}
 	sta VIC2Raster
 !ifdef IRQOpenBorders { } else {
 	jsr IRQKillAllSprites
@@ -1121,6 +1165,11 @@ ScorePanel2
 !ifdef Scroller_DiscardMinSpriteYPos {
 	; MPi: TODO: Perhaps not the best idea since any games that wait for BeforeScrollers/AfterScrollers for their work will want to have as much time above for animation and sprite updates
 ;	lda #Scroller_DiscardMinSpriteYPos-Multiplex_TopRasterHeight
+}
+!ifdef IrqTopOfScreenPos {
+	lda #IrqTopOfScreenPos
+} else {
+	lda #0
 }
 	sta VIC2Raster
 !ifdef IRQOpenBorders { } else {

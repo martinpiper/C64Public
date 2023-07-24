@@ -1,0 +1,54 @@
+
+!source "ScrollerScrollSprites.a"
+
+UpdateSprites
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	jsr Scroller_ScrollSprites
+
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+
+	jsr ActivationObject_UpdateScreenEdges
+	jsr NMIColourSplits_Calculate
+
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+
+	; This stops objects spawning when things get busy
+;	lda ScrollerDemo_OverrunTopIRQFlag
+;	sta VIC2BorderColour
+;	bne .overrun
+
+	; Potential for only doing this if there is time
+	jsr ActivationObject_CheckScreenEdges
+
+.overrun
+
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	jsr ActivationObject_RetireSpawnTimings
+
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Yellow
+	sta VIC2BorderColour
+}
+
+	jsr Animation_UpdateTick
+
+!ifdef Tusari2_DebugMainlineBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	rts

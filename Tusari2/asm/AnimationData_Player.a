@@ -1,0 +1,37 @@
+	+StartAnim ~AnimationFrames_MainCharTorsoStandLeft , 1
+	+DoFrame 153
+	+StartAnim ~AnimationFrames_MainCharLegsStandLeft , 1
+	+DoFrame 155
+
+	+StartAnim ~AnimationFrames_MainCharLegsKnealLeft , 1
+	+DoFrame 154
+
+	+StartAnim ~AnimationFrames_MainCharTorsoStandRight , 1
+	+DoFrame 182
+	+StartAnim ~AnimationFrames_MainCharLegsStandRight , 1
+	+DoFrame 184
+
+	+StartAnim ~AnimationFrames_MainCharLegsKnealRight , 1
+	+DoFrame 183
+
+	+StartAnim ~AnimationFrames_MainCharTorsoLeft , 2
+	+DoFrame 131 , 132 , 133 , 134 , 135 , 136 , 137 , 138 , 137 , 136 , 135 , 134 , 133 , 132
+	+StartAnim ~AnimationFrames_MainCharLegsLeft , 2
+	+DoFrame 139 , 140 , 141 , 142 , 143 , 144 , 145 , 146 , 147 , 148 , 149 , 150 , 151 , 152
+
+	+StartAnim ~AnimationFrames_MainCharTorsoRight , 2
+	+DoFrame $a0 , $a1 , $a2 , $a3 , $a4 , $a5 , $a6 , $a7 , $a6 , $a5 , $a4 , $a3 , $a2 , $a1
+	+StartAnim ~AnimationFrames_MainCharLegsRight , 2
+	+DoFrame $a8 , $a9 , $aa , $ab , $ac , $ad , $ae , $af , $b0 , $b1 , $b2 , $b3 , $b4 , $b5
+
+
+	+StartAnim ~AnimationFrames_MainCharSwordSwipeLeft , 3
+!for .i , 1 {
+	+DoFrame 211 , 212 , 213
+}
+	+EndAnimDelete
+	+StartAnim ~AnimationFrames_MainCharSwordSwipeRight , 3
+!for .i , 1 {
+	+DoFrame 235 , 236 , 237
+}
+	+EndAnimDelete

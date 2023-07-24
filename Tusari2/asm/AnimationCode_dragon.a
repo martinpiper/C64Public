@@ -1,0 +1,61 @@
+﻿; This simple hack takes the last processed animation frame for the dragon head and uses it for the body animation
+DragonAnimationFrame !by 0
+!zn
+AnimationInit_dragonBody
+	+MAnimation_StandardInit AnimationFrames_DragonBody		 , VIC2Colour_Green , AnimationTick_dragonBody , AnimationDelete_commonMakeRespawn
+
+!zn
+AnimationTick_dragonBody
+	lda DragonAnimationFrame
+	sta Animation_Index,x
+	rts
+
+
+!zn
+AnimationInit_dragonHead
+	+MAnimation_StandardInit AnimationFrames_DragonHead		 , VIC2Colour_Green , AnimationTick_dragonHead , AnimationDelete_commonMakeRespawn
+
+!zn
+AnimationTick_dragonHead
+	lda Animation_Index,x
+	sta DragonAnimationFrame
+	cmp #16
+	bne .noFireball
+
+	jsr Animation_FindFreeSlot
+	bcs .noAllocateFireball
+	stx .smX+1
+	+MWordValueTo_AX AnimationFrames_fireball
+	jsr Animation_ForceSet
+.smX ldx #0
+	lda AnimationXPosLo,x
+	sta AnimationXPosLo,y
+	lda AnimationXPosHi,x
+	sta AnimationXPosHi,y
+	lda AnimationYPos,x
+	sta AnimationYPos,y
+
+	; Interesting colour choice
+	lda #VIC2Colour_Red
+	sta AnimationSpriteColour,y
+
+	+MAnimation_SetFuncs AnimationTick_fireball , 0
+
+	lda #3
+	jsr SFXInit
+
+.noAllocateFireball
+.noFireball
+	rts
+
+!zn
+AnimationTick_fireball
+	lda AnimationXPosLo,x
+	clc
+	adc #2
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,x
+	adc #0
+	and #1
+	sta AnimationXPosHi,x
+	rts

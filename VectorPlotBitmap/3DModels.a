@@ -26,13 +26,15 @@ Transform_faces
 	!byte  27, 4,  6,  28, 3
 	!byte  9,  10, 28, 6,  4
 	!byte  4,  27, 8,  7,  4
-	!byte  3,  8,  27, 0,  1
-	!byte  28, 2,  0,  27, 1
-	!byte  10, 29, 27, 28, 1
+	; Engines
 	!byte  12, 11, 14, 13, 4
 	!byte  17, 18, 15, 16, 4
 	!byte  20, 19, 22, 21, 4
 	!byte  25, 26, 23, 24, 4
+	; Rear plane
+	!byte  3,  8,  27, 0,  1
+	!byte  28, 2,  0,  27, 1
+	!byte  10, 29, 27, 28, 1
 .face4
 
 
@@ -44,7 +46,7 @@ Transform_faces
 	;backface culling
 	!byte 1
 	;shaded
-	!byte 0
+	!byte 1
 	;pointers to vertices
 	!word .vertx1
 	!word .verty1
@@ -62,7 +64,7 @@ Transform_faces
 	;backface culling
 	!byte 1
 	;shaded
-	!byte 0
+	!byte 1
 	;pointers to vertices
 	!word .vertx3
 	!word .verty3

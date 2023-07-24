@@ -11,7 +11,7 @@ public class ImagePanel extends JPanel {
     private BufferedImage image;
 
     public ImagePanel() {
-        image = new BufferedImage(320, 224, BufferedImage.TYPE_INT_RGB);
+        image = new BufferedImage(1024, 256, BufferedImage.TYPE_INT_RGB);
     }
 
     @Override

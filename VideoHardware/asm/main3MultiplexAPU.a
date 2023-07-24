@@ -37,12 +37,15 @@ Initialise_NoMACROWaitForTheLastScan = 1
 !source "stdlib/Initialise.a"
 !source "BombJack/stdlib/Bus24Bit.a"
 !source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
 
 !zn
 start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
 	jsr Bus24Bit_Init
 	jsr APU_ResetDisable
 	jsr Video_DisableDisplay
@@ -69,7 +72,7 @@ mainLoop
 	jsr Video_StartRasterTimers
 
 	; Copy over new sprite data positions
-	lda #$02; EBBS
+	lda #kBus24Bit_APU_EBBS
 	+MWordValueTo_XY APUSpriteData
 	jsr Bus24Bit_SetAddressBus
 	+MWordValueTo_AX APURealSpriteDataStart

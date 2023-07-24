@@ -28,11 +28,23 @@
     <Filter Include="ExtLib\Scroller">
       <UniqueIdentifier>{8699e4b4-3136-4f66-908f-80fdc8ddd50d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ExtLib\Cart">
+      <UniqueIdentifier>{92368af5-7a0a-47e0-84b6-2cf1a6a10987}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ExtLib\Decompression">
+      <UniqueIdentifier>{a7874f8c-6b6e-4570-8b95-98472fc76bcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Sound">
+      <UniqueIdentifier>{78da5650-354c-473d-ab39-fcbf43efa1e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="output">
+      <UniqueIdentifier>{d88520a9-b7f6-4c2f-99b4-a46142c2bb60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ExtLib\Scroller\CartCode">
+      <UniqueIdentifier>{992dc989-7fec-4b5c-934f-e707a408b52e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Scroller\_f_index1.a">
-      <Filter>ExtLib\Scroller</Filter>
-    </None>
     <None Include="..\Scroller\AnimationEngine.a">
       <Filter>ExtLib\Scroller</Filter>
     </None>
@@ -175,27 +187,6 @@
     <None Include="..\Scroller\ScrollerScrollSprites.a">
       <Filter>ExtLib\Scroller</Filter>
     </None>
-    <None Include="Animation.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="HookInclude.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="ScrollEntry_Tusari.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="ScrollerData.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="Animation_macros.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="UpdateSprites.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="HandleUserInput.a">
-      <Filter>Sources</Filter>
-    </None>
     <None Include="..\SpriteMultiplexor\SpriteMultiplexor.a">
       <Filter>ExtLib\Multiplexor</Filter>
     </None>
@@ -205,23 +196,11 @@
     <None Include="..\Scroller\CheckForBadScrolls.a">
       <Filter>ExtLib\Scroller</Filter>
     </None>
-    <None Include="AnimationData.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="ActivationObject_macros.a">
-      <Filter>Sources</Filter>
-    </None>
-    <None Include="ActivationObjectTest.a">
-      <Filter>Sources</Filter>
-    </None>
     <None Include="features\ActivationObject.feature">
       <Filter>Sources\features</Filter>
     </None>
     <None Include="RunTestsEditor.bat" />
     <None Include="exported assets\Level1 sprites.properties">
-      <Filter>Sources\exported assets</Filter>
-    </None>
-    <None Include="exported assets\Level1-2.a">
       <Filter>Sources\exported assets</Filter>
     </None>
     <None Include="..\BerzerkRedux\Rand.a">
@@ -263,16 +242,254 @@
     <None Include="..\stdlib\VideoModes_Macros.a">
       <Filter>ExtLib\stdlib</Filter>
     </None>
-    <None Include="Tusari2Vars.a">
+    <None Include="asm\ActivationObject.a">
       <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\ActivationObject_macros.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\ActivationObjectTest.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\Animation.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\Animation_macros.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationData.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\HandleUserInput.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\HookInclude.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\MapPlacementData.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\ScrollEntry_Tusari.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\ScrollerData.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\Tusari2Vars.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\UpdateSprites.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\Camera.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\BankSelect8K.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash_Code.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\EasyFlash_Macros.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\GMod2_Code.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="..\MakeCart\asm\GMod2_Macros.a">
+      <Filter>ExtLib\Cart</Filter>
+    </None>
+    <None Include="asm\Intro.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\Chooser.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressRLE.a">
+      <Filter>ExtLib\Decompression</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressRLEVars.a">
+      <Filter>ExtLib\Decompression</Filter>
+    </None>
+    <None Include="asm\Title.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="..\Decompression\Decompression.a">
+      <Filter>ExtLib\Decompression</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionP2.a">
+      <Filter>ExtLib\Decompression</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionVars.a">
+      <Filter>ExtLib\Decompression</Filter>
+    </None>
+    <None Include="Sound\buildSound.bat">
+      <Filter>Sources\Sound</Filter>
+    </None>
+    <None Include="asm\CommonGameData.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationData_Player.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollerCommon_Tables.a">
+      <Filter>ExtLib\Scroller</Filter>
+    </None>
+    <None Include="_f_index1.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="asm\AnimationData_Upgrades.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationCode_Upgrades.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationCode_commonMakeRespawn.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationData_commonMakeRespawn.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationData_bat.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationCode_bat.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="..\stdlib\charpad.py">
+      <Filter>ExtLib\stdlib</Filter>
+    </None>
+    <None Include="..\stdlib\test_charpad.py">
+      <Filter>ExtLib\stdlib</Filter>
+    </None>
+    <None Include="..\.gitignore" />
+    <None Include="exported assets\buildData.bat">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2 sprites.properties">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level1Options.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Options.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="..\Citadel2\asm\Score_Macros.a">
+      <Filter>ExtLib\Citadel2</Filter>
+    </None>
+    <None Include="asm\AnimationCode_dragon.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="asm\AnimationCode_boss.a">
+      <Filter>Sources</Filter>
+    </None>
+    <None Include="exported assets\Level1Activation.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level1Code.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level1Data.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level1Placement.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Activation.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Code.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Data.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Placement.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="Scroller1.pdb">
+      <Filter>output</Filter>
+    </None>
+    <None Include="Scroller2.pdb">
+      <Filter>output</Filter>
+    </None>
+    <None Include="bin\Chooser.pdb">
+      <Filter>output</Filter>
+    </None>
+    <None Include="bin\Intro.pdb">
+      <Filter>output</Filter>
+    </None>
+    <None Include="bin\Title.pdb">
+      <Filter>output</Filter>
+    </None>
+    <None Include="..\stdlib\Comparisons.a">
+      <Filter>ExtLib\stdlib</Filter>
+    </None>
+    <None Include="asm\NMIColourSplits.a">
+      <Filter>ExtLib\Scroller</Filter>
+    </None>
+    <None Include="exported assets\Level1Splits.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="exported assets\Level2Splits.a">
+      <Filter>Sources\exported assets</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\CartOpts.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Header.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\HeaderEntry.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\ScreenConfig.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_1.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_39.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_40.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_41.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_m1.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_m39.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_m40.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\Scroll_m41.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\CartCode\StripsOffsets.a">
+      <Filter>ExtLib\Scroller\CartCode</Filter>
+    </None>
+    <None Include="..\Scroller\ScrollEntryCommonVars.a">
+      <Filter>ExtLib\Scroller</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt" />
     <Text Include="Tusari docs.txt" />
     <Text Include="Done.txt" />
-    <Text Include="ActivationObject.a">
-      <Filter>Sources</Filter>
+    <Text Include="..\Scroller\Done.txt">
+      <Filter>ExtLib\Scroller</Filter>
+    </Text>
+    <Text Include="..\Scroller\TODO.txt">
+      <Filter>ExtLib\Scroller</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

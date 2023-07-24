@@ -1,0 +1,10 @@
+PlayerSpriteYPosToScreenCharPos
+!fill VIC2SpriteYBorderTop-10-4 , -1
+!for .num , 20 { !fill 8 , (.num-1) }
+!fill 256 - (* - PlayerSpriteYPosToScreenCharPos) , -1
+
+PlayerSpriteXPosToScreenCharPos
+!fill (VIC2SpriteXBorderLeft-10-2)/2 , -1
+!for .num , 40 { !fill 4 , (.num-1) }
+!fill 256 - (* - PlayerSpriteXPosToScreenCharPos) , -1
+

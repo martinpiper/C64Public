@@ -18,7 +18,7 @@ rem --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.
 rem -Xmx256M -Xms256M
 rem -DZbdd6502.trace=true
 rem "C:\Users\Martin Piper\.jdks\corretto-1.8.0_252\bin\java.exe"
-java.exe -Xincgc -Xmx256M -Xms256M -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags @Demo6 --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue TestGlue features
+java.exe -Xincgc -Xmx256M -Xms256M -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags @Demo6 --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue macros --glue TestGlue features
 
 goto end
 :error

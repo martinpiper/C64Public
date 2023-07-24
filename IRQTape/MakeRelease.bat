@@ -11,6 +11,7 @@ mkdir ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\stdlib ..\..\TrialBuild2\TapeToolBuild\stdlib\ /s
 xcopy TapeTool\_config.a ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\acme.exe ..\..\TrialBuild2\TapeToolBuild
+xcopy ..\python39.dll ..\..\TrialBuild2\TapeToolBuild
 xcopy TapeTool\ExampleBuild.bat ..\..\TrialBuild2\TapeToolBuild
 xcopy TapeTool\Loaders.a ..\..\TrialBuild2\TapeToolBuild
 xcopy R.MUSC000.PRG ..\..\TrialBuild2\TapeToolBuild

@@ -61,6 +61,12 @@
     <Filter Include="Header Files\C64\Decompression">
       <UniqueIdentifier>{2e6b7f23-cec2-4825-a267-eed2ea867945}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\C64\Cart">
+      <UniqueIdentifier>{c1e05b10-b5ec-4779-91bb-806a9cce0ff7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\C64\VectorPlotBitmap">
+      <UniqueIdentifier>{b4db12f3-d4ec-43ad-bce2-1fbe872afc1a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -131,12 +137,12 @@
     <None Include="assets\convert10.bat">
       <Filter>Resource Files\assets</Filter>
     </None>
-    <None Include="BuildIt11.bat">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="assets\convert11.bat">
       <Filter>Resource Files\assets</Filter>
     </None>
+    <None Include="BuildIt11.bat" />
+    <None Include="BuildIt6c.bat" />
+    <None Include="BuildIt12.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -396,6 +402,105 @@
     </Library>
     <Library Include="asm\main11.a">
       <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\GapFind.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\main6c.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\BankSelect8K.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\EasyFlash.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\EasyFlash_Code.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\EasyFlash_Macros.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\GMod2_Code.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\GMod2_Macros.a">
+      <Filter>Header Files\C64\Cart</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Audio.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="asm\main12.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\3DModels.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\AutoDefs_Span.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\BitmapPlot.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\BitmapPlotMacros.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\BitmapPlotVars.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\GenericSpan.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Poly2D.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Poly2DMacros.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Poly2DMem.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Poly2DTest1.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Poly2DVars.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Segments.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\SegmentsMacros.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\SegmentsMemory.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\SegmentsTest1.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\SegmentsVars.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\VectorHardware.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\Transform.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\TransformMacros.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\TransformMem.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\TransformTables.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="..\VectorPlotBitmap\TransformVars.a">
+      <Filter>Header Files\C64\VectorPlotBitmap</Filter>
+    </Library>
+    <Library Include="tmp\_f_index1.a">
+      <Filter>Source Files\asm\ShadowBeast</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

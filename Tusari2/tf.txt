@@ -1,12 +1,443 @@
-Using max mode
-Using RLE mode
-Using run address $0400
-Opening 'ScrollerOrig.prg' for reading...
-Read load address as $0400
-End address = $ffc0
-Opening 'Scroller.prg' for writing...
-Working...
-Input length = $fbc0 output length = $7cdd
+First pass.
+Parsing source file '../Scroller/ScrollEntry.a'
+Parsing source file '../stdlib/stdlib.a'
+Parsing source file 'asm/ScrollEntry_Tusari.a'
+Parsing source file '../stdlib\Comparisons.a'
+Parsing source file '_f_index1.a'
+Parsing source file '../Scroller/ScrollerOptimisationsAggressive.a'
+Parsing source file '../Scroller/ScrollerVars.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexorVars.a'
+Parsing source file 'asm/Tusari2Vars.a'
+Parsing source file '../Scroller/ScrollEntryAfter.a'
+Parsing source file '../Scroller/ScrollEntryCommon.a'
+Parsing source file '../Scroller/ScrollEntryCommonVars.a'
+Parsing source file '../Scroller/ScrollerMacros.a'
+Parsing source file 'bin/FingerPrint.a'
+Segment size is 2048 ($800) bytes ($c800 - $d000 exclusive).
+Parsing source file '../stdlib/Initialise.a'
+Parsing source file '../Scroller/OneTime.a'
+Parsing source file 'bin/FingerPrint.a'
+Segment size is 526 ($20e) bytes ($400 - $60e exclusive).
+Segment size is 64 ($40) bytes ($680 - $6c0 exclusive).
+Loaded 2048 ($800) bytes from file offset 20 ($14).
+Segment size is 2048 ($800) bytes ($800 - $1000 exclusive).
+Parsing source file '../Scroller/SetupIRQs.a'
+Parsing source file '../Scroller/ScrollMain.a'
+Parsing source file '../Scroller/Scroller.a'
+Parsing source file '../Scroller/Scrollers.a'
+Parsing source file '../Scroller/ScrollerStripsMacros.a'
+Parsing source file '../Scroller/ScrollerStripsCommon.a'
+Parsing source file 'bin/StripOffsets.a'
+Parsing source file '../Scroller/ScrollerAnimation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMacros.a'
+Parsing source file '../Scroller/ScrollerCommon.a'
+Parsing source file '../Scroller/ScrollerCommon_Tables.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexor.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Code.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Macros.a'
+Parsing source file '../MakeCart/asm/EasyFlash.a'
+Parsing source file '../MakeCart/asm/BankSelect8K.a'
+Parsing source file '../Scroller/CatchUndefCartFiles.a'
+Parsing source file 'asm/HookInclude.a'
+Parsing source file '../Citadel2/asm/Score_Macros.a'
+Parsing source file 'bin/LevelTempOptions.a'
+Parsing source file 'asm/CommonGameData.a'
+Parsing source file 'asm/Animation_macros.a'
+Parsing source file '../stdlib/LongBranches.a'
+Parsing source file 'asm/Animation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem2.a'
+Parsing source file 'asm/UpdateSprites.a'
+Parsing source file '../Scroller/ScrollerScrollSprites.a'
+Parsing source file 'asm/ActivationObject.a'
+Parsing source file 'asm/ActivationObject_macros.a'
+Parsing source file '../BerzerkRedux/Rand.a'
+Parsing source file '../Citadel2/asm/Score.a'
+Parsing source file '../Scroller/SFXWithMusic.a'
+Parsing source file 'asm/NMIColourSplits.a'
+Parsing source file '../Scroller/ScrollerDataMacro.a'
+Parsing source file 'asm/ScrollerData.a'
+Loaded 36 ($24) bytes from file offset 2068 ($814).
+Loaded 200 ($c8) bytes from file offset 2324 ($914).
+Loaded 1 ($1) bytes from file offset 4 ($4).
+Loaded 1 ($1) bytes from file offset 5 ($5).
+Loaded 1 ($1) bytes from file offset 6 ($6).
+Parsing source file '../Scroller/ScrollerAnimationMemory.a'
+Parsing source file 'asm/AnimationData.a'
+Parsing source file 'asm/AnimationData_Player.a'
+Parsing source file 'asm/AnimationData_commonMakeRespawn.a'
+Parsing source file 'asm/AnimationData_Upgrades.a'
+Parsing source file 'bin/LevelTempData.a'
+Parsing source file 'asm/AnimationData_bat.a'
+Segment size is 16766 ($417e) bytes ($1000 - $517e exclusive).
+Segment size is 0 ($0) bytes ($51be - $51be exclusive).
+Segment size is 0 ($0) bytes ($51fe - $51fe exclusive).
+Segment size is 0 ($0) bytes ($523e - $523e exclusive).
+Segment size is 0 ($0) bytes ($527e - $527e exclusive).
+Parsing source file 'bin/LevelTempActivation.a'
+Segment size is 0 ($0) bytes ($52be - $52be exclusive).
+Segment size is 1 ($1) bytes ($517e - $517f exclusive).
+Segment size is 1 ($1) bytes ($51be - $51bf exclusive).
+Segment size is 1 ($1) bytes ($51fe - $51ff exclusive).
+Segment size is 1 ($1) bytes ($523e - $523f exclusive).
+Segment size is 1 ($1) bytes ($527e - $527f exclusive).
+Segment size is 0 ($0) bytes ($52be - $52be exclusive).
+Segment size is 1 ($1) bytes ($517f - $5180 exclusive).
+Segment size is 1 ($1) bytes ($51bf - $51c0 exclusive).
+Segment size is 1 ($1) bytes ($51ff - $5200 exclusive).
+Segment size is 1 ($1) bytes ($523f - $5240 exclusive).
+Segment size is 1 ($1) bytes ($527f - $5280 exclusive).
+Parsing source file 'asm/AnimationCode_commonMakeRespawn.a'
+Segment size is 0 ($0) bytes ($52be - $52be exclusive).
+Segment size is 1 ($1) bytes ($5180 - $5181 exclusive).
+Segment size is 1 ($1) bytes ($51c0 - $51c1 exclusive).
+Segment size is 1 ($1) bytes ($5200 - $5201 exclusive).
+Segment size is 1 ($1) bytes ($5240 - $5241 exclusive).
+Segment size is 1 ($1) bytes ($5280 - $5281 exclusive).
+Parsing source file 'asm/AnimationCode_Upgrades.a'
+Parsing source file 'bin/LevelTempCode.a'
+Parsing source file 'asm/AnimationCode_bat.a'
+Parsing source file 'bin/LevelTempSplits.a'
+Segment size is 1776 ($6f0) bytes ($52be - $59ae exclusive).
+Loaded 3316 ($cf4) bytes from file offset 2 ($2).
+Parsing source file 'asm/MapPlacementData.a'
+Segment size is 3328 ($d00) bytes ($8000 - $8d00 exclusive).
+Segment size is 0 ($0) bytes ($8e00 - $8e00 exclusive).
+Segment size is 0 ($0) bytes ($8f00 - $8f00 exclusive).
+Segment size is 0 ($0) bytes ($9000 - $9000 exclusive).
+Segment size is 0 ($0) bytes ($9100 - $9100 exclusive).
+Segment size is 0 ($0) bytes ($9200 - $9200 exclusive).
+Parsing source file 'bin/LevelTempPlacement.a'
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d00 - $8d01 exclusive).
+Segment size is 1 ($1) bytes ($8e00 - $8e01 exclusive).
+Segment size is 1 ($1) bytes ($8f00 - $8f01 exclusive).
+Segment size is 1 ($1) bytes ($9000 - $9001 exclusive).
+Segment size is 1 ($1) bytes ($9100 - $9101 exclusive).
+Segment size is 1 ($1) bytes ($9200 - $9201 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d01 - $8d02 exclusive).
+Segment size is 1 ($1) bytes ($8e01 - $8e02 exclusive).
+Segment size is 1 ($1) bytes ($8f01 - $8f02 exclusive).
+Segment size is 1 ($1) bytes ($9001 - $9002 exclusive).
+Segment size is 1 ($1) bytes ($9101 - $9102 exclusive).
+Segment size is 1 ($1) bytes ($9201 - $9202 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d02 - $8d03 exclusive).
+Segment size is 1 ($1) bytes ($8e02 - $8e03 exclusive).
+Segment size is 1 ($1) bytes ($8f02 - $8f03 exclusive).
+Segment size is 1 ($1) bytes ($9002 - $9003 exclusive).
+Segment size is 1 ($1) bytes ($9102 - $9103 exclusive).
+Segment size is 1 ($1) bytes ($9202 - $9203 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d03 - $8d04 exclusive).
+Segment size is 1 ($1) bytes ($8e03 - $8e04 exclusive).
+Segment size is 1 ($1) bytes ($8f03 - $8f04 exclusive).
+Segment size is 1 ($1) bytes ($9003 - $9004 exclusive).
+Segment size is 1 ($1) bytes ($9103 - $9104 exclusive).
+Segment size is 1 ($1) bytes ($9203 - $9204 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d04 - $8d05 exclusive).
+Segment size is 1 ($1) bytes ($8e04 - $8e05 exclusive).
+Segment size is 1 ($1) bytes ($8f04 - $8f05 exclusive).
+Segment size is 1 ($1) bytes ($9004 - $9005 exclusive).
+Segment size is 1 ($1) bytes ($9104 - $9105 exclusive).
+Segment size is 1 ($1) bytes ($9204 - $9205 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d05 - $8d06 exclusive).
+Segment size is 1 ($1) bytes ($8e05 - $8e06 exclusive).
+Segment size is 1 ($1) bytes ($8f05 - $8f06 exclusive).
+Segment size is 1 ($1) bytes ($9005 - $9006 exclusive).
+Segment size is 1 ($1) bytes ($9105 - $9106 exclusive).
+Segment size is 1 ($1) bytes ($9205 - $9206 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d06 - $8d07 exclusive).
+Segment size is 1 ($1) bytes ($8e06 - $8e07 exclusive).
+Segment size is 1 ($1) bytes ($8f06 - $8f07 exclusive).
+Segment size is 1 ($1) bytes ($9006 - $9007 exclusive).
+Segment size is 1 ($1) bytes ($9106 - $9107 exclusive).
+Segment size is 1 ($1) bytes ($9206 - $9207 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d07 - $8d08 exclusive).
+Segment size is 1 ($1) bytes ($8e07 - $8e08 exclusive).
+Segment size is 1 ($1) bytes ($8f07 - $8f08 exclusive).
+Segment size is 1 ($1) bytes ($9007 - $9008 exclusive).
+Segment size is 1 ($1) bytes ($9107 - $9108 exclusive).
+Segment size is 1 ($1) bytes ($9207 - $9208 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d08 - $8d09 exclusive).
+Segment size is 1 ($1) bytes ($8e08 - $8e09 exclusive).
+Segment size is 1 ($1) bytes ($8f08 - $8f09 exclusive).
+Segment size is 1 ($1) bytes ($9008 - $9009 exclusive).
+Segment size is 1 ($1) bytes ($9108 - $9109 exclusive).
+Segment size is 1 ($1) bytes ($9208 - $9209 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d09 - $8d0a exclusive).
+Segment size is 1 ($1) bytes ($8e09 - $8e0a exclusive).
+Segment size is 1 ($1) bytes ($8f09 - $8f0a exclusive).
+Segment size is 1 ($1) bytes ($9009 - $900a exclusive).
+Segment size is 1 ($1) bytes ($9109 - $910a exclusive).
+Segment size is 1 ($1) bytes ($9209 - $920a exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0a - $8d0b exclusive).
+Segment size is 1 ($1) bytes ($8e0a - $8e0b exclusive).
+Segment size is 1 ($1) bytes ($8f0a - $8f0b exclusive).
+Segment size is 1 ($1) bytes ($900a - $900b exclusive).
+Segment size is 1 ($1) bytes ($910a - $910b exclusive).
+Segment size is 1 ($1) bytes ($920a - $920b exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0b - $8d0c exclusive).
+Segment size is 1 ($1) bytes ($8e0b - $8e0c exclusive).
+Segment size is 1 ($1) bytes ($8f0b - $8f0c exclusive).
+Segment size is 1 ($1) bytes ($900b - $900c exclusive).
+Segment size is 1 ($1) bytes ($910b - $910c exclusive).
+Segment size is 1 ($1) bytes ($920b - $920c exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0c - $8d0d exclusive).
+Segment size is 1 ($1) bytes ($8e0c - $8e0d exclusive).
+Segment size is 1 ($1) bytes ($8f0c - $8f0d exclusive).
+Segment size is 1 ($1) bytes ($900c - $900d exclusive).
+Segment size is 1 ($1) bytes ($910c - $910d exclusive).
+Segment size is 1 ($1) bytes ($920c - $920d exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0d - $8d0e exclusive).
+Segment size is 1 ($1) bytes ($8e0d - $8e0e exclusive).
+Segment size is 1 ($1) bytes ($8f0d - $8f0e exclusive).
+Segment size is 1 ($1) bytes ($900d - $900e exclusive).
+Segment size is 1 ($1) bytes ($910d - $910e exclusive).
+Segment size is 1 ($1) bytes ($920d - $920e exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0e - $8d0f exclusive).
+Segment size is 1 ($1) bytes ($8e0e - $8e0f exclusive).
+Segment size is 1 ($1) bytes ($8f0e - $8f0f exclusive).
+Segment size is 1 ($1) bytes ($900e - $900f exclusive).
+Segment size is 1 ($1) bytes ($910e - $910f exclusive).
+Segment size is 1 ($1) bytes ($920e - $920f exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d0f - $8d10 exclusive).
+Segment size is 1 ($1) bytes ($8e0f - $8e10 exclusive).
+Segment size is 1 ($1) bytes ($8f0f - $8f10 exclusive).
+Segment size is 1 ($1) bytes ($900f - $9010 exclusive).
+Segment size is 1 ($1) bytes ($910f - $9110 exclusive).
+Segment size is 1 ($1) bytes ($920f - $9210 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d10 - $8d11 exclusive).
+Segment size is 1 ($1) bytes ($8e10 - $8e11 exclusive).
+Segment size is 1 ($1) bytes ($8f10 - $8f11 exclusive).
+Segment size is 1 ($1) bytes ($9010 - $9011 exclusive).
+Segment size is 1 ($1) bytes ($9110 - $9111 exclusive).
+Segment size is 1 ($1) bytes ($9210 - $9211 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d11 - $8d12 exclusive).
+Segment size is 1 ($1) bytes ($8e11 - $8e12 exclusive).
+Segment size is 1 ($1) bytes ($8f11 - $8f12 exclusive).
+Segment size is 1 ($1) bytes ($9011 - $9012 exclusive).
+Segment size is 1 ($1) bytes ($9111 - $9112 exclusive).
+Segment size is 1 ($1) bytes ($9211 - $9212 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d12 - $8d13 exclusive).
+Segment size is 1 ($1) bytes ($8e12 - $8e13 exclusive).
+Segment size is 1 ($1) bytes ($8f12 - $8f13 exclusive).
+Segment size is 1 ($1) bytes ($9012 - $9013 exclusive).
+Segment size is 1 ($1) bytes ($9112 - $9113 exclusive).
+Segment size is 1 ($1) bytes ($9212 - $9213 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d13 - $8d14 exclusive).
+Segment size is 1 ($1) bytes ($8e13 - $8e14 exclusive).
+Segment size is 1 ($1) bytes ($8f13 - $8f14 exclusive).
+Segment size is 1 ($1) bytes ($9013 - $9014 exclusive).
+Segment size is 1 ($1) bytes ($9113 - $9114 exclusive).
+Segment size is 1 ($1) bytes ($9213 - $9214 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d14 - $8d15 exclusive).
+Segment size is 1 ($1) bytes ($8e14 - $8e15 exclusive).
+Segment size is 1 ($1) bytes ($8f14 - $8f15 exclusive).
+Segment size is 1 ($1) bytes ($9014 - $9015 exclusive).
+Segment size is 1 ($1) bytes ($9114 - $9115 exclusive).
+Segment size is 1 ($1) bytes ($9214 - $9215 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d15 - $8d16 exclusive).
+Segment size is 1 ($1) bytes ($8e15 - $8e16 exclusive).
+Segment size is 1 ($1) bytes ($8f15 - $8f16 exclusive).
+Segment size is 1 ($1) bytes ($9015 - $9016 exclusive).
+Segment size is 1 ($1) bytes ($9115 - $9116 exclusive).
+Segment size is 1 ($1) bytes ($9215 - $9216 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d16 - $8d17 exclusive).
+Segment size is 1 ($1) bytes ($8e16 - $8e17 exclusive).
+Segment size is 1 ($1) bytes ($8f16 - $8f17 exclusive).
+Segment size is 1 ($1) bytes ($9016 - $9017 exclusive).
+Segment size is 1 ($1) bytes ($9116 - $9117 exclusive).
+Segment size is 1 ($1) bytes ($9216 - $9217 exclusive).
+Segment size is 0 ($0) bytes ($9300 - $9300 exclusive).
+Segment size is 1 ($1) bytes ($8d17 - $8d18 exclusive).
+Segment size is 1 ($1) bytes ($8e17 - $8e18 exclusive).
+Segment size is 1 ($1) bytes ($8f17 - $8f18 exclusive).
+Segment size is 1 ($1) bytes ($9017 - $9018 exclusive).
+Segment size is 1 ($1) bytes ($9117 - $9118 exclusive).
+Segment size is 1 ($1) bytes ($9217 - $9218 exclusive).
+Parsing source file 'asm/Camera.a'
+Parsing source file '../Scroller/CheckForBadScrolls.a'
+Parsing source file '../Scroller/ClampScrollVelocity.a'
+Parsing source file 'asm/HandleUserInput.a'
+Parsing source file '../Scroller/CharEffects.a'
+Segment size is 4449 ($1161) bytes ($9300 - $a461 exclusive).
+Segment size is 1000 ($3e8) bytes ($bc00 - $bfe8 exclusive).
+Segment size is 2048 ($800) bytes ($c000 - $c800 exclusive).
+Loaded 12224 ($2fc0) bytes from file offset 4105 ($1009).
+Parsing source file '../Scroller/DataCheck.a'
+Segment size is 12224 ($2fc0) bytes ($d000 - $ffc0 exclusive).
+Further pass.
+Parsing source file '../Scroller/ScrollEntry.a'
+Parsing source file '../stdlib/stdlib.a'
+Parsing source file 'asm/ScrollEntry_Tusari.a'
+Parsing source file '../stdlib\Comparisons.a'
+Parsing source file '_f_index1.a'
+Parsing source file '../Scroller/ScrollerOptimisationsAggressive.a'
+Parsing source file '../Scroller/ScrollerVars.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexorVars.a'
+Parsing source file 'asm/Tusari2Vars.a'
+Parsing source file '../Scroller/ScrollEntryAfter.a'
+Parsing source file '../Scroller/ScrollEntryCommon.a'
+Parsing source file '../Scroller/ScrollEntryCommonVars.a'
+Parsing source file '../Scroller/ScrollerMacros.a'
+Parsing source file 'bin/FingerPrint.a'
+Parsing source file '../stdlib/Initialise.a'
+Parsing source file '../Scroller/OneTime.a'
+Parsing source file 'bin/FingerPrint.a'
+Parsing source file '../Scroller/SetupIRQs.a'
+Parsing source file '../Scroller/ScrollMain.a'
+Parsing source file '../Scroller/Scroller.a'
+Parsing source file '../Scroller/Scrollers.a'
+Parsing source file '../Scroller/ScrollerStripsMacros.a'
+Parsing source file '../Scroller/ScrollerStripsCommon.a'
+Parsing source file 'bin/StripOffsets.a'
+Parsing source file '../Scroller/ScrollerAnimation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMacros.a'
+Parsing source file '../Scroller/ScrollerCommon.a'
+Parsing source file '../Scroller/ScrollerCommon_Tables.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexor.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Code.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Macros.a'
+Parsing source file '../MakeCart/asm/EasyFlash.a'
+Parsing source file '../MakeCart/asm/BankSelect8K.a'
+Parsing source file '../Scroller/CatchUndefCartFiles.a'
+Parsing source file 'asm/HookInclude.a'
+Parsing source file '../Citadel2/asm/Score_Macros.a'
+Parsing source file 'bin/LevelTempOptions.a'
+Parsing source file 'asm/CommonGameData.a'
+Parsing source file 'asm/Animation_macros.a'
+Parsing source file '../stdlib/LongBranches.a'
+Parsing source file 'asm/Animation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem2.a'
+Parsing source file 'asm/UpdateSprites.a'
+Parsing source file '../Scroller/ScrollerScrollSprites.a'
+Parsing source file 'asm/ActivationObject.a'
+Parsing source file 'asm/ActivationObject_macros.a'
+Parsing source file '../BerzerkRedux/Rand.a'
+Parsing source file '../Citadel2/asm/Score.a'
+Parsing source file '../Scroller/SFXWithMusic.a'
+Parsing source file 'asm/NMIColourSplits.a'
+Parsing source file '../Scroller/ScrollerDataMacro.a'
+Parsing source file 'asm/ScrollerData.a'
+Parsing source file '../Scroller/ScrollerAnimationMemory.a'
+Parsing source file 'asm/AnimationData.a'
+Parsing source file 'asm/AnimationData_Player.a'
+Parsing source file 'asm/AnimationData_commonMakeRespawn.a'
+Parsing source file 'asm/AnimationData_Upgrades.a'
+Parsing source file 'bin/LevelTempData.a'
+Parsing source file 'asm/AnimationData_bat.a'
+Parsing source file 'bin/LevelTempActivation.a'
+Parsing source file 'asm/AnimationCode_commonMakeRespawn.a'
+Parsing source file 'asm/AnimationCode_Upgrades.a'
+Parsing source file 'bin/LevelTempCode.a'
+Parsing source file 'asm/AnimationCode_bat.a'
+Parsing source file 'bin/LevelTempSplits.a'
+Parsing source file 'asm/MapPlacementData.a'
+Parsing source file 'bin/LevelTempPlacement.a'
+Parsing source file 'asm/Camera.a'
+Parsing source file '../Scroller/CheckForBadScrolls.a'
+Parsing source file '../Scroller/ClampScrollVelocity.a'
+Parsing source file 'asm/HandleUserInput.a'
+Parsing source file '../Scroller/CharEffects.a'
+Parsing source file '../Scroller/DataCheck.a'
+Further pass.
+Parsing source file '../Scroller/ScrollEntry.a'
+Parsing source file '../stdlib/stdlib.a'
+Parsing source file 'asm/ScrollEntry_Tusari.a'
+Parsing source file '../stdlib\Comparisons.a'
+Parsing source file '_f_index1.a'
+Parsing source file '../Scroller/ScrollerOptimisationsAggressive.a'
+Parsing source file '../Scroller/ScrollerVars.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexorVars.a'
+Parsing source file 'asm/Tusari2Vars.a'
+Parsing source file '../Scroller/ScrollEntryAfter.a'
+Parsing source file '../Scroller/ScrollEntryCommon.a'
+Parsing source file '../Scroller/ScrollEntryCommonVars.a'
+Parsing source file '../Scroller/ScrollerMacros.a'
+Parsing source file 'bin/FingerPrint.a'
+Parsing source file '../stdlib/Initialise.a'
+Parsing source file '../Scroller/OneTime.a'
+Parsing source file 'bin/FingerPrint.a'
+Parsing source file '../Scroller/SetupIRQs.a'
+Parsing source file '../Scroller/ScrollMain.a'
+Parsing source file '../Scroller/Scroller.a'
+Parsing source file '../Scroller/Scrollers.a'
+Parsing source file '../Scroller/ScrollerStripsMacros.a'
+Parsing source file '../Scroller/ScrollerStripsCommon.a'
+Parsing source file 'bin/StripOffsets.a'
+Parsing source file '../Scroller/ScrollerAnimation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMacros.a'
+Parsing source file '../Scroller/ScrollerCommon.a'
+Parsing source file '../Scroller/ScrollerCommon_Tables.a'
+Parsing source file '../SpriteMultiplexor/SpriteMultiplexor.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Code.a'
+Parsing source file '../MakeCart/asm/EasyFlash_Macros.a'
+Parsing source file '../MakeCart/asm/EasyFlash.a'
+Parsing source file '../MakeCart/asm/BankSelect8K.a'
+Parsing source file '../Scroller/CatchUndefCartFiles.a'
+Parsing source file 'asm/HookInclude.a'
+Parsing source file '../Citadel2/asm/Score_Macros.a'
+Parsing source file 'bin/LevelTempOptions.a'
+Parsing source file 'asm/CommonGameData.a'
+Parsing source file 'asm/Animation_macros.a'
+Parsing source file '../stdlib/LongBranches.a'
+Parsing source file 'asm/Animation.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem.a'
+Parsing source file '../Scroller/SpritePosToScreenPosMem2.a'
+Parsing source file 'asm/UpdateSprites.a'
+Parsing source file '../Scroller/ScrollerScrollSprites.a'
+Parsing source file 'asm/ActivationObject.a'
+Parsing source file 'asm/ActivationObject_macros.a'
+Parsing source file '../BerzerkRedux/Rand.a'
+Parsing source file '../Citadel2/asm/Score.a'
+Parsing source file '../Scroller/SFXWithMusic.a'
+Parsing source file 'asm/NMIColourSplits.a'
+Parsing source file '../Scroller/ScrollerDataMacro.a'
+Parsing source file 'asm/ScrollerData.a'
+Parsing source file '../Scroller/ScrollerAnimationMemory.a'
+Parsing source file 'asm/AnimationData.a'
+Parsing source file 'asm/AnimationData_Player.a'
+Parsing source file 'asm/AnimationData_commonMakeRespawn.a'
+Parsing source file 'asm/AnimationData_Upgrades.a'
+Parsing source file 'bin/LevelTempData.a'
+Parsing source file 'asm/AnimationData_bat.a'
+Parsing source file 'bin/LevelTempActivation.a'
+Parsing source file 'asm/AnimationCode_commonMakeRespawn.a'
+Parsing source file 'asm/AnimationCode_Upgrades.a'
+Parsing source file 'bin/LevelTempCode.a'
+Parsing source file 'asm/AnimationCode_bat.a'
+Parsing source file 'bin/LevelTempSplits.a'
+Parsing source file 'asm/MapPlacementData.a'
+Parsing source file 'bin/LevelTempPlacement.a'
+Parsing source file 'asm/Camera.a'
+Parsing source file '../Scroller/CheckForBadScrolls.a'
+Parsing source file '../Scroller/ClampScrollVelocity.a'
+Parsing source file 'asm/HandleUserInput.a'
+Parsing source file '../Scroller/CharEffects.a'
+Parsing source file '../Scroller/DataCheck.a'
+Saving 64448 ($fbc0) bytes ($400 - $ffc0 exclusive).
 Setting EasyFlash mode
 New address $8000
 New bank $0
@@ -17,22 +448,19 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'Scroller.prg' read $7cdd
+File 'bin\Intro.prg' read $1441
 New address $8000
 New bank $1
- Copy from $1 len $2000 to $0
+ Copy from $1 len $1440 to $0
  Write bank
 New address $8000
 New bank $2
- Copy from $2001 len $2000 to $0
  Write bank
 New address $8000
 New bank $3
- Copy from $4001 len $2000 to $0
  Write bank
 New address $8000
 New bank $4
- Copy from $6001 len $1cdc to $0
  Write bank
 New address $8000
 New bank $5
@@ -41,17 +469,18 @@ New address $8000
 New bank $6
  Write bank
 New address $8000
+Using new span size $2000
 New bank $7
-File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2df
+File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2da
 File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
 File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
-File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2df
+File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2da
 File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
 File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
-File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $19b
+File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
 File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
-File 'bin\ColouriseRight.bin' offset $0 xor $0 len $19b
+File 'bin\ColouriseRight.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
 File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
 File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
@@ -71,26 +500,38 @@ File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
 File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
 File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
 File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
-File 'bin\ColouriseTop.bin' read $2df to use $2df
+File 'bin\Scroller1.cmp' offset $0 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $2000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $4000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $6000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ef8
+File 'bin\Scroller2.cmp' offset $0 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $2000 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $4000 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1eb3
+File 'bin\Title.cmp' offset $0 xor $0 len $2000
+File 'bin\Title.cmp' offset $2000 xor $0 len $2000
+File 'bin\Title.cmp' offset $4000 xor $0 len $63e
+File 'bin\ColouriseTop.bin' read $2da to use $2da
 File 'bin\Char0To1_1.bin' read $148f to use $148f
 File 'bin\Char1To0_1.bin' read $148f to use $148f
 New bank $7
  Write multi-bank 7 $8000
-File 'bin\ColouriseBottom.bin' read $2df to use $2df
+File 'bin\ColouriseBottom.bin' read $2da to use $2da
 New bank $8
  Write multi-bank 8 $8000
 File 'bin\Char0To1_m1.bin' read $148f to use $148f
 File 'bin\Char1To0_m1.bin' read $148f to use $148f
 New bank $9
  Write multi-bank 9 $8000
-File 'bin\ColouriseLeft.bin' read $19b to use $19b
+File 'bin\ColouriseLeft.bin' read $196 to use $196
 New bank $a
  Write multi-bank 10 $8000
 File 'bin\Char0To1_40.bin' read $14d1 to use $14d1
 File 'bin\Char1To0_40.bin' read $14d1 to use $14d1
 New bank $b
  Write multi-bank 11 $8000
-File 'bin\ColouriseRight.bin' read $19b to use $19b
+File 'bin\ColouriseRight.bin' read $196 to use $196
 New bank $c
  Write multi-bank 12 $8000
 File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1
@@ -148,7 +589,238 @@ New bank $1d
 File 'bin\BlockStrips.bin' read $c35 to use $c35
 New bank $1e
  Write multi-bank 30 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $8ef8
 New bank $1f
  Write multi-bank 31 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $6ef8
+New bank $20
+ Write multi-bank 32 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $4ef8
+New bank $21
+ Write multi-bank 33 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $2ef8
+New bank $22
+ Write multi-bank 34 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $ef8
+New bank $23
+ Write multi-bank 35 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $7eb3
+New bank $24
+ Write multi-bank 36 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $5eb3
+New bank $25
+ Write multi-bank 37 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $3eb3
+New bank $26
+ Write multi-bank 38 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $1eb3
+New bank $27
+ Write multi-bank 39 $8000
+File 'bin\Title.cmp' read $463e to use $463e
+New bank $28
+ Write multi-bank 40 $8000
+File 'bin\Title.cmp' read $463e to use $263e
+New bank $29
+ Write multi-bank 41 $8000
+File 'bin\Title.cmp' read $463e to use $63e
+New bank $2a
+ Write multi-bank 42 $8000
+New bank $2b
+ Write multi-bank 43 $8000
 Finished adding chunks
-File 'Scroller.crt' wrote $42250
+File 'Scroller.crt' wrote $5a310
+Setting EasyFlash mode
+New address $8000
+New bank $0
+File '..\Citadel2\Citadel2Cart_8K.prg' read $297
+ Copy from $2 len $295 to $0
+ Write bank
+New address $a000
+New bank $0
+ Copy from $2 len $2 to $1ffc
+ Write bank
+File 'bin\Intro.prg' read $1441
+New address $8000
+New bank $1
+ Copy from $1 len $1440 to $0
+ Write bank
+New address $8000
+New bank $2
+ Write bank
+New address $8000
+New bank $3
+ Write bank
+New address $8000
+New bank $4
+ Write bank
+New address $8000
+New bank $5
+ Write bank
+New address $8000
+New bank $6
+ Write bank
+New address $8000
+New bank $6
+File 'bin\Chooser.prg' read $419
+ Copy from $2 len $417 to $0
+ Write bank
+Using new span size $2000
+New bank $7
+File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2da
+File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
+File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2da
+File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
+File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $196
+File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
+File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
+File 'bin\ColouriseRight.bin' offset $0 xor $0 len $196
+File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_41.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_39.bin' offset $0 xor $0 len $148f
+File 'bin\Char1To0_39.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_1.bin' offset $0 xor $0 len $148f
+File 'bin\Colour_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Colour_40.bin' offset $0 xor $0 len $15c1
+File 'bin\Colour_m40.bin' offset $0 xor $0 len $15c1
+File 'bin\Colour_39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
+File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
+File 'bin\Scroller1.cmp' offset $0 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $2000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $4000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $6000 xor $0 len $2000
+File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ef8
+File 'bin\Scroller2.cmp' offset $0 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $2000 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $4000 xor $0 len $2000
+File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1eb3
+File 'bin\Title.cmp' offset $0 xor $0 len $2000
+File 'bin\Title.cmp' offset $2000 xor $0 len $2000
+File 'bin\Title.cmp' offset $4000 xor $0 len $63e
+File 'bin\ColouriseTop.bin' read $2da to use $2da
+File 'bin\Char0To1_1.bin' read $148f to use $148f
+File 'bin\Char1To0_1.bin' read $148f to use $148f
+New bank $7
+ Write multi-bank 7 $8000
+File 'bin\ColouriseBottom.bin' read $2da to use $2da
+New bank $8
+ Write multi-bank 8 $8000
+File 'bin\Char0To1_m1.bin' read $148f to use $148f
+File 'bin\Char1To0_m1.bin' read $148f to use $148f
+New bank $9
+ Write multi-bank 9 $8000
+File 'bin\ColouriseLeft.bin' read $196 to use $196
+New bank $a
+ Write multi-bank 10 $8000
+File 'bin\Char0To1_40.bin' read $14d1 to use $14d1
+File 'bin\Char1To0_40.bin' read $14d1 to use $14d1
+New bank $b
+ Write multi-bank 11 $8000
+File 'bin\ColouriseRight.bin' read $196 to use $196
+New bank $c
+ Write multi-bank 12 $8000
+File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1
+File 'bin\Char1To0_m40.bin' read $15c1 to use $15c1
+New bank $d
+ Write multi-bank 13 $8000
+File 'bin\Char0To1_41.bin' read $148f to use $148f
+New bank $e
+ Write multi-bank 14 $8000
+File 'bin\Char1To0_41.bin' read $148f to use $148f
+New bank $f
+ Write multi-bank 15 $8000
+File 'bin\Char0To1_39.bin' read $148f to use $148f
+New bank $10
+ Write multi-bank 16 $8000
+File 'bin\Char1To0_39.bin' read $148f to use $148f
+New bank $11
+ Write multi-bank 17 $8000
+File 'bin\Char0To1_m41.bin' read $1579 to use $1579
+New bank $12
+ Write multi-bank 18 $8000
+File 'bin\Char1To0_m41.bin' read $1579 to use $1579
+New bank $13
+ Write multi-bank 19 $8000
+File 'bin\Char0To1_m39.bin' read $1579 to use $1579
+New bank $14
+ Write multi-bank 20 $8000
+File 'bin\Char1To0_m39.bin' read $1579 to use $1579
+New bank $15
+ Write multi-bank 21 $8000
+File 'bin\Colour_1.bin' read $148f to use $148f
+New bank $16
+ Write multi-bank 22 $8000
+File 'bin\Colour_m1.bin' read $148f to use $148f
+New bank $17
+ Write multi-bank 23 $8000
+File 'bin\Colour_40.bin' read $15c1 to use $15c1
+New bank $18
+ Write multi-bank 24 $8000
+File 'bin\Colour_m40.bin' read $15c1 to use $15c1
+New bank $19
+ Write multi-bank 25 $8000
+File 'bin\Colour_39.bin' read $1579 to use $1579
+New bank $1a
+ Write multi-bank 26 $8000
+File 'bin\Colour_m39.bin' read $1579 to use $1579
+New bank $1b
+ Write multi-bank 27 $8000
+File 'bin\Colour_41.bin' read $1579 to use $1579
+New bank $1c
+ Write multi-bank 28 $8000
+File 'bin\Colour_m41.bin' read $1579 to use $1579
+New bank $1d
+ Write multi-bank 29 $8000
+File 'bin\BlockStrips.bin' read $c35 to use $c35
+New bank $1e
+ Write multi-bank 30 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $8ef8
+New bank $1f
+ Write multi-bank 31 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $6ef8
+New bank $20
+ Write multi-bank 32 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $4ef8
+New bank $21
+ Write multi-bank 33 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $2ef8
+New bank $22
+ Write multi-bank 34 $8000
+File 'bin\Scroller1.cmp' read $8ef8 to use $ef8
+New bank $23
+ Write multi-bank 35 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $7eb3
+New bank $24
+ Write multi-bank 36 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $5eb3
+New bank $25
+ Write multi-bank 37 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $3eb3
+New bank $26
+ Write multi-bank 38 $8000
+File 'bin\Scroller2.cmp' read $7eb3 to use $1eb3
+New bank $27
+ Write multi-bank 39 $8000
+File 'bin\Title.cmp' read $463e to use $463e
+New bank $28
+ Write multi-bank 40 $8000
+File 'bin\Title.cmp' read $463e to use $263e
+New bank $29
+ Write multi-bank 41 $8000
+File 'bin\Title.cmp' read $463e to use $63e
+New bank $2a
+ Write multi-bank 42 $8000
+New bank $2b
+ Write multi-bank 43 $8000
+Finished adding chunks
+File 'Scroller.crt' wrote $5c320

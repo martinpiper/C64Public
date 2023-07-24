@@ -42,8 +42,15 @@ ZPTransform_rotY			= ZPTransform_VarBase + $28
 ZPTransform_rotZ			= ZPTransform_VarBase + $29
 
 
+!ifdef kTransform_wantViewTranslation {
+ZPTransform_posX			= ZPTransform_VarBase + $2a
+ZPTransform_posY			= ZPTransform_VarBase + $2b
+ZPTransform_posZ			= ZPTransform_VarBase + $2c
 
+ZPTransform_endVars			= ZPTransform_VarBase + $2d
+} else {
 ZPTransform_endVars			= ZPTransform_VarBase + $2a
+}
 
 !if ZPTransform_endVars >= $100 {
 !error "ZPTransform_endVars is out of zeropage"

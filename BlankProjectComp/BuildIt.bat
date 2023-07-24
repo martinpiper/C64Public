@@ -39,4 +39,4 @@ rem ..\bin\LZMPi.exe -ce c:\temp\t7.bin  c:\temp\tc7.bin
 rem ..\bin\LZMPi.exe -ce c:\temp\t8.bin  c:\temp\tc8.bin
 rem ..\bin\LZMPi.exe -ce c:\temp\t9.bin  c:\temp\tc9.bin
 rem ..\bin\LZMPi.exe -ce c:\temp\t10.bin c:\temp\tc10.bin
-rem ^^ Then trim last 5 bytes since they are not really needed for fixed lenght decompress
+rem ^^ Then trim last 5 bytes since they are not really needed for fixed length decompress

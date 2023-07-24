@@ -1,3 +1,93 @@
+* Using the vectors layer
+	Convert "Bad Apple" video, which is two colours, to RLE encoded screens
+	Have black as transparent
+		Add APU colour bars behind
+	Frame compression could be:
+		1 bit : Starting colour choice
+		9 bits : RLE length
+		0 = end of RLE for frame
+		Then round up to the next byte obviously...
+		C64 can decompress this into vector layer bytes quite quickly
+	>> Using ImageToBitplane: --rgbshift 4 4 4 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 16 --image "C:\work\C64\Animation\RawFrames2\frm00001.bmp" --outputpalettes target/vectors_paletteData.bin --outputvectors 1 20 2 255 target/vectors_Data.bin --convertwritepass
+	Probably will need to use cartridge video delta frame file layout to advance frames
+	Add extra screen, like sprite animation, scrolling text screen etc
+	Use vectors layer merged with something else for the current hardware... Once the combination board arrives
+	
+		
+	
+		
+
+
+
+
+* Add 3D demo, move the code from the BDD6502 vector test
+	>> Added @Demo12
+	Identify code that would benefit from hardware acceleration
+	Candidates are transformation, edge scanning
+	* Done: 3D source in ../VectorPlotBitmap/ will need to be copied into the SDK release build
+	* Add different model definitions, perhaps the letters for MEGAWANG?
+	* Done: Add proper Vectors.a setup and macros using the setup from the scenario
+	* Done: VectorPlot_drawSpansInternal needs to be extracted
+	* Done: Add extra positition transform
+	* Done: Add joystick control options:
+		Fire = Stop auto rotation
+		Fire+left = Do pos
+		Fire+right = Do rot
+		Fire+Up/down = Z pos
+		Directions = pos/rot
+	* Use the fast sort code, while reusing the index pointers from frame to frame, to sort the polygons?
+		There is also an obvious optimisation here to use a BSP tree for polygon ordering if there is only one model, or models are not intersecting
+	* Done: Add border configuration options: kVectorHardware_sideBarsSizeLeft and kVectorHardware_sideBarsColourRight
+	* Wraparound the rot values correctly, not just clamp to 0, upper and lower bounds
+	* Done: Consider colour offset for the "space ship" engines, since they are currently not visible with lighting enabled
+		Optional lighting toggle?
+			See: ; Colour bias
+		Ah ha, it's because the engines are not separated from the rear ship faces. Adjust these.
+			Find the rear ship faces by disabling them, then see how to remove their overdraw...
+				Reorder the faces in the mesh or trace the engine edge properly...
+					Note: "; Engines" and "; Rear plane"
+						Note the small "triangle" engine segments flicker because of the backface cull bugging out on the "triangle"
+					> Reordering "; Rear plane" to be last enables the engines to be seen. A lot easier than separating out the faces properly.
+	* Done: Optimise face render function depending on backface cull and lighting options
+	* Colour upper and lower bounds check config "cmp #$08" etc
+		Needs lower and upper value config with current default if not set
+	* Add option to increase vertical or horizontal resolution of the calculation
+	* Increase accuracy of the 3D calculation, including screen edge clipping and near Z clipping
+					
+
+
+
+
+* HardwareTest_VideoInit needs APU stop
+	Perhaps put into Video_DisableDisplay instead, since the APU is causing unstable video hardware init
+		>> By running demo1 without any extra APU reset the hardware failed to start after DisableDisplay.
+			However running the demo6 cartridge, then reseting the C64 on the "Loading" screen, which disables the APU
+			This allowed an unmodified demo1 to execute correctly
+	Or perhaps have an explicit Hardware_Init which does bus, audio, APU disable etc
+		Then add this before every Video_DisableDisplay
+	And also Video_InitDisplaySpritesScrollsBackground
+	Update main4.a to remove extra APU disable code...
+	Test the hardware still works after that...
+
+
+
+
+* Update demo 1 and demo 4 for hardware
+	Include music data decompress for demo 1
+	Add turrican title/game music to demo 4
+
+
+
+
+* Move HardwareTest_AudioInit out and create proper defines for the ebbs/address
+
+
+
+
+* APU demo, possible to create entirely APU originated effects for raster bar logo colour gradient table movement animation and also screen scrolling
+
+
+
 * Demo9: Space Harrier music choice: https://twitter.com/MartinPiper/status/1546801837755355141
 	https://www.youtube.com/watch?v=Hzgrb-mjLaM
 	* This one: https://modarchive.org/index.php?request=view_player&query=57939
@@ -9,7 +99,18 @@
 	** Code in Demo9\RenderFloor currently generates a tile/chars screen that uses quite a lot of chars.
 		Really this needs the APU to set the horizontal scroll plus palette to animate the floor.
 		** The code can generate the palette change animation table though :)
-
+		Code can generate a 256 row image, each row corresponds to that particular distance.
+		The screen position of each row is a function of the height.
+		It would be possible to generate tables for each Y height (byte) to select screen rows (byte) to draw.
+			For around 128 screen lines
+			>> Generated assets\Demo9\RenderFloor\out\floor.png and HeightToRowsX
+		The APU can then render each Y position
+		>> First test mostly works, once the rows table included the position minus the expected screen draw vertical offset
+			Note the word values in APULineScrolls all seem to have > = $300 so optimise this to a byte
+			* The far rows need to select a suitable transparent line instead of repeating the same value...
+			* The Z rows table could use double the resolution to remove some of the jagged lines?
+			* Since the APU knows what line it just waited for, can it subtract the line from the table value itself? This would potentially reduce the data needed for the X scroll lookup table entry.
+				Although if the table is expanded, then this wouldn't be possible with only an 8 bit subtract without any carry as the current design has limited ALU capability
 
 
 
@@ -48,18 +149,8 @@
 
 
 * https://www.spriters-resource.com/arcade/streetfighter2/sheet/117307/
+	https://www.spriters-resource.com/arcade/streetfighter2/sheet/27200/
 
-
-
-
-* main7.a
-	While writing to StackedSpriteData with MEmitSpriteFrameOffsetXY
-	Calculate the difference to the previous sprite
-	If it is > 16 and if the X store index < 24*4 then store that as the last best possible point for a simple multiplex point
-		Then possile to pick the next restart point after another 24 sprites
-	The index sort from the C64 multiplexor can be used on the Y positions of the animation entries
-	Then try waiting for that position using MBus24Bit_WaitUntilRasterY
-	Then output the next part of the sprites
 
 
 

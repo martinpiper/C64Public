@@ -6,10 +6,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,6 +14,8 @@ import java.util.stream.Collectors;
 public class Main {
 
     static public void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
+        PrintWriter outPlacement = new PrintWriter(new File(args[2]+"Placement.a"));
+        generatedWarning(outPlacement);
         Properties properties = new Properties();
         properties.load(new FileInputStream(args[0]));
         Set<String> keys = properties.stringPropertyNames();
@@ -67,6 +66,10 @@ public class Main {
         NodeList objects = documentElement.getElementsByTagName("object");
         List<ActivationObject> activationObjects = new ArrayList<>();
 
+        LinkedHashSet<String> fileData = new LinkedHashSet<String>();
+        LinkedHashSet<String> fileActivation = new LinkedHashSet<String>();
+        LinkedHashSet<String> fileCode = new LinkedHashSet<String>();
+
         int maxX = 0;
         int maxY = 0;
         for (int i = 0 ; i < objects.getLength(); i++) {
@@ -81,6 +84,32 @@ public class Main {
             if (objectName == null) {
                 System.err.println(args[1]+"(1) : Error : Object: " + id + " : Frame index not found: " + gid);
             } else {
+
+                for (int a = 0 ; a < 100 ; a++) {
+                    String value = properties.getProperty(objectName+".data."+Integer.toString(a));
+                    if (value != null && !value.isEmpty()) {
+                        if (value.charAt(0) == '_') {
+                            value = '\t' + value.substring(1);
+                        }
+                        fileData.add(value);
+                    }
+                    value = properties.getProperty(objectName+".activation."+Integer.toString(a));
+                    if (value != null && !value.isEmpty()) {
+                        if (value.charAt(0) == '_') {
+                            value = '\t' + value.substring(1);
+                        }
+                        fileActivation.add(value);
+                    }
+                    value = properties.getProperty(objectName+".code."+Integer.toString(a));
+                    if (value != null && !value.isEmpty()) {
+                        if (value.charAt(0) == '_') {
+                            value = '\t' + value.substring(1);
+                        }
+                        fileCode.add(value);
+                    }
+                }
+
+
                 ActivationObject activationObject = new ActivationObject(objectName,x ,y-21);
                 if (activationObject.getXpos() > maxX) {
                     maxX = activationObject.getXpos();
@@ -88,13 +117,13 @@ public class Main {
                 if (activationObject.getYpos() > maxY) {
                     maxY = activationObject.getYpos();
                 }
-                System.out.println("\t\t+AnimationEnemyMapPlacement ~.placedEnemy" + activationObjects.size()+" , " + objectName + "\t, " + activationObject.getXpos() +" , " + activationObject.getYpos());
+                outPlacement.println("\t\t+AnimationEnemyMapPlacement ~.placedEnemy" + activationObjects.size()+" , " + objectName + "\t, " + activationObject.getXpos() +" , " + activationObject.getYpos());
                 activationObjects.add(activationObject);
             }
         }
 
-        System.out.println();
-        System.out.println("; Num: + " + activationObjects.size() + " Max: " + maxX + " , " + maxY);
+        outPlacement.println();
+        outPlacement.println("; Num: + " + activationObjects.size() + " Max: " + maxX + " , " + maxY);
 
         TreeMap<Integer,Integer> []rangesX = new TreeMap[(maxX/8)+1];
         TreeMap<Integer,Integer> []rangesY = new TreeMap[(maxY/8)+1];
@@ -113,14 +142,14 @@ public class Main {
         }
 
         // Generate X list
-        System.out.println("AnimationEnemyMapPlacementsX");
+        outPlacement.println("AnimationEnemyMapPlacementsX");
         int prevIndex = -1;
         for (int i = 0 ; i < rangesX.length ; i++) {
             if (rangesX[i] == null) {
                 continue;
             }
             int nextIndex = -1;
-            System.out.println(".mapX" + i);
+            outPlacement.println(".mapX" + i);
             for (int j = i+1 ; j < rangesX.length ; j++) {
                 if (rangesX[j] != null) {
                     nextIndex = j;
@@ -135,24 +164,24 @@ public class Main {
             if (prevIndex != -1) {
                 prevText = ".mapX" + prevIndex;
             }
-            System.out.println("\t+AnimationEnemyMapPlacement_PosBlock " + rangesX[i].size() + " , " + nextText + " , " + prevText);
+            outPlacement.println("\t+AnimationEnemyMapPlacement_PosBlock " + rangesX[i].size() + " , " + nextText + " , " + prevText);
             for (int key : rangesX[i].keySet()) {
                 int activationObjectIndex = rangesX[i].get(key);
-                System.out.println("\t+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy" + activationObjectIndex + "\t\t; " + activationObjects.get(activationObjectIndex).getYpos());
+                outPlacement.println("\t+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy" + activationObjectIndex + "\t\t; " + activationObjects.get(activationObjectIndex).getYpos());
             }
             prevIndex = i;
         }
 
         // Generate Y list
-        System.out.println();
-        System.out.println("AnimationEnemyMapPlacementsY");
+        outPlacement.println();
+        outPlacement.println("AnimationEnemyMapPlacementsY");
         prevIndex = -1;
         for (int i = 0 ; i < rangesY.length ; i++) {
             if (rangesY[i] == null) {
                 continue;
             }
             int nextIndex = -1;
-            System.out.println(".mapY" + i);
+            outPlacement.println(".mapY" + i);
             for (int j = i+1 ; j < rangesY.length ; j++) {
                 if (rangesY[j] != null) {
                     nextIndex = j;
@@ -167,14 +196,43 @@ public class Main {
             if (prevIndex != -1) {
                 prevText = ".mapY" + prevIndex;
             }
-            System.out.println("\t+AnimationEnemyMapPlacement_PosBlock " + rangesY[i].size() + " , " + nextText + " , " + prevText);
+            outPlacement.println("\t+AnimationEnemyMapPlacement_PosBlock " + rangesY[i].size() + " , " + nextText + " , " + prevText);
             for (int key : rangesY[i].keySet()) {
                 int activationObjectIndex = rangesY[i].get(key);
-                System.out.println("\t+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy" + activationObjectIndex + "\t\t; " + activationObjects.get(activationObjectIndex).getXpos());
+                outPlacement.println("\t+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy" + activationObjectIndex + "\t\t; " + activationObjects.get(activationObjectIndex).getXpos());
             }
             prevIndex = i;
         }
 
+        outPlacement.flush();
+        outPlacement.close();
 
+        PrintWriter outData = new PrintWriter(new File(args[2]+"Data.a"));
+        generatedWarning(outData);
+        PrintWriter outActivation = new PrintWriter(new File(args[2]+"Activation.a"));
+        generatedWarning(outActivation);
+        PrintWriter outCode = new PrintWriter(new File(args[2]+"Code.a"));
+        generatedWarning(outCode);
+
+        for (String line : fileData) {
+            outData.println(line);
+        }
+        for (String line : fileActivation) {
+            outActivation.println(line);
+        }
+        for (String line : fileCode) {
+            outCode.println(line);
+        }
+
+        outData.flush();
+        outData.close();
+        outActivation.flush();
+        outActivation.close();
+        outCode.flush();
+        outCode.close();
+    }
+
+    private static void generatedWarning(PrintWriter outPlacement) {
+        outPlacement.println("; This file is automatically generated, do not edit!");
     }
 }

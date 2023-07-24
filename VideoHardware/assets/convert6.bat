@@ -10,7 +10,7 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "ShadowBeast/just blimps.png" "ShadowBeast/ani_beast.png" "../tmp/sprites2.png"
 
 echo Calculate optimal palette
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --palettesize 16 --rgbshift 4 4 4 --newpalettes --chars --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "ShadowBeast/beast_attract_playfield_1_1024.png" --tilewh 8 8 --nowritepass --image "ShadowBeast/game foreground.png" --tilewh 8 8 --nowritepass --nochars --image "../tmp/sprites1.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "../tmp/sprites2.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "ShadowBeast/Shadow of the Beast - Background 2.png" --tilewh 16 16 --imagequantize 16 --outputpalettes ../tmp/ShadowBeastPaletteData.bin --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --palettesize 16 --rgbshift 4 4 4 --newpalettes --chars --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "ShadowBeast/beast_attract_playfield_1_1024.png" --tilewh 8 8 --nowritepass --image "ShadowBeast/game foreground.png" --tilewh 8 8 --nowritepass --nochars --image "../tmp/sprites1.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "../tmp/sprites2.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "ShadowBeast/Shadow of the Beast - Background 2.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "ShadowBeast/sprites2.png" --tilewh 32 32 --imagequantize 16 --outputpalettes ../tmp/ShadowBeastPaletteData.bin --convertwritepass
 
 echo Convert chars
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --splitmaps --palettesize 16 --rgbshift 4 4 4 --chars --newpalettes --loadpalette ../tmp/ShadowBeastPaletteData.bin --numbitplanes 4 --image "ShadowBeast/beast_attract_playfield_1_1024.png" --tilewh 8 8 --fitpalettes --nostacking --outputplanes ../tmp/ShadowBeastChars_plane --outputscrcol ../tmp/ShadowBeastChars_map.bin --convertwritepass
@@ -28,6 +28,9 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 
 echo Convert sprites 2
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --palettesize 16 --rgbshift 4 4 4 --newpalettes --loadpalette ../tmp/ShadowBeastPaletteData.bin --numbitplanes 4 --image "../tmp/sprites2.png" --tilewh 16 16 --fitpalettes --nostacking --outputplanes ../tmp/ShadowBeastSprites2_plane --outputsprites ../tmp/ShadowBeastSprites2Sheet.txt --convertwritepass
+
+echo Convert scaled sprites
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --paletteoffset 0 --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --loadpaletteraw ../tmp/ShadowBeastPaletteData.bin --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "ShadowBeast/sprites2.png" --tilewh 32 32 --fitpalettes --outputscaled ../tmp/Demo6Sprites2 --outputsprites ../tmp/Demo6Sprites2Sheet.txt --namesuffix _scaled_  --convertwritepass
 
 echo Convert music
 cd ..\tmp

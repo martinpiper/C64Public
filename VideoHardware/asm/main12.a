@@ -1,0 +1,223 @@
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+; Enable this to send graphics data from code, however this only works if the data is small :)
+IncludeGraphicsData = 1
+;IncludeGraphicsData_L1=1
+
+; 3D defines
+kPoly2D_vertexBufferInZP = 1
+kSpanPlot_maxLen	= 156
+kSpanPlot_maxHeight	= 224
+kSpanCalc_maxSegments	= 8
+kTransform_wantViewTranslation = 1
+kVectorHardware_sideBarsSizeLeft	= $0e
+kVectorHardware_sideBarsColourRight	= $00
+
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+; Variables
+Vector_CurrentYPos	= $02
+ZPSegments_VarBase	= $03
+!source "SegmentsVars.a"
+ZPPoly2D_VarBase	= ZPSegments_endVars
+!source "Poly2DVars.a"
+ZPTransform_VarBase	= ZPPoly2D_endVars
+!source "TransformVars.a"
+
+!source "SegmentsMacros.a"
+!source "SpanCalcMacros.a"
+!source "Poly2DMacros.a"
+!source "TransformMacros.a"
+
+
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/APU.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+
+
+DisplayData
+	lda #kBus24Bit_VideoLayer_EBBS
+	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
+	jsr Bus24Bit_SetAddressBus
+	+MWordValueTo_AX GamePalette
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+	inc VIC2BorderColour
+
+	rts
+
+GamePalette
+	!bin "tmp/Demo10PaletteData.bin"
+	!fill 512 , 0
+
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+	jsr HardwareTest_VideoPattern0
+
+;	jsr Video_DisableDisplay
+;	jsr DisplayData
+	jsr VectorHardwareInit
+	jsr VectorHardwareInitPalette
+;	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+;	lda #$29	; A little wider on the left
+	sta CIA2PortBRS232
+
+;	lda #kVideo_EnableDisplay_Enable
+;	jsr Video_EnableDisplay
+
+	jsr Video_SetAddressMergeLayer
+	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Dither
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
+	; 3D Test
+	jsr Transform_Init
+	lda #1
+	jsr Transform_loadMesh
+
+mainLoop2
+	jsr Video_WaitVBlank
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_EBBS , kBus24Bit_VectorsScreen_Registers
+	+MBus24Bit_Send8BitValue 1
+	jsr renderFrame
+	jsr VectorPlot_drawSpansLo
+
+	jsr Video_WaitVBlank
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_EBBS , kBus24Bit_VectorsScreen_Registers
+	+MBus24Bit_Send8BitValue 0
+	jsr renderFrame
+	jsr VectorPlot_drawSpansHi
+
+	jmp mainLoop2
+
+.doRotation !by 0
+.doAutoRotation !by 1
+
+renderFrame
+	; Start rendering
+	jsr Segments_initStorage
+	ldx #0
+	ldy #kSpanPlot_maxHeight
+	jsr Segments_initListHeaders
+
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+!if 1 {
+	lda .doAutoRotation
+	beq .noAutoRot
+	inc ZPTransform_rotX
+	inc ZPTransform_rotX
+	inc ZPTransform_rotX
+	inc ZPTransform_rotY
+	inc ZPTransform_rotY
+	inc ZPTransform_rotZ
+.noAutoRot
+}
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+
+	lda #0
+	sta .doAutoRotation
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUpFire
+	inc ZPTransform_posZ
+.notUpFire
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDownFire
+	dec ZPTransform_posZ
+.notDownFire
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeftFire
+	lda #0
+	sta .doRotation
+.notLeftFire
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRightFire
+	lda #1
+	sta .doRotation
+.notRightFire
+	jmp .overFire
+
+.notFire
+	lda .doRotation
+	beq .doPos
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notPosUp
+	dec ZPTransform_rotY
+.notPosUp
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notPosDown
+	inc ZPTransform_rotY
+.notPosDown
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notPosLeft
+	dec ZPTransform_rotX
+.notPosLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notPosRight
+	inc ZPTransform_rotX
+.notPosRight
+
+	jmp .overFire
+.doPos
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	dec ZPTransform_posY
+.notUp
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	inc ZPTransform_posY
+.notDown
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	dec ZPTransform_posX
+.notLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	inc ZPTransform_posX
+.notRight
+.overFire
+
+	rts
+
+
+!source "VectorHardware.a"
+!source "SegmentsMemory.a"
+!source "Segments.a"
+!source "Poly2D.a"
+!source "Poly2DMem.a"
+!source "Transform.a"
+!source "TransformMem.a"
+!source "TransformTables.a"
+!source "3DModels.a"
+!source "BombJack/stdlib/HardwareTest.a"

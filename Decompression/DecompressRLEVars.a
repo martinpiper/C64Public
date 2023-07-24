@@ -9,6 +9,7 @@ RNXPCompressionDecompress_WriteByte	sta RNXPCompressionDecompress_WriteByteAddr
 RNXPCompressionDecompress_WriteBytesmAddr = RNXPCompressionDecompress_WriteByte + 1
 	inc RNXPCompressionDecompress_WriteBytesmAddr+0
 	bne .e1
+	+RNXPCompressionDecompress_WriteByteAddrHi
 	inc RNXPCompressionDecompress_WriteBytesmAddr+1
 .e1
 	rts

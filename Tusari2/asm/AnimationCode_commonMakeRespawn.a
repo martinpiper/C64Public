@@ -1,0 +1,78 @@
+	+DoAnimationActivationObject ~AnimationObject_explosion , AnimationInit_explosion , -1 , 0 , 0
+
+!zn
+AnimationDelete_commonMakeRespawn
+	+MAnimation_MakeObjectRespawnFrom Animation_ActivationObjectIndex
+	rts
+
+
+!zn
+Animation_makeExplode
+	txa
+	pha
+	tay
+	+MWordValueTo_AX AnimationFrames_Explosion
+	jsr Animation_ForceSet
+	+MAnimation_SetFuncs 0 , 0
+
+	lda #1
+	jsr SFXInit
+
+	pla
+	tax
+	rts
+
+
+!zn
+AnimationInit_explosion
+	jsr Animation_FindFreeSlot
+	bcs .error2
+	+MWordValueTo_AX AnimationFrames_Explosion
+	jsr Animation_ForceSet
+	jsr AnimationCommonSetInitPosition
+	; Interesting colour choice
+	tya
+	sta AnimationSpriteColour,y
+
+	+MAnimation_SetFuncs 0 , 0
+
+	clc
+.error2
+	rts
+
+
+
+AnimationTick_detectHitExplode
+	+MAnimation_CalculateShifted_X
+	+MAnimation_DetectBoundingBoxCollisionWithIndexShifted .isHit , 2 ,	10 , 20 , 10 , 20
+	+MSpritePosToCharacterLookupShifted .rejectRoutine2 , AnimationXPosShifted , AnimationYPos , BulletScreenBankHi , tempWork0 , tempWork1 , ZP_SpriteXPosToScreenCharPoslo , ZP_SpriteYPosToScreenCharPosLolo , ZP_SpriteYPosToScreenCharPosHilo
+	lda (tempWork0),y
+	bpl .hitExplodeCheck
+	tya
+	sec
+	sbc #VIC2ScreenCharsWidth
+	tay
+	lda (tempWork0),y
+	bpl .hitExplodeCheck
+	
+	jmp .rejectRoutine2
+
+.hitExplodeCheck
+	; The char effects index
+	tay
+	lda #-1
+	sta CharEffectsTime,y	; Kill the char effect
+	; +MAnimation_StopObjectRespawnFrom is not really needed since the explosion will not restore the MapPlacement_spawnedFlag, so it stays dead *if* the object has a respawn time of -1. Which most objects do
+	; However it is needed if the object has a respawn time. So to be safe set it here.
+.isHit
+	+MAnimation_StopObjectRespawnFrom Animation_ActivationObjectIndex
+	jsr Animation_makeExplode
+	+MWordValueTo_AX .scoreForGeneric
+	jsr ScoreAdd
+	rts
+
+.scoreForGeneric
+	+MScoreData 6 , 3
+
+.rejectRoutine2
+	rts

@@ -1,20 +1,36 @@
 	; Copy across the updated scroll values
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll0
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll1
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll2
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll3
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll4
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll5
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll6
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll7
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll8
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll9
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll10
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdate16Bits APU_Scroll11
 
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APU_Scroll0Chars , 2
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APU_Scroll1Chars , 2
 
 	; Blimps
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Blimp1 , kAPUData_Blimp1DataNum * 4
+;	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Blimp2 , kAPUData_Blimp2DataNum * 4

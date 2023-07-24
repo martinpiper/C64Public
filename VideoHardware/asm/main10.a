@@ -78,7 +78,7 @@ mainLoop
 	sta CIA2PortBRS232
 
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3

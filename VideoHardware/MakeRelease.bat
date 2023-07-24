@@ -14,6 +14,8 @@ mkdir ..\..\Builds\VideoHardwareSDK\C64
 mkdir ..\..\Builds\VideoHardwareSDK\C64\stdlib
 mkdir ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux
 mkdir ..\..\Builds\VideoHardwareSDK\C64\VideoHardware
+mkdir ..\..\Builds\VideoHardwareSDK\C64\Decompression
+mkdir ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap
 
 mkdir ..\..\Builds\VideoHardwareSDK\ImageToBitplane
 mkdir ..\..\Builds\VideoHardwareSDK\ImageToBitplane\target
@@ -33,9 +35,13 @@ xcopy ..\..\BombJack\stdlib\* ..\..\Builds\VideoHardwareSDK\BombJack\stdlib\ /s
 
 xcopy ..\..\C64\README.md ..\..\Builds\VideoHardwareSDK\C64\
 xcopy ..\..\C64\acme.exe ..\..\Builds\VideoHardwareSDK\C64\
+xcopy ..\..\C64\python39.dll ..\..\Builds\VideoHardwareSDK\C64\
 xcopy ..\..\C64\bin\* ..\..\Builds\VideoHardwareSDK\C64\bin\ /s
 xcopy ..\..\C64\stdlib\* ..\..\Builds\VideoHardwareSDK\C64\stdlib\ /s
 xcopy ..\..\C64\BerzerkRedux\Rand.a ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux\ /s
+xcopy ..\..\C64\Decompression\Decomp*.a ..\..\Builds\VideoHardwareSDK\C64\Decompression\
+xcopy ..\..\C64\VectorPlotBitmap\*.a ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap\
+
 xcopy ..\..\C64\VideoHardware\README.md ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 copy "..\..\C64\VideoHardware\SDK README.md" ..\..\Builds\VideoHardwareSDK\README.md
 xcopy ..\..\C64\VideoHardware\BuildIt*.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\

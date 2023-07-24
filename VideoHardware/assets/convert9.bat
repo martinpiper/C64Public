@@ -6,12 +6,16 @@ if not exist ..\tmp mkdir ..\tmp
 rem c:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe "C:\Users\Martin Piper\Downloads\32X32-F6.png" -sample 160x96! "C:\Users\Martin Piper\Downloads\16X16-F6.png"
 rem c:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe "C:\Users\Martin Piper\Downloads\tristarf.png" -sample 240x144! "C:\Users\Martin Piper\Downloads\tristarf_2.png"
 
+echo Concat tiles
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "Demo9/tiles.png" "Demo9/RenderFloor/out/floor.png" "../tmp/Demo9Tiles.png"
+
+
 echo Calculate palettes
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "Demo9/sprites1.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "Demo9/sprites2.png" --tilewh 32 32 --imagequantize 16 --nowritepass --image "Demo9/chars.png" --imagequantize 20 --tilewh 8 8 --nowritepass --image "Demo9/tiles.png" --tilewh 16 16 --outputpalettes ../tmp/Demo9PaletteData.bin --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "Demo9/chars.png" --imagequantize 20 --tilewh 8 8 --nowritepass --image "Demo9/sprites1.png" --tilewh 16 16 --imagequantize 16 --nowritepass --image "Demo9/sprites2.png" --tilewh 32 32 --imagequantize 16 --nowritepass --image "../tmp/Demo9Tiles.png" --tilewh 16 16 --outputpalettes ../tmp/Demo9PaletteData.bin --convertwritepass
 
 
 echo Convert tiles
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --paletteoffset 0 --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --loadpaletteraw ../tmp/Demo9PaletteData.bin --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "Demo9/tiles.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo9Tiles_plane --outputscrcol ../tmp/Demo9Tiles_map.bin --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --paletteoffset 0 --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --loadpaletteraw ../tmp/Demo9PaletteData.bin --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "../tmp/Demo9Tiles.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo9Tiles_plane --outputscrcol ../tmp/Demo9Tiles_map.bin --convertwritepass
 ..\..\bin\LZMPi.exe -cr ..\tmp\Demo9Tiles_map.bin ..\tmp\Demo9Tiles_map.cmp
 ..\..\bin\LZMPi.exe -cr ..\tmp\Demo9Tiles_plane0.bin ..\tmp\Demo9Tiles_plane0.cmp
 ..\..\bin\LZMPi.exe -cr ..\tmp\Demo9Tiles_plane1.bin ..\tmp\Demo9Tiles_plane1.cmp
@@ -47,9 +51,12 @@ echo Convert music
 cd ..\tmp
 if not exist target mkdir target
 java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\fnkyldrt.mod" "target/MusicMW2000" 1 1
-rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "C:\Users\Martin Piper\Downloads\lotus2-title.mod" "target/MusicMW2000" 3 5
+rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "C:\Users\Martin Piper\Downloads\lotus2-title.mod" "target/MusicMW2000" 65535 66858
 rem java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --playmod "target/MusicMW2000"
-..\..\bin\LZMPi.exe -cr target\MusicMW2000Samples.bin target\MusicMW2000Samples.cmp
+..\..\bin\LZMPi.exe -cut target\MusicMW2000Samples.bin target\MusicMW2000Samples.bin1 0 32768
+..\..\bin\LZMPi.exe -cut target\MusicMW2000Samples.bin target\MusicMW2000Samples.bin2 32768
+..\..\bin\LZMPi.exe -cr target\MusicMW2000Samples.bin1 target\MusicMW2000Samples.cmp1
+..\..\bin\LZMPi.exe -cr target\MusicMW2000Samples.bin2 target\MusicMW2000Samples.cmp2
 
 
 java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\Demo9\spacehar.mod" "target/MusicMW2000_game" 1 1

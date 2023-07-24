@@ -49,7 +49,32 @@ start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
 	jsr MusicInit
+
+	lda #1
+	+MAPUAvoidRastersTableEntry 0 , 8
+	+MAPUAvoidRastersTableEntry 36 , 37
+	+MAPUAvoidRastersTableEntry 77 , 85
+	+MAPUAvoidRastersTableEntry 91 , 92
+	+MAPUAvoidRastersTableEntry 119 , 120
+	+MAPUAvoidRastersTableEntry 133 , 139
+	+MAPUAvoidRastersTableEntry 142 , 159
+	+MAPUAvoidRastersTableEntry 150 , 151
+	+MAPUAvoidRastersTableEntry 157 , 158
+	+MAPUAvoidRastersTableEntry 163 , 164
+	+MAPUAvoidRastersTableEntry 169 , 170
+	+MAPUAvoidRastersTableEntry 173 , 174
+	+MAPUAvoidRastersTableEntry 183 , 184
+	+MAPUAvoidRastersTableEntry 193 , 194
+	+MAPUAvoidRastersTableEntry 186 + 25	-1 , 186 + 25
+	+MAPUAvoidRastersTableEntry 188 + 25	-1 , 188 + 25
+	+MAPUAvoidRastersTableEntry 193 + 25	-1 , 193 + 25
+	+MAPUAvoidRastersTableEntry 198 + 25	-1 , 198 + 25
+	+MAPUAvoidRastersTableEntry 205 + 25	-1 , 205 + 25
+	+MAPUAvoidRastersTableEntry 210 + 25	-1 , 210 + 25
+
 	jsr DisplayScreen
 	jsr APU_Enable
 
@@ -59,11 +84,15 @@ mainLoop
 mainLoopGame
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
+;	jsr APU_Disable
+;	jsr RefreshAPUData
 	jsr UpdateCommonScrolls
+;	jsr APU_Enable
 	jsr CopySpriteFrameData
 
 	jsr Move_Blimps
 
+;	+MAPUAvoidRastersTest
 	jsr MusicPoll
 
 	jsr AnimationFrames_Process

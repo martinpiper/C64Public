@@ -586,3 +586,9 @@ Total
 			Added: s:data\smp_*.raw to build2_11.bat
 
 	Done - Long samples played with video. The video is obviously too slow to keep up with the sample so it goes out of sync.
+	
+	
+	
+* Consider these extra process stages: +dither -scale '50%x100%' -remap c64_palette.gif -resize '160x200'
+	-sample '200%x100%'
+	Done in AnimationBitmap\Animation11\conv.bat

@@ -1,58 +1,76 @@
 * C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor %cd%\Scroller.crt
-* For editing the levels: C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe
-* For editing enemy placement: C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe
-* For editing the score panel: C:\Work\C64\ExternalTools\CharPad 2.0 310715\CharPad.exe
-* C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe
+* For editing the levels: "C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe"
+* For editing enemy placement: "C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe"
+	Open TMX files: "C:\Work\C64\Tusari2\exported assets\Level1.tmx"
+	Or use command line: "C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe" "C:\Work\C64\Tusari2\exported assets\Level1.tmx"
+* For editing the score panel: "C:\Work\C64\ExternalTools\CharPad 2.0 310715\CharPad.exe"
+* For editing sprites: "C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe"
+* For editing music and sound effects: "C:\Work\C64\MusicStudio2\MusicStudio\Release\MusicStudio.exe"
 
 
-* ; Will also need to handle more SFX channels with music off... See Citadel2 code that also uses MusicPlayerStop
-	And AnimationStopMusic SFX_Voices SFX_VoiceLowerReset SFX_VoiceUpperWrap
-	Also need to handle the music conversion better: MusicAndSFX_TusariLevel1.prg
-		Need some obvious effects linked it to test the build pipeline for using the export command line arguments
-		See: C:\Work\C64\Citadel2\Sound\buildSound.bat
+
+
+* Design doc, art references
+	The split level grants either water or fire spell upgrade depending on the route chosen
+
+
+
+
+* Add shooting ceiling trap enemy
+
+
+
+
+* To optimise the char effects: CharEffects_DebugBorder = 1
+	Perhaps for red BeforeScrollers remove any previously rendered data and set the CharEffectsScrH to be -1
+	Then for green AfterScrollers 
+		This really needs to account for any screen movement... Hmm...
+			The proposed screen movement is known, but whether it will be actioned that frame is another matter. This needs checking before the draw and movement is decoupled.
+	> Would it help if the raster position for IrqTopOfScreen was moved down?
+		Would this allow any code (like the char effects update code) to have more time before ScrollerUpdateTopIRQ?
+
+
+
+
+* Rock explosion causes screen shake?
+
+
+
+
+
+* Weapons upgrades need to show in score panel
+	Add icons for each upgrade level?
+		Blue sword not white sword for held power?
+
+
+
+
+* Add spawning of objects that are on the start screen position
+	Can be done by fake shifting the start a whole screen up/down (direction depends on position) (plus a bit more), then iterating over each char row and "scrolling" the sprites
+		All while being hidden without any animation
+
+
+
+* Make a macro for choosing what to execute next, to reduce the #6 magic number and jmp address risk:
+		lda #6
+		jsr CartSelectBank_8K
+		jmp C64Cartridge_Lo_8K
+
+
+
+
+* MusicStudio could export these sound effect values for "jsr SFXInit" as nicely formatted labels includes
+	Use the text name of the effect with suitable label escaping
+
+
+
+* The most common use pattern for SFX is to set the note first. Have an optional first note value in MusicStudio that removes the need to supply a note value for the SFXPlay.
+
 
 
 
 
 * "; Kill the char effect" to common macro code
-
-
-
-* Late jump, for a few frames after starting to fall, allow a jump.
-
-
-
-
-* Boss PoC
-	Added boss sprites and map placement
-	Need some simple AI
-		Jump with leg animation
-		Throw rock
-
-
-
-
-* Sword, press space to switch?
-	Short range slash - Sprite
-	High damage
-	Covers +/- 45 degrees from the joystick 8-way direction
-	Blocks (parry) all damage from the area covered while slashing
-	Upgrade with slightly longer range multiple sword effect?
-	Done: For simple collision detection can emit animated chars, like the daggers, which will also cause damage to enemies
-		These do not need to be deleted on collision to enable them to kill other enemies... Ignore "; Kill the char effect" and CharEffectsTime write
-	The last sword swipe direction can be stored to help push the player away from hit enemies
-	>> Added sprite simple animation for .swordRight and .swordLeft
-	Done: * Need to move the sword frames up and down depending on the animation frame
-
-
-
-* Daggers, starts with one, upgrade to 2 then 3 then directional 8-way spread shot +/ 45 degrees?
-
-
-
-
-* Optionally unroll Scroller_ScrollSprites
-
 
 
 
@@ -75,7 +93,8 @@
 
 
 * Hidden power-up block, turns into standable block when shot
-	Releases power-ups
+	Also not hidden block that can be placed
+	Releases power-ups, colour coded or small icons
 
 
 
@@ -89,4 +108,74 @@
 
 
 
-* ; TODO: This stops the in-game music. Normally this would be a choice from the title screen code
+* Detect NMI line timing (VIC type and PAL/NTSC) and then calculate suitable values into .rasterToTimeL at runtime
+
+
+
+
+* If the splayer is rapidly walking left/right over a one block step, sometimes the player gets caught inside the step and cannot move left/right (but can jump straight up)
+	This might need some careful adjustment around "; Little jump" tests
+	Can use the title screen "level" and automated movement to debug this
+
+
+
+
+* NTSC: Jumping up shows a colour update timing issue in some places on the map.
+	Check other directions, especially the horizontal scroll in this map area
+	Check the colour scroll timing for this particular direction, it might be trying to update too much for the part of the screen, it might be trying to update too much of the lower portion of the screen before the top.
+		The scroll might be chasing the raster down the screen badly.
+		NTSC scroll issue might be due to music in IRQ
+			>> Possibly yes: Scroller_DoMusicUpdateInIRQ
+			>> Need to reproduce reliably
+				Might be able to compensate with: Scroller_ColourScrollRasterAbortLevel
+			>> Find out if it's running: Scroller\CartCode\Scroll_40.a or Scroller\CartCode\Scroll_m40.a by detecting if it's running ScrollerDrawStripTopColour or ScrollerDrawStripBottomColour
+				When ScrollerDrawStripTopColour to the right of the start position when the dragon floating in the air is visible. Stand on the steps down to the right and jump up.
+					The top hill/ground part that ajoins the blue sky shows cyan flickering.
+					Perhaps even more noticable with music+SFX enabled.
+				>> ScrollColour_40
+				For PAL, first jsr to cart $8000: start line 254 end line 305
+				Second jsr cart: start 306 end 75
+				Third (colourise): start 77 end 86
+				For NTSC, first: start 253 end 65
+				Second: start 66 end 136
+				Third: start 137 end 146
+					And the flickering is mostly seen 11 chars from the top of the screen
+				NTSC options:
+				>> Added ScrollBankSplitAdjustLines to adjust the top scroll chunk downwards a few lines, which helped the middle flickering but then the top of the screen had flickering instead
+					So removed this option
+				>> Setting: Scroller_AdditionalCharLines = 0
+					Really did help
+				>> Also removing: Scroller_DoMusicUpdateInIRQ = 1
+					Also helped
+				>> Perhaps NTSC really just needs a smaller play area and bigger score panel?
+			* Could probably do with a "raster position" assert to check that the top scroll finishes before the raster postion of the last scrolled line for the top
+			* ScrollerDrawStripTopColour should be between the top half scroll and the bottom half scroll? Since the top half of the screen is done
+			Perhaps add a third jsr for the "bottom part" that is extra for PAL and not for NTSC since NTSC uses fewer lines?
+			** Check there the music update is happening, it should be underneath the top sprites update, after the NMI timing has been read and initialised.
+				This is because there seems to be not enough time after the score panel, when using the large scrolling area, to update the NMI timers?
+				>> This is a second problem for NTSC. At the start of the level, with the ghosts underneath the split and using Scroller_DebugMainlineBorderForIRQ and Scroller_DebugIRQBorder
+					Can clear see the Scroller_DebugMainlineBorderForIRQ time sometimes not completing before the "top of screen" IRQ.
+					>> IrqTopOfScreenPos = 16
+					.rasterToTimeL also needed adjustment with IrqTopOfScreenPos
+				>> Sometimes with music playing the top screen sprite will flicker, added Multiplex_EnableHookAfterTopSpritesUpdate to adjust when the music routine is called
+			> Now debug with Scroller_DebugColourScrollTimings
+				>> Note how the extra display lines combined with the music in IRQ has pushed the colour update into the screen update area, even in PAL.
+					Note block colourise: VIC2Colour_LightBlue
+					>> Single frame advance shows a couple of pixels above the blocks for the slope when jumping up...
+						Moving the "jsr ScrollerDrawStripTopColour" to in between the top.bottom half obviously helped
+						>> Making the top screen section smaller would help more...
+			>> NTSC: For level 1 start walk to the right down the slope, the without jumping walk left back up the slope.
+				Near the far left, with all ghosts above the split, the NMI still flickers.
+		* Option for moving the music routine to an on screen position after the top of the screen, freeing the time for the colour update
+			Or have the IRQ count "frames" and have the mainline execute multiple times to catchup.
+				Added: Scroller_CountMusicUpdateInIRQ
+		** For NTSC: Don't define Scroller_AdditionalCharLines, or rather Scroller_AdditionalCharLines = 0
+			This seems to be the only reliable way to mitigate the issue. Also consider disabling: Scroller_CountMusicUpdateInIRQ
+		** NTSC still flickers the NMI sometimes...
+			In ScrollerDemoWaitScorePanel note ScrollerDemo_OverrunCounter and ScrollerDemo_OverrunPanelIRQFlag
+				This improves matters, but still not perfect as the NMI wobbles a bit
+			>> ScrollerUpdateTopIRQHook needs to be faster, just a simple copy, nothing else.
+				At the moment it's doing too much calculation.
+				Move the calculation to after the activation object calc
+				>> After: ActivationObject_UpdateScreenEdges
+					Added: NMIColourSplits_Calculate to split the update even further

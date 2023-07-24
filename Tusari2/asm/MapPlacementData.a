@@ -1,0 +1,17 @@
+!zn
+!set kMapPlacement_currentIndex = 0
+!align 255,0
+MapPlacement_activationObject
+	* = * + kMapPlacement_maxIndex
+MapPlacement_spawnedFlag
+	* = * + kMapPlacement_maxIndex
+MapPlacement_posXLo
+	* = * + kMapPlacement_maxIndex
+MapPlacement_posXHi
+	* = * + kMapPlacement_maxIndex
+MapPlacement_posYLo
+	* = * + kMapPlacement_maxIndex
+MapPlacement_posYHi
+	* = * + kMapPlacement_maxIndex
+
+!source "bin/LevelTempPlacement.a"

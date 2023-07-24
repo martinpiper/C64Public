@@ -18,7 +18,7 @@ DisplayScreen
 	lda #$00
 	sta CIA2PortBRS232
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink | kVideo_EnableDisplay_Tiles_BorderYShrink
+	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 
 	jsr Bus24Bit_Reset

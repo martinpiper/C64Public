@@ -1497,6 +1497,10 @@ ScrollColour_1
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_1_bin , CartFile1_Start_Colour_1_bin
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_1_bin , CartFile1_Start_Colour_1_bin + ScrollBankSplit
 } else {
 	ldx #38
@@ -1589,6 +1593,10 @@ ScrollColour_m1
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m1_bin , CartFile1_Start_Colour_m1_bin
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m1_bin , CartFile1_Start_Colour_m1_bin + ScrollBankSplit
 } else {
 	ldx #1
@@ -1686,6 +1694,11 @@ ScrollColour_40
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_40_bin , CartFile1_Start_Colour_40_bin
+	jsr ScrollerDrawStripTopColour
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_40_bin , CartFile1_Start_Colour_40_bin + ScrollBankSplit
 } else {
 	ldx #39
@@ -1712,6 +1725,7 @@ ScrollColour_40
 	sta COLOURRAM+40+(0*40),x
 	dex
 	bpl .l1
+	jsr ScrollerDrawStripTopColour
 !ifdef Scroller_DebugColourScrollTimings {
 	lda #VIC2Colour_LightGreen
 	sta VIC2BorderColour
@@ -1761,7 +1775,6 @@ ScrollColour_40
 	dex
 	bpl .l2
 }
-	jsr ScrollerDrawStripTopColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
 
@@ -1778,6 +1791,10 @@ ScrollColour_m40
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m40_bin , CartFile1_Start_Colour_m40_bin
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m40_bin , CartFile1_Start_Colour_m40_bin + ScrollBankSplit
 } else {
 	ldx #39
@@ -1871,6 +1888,11 @@ ScrollColour_39
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_39_bin , CartFile1_Start_Colour_39_bin
+	jsr ScrollerDrawStripTopColour
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_39_bin , CartFile1_Start_Colour_39_bin + ScrollBankSplit
 } else {
 	ldx #1
@@ -1898,6 +1920,7 @@ ScrollColour_39
 	inx
 	cpx #40
 	bne .l1
+	jsr ScrollerDrawStripTopColour
 !ifdef Scroller_DebugColourScrollTimings {
 	lda #VIC2Colour_LightGreen
 	sta VIC2BorderColour
@@ -1949,7 +1972,6 @@ ScrollColour_39
 	bne .l2
 }
 
-	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripRightColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -1967,6 +1989,10 @@ ScrollColour_m39
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m39_bin , CartFile1_Start_Colour_m39_bin
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m39_bin , CartFile1_Start_Colour_m39_bin + ScrollBankSplit
 } else {
 	ldx #38
@@ -2058,6 +2084,11 @@ ScrollColour_41
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_41_bin , CartFile1_Start_Colour_41_bin
+	jsr ScrollerDrawStripTopColour
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_41_bin , CartFile1_Start_Colour_41_bin + ScrollBankSplit
 } else {
 	ldx #38
@@ -2084,6 +2115,7 @@ ScrollColour_41
 	sta COLOURRAM+41+(0*40),x
 	dex
 	bpl .l1
+	jsr ScrollerDrawStripTopColour
 !ifdef Scroller_DebugColourScrollTimings {
 	lda #VIC2Colour_LightGreen
 	sta VIC2BorderColour
@@ -2133,7 +2165,6 @@ ScrollColour_41
 	dex
 	bpl .l2
 }
-	jsr ScrollerDrawStripTopColour
 	jsr ScrollerDrawStripLeftColour
 
 } ;< !ifdef Scroller_NeedFullColourScroll
@@ -2151,6 +2182,10 @@ ScrollColour_m41
 !ifdef Scroller_NeedFullColourScroll {
 !ifdef Scroller_EnableSpeedCode {
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m41_bin , CartFile1_Start_Colour_m41_bin
+!ifdef Scroller_DebugColourScrollTimings {
+	lda #VIC2Colour_LightGreen
+	sta VIC2BorderColour
+}
 	+Scroller_ScrollExecCartBank CartFile1_Bank_Colour_m41_bin , CartFile1_Start_Colour_m41_bin + ScrollBankSplit
 } else {
 	ldx #1

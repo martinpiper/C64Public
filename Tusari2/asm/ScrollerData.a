@@ -1,0 +1,111 @@
+MarkBeginData = *
+
+!ifdef Scroller_UseDemoScorePanel {
+; The first few characters for the score panel, increase as needed
+ScorePanelNumChars = 36
+
+ScorePanelColourLookup
+!bin "ScorePanel.ctm" , ScorePanelNumChars , $814
+
+; For some reason ctm files store char byte then another byte...
+ScorePanelCharData
+!bin "ScorePanel.ctm" , 40*5 ,  $914 , 2
+
+ScorePanelBGCol0
+!bin "ScorePanel.ctm" , 1 , 4
+ScorePanelBGCol1
+!bin "ScorePanel.ctm" , 1 , 5
+ScorePanelBGCol2
+!bin "ScorePanel.ctm" , 1 , 6
+}
+
+!align 255,0
+
+MaxSpriteNumber = 191
+SpriteEmptyLookupTab		!fill 256 , 0
+
+!source "ScrollerAnimationMemory.a"
+
+
+; No block colours, it is chars based
+;!align 255,0	; So no need alignment
+BlockColours
+
+!scriptpythoninline {
+import charpad
+charpad.loadCTMFile("bin/LevelTemp.ctm")
+
+acme.source("BackgroundFixedColours")
+acme.source("!by " + str(charpad.getBackgroundColour()))
+acme.source("!by " + str(charpad.getMulticolour1()))
+acme.source("!by " + str(charpad.getMulticolour2()))
+
+acme.source("!align 255,0")
+acme.source("CharColours")
+acme.source("numMapUsedChars = " + str(charpad.getNumCharacters()))
+acme.bytestr(str(charpad.getCharacterAttributes()))
+
+acme.source("!align 255,0")
+acme.source("BlockData")
+acme.source("numMapUsedTiles = " + str(charpad.getNumTiles()))
+acme.bytestr(str(charpad.getTileData()))
+
+#; First two bytes = width,height
+#;!align 255,0
+acme.source("MapData")
+acme.source("!by " + str(charpad.getMapWidth()))
+acme.source("!by " + str(charpad.getMapHeight()))
+acme.bytestr(str(charpad.getMapData()))
+acme.source("MapDataEnd")
+}
+
+!source "AnimationData.a"
+
+!ifdef Scroller_NoMusic {} else {
+; Include demonstration music from the Element 114 music editor
+*=$8000
+
+; Music players do not have to start at $8000 but it helps use this part of memory before the
+; graphics at $c000-$ffff
+
+; Replace this !bin to include whatever music player you want
+; This file was exported with "Include sound effect code" option selected.
+!bin "bin\LevelTemp.prg",,2
+
+
+; Define these to point the entry points of the included music routine.
+MusicPlayerInit		= $8000
+MusicPlayerPlay		= $8003
+MusicPlayerStop		= $8006
+MusicPlayerPlaySFX	= $8009
+}
+
+MarkEndData = *
+
+!align 255,0
+; More code can go here, from: Tusari2\asm\HookInclude.a
+MarkBeginCode2
+!source "MapPlacementData.a"
+!source "Camera.a"
+!set RunJumpDemo_Joystick = CIA1KeyboardColumnJoystickA
+!source "HandleUserInput.a"
+!source "CharEffects.a"
+MarkEndCode2
+
+*=$bc00
+CharEffects_HiddenIndexLookup
+	!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , -1
+
+; VIC Graphics data
+*=$c000
+CharData
+!scriptpythoninline {
+import charpad
+charpad.loadCTMFile("bin/LevelTemp.ctm")
+acme.bytestr(str(charpad.getCharacters()))
+}
+
+*=$d000
+SpriteData
+!bin "bin/LevelTemp.spd" , 191*64 , $9 + $1000
+SpriteDataEnd

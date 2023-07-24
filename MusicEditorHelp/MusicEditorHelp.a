@@ -83,6 +83,7 @@ currentScreen !by  0
 	pla
 	sta ZPProcessorPort
 }
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
 
 !source "../Decompression/Decompression.a"
 !source "../Decompression/DecompressionP2.a"

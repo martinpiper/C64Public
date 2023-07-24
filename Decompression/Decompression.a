@@ -17,6 +17,7 @@
 ;	pla
 ;	sta ZPProcessorPort
 ;}
+; Also define this macro: !macro RNXPCompressionDecompress_WriteByteAddrHi {}
 
 
 ;To use these options define the labels below before including this source file.
@@ -79,6 +80,7 @@ RNXPCompressionDecompress_InitStore
 	rts
 }
 
+!ifndef Decompress_RNZip {
 .GetNextBitIntoCarry
 	pha
 	cpx #$80
@@ -97,6 +99,7 @@ RNXPCompressionDecompress_InitStore
 	tax
 	pla
 	rts
+}
 
 !ifdef Decompression_UseZPVars {
 .lastWorkOffset !by 0,0
@@ -272,15 +275,11 @@ RNXPCompressionDecompress
 	sta .workOffset+1
 	jmp .workOffsetWas2
 .workOffsetIsNot2
+;workOffset = ((workOffset-3)<<8) + source[curLen];
 	lda .workOffset
 	sec
 	sbc #3
-	sta .workOffset
-	bcs .noBorrow
-	dec .workOffset+1
-.noBorrow
-;workOffset = ((workOffset-3)<<8) + source[curLen];
-	lda .workOffset
+; Note: The bottom byte is discarded due to the result <<8, the top byte is replaced...
 	sta .workOffset+1
 
 	jsr RNXPCompressionDecompress_GetByte	
@@ -308,12 +307,15 @@ RNXPCompressionDecompress
 	jsr .GetNextBitIntoCarryKillA
 	rol .workLen
 
-	lda .workLen
-	ora .workLen+1
+	; Note: Status from above
+;	lda .workLen
+;	ora .workLen+1
 	bne .not0
 
-	lda #1
-	sta .workLen
+;	lda #1
+;	sta .workLen
+	; Equivalent since .workLen = 0
+	inc .workLen
 
 .longerWorklLen
 	jsr .GetNextBitIntoCarryKillA

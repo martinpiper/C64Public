@@ -109,7 +109,7 @@ ScreenColour = VIC2Colour_Black
 ;	jsr DebugSpriteDisplayTest
 }
 
-	+MDeltaDecompression_CopyColours $400
+	+MDeltaDecompression_CopyColoursSegment $400 , 12 , 16 , 6 , 13
 ;	+WaitForFire_A
 	jsr CheckForDecisionState
 
@@ -136,7 +136,7 @@ ScreenColour = VIC2Colour_Black
 ;	jsr DebugSpriteDisplayTest
 }
 
-	+MDeltaDecompression_CopyColours $4400
+	+MDeltaDecompression_CopyColoursSegment $4400 , 12 , 16 , 6 , 13
 ;	+WaitForFire_A
 	jsr CheckForDecisionState
 

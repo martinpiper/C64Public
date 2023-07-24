@@ -265,6 +265,10 @@ IrqTopOfScreen
 	inc VIC2BorderColour
 	dec VIC2BorderColour
 
+	; Useful references:
+	; https://bumbershootsoft.wordpress.com/2015/04/19/variable-screen-placement-the-vic-iis-forbidden-technique/
+	; https://csdb.dk/release/?id=115690
+
 	; Do the HSP by tweaking the VIC2ScreenControlV register at the correct time
 	lda #%01111011	; Plus ECM/Bitmap to disable the screen output
 ;	lda #%00011011	; Enable this line to see what is going on at the top of the screen

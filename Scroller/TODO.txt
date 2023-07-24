@@ -1,4 +1,26 @@
+* When using Scroller_DebugColourScrollTimings and Tusari2 with its extra rendered lines and in NTSC mode especially (but also PAL)
+	For ScrollColour_40 and other directions, note when in the screen the colourise happens, for the top edge especially and also the top right/left edge
+	Really going to have to increase the top chunk and also look at positioning the top (also right/left) colourise better. Inbetween the top/bottom update would be ideal
+		This would mean the left/right colourise would need to be split
+
+
+
+
+
+* Nothing is calling CharEffects_Init ?
+
+
+
+
 * Use 2 MHz mode where possible?
+	At $d012 = $ff
+		lda $d030
+		ora #1
+		sta $d030
+	At $d012 = 50
+		lda $d030
+		and #$fe
+		sta $d030
 
 
 
@@ -47,12 +69,6 @@
 	Calculate what sprites will be active on the target line and the expected y scroll and produce optimised routines for each combination
 	* Lees important now since the split now forces all sprites to be enabled on the scan line giving a stable split.
 		Due to sprite DMA triggering delaying the CPU until the correct point.
-
-
-
-
-; MPi: TODO: If not IRQOpenBorders then IrqTopOfScreen does not need to be at raster pos 0, it can be moved downwards to just before the first sprites are needed
-; MPi: TODO: Perhaps not the best idea since any games that wait for BeforeScrollers/AfterScrollers for their work will want to have as much time above for animation and sprite updates
 
 
 

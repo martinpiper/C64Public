@@ -1,0 +1,57 @@
+!source "Citadel2/asm/Score_Macros.a"
+!source "bin/LevelTempOptions.a"
+!source "CommonGameData.a"
+
+Scroller_ScorePanelPos = SCREENRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 2
+Scroller_ScorePanelSparklePos = SCREENRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 28
+Scroller_StrengthPanelPosColour = COLOURRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 34
+
+kAnimation_IncludeActivationObjectCode = 1
+kScore_IncludePanelUpdates = 1
+!source "Animation_macros.a"
+!source "stdlib/LongBranches.a"
+
+!source "Animation.a"
+!source "UpdateSprites.a"
+!source "ActivationObject.a"
+!source "BerzerkRedux/Rand.a"
+
+
+!source "Citadel2/asm/Score.a"
+
+!source "SFXWithMusic.a"
+
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+ScrollerDemoMainline_ExitTo
+	sta smScrollerDemoMainline_Address
+ScrollerDemoMainline_Exit
+	; Copy the score to the common area for the next part to access
+	+DisplayTextAt_AX Scroller_ScorePanelPos , Scroller_ScorePanelPos + Scroller_ScorePanelLen , Common_ScorePanel
+	lda #6
+	jsr CartSelectBank_8K
+
+smScrollerDemoMainline_Address = *+1
+	jmp C64Cartridge_Lo_8K
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+!source "NMIColourSplits.a"
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
+
+
+
+; A lookup table that converts SEUCK SFX number to the music player envelope number
+; There are 24 SEUCK sound effects
+SEUCKToMusicSFX
+	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
+	!by 8 , 9 , $a , $b , $c , $d , $e , $f
+;	!by 6 , 7 , 0 , 1 , 2 , 3 , 4 , 5
+; A lookup table to allow each sound effect to have a different note
+SEUCKToMusicSFXNote
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+	!by 48, 50, 32, 16, 32, 48, 52, 40
+;	!by 48, 50, 32, 16, 32, 48, 52, 40
+SEUCKToMusicPriority
+	!by 5 , 75 , 15 , 10 , 0 , 10 , 20 , 40
+	!by 50 , 40 , 50 , 0 , 0 , 0 , 0 , 0
+;	!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0

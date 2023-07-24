@@ -4,7 +4,10 @@ Feature: Animation tests
   Execute this with: java -jar ..\..\BDD6502\target\BDD6502-1.0.3-SNAPSHOT-jar-with-dependencies.jar
   Or with CPU trace: java -Dbdd6502.trace=true -jar ..\..\BDD6502\target\BDD6502-1.0.3-SNAPSHOT-jar-with-dependencies.jar
 
-  Performs animation routine tests using known data
+  Performs animation routine tests using known data.
+  Creates animations at known positions with screen characters at known points for collision tests.
+  Moves animations at known velocities and in combination with screen pixel scroll values.
+  Tests for animations hitting the screen collision points and animations being deleted.
 
   MPi: TODO: Implement tests for frames
 
@@ -14,6 +17,9 @@ Feature: Animation tests
     And I run the command line: ..\acme.exe --lib ../Scroller/ --labeldump test.lbl asm\AnimationsStub.a
     And I load prg "AnimationsStub.prg"
     And I load labels "test.lbl"
+    
+#    Given enable remote debugging
+#    And wait for debugger command
 
     # Add some characters to collide with
     # Top

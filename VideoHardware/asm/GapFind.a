@@ -1,0 +1,95 @@
+!zn
+
+GameSpriteDownCount !by 0
+GameSpriteDownPos !by 0
+GameSpriteUpCount !by 0
+GameSpriteUpPos !by 0
+
+GameSpriteSplitPos !by 0
+GameSpriteSplitPosRaster !by 0
+
+GapFind_Init
+	; Init scanning
+	lda #0
+	sta GameSpriteSplitPos
+	sta GameSpriteSplitPosRaster
+	sta GameSpriteUpCount
+	sta GameSpriteDownCount
+	sta GameSpriteUpPos
+	lda #15
+	sta GameSpriteDownPos
+	rts
+
+
+GapFind_Scan
+	; Start scanning
+
+.scanDown1
+	ldx GameSpriteDownPos
+.scanDown2
+	lda GameSpriteRow,x
+	bne .notBlank1b
+	stx GameSpriteSplitPos
+.notBlank1b
+
+	cpx GameSpriteUpPos
+	+IfURegLessThanOrEqualToVal .gotPosition
+
+	lda GameSpriteRow,x
+	bne .notBlank1
+
+	lda GameSpriteDownCount
+	beq .notBlank1a
+
+	cmp GameSpriteUpCount
+	+IfURegGreaterThanVal .gotDownBlank1
+	jmp .notBlank1a
+
+.notBlank1
+	clc
+	adc GameSpriteDownCount
+	sta GameSpriteDownCount
+
+.notBlank1a
+	dex
+	bne .scanDown2
+
+	jmp .gotPosition
+
+.gotDownBlank1
+	dex
+	stx GameSpriteDownPos
+
+	ldx GameSpriteUpPos
+.scanUp2
+	cpx GameSpriteDownPos
+	+IfURegGreaterThanOrEqualToVal .gotPosition
+	
+	lda GameSpriteRow,x
+	bne .notBlank2
+
+	lda GameSpriteUpCount
+	beq .notBlank2a
+	cmp GameSpriteDownCount
+	+IfURegGreaterThanVal .gotUpBlank1
+	jmp .notBlank2a
+
+.notBlank2
+	clc
+	adc GameSpriteUpCount
+	sta GameSpriteUpCount
+
+.notBlank2a
+	inx
+	cpx #15
+	+IfURegLessThanVal .scanUp2
+
+	jmp .gotPosition
+
+.gotUpBlank1
+;	inx
+	stx GameSpriteUpPos
+	jmp .scanDown1
+
+.gotPosition
+	rts

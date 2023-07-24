@@ -1,16 +1,19 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
 ; Enable this to send graphics data from code, however this only works if the data is small :)
-IncludeGraphicsData = 1
+;IncludeGraphicsData = 1
 ;IncludeGraphicsData_L1 = 1
 ;IncludeGraphicsData_L2 = 1
-IncludeGraphicsData_L3 = 1
-IncludeGraphicsData_L4 = 1
+;IncludeGraphicsData_L3 = 1
+;IncludeGraphicsData_L4 = 1
 
-
+kMaxGameSprites = 46
+EnableMultiplexing = 1
+;EnableMultiplexingDebug = 1
 
 !source "stdlib/stdlib.a"
 !source "stdlib/PETSCII.a"
+!source "stdlib/Comparisons.a"
 !source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 !source "BombJack/stdlib/APU_Macros.a"
@@ -29,6 +32,11 @@ zeroPage_Temp2	= $4
 zeroPage_Temp3	= $5
 zeroPage_Temp4	= $6
 zeroPage_Temp5	= $7
+!ifdef EnableMultiplexing {
+GameSpriteRow = $8
+}
+
+
 
 !zn
 *=$200
@@ -70,6 +78,7 @@ mainLoop
 
 	jsr Bus24Bit_Init
 
+	jsr APU_ResetDisable
 	jsr Video_DisableDisplay
 ;	jsr DisplayData
 	jsr Video_InitDisplaySpritesScrollsBackground
@@ -80,7 +89,7 @@ mainLoop
 	sta CIA2PortBRS232
 
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Background , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Chars
@@ -88,27 +97,39 @@ mainLoop
 	lda #255
 	sta CIA2PortBRS232
 
+!ifdef EnableMultiplexing {
+	jsr SetupAPU
+	jsr APU_Enable
+}
 	jsr DisplayData
 
 	jsr AnimationEngine_Init
 
 	+MAllocateAnimPos kAnimationType_red1 , 160 , 120
-;	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 40
 	+MAllocateAnimPos kAnimationType_walker1 , 90 , 90
-	+MAllocateAnimPos kAnimationType_rotate1 , 200 , 170
+	+MAllocateAnimPos kAnimationType_rotate1 , 200 , 70
+!ifdef EnableMultiplexing {
+	+MAllocateAnimPos kAnimationType_boss1 , 130 , 243
+	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 60
+	+MAllocateAnimPos kAnimationType_red1 , 230 , 120
+;	+MAllocateAnimPos kAnimationType_walker1 , 260 , 60
+} else {
 	+MAllocateAnimPos kAnimationType_boss1 , 130 , 253
-;	+MAllocateAnimPos kAnimationType_red1 , 10 , 120
+}
 
 ;	+MAllocateAnimPos kAnimationType_cammy_idle1 , 160 , 120
 
 	jsr Video_WaitVBlank
 
 .l1
-
 	; Simple scroll demo with RType data
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
 	inc VIC2BorderColour
+
+!ifdef EnableMultiplexing {
+	jsr MultiplexSwapBanks
+}
 
 	jsr Video_SetAddressCharScrollRegisters
 	lda .chars
@@ -138,28 +159,31 @@ mainLoop
 .skipPaletteUpdate
 }
 
+	; When not using multiplexing the CPU copies the sprites. When multiplexing the APU copies the sprite data at various points down the screen.
+!ifndef EnableMultiplexing {
 	jsr copySprites
+}
 
+!ifdef EnableMultiplexingDebug {
+	lda GameSpriteSplitPosRaster
+	beq .noSplitPos2
+	+MBus24Bit_SetAddress_AXY kBus24Bit_Sprites_EBBS , kBus24Bit_Sprites + (23 * 4)
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 7
+	lda GameSpriteSplitPosRaster
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue 255
+.noSplitPos2
+}
 
-
-	; Later on in the frame
-	inc AnimationEngine_posY + kAnimationEngine_maxSlots-1
-	inc AnimationEngine_posX + kAnimationEngine_maxSlots-1
-	bne .ol1
-	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-1
-.ol1
-
-	inc AnimationEngine_posX + kAnimationEngine_maxSlots-4
-	bne .ol2
-	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-4
-.ol2
-	inc AnimationEngine_posX + kAnimationEngine_maxSlots-4
-	bne .ol3
-	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-4
-.ol3
-
+	jsr MoveGameObjects
 	jsr AnimationEngine_Update
 	jsr AnimationEngine_RenderSprites
+
+!ifdef EnableMultiplexing {
+	jsr GapFind_Init
+	jsr MultiplexCalculation
+}
 
 	inc .smc1+1
 .smc1	lda #0
@@ -225,6 +249,9 @@ mainLoop
 }
 
 	jmp .l1
+
+.yposIndex !by 0
+.bestMultiplexPos !by 0
 .chars !by 0,0
 .tiles !by 0,0
 !if 1 {
@@ -257,6 +284,26 @@ mainLoop
 	lda #kBus24Bit_VideoLayer_EBBS
 	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette + (255*2)
 	jmp Bus24Bit_SetAddressBus
+
+
+!zn
+MoveGameObjects
+	; Later on in the frame, which is effectively *next* frame now
+	inc AnimationEngine_posY + kAnimationEngine_maxSlots-1
+	inc AnimationEngine_posX + kAnimationEngine_maxSlots-1
+	bne .ol1
+	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-1
+.ol1
+
+	inc AnimationEngine_posX + kAnimationEngine_maxSlots-4
+	bne .ol2
+	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-4
+.ol2
+	inc AnimationEngine_posX + kAnimationEngine_maxSlots-4
+	bne .ol3
+	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-4
+.ol3
+	rts
 
 
 !zn
@@ -450,3 +497,418 @@ AnimationFrames_boss1
 ;	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle6 , 5
 ;	+MAnimationFrame_DisplaySpeed	EmitSpriteFramecammy_idle7 , 5
 ;	+MAnimationFrame_DisplaySpeedGoto	EmitSpriteFramecammy_idle8 , 5,AnimationFrames_cammy_idle1
+
+!source "BombJack/stdlib/APU.a"
+
+!ifdef EnableMultiplexing {
+
+!source "asm/GapFind.a"
+
+
+TotalAPU_Start
+
+!macro MAPUCopySprite {
+	!for .i , 4 {
+		+MAPU kAPU_ExternalMEWR
+		+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+	}
+}
+
+!macro MAPUTopAndBottomSplits {
+	; Top and bottom splits
+!for .i , 2 {
+	; MPi: TODO: Add double buffered sprite data
+	+MAPU_LoadDoWait
+
+	; Disable sprites
+	+MAPU_LoadEBSFromB1
+	+MAPU_ProcessRasterByte
+
+	; Get EBSEADDR values
+	+MAPU_LoadEBSFromB1
+	+MAPU_LoadEADDRFromB1
+
+	; Only 23 sprites while multiplexing
+!for .i , 23 {
+	+MAPUCopySprite
+}
+
+	; Enable sprites
+	+MAPU_LoadEBSFromB1
+	+MAPU_ProcessRasterByte
+
+} ;< !for .i , 2 { ; NOTE: Top and bottom parts
+
+	+MAPU_LoadDoWait
+}
+
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	; Skip other frame ADDRB1
+	+MAPU kAPU_Reset_ADDRB1
+	+MAPU
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU
+
+
+	+MAPUTopAndBottomSplits
+	+MAPU_TestAndJump
+
+frameStart1
+	+MAPU
+	; Load other frame ADDRB1
+	+MAPU kAPU_Reset_ADDRB1
+	+MAPU
+	+MAPU kAPU_IDataRegLoad0
+	+MAPU kAPU_Incr_ADDRB1
+	+MAPU kAPU_IDataRegLoad1
+	+MAPU
+	+MAPU kAPU_ADDRB1Load16
+	+MAPU
+
+	+MAPUTopAndBottomSplits
+	+MAPU_TestAndJump
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+
+
+APUData_Start
+
+	; First frame
+!macro MAPUTopAndBottomSplitsData ~.topData , ~.bottomData , ~.bottomSplitPos {
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , $08
+
+	!by kBus24Bit_VideoLayer_EBBS
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+!ifndef EnableMultiplexingDebug {
+	!by kBus24Bit_VideoLayer_LayersEnable_234
+} else {
+	!by kBus24Bit_VideoLayer_LayersEnable_1
+}
+
+	!by kBus24Bit_Sprites_EBBS
+	+MLittleEndian16Bit kBus24Bit_Sprites
+
+.topData
+	!fill 23 * 4 , 0
+
+	!by kBus24Bit_VideoLayer_EBBS
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+	!by kBus24Bit_VideoLayer_LayersEnable_Default
+
+.bottomSplitPos = *+2
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , 128
+
+	!by kBus24Bit_VideoLayer_EBBS
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+!ifndef EnableMultiplexingDebug {
+	!by kBus24Bit_VideoLayer_LayersEnable_234
+} else {
+	!by kBus24Bit_VideoLayer_LayersEnable_1
+}
+
+	!by kBus24Bit_Sprites_EBBS
+	+MLittleEndian16Bit kBus24Bit_Sprites
+
+.bottomData
+	!fill 23 * 4 , 0
+	
+	!by kBus24Bit_VideoLayer_EBBS
+	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
+	!by kBus24Bit_VideoLayer_LayersEnable_Default
+
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start , $00
+}
+
+	; Other frame data pointer
+	+MLittleEndian16Bit apuOtherFrameData - APUData_Start
+
+
+	+MAPUTopAndBottomSplitsData ~StackedSpriteDataGEReal , ~StackedSpriteDataLTReal , ~StackedSpriteDataLTYPos
+
+	+MAPU_EmitPC frameStart0
+	; Frame ready when == 0
+apuFrameReady1
+	!by 1
+
+
+apuOtherFrameData
+	+MAPUTopAndBottomSplitsData ~StackedSpriteDataGEReal2 , ~StackedSpriteDataLTReal2 , ~StackedSpriteDataLTYPos2
+
+	+MAPU_EmitPC frameStart1
+	; Frame ready when == 0
+apuFrameReady0
+	!by 1
+
+APUData_Size = * -APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+
+
+!macro MSplitSpritesToAPU .direction {
+	ldy #0
+	ldx #0
+.csl1
+	lda StackedSpriteData+2,y
+	cmp GameSpriteSplitPosRaster
+!if .direction <= 0 {
+	+IfURegLessThanVal .csl1o
+} else {
+	+IfURegGreaterThanOrEqualToVal .csl1o
+}
+
+	lda StackedSpriteData,y
+	+MBus24Bit_Send8BitValueFromA
+	lda StackedSpriteData+1,y
+	+MBus24Bit_Send8BitValueFromA
+	lda StackedSpriteData+2,y
+	+MBus24Bit_Send8BitValueFromA
+	lda StackedSpriteData+3,y
+	+MBus24Bit_Send8BitValueFromA
+
+	; Count sprites
+	inx
+	cpx #23
+	+IfURegGreaterThanOrEqualToVal .csl2o
+
+.csl1o
+	iny
+	iny
+	iny
+	iny
+	cpy EmitSpriteFrame_count
+	+IfURegLessThanVal .csl1
+.csl2o
+}
+
+
+!zn
+MultiplexCalculation
+	; Check if we need to do any work at all
+	lda EmitSpriteFrame_count
+	cmp #23*4
+	+IfURegLessThanVal .simpleUpdate
+	jmp BeforePopulate
+
+.simpleUpdate
+	; Copy top sprites to APU
+	+MAPU_SetDataUpdateBus StackedSpriteDataGEReal
+	lda MultiplexBank
+	bne .il1
+	+MAPU_SetDataUpdateBus StackedSpriteDataGEReal2
+.il1
+	+MBus24Bit_FastSpeedCopy StackedSpriteData , 23 * 4
+
+	; Just move the split off the bottom of the screen, don't bother updating anything else
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTYPos
+	lda MultiplexBank
+	bne .il2
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTYPos2
+.il2
+	+MBus24Bit_Send8BitValue $f0
+
+	rts
+	
+BeforePopulate
+
+	jsr PopulateSpriteRowTable
+
+AfterPopulate
+
+	jsr GapFind_Scan
+
+	lda GameSpriteSplitPos
+	+lbeq .simpleUpdate
+
+	jsr CalculateMultiplexRasterPosition
+
+	; Update tables to the APU based on split position
+
+	; Top sprites update
+	+MAPU_SetDataUpdateBus StackedSpriteDataGEReal
+	lda MultiplexBank
+	bne .il3
+	+MAPU_SetDataUpdateBus StackedSpriteDataGEReal2
+.il3
+	+MSplitSpritesToAPU -1
+	jsr SplitSpritesClearRemaining
+
+
+	; Bottom sprites update
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTReal
+	lda MultiplexBank
+	bne .il4
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTReal2
+.il4
+	+MSplitSpritesToAPU 1
+	jsr SplitSpritesClearRemaining
+
+
+	jsr MultiplexSplitToAPU
+
+AfterMultiplexCalc
+	rts
+
+!zn
+PopulateSpriteRowTable
+	; Populate sprite table for no sort multiplexing
+	lda #0
+	ldy #15
+.cyl1
+	sta GameSpriteRow,y
+	dey
+	bpl .cyl1
+
+	; Update table with positions
+	ldy #0
+.cyl2
+	; Top of the sprite
+	lda StackedSpriteData+2,y
+	beq .noSpriteHere1
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	inc GameSpriteRow,x
+
+	; And the bottom of the sprite
+	lda StackedSpriteData+2,y
+	sec
+	sbc #15
+	bcc .noSpriteHere1
+	lsr
+	lsr
+	lsr
+	lsr
+	tax
+	inc GameSpriteRow,x
+
+.noSpriteHere1
+	; Next
+	iny
+	iny
+	iny
+	iny
+
+	cpy EmitSpriteFrame_count
+	+IfURegLessThanVal .cyl2
+
+	rts
+
+!zn
+CalculateMultiplexRasterPosition
+	; Convert into screen position
+	sta GameSpriteSplitPosRaster
+	asl GameSpriteSplitPosRaster
+	asl GameSpriteSplitPosRaster
+	asl GameSpriteSplitPosRaster
+	asl GameSpriteSplitPosRaster
+	lda GameSpriteSplitPosRaster
+	clc
+	adc #15
+	sta GameSpriteSplitPosRaster
+	rts
+
+!zn
+SplitSpritesClearRemaining
+	; Clear any remaining
+	lda #0
+.csl2
+	cpx #23
+	+IfURegGreaterThanOrEqualToVal .csl2o
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	inx
+	jmp .csl2
+.csl2o
+	rts
+
+!zn
+MultiplexSplitToAPU
+	; Update APU split pos
+	lda #255
+	sec
+	sbc GameSpriteSplitPosRaster
+	; Don't triger the bottom wait too early...
+	cmp #32
+	bcs .ok1
+	lda #32
+.ok1
+	; Adjust upwards a few lines to give mroe than enough time to switch to the new sprites
+	sec
+	sbc #12
+	sta StackedSpriteDataLTYPos
+
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTYPos
+	lda MultiplexBank
+	bne .il1
+	+MAPU_SetDataUpdateBus StackedSpriteDataLTYPos2
+.il1
+	+MBus24Bit_FastSpeedCopy StackedSpriteDataLTYPos , 1
+	rts
+
+!zn
+; Exit:
+; If MultiplexBank = 0 then display frame 0 and store data into frame 1
+; If MultiplexBank = 1 then display frame 1 and store data into frame 0
+MultiplexBank	!by 0
+MultiplexSwapBanks
+	inc MultiplexBank
+	lda MultiplexBank
+	and #1
+	sta MultiplexBank
+	bne .il1
+
+	+MAPU_SetDataUpdateBus apuFrameReady1
+	+MBus24Bit_Send8BitValue 1
+	+MAPU_SetDataUpdateBus apuFrameReady0
+	+MBus24Bit_Send8BitValue 0
+	rts
+
+.il1
+	+MAPU_SetDataUpdateBus apuFrameReady0
+	+MBus24Bit_Send8BitValue 1
+	+MAPU_SetDataUpdateBus apuFrameReady1
+	+MBus24Bit_Send8BitValue 0
+	rts
+}

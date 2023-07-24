@@ -245,6 +245,10 @@
 	sbc (ZPTransform_mulTabAddr6),y
 
 	; Using Z now
+!ifdef kTransform_wantViewTranslation {
+	clc
+	adc ZPTransform_posZ
+}
 	tay
 	lda Transform_invTab,y
 	+Transform_invAngle4
@@ -264,6 +268,10 @@
 	adc (ZPTransform_mulTabAddr5),y
 	sec
 	sbc (ZPTransform_mulTabAddr6),y
+!ifdef kTransform_wantViewTranslation {
+	clc
+	adc ZPTransform_posX
+}
 	tay
 	; Perspective X
 	lda (ZPTransform_mulTabAddr7),y
@@ -288,6 +296,10 @@
 	adc (ZPTransform_mulTabAddr5),y
 	sec
 	sbc (ZPTransform_mulTabAddr6),y
+!ifdef kTransform_wantViewTranslation {
+	clc
+	adc ZPTransform_posY
+}
 	tay
 	; Perspective Y
 	lda (ZPTransform_mulTabAddr7),y

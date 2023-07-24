@@ -1,0 +1,240 @@
+!zn
+kVerticalColoursSize = 2 + 2 + ((2 + 3) * kVerticalColoursNumPerSlot)
+
+BackupBackgroundFixedColours !by 0,0,0
+bufferedBackgroundFixedColours !by 0,0,0
+NMIColourSplits_Init
+	lda BackgroundFixedColours
+	sta BackupBackgroundFixedColours
+	lda BackgroundFixedColours+1
+	sta BackupBackgroundFixedColours+1
+	lda BackgroundFixedColours+2
+	sta BackupBackgroundFixedColours+2
+	lda #0
+	sta .signalUpdate
+
+	rts
+
+.signalUpdate !by 0
+
+!if kVerticalColoursSlots = 0 {
+; All stubbed out
+NMIColourSplits_Calculate
+ScrollerUpdateTopIRQHook
+IrqTopOfScreenHook
+ScrollerNMI1Hook
+	rts
+} else {
+; Calculates any split calculation
+NMIColourSplits_Calculate
+	jsr ActivationObject_UpdateScreenEdgesForNMI
+
+;	lda ScrollerDemo_OverrunPanelIRQFlag
+;	beq .noOverrun
+;	rts
+
+;.noOverrun
+	lda scrollerRealMovementXPixels
+	ora scrollerRealMovementYPixels
+	bne .gotMovement
+	rts
+.gotMovement
+
+	inc .signalUpdate
+	; Signal no timer this frame to start with
+	lda #$ff
+	sta .bufferedsmTH+1
+
+	; Restore default background colours
+	lda BackupBackgroundFixedColours
+	sta bufferedBackgroundFixedColours
+	lda BackupBackgroundFixedColours+1
+	sta bufferedBackgroundFixedColours+1
+	lda BackupBackgroundFixedColours+2
+	sta bufferedBackgroundFixedColours+2
+
+	+MByteValueToAddress_A kVerticalColoursSlots , tempWork3
+	bne .runChecks
+	rts
+.runChecks
+
+	+MWordValueToAddress_A VerticalColours , tempWork0
+.slotTest
+	ldy #1
+	lda ActivationObjectPositionMap_Left+1
+	cmp (tempWork0),y
+	+IfURegLessThanVal .endTest
+	+IfURegGreaterThanVal .leftPass
+	; =
+	ldy #0
+	lda ActivationObjectPositionMap_Left
+	cmp (tempWork0),y
+	+IfURegLessThanVal .endTest
+	; >=
+.leftPass
+
+	ldy #3
+	lda ActivationObjectPositionMap_Left+1
+	cmp (tempWork0),y
+	+IfURegLessThanVal .leftPass2
+	+IfURegGreaterThanVal .nextSlot
+	; =
+	ldy #2
+	lda ActivationObjectPositionMap_Left
+	cmp (tempWork0),y
+	+IfURegGreaterThanOrEqualToVal .nextSlot
+
+.leftPass2
+	lda #kVerticalColoursNumPerSlot
+	sta tempWork2
+	ldy #3
+.columnCheck
+	iny
+	lda (tempWork0),y
+	sec
+	sbc ActivationObjectPositionMap_Top
+	tax
+	iny
+	lda (tempWork0),y
+	sbc ActivationObjectPositionMap_Top+1
+	; It is in range because the hi value = 0
+	beq .foundPos
+	bmi .notThisPos
+	jmp .endTest
+
+.notThisPos
+	iny
+	; Use this colour since it has been passed
+	lda (tempWork0),y
+	sta bufferedBackgroundFixedColours
+	iny
+	lda (tempWork0),y
+	sta bufferedBackgroundFixedColours+1
+	iny
+	lda (tempWork0),y
+	sta bufferedBackgroundFixedColours+2
+	; Next position?
+	dec tempWork2
+	bne .columnCheck
+
+	; No more positions, so exit
+	rts
+
+.nextSlot
+	+MAddU8ToAddr16 kVerticalColoursSize , tempWork0 , tempWork1
+	dec tempWork3
+	bne .slotTest
+
+.endTest
+	rts
+
+.foundPos
+	; If it's the first line of the visible screen, then avoid using an NMI split
+	cpx #0
+	beq .notThisPos
+
+	; Test for the score panel position
+	cpx #kMaxNMILines
+	bcs .endTest
+	lda .rasterToTimeL,x
+	sta .bufferedsmTL+1
+	lda .rasterToTimeH,x
+	sta .bufferedsmTH+1
+	iny
+	; Use this colour since it has been hit
+	lda (tempWork0),y
+	sta .bufferedsmbackgroundColour+1
+	iny
+	lda (tempWork0),y
+	sta .bufferedsmbackgroundColour1+1
+	iny
+	lda (tempWork0),y
+	sta .bufferedsmbackgroundColour2+1
+
+	rts
+
+
+ScrollerUpdateTopIRQHook
+	lda .signalUpdate
+	bne .gotUpdate
+	rts
+.gotUpdate
+	dec .signalUpdate
+	lda bufferedBackgroundFixedColours
+	sta BackgroundFixedColours
+	lda bufferedBackgroundFixedColours+1
+	sta BackgroundFixedColours+1
+	lda bufferedBackgroundFixedColours+2
+	sta BackgroundFixedColours+2
+
+.bufferedsmTL lda #0
+	sta .smTL+1
+.bufferedsmTH lda #0
+	sta .smTH+1
+
+.bufferedsmbackgroundColour lda #0
+	sta .smbackgroundColour+1
+.bufferedsmbackgroundColour1 lda #0
+	sta .smbackgroundColour1+1
+.bufferedsmbackgroundColour2 lda #0
+	sta .smbackgroundColour2+1
+
+	rts
+
+; This gives a one pixel colour split above the score panel split.
+kMaxNMILines = scorePanelPos1 - Scroller_IRQRasterAdjust - VIC2SpriteYBorderTop24 + 2
+.rasterToTimeL
+.rasterToTimeH = .rasterToTimeL + 256
+!for .yy , 256 {
+!set .y = .yy-1 - IrqTopOfScreenPos
+	!word ((VIC2SpriteYBorderTop24 - 1 + .y)*TusariCyclesPerRaster) - 38
+}
+!swizzle .rasterToTimeL , 256 , 2
+
+
+; If there is a split position then start this the timer
+IrqTopOfScreenHook
+	; This code is sensitive to timing so make it happen first!
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+	sta CIA2TimerBControl
+	; Ack any interrupts that have happened
+	lda CIA2InterruptControl
+	; Turn off timer A
+	lda #0
+	sta CIA2TimerAControl
+
+	; Setup a one shot timer for NMI
+.smTL	lda #0
+	sta CIA2TimerALo
+.smTH	lda #255
+	cmp #255
+	beq .noTimer
+	sta CIA2TimerAHi
+	lda #$9						; Trigger timer A once only
+	sta CIA2TimerAControl
+	; Reset interrupt control for NMI so that if restore is pressed it only misses one frame.
+	lda #$81
+	sta CIA2InterruptControl
+.noTimer
+
+	; Debug
+;	lda #0
+;	sta VIC2BorderColour
+
+	rts
+
+; The actual split colour update
+ScrollerNMI1Hook
+.smbackgroundColour	lda #0
+.smbackgroundColour1 ldx #0
+.smbackgroundColour2 ldy #0
+	; Debug
+;	inc VIC2BorderColour
+	sta VIC2ScreenColour
+	stx VIC2ExtraBackgroundColour1
+	sty VIC2ExtraBackgroundColour2
+	rts
+}

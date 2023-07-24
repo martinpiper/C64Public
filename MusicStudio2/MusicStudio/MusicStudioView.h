@@ -86,6 +86,7 @@ protected:
 
 public:
 	void CommonSaveC64File(const char *address,const bool includeSoundEffectCode = false,const bool runningInEditor = false);
+	void CommonExporttoMIDI(CString realPathName);
 
 public:
 	afx_msg void OnEditOptimise();
@@ -98,6 +99,7 @@ public:
 	
 	void *mPlayerHandle;
 	afx_msg void OnChangeBlockData();
+	void OnChangeBlockDataInternal(bool forceUpdate);
 	CEdit mEnvelopeName;
 	afx_msg void OnEnChangeEditEnvelope0();
 	afx_msg void OnEnChangeEditEnvelope1();

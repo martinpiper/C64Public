@@ -6,7 +6,7 @@ Read load address as $0400
 End address = $fe00
 Opening 'Scroller.prg' for writing...
 Working...
-Input length = $fa00 output length = $70dd
+Input length = $fa00 output length = $757a
 Setting EasyFlash mode
 New address $8000
 New bank $0
@@ -17,7 +17,7 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'Scroller.prg' read $70dd
+File 'Scroller.prg' read $757a
 New address $8000
 New bank $1
  Copy from $1 len $2000 to $0
@@ -32,7 +32,7 @@ New bank $3
  Write bank
 New address $8000
 New bank $4
- Copy from $6001 len $10dc to $0
+ Copy from $6001 len $1579 to $0
  Write bank
 New address $8000
 New bank $5
@@ -42,16 +42,16 @@ New bank $6
  Write bank
 New address $8000
 New bank $7
-File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2df
+File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2da
 File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
 File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
-File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2df
+File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2da
 File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
 File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
-File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $19b
+File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
 File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
-File 'bin\ColouriseRight.bin' offset $0 xor $0 len $19b
+File 'bin\ColouriseRight.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
 File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
 File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
@@ -71,26 +71,26 @@ File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
 File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
 File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
 File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
-File 'bin\ColouriseTop.bin' read $2df to use $2df
+File 'bin\ColouriseTop.bin' read $2da to use $2da
 File 'bin\Char0To1_1.bin' read $148f to use $148f
 File 'bin\Char1To0_1.bin' read $148f to use $148f
 New bank $7
  Write multi-bank 7 $8000
-File 'bin\ColouriseBottom.bin' read $2df to use $2df
+File 'bin\ColouriseBottom.bin' read $2da to use $2da
 New bank $8
  Write multi-bank 8 $8000
 File 'bin\Char0To1_m1.bin' read $148f to use $148f
 File 'bin\Char1To0_m1.bin' read $148f to use $148f
 New bank $9
  Write multi-bank 9 $8000
-File 'bin\ColouriseLeft.bin' read $19b to use $19b
+File 'bin\ColouriseLeft.bin' read $196 to use $196
 New bank $a
  Write multi-bank 10 $8000
 File 'bin\Char0To1_40.bin' read $14d1 to use $14d1
 File 'bin\Char1To0_40.bin' read $14d1 to use $14d1
 New bank $b
  Write multi-bank 11 $8000
-File 'bin\ColouriseRight.bin' read $19b to use $19b
+File 'bin\ColouriseRight.bin' read $196 to use $196
 New bank $c
  Write multi-bank 12 $8000
 File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1

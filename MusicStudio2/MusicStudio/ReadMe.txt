@@ -3,16 +3,16 @@
 	-----------------------
 
 
-Music Studio 2.2 is a Windows-based SID music creator software. For an accurate C64 sound, it utilises the newest RESID-FP emulation available, both old (6581) and new (8580) SID chips. MS2 is capable of creating 1x speed tunes and alternate many SID chip parameters directly with various commands. Classic and new C64 sounds can be created with envelope parameters that can be set up in few simple steps. 
+Music Studio 2.2 is Windows-based SID music creator software. For an accurate C64 sound, it utilises the newest RESID-FP emulation available, both old (6581) and new (8580) SID chips. It is capable of creating 1x speed tunes and many SID chip parameters can be edited directly. Classic and new C64 sounds can be created with envelope parameters that can be set up in few simple steps. 
 
-For proper initialization, run MusicStudio2.2\MusicStudioLauncher.exe
+To start, run MusicStudio2.2\MusicStudioLauncher.exe
 
 Video demonstration: https://www.youtube.com/watch?v=3ApqDIbYPec
 C64: MusicStudio2 play music from BASIC: https://youtu.be/s9IgipH5vXw
 C64: MusicStudio2 play music from machine code: https://youtu.be/NRzS6oS9JLo
 
 
-Any errors regarding Visual Studio runtime can be foxed by installing the redistributable from Microsoft: http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU3/vcredist_x86.exe
+Any errors regarding Visual Studio runtime can be fixed by installing the redistributable from Microsoft: http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU3/vcredist_x86.exe
 
 
 
@@ -78,7 +78,7 @@ The first JMP uses the Accumulator to set the music track to play. The second JM
 
 
 MusicPlayerInit
-	Register A choses the song, starting at 0.
+	Register A chooses the song, starting at 0.
 MusicPlayerPlay
 MusicPlayerStop
 
@@ -466,7 +466,7 @@ X = Command
 Command:
 00 (both nybbles XY) = No note change. Do nothing. Delay time in ZZ
 1 = Set absolute note ZZ = note and remembers the previous note (used by command 2). Does this once at the start of the command. Effects can be active.
-2 = Restore remembred note
+2 = Restore remembered note
 8 = Timed note step add upper nybble Z+1 with time of lower nybble+1 (zero based).
 9 = Timed note step sub upper nybble Z-1 with time of lower nybble+1 (zero based).
 A = Relative note step ZZ = step signed 8 bit value each frame. For fast glides it is better to use this, the code is quicker and shorter.
@@ -532,6 +532,7 @@ In addition to the standard Windows MFC command line options the following are r
 	/exportToSID <filename>
 	/exportToSelf <y/n> <filename>
 	/exportToC64 <$hex or decimal address> <y/n> <filename>
+	/exportToMIDI <filename>
 	/play
 	/loadEnvelope <hex position> <filename>
 	/saveEnvelope <hex position> <filename>

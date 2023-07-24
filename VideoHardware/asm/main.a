@@ -78,7 +78,7 @@ start
 	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
 	sta CIA2PortBRS232
 
-	lda #kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Enable
+	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 
 	jsr Video_WaitVBlank

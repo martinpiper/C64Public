@@ -19,3 +19,5 @@ call BuildIt6b.bat
 call BuildIt7.bat
 call BuildIt9.bat
 call BuildIt10.bat
+call BuildIt11.bat
+call BuildIt12.bat

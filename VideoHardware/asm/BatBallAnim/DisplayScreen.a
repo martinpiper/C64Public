@@ -4,7 +4,7 @@ DisplayScreen
 
 	jsr Video_DisableDisplay
 	jsr Video_InitDisplaySpritesScrollsBackground
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable
+	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 	inc VIC2BorderColour
 

@@ -1,0 +1,260 @@
+!zn
+.lastPushX !by 1
+.lastPushY !by 1
+
+Camera_SeekToTarget_MapHX	!by 0
+Camera_SeekToTarget_MapHY	!by 0
+Camera_SeekToTarget			!by 0
+
+Camera_Update
+!ifdef PlayerMapEndXH1 {
+	lda scrollMapHX
+	cmp #PlayerMapEndXH1
+	bne .o1
+	lda scrollMapHY
+	cmp #PlayerMapEndYH1
+	bne .o1
+	lda #(PlayerMapEndLevel1*3)+$03
+	jmp ScrollerDemoMainline_ExitTo
+.o1
+}
+!ifdef PlayerMapEndXH2 {
+	lda scrollMapHX
+	cmp #PlayerMapEndXH2
+	bne .o2
+	lda scrollMapHY
+	cmp #PlayerMapEndYH2
+	bne .o2
+	lda #(PlayerMapEndLevel2*3)+$03
+	jmp ScrollerDemoMainline_ExitTo
+.o2
+}
+
+	; Simple push camera calculations
+	lda #0
+	sta frameTargetVelX
+	sta frameTargetVelY
+
+	lda Camera_SeekToTarget
+	beq .notSeekingTarget
+
+	jsr Camera_Update_ToTarget
+	jmp .over1
+
+.notSeekingTarget
+	jsr Camera_Update_ToPlayer
+
+.over1
+
+	jsr Camera_RoundOutPixels
+
+	jsr ScrollerCheckMapRangeAndVelocity
+
+	!source "CheckForBadScrolls.a"
+
+	!source "ClampScrollVelocity.a"
+	rts
+
+Camera_Update_ToPlayer
+	lda AnimationYPos
+	cmp #151+16	; Carefully selected to avoid any misaligned scrolling
+	bcc .no1b
+	lda UserInput_playerDeltaY
+	bmi .endY
+	lda #-3
+	sta frameTargetVelY
+	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no1b
+	lda AnimationYPos
+	cmp #151	; Carefully selected to avoid any misaligned scrolling
+	bcc .no1
+	lda UserInput_playerDeltaY
+	bmi .endY
+	lda #-2
+	sta frameTargetVelY
+	lda #-1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no1
+
+	lda AnimationYPos
+	cmp #119-16	; Carefully selected to avoid any misaligned scrolling
+	bcs .no2c
+	lda UserInput_playerDeltaY
+	beq .no2bb
+	bpl .no2
+.no2bb
+	lda #3
+	sta frameTargetVelY
+	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no2c
+	cmp #119	; Carefully selected to avoid any misaligned scrolling
+	bcs .no2
+	lda UserInput_playerDeltaY
+	beq .no2b
+	bpl .no2
+.no2b
+	lda #2
+	sta frameTargetVelY
+	lda #1	; Could be used but then it's harder to spot the "bad scrolls"
+	sta .lastPushY
+	jmp .endY
+.no2
+
+.endY
+
+	; This calculates larger push scroll values if the player is close to the screen edges
+	; Handle the X position now
+	lda AnimationXPosHi
+	lsr
+	lda AnimationXPosLo
+	ror
+
+	cmp #128+8-16
+	bcc .no3b
+	lda #-3
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .endX
+.no3b
+	cmp #128-8-16
+	bcc .no3
+	lda #-2
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .endX
+.no3
+
+	cmp #48-8+16
+	bcs .no4b
+	lda #3
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .endX
+.no4b
+	cmp #48+8+16
+	bcs .no4
+	lda #2
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .endX
+.no4
+
+.endX
+	rts
+
+
+Camera_Update_ToTarget
+	lda Camera_SeekToTarget_MapHX
+	cmp scrollMapHX
+	beq .none1
+	bcs .goLeft
+
+	lda #3
+	sta frameTargetVelX
+	lda #1
+	sta .lastPushX
+	jmp .none12
+
+.goLeft
+	lda #-3
+	sta frameTargetVelX
+	lda #-1
+	sta .lastPushX
+	jmp .none12
+
+.none1
+	lda scrollMapLX
+	cmp #2
+	beq .none12
+	bcs .goLeft2
+
+	lda #-1
+	sta frameTargetVelX
+	sta .lastPushX
+	jmp .none12
+
+.goLeft2
+	lda #1
+	sta frameTargetVelX
+	sta .lastPushX
+
+.none12
+
+
+	lda Camera_SeekToTarget_MapHY
+	cmp scrollMapHY
+	beq .none2
+	bcs .goUp
+
+	lda #3
+	sta frameTargetVelY
+	lda #1
+	sta .lastPushY
+	jmp .none22
+
+.goUp
+	lda #-3
+	sta frameTargetVelY
+	lda #-1
+	sta .lastPushY
+	jmp .none22
+
+.none2
+	lda scrollMapLY
+	cmp #2
+	beq .none22
+	bcs .goUp2
+
+	lda #-1
+	sta frameTargetVelY
+	sta .lastPushY
+	jmp .none22
+
+.goUp2
+	lda #1
+	sta frameTargetVelY
+	sta .lastPushY
+
+.none22
+
+	rts
+
+
+Camera_RoundOutPixels
+	; When there is no target X velocity, attempt to center the X scroll until it is 4 pixels again
+	lda frameTargetVelX
+	bne .haveTargetX
+
+;	lda topScreenScrollX
+	lda frameScrollX
+	cmp #4
+	beq .haveTargetX
+
+	ldx .lastPushX
+	stx frameTargetVelX
+.haveTargetX
+
+
+
+	; When there is no target Y velocity, attempt to center the Y scroll until it is 4 pixels again
+	lda frameTargetVelY
+	bne .haveTargetY
+
+;	lda topScreenScrollY
+	lda frameScrollY
+	cmp #4
+	beq .haveTargetY
+
+	ldx .lastPushY
+	stx frameTargetVelY
+.haveTargetY
+	rts

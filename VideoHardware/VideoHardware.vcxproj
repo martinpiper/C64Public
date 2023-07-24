@@ -9,6 +9,10 @@
       <Configuration>Release11</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release12|Win32">
+      <Configuration>Release12</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release3Anim|Win32">
       <Configuration>Release3Anim</Configuration>
       <Platform>Win32</Platform>
@@ -39,6 +43,10 @@
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release6b|Win32">
       <Configuration>Release6b</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release6c|Win32">
+      <Configuration>Release6c</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release6|Win32">
@@ -119,12 +127,22 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release12|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release6b|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release6c|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
@@ -172,10 +190,16 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release11|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release12|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release6b|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release6c|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release4_8|Win32'" Label="PropertySheets">
@@ -248,6 +272,12 @@
     <NMakeReBuildCommandLine>BuildIt11.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release12|Win32'">
+    <NMakeBuildCommandLine>BuildIt12.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt12.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt12.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'">
     <NMakeBuildCommandLine>BuildIt9.bat</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BuildIt9.bat</NMakeCleanCommandLine>
@@ -258,6 +288,12 @@
     <NMakeBuildCommandLine>BuildIt6b.bat</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BuildIt6b.bat</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>BuildIt6b.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release6c|Win32'">
+    <NMakeBuildCommandLine>BuildIt6c.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt6c.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt6c.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release4_8|Win32'">
@@ -287,6 +323,7 @@
     <None Include="BuildIt.bat" />
     <None Include="BuildIt10.bat" />
     <None Include="BuildIt11.bat" />
+    <None Include="BuildIt12.bat" />
     <None Include="BuildIt3.bat" />
     <None Include="BuildIt3Anim.bat" />
     <None Include="BuildIt3MultiplexAPU.bat" />
@@ -296,6 +333,7 @@
     <None Include="BuildIt5.bat" />
     <None Include="BuildIt6.bat" />
     <None Include="BuildIt6b.bat" />
+    <None Include="BuildIt6c.bat" />
     <None Include="BuildIt7.bat" />
     <None Include="BuildIt9.bat" />
     <None Include="FeatureEditor.bat" />
@@ -309,6 +347,7 @@
   <ItemGroup>
     <Library Include="..\..\BombJack\stdlib\APU.a" />
     <Library Include="..\..\BombJack\stdlib\APU_Macros.a" />
+    <Library Include="..\..\BombJack\stdlib\Audio.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24Bit.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24BitSimple.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24Bit_Macros.a" />
@@ -319,6 +358,12 @@
     <Library Include="..\BerzerkRedux\Rand.a" />
     <Library Include="..\Decompression\DecompressRLE.a" />
     <Library Include="..\Decompression\DecompressRLEVars.a" />
+    <Library Include="..\MakeCart\asm\BankSelect8K.a" />
+    <Library Include="..\MakeCart\asm\EasyFlash.a" />
+    <Library Include="..\MakeCart\asm\EasyFlash_Code.a" />
+    <Library Include="..\MakeCart\asm\EasyFlash_Macros.a" />
+    <Library Include="..\MakeCart\asm\GMod2_Code.a" />
+    <Library Include="..\MakeCart\asm\GMod2_Macros.a" />
     <Library Include="..\stdlib\BASICEntry80d.a" />
     <Library Include="..\stdlib\BASICEntry810.a" />
     <Library Include="..\stdlib\BASICEntry900.a" />
@@ -332,6 +377,28 @@
     <Library Include="..\stdlib\stdlib.a" />
     <Library Include="..\stdlib\VideoModes.a" />
     <Library Include="..\stdlib\VideoModes_Macros.a" />
+    <Library Include="..\VectorPlotBitmap\3DModels.a" />
+    <Library Include="..\VectorPlotBitmap\AutoDefs_Span.a" />
+    <Library Include="..\VectorPlotBitmap\BitmapPlot.a" />
+    <Library Include="..\VectorPlotBitmap\BitmapPlotMacros.a" />
+    <Library Include="..\VectorPlotBitmap\BitmapPlotVars.a" />
+    <Library Include="..\VectorPlotBitmap\GenericSpan.a" />
+    <Library Include="..\VectorPlotBitmap\Poly2D.a" />
+    <Library Include="..\VectorPlotBitmap\Poly2DMacros.a" />
+    <Library Include="..\VectorPlotBitmap\Poly2DMem.a" />
+    <Library Include="..\VectorPlotBitmap\Poly2DTest1.a" />
+    <Library Include="..\VectorPlotBitmap\Poly2DVars.a" />
+    <Library Include="..\VectorPlotBitmap\Segments.a" />
+    <Library Include="..\VectorPlotBitmap\SegmentsMacros.a" />
+    <Library Include="..\VectorPlotBitmap\SegmentsMemory.a" />
+    <Library Include="..\VectorPlotBitmap\SegmentsTest1.a" />
+    <Library Include="..\VectorPlotBitmap\SegmentsVars.a" />
+    <Library Include="..\VectorPlotBitmap\Transform.a" />
+    <Library Include="..\VectorPlotBitmap\TransformMacros.a" />
+    <Library Include="..\VectorPlotBitmap\TransformMem.a" />
+    <Library Include="..\VectorPlotBitmap\TransformTables.a" />
+    <Library Include="..\VectorPlotBitmap\TransformVars.a" />
+    <Library Include="..\VectorPlotBitmap\VectorHardware.a" />
     <Library Include="asm\AnimationData.a" />
     <Library Include="asm\AnimationEngine.a" />
     <Library Include="asm\AnimMacros.a" />
@@ -346,9 +413,11 @@
     <Library Include="asm\CharacterLogic.a" />
     <Library Include="asm\CharacterLogicData.a" />
     <Library Include="asm\DecompressRLECommon.a" />
+    <Library Include="asm\GapFind.a" />
     <Library Include="asm\main.a" />
     <Library Include="asm\main10.a" />
     <Library Include="asm\main11.a" />
+    <Library Include="asm\main12.a" />
     <Library Include="asm\main3.a" />
     <Library Include="asm\main3Anim.a" />
     <Library Include="asm\main3MultiplexAPU.a" />
@@ -357,6 +426,7 @@
     <Library Include="asm\main5.a" />
     <Library Include="asm\main6.a" />
     <Library Include="asm\main6b.a" />
+    <Library Include="asm\main6c.a" />
     <Library Include="asm\main6CommonBlimps.a" />
     <Library Include="asm\main6CommonScrolls.a" />
     <Library Include="asm\main7.a" />
@@ -393,6 +463,7 @@
     <Library Include="tmp\ShadowBeastSpritesSheet.txt.a" />
     <Library Include="tmp\spriteSheet.txt.a" />
     <Library Include="tmp\TurricanSpritesSheet.txt.a" />
+    <Library Include="tmp\_f_index1.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\BombJack\Done.txt" />

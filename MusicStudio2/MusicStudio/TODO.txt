@@ -1,3 +1,10 @@
+Command lines:
+/openFile "C:\Work\C64\MusicStudio2\ExampleFiles\Loopz Musix.msmus" /exportToMIDI c:\temp\t.mid
+/openFile "C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples\three notes one track.rpp"
+/openFile "C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples\one block.RPP"
+/openFile "C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples\_EXAMPLE 1.RPP"
+/openFile "C:\Users\Martin Piper\Downloads\_EXAMPLE 3.RPP"
+
 To build:
 cd /D C:\Work\C64\MusicStudio2\MusicStudio
 ..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderSID.a
@@ -15,7 +22,74 @@ cd /D C:\Work\C64\MusicStudio2\MusicStudio
 ..\..\acme.exe -v4 --lib ..\..\ --lib ..\MusicStudioConvert\ ..\MusicStudioConvert\HeaderOric.a
 oricutron.exe -t C:\Work\C64\MusicStudio2\MusicStudio\t.tap
 
+
+
 TODO
+
+* "C:\Users\Martin Piper\Downloads\_EXAMPLE 3.RPP" only importing nie notes, not the 16 notes in the track 3 block?
+	Break: mBlockTrackerRows[ block ][ blockRow ][0] = MusicStudio1::BlockEntry::GetNoteFromNumber(theNum - 12).c_str();
+	After: 		blockRow	213	int
+	Because of this: if ((startOfMIDIBlock > 0) && (theBlockLengthProcessed >= theBlockLength))
+			theBlockLengthProcessed	8192	__int64
+			theBlockLength	8192	__int64
+	>> tempoMultiplier needs to be roughly 32 instead of 16?
+		The MIDI block lengths need to be added together and checked with the midi block time to find the real multiplier
+
+
+
+
+
+
+
+* The build test should really use the command line to export a known working music file to prepare for the C64 and Oric test
+
+
+
+
+* Variable speed playback table. Have a variable length table with bit masks that specify what to run each call. For example:
+	Process voice 0/1/2
+		.p2
+	Process filter effects
+		TableCodeActivateFilter
+	Process state 0/1/2
+		.notThisFrame
+	Voice store, can be another table/byte value
+		MACROStoreVoice 0/1/2
+	> Can read the current bitmask from the table, and just shift it over to test the output carry
+	> Playback speed from the editor, needs calls per frame/second option
+		Needs to be set in the SID header
+			SIDTUNE_SPEED_CIA_1A
+			SIDTUNE_COMPATIBILITY_R64
+			songSpeed
+			clockSpeed
+			speedString
+		Also the prg export needs to handle this (raster based wait?)
+
+
+
+
+* Disable the entire voice option (mute tick box?)
+	Strip unused blocks and track data?
+	Removes all SID updates for the entire voice
+	Could even potentially remove the variable space for that voice
+	The voice to SID data copy might need a tweak
+	
+
+
+
+* Optimise duplicate blocks. Specifically detect blocks that result in the same output bytes.
+
+
+
+
+
+* MIDI: Allow the option for note polyphony into separate tracks. Either:
+	1) A round robin approach where notes are populated into blocks spread across a configurable number of tracks (1-3)
+	2) Where "middle C" (or perhaps instrument) is used for the left or right hand and to choose an appropriate track.
+	3) Where notes from each MIDI track are assigned to a specific track using one of the polyphony options above.
+
+
+
 
 * When exporting and importing blocks, or editing blocks, allow envelopes to use names instead of just numbers.
 	Then when loading a block attempt to match names
@@ -116,7 +190,19 @@ Music studio load while appending. Then option to optimise instruments, blocks.
 Useful for merging songs together and then extracting the instruments and track blocks for looping.
 Then can produce a combined instrument bank with extracted block loops.
 	Produce a demo, like the Hawkeye loader, with runtime editable music.
+	"C:\Users\Martin Piper\Downloads\Delta_Mix-E-Load_loader.sid"
+	"C:\Users\Martin Piper\Downloads\MIX-E-LOAD.DANISHGOLD.T64"
+		The different songs have a selection of different leads, bass, and drums
+		There seems to be unified and repeating transposition for the lead and bass.
+	"C:\Users\Martin Piper\Downloads\Hawkeye_loader.sid"
+	"C:\Users\Martin Piper\Downloads\Hawkeye_loader (1).sid"
+	"C:\Users\Martin Piper\Downloads\em Loader Music.t64"
+		This one has an easy to intercept keyboard poll
+		$99b-$99e are the locations to use for the various voice/effect values
+			They are loaded to display to the screen (nop out), but also loaded the music(?) player at $a8f onwards for example, find with "watch load ..."
 
+	"C:\Users\Martin Piper\Downloads\mixe-e-load.d64"
+		Seems to be a bit bugged for some of the lead tracks?
 
 
 
@@ -260,9 +346,11 @@ then start the sample to play.
 
 
 Have the option to specify what variables can be stored in zeropage, so speed up memory access.
-*Perhpas even have the option to automatically calculate what variables will benefit the raster time most by timing assembled code with different variables set.
+*Perhaps even have the option to automatically calculate what variables will benefit the raster time most by timing assembled code with different variables set.
 *The whole music could be played to find out the peak and average raster time and allow the automatic system to find the best match for either peak or average or both combined.
 *Basically like genetic code optimisation.
+** Or just run the music (the more the better) and count read/write access to memory, sort the addresses in terms of most access and map those map to the variables/labels used.
+
 
 
 

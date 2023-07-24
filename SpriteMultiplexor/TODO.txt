@@ -1,5 +1,10 @@
 ; TODO
 
+* Precise raster beam tracing in C64DebugGUI reveals the first IRQ is copying the sprites backwards, not top down, which could result in the top most sprite not quite getting its update completed in time?!! Investigate more fully.
+
+
+
+
 * It should be possible to have other tables (don't use a bitfield, it's slower to extract) to contain multicolour enable and X/Y expansion flags and sprite background priority.
 	The calculation involving Multiplex_spriteHeightTweak will need to be tweaked for Y expanded sprites.
 	Make the code beneath "lda Multiplex_XPosHi,y" generic and able to optionally update the other bitfields for x/y expansion, multicolour and background priority.

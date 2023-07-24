@@ -1,0 +1,339 @@
+;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+
+!source "stdlib/stdlib.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $02
+zeroPage_Temp1	= $03
+
+
+!zn
+* = C64Cartridge_Lo_8K
+!word DoTitleScreen
+!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
+; Jump table
+	jmp DoTitleScreen
+	jmp DoGame
+
+!source "tmp/FingerPrint.a"
+
+DoTitleScreen
+	+MStopInitStack_X
+	jsr CartInit
+	jsr DoDataToTop
+;	jmp DoGameReal
+	jmp DoTitleScreenReal
+
+DoGame
+	+MStopInitStack_X
+	jsr CartInit
+	jsr DoDataToTop
+	jmp DoGameReal
+
+; This is here to disable ultimax mode and make $c000 writeable RAM instead
+CartInit
+	lda #0
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	rts
+
+
+DataToTopStart
+!pseudopc $c000 {
+DataToTopStartReal
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+!source "stdlib/MemoryCopy.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+;!source "BombJack/stdlib/HardwareTest.a"
+!source "BombJack/stdlib/APU.a"
+!source "BombJack/stdlib/Audio.a"
+
+!source "tmp/_f_index1.a"
+
+!zn
+DoInit
+	sei
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+	rts
+
+!macro MBankDataToVideoFunction .bank , .address , .size , .function {
+!if .size > 0 {
+	jsr .function
+	lda #.bank
+	jsr CartSelectBank_8K
+	+MWordValueToAddressLoHi_A .address , BankDataToBus24_lo , BankDataToBus24_hi
+	+MWordValueTo_XY .size
+	jsr BankDataToBus24
+}
+}
+
+!macro MBankDataToVideoAddress .bank , .address , .size , .ebbs , .videoAddr {
+!if .size > 0 {
+	+MBus24Bit_SetAddress_AXY .ebbs , .videoAddr
+	lda #.bank
+	jsr CartSelectBank_8K
+	+MWordValueToAddressLoHi_A .address , BankDataToBus24_lo , BankDataToBus24_hi
+	+MWordValueTo_XY .size
+	jsr BankDataToBus24
+}
+}
+
+!macro MBankDataToC64Address .bank , .address , .size , .c64Addr {
+!if .size > 0 {
+	lda #.bank
+	jsr CartSelectBank_8K
+	+MWordValueToAddressLoHi_A .address , BankDataToC64_lo , BankDataToC64_hi
+	+MWordValueToAddressLoHi_A .c64Addr , BankDataToC64Dest_lo , BankDataToC64Dest_hi
+	+MWordValueTo_XY .size
+	jsr BankDataToC64
+}
+}
+
+!zn
+.c64Reminder
+	!scr "MegaWang 2000 Turbo Edition hardware"
+.c64ReminderEnd
+DoTitleScreenReal
+	jsr DoInit
+
+	+SetDefaultScreenLowerCase_A
+	+ClearScreenAt_AX SCREENRAM , ' '
+	+DisplayColourTextMiddle_AX .c64Reminder , .c64ReminderEnd , SCREENRAM , VIC2Colour_White
+
+	jsr Audio_Init
+	jsr Video_DisableDisplay
+;	+WaitForFire_A
+
+;	jsr HardwareTest_VideoPattern0
+
+	; Copy data
+	+MBankDataToVideoFunction CartFile1_Bank_ShadowBeastPaletteData_bin , CartFile1_Start_ShadowBeastPaletteData_bin , CartFile1_Size_ShadowBeastPaletteData_bin , Video_SetAddressPalette
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_map_bin , CartFile1_Start_ShadowBeastTiles_map_bin , CartFile1_Size_ShadowBeastTiles_map_bin , kBus24Bit_TileScreenMap_EBBS , kBus24Bit_TileScreenMap
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane0_bin , CartFile1_Start_ShadowBeastTiles_plane0_bin , CartFile1_Size_ShadowBeastTiles_plane0_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_0
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane1_bin , CartFile1_Start_ShadowBeastTiles_plane1_bin , CartFile1_Size_ShadowBeastTiles_plane1_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_1
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane2_bin , CartFile1_Start_ShadowBeastTiles_plane2_bin , CartFile1_Size_ShadowBeastTiles_plane2_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_2
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane3_bin , CartFile1_Start_ShadowBeastTiles_plane3_bin , CartFile1_Size_ShadowBeastTiles_plane3_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_3
+
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr DisplayLoading
+
+	+MBankDataToVideoAddress CartFile1_Bank_Demo6Sprites20_bin , CartFile1_Start_Demo6Sprites20_bin , CartFile1_Size_Demo6Sprites20_bin , kBus24Bit_Sprites2Planes_EBBS , kBus24Bit_Sprites2Planes_0
+	+MBankDataToVideoAddress CartFile1_Bank_Demo6Sprites21_bin , CartFile1_Start_Demo6Sprites21_bin , CartFile1_Size_Demo6Sprites21_bin , kBus24Bit_Sprites2Planes_EBBS , kBus24Bit_Sprites2Planes_1
+	+MBankDataToVideoAddress CartFile1_Bank_Demo6Sprites22_bin , CartFile1_Start_Demo6Sprites22_bin , CartFile1_Size_Demo6Sprites22_bin , kBus24Bit_Sprites2Planes_EBBS , kBus24Bit_Sprites2Planes_2
+	+MBankDataToVideoAddress CartFile1_Bank_Demo6Sprites23_bin , CartFile1_Start_Demo6Sprites23_bin , CartFile1_Size_Demo6Sprites23_bin , kBus24Bit_Sprites2Planes_EBBS , kBus24Bit_Sprites2Planes_3
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites_plane0_bin , CartFile1_Start_ShadowBeastSprites_plane0_bin , CartFile1_Size_ShadowBeastSprites_plane0_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_0
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites_plane1_bin , CartFile1_Start_ShadowBeastSprites_plane1_bin , CartFile1_Size_ShadowBeastSprites_plane1_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_1
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites_plane2_bin , CartFile1_Start_ShadowBeastSprites_plane2_bin , CartFile1_Size_ShadowBeastSprites_plane2_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_2
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites_plane3_bin , CartFile1_Start_ShadowBeastSprites_plane3_bin , CartFile1_Size_ShadowBeastSprites_plane3_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_3
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_map_bin , CartFile1_Start_ShadowBeastChars_map_bin , CartFile1_Size_ShadowBeastChars_map_bin , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_map_bin2 , CartFile1_Start_ShadowBeastChars_map_bin2 , CartFile1_Size_ShadowBeastChars_map_bin2 , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_plane0_bin , CartFile1_Start_ShadowBeastChars_plane0_bin , CartFile1_Size_ShadowBeastChars_plane0_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_0
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_plane1_bin , CartFile1_Start_ShadowBeastChars_plane1_bin , CartFile1_Size_ShadowBeastChars_plane1_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_1
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_plane2_bin , CartFile1_Start_ShadowBeastChars_plane2_bin , CartFile1_Size_ShadowBeastChars_plane2_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_2
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars_plane3_bin , CartFile1_Start_ShadowBeastChars_plane3_bin , CartFile1_Size_ShadowBeastChars_plane3_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_3
+
+	+MBankDataToVideoAddress CartFile1_Bank_SotBexportedMusicSamples_bin , CartFile1_Start_SotBexportedMusicSamples_bin , CartFile1_Size_SotBexportedMusicSamples_bin , $04 , $0000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_1_SotBexportedMusicSamples_bin , CartFile1_Start_spanned_1_SotBexportedMusicSamples_bin , CartFile1_Size_spanned_1_SotBexportedMusicSamples_bin , $04 , $2000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_2_SotBexportedMusicSamples_bin , CartFile1_Start_spanned_2_SotBexportedMusicSamples_bin , CartFile1_Size_spanned_2_SotBexportedMusicSamples_bin , $04 , $4000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_3_SotBexportedMusicSamples_bin , CartFile1_Start_spanned_3_SotBexportedMusicSamples_bin , CartFile1_Size_spanned_3_SotBexportedMusicSamples_bin , $04 , $6000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_4_SotBexportedMusicSamples_bin , CartFile1_Start_spanned_4_SotBexportedMusicSamples_bin , CartFile1_Size_spanned_4_SotBexportedMusicSamples_bin , $04 , $8000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_5_SotBexportedMusicSamples_bin , CartFile1_Start_spanned_5_SotBexportedMusicSamples_bin , CartFile1_Size_spanned_5_SotBexportedMusicSamples_bin , $04 , $a000
+
+
+	+MBankDataToC64Address CartFile1_Bank_main6a_prg , CartFile1_Start_main6a_prg , CartFile1_Size_main6a_prg , $200
+	+MBankDataToC64Address CartFile1_Bank_spanned_1_main6a_prg , CartFile1_Start_spanned_1_main6a_prg , CartFile1_Size_spanned_1_main6a_prg , $200 + $2000
+	+MBankDataToC64Address CartFile1_Bank_spanned_2_main6a_prg , CartFile1_Start_spanned_2_main6a_prg , CartFile1_Size_spanned_2_main6a_prg , $200 + $4000
+;	+MBankDataToC64Address CartFile1_Bank_spanned_3_main6a_prg , CartFile1_Start_spanned_3_main6a_prg , CartFile1_Size_spanned_3_main6a_prg , $200 + $6000
+!ifdef CartFile1_Size_spanned_3_main6a_prg {
+!error "CartFile1_Size_spanned_3_main6a_prg"
+}
+
+	jmp $200
+
+DisplayLoading
+	jsr Video_SetAddressVideoLayersEnable
+	lda #%0100
+	sta CIA2PortBRS232
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue -150
+	+MBus24Bit_SendLE16BitValue 450
+
+	lda #kVideo_EnableDisplay_Enable
+	jsr Video_EnableDisplay
+
+	rts
+
+DoGameReal
+	jsr DoInit
+	jsr Audio_Init
+
+	jsr DisplayLoading
+
+	; Copy data
+
+	; Clear the last sprite
+	+MBus24Bit_SetAddress_AXY kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_0 + $1fe0
+	lda #0
+	ldy #4*8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_1 + $1fe0
+	lda #0
+	ldy #4*8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_2 + $1fe0
+	lda #0
+	ldy #4*8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_3 + $1fe0
+	lda #0
+	ldy #4*8
+	jsr Bus24Bit_WriteAForY
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites2_plane0_bin , CartFile1_Start_ShadowBeastSprites2_plane0_bin , CartFile1_Size_ShadowBeastSprites2_plane0_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_0
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites2_plane1_bin , CartFile1_Start_ShadowBeastSprites2_plane1_bin , CartFile1_Size_ShadowBeastSprites2_plane1_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_1
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites2_plane2_bin , CartFile1_Start_ShadowBeastSprites2_plane2_bin , CartFile1_Size_ShadowBeastSprites2_plane2_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_2
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastSprites2_plane3_bin , CartFile1_Start_ShadowBeastSprites2_plane3_bin , CartFile1_Size_ShadowBeastSprites2_plane3_bin , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_3
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_map_bin , CartFile1_Start_ShadowBeastChars2_map_bin , CartFile1_Size_ShadowBeastChars2_map_bin , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_map_bin2 , CartFile1_Start_ShadowBeastChars2_map_bin2 , CartFile1_Size_ShadowBeastChars2_map_bin2 , kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap
+
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_plane0_bin , CartFile1_Start_ShadowBeastChars2_plane0_bin , CartFile1_Size_ShadowBeastChars2_plane0_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_0
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_plane1_bin , CartFile1_Start_ShadowBeastChars2_plane1_bin , CartFile1_Size_ShadowBeastChars2_plane1_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_1
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_plane2_bin , CartFile1_Start_ShadowBeastChars2_plane2_bin , CartFile1_Size_ShadowBeastChars2_plane2_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_2
+	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastChars2_plane3_bin , CartFile1_Start_ShadowBeastChars2_plane3_bin , CartFile1_Size_ShadowBeastChars2_plane3_bin , kBus24Bit_CharScreenPlanes_EBBS , kBus24Bit_CharScreenPlanes_3
+
+;	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_map_bin , CartFile1_Start_ShadowBeastTiles_map_bin , CartFile1_Size_ShadowBeastTiles_map_bin , kBus24Bit_TileScreenMap_EBBS , kBus24Bit_TileScreenMap
+;
+;	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane0_bin , CartFile1_Start_ShadowBeastTiles_plane0_bin , CartFile1_Size_ShadowBeastTiles_plane0_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_0
+;	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane1_bin , CartFile1_Start_ShadowBeastTiles_plane1_bin , CartFile1_Size_ShadowBeastTiles_plane1_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_1
+;	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane2_bin , CartFile1_Start_ShadowBeastTiles_plane2_bin , CartFile1_Size_ShadowBeastTiles_plane2_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_2
+;	+MBankDataToVideoAddress CartFile1_Bank_ShadowBeastTiles_plane3_bin , CartFile1_Start_ShadowBeastTiles_plane3_bin , CartFile1_Size_ShadowBeastTiles_plane3_bin , kBus24Bit_TileScreenPlanes_EBBS , kBus24Bit_TileScreenPlanes_3
+
+	+MBankDataToVideoAddress CartFile1_Bank_SotBexportedMusic2Samples_bin , CartFile1_Start_SotBexportedMusic2Samples_bin , CartFile1_Size_SotBexportedMusic2Samples_bin , $04 , $0000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_1_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_1_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_1_SotBexportedMusic2Samples_bin , $04 , $2000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_2_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_2_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_2_SotBexportedMusic2Samples_bin , $04 , $4000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_3_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_3_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_3_SotBexportedMusic2Samples_bin , $04 , $6000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_4_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_4_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_4_SotBexportedMusic2Samples_bin , $04 , $8000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_5_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_5_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_5_SotBexportedMusic2Samples_bin , $04 , $a000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_6_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_6_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_6_SotBexportedMusic2Samples_bin , $04 , $c000
+	+MBankDataToVideoAddress CartFile1_Bank_spanned_7_SotBexportedMusic2Samples_bin , CartFile1_Start_spanned_7_SotBexportedMusic2Samples_bin , CartFile1_Size_spanned_7_SotBexportedMusic2Samples_bin , $04 , $e000
+
+
+	+MBankDataToC64Address CartFile1_Bank_main6b_prg , CartFile1_Start_main6b_prg , CartFile1_Size_main6a_prg , $200
+	+MBankDataToC64Address CartFile1_Bank_spanned_1_main6b_prg , CartFile1_Start_spanned_1_main6b_prg , CartFile1_Size_spanned_1_main6b_prg , $200 + $2000
+	+MBankDataToC64Address CartFile1_Bank_spanned_2_main6b_prg , CartFile1_Start_spanned_2_main6b_prg , CartFile1_Size_spanned_2_main6b_prg , $200 + $4000
+	+MBankDataToC64Address CartFile1_Bank_spanned_3_main6b_prg , CartFile1_Start_spanned_3_main6b_prg , CartFile1_Size_spanned_3_main6b_prg , $200 + $6000
+;	+MBankDataToC64Address CartFile1_Bank_spanned_4_main6b_prg , CartFile1_Start_spanned_4_main6b_prg , CartFile1_Size_spanned_4_main6b_prg , $200 + $6000
+!ifdef CartFile1_Size_spanned_4_main6b_prg {
+!error "CartFile1_Size_spanned_4_main6b_prg"
+}
+
+	jmp $200
+
+
+!zn
+; Entry:
+; Setup BankDataToBus24_lo/BankDataToBus24_hi
+; X/Y = lo/hi size
+; Exit:
+; A/X/Y/ST = Trashed
+BankDataToBus24
+.cl1
+	cpx #0
+	beq .cl4
+.cl2
+BankDataToBus24_lo = *+1
+BankDataToBus24_hi = *+2
+	lda $1234
+	+MBus24Bit_Send8BitValueFromA
+	+MIncAddr16 BankDataToBus24_lo , BankDataToBus24_hi
+	dex
+	bne .cl2
+.cl4
+	cpy #0
+	beq .ret
+	dey
+	jmp .cl2
+.ret
+	rts
+
+!zn
+; Entry:
+; Setup BankDataToC64_lo/BankDataToC64_hi and BankDataToC64Dest_lo/BankDataToC64Dest_hi
+; X/Y = lo/hi size
+; Exit:
+; A/X/Y/ST = Trashed
+BankDataToC64
+.cl1
+	cpx #0
+	beq .cl4
+.cl2
+BankDataToC64_lo = *+1
+BankDataToC64_hi = *+2
+	lda $1234
+BankDataToC64Dest_lo = *+1
+BankDataToC64Dest_hi = *+2
+	sta $4321
+	+MIncAddr16 BankDataToC64_lo , BankDataToC64_hi
+	+MIncAddr16 BankDataToC64Dest_lo , BankDataToC64Dest_hi
+	dex
+	bne .cl2
+.cl4
+	cpy #0
+	beq .ret
+	dey
+	jmp .cl2
+.ret
+	rts
+
+;!source "../MakeCart/asm/EasyFlash_Code.a"
+!source "../MakeCart/asm/BankSelect8K.a"
+
+DataToTopEndReal
+}
+DataToTopEnd
+DataToTopSize = DataToTopEnd - DataToTopStart
+
+!if DataToTopEndReal >= VIC {
+!error "DataToTopEndReal is over VIC"
+}
+
+DoDataToTop
+	ldx #0
+.cl1
+!for .i , (>DataToTopSize)+1 {
+!set .ii = .i - 1
+	lda DataToTopStart + (.ii * $100),x
+	sta DataToTopStartReal + (.ii * $100),x
+}
+	dex
+	bne .cl1
+	rts

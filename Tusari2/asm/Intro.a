@@ -1,0 +1,64 @@
+; Intro code
+
+!source "stdlib/stdlib.a"
+!to "bin/Intro.prg", cbm
+!sl "bin/Intro.map"
+!sal
+!svl "bin/Intro.lbl"
+!pdb "bin/Intro.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+* = $400
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	+M_RAMTAS_LOW_STACK
+
+	; Example bitmap screen display
+	+MWordValueTo_XY BitmapLogoColours
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY COLOURRAM
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY VIC2ScreenCharsWidth * VIC2ScreenCharsHeight
+	jsr MemoryCopy_ForSize
+
+	+MACROWaitForTheLastScan_A
+
+	lda #kVIC2ScreenControlHBits_40Columns | kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+	+MVIC2MemorySetup_ScreenBitmap_A BitmapLogoScreen , BitmapLogo
+	sta VIC2MemorySetup
+	lda #CIA2PortASerialBusVICBank_Bank2
+	sta CIA2PortASerialBusVICBank
+	lda #VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Bitmap
+	sta VIC2ScreenControlV
+
+	+WaitForFire_A
+
+	lda #6
+	jsr CartSelectBank_8K
+	jmp C64Cartridge_Lo_8K
+
+
+!source "FingerPrint.a"
+
+!source "stdlib/Initialise.a"
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "../MakeCart/asm/EasyFlash_Code.a"
+;!source "../MakeCart/asm/GMod2_Code.a"
+
+
+
+!source "stdlib/MemoryCopy.a"
+BitmapLogoColours
+!bin "../BlankProjectComp/Tusari.col",,2
+* = $8c00
+BitmapLogoScreen
+!bin "../BlankProjectComp/Tusari.scr",,2
+* = $a000
+BitmapLogo
+!bin "../BlankProjectComp/Tusari.bmp",,2

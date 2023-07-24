@@ -16,7 +16,10 @@ Multiplex_items = 4
 
 !source "asm/DataDefs.a"
 ;!source "asm/MazeSolveDefs.a"
+!source "ScrollEntryCommonVars.a"
 !source "ScrollerVars.a"
+!source "SpritePosToScreenPosMacros.a"
+!source "asm/SubGameConstants.a"
 
 ; Fake a screen with no solid blocks or player bullets
 * = SCREENRAM
@@ -30,6 +33,15 @@ scrollMapHX						!by 0
 scrollMapHY						!by 0
 ScrollerExitMainLineCounter		!by 0
 
+MapBlockAlignedMovement	!by 1
+
+SubGamePickPos		!by 0
+SubGame_ExitState			!by SubGameExit_Null
+
+EnemyBulletBusy_Max = 28
+EnemyBulletBusy_Add = 30
+
+CaptureProbe_CapturedListAnimations
 
 Multiplex_MaxSpr !by Multiplex_items
 !source "asm/AnimationsMemory.a"
@@ -208,8 +220,26 @@ SubGame_Init
 AutoDoor_Init
 UpdateMapBlockOnScreenInternal
 PlayerSweep_Init
+CartSubGame_Init
+Battery_Init
+TutorialHint_Init
+Camera_Init
+Battery_Drain
+PlayerAddHealthTick
 	clc
 	rts
+	
+AllocatePlayerBullet
+	sec
+	rts
+
+; All not used
+PlayerBulletsX
+PlayerBulletsXVel
+PlayerBulletsYVel
+PlayerBulletsTime
+	!fill 32,0
+
 
 Citadel2_ZP_base = scrollerDemo_endVars
 !source "asm/Citadel2Vars.a"
@@ -219,6 +249,7 @@ Citadel2_ZP_base = scrollerDemo_endVars
 !source "asm/MazeSupport.a"
 !source "..\BerzerkRedux\Rand.a"
 !source "asm/Inventory.a"
+!source "asm/PlayerSpritePosTables.a"
 
 EnemyFlags
 	!by 0

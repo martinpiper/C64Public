@@ -379,6 +379,14 @@ void CMusicStudioDoc::Serialize(CArchive& ar)
 				UpdateDocumentDataToInternalFile();
 				return;
 			}
+
+			if (magicTest == kReaper)
+			{
+				LoadReaperFile(ar);
+				UpdateDocumentDataToInternalFile();
+				return;
+			}
+
 			// It isn't a regular file, try to load the C64 format data instead.
 			CStringA ansiName(ar.GetFile()->GetFilePath());
 			mMusicFile.LoadFromFile(ansiName);
@@ -1173,9 +1181,14 @@ void CMusicStudioDoc::UpdateTrackerBlockToInternal(const int currentBlock)
 				lastDuration = thisDuration;
 				lastDurationRelease = thisDurationRelease;
 				CString durationCommand;
-				// While sluring we can ignore the release duration
-				if ((lastDuration/2) > 0 && !(lastDuration&1) && (isSluring || usedEffectSlur || (lastDurationRelease*2) == lastDuration) || ((lastDuration/2) > 0 && (i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty()))
+				// If either of the durations is odd, then we output them properly
+				if ((lastDuration & 1) || (!(isSluring || usedEffectSlur) && (lastDurationRelease & 1)))
 				{
+					durationCommand.Format(_T("DTI:%x,%x\r\n"),lastDuration,lastDurationRelease);
+				}
+				else if ((lastDuration/2) > 0 && !(lastDuration&1) && (isSluring || usedEffectSlur || (lastDurationRelease*2) == lastDuration) || ((lastDuration/2) > 0 && (i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty()))
+				{
+					// While sluring we can ignore the release duration
 					durationCommand.Format(_T("DUR:%x\r\n"),lastDuration/2);
 				}
 				else
@@ -1194,7 +1207,14 @@ void CMusicStudioDoc::UpdateTrackerBlockToInternal(const int currentBlock)
 
 			if ((i==0) && mBlockTrackerRows[currentBlock][i][0].IsEmpty())
 			{
-				lastNote = "+++";
+				if (isHRDing)
+				{
+					lastNote = "===";
+				}
+				else
+				{
+					lastNote = "+++";
+				}
 			}
 			else if (!mBlockTrackerRows[currentBlock][i][0].IsEmpty() && (mBlockTrackerRows[currentBlock][i][0] != "==="))
 			{

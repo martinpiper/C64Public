@@ -1,11 +1,15 @@
-Given initialise sort test "*"
+Given build sort test "*"
   Given I have a simple overclocked 6502 system
+  And I enable uninitialised memory read protection with immediate fail
   And I enable trace with indent
   And I run the command line: ..\acme.exe --lib ..\ --lib ..\..\ -o target\CheckSort.prg --labeldump target\CheckSort.lbl -f cbm features\CheckSort$1.a
 
   And I load prg "target\CheckSort.prg"
   And I load labels "target\CheckSort.lbl"
 
+
+
+Given initialise sort values
   When I write memory at SortValueTable+0 with $$00
   When I write memory at SortValueTable+1 with $$01
   When I write memory at SortValueTable+2 with $$02
@@ -15,6 +19,8 @@ Given initialise sort test "*"
   # Note these last two values are the same, the sort routine should cope with this and still work
   When I write memory at SortValueTable+6 with $$06
   When I write memory at SortValueTable+7 with $$06
+  
+  
 
 
 
@@ -33,6 +39,12 @@ When executing the greater than sort test
 Then validate the expected ascending sort index table
   When I hex dump memory between SortIndexTable and SortIndexTable+8
   Then property "test.BDD6502.lastHexDump" must contain string ignoring whitespace "1000: 00 01 02 03 04 05 06 07"
+
+
+
+Then validate the expected ascending sort values table
+  When I hex dump memory between SortValueTable and SortValueTable+8
+  Then property "test.BDD6502.lastHexDump" must contain string ignoring whitespace "00 01 02 03 04 05 06 06"
 
 
 

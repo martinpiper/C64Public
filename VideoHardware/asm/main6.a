@@ -6,6 +6,9 @@ kBus24Bit_VideoLayer_HasOverscan=1
 !source "BombJack/stdlib/APU_Macros.a"
 !source "BombJack/stdlib/Bus24Bit_Macros.a"
 
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+
 !to "bin/main.prg", cbm
 !sal
 !sl "tmp/main.map"
@@ -66,26 +69,131 @@ Initialise_NoMACROWaitForTheLastScan = 1
 !source "BombJack/stdlib/Bus24Bit.a"
 !source "BombJack/stdlib/Video.a"
 !source "BombJack/stdlib/Music.a"
+!source "../MakeCart/asm/EasyFlash_Code.a"
+
+!source "tmp/Demo6Sprites2Sheet.txtVars.a"
 
 !zn
 start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
 	jsr MusicInit
+
+	lda #1
+	+MAPUAvoidRastersTableEntry 11 , 16
+	+MAPUAvoidRastersTableEntry 36 , 37
+	+MAPUAvoidRastersTableEntry 71 , 74
+	+MAPUAvoidRastersTableEntry 77 , 78
+	+MAPUAvoidRastersTableEntry 91 , 92
+	+MAPUAvoidRastersTableEntry 96 , 97
+	+MAPUAvoidRastersTableEntry 106 , 107
+	+MAPUAvoidRastersTableEntry 111 , 112
+	+MAPUAvoidRastersTableEntry 113 , 117
+	+MAPUAvoidRastersTableEntry 119 , 120
+	+MAPUAvoidRastersTableEntry 134 , 139
+	+MAPUAvoidRastersTableEntry 142 , 159
+	+MAPUAvoidRastersTableEntry 163 , 170
+	+MAPUAvoidRastersTableEntry 173 , 174
+	+MAPUAvoidRastersTableEntry 183 , 184
+	+MAPUAvoidRastersTableEntry 193 , 194
+	+MAPUAvoidRastersTableEntry 186 + 25	-1 , 186 + 25
+	+MAPUAvoidRastersTableEntry 188 + 25	-1 , 188 + 25
+	+MAPUAvoidRastersTableEntry 193 + 25	-1 , 193 + 25
+	+MAPUAvoidRastersTableEntry 198 + 25	-1 , 198 + 25
+	+MAPUAvoidRastersTableEntry 205 + 25	-1 , 205 + 25
+	+MAPUAvoidRastersTableEntry 210 + 25	-1 , 210 + 25
+
 	jsr DisplayScreen
 	jsr APU_Enable
 
 mainLoop
+
+	; Debug for "output pixel wobble"
+!if 0 {
+	jsr APU_ResetDisable
+	jsr HardwareTest_VideoPattern0
+	+WaitForFire_A
+	!source "BombJack/stdlib/HardwareTest.a"
+}
+
+
+	; test some APU code
+!if 0 {
+	jmp .do
+.APUCode
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS | kAPU_Load_EBS2
+	+MAPU kAPU_Incr_ADDRB1
+
+!for .i , 64 {
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_ProcessRasterWord
+}
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+
+.APUCodeSize = * - .APUCode
+.APUData
+	!by $01
+
+!for .i , 64 {
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , 16 + (.i * 2)
+	+MAPUEmitChangePaletteIndex 0*16 ,  <(.i * 16) , .i , .i
+	+MAPUEmitChangeXScrollCharsValueOnly .i
+}
+
+.APUDataSize = * - .APUData
+.do
+	jsr HardwareTest_VideoPattern0
+
+	jsr APU_ResetDisable
+	jsr APU_SetAddressAPUInstructions
+	+MBus24Bit_FastCopyLarge .APUCode , .APUCodeSize + $100
+	jsr APU_SetAddressAPUData
+	+MBus24Bit_FastCopyLarge .APUData , .APUDataSize + $100
+
+	jsr APU_Enable
+.l1
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jmp .l1
+
+
+!source "BombJack/stdlib/HardwareTest.a"
+}
+
+
 ;	+WaitForFire_A
 
 mainLoopGame
+;	+WaitForFire_A
 	; Hardware updates
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
+;	jsr APU_Disable
+;	jsr RefreshAPUData
 	jsr UpdateCommonScrolls
-	jsr UpdateTree
+;	jsr APU_Enable
 
+;	jsr APU_Disable
+	jsr UpdateTree1
+	jsr UpdateTree2
+	jsr UpdateTree3
+	jsr UpdateTree4
+;	jsr APU_Enable
+
+	jsr UpdateScaledSprites
+	
+;	+MAPUAvoidRastersTest
 	jsr MusicPoll
 
 	; Move logic
@@ -93,8 +201,21 @@ mainLoopGame
 	jsr Move_Blimps
 	jsr Move_Tree
 
-	jmp mainLoopGame
+;	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+;	jsr SetupAPU
+;.notLeft
+	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , mainLoopGame
+;	jmp mainLoopGame
+
+	lda #0
+	jsr CartSelectBank_8K
+	jmp C64Cartridge_Lo_8K + $0a
+
 	rts
+BounceTab
+	!for .i , 256 {
+		!by 32 + (20.0 * cos( (float(-.i) / 128.0) * 3.14159265 ))
+	}
 
 MusicDataStart
 MusicDataStart_afterHeader = MusicDataStart + 4
@@ -109,29 +230,110 @@ UpdateCommonScrolls
 	!source "asm/main6CommonScrolls.a"
 	rts
 
-UpdateTree
+
+UpdateScaledSprites
+	jsr Video_SetAddressVideoLayersEnable
+	lda #kBus24Bit_VideoLayer_LayersEnable_134
+	sta CIA2PortBRS232
+
+	; TODO: This is quite naughty because the CPU shouldn't be updating the video at the same time as the APU
+	; Ideally the APU should be sending this and the CPU sends to the APU...
+	; However at this particular screen position the APU doesn't seem to be trying to send data so it's mostly OK.
+	jsr Video_SetAddressSprites2
+
+!macro MSimpleScaledSprite .x , .y , .index {
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_scaled_32_0_0_colour
+	+MBus24Bit_Send8BitValue .y
+	lda SpriteYExtentLookup,y
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus24Bit_Send8BitValue .x
+	+MBus24Bit_Send8BitValue $20
+
+	+MBus24Bit_Send8BitValueFromY
+	+MBus24Bit_Send8BitValueFromY
+	+MBus24Bit_Send8BitValue .index
+}
+
+kScaledXPos = 88
+kScaledXWid = 48
+kScaledYPos = 180
+.sms1	ldx #0
+	inc .sms1+1
+	ldy BounceTab,x
+	+MSimpleScaledSprite kScaledXPos + (0*kScaledXWid) , kScaledYPos , 'd'-'a'
+.sms2	ldx #32
+	inc .sms2+1
+	inc .sms2+1
+	ldy BounceTab,x
+	+MSimpleScaledSprite kScaledXPos + (1*kScaledXWid) , kScaledYPos , 'e'-'a'
+.sms3	ldx #64
+	dec .sms3+1
+	ldy BounceTab,x
+	+MSimpleScaledSprite kScaledXPos + (2*kScaledXWid) , kScaledYPos , 'm'-'a'
+.sms4	ldx #96
+	dec .sms4+1
+	dec .sms4+1
+	ldy BounceTab,x
+	+MSimpleScaledSprite kScaledXPos + (3*kScaledXWid) , kScaledYPos , 'o'-'a'
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
+
+	jsr Video_SetAddressVideoLayersEnable
+	lda #kBus24Bit_VideoLayer_LayersEnable_1234
+	sta CIA2PortBRS232
+
+	rts
+
+UpdateTree1
 	; TODO: Find the right time to update this
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree1Data , kAPUData_Tree1Num * 4
 
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree2aData , kAPUData_Tree2aNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree2bData , kAPUData_Tree2bNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree2cData , kAPUData_Tree2cNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree2dData , kAPUData_Tree2dNum * 4
+	rts
 
+UpdateTree2
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree3aData , kAPUData_Tree3aNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree3bData , kAPUData_Tree3bNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree3cData , kAPUData_Tree3cNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree3dData , kAPUData_Tree3dNum * 4
+	rts
 
+UpdateTree3
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree4aData , kAPUData_Tree4aNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree4bData , kAPUData_Tree4bNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree4cData , kAPUData_Tree4cNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree4dData , kAPUData_Tree4dNum * 4
+	rts
 
+UpdateTree4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree5aData , kAPUData_Tree5aNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree5bData , kAPUData_Tree5bNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree5cData , kAPUData_Tree5cNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree5dData , kAPUData_Tree5dNum * 4
+	+MAPUAvoidRastersTest
 	+MAPU_DataUpdateNumBytes APUData_Tree5eData , kAPUData_Tree5eNum * 4
 	rts
 
@@ -179,3 +381,16 @@ Move_Tree
 	+MAndMem 1 , APUData_TreeX+1
 	jsr SetupTree
 	rts
+
+SpriteYExtentLookup
+	!by 1
+	!for .i , 255 {
+!set .realSize = ((32*32) / int(.i))
+!if .realSize < 1 {
+!set .realSize = 1
+}
+!if .realSize > 240 {
+!set .realSize = 240
+}
+		!by .realSize
+	}

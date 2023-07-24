@@ -1,0 +1,41 @@
+; Macros that help define the correct score structure
+
+!macro MScoreData .columStart , .toAdd1 {
+	!by .columStart , 1
+	!by .toAdd1
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 {
+	!by .columStart , 2
+	!by .toAdd1 , .toAdd2
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 {
+	!by .columStart , 3
+	!by .toAdd1 , .toAdd2 , .toAdd3
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 {
+	!by .columStart , 4
+	!by .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 {
+	!by .columStart , 5
+	!by .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6 {
+	!by .columStart , 6
+	!by .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6 , .toAdd7 {
+	!by .columStart , 7
+	!by .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6 , .toAdd7
+}
+
+!macro MScoreData .columStart , .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6 , .toAdd7 , .toAdd8 {
+	!by .columStart , 8
+	!by .toAdd1 , .toAdd2 , .toAdd3 , .toAdd4 , .toAdd5 , .toAdd6 , .toAdd7 , .toAdd8
+}

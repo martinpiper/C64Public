@@ -34,3 +34,16 @@
 	inx
 	bne .clc1d
 }
+
+
+!macro MDeltaDecompression_CopyColoursSegment .cols , .xs , .wid , .ys , .hei {
+!for .y , .hei {
+!set .yy = (.y-1) + .ys
+ 	ldx #.wid-1
+!set .l1 = *
+	lda .cols + (.yy * VIC2ScreenCharsWidth) + .xs,x
+	sta COLOURRAM + (.yy * VIC2ScreenCharsWidth) + .xs,x
+	dex
+	bpl .l1
+}
+}

@@ -1,8 +1,14 @@
-!ifndef Scroller_AdditionalCharLines {
-Scroller_AdditionalCharLines = 0
-}
-
+!source "ScrollEntryCommonVars.a"
 !source "ScrollerMacros.a"
+
+!ifndef Scroller_DisableScreenDataUsage {
+; This defines the screen data as being used, so that the assembler won't allow other blocks to use it without warning
+*=$c800
+ScreenData
+; Also include the fingerprint in the first screen
+!source "FingerPrint.a"
+	!fill (ScreenData + $800) - * , 0
+}
 
 ; This code is post-build linked with a decompression stage so we don't use any BASIC sys start code here.
 ; Instead the start for the code is $400 which is quickly overwritten by other data once the
@@ -48,12 +54,27 @@ ScrollerInitSpecificCode_Start = *
 ScrollerInitSpecificCode_End = *
 ScrollerInitSpecificCode_Size = * - ScrollerInitSpecificCode_Start
 	; The start of the real code. Memory from $400 to $fff is written by the title screen display code
+
+Bank0PanelBlankSpriteData = $680
+Bank0ScorePanelChars = $800
+!ifdef Scroller_UseDemoScorePanelStaticMemory {
+*=Bank0PanelBlankSpriteData
+!fill VIC2MemorySetup_SpriteSize , 0
+*=Bank0ScorePanelChars
+!ifdef Scroller_UseDemoScorePanel {
+!bin "ScorePanel.ctm" , VIC2MemorySetup_CharsSize , $14	; Include the maximum data if possible. Some characters are not usable due to being used for the other two screen sprite pointers however.
+} else {
+!fill VIC2MemorySetup_CharsSize , 0
+}
+}
+
 *=$1000
 ScrollerSpecificCode_Start = *
 !zn
 ScrollEntry
 	; The following can be called more than once if needed for a proper game type cycle
 .l1
+	+MStackConsistencyCheck_AX
 !ifdef Scroller_DecompressTitleScreenCodeHook {
 	jsr DecompressTitleScreenCode
 }
@@ -68,6 +89,9 @@ ScrollEntry
 	jsr SetupIRQs
 	jsr ScrollerDemoWaitTopIRQWithReSync
 	jsr ScrollerDemoMainline
+!ifdef ScrollerDemoMainline_ExitHook {
+	jsr ScrollerDemoMainline_Exit
+}
 	jmp .l1
 
 !ifdef Scroller_DisplayTitleScreen {

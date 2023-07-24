@@ -24,6 +24,8 @@ Scroller_EnableBlockStripsSpeedCode = 1
 ; Enable this to unroll block colour plotting speed code where possible
 Scroller_EnableBlockColourSpeedCode = 1
 
+; Enable this to unroll sprite scroll update code where possible
+Scroller_EnableScrollSpritesSpeedCode = 1
 
 ; Enable this to move certain sprite data into the zero page
 ;!source "ScrollerOptimisations.a"
@@ -71,6 +73,7 @@ Multiplex_BunchingCheck = 1
 ;Scroller_DebugNMIBorder = 1
 ; Non-interrupt timings
 ;Scroller_DebugMainlineBorder = 1
+;Scroller_DebugSoundTimings = 1
 ;Scroller_DebugColourScrollTimings = 1
 ;Scroller_DebugScreenScrollTimings = 1
 ;Scroller_DebugParalaxScrollTimings = 1
@@ -96,6 +99,8 @@ IRQOpenBorders = 1
 } else {
 ; Alter this to enable extra char lines if not in full screen mode, must not be defined in full screen mode
 Scroller_AdditionalCharLines = 2
+; If this is enabled then if targeting NTSC consider moving the top screen IRQ down with:
+; IrqTopOfScreenPos = 16
 }
 
 ; Use this to enable a demonstration of how to skip the level in the game at any point
@@ -109,6 +114,9 @@ Scroller_UseDemoScorePanel = 1
 ; Enables the colour scroll code, without this the colour screen is ignored
 Scroller_NeedFullColourScroll = 1
 
+; Disables filling ScreenData with 0, which includes it in the used memory map
+; Scroller_DisableScreenDataUsage = 1
+
 !ifdef Scroller_MultiDirection {
 
 ; Removes the UpdateSprites from the Scroller code, enabling it to be set by external code instead
@@ -121,8 +129,11 @@ Scroller_ColourScrollRasterAbortLevel = $80
 ; The maximum numebr of frames the code will abort a colour scroll before forcing it to proceed
 Scroller_ColourScrollRasterAbortLevelFrame = 1
 
-; Define this to force the music update to be in the top screen IRQ
+; These music options mitigate sound slowdown when the frame gets busy.
+; Define this to force the music update to be in the top screen IRQ. This increases IRQ load at the top of the screen.
 ;Scroller_DoMusicUpdateInIRQ = 1
+; Define this to count the number of times the IRQ should update the music, but instead signal this back to the mainline. This reduces IRQ load at the top of the screen.
+Scroller_CountMusicUpdateInIRQ = 1
 
 ; Define this to enable code that demonstrates a typical run and jump style of game
 Scroller_RunJumpDemo = 1

@@ -1,0 +1,440 @@
+; Intro code
+
+!source "stdlib/stdlib.a"
+!to "bin/Chooser.prg", cbm
+!sl "bin/Chooser.map"
+!sal
+!svl "bin/Chooser.lbl"
+!pdb "bin/Chooser.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+!source "_f_index1.a"
+
+* = C64Cartridge_Lo_8K
+	jmp .startTitleScreen
+	jmp .startLevel1
+	jmp .startLevel2
+.startTitleScreen
+	+MStopInitStack_X
+
+	jsr DisplayLoading
+
+	; Need to use indirect addressing to do the copy since we cannot use self modifying code
+	+MWordValueToAddress_A CodeMoveStartTitle , $fb
+
+	jmp CommonZPCopy
+
+
+
+.startLevel1
+	+MStopInitStack_X
+
+	jsr DisplayLoading
+
+	; Need to use indirect addressing to do the copy since we cannot use self modifying code
+	+MWordValueToAddress_A CodeMoveStartLevel1 , $fb
+
+	jmp CommonZPCopy
+
+
+
+.startLevel2
+	+MStopInitStack_X
+
+	jsr DisplayLoading
+
+	; Need to use indirect addressing to do the copy since we cannot use self modifying code
+	+MWordValueToAddress_A CodeMoveStartLevel2 , $fb
+
+	jmp CommonZPCopy
+
+!zn
+DisplayLoading
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+
+	+MACROWaitForTheLastScanPlus1_A
+	+BlankScreenBorderSpriteSound_A
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+SetMemory_AX $0000 + (13*40) + 4 , $0000 + (13*40) + 4 + 31 , '-'
+	+SetMemory_AX COLOURRAM + (13*40) + 4 , $0000 + (13*40) + 4 + 31 , VIC2Colour_Yellow
+	+DisplayColourTextMiddle_AX .loading , .loadingEnd , $0000 + (8*40) , VIC2Colour_White
+	+MACROWaitForTheLastScanPlus1_A
+	+SetDefaultScreenLowerCase_A
+
+	; Lowercase first screen!
+	lda #6
+	sta VIC2MemorySetup
+	rts
+
+.loading !scr "< Loading >"
+.loadingEnd
+
+!zn
+CommonZPCopy
+	ldy #ZPCodeEnd - ZPCodeStart
+.l0
+	lda ZPCodeStart-1,y
+	sta RealZPCodeStart-1,y
+	dey
+	bne .l0
+
+	; Copy the full dynamic code of $100 bytes
+	ldy #0
+.l1
+	lda ($fb),y
+	sta RealCodeStart,y
+	dey
+	bne .l1
+
+	; Copy common memory routines
+	ldy #0
+.l2
+	lda CodeMoveStartCommon,y
+	sta RealCodeStartCommon,y
+	; Note: This copy will need expanding
+	lda CodeMoveStartCommon + $100,y
+	sta RealCodeStartCommon + $100,y
+	dey
+	bne .l2
+
+	; If there is RAM banked in
+	+MWordValueToAddress_A RealCodeStartCommon_minIRQNMI , KERNALNMIServiceRoutineLo
+	+MWordValueToAddress_A RealCodeStartCommon_minIRQNMI , KERNALIRQServiceRoutineLo
+
+	jmp RealCodeStart
+
+ZPCodeStart
+!pseudopc $02 {
+RealZPCodeStart
+!macro RNXPCompressionIncBorder_A {
+}
+!macro RNXPCompressionDecompress_WriteByteAddrHi {
+	jsr LoadingIndicatorCallback
+}
+!source "Decompression/DecompressRLEVars.a"
+
+}
+ZPCodeEnd
+
+
+
+
+CodeMoveStartCommon
+!pseudopc IRQServiceRoutineLo {
+RealCodeStartCommon
+	; If there is kernal ROM banked in
+	; Stops any IRQ/NMI/BRK from crashing the machine
+	+MAssertEquals * , IRQServiceRoutineLo
+	+MLittleEndian16Bit RealCodeStartCommon_minIRQKernal
+	+MAssertEquals * , BRKServiceRoutineLo
+	+MLittleEndian16Bit RealCodeStartCommon_minBRK
+	+MAssertEquals * , NMIServiceRoutineLo
+	+MLittleEndian16Bit RealCodeStartCommon_minIRQNMI
+
+RealCodeStartCommon_minIRQKernal
+	jmp MinimalIRQServiceRoutine
+RealCodeStartCommon_minIRQNMI
+	rti
+RealCodeStartCommon_minBRK
+	+MDebugBreak
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "../MakeCart/asm/EasyFlash_Code.a"
+;!source "../MakeCart/asm/GMod2_Code.a"
+
+!source "Decompression/DecompressRLE.a"
+
+LoadingIndicatorCallback
+	pha
+	lda RNXPCompressionDecompress_WriteBytesmAddr+1
+	lsr
+	lsr
+	lsr
+	tay
+	lda #$a0
+	sta $0000 + (13*40) + 4,y
+	pla
+	rts
+
+; As long as the RLE code is before here then the old memory copy can be discarded
+!if * > $400 {
+!error "DecompressRLE too large"
+}
+
+
+SlowMemoryCopy_SetSource
+	stx .smSrc+1
+	sty .smSrc+2
+	rts
+
+SlowMemoryCopy_SetDestination
+	stx .smDst+1
+	sty .smDst+2
+	rts
+
+.yreg !by 0
+SlowMemoryCopy_ForSize
+	stx .lastX+1
+	cpy #0
+	beq .noY
+
+	sty .yreg
+	ldx #0
+.cx1
+	ldy #CartSelectBank_ProcessorPort
+	sty ZPProcessorPort
+.smSrc lda $1234,x
+	ldy #ProcessorPortAllRAM
+	sty ZPProcessorPort
+.smDst sta $1234,x
+	dex
+	bne .cx1
+	inc .smSrc+2
+	inc .smDst+2
+	dec .yreg
+	bne .cx1
+
+.noY
+.lastX	ldx #0
+	beq .ret
+
+	+MAddr16ToAddr16_A .smSrc + 1 , .smSrc2 + 1
+	+MAddr16ToAddr16_A .smDst + 1 , .smDst2 + 1
+
+.cx2
+	ldy #CartSelectBank_ProcessorPort
+	sty ZPProcessorPort
+.smSrc2 lda $1234
+	ldy #ProcessorPortAllRAM
+	sty ZPProcessorPort
+.smDst2 sta $1234
+	+MIncAddr16 .smSrc2 + 1 , .smSrc2 + 2
+	+MIncAddr16 .smDst2 + 1 , .smDst2 + 2
+	dex
+	bne .cx2
+
+.ret
+	rts
+
+!source "stdlib/MemoryCopy.a"
+RealCodeMoveEndCommon
+}
+CodeMoveEndCommon
+
+!if (CodeMoveEndCommon - CodeMoveStartCommon) > $200 {
+!error "CodeMoveEndCommon too large. See: Note: This copy will need expanding"
+}
+
+; Common start address
+RealCodeStart = $230
+
+!zn
+CodeMoveStartTitle
+!pseudopc RealCodeStart {
+	.startMem = $fff0 - (CartFile1_Size_Title_cmp + CartFile1_Size_spanned_1_Title_cmp + CartFile1_Size_spanned_2_Title_cmp)
+
+	lda #CartFile1_Bank_Title_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_Title_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_Title_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_1_Title_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_1_Title_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Title_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_1_Title_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_2_Title_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_2_Title_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Title_cmp + CartFile1_Size_spanned_1_Title_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_2_Title_cmp
+	jsr SlowMemoryCopy_ForSize
+
+!ifdef CartFile1_Bank_spanned_3_Title_cmp {
+!error "CartFile1_Bank_spanned_3_Title_cmp"
+}
+
+	+MWordValueTo_XY $800
+	jsr RNXPCompressionDecompressRLE_InitStore
+	+MWordValueTo_XY .startMem
+	jsr RNXPCompressionDecompressRLE
+	
+	jmp $800
+
+!if * > $300 {
+!error "Copy chunks code too large"
+}
+
+}
+
+
+!zn
+CodeMoveStartLevel1
+!pseudopc RealCodeStart {
+
+!ifdef CartFile1_Size_spanned_5_Scroller1_cmp {
+	.startMem = $fff0 - (CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp + CartFile1_Size_spanned_2_Scroller1_cmp + CartFile1_Size_spanned_3_Scroller1_cmp + CartFile1_Size_spanned_4_Scroller1_cmp + CartFile1_Size_spanned_5_Scroller1_cmp)
+} else {
+	.startMem = $fff0 - (CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp + CartFile1_Size_spanned_2_Scroller1_cmp + CartFile1_Size_spanned_3_Scroller1_cmp + CartFile1_Size_spanned_4_Scroller1_cmp)
+}
+	lda #CartFile1_Bank_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_1_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_1_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller1_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_1_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_2_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_2_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_2_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_3_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_3_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp + CartFile1_Size_spanned_2_Scroller1_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_3_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_4_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_4_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp + CartFile1_Size_spanned_2_Scroller1_cmp + CartFile1_Size_spanned_3_Scroller1_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_4_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+
+!ifdef CartFile1_Size_spanned_5_Scroller1_cmp {
+	lda #CartFile1_Bank_spanned_5_Scroller1_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_5_Scroller1_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller1_cmp + CartFile1_Size_spanned_1_Scroller1_cmp + CartFile1_Size_spanned_2_Scroller1_cmp + CartFile1_Size_spanned_3_Scroller1_cmp + CartFile1_Size_spanned_4_Scroller1_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_5_Scroller1_cmp
+	jsr SlowMemoryCopy_ForSize
+}
+
+!ifdef CartFile1_Size_spanned_6_Scroller1_cmp {
+!error "CartFile1_Size_spanned_6_Scroller1_cmp"
+}
+
+	+MWordValueTo_XY $400
+	jsr RNXPCompressionDecompressRLE_InitStore
+	+MWordValueTo_XY .startMem
+	jsr RNXPCompressionDecompressRLE
+	
+	jmp $400
+
+!if * > $300 {
+!error "Copy chunks code too large"
+}
+
+}
+
+
+
+!zn
+CodeMoveStartLevel2
+!pseudopc RealCodeStart {
+
+!ifdef CartFile1_Size_spanned_4_Scroller2_cmp {
+	.startMem = $fff0 - (CartFile1_Size_Scroller2_cmp + CartFile1_Size_spanned_1_Scroller2_cmp + CartFile1_Size_spanned_2_Scroller2_cmp + CartFile1_Size_spanned_3_Scroller2_cmp + CartFile1_Size_spanned_4_Scroller2_cmp)
+} else {
+	.startMem = $fff0 - (CartFile1_Size_Scroller2_cmp + CartFile1_Size_spanned_1_Scroller2_cmp + CartFile1_Size_spanned_2_Scroller2_cmp + CartFile1_Size_spanned_3_Scroller2_cmp)
+}
+	lda #CartFile1_Bank_Scroller2_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_Scroller2_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_Scroller2_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_1_Scroller2_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_1_Scroller2_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller2_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_1_Scroller2_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_2_Scroller2_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_2_Scroller2_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller2_cmp + CartFile1_Size_spanned_1_Scroller2_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_2_Scroller2_cmp
+	jsr SlowMemoryCopy_ForSize
+
+	lda #CartFile1_Bank_spanned_3_Scroller2_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_3_Scroller2_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller2_cmp + CartFile1_Size_spanned_1_Scroller2_cmp + CartFile1_Size_spanned_2_Scroller2_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_3_Scroller2_cmp
+	jsr SlowMemoryCopy_ForSize
+
+!ifdef CartFile1_Size_spanned_4_Scroller2_cmp {
+	lda #CartFile1_Bank_spanned_4_Scroller2_cmp
+	jsr CartSelectBank_8K_NoSEI
+	+MWordValueTo_XY CartFile1_Start_spanned_4_Scroller2_cmp
+	jsr SlowMemoryCopy_SetSource
+	+MWordValueTo_XY .startMem + CartFile1_Size_Scroller2_cmp + CartFile1_Size_spanned_1_Scroller2_cmp + CartFile1_Size_spanned_2_Scroller2_cmp + CartFile1_Size_spanned_3_Scroller2_cmp
+	jsr SlowMemoryCopy_SetDestination
+	+MWordValueTo_XY CartFile1_Size_spanned_4_Scroller2_cmp
+	jsr SlowMemoryCopy_ForSize
+}
+
+!ifdef CartFile1_Size_spanned_5_Scroller2_cmp {
+!error "CartFile1_Size_spanned_5_Scroller2_cmp"
+}
+
+	+MWordValueTo_XY $400
+	jsr RNXPCompressionDecompressRLE_InitStore
+	+MWordValueTo_XY .startMem
+	jsr RNXPCompressionDecompressRLE
+	
+	jmp $400
+
+!if * > $300 {
+!error "Copy chunks code too large"
+}
+
+}

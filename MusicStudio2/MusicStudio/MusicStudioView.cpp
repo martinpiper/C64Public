@@ -840,6 +840,11 @@ void CMusicStudioView::OnTimer(UINT_PTR nIDEvent)
 
 void CMusicStudioView::OnChangeBlockData()
 {
+	OnChangeBlockDataInternal(false);
+}
+
+void CMusicStudioView::OnChangeBlockDataInternal(bool forceUpdate)
+{
 	int block = GetCurrentBlockNum();
 	if ((block < 0) || (block >= MusicStudio1::MusicFile::kMaxBlocks))
 	{
@@ -847,7 +852,7 @@ void CMusicStudioView::OnChangeBlockData()
 	}
 	CString newText;
 	mBlockData.GetWindowText(newText);
-	bool wasUpdated = false;
+	bool wasUpdated = forceUpdate;
 	if (newText != GetDocument()->mBlocks[block])
 	{
 		GetDocument()->mBlockLastEditedAsTracker[block] = false;
@@ -866,9 +871,9 @@ void CMusicStudioView::OnChangeBlockData()
 		GetDocument()->mBlockTrackerLengths[block] = totalDuration;
 	}
 	CString theSize;
-	theSize.Format(_T("%x"),byteSize);
+	theSize.Format(_T("$%x (%d)"),byteSize,byteSize);
 	mBlockByteSize.SetWindowText(theSize);
-	theSize.Format(_T("%x"),totalDuration);
+	theSize.Format(_T("$%x (%d)"),totalDuration,totalDuration);
 	mBlockDurSize.SetWindowText(theSize);
 	DrawBlockErrorReport();
 
@@ -2256,6 +2261,7 @@ void CMusicStudioView::OnChangeBlockEditTrackerTempoEdit1()
 	DrawTrackerBlocks();
 	CommonSetModified();
 	SetNumToEdit(mBlockNum,currentBlock);
+	OnChangeBlockDataInternal(true);
 }
 
 void CMusicStudioView::OnChangeBlockEditTrackerTempoEdit2()
@@ -2275,6 +2281,7 @@ void CMusicStudioView::OnChangeBlockEditTrackerTempoEdit2()
 	DrawTrackerBlocks();
 	CommonSetModified();
 	SetNumToEdit(mBlockNum,currentBlock);
+	OnChangeBlockDataInternal(true);
 }
 
 void CMusicStudioView::OnChangeBlockEditTrackerTempoEdit3()
@@ -2294,6 +2301,7 @@ void CMusicStudioView::OnChangeBlockEditTrackerTempoEdit3()
 	DrawTrackerBlocks();
 	CommonSetModified();
 	SetNumToEdit(mBlockNum,currentBlock);
+	OnChangeBlockDataInternal(true);
 }
 
 volatile static bool sUpdating = false;
@@ -3048,6 +3056,9 @@ void CMusicStudioView::SetHelpState(const HelpState state)
 				L"TNT:XX - Set the note table.\r\n"
 				L"TPL:XX - Set the pulse table.\r\n"
 				L"TFL:XX - Set the filter table.\r\n"
+				L"--- - An extra sustain of the last note played.\r\n"
+				L"+++ - A silent rest. This can be used without any note before it. This will also stop the current note unless hard reset (HRD command) is disabled before playing the note.\r\n"
+				L"=== - A rest like +++ except it includes an immediate gate off. If sluring is enabled or hard restart disabled then the gate off will apply.\r\n"
 			);
 			break;
 		case kWave:
@@ -3287,6 +3298,18 @@ static void WriteVTime(RNReplicaNet::DynamicMessageHelper &fileData , int delta)
 
 void CMusicStudioView::OnFileExporttoMIDI()
 {
+	CFileDialog getFile(FALSE);
+	INT_PTR ret = getFile.DoModal();
+
+	if (ret != IDOK)
+	{
+		return;
+	}
+
+	CString realPathName = getFile.GetPathName();
+}
+void CMusicStudioView::CommonExporttoMIDI(CString realPathName)
+{
 	CommonPreExport();
 
 	OnBnClickedStop();
@@ -3414,15 +3437,6 @@ void CMusicStudioView::OnFileExporttoMIDI()
 		theFile.AddData(theTrack.GetBuffer(),theTrack.GetSize());
 	}
 
-	CFileDialog getFile(FALSE);
-	INT_PTR ret = getFile.DoModal();
-
-	if (ret != IDOK)
-	{
-		return;
-	}
-
-	CString realPathName = getFile.GetPathName();
 	_tremove(realPathName);
 
 	CT2CA theNameANSI(realPathName);

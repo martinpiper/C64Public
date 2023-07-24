@@ -310,8 +310,8 @@ Scroller_EnableBlockStripsSpeedCodeInCart = 1
 
 !macro MACROScrollerDrawStripColouriseUnrolled .pos , .steps , .stride {
 	ldy topScreenBank
-	lda BankToScreenAddr,y
-	cmp #$c8
+;	lda BankToScreenAddr,y
+;	cmp #$c8
 	beq .doC8
 	jmp .doCC
 .doC8

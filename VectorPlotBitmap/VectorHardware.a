@@ -1,0 +1,175 @@
+kVectorHardware_longSpan = $fe
+
+!zn
+VectorHardwareFillBlank
+	ldx #0
+	ldy #$20
+.cl1
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue kVectorHardware_longSpan
+	dex
+	bne .cl1
+	dey
+	bne .cl1
+	rts
+
+
+!zn
+VectorHardwareInit
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_Bank0_EBBS , kBus24Bit_VectorsScreen_Bank0_Plane
+	jsr VectorHardwareFillBlank
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_Bank1_EBBS , kBus24Bit_VectorsScreen_Bank1_Plane
+	jsr VectorHardwareFillBlank
+	rts
+
+
+!zn
+.colTab
+	!by $0f , $11 , $22 , $33 , $44 , $55 , $66 , $77 , $88 , $99 , $aa , $bb , $cc , $dd , $ee , $ff
+VectorHardwareInitPalette
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + $100
+	ldx #0
+.cl1
+	lda .colTab,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+	inx
+	cpx #16
+	bne .cl1
+
+	rts
+
+
+!zn
+VectorPlot_drawSpansLo
+	; Needs + $0040
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_Bank0_EBBS , kBus24Bit_VectorsScreen_Bank0_Plane
+	jmp VectorPlot_drawSpansInternal
+
+VectorPlot_drawSpansHi
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_Bank1_EBBS , kBus24Bit_VectorsScreen_Bank1_Plane
+
+VectorPlot_drawSpansInternal
+	lda #kVectorHardware_longSpan
+	ldy #$40
+	jsr Bus24Bit_WriteAForY
+
+	lda #0
+	sta Vector_CurrentYPos
+.l1
+	lda #0
+	sta .currentSpanLength
+
+!ifndef kVectorHardware_sideBarsSizeLeft {
+kVectorHardware_sideBarsSizeLeft = $12
+}
+
+!if kVectorHardware_sideBarsSizeLeft > 0 {
+	; Output a constant colour for left edge debugging
+	lda #$8f
+	+MBus24Bit_Send8BitValueFromA
+	; Note: First pixel coordinate is double clocked in hardware, so no -1 adjustment
+	lda #kVectorHardware_sideBarsSizeLeft
+	+MBus24Bit_Send8BitValueFromA
+}
+
+
+	ldx Vector_CurrentYPos
+	lda Segments_linesHi,x
+	beq .completeSpan
+
+	sta ZPSegments_currentSegmentHi
+	lda Segments_linesLo,x
+	sta ZPSegments_currentSegmentLo
+
+.gotSegment
+	ldy #kSegment_offset_left
+	lda (ZPSegments_currentSegmentLo),y
+	cmp .currentSpanLength
+	beq .inSync
+
+	; Output a transparent span to match the sparse span left pos
+	sec
+	sbc .currentSpanLength
+	ldx #0
+	jsr .outputSpan
+
+.inSync
+	; Now output a span with its colour
+	ldy #kSegment_offset_colour
+	lda (ZPSegments_currentSegmentLo),y
+;	lda #1	; Debug force colour
+	; Adjust colour range to avoid transparent colour 0
+	and #%111
+	ora #$80
+	tax
+	inx
+
+	ldy #kSegment_offset_right
+	lda (ZPSegments_currentSegmentLo),y
+	sec
+	sbc .currentSpanLength
+
+	jsr .outputSpan
+
+	+Segments_getNextSegment
+	lda ZPSegments_currentSegmentHi
+	bne .gotSegment
+
+.completeSpan
+	; Complete any length remaining
+	lda .currentSpanLength
+	cmp #kSpanPlot_maxLen
+	bcs .endSpan
+
+	lda #kSpanPlot_maxLen
+	sec
+	sbc .currentSpanLength
+	sbc #2
+
+	; Output an end span, twice. This makes the maths and logic easier
+	ldx #0
+	stx CIA2PortBRS232
+	+MBus24Bit_Send8BitValueFromA
+	stx CIA2PortBRS232
+	+MBus24Bit_Send8BitValueFromA
+
+.endSpan
+!ifndef kVectorHardware_sideBarsColourRight {
+kVectorHardware_sideBarsColourRight = $8f
+}
+
+	; Output a very long end span to take this into or beyond the hsync
+	; Output a constant colour for right edge debugging
+	lda #kVectorHardware_sideBarsColourRight
+	+MBus24Bit_Send8BitValueFromA
+	lda #kVectorHardware_longSpan
+	+MBus24Bit_Send8BitValueFromA
+
+	inc Vector_CurrentYPos
+	lda Vector_CurrentYPos
+	cmp #kSpanPlot_maxHeight
+	+lbne .l1
+
+	rts
+
+; A = Length (never 0)
+; X = Colour
+.outputSpan
+	tay
+	clc
+	adc .currentSpanLength
+	sta .currentSpanLength
+
+	dey	; -2 Adjustment for hardware
+	dey
+	; Double draw the span in hardware, makes the logic a lot easier
+	stx CIA2PortBRS232
+	sty CIA2PortBRS232
+	stx CIA2PortBRS232
+	sty CIA2PortBRS232
+	rts
+
+
+.currentSpanLength
+	!by 0

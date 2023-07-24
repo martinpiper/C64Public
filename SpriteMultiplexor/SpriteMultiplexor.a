@@ -437,6 +437,10 @@ Multiplex_maininterEx
 	inc VIC2BorderColour
 }
 
+!ifdef Multiplex_EnableHookAfterTopSpritesUpdate {
+	jsr Multiplex_HookAfterTopSpritesUpdate
+}
+
 !ifdef Multiplex_MaintainPriority { } else {
 .switch	jmp Multiplex_exitinter			; Self modifying for jmp or bit
 }

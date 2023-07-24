@@ -374,3 +374,546 @@
 
 
 * Add fish animation
+
+
+
+* Running out of code space for Tusari2\HookInclude.a
+	Move code into MarkBeginCode2 Note: ; More code can go here
+
+
+
+
+* Animation_Index never goes to 0 in Tusari2\Animation.a
+	This stops the bats from choosing a new target...
+	Instead increment a "looped" flag?
+	Or have a "rendered index" value?
+	>> Added Animation_IndexLoopedEvent
+
+
+
+
+* Late jump, for a few frames after starting to fall, allow a jump.
+	A failed jump is most noticable when jumping from a downward ramp
+	Coyote time can be around 5 frames...
+
+
+
+* When walking the player all the way to the left of the map from the boss section, the screen flickers for one frame?!
+	Seems like a failed screen bank switch?
+		Using Tusari2_DebugMainlineBorder VIC2Colour_Blue
+		Shows ActivationObject_CheckScreenEdges is taking a stupid amount of time when the map hits the left hand edge?
+			Also when running the the right a couple of tiles and then waiting the .cycleEdge takes a long time for the first iteration
+			The left hand edge coordinate goes negative, so the object scan wraps around and scans the whole database...
+				This only happens on the far left hand edge of the map
+		See: ; Stop a huge wraparound coordinate from using a huge amount of scanning time by detecting $ffxx numbers
+
+
+
+
+* Boss PoC
+	Added boss sprites and map placement
+	Need some simple AI
+		Jump with leg animation
+		Throw rock
+	For the boss:
+		scrollMapHX	16
+		scrollMapHY	8
+	Done: Scroll map to show the full boss
+	Done: Lock screen? To avoid scrolling off screen issues... See: AnimationDelete_bossHead
+		Camera told to override scroll to position during AnimationTick_bossHead
+			See: ; Simple push camera calculations
+				Move to function, include "ScrollerCheckMapRangeAndVelocity", excluding the bottom "lda AnimationYPos" section
+			scrollMapHX scrollMapLX
+			scrollMapHY scrollMapLY
+			frameTargetVelX frameTargetVelY
+			>> Camera_SeekToTarget
+	Done: Also when AnimationTick_bossHead explodes then remove the scroll lock
+		Done: Unlock screen on boss death?
+	Done: Synchronise boss animation frames based on AnimationTick_bossBodyRight
+	Done: Boss jump up and down based on AnimationTick_bossBodyRight
+	Done: Syncronise boss body parts based on BossAnimationIndex being active and position
+		Done: Going to need a way to call a tick before all others, at the start of the frame?
+			Register an animation index?
+			+MWordValueToAddress_A Animation_UpdatePriorityTickDefault , Animation_UpdatePriorityTick
+	Done: Boss hit collision, health, explode. See: Bats health
+	Done: Boss throw rock, which can be a spawned object, not a map object, remove from map
+		Done: Rock bounces, has collision with map... Will need some physics handler?
+		TODO: Rock collides with player
+	Done: If the head goes off the top of the screen then stop jumping
+
+
+
+
+* Pause/Quit will need to go back to the title screen via a complete memory reset instead
+	See: ScrollerDemoMainline_ExitHook
+
+
+
+
+* Game specific boot code, single bank that has defined entry points for title screen, run level X, game complete, etc
+	Then this bank can be used to control the flow for the rest of the game
+		For cartridge releases, I've decided that basically the whole C64 RAM is able to be used for each level load.
+		I'm not going to have careful initialisation and common code, instead everything is going to be loaded from scratch and so the code is going to be squeezed into spare areas between data blocks.
+		There's no real need to have a lot of pain and potential missing initialisation bugs for the sake of squeezing out a second or two faster level loading.
+	Still use Citadel2Cart_8K, since it handles quite a lot of good consistent startup.
+	The first thing it loads is the "title screen" compressed code starting at 2061
+	Can decompress data (RLE preferred) by using known data defines for compressed data
+	>> Boot > Intro.a Chooser.a Title.a
+
+
+
+* Stopped restore key from crashing the game load via Chooser.a
+
+
+
+
+
+* Optimise Chooser.a MemoryCopy_SetSource variations and also DecompressRLE by moving them to zeropage
+
+
+
+* Add optional "alternate" X and Y velocity update option to char effects so give better control over the weapon effects
+	Make them shifted by 1 or 2 places instead
+		Much simpler code
+
+
+
+
+* Slightly lower the dagger Y start when standing. 4 pixels or so.
+
+
+
+* Bring the dagger X start closer into the body
+
+
+
+
+* Need loading progress indicator
+	Probably after each 256 bytes written instead of RNXPCompressionIncBorder_A:
+		RNXPCompressionDecompress_WriteByteAddrHi
+
+
+
+* Narrow the push scroll horizontally
+
+
+
+
+* Pre-calc multiply char move by 2
+
+
+
+
+* Add pickup type for "sparkle" effect
+
+
+
+
+* Fire held while stationary (no left or right) for a second and then press down = Expanding sparkle circle/line/bar effect (perhaps the screen doesn't scroll during this time)
+	Done: Effect
+	Done: Will need a score panel effect
+	Done: Limited number? Like spells but smaller.
+		Player_FireSparkleSetup
+		Done: Will need code to then spawn multiple sparkles
+
+
+
+
+* Done: The chest can spawn random weapon pickups
+	Done: One pickup done, need to spawn random ones
+	Done: Limited number of spawns
+		Animation_GeneralStorage0
+
+
+
+* Music song start index 2 is wrong?
+	"C:\Work\C64\Tusari2\Sound\Level1-2.msmus"
+	Probably the TrackStart0/TrackStart1/TrackStart2 calculation
+	Track starts are meant to be:
+		00	40	44
+		00	2d	31
+		00	0c	10
+	Data fix, the last two tracks were missing FD to terminate the tracks
+
+
+
+
+* ; Will also need to handle more SFX channels with music off... See Citadel2 code that also uses MusicPlayerStop
+	And AnimationStopMusic SFX_Voices SFX_VoiceLowerReset SFX_VoiceUpperWrap
+		Modified in C:\Work\C64\Citadel2\asm\TitleScreen.a
+	Done: Also need to handle the music conversion better: MusicAndSFX_TusariLevel1.prg
+		Need some obvious effects linked it to test the build pipeline for using the export command line arguments
+		See: C:\Work\C64\Citadel2\Sound\buildSound.bat
+	> Need: MusicAndSFX_TusariLevel1.prg
+		*=$8000
+		"C:\Work\C64\Tusari2\Sound\Sound effects.msmus"
+		"C:\Work\C64\Tusari2\Sound\Level1-2.msmus"
+	> Need: Scroller_PlaySoundEffectsDuringGame = 1
+	> Need: !source "SFXWithMusic.a"
+	> Need: Something like: Citadel2\asm\SFXTables.a for SEUCKToMusicSFX
+	Sounds needed
+		00	Throw dagger
+		01	Explode
+		02	Hit enemy, but only damage, not die
+		03	Fire fireball from dragon
+		04	Bat/bird swoop
+		05	Spawn pickup
+		06	Collect pickup
+		07	Fire sparkles
+		08	Sparkles ready
+		09	Sword throw - Three steps
+		0a	Sword throw charge - Three steps
+		0b	Player land after jump
+
+
+
+
+* ; TODO: This stops the in-game music. Normally this would be a choice from the title screen code
+	* Scroller_ScorePanelPos will need to be backed up
+	* Need to do ScoreInit at the start of the title screen
+	* Title screen choose SFX or music+SFX
+		SFX_Voices
+		SFX_VoiceUpperWrap
+		SFX_VoiceLowerReset
+		* jsr MusicPlayerStop
+	* Display current choice
+
+
+
+
+* Move music to IRQ. Use: IrqTopOfScreen? Or count the expected number of music frames with the IRQ and call that many times?
+	> Scroller_DoMusicUpdateInIRQ
+	> Scroller_EnableSpeedCode
+	SFX routines will need guarded method for SFX playing
+	Also SFX routine will need a suitable guarded method for starting a new music track
+
+
+
+* Music only option
+
+
+
+
+* Hmm with Scroller_DoMusicUpdateInIRQ and firing rapidly without any other sprites on screen, sometimes there is a frame judder in the left/right scroll
+	Recording a video, then analysing the frames shows: "C:\Users\Martin Piper\Videos\Captures\VICE_ C64 (x64sc) at 98% speed, 49 fps 2023-01-25 17-17-45.mp4"
+		VIC2Colour_LightGrey and VIC2Colour_DarkGrey (before VIC2Colour_LightGreen) taking a long time
+		BeforeScrollers and AfterScrollers
+			Hmm this is Scroller\CharEffects.a
+	>> ; Potential for only doing this if there is time
+		Perhaps use the method that Citadel2 uses to avoid busy frames?
+			>> Using Scroller_ColourScrollRasterAbortLevel before "jsr ActivationObject_CheckScreenEdges"
+			>> ; This stops objects spawning when things get busy
+				>> But this triggered too often...
+	>> Reduce: kNumCharEffects = 10
+		>> This fixed the issue, but the number of chars is quite limited, so consider optimising the routine by unrolling it instead
+			CharEffects_EnableBeforeScrollersSpeedCode = 1
+			CharEffects_EnableAfterScrollersSpeedCode = 1
+			CharEffects_EnableAfterScrollersSpeedCode2 = 1
+	>> Consider adding CharEffectsUsedX for BeforeScrollers
+		Then splitting the char move and the update, so the move happens elsewhere in the frame
+	>> It seems that having a minimum value for PlayerUpgrades_daggerThrow*Timer was a better optimisation, it reduces the bullet spam :D
+		Anyway, the CharEffects_Enable*SpeedCode are options if later on there is enough available memory or more time is needed
+
+
+
+
+* Perhaps remove sparkles and collide with sword sprite directly?
+	+MAnimation_DetectBoundingBoxCollisionWithIndex .isHit , 2 ,	10 , 20 , 10 , 20
+
+
+
+
+* The score and other common game data can be stored at either $100-$13f which Chooser keeps free or $ffc0-$fff0 which isn't used for sprites
+	Tusari2\asm\CommonGameData.a
+		Common_MusicSFXConfig
+		Common_ScorePanel
+
+
+
+
+* Consider calculating the active animation XPos shifted value for all animations and using that in the detection and char lookup macros and bounding box
+	Can then remove PlayerXPosShifted and replace with AnimationXPosShifted
+	>> MAnimation_CalculateShiftedIndex
+	>> MAnimation_CalculateShifted_X
+	>> MSpritePosToCharacterLookupShifted
+
+
+
+
+* Eject powerups with random X/Y velocity that decays quickly
+
+
+
+
+* For Scroller_UseDemoScorePanel add an option to relocate the score panel data straight into the destination memory address instead of the current copying mechanism
+	This is because there isn't any "title screen" state per se, since the level code+data load uses the whole memory from $200-$ffc0
+	>>Scroller_UseDemoScorePanelStaticMemory = 1
+
+
+
+* Player crouch + fire obviously
+	AnimationFrames_MainCharLegsKnealLeft
+	AnimationFrames_MainCharLegsKnealRight
+	If standing and stationary and down pressed then go into crouch
+	If crouching and move left or right then cancel crouch and go into walk
+
+
+
+
+* Player weapons
+	Short range slash - Sprite
+	High damage
+	Covers +/- 45 degrees from the joystick 8-way direction
+	Blocks (parry) all damage from the area covered while slashing
+	Upgrade with slightly longer range multiple sword effect?
+	Done: For simple collision detection can emit animated chars, like the daggers, which will also cause damage to enemies
+		These do not need to be deleted on collision to enable them to kill other enemies... Ignore "; Kill the char effect" and CharEffectsTime write
+	The last sword swipe direction can be stored to help push the player away from hit enemies
+	>> Added sprite simple animation for .swordRight and .swordLeft
+	Done: * Need to move the sword frames up and down depending on the animation frame
+	Done: Sword effect chars also need to be inside the character's body and also cover a larger area.
+		See: Make the sparkle move down, which helps with the enemy hit detection
+		See: sbc #16	; Adjust up a bit to account for the falling sparkle effect speed
+	TODO: Standing frame needs some arm animation for the sword
+	Done: Choose to fire the daggers
+		Actually no, sword and daggers together is fine
+			>>; Fire the daggers as well
+	Done: Change sword and dagger fire to be a distinct fire press and release
+		Note: ; Debounce check
+		.swipeSword
+		.fireDagger
+	Done: Stop stationary daggers, if no direction then fire AnimPlayer_lastDirectionSet
+		>> .smbx and .smby
+	Done: Dagger power progression, single dagger, multiples, dir/up, dir/up/down, surround
+		* Daggers, starts with one, upgrade to 2 then 3 then directional 8-way spread shot +/ 45 degrees?
+		Dagger directions done, but just need a counter for the weapon strength
+		Done: AnimationInit_upgradeDagger
+			To start with the dagger throw has a timeout, limiting the maximum fire rate. This can be decreased to 0, allowing the player to fire as rapidly as the char effects allow
+		Done: AnimationInit_upgradeDaggerBehind
+		Done: AnimationInit_upgradeSword
+			Sword throw is initially disabled, strength 0, increases the sword throw strength up to a maximum of 3
+		Done: AnimationInit_upgradeDaggerUp
+		Done: AnimationInit_upgradeDaggerDown
+			These up/down can use a similar throw timer which decreases with upgrades
+	Done: Hold down fire throws the sword in the last direction until release fire or until it hits the backround
+	Not needed, done previously: The dagger upgrade, each fire button press can set the number of dagger to release over the next X frames.
+		The release code can default to left/right plus up/down and switch direction
+		Will need a vertical up and down dagger? Or just don't have straight up or down. :) So 6-way instead.
+	Done: Indicate sword throw strength
+		Scroller_StrengthPanelPosColour
+
+
+
+
+* Title screen to show weapons pickups effects by having a running, jumping, shooting player character.
+	Most of the extra code can be stubbed out, no scrolling of course, just a very minimal set of char screen data.
+	Spawn pickups, walk into it, shoot...
+	Could even shoot simple enemies with the weapons...
+	> That effort can also be applied to test scenarios.
+	>> Player graphics in, charset in, shooting a dagger in
+	> Done: Need a "map"
+	>> HandleFakePlayerInput
+	>> Common code for: .spawnFramesTab .spawnColoursTab .spawnTicksTab handling, to spawn pickups without a chest
+		.hitRoutineChest
+		>> SpawnAPickupWithPosition
+	>> Going to need to split these objects into separate code to be included, probably as generated !source lines, much like the !source "AnimationData_Player.a"
+		Will need to expand the conversion tool to do this
+		Will need a list of lines to include, and remove duplicates before outputting the level file data
+			To handle inclusion of common code like: AnimationDelete_commonMakeRespawn
+		>> Added bats
+	* Scroller_ScorePanelTopLeft will need a proper address, in game include the SCRENRAM, in the Title put it as $cc00 where it won't be visible
+		** Actually because of the potetial for COLOURRAM clashes, would be better to disable score panel updates to separate functions, with something similar to kAnimation_IncludeActivationObjectCode
+			> For example: kScore_IncludePanelUpdates = 1
+				Move ScorePanel defines from: C:\Work\C64\Tusari2\asm\CommonGameData.a to C:\Work\C64\Tusari2\asm\HookInclude.a
+				Then Title need not have any score panel updates at all
+
+
+
+
+* When the boss appears, apart from the music, some kind of "grand entrance"... Rocks raining down for example.
+
+
+
+
+* TODO: Spacebar releases fire/ice/water spell? Lots of fast flickering sprites that rain down? All enemies are damaged with some kind of rolling damage effect not really linked to sprites/chars collision?
+	Done: Add extra upgrade - https://www.youtube.com/watch?v=JFfJOEKi6sQ
+	Will need keyboard detect, like the pause key...
+		>> Scroller_ScanForSpace = 1
+	Spell size also based on number of pickups. Spell bottles red/white/blue... Yes formulaic.
+		.spellBottleToTime
+		.handleCasting
+		>> Player_UsingSpellDamage should be used inside MAnimation_DetectBoundingBoxCollisionWithIndex* as a forced hit
+
+
+
+
+* .spellEffectFrameFlicker These animation tables can be reorganised to be linear
+	Now using: !swizzle .swizzleMemory , .swizzleMemoryRowSize , 3
+
+
+
+
+* Single step up character while walking left/right
+	.jumpIndexForce
+	* Perhaps no fall sound if the fall isn't that far or for too long, to avoid the small jump up from making noise :)
+		.isFallingForFrames
+
+
+
+
+* Level1-2.ctm renamed to Level1.ctm and moved to "exported assets"
+	Similar changes for music data and map placement data
+
+
+
+
+* Player start position could come from the map placement file...
+	; Set map scroll position
+	Done: > At least make this a configurable value for each level, perhaps an extra included source file?
+		Level*Options.a gets copied to LevelTempOptions.a during build
+	> Will need "level complete" coordinate range as well, which the camera can use to trigger the next level
+		PlayerMapEnd*
+
+
+
+
+* Complete level check, trigger map coords?
+	* Intermission/loading screen
+		These will need to be noted/tweaked:
+			MaxSpriteNumber
+			numMapUsedChars
+			numMapUsedTiles
+			MapData
+			MapPlacement_*
+				MapPlacement_activationObject etc
+					This is used by MActivationObject_HandleEdge, so these tables will need to be in a fixed point
+					While these reference code for the animations, like AnimationInit_*, which is fine, the code needs to be after fixed size data
+				AnimationData.a which includes "exported assets/Level1-2.a" and is included by ScrollerData.a
+			AnimationActivationObject_InitLo_* same rationale as MapPlacement_*
+			kAnimation_maxActivationObjects
+			* For each level it would be possible to dynamically include each chunk of data as separate files based on the animations used in the level.
+				For example:
+					AnimationObject_bat
+						AnimationInit_bat
+							AnimationFrames_Bat
+	* Load next level data
+		Note: !source "exported assets/Level1-2.a"
+	* Or since the cartridge is being used, just assemble the whole code as one huge blob with dynamic source files based on enemies used etc
+		The game can load levels or go back to the title screen etc just by banking in the first code block and using a known jmp entrypoint
+		Much simpler than trying to have "common code" etc
+	* Convert CTM and SPR assets to binary and source files, ready to be !source included for each level
+		Build two levels, using different data
+		Include level complete code and load the next level in the cart
+		Also score panel data
+		>> !source "MapPlacementData.a"
+	* Due to cartridge based speed code, these will need to be in the same place across all loads:
+		>> Scroller_EnableBlockColourSpeedCode and Scroller_EnableSpeedCode
+		CharColours	- Move to the start or end of data somewhere Just before the music?
+		topScreenBank		- Hopefully static due to it being in core code, add build check?
+		BankToScreenAddr	- Hopefully static due to it being in core code, add build check?
+		The level CTM files will ned consistent naming, also the filename will need to be handled. Probably by copying to a common filename for each level assembly pass...
+	* BuildIt.bat can build each final level by copying the actual level/music/processed level file etc to common file names
+
+
+
+
+
+* While processing the map placement data and generating lines like: +AnimationEnemyMapPlacement ~.placedEnemy0 , AnimationObject_chest	, 2240 , 879
+	Output: Level1Placement.a, plus the below
+		buildData.bat will need updating with a leaf filename
+	> Will need an additional three separate output files to be included
+		> Would need to optionally remove duplicates and output in order of their definition, or output verbatim while replacing any leading space with a tab
+	* Output lines for: !source "AnimationData_commonMakeRespawn.a"
+		> Or like this:
+				+StartAnim ~AnimationFrames_Worm , 5
+				+DoFrame $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50
+	* Output suitable lines to a source file for: +DoAnimationActivationObject ~AnimationObject_chest , AnimationInit_chest , -1 , 0 , 0
+	* Also emit lines for:
+		!source "AnimationCode_bat.a"
+	* e.g. Given the existing definition
+	5.object.name=AnimationObject_worm
+	5.object.range.frame=73-80
+	> From the name at: 5.object.name
+		AnimationObject_worm.data.0=!source "AnimationData_commonMakeRespawn.a"
+		AnimationObject_worm.data.1= +StartAnim ~AnimationFrames_Worm , 5
+		AnimationObject_worm.data.2= +DoFrame $49 , $4a , $4b , $4c , $4d , $4e , $4f , $50
+		AnimationObject_worm.activation.0= +DoAnimationActivationObject ~AnimationObject_explosion , AnimationInit_explosion , -1 , 0 , 0
+		AnimationObject_worm.activation.1= +DoAnimationActivationObject ~AnimationObject_worm , AnimationInit_worm , -1 , 0 , 0
+		AnimationObject_worm.code.0=AnimationInit_worm
+		AnimationObject_worm.code.1= +MAnimation_StandardInit AnimationFrames_worm , VIC2Colour_Red , AnimationTick_detectHitExplode , AnimationDelete_commonMakeRespawn
+	>> Activation can often code into Code sections
+		Meaning there are going to be two files, Data.a and Code.a used
+
+
+
+
+* Space spell effect seems to remove/collect any spawned pickups?
+	Also it seems to activate chests?
+	Because MAnimation_DetectBoundingBoxCollisionWithIndexShifted is used in upgrades AnimationTick_upgradeBounce and uses index 0 which is the player
+		MAnimation_DetectBoundingBoxCollisionWithIndexShifted has "lda Player_UsingSpellDamage" check because it was also used for the sword to make the sword hit
+
+
+
+
+* Import BackgroundFixedColours from ctm file
+
+
+
+
+* For a given map X coordinate (>= and < test) , have the ability to set a vertical split position to change background colour, or other multi-colours. One active split for the screen.
+	* Or resort back to the level defaults
+	>> Probably after: ActivationObject_UpdateScreenEdges
+	Will need to use the top screen Y scroll value
+		topScreenScrollY
+		topScreenScrollYInv
+		After ScrollerUpdateTopIRQ
+		Or probably in IrqTopOfScreen
+	> Top screen IRQ uses colours, then at the split point down the screen the colours are changed
+		The pre-calculation for this will need to be done at some point during the frame (ScrollerUpdateTopIRQ). Ensure the setup for this is IRQ safe by avoiding a partial update being used.
+	>> Should ScrollerUpdateTopIRQ actually be pausing the IRQs so that it can update all values correctly?
+		This would affect any NMI stability if it did overrun. Hmph.
+	>> Note: ScrollerNMI1
+	>> ActivationObject_UpdateScreenEdges similar code will be needed to update any Y split position
+		> ActivationObjectPosition_Left
+		> ActivationObjectPosition_Top
+	> Adding:
+		Scroller_EnableUpdateTopIRQHook = 1
+		Scroller_EnableIrqTopOfScreenHook = 1
+		Scroller_EnableNMI1Hook = 1
+	For:
+		ScrollerUpdateTopIRQHook
+		IrqTopOfScreenHook
+		ScrollerNMI1Hook
+	>> VerticalColours table
+	* Perhaps a negative colour entry will avoid updating that value?
+
+
+
+
+* NMI colour split timing, don't need an NMI if the first line is changed, just set the background colours
+	* Also tweak the score panel rejection limit so that it is as close as possible considering sprites over the split
+		kMaxNMILines currently = $a8 = 168
+
+
+
+
+* Level1 has eight sprites on the score panel split. Test the NMI colour split close to the score panel split.
+
+
+
+
+* Split VerticalColours and other data into level data file
+	* VerticalColours can use a define for the number of vertical slots, instead of having "!word 65535 , 65535: at the end
+
+
+
+
+* If there are no colour splits in a level then no need to include all the extra code in: !source "NMIColourSplits.a"
+	When kVerticalColoursSlots = 0
+	Instead just stub out the hooks
+
+
+
+
+* When the scroll reaches the bottom of the map, the limit test needs to be one char row above where it is now. The bottom split is showing the first pixels of corrupt blocks.
+	* Also the row of characters under the score panel top row (for the split) are non-collidable, perhaps they should have collision to stop the player?

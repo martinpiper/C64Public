@@ -22,6 +22,7 @@ cd ..
 mkdir MusicStudio2Bin
 cd MusicStudio2Bin
 copy ..\..\..\C64\acme.exe
+copy ..\..\..\C64\python39.dll
 xcopy ..\..\..\C64\stdlib\*.* stdlib\ /s
 mkdir MusicStudio2
 cd MusicStudio2

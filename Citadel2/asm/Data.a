@@ -62,14 +62,18 @@ MarkEndData = *
 ; From here this point is decompressed level data that can be updated between levels
 ; Reserve empty space for level data
 
-*=LevelDataStart
+* = LevelDataStart
+!source "FingerPrint.a"
+	!fill OtherCodeMemory - * , 0
+
+;*=LevelDataStart
 ;!fill $1000
 ;!bin "DataLevel1.prg" ,, 2
 !source "DataAutoDefsScorePanel.a"
 !source "DataAutoDefs.a"
 
 
-* = MusicPlayerInit
+;* = MusicPlayerInit
 ;!bin "MusicAndSFX.prg",,$2	; Remember to skip any lo/hi file information by using $2
 ;!bin "Sound\Citadel2_Title.prg",,2
 
@@ -80,7 +84,7 @@ MarkEndData = *
 *=CharData
 !bin "Level1.ctm" , $800 , $14
 
-!source "FingerPrint.a"
+
 
 *=SpriteData
 !bin "LevelSprites.spd" , MaxSpriteNumber*64 , $9

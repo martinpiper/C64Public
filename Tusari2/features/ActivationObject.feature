@@ -9,7 +9,7 @@ Feature: ActivationObject tests
     When I enable uninitialised memory read protection
     Given I have a simple overclocked 6502 system
 
-    And I run the command line: ..\acme.exe -v4 --msvc --lib ../ --lib ../Scroller/ -o test.prg --labeldump test.lbl -f cbm ActivationObjectTest.a
+    And I run the command line: ..\acme.exe -v4 --msvc --lib asm/ --lib ../ --lib ../Scroller/ -o test.prg --labeldump test.lbl -f cbm ActivationObjectTest.a
     And I load prg "test.prg"
     And I load labels "test.lbl"
 

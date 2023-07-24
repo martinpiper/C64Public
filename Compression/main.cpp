@@ -9,6 +9,7 @@
 #include "CompressE.h"
 #include "CompressRLE.h"
 #include "Decompress.h"
+#include "DecompressE.h"
 #include "../Common/ParamToNum.h"
 
 using namespace RNReplicaNet::RNXPCompression;
@@ -74,6 +75,7 @@ int main(int argc,char **argv)
 			"bytes of the file. The optional start address will override the start address\n"
 			"read from the first two bytes of the prg file.\n"
 			" -c64b will cause the border to flash during decompression.\n"
+			" -c64 or -c64b allows memory in the range $400-$ffff to be used and is less destructive to zeropage.\n"
 			" -c64m or -c64mb will use max mode ($200-$ffff available) without or with border flashing.\n"
 			" -c64mr or -c64mrb will use RLE max mode ($200-$ffff available) without or with border flashing.\n"
 			"By default the border will not flash.\n\n"
@@ -112,11 +114,11 @@ int main(int argc,char **argv)
 	int machineMemoryTopMinus256 = machineMemoryTop - 0x100;
 
 
-	if ((argv[1][1] == 'c') && (argv[1][2] == 'r'))
+	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'r'))
 	{
 		useRLE = true;
 	}
-	if ((argv[1][1] == 'c') && (argv[1][2] == 'e'))
+	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'e'))
 	{
 		useRNZipMode = true;
 	}
@@ -268,6 +270,14 @@ int main(int argc,char **argv)
 	int endAddress = (int)loadC64Code+(int)inputSize;
 
 	printf("End address = $%04x\n",endAddress);
+
+	int adjust = endAddress - 0xfffa;
+	if (adjust > 0)
+	{
+		inputSize -= adjust;
+		endAddress = (int)loadC64Code+(int)inputSize;
+		printf("New end address = $%04x adjusted by $%x\n",endAddress , adjust);
+	}
 
 
 	printf("Opening '%s' for writing...\n",argv[3]);
@@ -771,10 +781,21 @@ int main(int argc,char **argv)
 
 
 		u32 outDecomp;
-		if (Decompress(compressedDataStart,inputSize,output,&outDecomp))
+		if (useRNZipMode)
 		{
-			printf("Problem during decompression\n");
-			exit(-1);
+			if (DecompressE(compressedDataStart,inputSize,output,&outDecomp))
+			{
+				printf("Problem during decompressionE\n");
+				exit(-1);
+			}
+		}
+		else
+		{
+			if (Decompress(compressedDataStart,inputSize,output,&outDecomp))
+			{
+				printf("Problem during decompression\n");
+				exit(-1);
+			}
 		}
 		printf("Decompressed length = $%04x\n",outDecomp);
 

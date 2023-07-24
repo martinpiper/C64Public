@@ -14,10 +14,8 @@ DisplayScreen
 
 	jsr Video_SetAddressVideoPriorityRegister
 	; Layer order
-	; Sprites behind chars
-;	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Background
 	; Sprites behind clouds
-	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Background
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel3 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel0
 
 	inc VIC2BorderColour
 
@@ -29,7 +27,7 @@ DisplayScreen
 	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
 	sta CIA2PortBRS232
 
-	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Tiles_Enable | kVideo_EnableDisplay_Tiles_BorderXShrink
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
 	jsr Video_EnableDisplay
 
 	jsr Bus24Bit_Reset

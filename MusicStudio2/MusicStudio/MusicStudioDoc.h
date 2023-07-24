@@ -30,6 +30,7 @@ public:
 	static const int kMIDITrack = 0x6b72544d;
 	static const int kGoatTrackerV1 = 0x21535447;
 	static const int kGoatTrackerV2 = 0x35535447;
+	static const int kReaper = 0x4145523c; // "<REAPER_PROJECT 0.1 "6.78/win64" 1681915148"
 
 protected: // create from serialization only
 	CMusicStudioDoc();
@@ -141,6 +142,10 @@ public:
 	bool LoadGoatTrackerSong(CArchive &ar,const int version);
 
 	bool LoadMIDIFile(CArchive &ar);
+
+	bool LoadReaperFile(CArchive &ar);
+
+	void BlockInit(int &block, int outBlockTempo, int track, int &trackPos, LONGLONG &theBlockLengthProcessed, int &numberOfEventsInBlock, bool checkForDuplicates);
 
 	bool LoadMWMusicFile(CArchive &ar);
 

@@ -455,3 +455,117 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 	OpenDocumentFile( _T("C:\\Work\\C64\\MusicStudio2\\ExampleFiles\\Loopz Musix.msmus") );
 	Produces something that can be recognised
 	Done: Needs to handle transpose and repeat block commands
+
+
+
+
+* Underneath the tracker mode editor there is a display for the "Frames", this doesn't seem to take into account the active block "tempo" and also it is not indicating the number is in hex, include a decimal value too.
+	IDC_EDIT48
+		mBlockDurSize
+	IDC_EDIT58 is tempo	OnChangeBlockEditTrackerTempoEdit1
+
+
+
+
+* Block tracker edit mode: When the number of rows is odd (and tempo is 1) then the final calculated duration (which uses frames/2 by default) doesn't seem to update
+	The "Frames" display doesn't update when going from 6 to 7 rows with an empty block for example
+	The output DUR: command doesn't update the number properly
+	This indicates a rounding error when converting the rest lengths
+	This doesn't happen if the first (0) row contains a valid note, it correctly uses DTI:
+	> Fixed, uses "DTI:" when it should do
+
+
+
+
+* When in tracker mode, converting a note with DTI to have the same release timing as the niote length produces noticable clicks with a following rest (+++)
+	Why? Fix, obviously.
+	Reducing the release length to always be one less than the note length seems to fix this...
+	Is there a problem with processing the +++ command affecting the gate in combination with hard restart?
+	HRD and use === instead
+
+
+
+
+* Reaper import:
+	Application: "C:\Temp\REAPER\reaper.exe"
+	"C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples"
+	In file: C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples\three notes one track.rpp
+		Note: For three notes, separated by rests:
+			<TRACK {A4470774-6ED8-416C-BFEA-DA175BF2766D}
+			<ITEM
+			POSITION 0
+			  <SOURCE MIDI
+				HASDATA 1 960 QN
+				CCINTERP 32
+				POOLEDEVTS {093CC3D2-0758-4BC9-9492-6DC54DF02B3A}
+				E 0 90 35 7f
+				E 120 80 35 00
+				E 120 90 3c 7f
+				E 120 80 3c 00
+				e 120 90 40 7f
+				e 120 80 40 00
+				E 2280 b0 7b 00
+				CCINTERP 32
+				CHASE_CC_TAKEOFFS 1
+				GUID {C73306DE-B4D1-4BCE-B5D7-3F25D01BABF7}
+		Seems to be MIDI note data starting with: E 0 90 35 7f
+			Ending with: CCINTERP 32
+	* Need extra file extension added to open file
+		* Note will need a duplicate entry similar to IDR_MusicStudioTYPE2
+	>> LoadReaperFile
+	> Perhaps it would be better to switch to tracker mode?
+	> For a 1 second block the total time is:
+		TEMPO 120 4 4
+		<TRACK
+		<ITEM
+		  POSITION 1.5		(in seconds)
+		  LENGTH 1			(if length is longer than the total item length then the item repeats and can repeat partially)
+		  <SOURCE MIDI
+		  HASDATA 1 960 QN	(960 = 1920 / 2, hmm does this indicate the real length? Nope, so ignore for now)
+		  POOLEDEVTS {1121D557-29CB-4885-9F5B-13093D70E1D9}
+		E 1920 b0 7b 00		(1 second rest at 120 bpm, rest is b0)
+		    E 240 90 29 7f	(after 240 ticks, 90 note on, 29 note)
+		    E 240 80 29 00	(after 240 ticks, 80 note off, 29 note)
+		  CCINTERP 32
+	> The logic here, will be to keep on processing these midi events, note first event (E or e), until "  CCINTERP 32" while LENGTH has not reached zero.
+		Restarting at the first event as necessary.
+		Set the tracker block length
+		Would need to create empty tracker block for any gaps in position (time) detected
+	>> Needed: SOFFS 0 0
+	** Note: Try to handle full and partial loops of output block data
+	** This seems to be missing the last flurry of notes?
+		"C:\Users\Martin Piper\Downloads\NP MIDI conversion examples\Examples\one block.RPP"
+		** The tempo also seems to be too slow?
+			Could this be related to: // Why divide 2? It fitted the observed data in "one block.RPP"
+			Could these event times have to be devided by 2? Why not the other file?
+			>> Bodge fix for "one block.RPP"
+		> Something to do with "BEAT 1" being present? Or in the metronome block?
+	** Need to split longer blocks.
+		Use: numberOfEventsInBlock
+		Update: theBlockLengthProcessed
+	** Perhaps split on every loop as well? This would make it easier to spot duplicate blocks
+		Update:
+			numberOfEventsInBlock
+			theBlockLengthProcessed
+	** Done: Need to remove items with "MUTE 1 0", can pre-process this
+		Count subsequent > and <
+	** Done: Need to remove tracks with no items, can pre-process this
+	** Example1 seems to be creating a lot of duplicate blocks, try to spot them and remove as an option
+
+2.2.0.8
+
+
+
+
+* Reaper import, include a configuration dialog window for import options
+	See CImportMIDI for example usage
+		// Remove muted items
+		// Remove any tracks without items
+		tempo = 120
+		Ticks multiplier (16) for:
+			blockTicksPerSecond = tempo * 16
+		includeEmptyTime = false;
+		beatAdjustment = 0
+		// Check for any duplicates
+		kC64FramesPerSecond = 50;
+		outBlockTempo = 1;

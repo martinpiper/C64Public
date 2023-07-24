@@ -16,6 +16,10 @@
 //-sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00682.bmp 0 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
 //-spriteminy 0 -spritemaxy 75 -spriteminx 80 -spritemaxx 216 -sheetthresholdbase 0 -sheettargetnumspritesmax 8 -sheetframes c:\temp\t.spr -1 -sheetinfo c:\temp\t.sno -1 48 -sheetcolours 0 11 12 -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00048.bmp 0 0 0 c:\temp\t.bin c:\temp\t.scr c:\temp\t.col
 //-forceordering -bitmap -r  ..\AnimationBitmap\Animation10\frm00060.bmp 0 0 0 c:\temp\t.chr c:\temp\t.scr c:\temp\t.col
+//-forceordering -swizzle -window 10 0 20 12 -reducebitmapchange c:\temp\t.scr c:\temp\t.col -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2b.bin c:\temp\t2b.scr c:\temp\t2b.col
+//-forceordering -reducebitmapchange c:\temp\t.scr c:\temp\t.col -bitmap -m C:\Work\C64\AnimationBitmap\Animation8\frm00049.bmp 0 0 0 c:\temp\t2b.bin c:\temp\t2b.scr c:\temp\t2b.col
+//-window 0 0 40 25 TestScreen.bmp 4 9 12 chars.bin screen.bin colours.bin
+//-window 5 2 20 15 TestScreen.bmp 4 9 12 chars.bin screen.bin colours.bin
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
@@ -31,6 +35,7 @@
 #include "RNPlatform/Inc/MessageHelper.h"
 
 using namespace RNReplicaNet;
+using namespace std;
 
 static bool sDoSprites = false;
 static size_t sUDGByteSize = 8;
@@ -114,6 +119,7 @@ static int C64Palette[] = {
 */
 
 // Palette entries from VICE
+// From: Palette.bmp
 static int C64Palette[] = {
 					0x00, 0x00, 0x00,
 					0xff, 0xff, 0xff,
@@ -268,6 +274,15 @@ int main(int argc,char **argv)
 	unsigned int spritemaxy = 200-21;
 	bool forceOrdering = false;
 	DynamicMessageHelper *previousScreen = 0, *previousColours = 0;
+
+	unsigned int windowX = 0;
+	unsigned int windowY = 0;
+	unsigned int windowXEnd = 0;
+	unsigned int windowYEnd = 0;
+	unsigned int windowWid = 0;
+	unsigned int windowHei = 0;
+
+	bool swizzle = false;
 
 	int sheetthresholdbase = 0;
 	memset(usedColoursSheetThreshold , 0 , sizeof(usedColoursSheetThreshold));
@@ -430,6 +445,36 @@ int main(int argc,char **argv)
 					argv++;
 				}
 			}
+			else if (strcmp( argv[1] , "-addidx" ) == 0 )
+			{
+				if (argc >= 1 )
+				{
+					sAddIdx= atoi(argv[2]);
+					argc--;
+					argv++;
+				}
+			}
+			else if (strcmp( argv[1] , "-bitmap" ) == 0 )
+			{
+				sBitmapMode = true;
+			}
+			else if (strcmp( argv[1] , "-window" ) == 0 )
+			{
+				if (argc >= 1 )
+				{
+					windowX = 8 * atoi(argv[2]);
+					windowY = 8 * atoi(argv[3]);
+					windowWid = 8 * atoi(argv[4]);
+					windowHei = 8 * atoi(argv[5]);
+
+					argc -= 4;
+					argv += 4;
+				}
+			}
+			else if (strcmp( argv[1] , "-swizzle" ) == 0 )
+			{
+				swizzle = true;
+			}
 			else if ((argv[1][1] == 'h') || (argv[1][1] == 'H') || (argv[1][1] == '?'))
 			{
 				showHelp = true;
@@ -454,19 +499,7 @@ int main(int argc,char **argv)
 				sDoSprites = true;
 				sUDGByteSize = 64;
 			}
-			else if (strcmp( argv[1] , "-addidx" ) == 0 )
-			{
-				if (argc >= 1 )
-				{
-					sAddIdx= atoi(argv[2]);
-					argc--;
-					argv++;
-				}
-			}
-			else if (strcmp( argv[1] , "-bitmap" ) == 0 )
-			{
-				sBitmapMode = true;
-			}
+
 			argc--;
 			argv++;
 		}
@@ -490,14 +523,16 @@ int main(int argc,char **argv)
 		printf("-sheetthresholdmax : Sets maximum threshold for all colours to be output to the sprite sheet.\n");
 		printf("-sheetthreshold <index> <value> : Sets the threshold value for a specific colour index\n");
 		printf("-sheetframes <filename> <number> : Sets the output filename for the sprite sheet frames and the number of sprites to pad the output data to.\n");
-		printf("-sheetinfo <filename> <pad> <offset>: Sets the output filename for the sprite information, plus the bytes to pad the data to and the frame offset to use when writing the info.\n");
+		printf("-sheetinfo <filename> <pad> <offset> : Sets the output filename for the sprite information, plus the bytes to pad the data to and the frame offset to use when writing the info.\n");
 		printf("-sheetcolours <background> <multicolour 1> <multicolour 2>: Defines the background and multicolour index values to use for the sprites.\n");
 		printf("-sheetthresholdbase <value> : Sets the threshold value for all colours in the sprite sheet.\n");
 		printf("-addscreeninfo : Adds screen background and multicolour to the output screen character information.\n");
 		printf("-addsheetinfo : Adds sprite sheet multicolour information to the sheet info data.\n");
 		printf("-sheetthresholdbase <num sprites> : Will keep on increasing sheetthresholdbase until the number of sprites is <= this target.\n");
 		printf("-forceordering : Forces ordering of bitmap colour information to reduce changes in chosen intra-frame colours.\n");
-		printf("-reducebitmapchange <screen file> <colours file>: Compares the current bitmap with previous colour data and choses an optimal set of colours that reduces inter-frame changes.\n");
+		printf("-reducebitmapchange <screen file> <colours file> : Compares the current bitmap with previous colour data and choses an optimal set of colours that reduces inter-frame changes.\n");
+		printf("-window <x> <y> <width> <height> : Extracts a window to the output data, based on characters.\n");
+		printf("-swizzle : Swizzles the output data so that it can be optimised for unrolled loop copying.\n");
 
 		exit(0);
 	}
@@ -576,6 +611,20 @@ int main(int argc,char **argv)
 		unsigned int wid,hei;
 		file >> wid;
 		file >> hei;
+		unsigned int inputWid = wid,inputHei = hei;
+		if (windowWid > 0 && windowHei > 0)
+		{
+			wid = min(wid , windowWid);
+			hei = min(hei , windowHei);
+		}
+		else
+		{
+			windowWid = wid;
+			windowHei = hei;
+		}
+		windowXEnd = windowX + windowWid;
+		windowYEnd = windowY + windowHei;
+
 		unsigned char bits;
 		file >> bits;
 		file >> bits;
@@ -616,23 +665,26 @@ int main(int argc,char **argv)
 		// Create a map of C64 colour and the count for the colour.
 		std::map<unsigned char,int> colourMap;
 		unsigned int x,y;
-		unsigned int roundedScan = wid * 3;
+		unsigned int roundedScan = inputWid * 3;
 		roundedScan += 3;
 		roundedScan &= ~3;
-		for (y=0;y<hei;y++)
+		for (y=0;y<inputHei;y++)
 		{
-			file.SetSize(bitmapOffset + (((hei-1)-y)*roundedScan));
+			file.SetSize(bitmapOffset + (((inputHei-1)-y)*roundedScan));
 			unsigned int RGB = 0;
 
-			for (x=0;x<wid;x++)
+			for (x=0;x<inputWid;x++)
 			{
 				file.GetVariable(&RGB,3);
 				unsigned char C64Index = RGBToC64(RGB);
-				// Insert a new element
-				std::pair<std::map<unsigned char,int>::iterator,bool> ret = colourMap.insert(std::pair<unsigned char,int>(C64Index,0));
-				// Increment the counter for the element.
-				// If it was inserted then 0 becomes 1, else it was found so the reference increases by 1.
-				(*ret.first).second++;
+				if (x >= windowX && x < windowXEnd && y >= windowY && y < windowYEnd)
+				{
+					// Insert a new element
+					std::pair<std::map<unsigned char,int>::iterator,bool> ret = colourMap.insert(std::pair<unsigned char,int>(C64Index,0));
+					// Increment the counter for the element.
+					// If it was inserted then 0 becomes 1, else it was found so the reference increases by 1.
+					(*ret.first).second++;
+				}
 			}
 		}
 
@@ -704,23 +756,26 @@ int main(int argc,char **argv)
 			oldScreenSpriteSheet.push_back(temp);
 		}
 
-		for (y=0;y<hei;y++)
+		for (y=0;y<inputHei;y++)
 		{
-			file.SetSize(bitmapOffset + (((hei-1)-y)*roundedScan));
+			file.SetSize(bitmapOffset + (((inputHei-1)-y)*roundedScan));
 			unsigned int RGB = 0;
 
-			for (x=0;x<wid;x++)
+			for (x=0;x<inputWid;x++)
 			{
 				// Get three bytes RGB, convert it to a C64 palette entry and and store it.
 				file.GetVariable(&RGB,3);
-				oldScreen.push_back(RGB);
-				unsigned char C64Index = RGBToC64(RGB);
-				newScreen.push_back(C64Index);
+				if (x >= windowX && x < windowXEnd && y >= windowY && y < windowYEnd)
+				{
+					oldScreen.push_back(RGB);
+					unsigned char C64Index = RGBToC64(RGB);
+					newScreen.push_back(C64Index);
 
-				std::pair<std::map<unsigned char,int>::iterator,bool> ret = colourMap.insert(std::pair<unsigned char,int>(C64Index,0));
-				// Increment the counter for the element.
-				// If it was inserted then 0 becomes 1, else it was found so the reference increases by 1.
-				(*ret.first).second++;
+					std::pair<std::map<unsigned char,int>::iterator,bool> ret = colourMap.insert(std::pair<unsigned char,int>(C64Index,0));
+					// Increment the counter for the element.
+					// If it was inserted then 0 becomes 1, else it was found so the reference increases by 1.
+					(*ret.first).second++;
+				}
 			}
 		}
 
@@ -1041,7 +1096,7 @@ int main(int argc,char **argv)
 
 			if (forceHires)
 			{
-				colourBG = 255;	// Force it to be ignored
+				colourBG = kUnusedColourIndex;	// Force it to be ignored
 			}
 
 			int screenIndex = 0;
@@ -1226,10 +1281,12 @@ int main(int argc,char **argv)
 					{
 						if (forceOrdering)
 						{
-							maxCol10Index = colourMC1;
+							if (maxCol01Index < maxCol10Index)
+							{
+								std::swap(maxCol01Index , maxCol10Index);
+							}
 						}
-						maxCol01Index = 0;
-						maxCol11Index = 0;
+						maxCol11Index = kUnusedColourIndex;
 					}
 
 					if (forceMulticolour && forceOrdering)
@@ -1379,7 +1436,7 @@ int main(int argc,char **argv)
 								pixelData = pixelData << 1;
 
 								unsigned char index = RGBToC64(oldScreen[((y+yi)*wid)+x+xi]);
-								if (index == maxCol10Index)
+								if (index == maxCol01Index)
 								{
 									pixelData = pixelData | 1;
 								}
@@ -1415,6 +1472,10 @@ int main(int argc,char **argv)
 						fwrite(&pixelData, sizeof(pixelData) , 1 , fpBitmap);
 					}
 
+
+					maxCol01Index = maxCol01Index & 0x0f;
+					maxCol10Index = maxCol10Index & 0x0f;
+					maxCol11Index = maxCol11Index & 0x0f;
 					unsigned char charBlock = (maxCol01Index << 4) | maxCol10Index;
 					if (previousScreen && previousColours)
 					{
@@ -1431,7 +1492,16 @@ int main(int argc,char **argv)
 							charBlock |= prevScrLo;
 						}
 					}
-					fwrite(&charBlock, sizeof(charBlock) , 1 , fpScreen);
+					if (swizzle)
+					{
+						fwrite(&charBlock, sizeof(charBlock) , 1 , fpScreen);
+						fwrite(&maxCol11Index, sizeof(maxCol11Index) , 1 , fpScreen);
+					}
+					else
+					{
+						fwrite(&charBlock, sizeof(charBlock) , 1 , fpScreen);
+						fwrite(&maxCol11Index, sizeof(maxCol11Index) , 1 , fpColours);
+					}
 
 					if (previousScreen && previousColours)
 					{
@@ -1442,18 +1512,42 @@ int main(int argc,char **argv)
 							charBlock = prevColLo;
 						}
 					}
-					fwrite(&maxCol11Index, sizeof(maxCol11Index) , 1 , fpColours);
 
 					screenIndex++;
 				}
 			}
 
 			fclose(fpBitmap);
+
+			if (swizzle)
+			{
+				DynamicMessageHelper file;
+				file.Read(charsFilename,true);
+				char *theData = (char *)file.GetBuffer();
+
+				fpBitmap = fopen(charsFilename,"wb");
+
+				unsigned int cwid = wid / 8;
+				unsigned int chei = hei / 8;
+
+				for (x = 0 ; x < cwid ; x++)
+				{
+					for (int row = 0 ; row < 8 ; row++)
+					{
+						for (y = 0 ; y < chei ; y++)
+						{
+							fputc(theData[((x + (y*cwid))*8) + (7-row)] , fpBitmap);
+						}
+					}
+				}
+
+				fclose(fpBitmap);
+			}
+
 			if (addScreenInfo)
 			{
 				fputc(colourBG , fpScreen);
-				fputc(colourMC1 , fp);
-				fputc(colourMC2 , fp);
+				// Bitmap mode so no multicolour...
 			}
 			fclose(fpScreen);
 			fclose(fpColours);

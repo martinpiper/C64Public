@@ -1,0 +1,460 @@
+; Title code
+
+!source "stdlib/stdlib.a"
+!to "bin/Title.prg", cbm
+!sl "bin/Title.map"
+!sal
+!svl "bin/Title.lbl"
+!pdb "bin/Title.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+!source "stdlib/LongBranches.a"
+!source "Citadel2/asm/Score_Macros.a"
+
+!source "CommonGameData.a"
+
+* = $800
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	+M_RAMTAS_LOW
+
+	jsr AnimationInit2
+	lda #0
+	jsr MusicPlayerInit
+
+	; Clear a sprite at $300
+	lda #0
+	ldx #VIC2MemorySetup_SpriteSize-1
+.cl1
+	sta $300,x
+	dex
+	bpl .cl1
+
+	; Point this screen to the empty sprite
+	ldx #kVIC2NumSprites-1
+	+MVIC2SpriteIndex_A $300
+.cl2
+	sta SPRITEFRAME,x
+	dex
+	bpl .cl2
+
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+
+	; Update game area colours from ScreenColourData table
+	ldx #39
+.cc1
+!for .ii , 14 {
+!set .i = 10 + .ii -1
+	ldy ScreenData + (.i * 40),x
+	lda ScreenColourData,y
+	sta COLOURRAM + (.i * 40),x
+}
+	dex
+	+lbpl .cc1
+
+
+	+DisplayColourTextAt_AX .title , .titleEnd , SCREENRAM + (0*40) , VIC2Colour_Yellow
+
+	+DisplayColourTextAt_AX .soundChoice1 , .soundChoice1End , SCREENRAM + (1*40) , VIC2Colour_Green
+	+DisplayColourTextAt_AX .soundChoice2 , .soundChoice2End , SCREENRAM + (2*40) , VIC2Colour_LightRed
+	+DisplayColourTextAt_AX .soundChoice3 , .soundChoice3End , SCREENRAM + (3*40) , VIC2Colour_LightBlue
+
+	+DisplayColourTextAt_AX .instructions1 , .instructions1End , SCREENRAM + (4*40) , VIC2Colour_LightGreen
+	+DisplayColourTextAt_AX .instructions2 , .instructions2End , SCREENRAM + (7*40) , VIC2Colour_LightGrey
+
+	+MACROWaitForTheLastScan_A
+	+MVIC2SpriteEnableAll_A
+
+.main
+	+MACROWaitForTheLastScan_A
+	inc VIC2BorderColour
+	jsr BeforeScrollers
+	inc VIC2BorderColour
+	jsr HandleFakePlayerInput
+	inc VIC2BorderColour
+	jsr HandleUserInput
+	inc VIC2BorderColour
+	jsr Animation_UpdateTick
+	inc VIC2BorderColour
+	jsr AnimationUpdateMultiplexor
+	inc VIC2BorderColour
+	jsr AfterScrollers
+	inc VIC2BorderColour
+	jsr MusicPlayerPlay
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+
+	lda #JoystickBits_Left
+	bit CIA1KeyboardColumnJoystickA
+	bne .notLeft
+	lda #0
+	sta Common_MusicSFXConfig
+.notLeft
+	lda #JoystickBits_Right
+	bit CIA1KeyboardColumnJoystickA
+	bne .notRight
+	lda #1
+	sta Common_MusicSFXConfig
+.notRight
+	lda #JoystickBits_Down
+	bit CIA1KeyboardColumnJoystickA
+	bne .notDown
+	lda #2
+	sta Common_MusicSFXConfig
+.notDown
+
+	lda Common_MusicSFXConfig
+	beq .isSFX
+	cmp #1
+	beq .isMusicSFX
+.isMusic
+	+DisplayColourTextAt_AX .soundChoiceMusic , .soundChoiceMusicEnd , SCREENRAM + (24*40) , VIC2Colour_White
+	jmp .oChoice
+.isSFX
+	+DisplayColourTextAt_AX .soundChoiceSFX , .soundChoiceSFXEnd , SCREENRAM + (24*40) , VIC2Colour_White
+	jmp .oChoice
+.isMusicSFX
+	+DisplayColourTextAt_AX .soundChoiceMusicSFX , .soundChoiceMusicSFXEnd , SCREENRAM + (24*40) , VIC2Colour_White
+	jmp .oChoice
+.oChoice
+
+	; Show "game" section
+	+MACROWaitForRaster VIC2SpriteYBorderTop + (10*8)
+	+MByteValueToAddress_A VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Extended | kVIC2ScreenControlVBits_Bitmap , VIC2ScreenControlV
+	+MVIC2MemorySetup_ScreenChar_A ScreenData , CharData
+	sta VIC2MemorySetup
+	+MByteValueToAddress_A CIA2PortASerialBusVICBank_Bank3 , CIA2PortASerialBusVICBank
+	+MByteValueToAddress_A VIC2ScreenControlHDefault | kVIC2ScreenControlHBits_Multicolour , VIC2ScreenControlH
+	lda ScreenDataBGCol0
+	sta VIC2ScreenColour
+	lda ScreenDataBGCol1
+	sta VIC2ExtraBackgroundColour1
+	lda ScreenDataBGCol2
+	sta VIC2ExtraBackgroundColour2
+
+	ldx #VIC2ScreenControlVDefault
+	+MACROWaitForRaster VIC2SpriteYBorderTop + (10*8) + 2
+	stx VIC2ScreenControlV
+
+	; Show text section
+	+MACROWaitForRaster VIC2SpriteYBorderTop + (24*8) - 1
+	+MByteValueToAddress_A VIC2ScreenControlVDefault | kVIC2ScreenControlVBits_Extended | kVIC2ScreenControlVBits_Bitmap , VIC2ScreenControlV
+	+SetDefaultScreenLowerCaseNoEnable_A
+	+MACROWaitForRaster VIC2SpriteYBorderTop + (24*8)
+	+DelayFor 45
+	ldx #VIC2ScreenControlVDefault
+	stx VIC2ScreenControlV
+
+
+	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .main
+
+	; Now start the game
+	jsr MusicPlayerStop
+
+	; Set the score
+	+SetMemory_AX Common_ScorePanel , Common_ScorePanel + Scroller_ScorePanelLen - 1 , Score_ZeroCharacter
+
+	lda #6
+	jsr CartSelectBank_8K
+;	jmp C64Cartridge_Lo_8K + $06
+	jmp C64Cartridge_Lo_8K + $03
+
+
+.title !scr "This is my title screen"
+.titleEnd
+
+.soundChoice1 !scr "Move stick left to choose SFX"
+.soundChoice1End
+.soundChoice2 !scr "Move stick right to choose music+SFX"
+.soundChoice2End
+.soundChoice3 !scr "Move stick down to choose music"
+.soundChoice3End
+.soundChoiceMusic		!scr "Music    "
+.soundChoiceMusicEnd
+.soundChoiceSFX			!scr "SFX      "
+.soundChoiceSFXEnd
+.soundChoiceMusicSFX	!scr "Music+SFX"
+.soundChoiceMusicSFXEnd
+
+.instructions1 !scr "Hold down fire for over a second and    release to throw the sword, if you have the powerup."
+.instructions1End
+.instructions2 !scr "Hold down fire for a second while       stationary and tap down to use a force  blast, if you have the powerup."
+.instructions2End
+
+
+
+!source "FingerPrint.a"
+
+!source "stdlib/Initialise.a"
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "../MakeCart/asm/EasyFlash_Code.a"
+;!source "../MakeCart/asm/GMod2_Code.a"
+
+; Include bare minimum to get the player and other animations working in this title screen
+; A case of include code and then define values/stubs for everything until it assembles
+
+; Defines and macros
+Multiplex_items = 8
+Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
+Multiplex_DiscardSpritesYPos = VIC2SpriteYBorderBottom
+Scroller_AdditionalCharLines = 7
+Scroller_ScorePanelTopLeft = 0	; Can move this to where the title screen wants to diisplay, if it wants a score panel display
+numMapUsedChars = 256
+
+; Note: Shared with ScrollEntry_Tusari.a
+Animation_ActiveNonZeroEnabled = 1
+Animation_ActiveNonZero = Animation_FramesHi
+kNumCharEffects = 20
+CharEffects_HiddenIndexLookupEnabled = 1
+CharEffects_CoordinateShiftX = 1
+CharEffects_CoordinateShiftY = 1
+; Not enabled in Tusari2 to make the tests simpler: MapSolidCharsLower = 16
+MapSolidCharsUpper = 128
+
+
+!source "ScrollerVars.a"
+Tusari2_ZP_base = scrollerDemo_endVars ; Multiplex_endVars
+!source "Tusari2Vars.a"
+
+!source "Animation_macros.a"
+!source "SpritePosToScreenPosMacros.a"
+!source "CommonGameData.a"
+
+
+; Memory
+scrollMapHX	!by $00
+scrollMapLX	!by $00
+scrollMapHY	!by $00
+scrollMapLY	!by $00
+frameTargetVelX			!by 0
+frameTargetVelY			!by 0
+frameScrollX			!by 0
+frameScrollY			!by 0
+topScreenScrollX		!by 0
+topScreenScrollY		!by 0
+ScrollerScreenCharMovedX !by 0
+ScrollerScreenCharMovedY !by 0
+RunJumpDemo_Joystick	!by $ff
+Scroller_KeySpacePressed	!by 0
+
+;Animation_ActivationObjectIndex
+;MapPlacement_spawnedFlag
+
+SFX_Voices			!by 0
+SFX_VoiceUpperWrap	!by 0
+SFX_VoiceLowerReset	!by 0
+
+BlockData
+
+
+ScrollerBankVisible		!by >ScreenData
+BulletScreenBankHi !by >CharEffects_HiddenIndexLookup
+
+!source "ScrollerCommon_Tables.a"
+
+!source "ScrollerAnimationMemory.a"
+!zn
+!source "AnimationData_Player.a"
+!source "AnimationData_commonMakeRespawn.a"
+!source "AnimationData_Upgrades.a"
+!source "AnimationData_bat.a"
+
+
+; Must be the last macro to correctly terminate the last sequence
++EndAnimLoop
+
+!source "AnimationCode_commonMakeRespawn.a"
+!source "AnimationCode_Upgrades.a"
+!source "AnimationCode_bat.a"
+
+; Code
+; Normally these would come from "bin/LevelTempOptions.a"
+; Start pos
+PlayerMapStartPositionXH = 0
+PlayerMapStartPositionYH = 0
+PlayerScreenStartPositionX = 136
+PlayerScreenStartPositionY = 144
+
+!source "Animation.a"
+!source "HandleUserInput.a"
+!source "CharEffects.a"
+!source "BerzerkRedux/Rand.a"
+
+!zn
+.posDelay !by 0
+.enemySpawn !by 200
+.inputs
+	!fill 16 , JoystickBits_Left
+	!fill 16 , 0 
+	!fill 16 , JoystickBits_Right | JoystickBits_Fire
+	!fill 16 , 0 
+	!fill 16 , JoystickBits_Left
+	!fill 16 , 0 
+	!fill 16 , JoystickBits_Right | JoystickBits_Up | JoystickBits_Fire
+	!by JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0
+	!fill 8 , JoystickBits_Left
+	!fill 2 , JoystickBits_Left | JoystickBits_Up
+	!fill 2 , JoystickBits_Left
+	!fill 2 , JoystickBits_Left | JoystickBits_Up
+	!fill 2 , JoystickBits_Left
+	!fill 15 , JoystickBits_Fire
+	!by JoystickBits_Fire | JoystickBits_Down
+	!fill 8 , JoystickBits_Right | JoystickBits_Up
+	!fill 8 , JoystickBits_Right
+	!fill 15 , JoystickBits_Fire
+	!by 0 
+	!fill 16 , JoystickBits_Left
+	!fill 16 , 0 
+	!by JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0 , JoystickBits_Fire , 0
+	!fill 16 , 0
+.inputsSize = * - .inputs
+HandleFakePlayerInput
+.smPos	ldx #0
+	lda .inputs,x
+	eor #$ff
+	sta RunJumpDemo_Joystick
+
+	dec .posDelay
+	bpl .noUpgrade
+
+	lda #4
+	sta .posDelay
+
+	inc .smPos+1
+	bne .noUpgrade
+
+	lda #128
+	ldx #0
+	ldy #220
+	jsr SpawnAPickupWithPosition
+.smt1	lda #0
+	jsr SpawnAPickupWithType
+	inc .smt1+1
+
+.noUpgrade
+	lda Animation_CountEnemiesThatHomeInYPos
+	cmp #4
+	bcs .noEnemySpawn
+
+	dec .enemySpawn
+	bne .noEnemySpawn
+
+	lda #200
+	sta .enemySpawn
+
+	jsr AnimationInit_bat
+
+.noEnemySpawn
+
+	rts
+
+!zn
+AnimationUpdateMultiplexor
+	ldy #0
+	sty VIC2SpriteXMSB
+	ldx #0
+.l1
+	lda Animation_FramesHi,x
+	beq .isFree
+	lda AnimationSpriteFrame,x
+	sta ScreenData + SPRITEFRAMESCROFF,x
+	lda AnimationSpriteColour,x
+	sta VIC2Sprite0Colour,x
+
+	lda AnimationXPosLo,x
+	sta VIC2Sprite0X,y
+	lda AnimationXPosHi,x
+	lsr
+	ror VIC2SpriteXMSB
+
+	lda AnimationYPos,x
+	sta VIC2Sprite0Y,y
+
+.next
+	inx
+	iny
+	iny
+	cpx #Multiplex_items
+	bne .l1
+	rts
+
+.isFree
+	sta VIC2Sprite0Y,y
+	lsr VIC2SpriteXMSB
+	jmp .next
+
+AnimationCommonSetInitPosition
+	lda #<VIC2SpriteXBorderRight
+	sta AnimationXPosLo,y
+	lda #>VIC2SpriteXBorderRight
+	sta AnimationXPosHi,y
+	lda #160
+	sta AnimationYPos,y
+	rts
+
+; Stubs that do nothing in title screen mode
+ScrollerUpdateRealCoordinates
+NMIColourSplits_Init
+ActivationObjectInit
+ScoreSetAddress
+Camera_Update
+SFXInit
+ScoreAdd
+	rts
+
+
+*=$8000
+; Define these to point the entry points of the included music routine.
+MusicPlayerInit		= * + 0
+MusicPlayerPlay		= * + 3
+MusicPlayerStop		= * + 6
+!bin "bin\TitleMusic.prg",,2
+
+
+* = $bc00
+CharEffects_HiddenIndexLookup
+	!fill VIC2ScreenCharsWidth * VIC2ScreenCharsHeight , -1
+
+*=$cc00
+ScreenColourData
+!bin "TitleGamePanel.ctm" , numMapUsedChars ,  $814
+
+ScreenDataBGCol0
+!bin "TitleGamePanel.ctm" , 1 , 4
+ScreenDataBGCol1
+!bin "TitleGamePanel.ctm" , 1 , 5
+ScreenDataBGCol2
+!bin "TitleGamePanel.ctm" , 1 , 6
+
+*=$c800
+ScreenData
+!bin "TitleGamePanel.ctm" , 40*25 ,  $918 , 2
+
+
+; VIC Graphics data
+*=$c000
+CharData
+!bin "TitleGamePanel.ctm" , numMapUsedChars * 8 , $10
+
+*=$d000 + (131 - $40) * $40
+!bin "exported assets/Level1.spd" , (7*8) * $40 , $9 + $1000 + ((131 - $40) * $40)
+
+*=$d000 + (208 - $40) * $40
+!bin "exported assets/Level1.spd" , 14 * $40 , $9 + $1000 + ((208 - $40) * $40)
+
+*=$d000 + (235 - $40) * $40
+!bin "exported assets/Level1.spd" , 3 * $40 , $9 + $1000 + ((235 - $40) * $40)
+
+*=$d000 + (238 - $40) * $40
+!bin "exported assets/Level1.spd" , 7 * $40 , $9 + $1000 + ((238 - $40) * $40)
+
+*=$d000 + ($5b - $40) * $40
+!bin "exported assets/Level1.spd" , 6 * $40 , $9 + $1000 + (($5b- $40) * $40)
+
+*=$d000 + ($42 - $40) * $40
+!bin "exported assets/Level1.spd" , 7 * $40 , $9 + $1000 + (($42- $40) * $40)

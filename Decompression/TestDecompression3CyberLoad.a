@@ -30,6 +30,7 @@ EndOfMemory = $ff00
 ; The contents of this macro can be used to cause the border colour to change while decompressing.
 !macro RNXPCompressionIncBorder_A {
 }
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
 
 !macro DisplayColourTextBoundingAt_AX .start , .end , .scr , .col , .innerTop , .innerBottom , .outer , .outerCol {
 	ldx #.end-.start

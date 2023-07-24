@@ -1,6 +1,7 @@
 ; Decompression code
 DecompressionCode_Start = *
 !macro RNXPCompressionIncBorder_A {}
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
 Decompression_OptimiseForOneEscapeBit = 1
 Decompression_OptimiseNoChangingEscape = 1
 

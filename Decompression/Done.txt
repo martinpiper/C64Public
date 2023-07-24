@@ -95,3 +95,11 @@
 * This fails to even decompress properly at the start of the code at $400, why? C:\Work\C64\Scroller>..\bin\LZMPi.exe -c64rb ScrollerOrig.prg Scroller.prg 1024 && Scroller.prg
 	Is -c64rb unsupported?!	- Not supported
 	Memory alignment with -c64mr/-c64mrb issue fixed
+
+
+
+* Decompression.a : ora .workLen+1 is not needed as it's always getting two bits?
+	The lda is not needed as rol sets the status
+	The lda #1 sta workLen could also be an inc
+	.GetNextBitIntoCarry can use !ifndef Decompress_RNZip {
+	>> Tests passed, cycle counts reduced

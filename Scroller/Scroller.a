@@ -505,7 +505,11 @@ ScrollerCheckMapRangeAndVelocity
 	cmp scrollMapHY
 	bne .no4
 	lda scrollMapLY
+!if Scroller_AdditionalCharLines >= 2 {
+	cmp #2
+} else {
 	cmp #3
+}
 	bne .no4
 	lda frameTargetVelY
 	bpl .no4

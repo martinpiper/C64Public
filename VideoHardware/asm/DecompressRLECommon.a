@@ -17,6 +17,7 @@ RNXPCompressionDecompress_GetByte	lda $1234
 .e2
 	rts
 !macro RNXPCompressionIncBorder_A {}
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
 !source "..\Decompression\DecompressRLE.a"
 
 

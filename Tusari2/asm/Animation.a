@@ -1,0 +1,321 @@
+!zn
+
+!source "SpritePosToScreenPosMem.a"
+!source "SpritePosToScreenPosMem2.a"
+
+AnimationXPosShifted !fill Multiplex_items
+
+Animation_FramesLo
+	!by <AnimationFrames_MainCharLegsStandLeft
+	!by <AnimationFrames_MainCharTorsoStandLeft
+	!fill Multiplex_items-2 , 0
+
+Animation_FramesHi
+	!by >AnimationFrames_MainCharLegsRight
+	!by >AnimationFrames_MainCharTorsoRight
+	!fill Multiplex_items-2 , 0
+
+
+Animation_TickLo
+	!fill Multiplex_items , 0
+Animation_TickHi
+	!fill Multiplex_items , 0
+
+Animation_DeleteLo
+	!fill Multiplex_items , 0
+Animation_DeleteHi
+	!fill Multiplex_items , 0
+
+
+Animation_Index
+	!fill Multiplex_items , 0
+
+Animation_IndexLoopedEvent
+	!fill Multiplex_items , 0
+
+Animation_IsActivationObject
+	!fill Multiplex_items , 0
+
+Animation_ActivationObjectIndex
+	!fill Multiplex_items , 0
+
+; Can be used for anything, but mostly health
+Animation_GeneralStorage0
+	!fill Multiplex_items , 0
+Animation_GeneralStorage1
+	!fill Multiplex_items , 0
+Animation_GeneralStorage2
+	!fill Multiplex_items , 0
+
+AnimationInit2
+	+MWordValueToAddress_A Animation_UpdatePriorityTickDefault , Animation_UpdatePriorityTick
+
+	; Setup the player position
+	lda #<PlayerScreenStartPositionX
+	sta AnimationXPosLo
+	lda #>PlayerScreenStartPositionX
+	sta AnimationXPosHi
+	lda #PlayerScreenStartPositionY
+	sta AnimationYPos
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	lda #VIC2Colour_LightRed
+	sta AnimationSpriteColour
+	sta AnimationSpriteColour+1
+
+	; Set map scroll position
+	+MByteValueToAddress_A PlayerMapStartPositionXH , scrollMapHX
+
+	; Start pos
+	+MByteValueToAddress_A PlayerMapStartPositionYH , scrollMapHY
+
+	+MByteValueToAddress_A 4 , frameScrollX
+	+MByteValueToAddress_A 4 , frameScrollY
+	jsr ScrollerUpdateRealCoordinates
+	jsr ActivationObjectInit
+	jsr NMIColourSplits_Init
+
+!ifdef kScore_IncludePanelUpdates {
+	+MWordValueTo_AX Scroller_ScorePanelPos
+	jsr ScoreSetAddress
+
+	; Copy the current score from the title screen, or the previous game level
+	+DisplayTextAt_AX Common_ScorePanel , Common_ScorePanel + Scroller_ScorePanelLen , Scroller_ScorePanelPos
+}
+
+	; Action the sound config request
+	lda Common_MusicSFXConfig
+	cmp #kCommon_MusicSFXConfig_Music
+	beq .wantMusic
+	cmp #kCommon_MusicSFXConfig_MusicSFX
+	beq .wantMusicSFX
+
+	; Use all voices for SFX
+	lda #3
+	sta SFX_Voices
+	lda #3
+	sta SFX_VoiceUpperWrap
+	lda #0
+	sta SFX_VoiceLowerReset
+	jsr MusicPlayerStop
+	jmp .o1
+
+.wantMusicSFX
+	lda #2
+	sta SFX_Voices
+	lda #3
+	sta SFX_VoiceUpperWrap
+	lda #1
+	sta SFX_VoiceLowerReset
+	jmp .o1
+
+.wantMusic
+	lda #0
+	sta SFX_Voices
+
+.o1
+
+	rts
+
+
+
+Animation_FindFreeSlot
+	ldy #Multiplex_items-1
+.ff1
+	lda Animation_FramesHi,y
+	beq .foundFree
+	dey
+	; Never consider the three player animation slots
+	cpy #2
+	bne .ff1
+	sec
+	rts
+.foundFree
+	; By default flag the potential object as not being spawned
+	lda #0
+	sta Animation_IsActivationObject,y
+	clc
+	rts
+
+
+; For Animation_UpdateTick
+.discard
+	jsr Animation_Delete
+	jmp .nextSlot
+
+
+; Deletes the animation index
+; Entry:
+; X = Animation index
+Animation_Delete
+	lda Animation_DeleteHi,x
+	beq .noDeleteFunc
+	sta .smDelete+2
+
+	lda Animation_DeleteLo,x
+	sta .smDelete+1
+
+.smDelete	jsr $1234
+
+.noDeleteFunc
+	; Fall through
+
+; Deletes the animation index without calling the delete function
+Animation_DeleteNoDeleteFunction
+	lda #0
+	sta Animation_FramesHi,x
+	rts
+
+
+Animation_UpdatePriorityTickDefault
+	rts
+
+Animation_UpdateTick
+
+Animation_UpdatePriorityTickX = *+1
+	ldx #0
+Animation_UpdatePriorityTick = *+1
+	jsr Animation_UpdatePriorityTickDefault
+
+	; Calculate the shifted player pos once
+	+MAnimation_CalculateShiftedIndex 0
+	; Sword position
+	+MAnimation_CalculateShiftedIndex 2
+
+	; Loop through animation frames
+	ldx #Multiplex_items-1
+.an1
+	lda Animation_FramesHi,x
+	beq .nextSlot
+	sta tempWork1
+
+	; Never, ever, discard the player animations in the first two slots
+	cpx #2
+	bcc .noDiscard
+
+	lda AnimationYPos,x
+	cmp #Scroller_DiscardMinSpriteYPos-16
+	bcc .discard
+!set Multiplex_DiscardSpritesYPosSafe = Multiplex_DiscardSpritesYPos+16
+!if Multiplex_DiscardSpritesYPosSafe > VIC2SpriteYBorderBottom {
+	!set Multiplex_DiscardSpritesYPosSafe = VIC2SpriteYBorderBottom
+}
+	cmp #Multiplex_DiscardSpritesYPosSafe
+	bcs .discard
+
+.testXPos
+	lda AnimationXPosHi,x
+	beq .noDiscard
+	lda AnimationXPosLo,x
+	cmp #<(VIC2SpriteXBorderRight+32+16)
+	bcs .discard
+
+.noDiscard
+	lda Animation_FramesLo,x
+	sta tempWork0
+	ldy Animation_Index,x
+	lda (tempWork0),y
+	bne .gotFrame
+	; 0 = end of animation sequence
+	iny
+	lda (tempWork0),y
+	cmp #kEndAnim_Delete
+	beq .discard
+	; Otherwise it's kEndAnim_Loop
+	lda #1
+	sta Animation_Index,x
+	inc Animation_IndexLoopedEvent,x
+	ldy #0
+	lda (tempWork0),y
+	sta AnimationSpriteFrame,x
+	jmp .doTick
+.gotFrame
+	sta AnimationSpriteFrame,x
+	iny
+	tya
+	sta Animation_Index,x
+
+.doTick
+	lda Animation_TickHi,x
+	beq .noTickFunc
+	sta .smTick+2
+
+	lda Animation_TickLo,x
+	sta .smTick+1
+
+	; Preserve X
+	stx .smx+1
+.smTick	jsr $1234
+.smx ldx #0
+
+.noTickFunc
+
+.nextSlot
+	dex
+	bpl .an1
+
+	rts
+
+
+
+; Morphs to a particular animation if it is different to what is currently there. This resets the frame index if the morph happens.
+; Entry:
+; A/X = lo/hi animation header
+; Y = Animation index
+Animation_MorphToIfNeeded
+	pha
+	cmp Animation_FramesLo,y
+	bne .l1
+
+	txa
+	cmp Animation_FramesHi,y
+	bne .l2
+
+	pla
+	rts
+
+.l1
+	txa
+.l2
+	sta Animation_FramesHi,y
+	pla
+	sta Animation_FramesLo,y
+.commonInit
+	lda #0
+	sta Animation_Index,y
+	sta Animation_IndexLoopedEvent,y
+	rts
+
+; Entry:
+; A/X = lo/hi animation header
+; Y = Animation index
+Animation_ForceSet
+	sta Animation_FramesLo,y
+	sta .smFrame+1
+	txa
+	sta Animation_FramesHi,y
+	sta .smFrame+2
+	; Init the first frame
+.smFrame lda $1234
+	sta AnimationSpriteFrame,y
+	jmp .commonInit
+
+
+
+
+!zn
+; Flashes the animation index
+; Entry:
+; X = Animation index
+Animation_FlashTheSprite
+	lda AnimationSpriteColour,x
+	eor #$ff
+	sta AnimationSpriteColour,x
+	rts
+

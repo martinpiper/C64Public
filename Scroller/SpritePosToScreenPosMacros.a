@@ -17,6 +17,21 @@
 	tay
 }
 
+!macro MSpritePosToCharacterLookupShifted .rejectRoutine , .AnimationXPosShifted , .AnimationYPos , .drawnBank , .outputAddress0 , .outputAddress1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
+	ldy .AnimationYPos,x
+	lda (.ZP_SpriteYPosToScreenCharPosHilo),y
+	bmi .rejectRoutine
+	ora .drawnBank
+	sta .outputAddress1
+	lda (.ZP_SpriteYPosToScreenCharPosLolo),y
+	sta .outputAddress0
+
+	ldy .AnimationXPosShifted,x
+	lda (.ZP_SpriteXPosToScreenCharPoslo),y
+	bmi .rejectRoutine
+	tay
+}
+
 !macro MSpritePosToCharacterLookupPosTweak .tweakX , .tweakY , .rejectRoutine , .AnimationXPosLo , .AnimationXPosHi , .AnimationYPos , .drawnBank , .outputAddress0 , .outputAddress1 , .ZP_SpriteXPosToScreenCharPoslo , .ZP_SpriteYPosToScreenCharPosLolo , .ZP_SpriteYPosToScreenCharPosHilo {
 	lda .AnimationYPos,x
 	clc

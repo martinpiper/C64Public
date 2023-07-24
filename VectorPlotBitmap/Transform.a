@@ -12,21 +12,22 @@ Transform_Init
 	sta ZPTransform_mulTabAddr3+1
 	sta ZPTransform_mulTabAddr5+1
 	sta ZPTransform_mulTabAddr7+1
-	sta .smmulTab1+2
-	sta .smmulTab3+2
 	lda #>Transform_mulTab2
 	sta ZPTransform_mulTabAddr2+1
 	sta ZPTransform_mulTabAddr4+1
 	sta ZPTransform_mulTabAddr6+1
 	sta ZPTransform_mulTabAddr8+1
-	sta .smmulTab2+2
-	sta .smmulTab4+2
 
 
 	lda #$00
 	sta ZPTransform_rotX
 	sta ZPTransform_rotY
 	sta ZPTransform_rotZ
+!ifdef kTransform_wantViewTranslation {
+	sta ZPTransform_posX
+	sta ZPTransform_posY
+	sta ZPTransform_posZ
+}
 
 	rts
 
@@ -48,7 +49,7 @@ Transform_transformProjectVerts
 
 
 
-Transform_renderFaces
+!macro MTransform_renderFaces .backface , .light , ~.face_first , ~.face_last {
 .face_first	ldy #0
 .l1
 	sty ZPTransform_faceOffset
@@ -63,6 +64,7 @@ Transform_renderFaces
 	ldx Transform_faces+1,y
 	lda Transform_transVertsX,x
 	sta Poly2D_vertexBufferX+1
+!if .backface > 0 or .light > 0 {
 	sec
 	sbc Poly2D_vertexBufferX+0
 
@@ -70,9 +72,11 @@ Transform_renderFaces
 	sta .smmulTab1+1
 	eor #$ff
 	sta .smmulTab2+1
+}
 
 	lda Transform_transVertsY,x
 	sta Poly2D_vertexBufferY+1
+!if .backface > 0 or .light > 0 {
 	sec
 	sbc Poly2D_vertexBufferY+0
 
@@ -80,6 +84,7 @@ Transform_renderFaces
 	sta .smmulTab3+1
 	eor #$ff
 	sta .smmulTab4+1
+}
 
 	; Load next verts into the face
 	ldx Transform_faces+2,y
@@ -99,20 +104,25 @@ Transform_renderFaces
 	; Use index for the multab entries and dot product
 	tax
 
+!if .backface > 0 or .light > 0 {
 	;multiply first and subtract second
-.smmulTab3	lda $1000,y
+.smmulTab3	lda Transform_mulTab1,y
 	sec
-.smmulTab4	sbc $1000,y
+.smmulTab4	sbc Transform_mulTab2,y
 	sec
-.smmulTab1	sbc $1000,x
+.smmulTab1	sbc Transform_mulTab1,x
 	clc
-.smmulTab2	adc $1000,x
+.smmulTab2	adc Transform_mulTab2,x
+}
 
+!if .backface > 0 {
 	; Skip if the face is not visible
 	bpl .skipFace
+}
 
 	; Face is visible
 	ldy ZPTransform_faceOffset
+!if .light > 0 {
 	; Use the result to calculate lighting
 	eor #$ff
 	lsr
@@ -120,15 +130,19 @@ Transform_renderFaces
 	lsr
 	clc
 	adc Transform_faces+4,y	; Colour bias
-;	lda Transform_faces+4,y
+} else {
+	lda Transform_faces+4,y	; Just colour
+}
 
+!if .light > 0 {
 	bne +
 	lda #1
 +
 	cmp #$08
 	bcc +
-	lda #7
+	lda #$07
 +
+}
 	sta .smTheColour+1
 
 
@@ -159,9 +173,25 @@ Transform_renderFaces
 .face_last	cmp #0
 	+lbne .l1
 	rts
+}
 
+; Calculate optimised face code depending on the options used
+Transform_renderFaces00
+	+MTransform_renderFaces 0 , 0 , ~.face_first00 , ~.face_last00
+Transform_renderFaces01
+	+MTransform_renderFaces 0 , 1 , ~.face_first01 , ~.face_last01
+Transform_renderFaces10
+	+MTransform_renderFaces 1 , 0 , ~.face_first10 , ~.face_last10
+Transform_renderFaces11
+	+MTransform_renderFaces 1 , 1 , ~.face_first11 , ~.face_last11
 
+Transform_renderFacesTab
+	!word Transform_renderFaces00 , Transform_renderFaces01 , Transform_renderFaces10 , Transform_renderFaces11
 
+Transform_renderFaces
+	jmp Transform_renderFaces11
+
+.ff !by 0
 ; Entry
 ; A = Mesh index
 Transform_loadMesh
@@ -181,10 +211,20 @@ Transform_loadMesh
 
 	; Backface cull flag
 	lda (ZPTransform_modelAddr),y
+	asl
 
 	iny
 	; Shaded face flag
-	lda (ZPTransform_modelAddr),y
+	ora (ZPTransform_modelAddr),y
+
+	; Calculate the final face render
+	asl
+	tax
+	lda Transform_renderFacesTab,x
+	sta Transform_renderFaces+1
+	lda Transform_renderFacesTab+1,x
+	sta Transform_renderFaces+2
+
 
 	iny
 	; Set the addresses
@@ -211,8 +251,14 @@ Transform_loadMesh
 	; Get the face index values
 	iny
 	lda (ZPTransform_modelAddr),y
-	sta .face_first+1
+	sta .face_first00+1
+	sta .face_first01+1
+	sta .face_first10+1
+	sta .face_first11+1
 	iny
 	lda (ZPTransform_modelAddr),y
-	sta .face_last+1
+	sta .face_last00+1
+	sta .face_last01+1
+	sta .face_last10+1
+	sta .face_last11+1
 	rts
