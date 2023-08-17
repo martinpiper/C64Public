@@ -1415,9 +1415,14 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				}
 
 				int rep = 1;
-				// Potential three parameter combinations first
-				if ( argv[0][1] && argv[0][2] && IsNum( argv[0] + 3 ) )
+				// Potential four parameter combinations first
+				if ( argv[0][1] && (argv[0][2] == 'p') && argv[0][3] && IsNum( argv[0] + 4 ) )
 				{
+					rep = ParamToNum(argv[0]+4);
+				}
+				else if ( argv[0][1] && argv[0][2] && IsNum( argv[0] + 3 ) )
+				{
+					// Potential three parameter combinations next
 					rep = ParamToNum(argv[0]+3);
 				}
 				else if ( argv[0][1] && IsNum( argv[0] + 2 ) )
@@ -1494,6 +1499,57 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 					AddStream();
 					break;
+				}
+				else if ( argv[0][1] && argv[0][2] == 'p' && argv[0][3] == 's' )
+				{
+					// Write a short pulse
+					while ( rep-- )
+					{
+						if ( useTurbo )
+						{
+							mCurrentStream->mData.push_back( (char) mTurboZeroPulse );
+						}
+						else
+						{
+							mCurrentStream->mData.push_back( (char) mObservedShortPulse );
+						}
+					}
+
+					AddStream();
+				}
+				else if ( argv[0][1] && argv[0][2] == 'p' && argv[0][3] == 'm' )
+				{
+					// Write a medium pulse
+					while ( rep-- )
+					{
+						if ( useTurbo )
+						{
+							mCurrentStream->mData.push_back( (char) mTurboOnePulse );
+						}
+						else
+						{
+							mCurrentStream->mData.push_back( (char) mCalculatedMediumPulse );
+						}
+					}
+
+					AddStream();
+				}
+				else if ( argv[0][1] && argv[0][2] == 'p' && argv[0][3] == 'l' )
+				{
+					// Write a long pulse
+					while ( rep-- )
+					{
+						if ( useTurbo )
+						{
+							mCurrentStream->mData.push_back( (char) mTurboOnePulse );
+						}
+						else
+						{
+							mCurrentStream->mData.push_back( (char) mCalculatedLongPulse );
+						}
+					}
+
+					AddStream();
 				}
 				else if ( argv[0][1] && argv[0][2] == 'l' )
 				{
@@ -2136,6 +2192,9 @@ ocl[rep] : Write a kernal format leader pulse. Typical values for rep are: $6a10
 oce[rep] : Write a kernal format end-of-data marker. There usually needs to be only one.\n\n\
 ocn[r] [bytes]: Write tape bytes in kernal format. If 'r' is supplied the checksum will be reset.\n\n\
 ocb1 <file name> [TapeRelocatedStart address to load data] [nameStart offset] [nameEnd offset] [tapeHeader offset] [tapeHeaderEnd offset] [startBlock offset] [TapeTurboEndOfExtendedZeroPageCodeAndIRQ offset]: Writes a turbo tape boot loader kernal file from \"file name\" with tape header containing user data without the second data block to improve loading speed. If the values are missing then the loaded label values are used.\n\n\
+ocps[rep] : Write a kernal short pulse for rep times\n\
+ocpm[rep] : Write a kernal medium pulse for rep times\n\
+ocpl[rep] : Write a kernal long pulse for rep times\n\
 Turbo format writes:\n\
 otl[rep] : Write a turbo format leader. Typical values for rep are: $6a10 10 seconds for the start of the tape. $2 between blocks. $c0 before the file to account for the tape motor starting.\n\n\
 ote[rep] : Write a turbo format end-of-data marker. There usually needs to be only one.\n\n\
@@ -2144,6 +2203,9 @@ otf[b][r] <file name> <file name byte> [start offset] [end offset] [load address
 otft <file name> [start offset] [end offset] : Writes turbo data with a tiny header without a filename or a load address. The checksum register is always reset. The start offset and end offset are optional, they are calculated assuming a PRG format file.\n\n\
 s : Interleave the next file with the previous file when using turbo checksum block method.\n\n\
 n <seed> : If seed is non-zero then randomly write blocks using the seed for the random number generator. A value of 0, the default, will write blocks in memory order.\n\n\
+otps[rep] : Write a turbo short pulse (0) for rep times\n\
+otpm[rep] : Write a turbo medium pulse (1) for rep times\n\
+otpl[rep] : Write a turbo long pulse (1) for rep times\n\
 ");
 }
 
