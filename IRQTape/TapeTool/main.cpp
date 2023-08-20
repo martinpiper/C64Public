@@ -72,6 +72,15 @@ m "Loaders.map" wn "test.tap" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCo
 // With loading screen
 wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUSC000.prg" 1 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.scr" 2 $2 $3eb .BitmapLogoScreen otl$c0 otfbr "..\..\BlankProjectComp\Tusari.col" 3 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.bmp" 4 $2 $1f43 .BitmapLogo otl$c0 otfbr "..\TestMultiplexor.prg" 5 otl$c0 c
 
+
+
+// Output 1000 pulses, kernal short/medium/long and turbo short/long
+wn "test.tap" ocps1000 c
+wn "test.tap" ocpm1000 c
+wn "test.tap" ocpl1000 c
+
+wn "test.tap" otps1000 c
+wn "test.tap" otpl1000 c
 */
 
 #include <stdio.h>

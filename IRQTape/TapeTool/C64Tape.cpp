@@ -1606,8 +1606,9 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					while ( (argc > 0 ) && ( IsNum( *argv ) || (argv[0][0] == '@') || (argv[0][0] == '!') ) )
 					{
 						// Handle a checksum byte request
-						if( argv[0][0] == '!' )
+						if( argv[0][0] == '!' && argv[0][1] == '\0')
 						{
+							printf("Writing checksum $%x\n" , mChecksumRegister);
 							TapeWriteByte( useTurbo , mChecksumRegister );
 						}
 						else if( ( argv[0][0] == '@' ) && ( argc >= 2 ) )
@@ -1978,6 +1979,12 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 			case 'v':
 			{
+				bool percentage = false;
+				if (argv[0][1] == '%')
+				{
+					percentage = true;
+				}
+
 				if (mTapeFile)
 				{
 					fclose(mTapeFile);
@@ -2028,8 +2035,24 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				{
 					fseek( mTapeFile , pos , SEEK_SET );
 					int thePulse = fgetc(mTapeFile);
-					int thisVariance = (rand() % ((theVariance*2)+1)) - theVariance;
-					thePulse += thisVariance;
+					if (percentage)
+					{
+						int thisVariance = 100;
+						if (theVariance > 100)
+						{
+							thisVariance = (rand() % (theVariance - 100)) + 100;
+						}
+						else
+						{
+							thisVariance = 100 - (rand() % (100 - theVariance));
+						}
+						thePulse = (thePulse * thisVariance) / 100;
+					}
+					else
+					{
+						int thisVariance = (rand() % ((theVariance*2)+1)) - theVariance;
+						thePulse += thisVariance;
+					}
 					if (thePulse < 1)
 					{
 						thePulse = 1;
@@ -2054,6 +2077,12 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 			case 'd':
 			{
+				bool percentage = false;
+				if (argv[0][1] == '%')
+				{
+					percentage = true;
+				}
+
 				if (mTapeFile)
 				{
 					fclose(mTapeFile);
@@ -2104,7 +2133,14 @@ int C64Tape::HandleParams( int argc , char ** argv )
 				{
 					fseek( mTapeFile , pos , SEEK_SET );
 					int thePulse = fgetc(mTapeFile);
-					thePulse += theDelta;
+					if (percentage)
+					{
+						thePulse = (thePulse * theDelta) / 100;
+					}
+					else
+					{
+						thePulse += theDelta;
+					}
 					if (thePulse < 1)
 					{
 						thePulse = 1;
@@ -2182,6 +2218,8 @@ c : Close the file. If writing to a file then this must be used to close the fil
 m[c] <file name> : Read a map file from ACME of \"label = address\" pairs. The 'c' will optionally clear the map entries before reading the file. \n\n\
 v <file name> <integer variance>: Applies random variance to a TAP file. TAP files store the pulses divided by 8, so a variance of 1 will vary the TAP file pulses to within +/-1, which is +/- 8 cycles at the C64.\n\n\
 d <file name> <integer delta>: Applies constant to a TAP file. TAP files store the pulses divided by 8, so a delta of 1 will change the TAP file pulses by +1, which is + 8 cycles at the C64.\n\n\
+v%% <file name> <integer variance>: Applies random percentage variance to a TAP file. TAP files store the pulses divided by 8, so a variance of 110 will increase the TAP pulses up to 10%%. A variance of 90 will reduce the pulses up to 10%%.\n\n\
+d%% <file name> <integer delta>: Applies constant percentage to a TAP file. TAP files store the pulses divided by 8, so a delta of 110 will increase TAP file pulses by 10%% and 90 will reduce the pulse length by 10%%.\n\n\
 \n\n\
 For the commands below: The rep is an optional number defining how many times to read/write.\n\
 The bytes can be a combination of space separated numbers or a file name followed by start offset and end offset or \"!\" to write the checksum register. For example \"ocn $89 28 @\"file name\" 4 0x20 !\" will write the two bytes, followed by the bytes from the file starting at offset 4 and ending at offset 32 followed by the checksum register.\n\

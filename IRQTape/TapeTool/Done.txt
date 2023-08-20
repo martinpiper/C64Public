@@ -294,3 +294,26 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 
 * Need to support the short kernal header variant: TapeTool\Kernal short headers check.txt
 	Note the header lengths also don't need to match
+
+
+
+
+* Need output raw kernal short/medium/long and turbo short/long repeated pulses command line options
+	kernal and turbo short, medium, long repeated pulse write examples:
+		wn "test.tap" ocps$6a10 ocpm$6a10 ocpl$6a10 c
+		wn "test.tap" otps$6a10 otpm$6a10 otpl$6a10 c
+			Turbo medium and long are '1' bits, short is a '0' bit
+
+
+
+
+* Applying delta should scale all the tape pulses, not just add an absolute value?
+	Would this allow the kernal to read a wider range of constant speed adjustment?
+	Would this then mean the turbo can start off slow, then use a faster rate with similar timing correction?
+		Perhaps even start with the previous kernal timings adjustment and use it to start the adjustment for the turbo
+	>> Slightly surprised to find out that the kernal tape load is less reliable than my turbo load. The kernal cannot handle a tape that is too slow or too fast...
+		Whereas my turbo tape will handle a larger range of speeds than the kernal.
+		Even with the kernal doing that tape speed adjustment check
+		This is because the kernal uses three pulse lengths, but they are closer together.
+		The turbo pulses are wider apart, and only uses two pulses, so it's easier to differentiate the pulse lengths over a wider range.
+

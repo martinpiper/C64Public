@@ -24,6 +24,23 @@ copy /Y test.tap test_r.tap
 ..\..\bin\TapeTool.exe v test_r.tap 3
 
 
+
+rem Applying percentage variance
+rem 115 is equivalent to d using 7, comparing the kernal short pulse result
+copy /Y test.tap test_pp.tap
+..\..\bin\TapeTool.exe d%% test_pp.tap 119
+
+rem 85 is equivalent to d using -8, comparing the kernal short pulse result
+copy /Y test.tap test_mp.tap
+..\..\bin\TapeTool.exe d%% test_mp.tap 85
+
+copy /Y test.tap test_rp.tap
+..\..\bin\TapeTool.exe v%% test_rp.tap 114
+copy /Y test.tap test_rm.tap
+..\..\bin\TapeTool.exe v%% test_rm.tap 90
+
+
+
 echo run test.tap
 test.tap
 
@@ -35,6 +52,20 @@ test_m.tap
 
 echo run test_r.tap
 test_r.tap
+
+
+echo run test_pp.tap
+test_pp.tap
+
+echo run test_mp.tap
+test_mp.tap
+
+echo run test_rp.tap
+test_rp.tap
+
+echo run test_rm.tap
+test_rm.tap
+
 
 goto end
 

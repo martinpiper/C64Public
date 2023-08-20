@@ -2,12 +2,9 @@ TapeTool TODO file started 12 September 2012
 A tool to provide a command line interface that enables C64 format TAP files to be created with kernal and turbo data.
 ********************************************
 
-* Need output raw kernal short/medium/long and turbo short/long repeated pulses command line options
-	kernal and turbo short, medium, long repeated pulse write examples:
-		wn "test.tap" ocps$6a10 ocpm$6a10 ocpl$6a10 c
-		wn "test.tap" otps$6a10 otpm$6a10 otpl$6a10 c
-			Turbo medium and long are '1' bits, short is a '0' bit
-
+* To handle higher turbo speeds, the decoding IRQ could CLI and ack the IRQ earlier, to allow for an overlapped IRQ
+	The temp storage would really need to be on the stack
+		The safety of code in longer execution paths would need to be sure that any newly decoded bits don't disturb their execution
 
 
 

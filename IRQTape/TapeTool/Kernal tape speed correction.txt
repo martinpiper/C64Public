@@ -1,0 +1,116 @@
+
+
+https://csdb.dk/forums/?roomid=11&topicid=161499&showallposts=1
+
+I figured this out a while ago... From memory the important location is $b0
+
+http://unusedino.de/ec64/technical/aay/c64/zpb0.htm
+file:///C:/work/C64Docs/unusedino.de/ec64/technical/aay/c64/zpb0.htm
+
+
+Stores to $b1 derive from values in $b0, so $b1 can be ignored. $b1 is basically used during CIA timer calculation.
+
+
+I was able to test this empirically by taking a tap file and adjusting all the pulse lengths by a constant amount and noting the changes in b0 after the load finished.
+
+Making the pulse lengths much longer results in larger tweaks being calculated for b0 compared to small pulse length changes.
+
+
+$b0 is only really updated by inc/dec in response to testing the result of read pulse length calculations stored in $92, this is the routine at $f9d5
+This means the pulse adjustment happens gradually over time (due to inc/dec only being +1/-1) in response to testing if the current read pulse is longer or shorter than the expected value. $b0 is of course initialised to 0 during the start of tape read.
+
+
+
+
+Interestingly, this adjustment to $b0 even happens during the tape file lead pulses, which are repeated short pulses.
+
+
+
+
+It's also interesting to note that the countdown sequence counting from $89 to $81 and for the second verify block counting from $09 to $01 does not have to include all numbers to be read by the kernal. I find this by manipulating the bytes written using my TapeTool.
+	C64\IRQTape\TapeTool\Kernal short headers check.txt
+
+
+
+
+Tape with full $89-$81/$09-$01 countdown headers...
+..\..\bin\TapeTool.exe wn "test.tap" ocl$6a10 ocn $89 $88 $87 $86 $85 $84 $83 $82 $81 ocnr $03 $00 $04 $07 $04 @"Loaders.bin" 0 187 ! oce ocl$4f ocn $9 $8 $7 $6 $5 $4 $3 $2 $1 ocnr $03 $00 $04 $07 $04 @"Loaders.bin" 0 187 ! oce ocl$1500 ocn $89 $88 $87 $86 $85 $84 $83 $82 $81 ocnr $00 $01 $02 $03 $04 $05 $06 ! oce ocl$4f ocn $9 $8 $7 $6 $5 $4 $3 $2 $1 ocnr $00 $01 $02 $03 $04 $05 $06 ! oce ocl$1500 c
+
+
+Tape with just $81/$01 as the headers...
+..\..\bin\TapeTool.exe wn "test.tap" ocl$6a10 ocn $81 ocnr $03 $00 $04 $07 $04 @"Loaders.bin" 0 187 ! oce ocl$4f ocn $1 ocnr $03 $00 $04 $07 $04 @"Loaders.bin" 0 187 ! oce ocl$1500 ocn $81 ocnr $00 $01 $02 $03 $04 $05 $06 ! oce ocl$4f ocn $1 ocnr $00 $01 $02 $03 $04 $05 $06 ! oce ocl$1500 c
+
+Both will load.
+
+
+
+
+
+Creating long tapes with just short or medium pulses, the adjustment value in $b0 remains within a narrow range, $fe-$01.
+
+However if the tape just contains long pulses, the $b0 adjustment value quickly escapes the normal range and starts rapidly increasing way beyond what would be considered to be normal.
+
+This behaviour indicates the kernal is able to differentiate and calibrate on short and medium pulses, but cannot handle calibration using repeated long pulses.
+
+
+
+
+
+There are some multiplies in there but doesn't seem to be any mean calculation. It just nudges the adjustment to fit the recent measurement.
+
+
+
+
+
+
+The "adjustment code" at $f9d5 reads the accumulated value from $92, if it's zero then it doesn't change the adjustment value.
+Otherwise it nudges (+/- 1) the adjustment value at $b0, based on if the value at $92 is positive or negative, and then resets the accumulated value at $92 to zero.
+
+The "adjustment code" is executed every other bit received from the tape by the $f9a4 eor and $f9a8 beq test.
+
+This means the accumulated value in $92 has two "variations between received and expected" timings accumulated into it.
+
+
+
+
+
+Code path analysis for only interesting store into $92, the accumulated value calculation:
+file:///C:/work/C64Docs/unusedino.de/ec64/technical/aay/c64/zp92.htm
+file:///C:/work/C64Docs/unusedino.de/ec64/technical/aay/c64/romf92c.htm
+	F9A0: 85 92     STA $92       ; Timing Constant for Tape
+
+bk f9a0
+
+Using:
+	..\..\bin\TapeTool.exe wn "tests.tap" ocps1000 c
+	..\..\bin\TapeTool.exe wn "testm.tap" ocpm1000 c
+	..\..\bin\TapeTool.exe wn "testl.tap" ocpl1000 c
+@F94F-@F957 : Calculates pulse timer value into $b1
+
+With: tests.tap
+bk f959
+After a few cycles for stablisation...
+[b1] =
+4e
+5b
+5c
+59
+5a
+5a
+[b0] should be 0 or very near 0
+
+
+with: testm.tap
+[b1] = 
+7c
+7b
+84
+7b
+7d
+
+
+Both short and medium pulses seems to get to f99e, the accumulate into $92
+	But using the same preceeeding sbc #$13
+
+
+
