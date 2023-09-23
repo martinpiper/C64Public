@@ -33,11 +33,11 @@ Feature: Test compression toolset and code
 
 	# Standard memory validations
     When I hex dump memory between $ff00 and $ff08
-	Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
+    Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
     When I hex dump memory between $fff8 and $10000
-	Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
+    Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
     When I hex dump memory between $fee0 and $ff00
-	Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
+    Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
     When I hex dump memory between TheOutput and TheOutputEnd
     Then property "test.BDD6502.lastHexDump" must contain string "2: 43 98 af f1 67 77 7a 62"
 
@@ -49,63 +49,82 @@ Feature: Test compression toolset and code
     Given I run the command line: ..\acme.exe -v4 DefineDoCheckMemory.a <source>
     And I load prg "TestDecompression.prg"
     And I load labels "target\CheckMemory.lbl"
-    When I execute the procedure at 2061 for no more than <instructions> instructions until PC = StartChecks
+    And I load labels "TestDecompression.map"
+#    Given I enable trace
+    # Check memory move timings, which incorporates the time taken to move the compressed data to the end of memory
+    When I execute the procedure at 2061 for no more than <move> instructions until PC = CommonDataCopy_End
+
+    # Validate decompression memory stores are completely expected
+    Given load binary file "target\CheckMemory.prg" into temporary memory
+    And trim "2" bytes from the start of temporary memory
+    Then for memory from "$400" to "$ffff" expect writes at "$400" with temporary memory
+
+    # Validates the time taken to decompress
+    When I continue executing the procedure for no more than <instructions> instructions until PC = StartChecks
+    
+    # Validate machine execute state and final memory
     When I continue executing the procedure for no more than 4112362 instructions until PC = EndChecks
 
 	# Standard memory validations
     When I hex dump memory between $ff00 and $ff08
-	Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
+    Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
     When I hex dump memory between $fff8 and $10000
-	Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
+    Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
     When I hex dump memory between $fee0 and $ff00
-	Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
+    Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
     When I hex dump memory between TheOutput and TheOutputEnd
     Then property "test.BDD6502.lastHexDump" must contain string "2: 43 98 af f1 67 77 7a 62"
 
   Examples:
-    | instructions | compress | source                                                                |
-    | 3341688      | -c       | TestDecompression2.a                                                  |
-    | 3375542      | -c       | DefineDoBorderEffect.a TestDecompression2.a                           |
-    | 3337862      | -c       | TestDecompression3.a                                                  |
-    | 3371716      | -c       | DefineDoBorderEffect.a TestDecompression3.a                           |
-    | 1614534      | -ce      | DefineDecompress_RNZip.a TestDecompression2.a                         |
-    | 1649949      | -ce      | DefineDoBorderEffect.a DefineDecompress_RNZip.a TestDecompression2.a  |
-    | 1614649      | -ce      | DefineDecompress_RNZip.a TestDecompression3.a                         |
-    | 1650064      | -ce      | DefineDoBorderEffect.a  DefineDecompress_RNZip.a TestDecompression3.a |
-    | 819904       | -cr      | TestDecompression3RLE.a                                               |
-    | 826964       | -cr      | DefineDoBorderEffect.a TestDecompression3RLE.a                        |
+    | move   | instructions | compress | source                                                                |
+    | 97125  | 3234519      | -c       | TestDecompression2.a                                                  |
+    | 97125  | 3266959      | -c       | DefineDoBorderEffect.a TestDecompression2.a                           |
+    | 97240  | 3230722      | -c       | TestDecompression3.a                                                  |
+    | 97240  | 3263162      | -c       | DefineDoBorderEffect.a TestDecompression3.a                           |
+    | 98154  | 1502167      | -ce      | DefineDecompress_RNZip.a TestDecompression2.a                         |
+    | 98154  | 1536827      | -ce      | DefineDoBorderEffect.a DefineDecompress_RNZip.a TestDecompression2.a  |
+    | 98269  | 1502167      | -ce      | DefineDecompress_RNZip.a TestDecompression3.a                         |
+    | 98269  | 1536827      | -ce      | DefineDoBorderEffect.a  DefineDecompress_RNZip.a TestDecompression3.a |
+    | 147149 | 672755       | -cr      | TestDecompression3RLE.a                                               |
+    | 147149 | 679815       | -cr      | DefineDoBorderEffect.a TestDecompression3RLE.a                        |
+    | 156405 | 899938       | -cu      | TestDecompression4U.a                                                 |
+    | 156405 | 900463       | -cu      | DefineDoBorderEffect.a TestDecompression4U.a                          |
 
 
 
 
   @selfExtract
   Scenario Outline: Execute LZMPi self extracting compressed output using <option>
-	# Test the self extracted tool output
+    # Test the self extracted tool output
     Given I run the command line: ..\bin\LZMPi.exe -t $ff00 <option> target\CheckMemory.prg target\Compressed<option>.prg $400
     And I load prg "target\Compressed<option>.prg"
     And I load labels "target\CheckMemory.lbl"
     When I execute the procedure at 2061 for no more than <instructions> instructions until PC = StartChecks
     When I continue executing the procedure for no more than 4112362 instructions until PC = EndChecks
 
-	# Standard memory validations
+    # Standard memory validations
     When I hex dump memory between $ff00 and $ff08
-	Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
+    Then property "test.BDD6502.lastHexDump" must contain string "ff00: 00 01 02 03 04 05 06 07"
     When I hex dump memory between $fff8 and $10000
-	Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
+    Then property "test.BDD6502.lastHexDump" must contain string "fff8: 07 06 05 04 03 02 01 00"
     When I hex dump memory between $fee0 and $ff00
-	Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
+    Then property "test.BDD6502.lastHexDump" must contain string "Hello there foo!"
     When I hex dump memory between TheOutput and TheOutputEnd
     Then property "test.BDD6502.lastHexDump" must contain string "2: 43 98 af f1 67 77 7a 62"
 
   Examples:
-    | instructions | option  | compress |
-    | 3341688      | -c64    | -c       |
-    | 3375542      | -c64b   | -c       |
-    | 3337862      | -c64m   | -c       |
-    | 3371716      | -c64mb  | -c       |
-    | 1614534      | -c64e   | -ce      |
-    | 1649949      | -c64eb  | -ce      |
-    | 1614649      | -c64em  | -ce      |
-    | 1650064      | -c64emb | -ce      |
-    | 819904       | -c64mr  | -cr      |
-    | 826964       | -c64mrb | -cr      |
+    | instructions | option  |
+    | 3331644      | -c64    |
+    | 3364084      | -c64b   |
+    | 3327962      | -c64m   |
+    | 3360402      | -c64mb  |
+    | 1600321      | -c64e   |
+    | 1634981      | -c64eb  |
+    | 1600436      | -c64me  |
+    | 1635096      | -c64meb |
+    | 819904       | -c64mr  |
+    | 826964       | -c64mrb |
+    | 1056343      | -c64mu  |
+    | 1056868      | -c64mub |
+
+

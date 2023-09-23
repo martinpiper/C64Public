@@ -60,6 +60,7 @@ private:
 
 	void EncodeMatch(u32 len, const u32 offset);
 
+	u32 LiteralRunLength(u32 currentLitNum);
 	void EncodeLiteralRun(const u8 *litRun, u32 currentLitNum);
 
 	// Calculates the proposed match length in bits
@@ -137,11 +138,15 @@ private:
 	u32 mHistoryBufferIndex;
 
 	std::list<Node *> mNodes;
+
+	void NodesFree(void);
 };
 
 extern int gXPCompressionTweak1;
 extern int gXPCompressionTweak2;
 extern int gXPCompressionTweak3;
 extern int gXPCompressionTweak4;
+extern bool gXPCompressionTweak5;
+extern bool gXPCompressionTweak6;
 
 #endif

@@ -50,6 +50,7 @@ BEGIN_MESSAGE_MAP(CTestVerletDlg, CDialog)
 	ON_WM_ERASEBKGND()
 	ON_WM_TIMER()
 	//}}AFX_MSG_MAP
+	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -461,112 +462,117 @@ static void DoRounding( void )
 
 static void VerletInit( void )
 {
-#if 1
-	// Setup eight quads that will fall and collide.
-	sParticles.resize(32);
-//	sParticles.resize(8);
-	Vec2f o;
-	o = Vec2f( 165 , 0 );
-	// The size is 28 because using x/y expanded sprites this means 14 pixels. 14 * sqrt(2) = 19.79 which means a rotated square will fit inside a single sprite.
-
-	sParticles[0].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[1].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[2].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[3].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 135 , 0 );
-	sParticles[4].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[5].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[6].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[7].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 105 , 0 );
-	sParticles[8].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[9].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[10].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[11].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 160 , -30 );
-	sParticles[12].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[13].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[14].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[15].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 130 , 80 );
-	sParticles[16].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[17].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[18].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[19].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 100 , 90 );
-	sParticles[20].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[21].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[22].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[23].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 160 , 170 );
-	sParticles[24].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[25].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[26].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[27].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	o = Vec2f( 130 , 170 );
-	sParticles[28].SetPosition( o + Vec2f( 0 , 0 ) );
-	sParticles[29].SetPosition( o + Vec2f( 28 , 0 ) );
-	sParticles[30].SetPosition( o + Vec2f( 28 , 28 ) );
-	sParticles[31].SetPosition( o + Vec2f( 0 , 28 ) );
-
-	// Setup constraints, taking into account the initial position of the particles
-	size_t i , j , k;
-	for ( k = 0 ; k < sParticles.size() ; k += 4 )
+	static bool choice = false;
+	sParticles.clear();
+	choice = !choice;
+	if (choice)
 	{
-		for ( i = 0 ; i < 4 ; i++ )
-		{
-			j = ( i + 1 ) & 3;
-			sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
+		// Setup eight quads that will fall and collide.
+		sParticles.resize(32);
+	//	sParticles.resize(8);
+		Vec2f o;
+		o = Vec2f( 165 , 0 );
+		// The size is 28 because using x/y expanded sprites this means 14 pixels. 14 * sqrt(2) = 19.79 which means a rotated square will fit inside a single sprite.
 
-			j = ( i + 2 ) & 3;
-			sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
+		sParticles[0].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[1].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[2].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[3].SetPosition( o + Vec2f( 0 , 28 ) );
 
-			j = ( i + 3 ) & 3;
-			sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
-		}
-	}
+		o = Vec2f( 135 , 0 );
+		sParticles[4].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[5].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[6].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[7].SetPosition( o + Vec2f( 0 , 28 ) );
 
-	for ( i = 0 ; i < sParticles.size() ; i += 4 )
-//	for ( i = 0 ; i < 4 ; i += 4 )
-	{
-		// Now the quads
+		o = Vec2f( 105 , 0 );
+		sParticles[8].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[9].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[10].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[11].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		o = Vec2f( 160 , -30 );
+		sParticles[12].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[13].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[14].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[15].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		o = Vec2f( 130 , 80 );
+		sParticles[16].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[17].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[18].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[19].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		o = Vec2f( 100 , 90 );
+		sParticles[20].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[21].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[22].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[23].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		o = Vec2f( 160 , 170 );
+		sParticles[24].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[25].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[26].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[27].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		o = Vec2f( 130 , 170 );
+		sParticles[28].SetPosition( o + Vec2f( 0 , 0 ) );
+		sParticles[29].SetPosition( o + Vec2f( 28 , 0 ) );
+		sParticles[30].SetPosition( o + Vec2f( 28 , 28 ) );
+		sParticles[31].SetPosition( o + Vec2f( 0 , 28 ) );
+
+		// Setup constraints, taking into account the initial position of the particles
+		size_t i , j , k;
 		for ( k = 0 ; k < sParticles.size() ; k += 4 )
 		{
-			if ( k != i )
+			for ( i = 0 ; i < 4 ; i++ )
 			{
-				sParticles[ i ].mConstraints.push_back( new ConstraintRadius( sParticles[ i ] , sParticles[ i + 1 ] , sParticles[ i + 2 ] , sParticles[ i + 3 ] , sParticles[ k + 0 ] , sParticles[ k + 1 ] , sParticles[ k + 2 ] , sParticles[ k + 3 ] ) );
+				j = ( i + 1 ) & 3;
+				sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
 
-				for ( j = 0 ; j < 4 ; j++ )
+				j = ( i + 2 ) & 3;
+				sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
+
+				j = ( i + 3 ) & 3;
+				sParticles[ k + i ].mConstraints.push_back( new ConstraintLength( sParticles[ k + i ] , sParticles[ k + j ] ) );
+			}
+		}
+
+		for ( i = 0 ; i < sParticles.size() ; i += 4 )
+	//	for ( i = 0 ; i < 4 ; i += 4 )
+		{
+			// Now the quads
+			for ( k = 0 ; k < sParticles.size() ; k += 4 )
+			{
+				if ( k != i )
 				{
-					sParticles[ i + j ].mConstraints.push_back( new ConstraintQuad( sParticles[ i + j ] , sParticles[ k + 0 ] , sParticles[ k + 1 ] , sParticles[ k + 2 ] , sParticles[ k + 3 ] ) );
+					sParticles[ i ].mConstraints.push_back( new ConstraintRadius( sParticles[ i ] , sParticles[ i + 1 ] , sParticles[ i + 2 ] , sParticles[ i + 3 ] , sParticles[ k + 0 ] , sParticles[ k + 1 ] , sParticles[ k + 2 ] , sParticles[ k + 3 ] ) );
+
+					for ( j = 0 ; j < 4 ; j++ )
+					{
+						sParticles[ i + j ].mConstraints.push_back( new ConstraintQuad( sParticles[ i + j ] , sParticles[ k + 0 ] , sParticles[ k + 1 ] , sParticles[ k + 2 ] , sParticles[ k + 3 ] ) );
+					}
 				}
 			}
 		}
 	}
-
-#else
-	// A simple swinging rope
-	sParticles.resize(9);
-	Vec2f o( 100,0 );
-	size_t i;
-	for ( i = 0 ; i < sParticles.size() ; i++ )
+	else
 	{
-		sParticles[ i ].SetPosition( o + Vec2f( (float) i * 20 , 0 ) );
-	}
+		// A simple swinging rope
+		sParticles.resize(9);
+		Vec2f o( 100,0 );
+		size_t i;
+		for ( i = 0 ; i < sParticles.size() ; i++ )
+		{
+			sParticles[ i ].SetPosition( o + Vec2f( (float) i * 20 , 0 ) );
+		}
 
-	sParticles[ 0 ].mConstraints.push_back( new ConstraintPosition( sParticles[ 0 ] , sParticles[ 0 ].mCurrentPosition ) );
-	for ( i = 1 ; i < sParticles.size() ; i++ )
-	{
-		sParticles[ i ].mConstraints.push_back( new ConstraintLength( sParticles[ i ] , sParticles[ i - 1 ] ) );
+		sParticles[ 0 ].mConstraints.push_back( new ConstraintPosition( sParticles[ 0 ] , sParticles[ 0 ].mCurrentPosition ) );
+		for ( i = 1 ; i < sParticles.size() ; i++ )
+		{
+			sParticles[ i ].mConstraints.push_back( new ConstraintLength( sParticles[ i ] , sParticles[ i - 1 ] ) );
+		}
 	}
-#endif
 }
 
 static void VerletTick( void )
@@ -699,7 +705,7 @@ void CTestVerletDlg::OnPaint()
 	theDC.SetTextColor(RGB(255,255,255));
 	theDC.SetBkColor(RGB(0,0,0));
 	theDC.SetBkMode(TRANSPARENT);
-	theDC.TextOut(10,10,"Hello");
+	theDC.TextOut(10,10,"Press any key");
 }
 
 // The system calls this to obtain the cursor to display while the user drags
@@ -723,4 +729,12 @@ void CTestVerletDlg::OnTimer(UINT nIDEvent)
 	// Draw the window
 	RedrawWindow();	
 	CDialog::OnTimer(nIDEvent);
+}
+
+
+void CTestVerletDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	VerletInit();
+
+	CDialog::OnKeyDown(nChar, nRepCnt, nFlags);
 }

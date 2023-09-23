@@ -1,0 +1,167 @@
+; Done
+
+* Drive code for use in Berzerk Redux
+
+
+
+* Add save code
+
+
+
+* Add ATN + two-bit transfer mode
+	>> IRQDisk_UseATN
+
+
+
+* Test clocked data transfer...
+	>> IRQDisk_TestClockedTransfer
+
+
+
+
+* Using IRQDisk_UseATN with the screen on, seems to work
+	But... Not convinced that the huge delay with ATNCycleCount is that performant
+	* So... Try reducing the delay ATNCycleCount to the point of failure
+		Needs data loaded checksum test
+	* Also create an "avoid raster" table that uses the current raster position (would need 9 bits or just assume bit 9 is always OK) to avoid bad lines
+		Also avoid the raster split so the SEI/CLI doesn't alter the raster bar stability
+		** Then try reducing ATNCycleCount even further
+		>> IRQDisk_DebugRepeatLoads and IRQDisk_DebugElapsedTime
+	> Latest Hoxs64 has proper syncronised cycle accurate C64 and drive debugging
+		"C:\Users\Martin Piper\Downloads\hoxs64_x64_1_1_2_3\hoxs64.exe"
+		Enable C64 ATN load code, force to a particular address to make the Hoxs64 breakpoint easier to set
+		> Using Vice, even with +virtualdev the monitor windows do not update properly when single stepping
+	>> "C:\Users\Martin Piper\Downloads\hoxs64_x64_1_1_2_3\hoxs64.exe" -runfast -autoload c:\work\c64\IRQDisk\test.d64
+		Bug: At the start of computerRecvBitsATNBurst, the drive code is still calculating "; Read next bits to send"
+			This explains why ATNCycleCount is sensitive to change, the drive isn't really waiting for the C64 ATM, the C64 has set ATN and the drive is trying to catchup, which is dead wrong :D
+
+
+
+
+* Document speed of normal mode and ATN mode, while loading a much longer file
+	Estimate speed of clocked mode
+
+
+
+* ATN code fixed, includes IRQDisk_MarkUnsafeRaster to allow unsafe areas of the screen to be set.
+	This allows ATN + 2-bit transfer with the screen on and stable raster IRQ and sprites
+
+
+
+
+* Need screen checksum check, both screens
+	Validate with 1-bit mode first, then ATN
+	> Actually test with full data to give any accurate position for differences...
+		ExpectedData1 ExpectedData2
+
+
+
+* Optimise ATN + 2-bit transfer by using lookup tables to convert the bit pair to/from the drive/C64 side
+	Also check if the two sta and eor #.VIA1Port_ATNACK | .VIA1Port_DataOut | .VIA1Port_ClockOut is really needed?
+		Perhpas only one sta needed?
+		Reduced to one store. The .VIA1Port_ATNACK causes the othr signals to not be read properly, so it was also removed. Saving 6 cycles.
+	* Done: Use a 2-bit lookup table for sending, which includes the needed eor signals
+		> .bitPairToSerialData
+		> Adjusted timings, less wasted time
+	* There is further drive side optimisation by using a 256 byte table to remove the need for "and" and "tax" in MSendBitPair
+		Perhaps the unused buffer at $300 could be used with a short table generation bit of code that uses .bitPairToSerialData
+	* Done: Use a lookup table on the C64 to decode
+	* Done: Optimise safe raster area table
+
+
+
+
+* MC64DecodeBitPair could be optimised by always using A and not using temporary memory, doing a lda instead of ora for the first pass. Like this...
+	Remove repeated:
+		lda .tempStore
+		lsr
+		lsr
+		ora .serialBitPairToRealBitPair,x
+		sta .tempStore
+	Use:
+		+DelayFor 12
+		ldx .serialIn
+		lda .serialBitPairToRealBitPair,x
+
+		+DelayFor 12
+		ldx .serialIn
+		lsr
+		lsr
+		ora .serialBitPairToRealBitPair,x
+
+		+DelayFor 12
+		ldx .serialIn
+		lsr
+		lsr
+		ora .serialBitPairToRealBitPair,x
+
+		+DelayFor 12
+		ldx .serialIn
+		lsr
+		lsr
+		ora .serialBitPairToRealBitPair,x
+
+
+
+
+* Soak test with repeated loads (obviously) and 2-bit mode sometimes causes Vice to wait, where the C64 is waiting for an ACK from the drive in 1-bit mode
+	IRQDisk_C64FromBurstGuardTime might be an issue
+	Added TestIteration to help repeat it if it triggers again...
+		= $02b2
+	Reproducible just after .bph3
+	Drive: ATN wait
+		y=66
+	C64: .waitACK3
+		bt = .computerRecv
+			Previous = TAY in .diskLoadL
+		x=8 means it hasn't even completed the first bit yet...
+		y=0 indicating it has finished the block
+		The last address stored in $8f4
+		But m 800 shows 859 is ok, but 85a is bad, so after .bph3 hit, w store 859 and trace...
+		Vice single stepping did not reproduce the produce, running ahead did...
+	Created IRQDisk_DriveSendBurstC64CalculationTimeLast, trying a run with that. hoxs64 shows no issue, with either the original code without IRQDisk_DriveSendBurstC64CalculationTimeLast and with IRQDisk_DriveSendBurstC64CalculationTimeLast
+	>> Test on the newest Vice... With the original code... Perhaps it is an emulator issue?
+		Also try with drive wobble...
+	With IRQDisk_DriveSendBurstC64CalculationTimeLast cannot reproduce on old and new Vice.
+	> Old Vice no wobble reproduced at TestIteration=$408
+	> Old vice with wobble doesn't reproduce
+	> Setting TestIterationBreakAt=$408 now caused issue as above at $2b2
+		$86a is wrong = $55, rest of locations filled with $55
+		$869 is ok
+		So set TestIterationBreakAt=$2b2 then bk .bph1/2/3
+			.bph3 hit single stepping...
+			$6a was now OK, $6b wasn't...
+	>> Added a perhaps more robust ATNACK send and check "; Signal ACK back to the computer" and "; Wait for ACK from drive"
+		If there is a rare bug in the drive emulation in Vice then perhaps this will kick it to work
+		Although it is worth pointing out the C64 and Hoxs both have no issue without the ATNACK step
+	> Could it be the stopwatch (sw) value rolling over 32 bits? Causing the drive code to pause for a very long time when it shouldn't be?
+		Tested up to TestIteration=$400+
+	* Restore code without ATNACK, restore first extra wait, test...
+		Undefine IRQDisk_UseATNACK
+		Repeated at $2b2 again, wrong mem $86b for .bph3, so set breakpoint and measure sw...
+		w store 869
+		Load snapshot "C:\temp\irqdisk just before bug.vsf"
+		Open drive disassembly view
+		Single step C64, note how drive executes code with C64
+		Note how at C:PC 85e4 A = $6a which is correct
+		Single step C64 for a while and note how drive PC stops executing any code at 59d
+			Interesting to ntoe that when 8:PC = 59d the emulator C64 video frame refreshes
+		https://sourceforge.net/p/vice-emu/bugs/search/?q=status%3Aopen*+AND+text%3A1541+AND+text%3Acycle
+		C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -moncommands C:\work\c64\IRQDisk\TestIRQDisk.lbl -drive8wobble 0 +autostart-delay-random -remotemonitor -truedrive C:\Work\C64\IRQDisk\test.d64
+		V3.1 rev 34062M (Windows)
+	>> Newer Vice
+		"C:\Users\Martin Piper\Downloads\GTK3VICE-3.7.1-win32-r43776\GTK3VICE-3.7.1-win32-r43776\bin\x64sc.exe" -moncommands C:\work\c64\IRQDisk\TestIRQDisk.lbl -drive8wobbleamplitude 0 +autostart-delay-random -drive8truedrive C:\Work\C64\IRQDisk\test.d64
+		monitor:
+			dev 8:
+			r
+			dev c:
+			r
+			z
+		ah ha, latest Vice doesn't have this issue because it updates drive and C64 cycles at the same time
+			New Vice executed until $951 iterations, no problems.
+
+
+
+
+* Needs a large file read. The first half can duplicate the second half and be used to check it.
+	Passes

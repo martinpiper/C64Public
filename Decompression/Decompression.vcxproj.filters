@@ -119,6 +119,39 @@
     <None Include="DefineDoCheckMemory.a">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="TestDecompression4U.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="LauncherAddressCalc.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="CommonDataCopy.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="DecompressionU.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="features\CheckFiles.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="BorderEffectCommon.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\stdlib\LongBranches.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="DecompressionUVars.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="features\CheckReferenceU.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="macros\ReferenceU.macro">
+      <Filter>features</Filter>
+    </None>
+    <None Include="DecompressionUReferenceLongOffset.a">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -128,5 +161,10 @@
     <ClCompile Include="PrgData.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Compression\CompressUInternals.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

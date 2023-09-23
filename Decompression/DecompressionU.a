@@ -1,0 +1,234 @@
+!zn
+RNXPCompressionDecompressU
+!ifndef RNXPCompressionDecompressU_avoidTempInit {
+	; Init offset
+	ldy	#-1
+	sty	RNXPCompressionDecompress_TempOffset+0
+	sty	RNXPCompressionDecompress_TempOffset+1
+	; Clear high length
+	iny
+	sty	RNXPCompressionDecompress_TempWord1+1
+} else {
+	ldy #0
+}
+	; Init bit held in X
+	ldx	#$40
+
+.nextCommand
+	; Length = 1
+	lda	#1
+	sta	RNXPCompressionDecompress_TempWord1 + 0
+
+	; Check next bit, handle literals or copy?
+	txa
+	asl
+	bcc	.copyLiterals
+
+	; Copy bytes using new offset
+.copyWithNewOffset
+	; Get offset MSB
+	jsr	.getPackedValue
+	; Assume carry set here...
+
+	; Sets carry in all situations except EOD (or corrupted data)
+	lda #2	; COMPU_EOD = 512
+	cmp RNXPCompressionDecompress_TempWord1 + 1
+	beq .reachedEndOfFile
+	; Negate offset MSB
+	tya
+	; Assume carry set
+	sbc	RNXPCompressionDecompress_TempWord1 + 0
+	; First store for offset MSB
+	sta RNXPCompressionDecompress_TempOffset + 1
+	tya
+	sbc RNXPCompressionDecompress_TempWord1 + 1
+	ror
+	; Final update for offset MSB
+	ror RNXPCompressionDecompress_TempOffset + 1
+
+	; Get offset LSB
+	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
+	+MIncZPAddrWord RNXPCompressionDecompress_GetBytesmAddr
+	; Shift in carry. Also carry used below for length decision
+	ror
+	; To offset LSB
+	sta	RNXPCompressionDecompress_TempOffset + 0
+
+	; Reset length first, including the MSB
+	lda	#1
+	sta	RNXPCompressionDecompress_TempWord1 + 0
+	sty	RNXPCompressionDecompress_TempWord1 + 1
+
+	; Minimum length check
+	lda	#-2
+	bcs	.copyToPageAddress
+
+	; Reset length and get new length
+	lda	#1
+	sta	RNXPCompressionDecompress_TempWord1 + 0
+
+	; Restore bit stream
+	txa
+	jsr	.getPackedValueData
+
+	; Negate value
+	lda	RNXPCompressionDecompress_TempWord1 + 0
+	eor	#$FF
+
+.copyToPageAddress
+	; Calc any partial page
+	; Assume CS here
+	tay
+	eor	#$ff
+	adc	RNXPCompressionDecompress_WriteBytesmAddr + 0
+	sta	RNXPCompressionDecompress_WriteBytesmAddr + 0
+	bcs	.notHighPage1
+
+	dec	RNXPCompressionDecompress_WriteBytesmAddr + 1
+
+.notHighPage1
+	; Calculate address of match with negative offset
+	clc
+	adc	RNXPCompressionDecompress_TempOffset + 0
+	sta	.smcopyFromAddr + 0
+	lda	RNXPCompressionDecompress_WriteBytesmAddr + 1
+	adc	RNXPCompressionDecompress_TempOffset + 1
+	sta	.smcopyFromAddr + 1
+
+.smcopyFromAddr	 =	  *+1
+.copyFromAddr
+	lda	$1234,y
+	sta	(RNXPCompressionDecompress_WriteBytesmAddr),y
+	iny
+	bne	.copyFromAddr
+	inc	RNXPCompressionDecompress_WriteBytesmAddr + 1
+
+	; Any full pages left?
+	lda	RNXPCompressionDecompress_TempWord1 + 1
+	beq	.nextCommand
+
+	; Next page to copy
+	dec	RNXPCompressionDecompress_TempWord1 + 1
+	inc	.smcopyFromAddr + 1
+	jmp	.copyFromAddr
+
+.reachedEndOfFile
+!ifdef RNXPCompressionDecompress_ExitCodeDefined {
+	+RNXPCompressionDecompress_ExitCode
+} else {
+	rts
+}
+
+
+; Copies literals from the compressed data
+.copyLiterals
+	; Get packed length value
+	jsr	.getPackedValue
+
+	; Store bit stream
+	pha
+
+	; Check low length
+	ldx	RNXPCompressionDecompress_TempWord1 + 0
+	bne	.copyLiteralBytes
+
+	; Any full pages?
+.copyLiteralPages
+	dec	RNXPCompressionDecompress_TempWord1 + 1
+
+.copyLiteralBytes
+	; Assume CS here
+	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
+	sta	(RNXPCompressionDecompress_WriteBytesmAddr),y
+
+	inc+1 RNXPCompressionDecompress_GetBytesmAddr + 0
+	bne	.notHigh2
+	+RNXPCompressionIncBorder_A
+	inc+1 RNXPCompressionDecompress_GetBytesmAddr + 1
+.notHigh2
+	+MIncZPAddrWord RNXPCompressionDecompress_WriteBytesmAddr
+	; Any bytes left?
+	dex
+	bne	.copyLiteralBytes
+
+	; Any full pages?
+	lda	RNXPCompressionDecompress_TempWord1 + 1
+	bne	.copyLiteralPages
+
+	; Reset length = 1
+	inx
+	stx	RNXPCompressionDecompress_TempWord1 + 0
+
+	; Restore bit stream
+	pla
+
+	; Since we have just finished literals, it has to be a copy, so...
+	; ... use last offset or new one?
+	asl
+	+lobcs .copyWithNewOffset
+
+	; Rarely happens
+.useOldOffset
+	jsr	.getPackedValue
+
+	; Negate length
+	tya
+	sbc	RNXPCompressionDecompress_TempWord1 + 0
+	sec
+	bne	.copyToPageAddress
+
+	; Handle high byte
+	dec	RNXPCompressionDecompress_TempWord1 + 1
+	; Always CS true
+	bcs	.copyToPageAddress
+
+
+; Packed value handling
+; Entry:
+; A = Bit stream
+; Exit:
+; RNXPCompressionDecompress_TempWord1 contains the value
+; Always CS
+; X = Saved bit stream
+.getPackedValueData
+	; Shift in value bit
+	asl
+	rol	RNXPCompressionDecompress_TempWord1 + 0
+
+; Gets the next up to 16-bit stream packed value
+; Entry:
+; A = Bit stream
+; Exit:
+; RNXPCompressionDecompress_TempWord1 contains the value
+; Always CS
+; X = Saved bit stream
+.getPackedValue
+	; Got data next?
+	asl
+	bcc	.getPackedValueData
+
+	; Need new bit stream?
+	bne	.getPackedValueDone
+
+.getPackedValueNextInStream
+	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
+	+MIncZPAddrWord RNXPCompressionDecompress_GetBytesmAddr
+	; Completed the value?
+	rol
+	bcs	.getPackedValueDone
+
+.getPackedValueWord
+	asl
+	rol	RNXPCompressionDecompress_TempWord1 + 0
+	rol	RNXPCompressionDecompress_TempWord1 + 1
+	; Completed the value?
+	asl
+	bcc	.getPackedValueWord
+
+	; Need new bit stream?
+	beq	.getPackedValueNextInStream
+
+.getPackedValueDone
+	; Save bit stream
+	tax
+	rts

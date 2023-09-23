@@ -29,8 +29,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
-    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc TestDecompressionRNZip.a</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc TestDecompressionRNZip.a</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression4U.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression4U.a</NMakeReBuildCommandLine>
     <NMakeOutput>Decompression.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -53,23 +53,34 @@
     <CustomBuild Include="..\DoBackup.bat" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\stdlib\LongBranches.a" />
     <None Include="AnimationBitmapDefines.a" />
+    <None Include="BorderEffectCommon.a" />
     <None Include="BuildData.bat" />
     <None Include="BuildDataFragment.bat" />
+    <None Include="CommonDataCopy.a" />
+    <None Include="DecompressionU.a" />
+    <None Include="DecompressionUReferenceLongOffset.a" />
+    <None Include="DecompressionUVars.a" />
     <None Include="DecompressRLE.a" />
     <None Include="DecompressRLEVars.a" />
     <None Include="DefineDecompress_RNZip.a" />
     <None Include="DefineDoBorderEffect.a" />
     <None Include="DefineDoCheckMemory.a" />
     <None Include="FeatureEditor.bat" />
+    <None Include="features\CheckFiles.feature" />
     <None Include="features\CheckMemory.feature" />
+    <None Include="features\CheckReferenceU.feature" />
     <None Include="features\Checks.a" />
     <None Include="HMOrigBoot.a" />
     <None Include="HMOrigDefines.a" />
+    <None Include="LauncherAddressCalc.a" />
+    <None Include="macros\ReferenceU.macro" />
     <None Include="RunTests.bat" />
     <None Include="TestDecompression3.a" />
     <None Include="TestDecompression3CyberLoad.a" />
     <None Include="TestDecompression3RLE.a" />
+    <None Include="TestDecompression4U.a" />
     <None Include="TestDecompressionRNZip.a" />
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +89,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PrgData.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Compression\CompressUInternals.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

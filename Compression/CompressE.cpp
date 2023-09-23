@@ -48,9 +48,7 @@ void CompressionE::BitBufferWriteBits(void)
 
 void CompressionE::BitBufferPutBit(unsigned char bit)
 {
-#ifdef TOTAL_BITS_DEBUG
-	mTotalBits++;
-#endif
+	mTotalBitsOut++;
 	// Paranoia checking to ensure only the bottom bit is passed in
 	if (bit)
 	{
@@ -81,9 +79,7 @@ void CompressionE::BitBufferPutBit(unsigned char bit)
 
 void CompressionE::BitBufferPutByte(unsigned char b)
 {
-#ifdef TOTAL_BITS_DEBUG
-	mTotalBits += 8;
-#endif
+	mTotalBitsOut+=8;
 
 	*mBitBufferNextOut++ = FORCE_BYTE(b);
 }
@@ -92,7 +88,7 @@ void CompressionE::BitBufferPutByte(unsigned char b)
 void CompressionE::BitBufferFlushBits(unsigned char filler_bit)
 {
 #ifdef TOTAL_BITS_DEBUG
-	printf("\n//mTotalBits before flush = %d\n",mTotalBits);
+	printf("\n//mTotalBits before flush = %d\n",mTotalBitsOut);
 #endif
 
 	if (mBitBufferCount > 0)
@@ -221,6 +217,11 @@ int CompressionE::CodedMatchLength(u32 len, u32 offset)
 
 //static FILE *fp = 0;
 
+int CompressionE::LiteralRunLength(u32 currentLitNum)
+{
+	return (int) (currentLitNum * 9);
+}
+
 void CompressionE::EncodeLiteralRun(const u8 *litRun, u32 currentLitNum)
 {
 #ifdef TOTAL_BITS_DEBUG
@@ -248,6 +249,7 @@ void CompressionE::EncodeLiteralRun(const u8 *litRun, u32 currentLitNum)
 
 int CompressionE::Compress( const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compLevel)
 {
+	mTotalBitsOut = 0;
 	if ((compLevel < 1) || (compLevel > 10))
 	{
 		return GBA_E_INVALID_ARGUMENT;
@@ -306,6 +308,7 @@ int CompressionE::Compress( const u8 *in, u32 inLen,u8 *out, u32 *outLen,int com
 		mMaximumDictionaryBlocks = 131072;
 	}
 
+
 	// If the input length is larger than this then switch to using the hash table.
 	// The idea being that even though it uses more memory and constructs (clears) the table it is actually quicker for larger input blocks.
 	if ((inLen >= (512*1024)) && (mMaximumDictionaryBlocks > 50000))
@@ -318,64 +321,103 @@ int CompressionE::Compress( const u8 *in, u32 inLen,u8 *out, u32 *outLen,int com
 	u32 currentLitNum = 0;			// Number of literals to encode
 
 	u32 curPos = 0;
+	u32 lastDictionaryAddPos = 0;
 
 	mLastMatchPos = 0x7fffffff;
 
 	while (curPos < inLen)
 	{
+		if (gXPCompressionTweak6)
+		{
+			if (curPos > 2)
+			{
+				for ( ; lastDictionaryAddPos < curPos-2 ; lastDictionaryAddPos++)
+				{
+					DictionaryAdd(lastDictionaryAddPos);
+				}
+			}
+		}
+
 		if ((u32)(mBitBufferNextOut - out) > inLen)
 		{
 			return -1;
 		}
-		// Now try a dictionary match
-		int dictionaryBits = -1;
-		u32 matchLen,matchOffset;
-		Value *pValue = 0;
-		if (DictionaryFindMatch(curPos,matchLen,matchOffset,&pValue))
+		if (mIgnoreChoicePos.find(curPos) == mIgnoreChoicePos.end())
 		{
-			dictionaryBits = CodedMatchLength(matchLen,matchOffset);
-		}
-
-		// Is length of the proposed match smaller than the number of bits needed for a literal version of the match length?
-		if ((dictionaryBits != -1) && (dictionaryBits < (int)(matchLen * 9)))
-		{
-			// Yes, so the match results in a smaller size so we use it.
-
-			// Now do a forward match test
-			u32 curPos2 = curPos+1;
-			int dictionaryBits2 = -1;
-			u32 matchLen2,matchOffset2;
-			bool firstMatchIsBetter = true;
-			Value *pValue2 = 0;
-			// This forward match test takes some extra time
-			if ((curPos2 < inLen) && mDoForwardCheck)
+			// Now try a dictionary match
+			int dictionaryBits = -1;
+			u32 matchLen,matchOffset;
+			Value *pValue = 0;
+			if (DictionaryFindMatch(curPos,matchLen,matchOffset,&pValue))
 			{
-				if (DictionaryFindMatch(curPos2,matchLen2,matchOffset2,&pValue2))
-				{
-					dictionaryBits2 = CodedMatchLength(matchLen2,matchOffset2);
+				dictionaryBits = CodedMatchLength(matchLen,matchOffset);
+			}
 
-					if ((dictionaryBits2 != -1) && (dictionaryBits2 < (int)(matchLen2 * 9)))
+			// Is length of the proposed match smaller than the number of bits needed for a literal version of the match length?
+			if ((dictionaryBits != -1) && (dictionaryBits < LiteralRunLength(matchLen)))
+			{
+				// Yes, so the match results in a smaller size so we use it.
+
+				// Now do a forward match test
+				u32 currentLitNum2 = currentLitNum + 1;
+				u32 curPos2 = curPos+1;
+				int dictionaryBits2 = -1;
+				u32 matchLen2,matchOffset2;
+				bool firstMatchIsBetter = true;
+				Value *pValue2 = 0;
+				// This forward match test takes some extra time
+				if ((curPos2 < inLen) && mDoForwardCheck)
+				{
+					if (DictionaryFindMatch(curPos2,matchLen2,matchOffset2,&pValue2))
 					{
-						// Figure out if it is shorter (in terms of bits saved to the file) to skip the first match and encode using this second try instead
-						if ( (dictionaryBits + (int) gXPCompressionTweak1 + (int(matchLen2) * gXPCompressionTweak2) - (int(matchLen) * gXPCompressionTweak3) ) > (dictionaryBits2 + gXPCompressionTweak4))
+						dictionaryBits2 = CodedMatchLength(matchLen2,matchOffset2);
+
+						if ((dictionaryBits2 != -1) && (dictionaryBits2 < LiteralRunLength(matchLen2)))
 						{
-							firstMatchIsBetter = false;
+							if (gXPCompressionTweak5)
+							{
+								int endCompPos1 = curPos + matchLen;
+								int endCompPos2 = curPos2 + matchLen2;
+								int extraCompressed = endCompPos2 - endCompPos1;
+								int optionBitsLength1 = LiteralRunLength(currentLitNum) + dictionaryBits;
+								int optionBitsLength2 = LiteralRunLength(currentLitNum2) + dictionaryBits2;
+								int compressedBytes1 = currentLitNum + matchLen;
+								int compressedBytes2 = currentLitNum2 + matchLen2;
+								// This has no effect, at all...
+		//						compressedBytes1 += gXPCompressionTweak3-5;
+		//						compressedBytes2 += gXPCompressionTweak4-5;
+								// Test the compression ratio for the portion being encoded
+								if ( (float(compressedBytes1) / float(optionBitsLength1)) <= (float(compressedBytes2) / float(optionBitsLength2)) )
+								{
+									firstMatchIsBetter = false;
+								}
+							}
+							else
+							{
+								// Figure out if it is shorter (in terms of bits saved to the file) to skip the first match and encode using this second try instead
+								if ( (dictionaryBits + (int) gXPCompressionTweak1 + (int(matchLen2) * gXPCompressionTweak2) - (int(matchLen) * gXPCompressionTweak3) ) > (dictionaryBits2 + gXPCompressionTweak4))
+								{
+									firstMatchIsBetter = false;
+								}
+							}
 						}
 					}
 				}
-			}
 
-			if (firstMatchIsBetter)
-			{
-				// Store any literals we have not already output
-				EncodeLiteralRun(litRun,currentLitNum);
-				// Store the match
-				EncodeMatch(matchLen,matchOffset);
-				curPos += matchLen;
-				litRun = in + curPos;
-				currentLitNum = 0;
-//				printf("left = %d\n",inLen - curPos);
-				continue;
+				if (firstMatchIsBetter)
+				{
+					mChoicesPos.push_back(curPos);
+
+					// Store any literals we have not already output
+					EncodeLiteralRun(litRun,currentLitNum);
+					// Store the match
+					EncodeMatch(matchLen,matchOffset);
+					curPos += matchLen;
+					litRun = in + curPos;
+					currentLitNum = 0;
+	//				printf("left = %d\n",inLen - curPos);
+					continue;
+				}
 			}
 		}
 
@@ -557,7 +599,7 @@ bool CompressionE::DictionaryFindMatch(const u32 fromStartPos,u32 &len,u32 &matc
 		{
 			continue;
 		}
-		int proposedBitLength = (proposedMatchLen * 9) - proposedBits;
+		int proposedBitLength = LiteralRunLength(proposedMatchLen) - proposedBits;
 
 		if (proposedBitLength > bestBitLength)
 		{
@@ -675,7 +717,7 @@ bool CompressionE::CommonValueChecks(Value *value,const u32 fromStartPos, u32 &b
 	{
 		return false;
 	}
-	int proposedBitLength = (proposedMatchLen * 9) - proposedBits;
+	int proposedBitLength = LiteralRunLength(proposedMatchLen) - proposedBits;
 
 	if (proposedBitLength > bestBitLength)
 	{

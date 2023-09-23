@@ -2,8 +2,9 @@
 ; The code that is sent to the drive
 .driveCodePseudoStart:
 
+DriveCode_Start
 !pseudopc $500 {
-
+DriveCode_StartReal
 
 ; Unused according to http://unusedino.de/ec64/technical/aay/c1541/ra41main.htm
 .unused1541ZP	= $1b
@@ -264,6 +265,9 @@
 	bne .driveSendBuffer
 
 !ifdef IRQDisk_UseATN {
+	; To allow the C64 time to process the last bit pair
+	+DelayFor IRQDisk_DriveSendBurstC64CalculationTimeLast
+
 	; Send C0D0 to cause the computer to wait for the normal bits to be sent next
 	lda #0
 	sta .VIA1Port
@@ -567,41 +571,64 @@
 }
 
 !ifdef IRQDisk_UseATN {
+.bitPairToSerialData
+	; 0 0
+	!by .VIA1Port_ClockOut | .VIA1Port_DataOut
+	; 0 1
+	!by .VIA1Port_DataOut
+	; 1 0
+	!by .VIA1Port_ClockOut
+	; 1 1
+	!by 0
+
 ; Sends 8 bits in four groups of 2 bits using data and clock with ATN as the trigger
 .driveSendBurst:
 	stx .unused1541ZP
-
-	; Counter to send 4 lots of 2 bits
-	ldx #4
-.driveSendBitBL:
-	; Read next bits to send
-	lsr .unused1541ZP
-	lda #0
-	rol
-	asl
-	lsr .unused1541ZP
-	rol
-	asl
-	; Send them
-	ora #.VIA1Port_ATNACK
-	sta .toSendWithATN
 
 	lda #.VIA1Port_ATN
 .waitDriveATN
 	bit .VIA1Port
 	beq .waitDriveATN
-	lda .toSendWithATN
+!ifdef IRQDisk_UseATNACK {
+	; Signal ACK back to the computer
+	lda #.VIA1Port_ATNACK
 	sta .VIA1Port
-	lda #1
-	clc
-.sendbVL1:
-	adc #1
-	cmp #(.ATNCycleCount * 2)
-	bne .sendbVL1
+}
 
-	dex
-	; Loop for the other bits
-	bne .driveSendBitBL
+
+	; Counter to send 4 lots of 2 bits
+.driveSendBitBL:
+!macro MSendBitPair .unused1541ZP , .bitPairToSerialData , .VIA1Port {
+	lda .unused1541ZP				; 3
+	and #3							; 2
+	tax								; 2
+	lda .bitPairToSerialData,x		; 4+
+	sta .VIA1Port					; 4
+}
+
+!macro MShiftBitPair .unused1541ZP {
+	lsr .unused1541ZP				; 5
+	lsr .unused1541ZP				; 5
+}
+
+	+MSendBitPair .unused1541ZP , .bitPairToSerialData , .VIA1Port
+	; The C64 is decoding the bit pattern here
+	+MShiftBitPair .unused1541ZP
+	+DelayFor IRQDisk_DriveSendBurstC64CalculationTimeFirst
+
+	+MSendBitPair .unused1541ZP , .bitPairToSerialData , .VIA1Port
+	; The C64 is decoding the bit pattern here
+	+MShiftBitPair .unused1541ZP
+	+DelayFor IRQDisk_DriveSendBurstC64CalculationTimeRest
+
+	+MSendBitPair .unused1541ZP , .bitPairToSerialData , .VIA1Port
+	; The C64 is decoding the bit pattern here
+	+MShiftBitPair .unused1541ZP
+	+DelayFor IRQDisk_DriveSendBurstC64CalculationTimeRest
+
+	+MSendBitPair .unused1541ZP , .bitPairToSerialData , .VIA1Port
+	; This last delay isn't needed, unless exiting back to 1-bit mode
+;	+DelayFor IRQDisk_DriveSendBurstC64CalculationTimeLast
 
 	rts
 .toSendWithATN !by 0
@@ -741,3 +768,8 @@
 
 .driveCodeRealEnd:
 } ; < !pseudopc
+
+!if .driveCodeRealEnd >= .driveRAMEnd {
+!error "No more drive RAM available"
+}
+

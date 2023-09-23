@@ -9,7 +9,7 @@ typedef signed int s32;
 typedef signed short s16;
 typedef signed char s8;
 
-#define LONG_OFFSET_THRESHOLD			 0xd00
+extern u32 LONG_OFFSET_THRESHOLD;
 
 #define GBA_E_OK					0
 #define GBA_E_ERROR					(-1)

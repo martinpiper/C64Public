@@ -194,9 +194,15 @@ IRQDisk_Load:
 !ifdef IRQDisk_UseATN {
 	; Start the disk loading loop
 .diskLoadL:
+	; Avoid any conflict with the drive switching from ATN mode to 1-bit mode
+	+DelayFor IRQDisk_C64FromBurstGuardTime
+
 	; Gets the number of bytes to process, or the EOF escape code, or an error escape code
 	jsr .computerRecv
 	tay
+
+	; This delay is to allow the drive time to setup the next byte and begin waiting for the ATN strobe
+	+DelayFor IRQDisk_C64ToBurstGuardTime
 
 .diskLoadL2
 	jsr .computerRecvBitsATNBurst
@@ -223,7 +229,10 @@ IRQDisk_Load:
 	sta $100
 	; Useful debugging displays chars on the screen or flashes the border
 ;	sta $400	; store it
-;	inc VIC2ScreenColour
+!ifdef IRQDisk_UpdateRegisterOnDataStore {
+	inc IRQDisk_UpdateRegisterOnDataStore
+	sta IRQDisk_UpdateRegisterOnDataStore
+}
 	inc .storeLo
 	bne .dls1
 	inc .storeHi
@@ -247,7 +256,10 @@ IRQDisk_Load:
 	sta $100,y
 	; Useful debugging displays chars on the screen or flashes the border
 ;	sta $400,y	; store it
-;	inc VIC2ScreenColour
+!ifdef IRQDisk_UpdateRegisterOnDataStore {
+	inc IRQDisk_UpdateRegisterOnDataStore
+	sta IRQDisk_UpdateRegisterOnDataStore
+}
 	iny
 	bne .diskLoadL
 	inc .storeHi
@@ -443,11 +455,22 @@ IRQDisk_WriteData
 ; Send C1D1
 ; Loop for the other bits
 ;***************************************
+!ifdef IRQDisk_UpdateRegisterOnIdle {
+.tempDelay !by 0
+}
+
 	; Gets a byte from the drive without escape byte parsing
 .computerRecvBits:
 	; Counter for 8 bits to receive
 	ldx #8
 .waitIdle1:
+!ifdef IRQDisk_UpdateRegisterOnIdle {
+	inc .tempDelay
+	bne .tempDelayo1
+	inc IRQDisk_UpdateRegisterOnIdle
+	sta IRQDisk_UpdateRegisterOnIdle
+.tempDelayo1
+}
 	; Wait while C0D0
 	lda .serialIn
 	and #.serialDataIn | .serialClockIn
@@ -497,6 +520,12 @@ IRQDisk_WriteData
 ;	inc VIC2BorderColour
 
 	lda .tempStore
+
+!ifdef IRQDisk_UpdateRegisterOnData {
+	inc IRQDisk_UpdateRegisterOnData
+	sta IRQDisk_UpdateRegisterOnData
+}
+
 	rts
 
 !ifdef IRQDisk_TestClockedTransfer {
@@ -543,70 +572,127 @@ IRQDisk_ClockedRecv:
 	dex
 	bne .waitClock1	; loop until all bits are received
 
-	; Debug timing
-	inc VIC2BorderColour
 
 	lda .tempStore
+
+!ifdef IRQDisk_UpdateRegisterOnData {
+	; Debug timing
+	sta IRQDisk_UpdateRegisterOnData
+}
 	rts
 
 }
 
 !ifdef IRQDisk_UseATN {
+
+; Table of flags for which raster lines are going to be safe for the ATN 2-bit transfer to begin on. This avoids bad line timing issues.
+; If there are any stable rasters, or sprites, these can also be removed from this table.
+IRQDisk_MarkUnsafeRaster
+!ifndef IRQDisk_NoScreenNoIRQ {
+	lda #1
+	ldy #IRQDisk_SafeRasterGuard
+.sl1
+	sta IRQDisk_SafeRasters,x
+	dex
+	dey
+	bne .sl1
+}
+	rts
+
+!ifndef IRQDisk_NoScreenNoIRQ {
+IRQDisk_SafeRasterGuard = 3
+; 0 = safe, 1 = not safe
+IRQDisk_SafeRasters
+	!fill 48 , 0
+!for .i , VIC2ScreenCharsHeight {
+	; 0, 3, 4, 5, 6, 7 are "safe". Empirically tested.
+	; 0 is interesting, if a bad line happens during the last bit pair decode, it doesn't matter if it is delayed as long as the serial read is OK
+	!by 0,1,1,0,0,0,0,0
+}
+	!fill 16 , 0
+}
+
+.serialBitPairToRealBitPair
+!for .ii , 256 {
+	!set .i = .ii -1
+	!set .val1 = 0
+	!set .val2 = 0
+	!if (.i & .serialClockIn) > 0 {
+		!set .val1 = $40
+	}
+	!if (.i & .serialDataIn) > 0 {
+		!set .val2 = $80
+	}
+	!by .val1 | .val2
+}
+
 .computerRecvBitsATNBurst:
+!ifndef IRQDisk_NoScreenNoIRQ {
+	lda #kVIC2ScreenControlVBits_RasterHi
+	bit VIC2ScreenControlV
+	bne .okGet
+
+.waitRaster
+	ldx VIC2Raster
+	lda IRQDisk_SafeRasters,x
+	bne .waitRaster
+.okGet
+}
+
 	; Stop IRQs from messing with our timings
 	sei
 
-	; Counter for 8 bits to receive
-	ldx #4
-.recvBLoop1:
+	; The drive sits in a very tight loop when in burst mode and with the C64 slower than the drive we only wait a short while.
 
-	; Strobe ATN to signal the drive to send two bits
+	; Strobe ATN to signal the drive to send four pairs of two bits
 	lda .serialOut
 	ora #.serialATNOut
 	sta .serialOut
-	; Wait a short while for the drive to respond.
-	; The drive sits in a very tight loop when in burst mode and with the C64 slower than the
-	; drive we only wait a short while.
-	lda #1
-	clc
-.recbVL2:
-	adc #1
-	cmp #.ATNCycleCount
-	bne .recbVL2
-
-	lda .serialIn
-	pha
-
-	; Un-strobe ATN
+!ifdef IRQDisk_UseATNACK {
+	; Wait for ACK from drive
+	lda #.serialDataIn
+.wl1	bit .serialIn
+	beq .wl1
+}
 	lda .serialOut
-	and #255 - .serialATNOut
+	and #!.serialATNOut
 	sta .serialOut
 
-	lda #1
-	clc
-.recbVL3:
-	adc #1
-	cmp #.ATNCycleCount
-	bne .recbVL3
+	; Debug test read for serial cycle comms visualisation
+!if 0 {
+.testRead
+!for .i ,256 {
+	lda .serialIn
+}
+	rts
+}
 
-	pla
+!macro MC64DecodeBitPair .first , .serialIn , .tempStore , .serialBitPairToRealBitPair {
+	; Decode two bits using the table and shift them in
+	ldx .serialIn
+!if .first > 0 {
+	lda .serialBitPairToRealBitPair,x
+} else {
+	lsr
+	lsr
+	ora .serialBitPairToRealBitPair,x
+}
+}
 
-	eor #.serialDataIn | .serialClockIn
-	; MPi: TODO: Implement for other platforms except C64
-	pha
-	; Shift in the clock bit from the drive
-	asl
-	asl
-	ror .tempStore
-	pla
-	asl
-	; Shift in the data bit from the drive
-	ror .tempStore
+!ifndef IRQDisk_UseATNACK {
+	; This delay ensures the first serial read is going to be after the drive, regardless of the slight wobble after its wait
+	+DelayFor IRQDisk_C64FirstBurstReadDelay
+}
 
-	; Loop around getting the rest of the bits
-	dex
-	bne .recvBLoop1	; loop until all bits are received
-	lda .tempStore
+	; The drive is calculating the 2-bit pattern to send here
+	+DelayFor IRQDisk_DriveSendBurstDriveCalculationTimeFirst
+	+MC64DecodeBitPair 1 , .serialIn , .tempStore , .serialBitPairToRealBitPair
+	+DelayFor IRQDisk_DriveSendBurstDriveCalculationTimeRest
+	+MC64DecodeBitPair 0 , .serialIn , .tempStore , .serialBitPairToRealBitPair
+	+DelayFor IRQDisk_DriveSendBurstDriveCalculationTimeRest
+	+MC64DecodeBitPair 0 , .serialIn , .tempStore , .serialBitPairToRealBitPair
+	+DelayFor IRQDisk_DriveSendBurstDriveCalculationTimeLast
+	+MC64DecodeBitPair 0 , .serialIn , .tempStore , .serialBitPairToRealBitPair
 
 	; Allow IRQs again
 	cli

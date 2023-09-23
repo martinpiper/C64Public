@@ -44,6 +44,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 private:
 	size_t mTimes;
+public:
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 //{{AFX_INSERT_LOCATION}}

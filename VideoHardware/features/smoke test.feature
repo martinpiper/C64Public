@@ -581,6 +581,7 @@ Feature: Smoke test
     Given video display does not save debug BMP images
     Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
+    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     When I execute the procedure at mainLoop until return
 
 
@@ -839,7 +840,9 @@ Feature: Smoke test
   Scenario: Smoke test for Demo9
     Given clear all external devices
     Given a new audio expansion
+    And the audio expansion uses exact address matching
     Given a new video display with overscan and 16 colours
+    And the display uses exact address matching
 #    And enable video display bus debug output
 #    And enable debug pixel picking
     Given video display processes 24 pixels per instruction
@@ -858,25 +861,38 @@ Feature: Smoke test
     Given a user port to 24 bit bus is installed
 #    And enable user port bus debug output
     And enable APU mode
+	And the APU uses exact address matching
 	# Use with kJustForLogo instead of "Chars V4.0 layer"
 #    Given add a StaticColour layer for palette index '0x01'
 #    Given add a GetBackground layer fetching from layer index '1'
 #    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
 #    And the layer has 16 colours
-    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+
+    Given add a 2-to-1 merge layer with registers at '0xa200'
+    And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
+      Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+      And the layer uses exact address matching
+      And the layer has 16 colours
+      And the layer has overscan
+      Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
+      And the layer uses exact address matching
+      And the layer has 16 colours
+      And the layer has overscan
     Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+	And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
     Given add a Sprites2 layer with registers at '0x9200' and addressEx '0x08' and running at 14.31818MHz
     And the layer has 16 colours
     And the layer has overscan
     Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+	And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
-	Given randomly initialise all memory using seed 4321
+    Given randomly initialise all memory using seed 4321
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
     # Palette
@@ -898,14 +914,21 @@ Feature: Smoke test
     Given write data from file "tmp/Demo9Chars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
     Given write data from file "tmp/Demo9Chars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
     Given write data from file "tmp/Demo9Chars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Chars2
+    Given write data from file "tmp/Demo9Chars2_map.bin" to 24bit bus at '0x4000' and addressEx '0x90'
+    Given write data from file "tmp/Demo9Chars2_map.bin2" to 24bit bus at '0x8000' and addressEx '0x90'
+    Given write data from file "tmp/Demo9Chars2_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x30'
+    Given write data from file "tmp/Demo9Chars2_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x30'
+    Given write data from file "tmp/Demo9Chars2_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x30'
+    Given write data from file "tmp/Demo9Chars2_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x30'
     # Tiles
     Given write data from file "tmp/Demo9Tiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
     Given write data from file "tmp/Demo9Tiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
     Given write data from file "tmp/Demo9Tiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
     Given write data from file "tmp/Demo9Tiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
     Given write data from file "tmp/Demo9Tiles_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x40'
-	#  Music
-	# Can be replaced with "MinimalMusicDemoTest = 1" to have a minimal music demo
+    # Music
+    # Can be replaced with "MinimalMusicDemoTest = 1" to have a minimal music demo
     Given write data from file "tmp/target/MusicMW2000Samples.bin1" to 24bit bus at '0x0000' and addressEx '0x04'
     Given write data from file "tmp/target/MusicMW2000Samples.bin2" to 24bit bus at '0x8000' and addressEx '0x04'
 
@@ -930,6 +953,7 @@ Feature: Smoke test
     Given video display does not save debug BMP images
     Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
+    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     When I execute the procedure at start until return
 
 
@@ -1173,6 +1197,9 @@ Feature: Smoke test
     Given a user port to 24 bit bus is installed
 #    And enable user port bus debug output
     And enable APU mode
+    And APU clock divider 1
+    And APU memory clock divider 2
+
 	# Use with kJustForLogo instead of "Chars V4.0 layer"
 #    Given add a StaticColour layer for palette index '0x01'
 #    Given add a GetBackground layer fetching from layer index '1'

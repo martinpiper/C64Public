@@ -8,8 +8,10 @@
 #include "Compress.h"
 #include "CompressE.h"
 #include "CompressRLE.h"
+#include "CompressU.h"
 #include "Decompress.h"
 #include "DecompressE.h"
+#include "DecompressU.h"
 #include "../Common/ParamToNum.h"
 
 using namespace RNReplicaNet::RNXPCompression;
@@ -42,6 +44,28 @@ using namespace RNReplicaNet::RNXPCompression;
 //20362 : ..\bin\LZMPi.exe -c TestData\5.bin c:\temp\t.bin
 //846
 
+// -c64b "C:\temp\wizball_ocean_6389_min.prg" "C:\temp\wizball_ocean_6389_min_lzmpi.prg" $6389
+// Input length = $f900 output length = $9266
+// -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+// Input length = $f900 output length = $90a8
+// -o1 -o2 -o3 -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+// Input length = $f900 output length = $8ffb
+// -o2 -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+// -o1 -o2 -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+// Input length = $f900 output length = $9017
+
+// -ce "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+// Input length = $f900 output length = $927a
+
+
+// -cu "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp4" 2
+// Input length = $f900 output length = $8836
+// -c64mub "C:\temp\wizball_ocean_6389_min.prg" "C:\temp\wizball_ocean_6389_min_lzmpiu.prg" $6389
+// Input length = $f900 output length = $893f
+
+
+// -o4 2 2 3 1 -c UnitTest2.dat c:\temp\ut2.cdat
+
 // TODO: Add an option to compress and run BASIC code.
 // Related^^ TODO: Update $2d and $2e properly so that other applications that expect them will work.
 //-c64b SEUCK.prg SEUCKComp.prg 2064
@@ -65,28 +89,34 @@ int main(int argc,char **argv)
 			" -c <input file> <outfile file> [offset from the start of the file]\n"
 			"To decompress files compressed with -c use:\n"
 			" -d <input file> <outfile file>\n"
-			"To use LZMPiE mode (RNZip with simpler but faster compression) then use:"
+			"To use LZMPiE mode (Simpler compression with faster decompression) then use:"
 			" -ce <input file> <outfile file> [offset from the start of the file]\n"
+			"To use LZMPiU mode (Better compression, slightly more complex decompression) then use:"
+			" -cu <input file> <outfile file> [offset from the start of the file]\n"
 			"To use RLE mode then use:"
 			" -cr <input file> <outfile file> [offset from the start of the file]\n"
 			"To create a C64 self extracting binary use:\n"
-			" -c64[m][b][r][e] <input file> <outfile file> <run address> [start address]\n\n"
+			" -c64[m][b][r][e][u] <input file> <outfile file> <run address> [start address]\n\n"
 			"-c64 will compress a C64 prg file with the start address being the first two\n"
 			"bytes of the file. The optional start address will override the start address\n"
 			"read from the first two bytes of the prg file.\n"
 			" -c64b will cause the border to flash during decompression.\n"
-			" -c64 or -c64b allows memory in the range $400-$ffff to be used and is less destructive to zeropage.\n"
-			" -c64m or -c64mb will use max mode ($200-$ffff available) without or with border flashing.\n"
-			" -c64mr or -c64mrb will use RLE max mode ($200-$ffff available) without or with border flashing.\n"
+			" -c64 or -c64b allows memory in the range $400-$fff9 to be used and is less destructive to zeropage.\n"
+			" -c64m or -c64mb will use max mode ($200-$fff9 available) without or with border flashing.\n"
+			" Adding one of e/u/r will use the corresponding compression method.\n"
 			"By default the border will not flash.\n\n"
 			"Use the following to skip a number of bytes from the start of the file and\n"
 			"set a length. If the length equals 0 the length is still set from the file: \n"
 			" -c <input file> <outfile file> <offset> [length]\n\n"
 			" -cut <input file> <outfile file> <offset> [length]\n"
 			"-cut will not compress the file, meaning data is just effectively cut and written to the output file.\n"
-			"-hex <input file containing hex data> <output file> <start offset> <skip>"
+			"-hex <input file containing hex data> <output file> <start offset> <skip>\n"
 			"-t <address>\n"
 			" The default value is $10000. Must be first in the parameter list. This will set the top most memory address used by the decompression code when using the -c64 self extracting code. This is useful to segregate the top pages of memory so they can be used for saved data between file loads.\n"
+			" -o1 Enable permutation optimise compression pass (slow). Must be before other compression options.\n"
+			" -o2 Enable shuffle optimise compression pass (very slow). Must be before other compression options.\n"
+			" -o3 Enable long threshold optimise compression pass (quite slow). Must be before other compression options.\n"
+			" -o4 <num1> <num2> <num3> <num4> Specifies the four tweak values displayed during -o1 which avoids the slow permutation search. Must be before other compression options.\n"
 		);
 		exit(-1);
 	}
@@ -99,17 +129,64 @@ int main(int argc,char **argv)
 	bool useRLE = false;
 	u32 startC64Code = 0x900;
 	u32 loadC64Code = 0;
+	u32 loadC64CodeSkipStart = 2;
 	bool flashBorder = false;
 	bool maxMode = false;
 	bool useRNZipMode = false;
+	bool enablePermutation = false;
+	bool enableShuffle = false;
+	bool enableOffsetThreshold = false;
+	bool handledPreParam = false;
+	bool useCompressionU = false;
 
-
-	if (argv[1][1] == 't')
+	do
 	{
-		machineMemoryTop = ParamToNum(argv[2]);
-		argc-=2;
-		argv+=2;
-	}
+		handledPreParam = false;
+
+		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == '1')
+		{
+			enablePermutation = true;
+			argc--;
+			argv++;
+			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == '2')
+		{
+			enableShuffle = true;
+			argc--;
+			argv++;
+			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == '3')
+		{
+			enableOffsetThreshold = true;
+			argc--;
+			argv++;
+			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == '4')
+		{
+			gXPCompressionTweak1 = ParamToNum(argv[2]);
+			gXPCompressionTweak2 = ParamToNum(argv[3]);
+			gXPCompressionTweak3 = ParamToNum(argv[4]);
+			gXPCompressionTweak4 = ParamToNum(argv[5]);
+
+			argc-=5;
+			argv+=5;
+			handledPreParam = true;
+		}
+
+		if (argv[1][1] == 't')
+		{
+			machineMemoryTop = ParamToNum(argv[2]);
+			argc-=2;
+			argv+=2;
+			handledPreParam = true;
+		}
+	} while (handledPreParam);
 
 	int machineMemoryTopMinus256 = machineMemoryTop - 0x100;
 
@@ -117,6 +194,10 @@ int main(int argc,char **argv)
 	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'r'))
 	{
 		useRLE = true;
+	}
+	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'u'))
+	{
+		useCompressionU = true;
 	}
 	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'e'))
 	{
@@ -153,6 +234,12 @@ int main(int argc,char **argv)
 				useRLE = true;
 			}
 
+			if (subOption.find('u') != std::string::npos)
+			{
+				printf("Using LZMPiU mode\n");
+				useCompressionU = true;
+			}
+
 			startC64Code = ParamToNum(argv[4]);
 			printf("Using run address $%04x\n",startC64Code);
 
@@ -160,6 +247,12 @@ int main(int argc,char **argv)
 			{
 				loadC64Code = ParamToNum(argv[5]);
 				printf("Using load address $%04x\n",loadC64Code);
+			}
+
+			if (argc >= 7)
+			{
+				loadC64CodeSkipStart = ParamToNum(argv[6]);
+				printf("Using skip start bytes $%04x\n",loadC64CodeSkipStart);
 			}
 		}
 		else
@@ -244,12 +337,12 @@ int main(int argc,char **argv)
 		{
 			loadC64Code = fgetc(fp);
 			loadC64Code |= fgetc(fp) << 8;
-			printf("Read load address as $%04x\n",loadC64Code);
+			printf("Read load address (from first two bytes) as $%04x\n",loadC64Code);
 		}
 		else
 		{
-			// Skip two bytes
-			fseek(fp,2,SEEK_SET);
+			printf("Skipping start bytes $%04x\n",loadC64CodeSkipStart);
+			fseek(fp,loadC64CodeSkipStart,SEEK_SET);
 		}
 	}
 
@@ -326,129 +419,321 @@ int main(int argc,char **argv)
 #if 1
 		// For now we will always use one escape bit because it seems to consistently generate
 		// the best results.
-		if (useRLE)
+		if (useCompressionU)
+		{
+			CompressionU comp;
+			comp.Compress(input,inputSize,output,&outSize,10);
+		}
+		else if (useRLE)
 		{
 			TestRLEPack(input,inputSize,output,&outSize);
 		}
 		else
 		{
-#if 0
+			int outBitSizeTrue;
+			int outBitSizeFalse;
+
+			printf("Compression stage: Dictionary test\n");
+			gXPCompressionTweak6 = true;
 			if (useRNZipMode)
 			{
 				CompressionE comp;
 				comp.Compress(input,inputSize,output,&outSize,10);
-				outBitSize = outSize*8;
+				outBitSizeTrue = comp.mTotalBitsOut;
 			}
 			else
 			{
 				Compression comp;
 				comp.Compress(input,inputSize,output,&outSize,10,1);
-				outBitSize = comp.mTotalBitsOut;
+				outBitSizeTrue = comp.mTotalBitsOut;
+			}
+			gXPCompressionTweak6 = false;
+			if (useRNZipMode)
+			{
+				CompressionE comp;
+				comp.Compress(input,inputSize,output,&outSize,10);
+				outBitSizeFalse = comp.mTotalBitsOut;
+			}
+			else
+			{
+				Compression comp;
+				comp.Compress(input,inputSize,output,&outSize,10,1);
+				outBitSizeFalse = comp.mTotalBitsOut;
+			}
+			printf("Out bit sizes: %d %d\n" , outBitSizeTrue , outBitSizeFalse);
+			if (outBitSizeTrue <= outBitSizeFalse)
+			{
+				printf("Compression dictionary enabled\n");
+				gXPCompressionTweak6 = true;
+			}
+			else
+			{
+				printf("Compression dictionary disabled\n");
+				gXPCompressionTweak6 = false;
 			}
 
-			int besta = gXPCompressionTweak1,bestb = gXPCompressionTweak2,bestc = gXPCompressionTweak3,bestd = gXPCompressionTweak4;
-
-			int a,b,c,d;
-			for (a=1 ; a < 10 ; a++)
+			printf("Compression stage: Ratio test\n");
+			gXPCompressionTweak5 = true;
+			if (useRNZipMode)
 			{
-				for (b=a ; b < 10 ; b++)
+				CompressionE comp;
+				comp.Compress(input,inputSize,output,&outSize,10);
+				outBitSizeTrue = comp.mTotalBitsOut;
+			}
+			else
+			{
+				Compression comp;
+				comp.Compress(input,inputSize,output,&outSize,10,1);
+				outBitSizeTrue = comp.mTotalBitsOut;
+			}
+			gXPCompressionTweak5 = false;
+			if (useRNZipMode)
+			{
+				CompressionE comp;
+				comp.Compress(input,inputSize,output,&outSize,10);
+				outBitSizeFalse = comp.mTotalBitsOut;
+			}
+			else
+			{
+				Compression comp;
+				comp.Compress(input,inputSize,output,&outSize,10,1);
+				outBitSizeFalse = comp.mTotalBitsOut;
+			}
+			printf("Out bit sizes: %d %d\n" , outBitSizeTrue , outBitSizeFalse);
+			if (outBitSizeTrue <= outBitSizeFalse)
+			{
+				printf("Compression ratio enabled\n");
+				gXPCompressionTweak5 = true;
+			}
+			else
+			{
+				printf("Compression ratio disabled\n");
+				gXPCompressionTweak5 = false;
+			}
+
+			if (enablePermutation)
+			{
+				printf("Compression stage: Baseline\n");
+				if (useRNZipMode)
 				{
-					for (c=b ; c < 10 ; c++)
+					CompressionE comp;
+					comp.Compress(input,inputSize,output,&outSize,10);
+					outBitSize = comp.mTotalBitsOut;
+				}
+				else
+				{
+					Compression comp;
+					comp.Compress(input,inputSize,output,&outSize,10,1);
+					outBitSize = comp.mTotalBitsOut;
+				}
+				printf("Out bytes: %d\n" , outSize);
+
+				printf("Compression stage: Permutation\n");
+				int besta = gXPCompressionTweak1,bestb = gXPCompressionTweak2,bestc = gXPCompressionTweak3,bestd = gXPCompressionTweak4;
+
+				int a,b,c,d;
+				for (a=1 ; a < 10 ; a++)
+				{
+					for (b=a ; b < 10 ; b++)
 					{
-						for (d=1 ; d < 10 ; d++)
+						for (c=b ; c < 10 ; c++)
 						{
-							printf("Trying : %d %d %d %d                \r", a , b ,c , d);
-							int ret;
-							gXPCompressionTweak1 = a;
-							gXPCompressionTweak2 = b;
-							gXPCompressionTweak3 = c;
-							gXPCompressionTweak4 = d;
+							for (d=1 ; d < 10 ; d++)
+							{
+								printf("Trying : %d %d %d %d                \r", a , b ,c , d);
+								int ret;
+								gXPCompressionTweak1 = a;
+								gXPCompressionTweak2 = b;
+								gXPCompressionTweak3 = c;
+								gXPCompressionTweak4 = d;
 
-							u32 comp2mTotalBitsOut;
-							if (useRNZipMode)
-							{
-								CompressionE comp2;
-								ret = comp2.Compress(input,inputSize,output,&outSize,10);
-								comp2mTotalBitsOut = outSize*8;
-							}
-							else
-							{
-								Compression comp2;
-								comp2.mEarlyOut = outBitSize;
-								ret = comp2.Compress(input,inputSize,output,&outSize,10,1);
-								comp2mTotalBitsOut = comp2.mTotalBitsOut;
-							}
-							printf("Working %d : %d %d %d %d                \r",outBitSize - comp2mTotalBitsOut , a , b ,c , d);
-							if (ret == -1)
-							{
-								continue;
-							}
+								u32 comp2mTotalBitsOut;
+								if (useRNZipMode)
+								{
+									CompressionE comp2;
+									ret = comp2.Compress(input,inputSize,output,&outSize,10);
+									comp2mTotalBitsOut = comp2.mTotalBitsOut;
+								}
+								else
+								{
+									Compression comp2;
+									comp2.mEarlyOut = outBitSize;
+									ret = comp2.Compress(input,inputSize,output,&outSize,10,1);
+									comp2mTotalBitsOut = comp2.mTotalBitsOut;
+								}
+								printf("Working %d : %d %d %d %d                \r",outBitSize - comp2mTotalBitsOut , a , b ,c , d);
+								if (ret == -1)
+								{
+									continue;
+								}
 
-							if (comp2mTotalBitsOut < outBitSize)
-							{
-								printf("New best %d : %d %d %d %d                \n",outBitSize - comp2mTotalBitsOut , a , b ,c , d);
-								outBitSize = comp2mTotalBitsOut;
-								besta = gXPCompressionTweak1;
-								bestb = gXPCompressionTweak2;
-								bestc = gXPCompressionTweak3;
-								bestd = gXPCompressionTweak4;
+								if (comp2mTotalBitsOut < outBitSize)
+								{
+									printf("\nGot size %d\n",outSize);
+									printf("New best tweak %d : %d %d %d %d\n",outBitSize - comp2mTotalBitsOut , a , b ,c , d);
+									outBitSize = comp2mTotalBitsOut;
+									besta = gXPCompressionTweak1;
+									bestb = gXPCompressionTweak2;
+									bestc = gXPCompressionTweak3;
+									bestd = gXPCompressionTweak4;
+								}
 							}
 						}
 					}
 				}
+				gXPCompressionTweak1 = besta;
+				gXPCompressionTweak2 = bestb;
+				gXPCompressionTweak3 = bestc;
+				gXPCompressionTweak4 = bestd;
 			}
-			gXPCompressionTweak1 = besta;
-			gXPCompressionTweak2 = bestb;
-			gXPCompressionTweak3 = bestc;
-			gXPCompressionTweak4 = bestd;
-#endif
+
+			if(enableOffsetThreshold)
+			{
+				printf("Compression stage: Baseline for threshold\n");
+				if (useRNZipMode)
+				{
+					CompressionE comp;
+					comp.Compress(input,inputSize,output,&outSize,10);
+					outBitSize = comp.mTotalBitsOut;
+				}
+				else
+				{
+					Compression comp;
+					comp.Compress(input,inputSize,output,&outSize,10,1);
+					outBitSize = comp.mTotalBitsOut;
+				}
+				printf("Out bit size threshold: %d\n" , outBitSize);
+
+				u32 bestThreshold = LONG_OFFSET_THRESHOLD;
+
+				for (LONG_OFFSET_THRESHOLD = 0x100 ; LONG_OFFSET_THRESHOLD < (u32)(inputSize/2); LONG_OFFSET_THRESHOLD += 0x100)
+				{
+					printf("Trying... Bit size threshold: $%x\r" , LONG_OFFSET_THRESHOLD);
+					u32 comp2mTotalBitsOut;
+					if (useRNZipMode)
+					{
+						CompressionE comp;
+						comp.Compress(input,inputSize,output,&outSize,10);
+						comp2mTotalBitsOut = comp.mTotalBitsOut;
+					}
+					else
+					{
+						Compression comp;
+						comp.Compress(input,inputSize,output,&outSize,10,1);
+						comp2mTotalBitsOut = comp.mTotalBitsOut;
+					}
+					if (comp2mTotalBitsOut < outBitSize)
+					{
+						printf("\nNew out bit size threshold: %d for threshold $%x\n" , comp2mTotalBitsOut , LONG_OFFSET_THRESHOLD);
+						outBitSize = comp2mTotalBitsOut;
+						bestThreshold = LONG_OFFSET_THRESHOLD;
+					}
+				}
+
+				LONG_OFFSET_THRESHOLD = bestThreshold;
+
+				if (useRNZipMode)
+				{
+					CompressionE comp;
+					comp.Compress(input,inputSize,output,&outSize,10);
+					outBitSize = comp.mTotalBitsOut;
+				}
+				else
+				{
+					Compression comp;
+					comp.Compress(input,inputSize,output,&outSize,10,1);
+					outBitSize = comp.mTotalBitsOut;
+				}
+
+				printf("\nFinal out bit size threshold: %d for threshold $%x\n" , outBitSize , LONG_OFFSET_THRESHOLD);
+			}
+
 			if (useRNZipMode)
 			{
 				CompressionE comp3;
 				comp3.Compress(input,inputSize,output,&outSize,10);
-				outBitSize = outSize*8;
+				outBitSize = comp3.mTotalBitsOut;
+
+				// This tries to optimise the compression choices even more by optionally trying each
+				// dictionary and literal choice one at a time to get the best output length.
+				if (enableShuffle)
+				{
+					printf("Compression stage: Shuffle\n");
+					size_t choiceIndex;
+					for (choiceIndex = 0 ; choiceIndex < comp3.mChoicesPos.size() ; /*Deliberate no incr*/)
+					{
+						printf("Considering pos %d/%d with len %d exceptions %d\r",choiceIndex,comp3.mChoicesPos.size(),outSize,comp3.mIgnoreChoicePos.size());
+						CompressionE comp2;
+						comp2.mIgnoreChoicePos = comp3.mIgnoreChoicePos;
+						comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
+						u32 outSize2;
+						u32 outBitSize2;
+						comp2.Compress(input,inputSize,output,&outSize2,10);
+						outBitSize2 = comp2.mTotalBitsOut;
+						if (outBitSize2 < outBitSize)
+						{
+							printf("\nGot size %d\n",outSize2);
+							printf("\nFound %d bits at pos %d/%d\n",outBitSize - outBitSize2,choiceIndex,comp3.mChoicesPos.size());
+							comp3.mIgnoreChoicePos = comp2.mIgnoreChoicePos;
+							comp3.mChoicesPos = comp2.mChoicesPos;
+							outBitSize = outBitSize2;
+							outSize = outSize2;
+							// loop and check again
+							continue;
+						}
+						choiceIndex++;
+					}
+
+					printf("Compression stage: Final\n");
+					// Final compress with the choices
+					comp3.Compress(input,inputSize,output,&outSize,10);
+				}
 			}
 			else
 			{
+				printf("Compression stage: First attempt\n");
 				Compression comp3;
 				comp3.Compress(input,inputSize,output,&outSize,10,1);
 				outBitSize = comp3.mTotalBitsOut;
-			}
 
-			// This tries to optimise the compression choices even more by optionally trying each
-			// dictionary and literal choice one at a time to get the best output length.
-			// It saves 149 bytes with C:\work\C64\CityGame\OriginalData.prg but takes ages.
-#if 0
-			size_t choiceIndex;
-			for (choiceIndex = 0 ; choiceIndex < comp3.mChoicesPos.size() ; /*Deliberate no incr*/)
-			{
-				printf("Considering pos %d/%d with len %d exceptions %d\r",choiceIndex,comp3.mChoicesPos.size(),outSize,comp3.mIgnoreChoicePos.size());
-				Compression comp2;
-				comp2.mIgnoreChoicePos = comp3.mIgnoreChoicePos;
-				comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
-				u32 outSize2;
-				u32 outBitSize2;
-				comp2.Compress(input,inputSize,output,&outSize2,10,1);
-				outBitSize2 = comp2.mTotalBitsOut;
-	//			printf("   Got size %d\n",outSize2);
-				if (outBitSize2 < outBitSize)
+				// This tries to optimise the compression choices even more by optionally trying each
+				// dictionary and literal choice one at a time to get the best output length.
+				// It saves 149 bytes with C:\work\C64\CityGame\OriginalData.prg but takes ages.
+				if (enableShuffle)
 				{
-					printf("\nFound %d bits at pos %d/%d\n",outBitSize - outBitSize2,choiceIndex,comp3.mChoicesPos.size());
-					comp3.mIgnoreChoicePos = comp2.mIgnoreChoicePos;
-					comp3.mChoicesPos = comp2.mChoicesPos;
-					outBitSize = outBitSize2;
-					outSize = outSize2;
-					// loop and check again
-					continue;
-				}
-				choiceIndex++;
-			}
+					printf("Compression stage: Shuffle\n");
+					size_t choiceIndex;
+					for (choiceIndex = 0 ; choiceIndex < comp3.mChoicesPos.size() ; /*Deliberate no incr*/)
+					{
+						printf("Considering pos %d/%d with len %d exceptions %d\r",choiceIndex,comp3.mChoicesPos.size(),outSize,comp3.mIgnoreChoicePos.size());
+						Compression comp2;
+						comp2.mIgnoreChoicePos = comp3.mIgnoreChoicePos;
+						comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
+						u32 outSize2;
+						u32 outBitSize2;
+						comp2.Compress(input,inputSize,output,&outSize2,10,1);
+						outBitSize2 = comp2.mTotalBitsOut;
+						if (outBitSize2 < outBitSize)
+						{
+							printf("\nGot size %d\n",outSize2);
+							printf("\nFound %d bits at pos %d/%d\n",outBitSize - outBitSize2,choiceIndex,comp3.mChoicesPos.size());
+							comp3.mIgnoreChoicePos = comp2.mIgnoreChoicePos;
+							comp3.mChoicesPos = comp2.mChoicesPos;
+							outBitSize = outBitSize2;
+							outSize = outSize2;
+							// loop and check again
+							continue;
+						}
+						choiceIndex++;
+					}
 
-			// Final compress with the choices
-			comp3.mEarlyOut = -1;
-			comp3.mEnableChoicesOutput = true;
-			comp3.Compress(input,inputSize,output,&outSize,10,1);
-#endif
+					printf("Compression stage: Final\n");
+					// Final compress with the choices
+					comp3.mEarlyOut = -1;
+					comp3.mEnableChoicesOutput = true;
+					comp3.Compress(input,inputSize,output,&outSize,10,1);
+				}
+			}
 		}
 
 #else
@@ -566,7 +851,23 @@ int main(int argc,char **argv)
 #error sC64DecompNoEffectMaxRLE_LauncherAddress_loadC64Code
 #endif
 
-			// The commented values are for the super expanded decompression code that makes $200-$fff available
+#if sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code
+#endif
+
+			// The commented values are for the super expanded decompression code that makes $200-$fff9 available
 			if (maxMode && useRLE)
 			{
 				outSize += 2;	//	For the 2 byte original size header
@@ -603,6 +904,38 @@ int main(int argc,char **argv)
 			else if (!maxMode && useRLE)
 			{
 				printf("!!RLE and non-max mode not supported!!\n");
+				exit(-1);
+			}
+			else if (useCompressionU && maxMode)
+			{
+				theC64Code = sC64DecompNoEffectMaxRNZipU_Data;
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipU_Data) + outSize;
+				sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipU_Data);
+				if (flashBorder)
+				{
+					theC64Code = sC64DecompBorderEffectMaxRNZipU_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRNZipU_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompBorderEffectMaxRNZipU_Data);
+				}
+
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
+				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+			}
+			else if (!maxMode && useCompressionU)
+			{
+				printf("!!CompressionU and non-max mode not supported!!\n");
 				exit(-1);
 			}
 			else if (useRNZipMode && maxMode)
@@ -781,7 +1114,15 @@ int main(int argc,char **argv)
 
 
 		u32 outDecomp;
-		if (useRNZipMode)
+		if (useCompressionU)
+		{
+			if (DecompressU(compressedDataStart,inputSize,output,&outDecomp))
+			{
+				printf("Problem during decompressionU\n");
+				exit(-1);
+			}
+		}
+		else if (useRNZipMode)
 		{
 			if (DecompressE(compressedDataStart,inputSize,output,&outDecomp))
 			{

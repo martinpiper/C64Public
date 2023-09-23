@@ -1,0 +1,15 @@
+!ifdef RNXPCompressionDecompress_WriteByteAddr { } else {
+RNXPCompressionDecompress_WriteByteAddr = $400
+}
+!ifdef RNXPCompressionDecompress_GetByteAddr { } else {
+RNXPCompressionDecompress_GetByteAddr = $401
+}
+
+; Setup zeropage indirect registers and their values
+; These are used with indirect addressing mode
+RNXPCompressionDecompress_WriteBytesmAddr	!word RNXPCompressionDecompress_WriteByteAddr
+RNXPCompressionDecompress_GetBytesmAddr		!word RNXPCompressionDecompress_GetByteAddr
+
+; These do not have to be in zeropage, but for speed they should be
+RNXPCompressionDecompress_TempWord1			!word 0
+RNXPCompressionDecompress_TempOffset		!word -1

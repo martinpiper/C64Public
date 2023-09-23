@@ -43,6 +43,10 @@ public:
 	 */
 	int Compress( const u8*src, u32 src_len,u8 *dst, u32 *dst_len,int level);
 
+	std::vector<u32> mChoicesPos;
+	std::set<u32> mIgnoreChoicePos;
+	int mTotalBitsOut;
+
 private:
 	// Bit buffering
 	void BitBufferWriteBits(void);
@@ -60,6 +64,7 @@ private:
 
 	void EncodeMatch(u32 len, const u32 offset);
 
+	int LiteralRunLength(u32 currentLitNum);
 	void EncodeLiteralRun(const u8 *litRun, u32 currentLitNum);
 
 	// Calculates the proposed match length in bits

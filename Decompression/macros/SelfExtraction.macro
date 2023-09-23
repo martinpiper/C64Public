@@ -1,0 +1,34 @@
+Given setup self extraction test memory using option "*"
+  Given I run the command line: ..\bin\LZMPi.exe -t $$fd00 $1 target\memory.prg target\memory-sfx.prg $$400
+
+  Given I have a simple overclocked 6502 system
+  And I start writing memory at $$fd00
+  And I write the following hex bytes
+    | f0 f1 f2 f3 f4 f5 f6 f7 |
+  And I start writing memory at $$04f8
+  And I write the following hex bytes
+    | f7 f6 f5 f4 f3 f2 f1 f0 |
+  And I am using C64 processor port options
+  Given add C64 hardware
+
+  And I load prg "target\memory-sfx.prg"
+
+
+
+
+Then test memory blocks
+  When I hex dump memory between $$fd00 and $$fd08
+  Then property "test.BDD6502.lastHexDump" must contain string "fd00: f0 f1 f2 f3 f4 f5 f6 f7"
+  When I hex dump memory between $$04f8 and $$0500
+  Then property "test.BDD6502.lastHexDump" must contain string "4f8: f7 f6 f5 f4 f3 f2 f1 f0"
+
+
+
+
+Then test self extraction works correctly
+  Then test memory blocks
+#  Given I enable trace
+  When I execute the procedure at 2061 for no more than 10000000 instructions until PC = $$400
+  Then test memory blocks
+  When save 6502 memory with two byte header from "$$500" to "$$fc00" to file "target/memoryAfter.prg"
+  Then assert that file "target/memory.prg" is binary equal to file "target/memoryAfter.prg"

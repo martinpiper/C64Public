@@ -1,0 +1,49 @@
+Given compressed test data
+  Given I run the command line: ..\bin\LZMPi.exe -cu "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp4" 2
+
+
+
+Given assemble DecompressU test
+  And I create file "target\test.a" with
+    """
+    !source "../stdlib/stdlib.a"
+    !to "target/test.prg", cbm
+    !sal
+    !sl "target/test.map"
+    !svl "target/test.lbl"
+    !cpu 6510
+    !ct pet
+    
+    !source "../stdlib/LongBranches.a"
+    
+    !macro RNXPCompressionIncBorder_A {}
+    
+    RNXPCompressionDecompress_WriteByteAddr = $$400
+    
+    ; This should be fine, ends near the end of memory
+    *=$$77ac
+    RNXPCompressionDecompress_GetByteAddr
+    !bin "c:\temp\t.cmp4",,2
+    
+
+    RNXPCompressionDecompressU_avoidTempInit = 1
+    *=$$f8
+    !source "DecompressionUVars.a"
+    !source "DecompressionU.a"
+    ;!source "DecompressionUReferenceLongOffset.a"
+    """
+  
+  Given I run the command line: ..\acme.exe -v4 target\test.a
+  And I load prg "target\test.prg"
+  And I load labels "target\test.map"
+  When enable remote debugging
+
+
+
+
+Then expect correct memory writes during decompression
+  Given load binary file "C:\temp\wizball_ocean_6389_min.prg" into temporary memory
+  And trim "2" bytes from the start of temporary memory
+
+  Then for memory from "$$400" to "$$ffff" expect writes at "$$400" with temporary memory
+  Then I execute the procedure at RNXPCompressionDecompressU until return

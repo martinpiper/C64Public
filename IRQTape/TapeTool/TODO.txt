@@ -2,6 +2,27 @@ TapeTool TODO file started 12 September 2012
 A tool to provide a command line interface that enables C64 format TAP files to be created with kernal and turbo data.
 ********************************************
 
+
+* Proper regression tests of TapeTool and loader combinations in emulator
+	Like the screenshot verification: "C:\work\c64\Scroller\features\VerifyByScreenshots.feature"
+		Can check for the loading screen being displayed correctly
+	Command line args:
+		-dszerogapdelay <value>
+			Set delay in cycles for a zero in the tap
+		-dsspeedtuning <value>
+			Set number of cycles added to each gap in the tap
+		-dstapewobble <value>
+			Set maximum random number of cycles added to each gap in the tap
+	break +2304
+	attach "foo.tap" 1
+	break 3f03
+
+	
+	
+
+
+
+
 * To handle higher turbo speeds, the decoding IRQ could CLI and ack the IRQ earlier, to allow for an overlapped IRQ
 	The temp storage would really need to be on the stack
 		The safety of code in longer execution paths would need to be sure that any newly decoded bits don't disturb their execution

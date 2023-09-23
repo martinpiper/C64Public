@@ -92,6 +92,7 @@ mainLoop
 ;	jsr DisplayData
 	jsr VectorHardwareInit
 	jsr VectorHardwareInitPalette
+
 ;	jsr Video_InitDisplaySpritesScrollsBackground
 
 	jsr Video_SetAddressVideoOverscanExtentRegisters
@@ -99,14 +100,28 @@ mainLoop
 ;	lda #$29	; A little wider on the left
 	sta CIA2PortBRS232
 
-;	lda #kVideo_EnableDisplay_Enable
-;	jsr Video_EnableDisplay
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+
+;	+WaitForFire_A
 
 	jsr Video_SetAddressMergeLayer
-	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Dither
+	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Dither | kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1
 	+MBus24Bit_Send8BitValue 0
 	+MBus24Bit_Send8BitValue 0
 	+MBus24Bit_Send8BitValue 0
+
+
+!if 1 {
+	; APU demo test...
+;	+WaitForFire_A
+	jsr SetupAPU
+;	+WaitForFire_A
+	jsr APU_Enable
+	+WaitForFire_A
+	jsr APU_ResetDisable
+	jsr VectorHardwareInit
+}
 
 	; 3D Test
 	jsr Transform_Init
@@ -117,12 +132,28 @@ mainLoop2
 	jsr Video_WaitVBlank
 	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_EBBS , kBus24Bit_VectorsScreen_Registers
 	+MBus24Bit_Send8BitValue 1
+
+	jsr Video_SetAddressMergeLayer
+	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Dither | kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
 	jsr renderFrame
 	jsr VectorPlot_drawSpansLo
+
+
 
 	jsr Video_WaitVBlank
 	+MBus24Bit_SetAddress_AXY kBus24Bit_VectorsScreen_EBBS , kBus24Bit_VectorsScreen_Registers
 	+MBus24Bit_Send8BitValue 0
+
+	jsr Video_SetAddressMergeLayer
+	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_DitherPhase | kBus24Bit_MergeLayer_Register_Control_Dither | kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+
 	jsr renderFrame
 	jsr VectorPlot_drawSpansHi
 
@@ -221,3 +252,148 @@ renderFrame
 !source "TransformTables.a"
 !source "3DModels.a"
 !source "BombJack/stdlib/HardwareTest.a"
+
+
+TotalAPU_Start
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Colour changes
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+
+!for .i , 10 {
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+}
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+.ystart = 135
+APUData_Start
+	!by $01
+
+	; Next RHRV to wait for
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , 0
+	+MAPUEmitChangePaletteIndex 0 ,  102 , 119 , 136
+
+	; Using the colours from VectorHardwareInitPalette
+	+MAPU_EmitWait 100 , .ystart
+	+MAPUEmitChangeBackgroundColour 129
+	+MAPU_EmitWait 239 , .ystart
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart
+	+MAPUEmitChangePaletteIndex 0 ,  136 , 119 , 136
+
+	+MAPU_EmitWait 101 , .ystart + 1
+	+MAPUEmitChangeBackgroundColour 130
+	+MAPU_EmitWait 238 , .ystart + 1
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 1
+	+MAPUEmitChangePaletteIndex 0 ,  153 , 119 , 136
+
+	+MAPU_EmitWait 102 , .ystart + 2
+	+MAPUEmitChangeBackgroundColour 131
+	+MAPU_EmitWait 237 , .ystart + 2
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 2
+	+MAPUEmitChangePaletteIndex 0 ,  170 , 119 , 136
+
+	+MAPU_EmitWait 103 , .ystart + 3
+	+MAPUEmitChangeBackgroundColour 132
+	+MAPU_EmitWait 236 , .ystart + 3
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 3
+	+MAPUEmitChangePaletteIndex 0 ,  187 , 119 , 136
+
+	+MAPU_EmitWait 104 , .ystart + 4
+	+MAPUEmitChangeBackgroundColour 133
+	+MAPU_EmitWait 235 , .ystart + 4
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 4
+	+MAPUEmitChangePaletteIndex 0 ,  204 , 119 , 136
+
+	+MAPU_EmitWait 105 , .ystart + 5
+	+MAPUEmitChangeBackgroundColour 134
+	+MAPU_EmitWait 234 , .ystart + 5
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 5
+	+MAPUEmitChangePaletteIndex 0 ,  221 , 119 , 136
+
+	+MAPU_EmitWait 106 , .ystart + 6
+	+MAPUEmitChangeBackgroundColour 135
+	+MAPU_EmitWait 233 , .ystart + 6
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 6
+	+MAPUEmitChangePaletteIndex 0 ,  238 , 119 , 136
+
+	+MAPU_EmitWait 107 , .ystart + 7
+	+MAPUEmitChangeBackgroundColour 136
+	+MAPU_EmitWait 232 , .ystart + 7
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 7
+	+MAPUEmitChangePaletteIndex 0 ,  255 , 119 , 136
+
+	+MAPU_EmitWait 108 , .ystart + 8
+	+MAPUEmitChangeBackgroundColour 137
+	+MAPU_EmitWait 230 , .ystart + 8
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 8
+	+MAPUEmitChangePaletteIndex 0 ,  255 , 98 , 118
+
+	+MAPU_EmitWait 109 , .ystart + 9
+	+MAPUEmitChangeBackgroundColour 138
+	+MAPU_EmitWait 229 , .ystart + 9
+	+MAPUEmitChangeBackgroundColour 0
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , .ystart + 9
+	+MAPUEmitChangePaletteIndex 0 ,  255 , 85 , 106
+
+APUData_End
+APUData_Size = APUData_End - APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+

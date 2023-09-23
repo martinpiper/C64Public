@@ -5,16 +5,20 @@ VIC2_Bank0	= $0000
 VIC2_Bank1	= $4000
 VIC2_Bank2	= $8000
 VIC2_Bank3	= $c000
+!ifndef STDLIB_OnlyAddresses {
 kSize_8K	= 8 * 1024
 kSize_16K	= 16 * 1024
 kVIC2NumSprites = 8
+}
 
 ; Zeropage
 
 ; Each enabled bit sets read and write on the processor port (ZPProcessorPort) otherwise the value can just be read.
 ; Default: $2F, %101111
 ZPProcessorPortDDR				= $00
+!ifndef STDLIB_OnlyAddresses {
 ProcessorPortDDRDefault			= %101111
+}
 
 ; Bits 0-2: Configuration for memory areas $A000-$BFFF, $D000-$DFFF and $E000-$FFFF. Values:
 ; %x00: RAM visible in all three areas.
@@ -28,12 +32,13 @@ ProcessorPortDDRDefault			= %101111
 ; Bit 5: Datasette motor control; 0 = On; 1 = Off.
 ; Default: $37, %110111
 ZPProcessorPort					= $01
+!ifndef STDLIB_OnlyAddresses {
 ProcessorPortDefault			= %110111
 ProcessorPortAllRAMWithIO		= %100101
 ProcessorPortAllRAM				= %100000
 ProcessorPortKERNALWithIO		= %100110
 ProcessorPortCharROMBASICKERNAL	= %110011
-
+}
 
 ; $02 - $06 are unused (apparently).
 
@@ -219,6 +224,7 @@ BASICTextPrint				= $ab1e
 
 
 ; KERNAL routines
+; Generally less safe to use than the standard entry points. But often used anyway.
 
 RND			= $e097
 RNDWithParam	= $e0be
@@ -230,6 +236,35 @@ KERNALBASICStartupMessages	= $e422
 CLRSCR		= $e544
 HEADERex	= $F76A
 
+KERNALTape_TimingAdjustment		= $f9d5
+
+KERNALVIC_DefaultValues = $ecb9
+
+
+KERNALInitIO = $fda3
+
+
+; Serial IO internals
+KERNALSerialBus_DelayOneMillisecond			= $eeb3
+KERNALSerialBus_SignalLowClock				= $ee85
+KERNALSerialBus_SignalHighClock				= $ee8e
+KERNALSerialBus_SignalLowData				= $ee97
+KERNALSerialBus_SignalHighData				= $eea0
+KERNALSerialBus_WaitSignalStable			= $eea9
+KERNALSerialBus_SendTALK					= $ed09
+KERNALSerialBus_SendTALKSecondaryAddress	= $edc7
+KERNALSerialBus_SendLISTEN					= $ed0c
+KERNALSerialBus_SendLISTENSecondaryAddress	= $edb9
+KERNALSerialBus_SendDataDeferred			= $eddd
+KERNALSerialBus_SendData					= $ed40
+KERNALSerialBus_SendUNTALK					= $edef
+KERNALSerialBus_SendUNLISTEN				= $edfe
+KERNALSerialBus_ReceiveData					= $ee13
+KERNALSerialBus_ClearATN					= $edbe
+
+
+; Standard entry points, hence the "standard" names
+; These generally use indirected jmp()
 ACPTR   = $FFA5
 CHKIN   = $FFC6
 CHKOUT  = $FFC9
@@ -356,12 +391,14 @@ VIC2SpriteXMSB					= $d010
 ; 6 1 = Extended background mode on
 ; 7 Read: Current raster line position bit 9. Write: Bit 9 of raster line position to generate next interrupt.
 ; Default: $1b, %00011011
+!ifndef STDLIB_OnlyAddresses {
 kVIC2ScreenControlVBits_25Rows		= %00001000
 kVIC2ScreenControlVBits_ScreenOn	= %00010000
 kVIC2ScreenControlVBits_Bitmap		= %00100000
 kVIC2ScreenControlVBits_Extended	= %01000000
 kVIC2ScreenControlVBits_RasterHi	= %10000000
 VIC2ScreenControlVDefault		= %00011011
+}
 VIC2ScreenControlV				= $d011
 
 ; Read: Current raster line position.
@@ -381,13 +418,17 @@ VIC2SpriteEnable				= $d015
 ; 4 1 = Multicolour on
 ; 5-7 Unused
 ; Default: $c8, %11001000
+!ifndef STDLIB_OnlyAddresses {
 kVIC2ScreenControlHBits_40Columns	= %1000
 kVIC2ScreenControlHBits_Multicolour	= %10000
 VIC2ScreenControlHDefault		= %11001000
+}
 VIC2ScreenControlH				= $d016
 
+!ifndef STDLIB_OnlyAddresses {
 VIC2ScreenCharsWidth			= 40
 VIC2ScreenCharsHeight			= 25
+}
 
 ; Each bit sets the double height enable for each sprite.
 VIC2SpriteDoubleHeight			= $d017
@@ -400,13 +441,17 @@ VIC2SpriteDoubleHeight			= $d017
 ; Bit 3 Bitmap memory location * $2000 (8192) inside current VIC bank selected by $dd00.
 ; Bits 4-7 Screen memory location * $0400 (1024)  inside current VIC bank selected by $dd00.
 ; Default: $15, %00010101
+!ifndef STDLIB_OnlyAddresses {
 VIC2MemorySetupDefault			= %00010101
+}
 VIC2MemorySetup					= $d018
 
+!ifndef STDLIB_OnlyAddresses {
 VIC2MemorySetup_BitmapSize		= $2000
 VIC2MemorySetup_CharsSize		= $800
 VIC2MemorySetup_ScreenSize		= $400
 VIC2MemorySetup_SpriteSize		= $40
+}
 
 !macro MVIC2SpriteIndex_A .address {
 	lda #(.address & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
@@ -482,6 +527,7 @@ VIC2Sprite5Colour				= $d02c
 VIC2Sprite6Colour				= $d02d
 VIC2Sprite7Colour				= $d02e
 
+!ifndef STDLIB_OnlyAddresses {
 ; The colour values
 VIC2Colour_Black		= 0
 VIC2Colour_White		= 1
@@ -508,7 +554,6 @@ VIC2Multicolour_Purple	= 12
 VIC2Multicolour_Green	= 13
 VIC2Multicolour_Blue	= 14
 VIC2Multicolour_Yellow	= 15
-
 
 ; Other constant values related to the VIC2
 ; Unexpanded sprite sizes
@@ -538,6 +583,8 @@ VIC2SpriteYBorderTop = 50
 VIC2SpriteYBorderTop24 = 54
 ; The bottom most position for a 25 row screen where the sprite is completely hidden by the border
 VIC2SpriteYBorderBottom = 250
+
+} ; <!ifndef STDLIB_OnlyAddresses
 
 
 ; SID Audio chip
@@ -658,7 +705,7 @@ SIDVoice3ADSROutput				= $d41c		; Read only
 
 
 ; CIA1
-
+!ifndef STDLIB_OnlyAddresses {
 JoystickBits_Up		= %1
 JoystickBits_Down	= %10
 JoystickBits_Left	= %100
@@ -666,6 +713,7 @@ JoystickBits_Right	= %1000
 JoystickBits_Fire	= %10000
 
 JoystickBits_AllDirections = JoystickBits_Up | JoystickBits_Down | JoystickBits_Left | JoystickBits_Right
+}
 
 ; Port A read:
 ; Bit 0: 0 = Port 2 joystick up pressed.
@@ -759,6 +807,7 @@ CIA1TimerBControl				= $dc0f
 ; Bit 6: Serial bus CLOCK IN; 0 = High; 1 = Low.
 ; Bit 7: Serial bus DATA IN; 0 = High; 1 = Low.
 CIA2PortASerialBusVICBank		= $dd00		; 56576
+!ifndef STDLIB_OnlyAddresses {
 kCIA2PortASerialBusVICBankBits_BankMask = %11
 CIA2PortASerialBusVICBank_Bank0	= %11
 CIA2PortASerialBusVICBank_Bank1	= %10
@@ -766,6 +815,7 @@ CIA2PortASerialBusVICBank_Bank2	= %01
 CIA2PortASerialBusVICBank_Bank3	= %00
 CIA2PortASerialBusVICBankDefault= CIA2PortASerialBusVICBank_Bank0
 CIA2PortASerialBusVICBankMask	= $3fff
+}
 
 
 ; Read bits:
@@ -846,13 +896,17 @@ MemoryMappedIOArea1					= $de00
 MemoryMappedIOArea2					= $df00
 
 ; Constants
+!ifndef STDLIB_OnlyAddresses {
 CyclesPerSecondPALC64	= 985248
 CyclesPerRasterPALC64	= 63
 RasterLinesPALC64		= 312
+RasterLengthPALC64		= 504
 
+CyclesPerSecondNTSCC64	= 1022727
 CyclesPerRasterNTSCC64	= 65
-
-
+RasterLinesNTSCC64		= 263
+RasterLengthNTSCC64		= 520
+}
 
 
 ; Useful code fragments
@@ -1257,8 +1311,10 @@ CyclesPerRasterNTSCC64	= 65
 	} else {
 	.realCycles = .cycles
 	}
-	!for .i , (.realCycles/2) {
-	nop
+	!if .realCycles >= 2 {
+		!for .i , (.realCycles/2) {
+		nop
+		}
 	}
 }
 
@@ -1431,6 +1487,13 @@ CyclesPerRasterNTSCC64	= 65
 .o1
 }
 
+!macro MIncZPAddrWord .word {
+	inc+1 .word
+	bne .o1
+	inc+1 .word+1
+.o1
+}
+
 
 !macro MAddAToAddr16 .lo , .hi {
 	clc
@@ -1565,7 +1628,7 @@ CyclesPerRasterNTSCC64	= 65
 	lda .val1
 }
 
-!macro MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi {
+!macro MAdd8STo16SCommon .val2Lo , .val2Hi {
 	bpl .pos
 	dey	; Now neg sign
 .pos
@@ -1579,13 +1642,13 @@ CyclesPerRasterNTSCC64	= 65
 
 !macro MAdd8STo16S .val1 , .val2Lo , .val2Hi {
 	+MAdd8STo16SCommonPre .val1 , .val2Lo , .val2Hi
-	+MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi
+	+MAdd8STo16SCommon .val2Lo , .val2Hi
 }
 
 !macro MAdd8STo16SWithZeroCheck .val1 , .val2Lo , .val2Hi {
 	+MAdd8STo16SCommonPre .val1 , .val2Lo , .val2Hi
 	beq .end
-	+MAdd8STo16SCommon .val1 , .val2Lo , .val2Hi
+	+MAdd8STo16SCommon .val2Lo , .val2Hi
 .end
 }
 

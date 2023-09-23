@@ -13,7 +13,7 @@
 		https://opengameart.org/content/forest-tiles
 
 	Map editors: https://www.mapeditor.org/2020/04/14/tiled-1-3-4-released.html
-		C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe
+		C:\Downloads\tiled-windows-64bit-snapshot\tiled.exe
 		Supports flips, allows export as large image
 	https://ogmoeditor.itch.io/editor
 	
@@ -668,3 +668,29 @@
 		Validate generated frames
 			cd /d C:\work\BombJack\output
 			compareimages.bat 180
+
+
+
+
+
+* Demo9 some purple pixels background
+	Might be the option to convert the chars without a transparent colour and then not have a background colour?
+	>> Added Video_PalettesColour0ClearTo
+	>> Added: "; Clear the last transparent background colour to black"
+
+
+
+
+* Demo9: Use the extra chars layer to display an extra layer of metal/grid work over the background. From the demo7 assets, but very sparse.
+	Current EBBS memory map:
+		01	Video
+		02	APU
+		04	Audio
+		08	Sprites2
+		10	Sprites
+		20	Chars planes
+		40	Tiles planes
+		80	Chars screens
+		80	Tiles screen
+	* This will need more precise memory decoding for the hardware and emulation
+	>> "C:\Downloads\tiled-windows-64bit-snapshot\tiled.exe"

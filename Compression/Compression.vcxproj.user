@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-hex C:\Work\BombJack\output\DebugAudioOutput.txt c:\temp\t.bin 3 4</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-cu C:\Work\C64\Decompression\target\memory.prg c:\temp\t.cmp 2</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-de "C:\Users\Martin Piper\Downloads\mama_llama_comp.prg" c:\temp\t.prg</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-cu C:\Work\C64\Decompression\target\memory.prg c:\temp\t.cmp 2</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

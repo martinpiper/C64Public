@@ -39,6 +39,15 @@
     <ClInclude Include="DecompressE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CompressU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DecompressU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CompressUInternals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Compress.cpp">
@@ -60,6 +69,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DecompressE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CompressU.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DecompressU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,6 +146,21 @@
       <Filter>asm</Filter>
     </None>
     <None Include="..\stdlib\stdlib.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\features\CheckFiles.feature">
+      <Filter>features</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionU.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression4U.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionUVars.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionUReferenceLongOffset.a">
       <Filter>asm</Filter>
     </None>
   </ItemGroup>

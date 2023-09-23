@@ -1,0 +1,20 @@
+; TODO
+; C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe
+; -moncommands C:\work\c64\IRQDisk\TestIRQDisk.lbl -drive8wobble 0 +autostart-delay-random -remotemonitor -truedrive C:\Work\C64\IRQDisk\test.d64
+; -moncommands TestIRQDisk.lbl -drive8wobble 0 +autostart-delay-random -remotemonitor -truedrive test.d64
+
+; "C:\Users\Martin Piper\Downloads\hoxs64_x64_1_1_2_3\hoxs64.exe" -runfast -autoload c:\work\c64\IRQDisk\test.d64
+
+; New Vice
+; "C:\Users\Martin Piper\Downloads\GTK3VICE-3.7.1-win32-r43776\GTK3VICE-3.7.1-win32-r43776\bin\x64sc.exe" -drive8wobbleamplitude 0 +autostart-delay-random -remotemonitor -drive8truedrive C:\Work\C64\IRQDisk\test.d64
+
+
+* Usage of ".serialBitPairToRealBitPair,x" could be optimised by assuming certain bits are always set/clear and truncating the table appropriately and using ".serialBitPairToRealBitPair-something,x"
+
+
+
+
+* Use real 1541, write disk, test by sending over new prg
+	Avoids the broken keyboard and booting the disk
+
+

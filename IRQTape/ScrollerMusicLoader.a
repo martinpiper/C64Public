@@ -157,6 +157,8 @@ MainSecondLoaderStart
 	cmp #.yposSplit
 	bcc .s00
 
+.rasterTestDone1
+
 	lda CIA2PortASerialBusVICBank
 	and #kCIA2PortASerialBusVICBankBits_BankMask
 	cmp #CIA2PortASerialBusVICBank_Bank0

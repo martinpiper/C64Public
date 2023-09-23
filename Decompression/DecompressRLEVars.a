@@ -15,6 +15,7 @@ RNXPCompressionDecompress_WriteBytesmAddr = RNXPCompressionDecompress_WriteByte 
 	rts
 
 RNXPCompressionDecompress_GetByte	lda RNXPCompressionDecompress_GetByteAddr
+RNXPCompressionDecompress_GetBytesmAddr = RNXPCompressionDecompress_GetByte + 1
 	inc RNXPCompressionDecompress_GetByte+1
 	bne .e2
 	inc RNXPCompressionDecompress_GetByte+2

@@ -3,7 +3,7 @@
 #include "common.h"
 
 /**
- * Decompresses memory compressed with Compress
+ * Decompresses memory compressed with CompressE
  * \param source the source memory pointer
  * \param sourceLen the size of the source memory buffer
  * \param dest the destination memory buffer

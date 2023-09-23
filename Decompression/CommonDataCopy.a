@@ -14,3 +14,5 @@ NOTE_EndOfMemoryMinus256		sta EndOfMemory-$100,x
 	; Copy a bit extra beyond the start so we don't have to mess around with the partial block logic
 	cmp #(>CompressedDataStart)-2
 	bne .cp2
+
+CommonDataCopy_End

@@ -34,3 +34,19 @@ IRQDisk_MachineTypeC128		= 8
 ; Choose the 2 bit ATN mode burst transfer, only works with one drive connected.
 ; As of 1st October 2008 this only works on a real C64 or Hoxs64.
 ;IRQDisk_UseATN = 1
+
+
+
+; Define performance or behaviour used by the C64 and drive code
+IRQDisk_C64FirstBurstReadDelay = 6
+
+IRQDisk_DriveSendBurstDriveCalculationTimeFirst = 12
+IRQDisk_DriveSendBurstDriveCalculationTimeRest = 12
+IRQDisk_DriveSendBurstDriveCalculationTimeLast = 12
+
+IRQDisk_DriveSendBurstC64CalculationTimeFirst = 0
+IRQDisk_DriveSendBurstC64CalculationTimeRest = 0
+IRQDisk_DriveSendBurstC64CalculationTimeLast = 6
+
+IRQDisk_C64ToBurstGuardTime = 6
+IRQDisk_C64FromBurstGuardTime = 6

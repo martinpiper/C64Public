@@ -12,6 +12,18 @@
 ; After saving, note purple border and cyan raster
 ; Press fire - Note "formula too complex" error, indicating a RTS back to BASIC(ish)
 
+; A good way to develop or optimise code is to enable "IRQDisk_NoScreenNoIRQ" first. Make sure optimisations work without worrying about instability.
+; Then disable "IRQDisk_NoScreenNoIRQ" then tweak IRQDisk_SafeRasters to make the code stable again.
+
+; Current using IRQDisk_DebugElapsedTime no IRQDisk_DebugRepeatLoads, time from .repeatLoad to JAM:
+; break .repeatLoad then sw reset, then when JAM, use sw
+; 1 bit screen on:								2872209
+; IRQDisk_UseATN with screen and IRQ enabled:	2707479
+; IRQDisk_UseATN no screen:						2299032
+; 1-bit minus 2-bit screen on:	164730
+; 2-bit screen on div 1-bit:		0.9426469313340359
+; 2-bit screen off div 1-bit:		0.8004403579265994
+
 
 !source "../stdlib/stdlib.a"
 !to "TestIRQDisk.prg", cbm
@@ -26,38 +38,39 @@
 IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
 IRQDisk_Retries = 5
 IRQDisk_LEDFlash = 15
-;IRQDisk_UseATN = 1
+IRQDisk_UseATN = 1
+;IRQDisk_UseATNACK = 1
+
+; Enable this to disable the screen
+;IRQDisk_NoScreenNoIRQ = 1
 
 ; Enable this to cause timing debug code to run instead. It helps show timings for 2 bit transfer.
 ;IRQDisk_DebugTimings = 1
 
 ; Enable this to use the JAM opcode and remove joystick fire waits. Stop the save from happening. Useful for timing the loading speed.
 ; Remember to use this Vice command line option to stop random delays on boot: -drive8wobble 0 +autostart-delay-random
-;IRQDisk_DebugElapsedTime = 1
-; Current:
-; 12972074
+IRQDisk_DebugElapsedTime = 1
+
+; Enable this to repeatedly execute the loads, removes the JAM from IRQDisk_DebugElapsedTime, easier to debug with IRQDisk_DebugElapsedTime
+; Also good for soak tests
+IRQDisk_DebugRepeatLoads = 1
 
 ; This enables a test of data transfer on the rising edge of the clock line. It can be clocked twice as fast as the normal transfer when the screen and IRQs are disabled.
 ; Rising egde of the clock means the timing on the C64 side is not so tight and can cope with some wobble.
 ;IRQDisk_TestClockedTransfer = 1
 
 
-!if 0 {
-!source "../stdlib/BASICEntry900.a"
-
-*=BASICEntry
-	lda #ProcessorPortAllRAMWithIO
-	jsr InitialiseMachine
-.l1
-	inc VIC2BorderColour
-	jmp .l1
+; Choose border effects
+IRQDisk_UpdateRegisterOnIdle = VIC2BorderColour
+IRQDisk_UpdateRegisterOnData = VIC2BorderColour
+IRQDisk_UpdateRegisterOnDataStore = VIC2BorderColour
 
 
-!source "../stdlib/Initialise.a"
-}
+TestIteration = $200
+TestIterationBreakAt = $2b2
 
-* = $c000
-	lda #ProcessorPortDefault
+* = $8000
+	lda #ProcessorPortKERNALWithIO
 	jsr InitialiseMachine
 	+InitKERNALIO_AXY
 	+SetDefaultScreen_A
@@ -90,10 +103,16 @@ IRQDisk_LEDFlash = 15
 	iny
 	jmp .ll1
 .dojam jam
+	!tx "error in clock"
 }
 
-;	lda #0
-;	sta VIC2ScreenControlV
+	; Make sure there are no bad lines, needed for testing highly synchronised drive code
+!ifdef IRQDisk_NoScreenNoIRQ {
+	lda #0
+	sta VIC2ScreenControlV
+}
+
+	+MWordValueToAddress_A 0 , TestIteration
 
 !ifdef IRQDisk_DebugTimings {
 .l1
@@ -153,27 +172,62 @@ IRQDisk_LEDFlash = 15
 	rts
 }
 
+!ifndef IRQDisk_NoScreenNoIRQ {
 	jsr InitIRQ
+}
 
+.repeatLoad
 !ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+
+	; If things go wrong, this helps repeat the test iteration
+	+MIncAddr16 TestIteration , TestIteration+1
+
+!ifdef TestIterationBreakAt {
+	lda TestIteration
+	cmp #<TestIterationBreakAt
+	bne .nope1
+	lda TestIteration+1
+	cmp #>TestIterationBreakAt
+	bne .nope1
+.bph1
+	nop
+.nope1
 }
 
 	lda #.nameTestEnd-.nameTest
 	ldx #<.nameTest
 	ldy #>.nameTest
 	jsr IRQDisk_Load
+	jsr ValidateScreenWithExpected1
 
 	inc VIC2BorderColour
 
 !ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+
+	; If things go wrong, this helps repeat the test iteration
+	+MIncAddr16 TestIteration , TestIteration+1
+
+!ifdef TestIterationBreakAt {
+	lda TestIteration
+	cmp #<TestIterationBreakAt
+	bne .nope2
+	lda TestIteration+1
+	cmp #>TestIterationBreakAt
+	bne .nope2
+.bph2
+	nop
+.nope2
 }
 
 	lda #.nameTest2End-.nameTest2
 	ldx #<.nameTest2
 	ldy #>.nameTest2
 	jsr IRQDisk_Load
+	jsr ValidateScreenWithExpected2
 
 	inc VIC2BorderColour
 
@@ -181,8 +235,40 @@ IRQDisk_LEDFlash = 15
 	+WaitForFire_A
 }
 
+	; If things go wrong, this helps repeat the test iteration
+	+MIncAddr16 TestIteration , TestIteration+1
+
+!ifdef TestIterationBreakAt {
+	lda TestIteration
+	cmp #<TestIterationBreakAt
+	bne .nope3
+	lda TestIteration+1
+	cmp #>TestIterationBreakAt
+	bne .nope3
+.bph3
+	nop
+.nope3
+}
+
+	lda #.nameTest3End-.nameTest3
+	ldx #<.nameTest3
+	ldy #>.nameTest3
+	jsr IRQDisk_Load
+	jsr ValidateScreenWithExpected3
+
+	inc VIC2BorderColour
+
+!ifndef IRQDisk_DebugElapsedTime {
+	+WaitForFire_A
+}
+
+!ifdef IRQDisk_DebugRepeatLoads {
+	jmp .repeatLoad
+}
+
 !ifdef IRQDisk_DebugElapsedTime {
 	jam
+	!tx "ok"
 }
 
 !if 1 {
@@ -209,6 +295,8 @@ IRQDisk_LEDFlash = 15
 .nameTestEnd = *
 .nameTest2 !raw "SCREEN2"
 .nameTest2End = *
+.nameTest3 !raw "SCREEN3"
+.nameTest3End = *
 
 .nameTestSave !raw "TESTSAVE"
 .nameTestSaveEnd = *
@@ -232,7 +320,7 @@ TestIRQ
 	pla
 	tax
 	pla
-	jmp DefaultIRQServiceRoutine
+	jmp MinimalIRQServiceRoutine
 
 InitIRQ
 	sei
@@ -246,8 +334,12 @@ InitIRQ
 	lda #>TestIRQ
 	sta IRQServiceRoutineHi
 	; Raster position
-	lda #152
-	sta VIC2Raster
+	ldx #152
+	stx VIC2Raster
+!ifdef IRQDisk_UseATN {
+	jsr IRQDisk_MarkUnsafeRaster
+}
+
 	lda VIC2ScreenControlV
 	and #$7f
 	sta VIC2ScreenControlV
@@ -279,3 +371,77 @@ InitIRQ
 ;}
 
 !source "../stdlib/Initialise.a"
+
+
+ExpectedData1
+	!bin "screen1.prg",,2
+
+ExpectedData2
+	!bin "screen1.prg",$132,2
+	!bin "screen2.prg",,2
+	!bin "screen1.prg",,2 + $366
+
+!zn
+ValidateScreenWithExpected1
+	ldx #0
+.cl1
+	lda SCREENRAM+$000,x
+	cmp ExpectedData1+$000,x
+	bne .error
+	lda SCREENRAM+$100,x
+	cmp ExpectedData1+$100,x
+	bne .error
+	lda SCREENRAM+$200,x
+	cmp ExpectedData1+$200,x
+	bne .error
+	lda SCREENRAM+$2e8,x
+	cmp ExpectedData1+$2e8,x
+	bne .error
+	inx
+	bne .cl1
+	rts
+
+ValidateScreenWithExpected2
+	ldx #0
+.cl2
+	lda SCREENRAM+$000,x
+	cmp ExpectedData2+$000,x
+	bne .error
+	lda SCREENRAM+$100,x
+	cmp ExpectedData2+$100,x
+	bne .error
+	lda SCREENRAM+$200,x
+	cmp ExpectedData2+$200,x
+	bne .error
+	lda SCREENRAM+$2e8,x
+	cmp ExpectedData2+$2e8,x
+	bne .error
+	inx
+	bne .cl2
+	rts
+
+ValidateScreenWithExpected3
+	+MWordValueToAddressLoHi_A SCREENRAM , .sm1+1 , .sm1+2
+	ldx #0
+.cl3
+	; Should be this repeating pattern
+	txa
+.sm1	cmp SCREENRAM,x
+	bne .error
+	inx
+	bne .cl3
+	inc .sm1+2
+	lda .sm1+2
+	cmp #$74
+	bne .cl3
+	rts
+
+.error
+	jam
+	!tx "error in data"
+
+;!if * >= VIC {
+!if * >= BASICROM {
+	!error "Code too large"
+}
+

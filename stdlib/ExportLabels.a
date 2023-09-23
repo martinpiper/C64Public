@@ -1,0 +1,19 @@
+; This includes default labels from the various stdlib files and exports them into a static known place
+; ..\acme.exe -v9 ExportLabels.a
+; Could be used by:
+; copy /y c:\temp\ExportLabels.lbl + c:\work\c64\stdlib\BreakSerialBus.txt c:\temp\t.lbl
+; C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor -moncommands c:\temp\t.lbl
+
+STDLIB_OnlyAddresses = 1.0	; Using a floating point value stops this label being exported to the labels file
+!source "stdlib.a"
+!to "..\..\..\Temp\t.prg", cbm
+!sal
+!svl "..\..\..\Temp\ExportLabels.lbl"
+!pdb "..\..\..\Temp\ExportLabels.pdb"
+!cpu 6510
+!ct pet
+!initmem 0
+
+
+* = $800
+rts

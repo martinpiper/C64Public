@@ -1,10 +1,29 @@
 ; TODO
 
+* Option for how many players per side before the game starts
+
+
+
+
+* Option for two or more human players on the same team, or opposing teams
+	User port extender for joysticks?
+
+
+
+
+
+* When holding down fire while running without the ball, to control the ball once the player moves into it, the power stays at minimum.
+	Only when controlling the ball does the power increase.
+	This allows the player to get into a rhythm of timing the release after controlling the ball for a good shot power
+
+
+
+
 * Properly limit AI running players count, based on those actually moving, to preserve frame time
 
 
 
-* Controlling player arrow could do with indicating where the player is off screen. For example point up, down, left, or right depnding on where the player is off screen
+* Controlling player arrow could do with indicating where the player is off screen. For example point up, down, left, or right depending on where the player is off screen
 	The signs from "Player_Multiplex_YPosHi + .i" and "Multiplex_XPosHi + .i + 1" can be used
 
 
@@ -14,3 +33,21 @@
 
 
 * When attacking, move the target positions towards the opposition goal based on the ball position
+
+
+
+
+* Players that are on the left hand edge of the pitch do not kick the ball to the left, same for the right edge
+	Instead they aim for a point above or below the ball until they are on the opposite side, then move vertically onto the ball
+	
+
+
+
+* Players when they have the ball try to find the other player with the most space
+	Players away from the goal have an increasing space adjustment value
+	This will tend to make players pass to a player with space towards the goal
+
+
+
+
+* When near the goal, shoot towards the goal

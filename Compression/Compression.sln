@@ -5,6 +5,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Compression", "Compression.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BinToC", "..\BinToC\BinToC.vcxproj", "{0EB011DB-69D2-4C45-A656-69607332D66F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestCompression", "TestCompression\TestCompression.vcxproj", "{79BC7420-B68D-4F96-A6F3-A9BC4ECE85E7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F9963956-F92D-4977-98AD-92EC722A7ED5} = {F9963956-F92D-4977-98AD-92EC722A7ED5}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +24,10 @@ Global
 		{0EB011DB-69D2-4C45-A656-69607332D66F}.Debug|Win32.Build.0 = Debug|Win32
 		{0EB011DB-69D2-4C45-A656-69607332D66F}.Release|Win32.ActiveCfg = Release|Win32
 		{0EB011DB-69D2-4C45-A656-69607332D66F}.Release|Win32.Build.0 = Release|Win32
+		{79BC7420-B68D-4F96-A6F3-A9BC4ECE85E7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{79BC7420-B68D-4F96-A6F3-A9BC4ECE85E7}.Debug|Win32.Build.0 = Debug|Win32
+		{79BC7420-B68D-4F96-A6F3-A9BC4ECE85E7}.Release|Win32.ActiveCfg = Release|Win32
+		{79BC7420-B68D-4F96-A6F3-A9BC4ECE85E7}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

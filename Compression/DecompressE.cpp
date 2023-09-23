@@ -57,10 +57,11 @@ int DecompressE( const u8 * source, u32  sourceLen,u8 * dest, u32 * destLen )
 			theBit = MGetNextBit();
 
 			workOffset = (workOffset<<1) | theBit;
-			if (workOffset >= 0x100000)
-			{
-				break;
-			}
+			// While the 6502 code does escape early (by noticing the high bit carry shift), this code does not escape early since the input buffer pointer (curLen) is used for validation
+//			if (workOffset >= 0x100000)
+//			{
+//				break;
+//			}
 
 			theBit = MGetNextBit();
 			if (theBit)

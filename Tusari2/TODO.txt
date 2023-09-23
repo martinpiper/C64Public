@@ -1,11 +1,17 @@
 * C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor %cd%\Scroller.crt
 * For editing the levels: "C:\work\c64\ExternalTools\CharPad Free Edition 2.7.2\CharPad.exe"
-* For editing enemy placement: "C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe"
+* For editing enemy placement: "C:\Downloads\tiled-windows-64bit-snapshot\tiled.exe"
 	Open TMX files: "C:\Work\C64\Tusari2\exported assets\Level1.tmx"
-	Or use command line: "C:\Users\Martin Piper\Downloads\tiled-windows-64bit-snapshot\tiled.exe" "C:\Work\C64\Tusari2\exported assets\Level1.tmx"
+	Or use command line: "C:\Downloads\tiled-windows-64bit-snapshot\tiled.exe" "C:\Work\C64\Tusari2\exported assets\Level1.tmx"
 * For editing the score panel: "C:\Work\C64\ExternalTools\CharPad 2.0 310715\CharPad.exe"
 * For editing sprites: "C:\work\c64\ExternalTools\SpritePad v2b1\SpritePad.exe"
 * For editing music and sound effects: "C:\Work\C64\MusicStudio2\MusicStudio\Release\MusicStudio.exe"
+
+
+
+* When falling against a vertical edge to the right of the player, without jump pressed...
+	>> Then if left and jump are pressed (and the edge is detected) then start a slightly smaller jump than the main jump?
+	Like an edge grab jump...
 
 
 

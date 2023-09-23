@@ -1,5 +1,198 @@
 -- TODO
 
+* Should mIgnoreChoicePos cause the calculated choice to be inverted?
+
+
+
+
+* Are all relevant dictionary entries created during data scanning and run length encoding output?
+	Ideally at least the last run length item should be added to the dictionary as it is the closest one.
+	>> // Why does doing this extra DictionaryAdd cause the compression size to get worse?
+		Doesn't this indicate Compression::DictionaryFindMatch is not returning optimal matches?
+			Also printf("Freeing dictionary block\n"); isn't triggering
+	>> -c64b "C:\temp\wizball_ocean_6389_min.prg" "C:\temp\wizball_ocean_6389_min_lzmpi.prg" $6389
+		Input length = $f900 output length = $9297
+	>> Why is this: int proposedBitLength = (proposedMatchLen * 9) - proposedBits - 2;
+		Producing: output length = $926b
+		Instead of: int proposedBitLength = (proposedMatchLen * 9) - proposedBits;
+			The first in the file... The second one on its own is also producing the same result
+		> Can it be another permutation option?
+	* This isn't actually producing any savings...: // Do the forward match test
+		Is it broken?
+	>> Surely for: // This forward match test takes some extra time
+		The real test is, does this point in the file result in smaller size compared to the other?
+		** This produced a better result: // Test the compression ratio for the portion being encoded
+				New: Input length = $f900 output length = $90a8
+				Old: Input length = $f900 output length = $90d9
+			Than the other: // Figure out if it is shorter (in terms of bits saved to the file) to skip the first match and encode using this second try instead
+			>> gXPCompressionTweak* permutations have no effect at all
+			Create a proper unit test that uses several files.
+				Compress each file with various options, make sure to note the size of each, that they do not get bigger
+			>> Interesting to note that with the ratio check and using -o2 -o3 it produced almost the same size ($8ffa compared to old $8ffb 1 byte diff) compared to without the ratio check with -o1 -o2 -o3
+				So the ratio check seems equivalent to -o1 but much less time
+				But using: -o2 -o3 -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+					There are still decision points that get ignored...
+						-o2 -c "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp" 2
+							Compression stage: Final1 with len 36894 exceptions 120
+							Ignoring at 509 - currentLitNum 0 matchLen 4 matchOffset 9
+							Ignoring at 1733 - currentLitNum 0 matchLen 3 matchOffset 134
+							Ignoring at 2570 - currentLitNum 0 matchLen 6 matchOffset 191
+							Ignoring at 3063 - currentLitNum 0 matchLen 3 matchOffset 24
+							Ignoring at 3123 - currentLitNum 2 matchLen 7 matchOffset 16
+							Ignoring at 6222 - currentLitNum 4 matchLen 4 matchOffset 10
+							Ignoring at 6588 - currentLitNum 4 matchLen 2 matchOffset 1
+							Ignoring at 6696 - currentLitNum 1 matchLen 3 matchOffset 1536
+							Ignoring at 7098 - currentLitNum 0 matchLen 3 matchOffset 224
+							Ignoring at 7330 - currentLitNum 0 matchLen 3 matchOffset 19
+							Ignoring at 7519 - currentLitNum 4 matchLen 3 matchOffset 2411
+							Ignoring at 8607 - currentLitNum 2 matchLen 7 matchOffset 5936
+							Ignoring at 8637 - currentLitNum 0 matchLen 3 matchOffset 1043
+							Ignoring at 8748 - currentLitNum 1 matchLen 4 matchOffset 6002
+							Ignoring at 9422 - currentLitNum 0 matchLen 4 matchOffset 477
+							Ignoring at 9464 - currentLitNum 0 matchLen 6 matchOffset 60
+							Ignoring at 9509 - currentLitNum 8 matchLen 2 matchOffset 339
+							Ignoring at 9657 - currentLitNum 2 matchLen 4 matchOffset 596
+							Ignoring at 10986 - currentLitNum 0 matchLen 5 matchOffset 1304
+							Ignoring at 13161 - currentLitNum 0 matchLen 2 matchOffset 121
+							Ignoring at 13211 - currentLitNum 0 matchLen 3 matchOffset 2311
+							Ignoring at 13392 - currentLitNum 1 matchLen 6 matchOffset 2746
+							Ignoring at 13493 - currentLitNum 0 matchLen 5 matchOffset 3826
+							Ignoring at 15500 - currentLitNum 5 matchLen 7 matchOffset 24
+							Ignoring at 15689 - currentLitNum 0 matchLen 2 matchOffset 18
+							Ignoring at 16041 - currentLitNum 0 matchLen 2 matchOffset 196
+							Ignoring at 19016 - currentLitNum 3 matchLen 2 matchOffset 138
+							Ignoring at 19080 - currentLitNum 1 matchLen 3 matchOffset 312
+							Ignoring at 19530 - currentLitNum 3 matchLen 3 matchOffset 340
+							Ignoring at 21150 - currentLitNum 11 matchLen 3 matchOffset 132
+							Ignoring at 21381 - currentLitNum 0 matchLen 3 matchOffset 6194
+							Ignoring at 21620 - currentLitNum 5 matchLen 3 matchOffset 6377
+							Ignoring at 21896 - currentLitNum 3 matchLen 3 matchOffset 6654
+							Ignoring at 22439 - currentLitNum 2 matchLen 3 matchOffset 7901
+							Ignoring at 22611 - currentLitNum 5 matchLen 2 matchOffset 446
+							Ignoring at 23148 - currentLitNum 1 matchLen 7 matchOffset 1104
+							Ignoring at 25303 - currentLitNum 0 matchLen 2 matchOffset 9
+							Ignoring at 26442 - currentLitNum 0 matchLen 3 matchOffset 6667
+							Ignoring at 29246 - currentLitNum 0 matchLen 2 matchOffset 164
+							Ignoring at 29709 - currentLitNum 6 matchLen 2 matchOffset 507
+							Ignoring at 30572 - currentLitNum 1 matchLen 3 matchOffset 38
+							Ignoring at 30891 - currentLitNum 0 matchLen 3 matchOffset 4291
+							Ignoring at 31423 - currentLitNum 1 matchLen 2 matchOffset 20
+							Ignoring at 31791 - currentLitNum 2 matchLen 5 matchOffset 6428
+							Ignoring at 31905 - currentLitNum 2 matchLen 3 matchOffset 379
+							Ignoring at 32374 - currentLitNum 0 matchLen 3 matchOffset 7504
+							Ignoring at 32383 - currentLitNum 1 matchLen 2 matchOffset 51
+							Ignoring at 32633 - currentLitNum 0 matchLen 3 matchOffset 5870
+							Ignoring at 32812 - currentLitNum 2 matchLen 5 matchOffset 1175
+							Ignoring at 32915 - currentLitNum 0 matchLen 4 matchOffset 2623
+							Ignoring at 33375 - currentLitNum 2 matchLen 3 matchOffset 4979
+							Ignoring at 33379 - currentLitNum 0 matchLen 3 matchOffset 114
+							Ignoring at 33514 - currentLitNum 1 matchLen 3 matchOffset 130
+							Ignoring at 34165 - currentLitNum 1 matchLen 2 matchOffset 20
+							Ignoring at 35483 - currentLitNum 0 matchLen 3 matchOffset 848
+							Ignoring at 35991 - currentLitNum 5 matchLen 4 matchOffset 10047
+							Ignoring at 36213 - currentLitNum 6 matchLen 3 matchOffset 6292
+							Ignoring at 36280 - currentLitNum 2 matchLen 3 matchOffset 3322
+							Ignoring at 36666 - currentLitNum 1 matchLen 3 matchOffset 1893
+							Ignoring at 36702 - currentLitNum 0 matchLen 3 matchOffset 8183
+							Ignoring at 37140 - currentLitNum 0 matchLen 3 matchOffset 4291
+							Ignoring at 37168 - currentLitNum 4 matchLen 3 matchOffset 6793
+							Ignoring at 37649 - currentLitNum 1 matchLen 5 matchOffset 755
+							Ignoring at 37969 - currentLitNum 3 matchLen 3 matchOffset 1042
+							Ignoring at 37989 - currentLitNum 3 matchLen 4 matchOffset 12102
+							Ignoring at 38009 - currentLitNum 3 matchLen 3 matchOffset 1076
+							Ignoring at 38085 - currentLitNum 0 matchLen 2 matchOffset 3
+							Ignoring at 38286 - currentLitNum 0 matchLen 2 matchOffset 10
+							Ignoring at 38516 - currentLitNum 0 matchLen 2 matchOffset 25
+							Ignoring at 38667 - currentLitNum 0 matchLen 3 matchOffset 17
+							Ignoring at 38713 - currentLitNum 3 matchLen 2 matchOffset 36
+							Ignoring at 38840 - currentLitNum 0 matchLen 3 matchOffset 5851
+							Ignoring at 38919 - currentLitNum 0 matchLen 3 matchOffset 3594
+							Ignoring at 38965 - currentLitNum 3 matchLen 4 matchOffset 6774
+							Ignoring at 38985 - currentLitNum 1 matchLen 4 matchOffset 2739
+							Ignoring at 39303 - currentLitNum 0 matchLen 4 matchOffset 13573
+							Ignoring at 39524 - currentLitNum 1 matchLen 3 matchOffset 6149
+							Ignoring at 39547 - currentLitNum 1 matchLen 3 matchOffset 3773
+							Ignoring at 39908 - currentLitNum 2 matchLen 3 matchOffset 6622
+							Ignoring at 40120 - currentLitNum 2 matchLen 3 matchOffset 8100
+							Ignoring at 40607 - currentLitNum 4 matchLen 3 matchOffset 6871
+							Ignoring at 40826 - currentLitNum 1 matchLen 3 matchOffset 2373
+							Ignoring at 41028 - currentLitNum 0 matchLen 3 matchOffset 1965
+							Ignoring at 41393 - currentLitNum 2 matchLen 3 matchOffset 8002
+							Ignoring at 41755 - currentLitNum 0 matchLen 2 matchOffset 5
+							Ignoring at 42578 - currentLitNum 0 matchLen 3 matchOffset 2991
+							Ignoring at 42643 - currentLitNum 0 matchLen 4 matchOffset 40985
+							Ignoring at 43075 - currentLitNum 2 matchLen 3 matchOffset 1246
+							Ignoring at 43197 - currentLitNum 0 matchLen 2 matchOffset 56
+							Ignoring at 44221 - currentLitNum 0 matchLen 4 matchOffset 14563
+							Ignoring at 44484 - currentLitNum 3 matchLen 2 matchOffset 17
+							Ignoring at 44670 - currentLitNum 1 matchLen 2 matchOffset 188
+							Ignoring at 45193 - currentLitNum 0 matchLen 2 matchOffset 406
+							Ignoring at 46521 - currentLitNum 0 matchLen 3 matchOffset 5648
+							Ignoring at 47520 - currentLitNum 0 matchLen 3 matchOffset 3592
+							Ignoring at 47554 - currentLitNum 3 matchLen 5 matchOffset 31667
+							Ignoring at 48085 - currentLitNum 6 matchLen 19 matchOffset 35176
+							Ignoring at 49647 - currentLitNum 9 matchLen 2 matchOffset 320
+							Ignoring at 49691 - currentLitNum 1 matchLen 13 matchOffset 512
+							Ignoring at 50072 - currentLitNum 0 matchLen 3 matchOffset 244
+							Ignoring at 50156 - currentLitNum 3 matchLen 2 matchOffset 192
+							Ignoring at 50617 - currentLitNum 0 matchLen 6 matchOffset 29210
+							Ignoring at 50684 - currentLitNum 0 matchLen 11 matchOffset 64
+							Ignoring at 51303 - currentLitNum 0 matchLen 44 matchOffset 64
+							Ignoring at 51366 - currentLitNum 1 matchLen 10 matchOffset 6425
+							Ignoring at 53302 - currentLitNum 2 matchLen 9 matchOffset 937
+							Ignoring at 53666 - currentLitNum 0 matchLen 3 matchOffset 183
+							Ignoring at 53806 - currentLitNum 1 matchLen 17 matchOffset 2314
+							Ignoring at 53887 - currentLitNum 0 matchLen 16 matchOffset 64
+							Ignoring at 53995 - currentLitNum 0 matchLen 6 matchOffset 53100
+							Ignoring at 54063 - currentLitNum 1 matchLen 9 matchOffset 80
+							Ignoring at 54182 - currentLitNum 1 matchLen 2 matchOffset 64
+							Ignoring at 54480 - currentLitNum 13 matchLen 2 matchOffset 291
+							Ignoring at 54643 - currentLitNum 0 matchLen 3 matchOffset 64
+							Ignoring at 54824 - currentLitNum 1 matchLen 2 matchOffset 363
+							Ignoring at 55830 - currentLitNum 3 matchLen 4 matchOffset 26402
+							Ignoring at 55973 - currentLitNum 11 matchLen 3 matchOffset 4018
+							Ignoring at 59126 - currentLitNum 0 matchLen 4 matchOffset 1024
+							Ignoring at 63392 - currentLitNum 1 matchLen 8 matchOffset 55399
+							Ignoring at 63715 - currentLitNum 39 matchLen 4 matchOffset 60404
+							Input length = $f900 output length = $9020
+				>> When using -ce, almost the same test except with <= produces better results: if ( (float(compressedBytes1) / float(optionBitsLength1)) <= (float(compressedBytes2) / float(optionBitsLength2)) )
+					Old: Input length = $f900 output length = $929a
+					New: Input length = $f900 output length = $927e
+			>> While testing with the old test data, some file sizes were smaller without the ratio check...
+				So added always checked option: gXPCompressionTweak5
+
+
+
+
+* There might be more efficient large value packing for Compression::PackValueLarge and PackValueLargeLen
+	Perhaps output two bits for each BitBufferPutBit(0); and adjust the bitPos accordingly
+
+
+
+
+* Look at altering LONG_OFFSET_THRESHOLD dynamically, especially when compressing in self extracting mode
+	The decompression code does have: cmp #$d
+		Will need an extra LauncherAddress based label
+		The self extracting launcher can update the value directly, no need to save the file in the file data, to save space.
+		Saved compressed data however will need to save that value in the file and the decompression code will need to read it, or the value will need to be passed into the code
+	>> -o3 but the self extracting decompression and the output data needs updating
+
+
+
+
+* New compression ideas:
+	Currently CompressionE::EncodeMatch outputs the length and offset using the same packing algorithm
+	Perhaps there are benefits to packing larger offsets or lengths using an algorithm that doesn't use so many signal bits
+	Analyse the length and offset pairs for a variety of files. Look for good patterns and thresholds.
+	Good matches might be closer and slightly shorter, compared to longer and far away.
+	Implement a search ahead model, where decision points will branch out and search ahead. These can operate in separate threads.
+		Note the source file offset and the best smallest bit size up until that point, in a global buffer. Then branches can decide to terminate their search, freeing the thread and memory used.
+			This should be an efficient way to optimally pack data.
+	
+
+
+
+
 * For if (argv[1][1] == 'd')
 	Done: * -de needs to be supported
 	* -dr needs to be supported
@@ -52,4 +245,43 @@
 		adc RNXPCompressionDecompress_WriteBytesmAddr+1
 		sta .smEndTestH+1
 	The values can be pre-calculated and just stored by the self extracting code
+
+
+
+
+
+* Escape bit could then pull in variable value bits for larger values
+	1
+	Then 1 value bit
+	1
+	Then 2 value bits
+	1
+	Then 3 value bits 
+
+
+
+* Revisit the number of literals encoding idea...
+	* Using C:\temp\wizball_ocean_6389_min.prg a good target is $8831
+	From Done.txt: Is there a saving by making EncodeLiteralRun write the length of the number of literals it is going to output?
+	But this time use a different encoding that is optimised for small numbers
+	> EncodeLiteralRun
+	> currentLitNum * 9
+	> currentLitNum*9
+	> currentLitNum2*9
+	> Or prety much anywhere "*9" or "* 9" exists
+	* Done: Needs LiteralRunLength() to calculate the number of bits used
+	* Now LiteralRunLength and EncodeLiteralRun can be updated to test new ideas about literal encoding
+	** For Compression class, there really aren't any gains
+	>> Try CompressionE
+		* Done: Add LiteralRunLength for CompressionE
+		* Done: Add enableShuffle check to: if (firstMatchIsBetter)
+			Orig: Input length = $f900 output length = $927a
+			New -o2: Input length = $f900 output length = $9219
+	* Maybe the value calculation for DictionaryFindMatch is wrong? Perhpas it should be ratio based as well?
+		Doesn't help, slightly worse.
+	** LZMPiE optimisation
+		Output count of literals, even for >256 literals, means the next code is definitely a copy
+			** So that code can be skipped
+
+
 

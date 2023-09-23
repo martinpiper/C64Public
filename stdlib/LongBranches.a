@@ -38,3 +38,77 @@
 	jmp .target
 +
 }
+
+
+
+; Long branches that can optimise based on the range
+!macro lobmi .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	bmi .target
+} else {
+	bpl *+5
+	jmp .target
+}
+}
+
+!macro lobpl .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	bpl .target
+} else {
+	bmi +
+	jmp .target
++
+}
+}
+
+!macro lobeq .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	beq .target
+} else {
+	bne +
+	jmp .target
++
+}
+}
+
+!macro lobne .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	bne .target
+} else {
+	beq +
+	jmp .target
++
+}
+}
+
+!macro lobcs .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	bcs .target
+} else {
+	bcc +
+	jmp .target
++
+}
+}
+
+!macro lobcc .target {
+!previouscontext
+!if (* - .target) <= 126 {
+;	!warn "using optimal branch back"
+	bcc .target
+} else {
+	bcs +
+	jmp .target
++
+}
+}

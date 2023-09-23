@@ -103,3 +103,165 @@
 	The lda #1 sta workLen could also be an inc
 	.GetNextBitIntoCarry can use !ifndef Decompress_RNZip {
 	>> Tests passed, cycle counts reduced
+
+
+
+
+* While processing choices...
+	Once there is a new exception used, one that results in a smaller file, the choices will need to be updated from the new compressed file so far...
+		Not using comp3.mChoicesPos
+		The new compression pass would output remaining choices, so iterate those
+	Need a shorter test file...
+	>> comp3.mChoicesPos = comp2.mChoicesPos;
+
+
+
+
+* Add option to specify the four optimise values...
+
+
+
+
+* Handle the prefix options better, in a loop: -o1 -o1 -t ...
+
+
+
+
+* Is there a saving by making EncodeLiteralRun write the length of the number of literals it is going to output?
+	Write out the literal counts and study the distribution...
+		currentLitNum = 3  old 18996 new 20394
+	So the old way of using a bit per literal is on average better than encoding the number of literals...
+
+
+
+
+* // TODO: This produces savings in some files, but makes others larger. Why?!
+	Because DictionaryAdd shouldnt be used for positions that haven't been decompresed yet... Dumbo
+
+
+
+
+* Add CompressionU option
+	And DecompressU like DecompressE
+	>> -cu "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp4" 2
+		Input length = $f900 output length = $882d
+	>> -cu C:\work\c64\Decompression\Scroller.bin C:\work\c64\Decompression\Scroller.cmp4
+		Input length = $d312 output length = $41dc
+	>> Possible to supply an override load address
+	>> LZMPi.exe -c64mub C:\work\c64\Decompression\Scroller.bin C:\temp\t.prg $900 $803
+		Input length = $d310 output length = $42de
+	>> Possible to avoid skipping bytes (or skip any number of bytes at the start)
+		LZMPi.exe -c64mub C:\work\c64\Decompression\Scroller.bin C:\temp\t.prg $900 $801 0
+		Input length = $d312 output length = $42e0
+	>> -c64mub "C:\temp\wizball_ocean_6389_min.prg" "C:\temp\wizball_ocean_6389_min_lzmpiu.prg" $6389
+		Input length = $f900 output length = $893a (35,130 bytes)
+	>> -c64mu "C:\temp\wizball_ocean_6389_min.prg" "C:\temp\wizball_ocean_6389_min_lzmpiu.prg" $6389
+		Input length = $f900 output length = $892c (35,116 bytes)
+	* And DecompressU option
+
+
+
+
+
+
+* LZMPi.exe -cu "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp4" 2
+	..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression4U.a
+		^^ Using c:\temp\t.cmp4 option
+	Try to squeeze more bytes out of this with longer match offsets
+	Using: http://127.0.0.1:8001/ace-builds-master/demo/autocompletion.html?filename=features/CheckReferenceU.feature
+		copyFromAddr:
+		  014B  B9 B5 9E  LDA $9EB5,Y    @$9FB3      A:A0 X:50 Y:FE F:A1 S:1FD [N.-....C]
+		MemoryAccessException: Write at: AC46 with value: A0 was expected to be value: 0D
+			sta	(RNXPCompressionDecompress_WriteBytesmAddr),y
+	Using: LZMPi.exe -c64mub "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.prg" $6389
+		Vicemon: w store ac46
+		Does have the same issue of storing a0 instead of 0d...
+		00f8  48 ab b6 de  1a 01 6d f3
+		RNXPCompressionDecompress_WriteBytesmAddr	ab48
+		RNXPCompressionDecompress_GetBytesmAddr		deb6
+		RNXPCompressionDecompress_TempWord1			011a
+		RNXPCompressionDecompress_TempOffset		f36d
+		deb0  e7 b0 44 14  4a db *05* 09  cb 00 6f 7e  9c 63 85 d0
+	> Based on the trace history, this is the first entry into copyFromAddr, so it's the first attempt to copy a range
+		So we don't know yet if the length or the offset is wrong...
+	>> If the code was changed to increment copy instead of decrement, this would tell us if the offset or the length is wrong...
+	>> Check the C decompress at the same area in the compressed stream
+		So MAX_OFFSET 0xffff: LZMPi.exe -cu "C:\temp\wizball_ocean_6389_min.prg" "c:\temp\t.cmp4" 2
+			Found in output file at 66dd...
+			In C64\Compression\DecompressU.cpp : // Note: Debug
+				nMatchOffset $4de nMatchLen $3
+				nMatchOffset $8c93 nMatchLen $2	<< Problem
+				After reading *pInputData = 05 at file offset 66e3
+				Hmm $10000-$8c93 = $736d which is similar to RNXPCompressionDecompress_TempOffset $f36d at the 6502 breakpoint, but the MSBit is wrong
+	>> In Vice put a "w store ac45" then trace through...
+		The values don't seem to be matching up during decode with DecompressionU_readPackedValue
+	Try earlier, end of a literal copy: w store ac42
+	.getPackedValue needs to track the bits being read better, to support longer offsets
+	>> For the next match after "w store ac45" the returned ".getPackedValue" returns $11a which is the same as the cpp code nMatchOffsetHighByte value
+		So the subsequent maths would need updating for larger offsets. "; Negate offset MSB, check for EOF"
+		In: CompressU.cpp See: "Note for MAX_OFFSET"
+	> Fixed: Added 9th sign bit: ; Include the inverted last sign
+		Also temp value clear including MSB: ; Reset length first, including the MSB
+		Also EOD check update: lda #2	; COMPU_EOD = 512
+		Not quite working for all data? DecompressionUReferenceLongOffset.a
+			features/CheckMemory.feature shows checksum error
+	>> features/CheckMemory.feature
+		Using example row:
+		| 865724       | -cu      | TestDecompression4U.a                                        
+	>> MemoryAccessException: Write at: 85E6 with value: D6 was expected to be value: 03
+	>> Debug DecompressU.cpp         |
+	>> -du "C:\work\c64\Decompression\target\CheckMemory.cmp" "c:\temp\t.bin"
+		> if ( (pCurOutData - pOutData) == 0x85E6 - 0x400 )
+			nMatchOffset $70 nMatchLen $4
+			nMatchOffset $8000 nMatchLen $c
+		The offset looks suspicious doesn't it...
+		w store 85e5 and trace...
+	>> Now using longer offsets, tidying code, removed:
+		// Note for MAX_OFFSET: If this offset is changed from 0x7f80 to 0xffff then "if (nMatchOffsetHighByte == 256)" and "256 /* EOD */" for the end of data marker will also need changing.
+		// As would the decompression algorithm to handle the larger offset MSB number.
+		// Note: DecompressionUReference.a implementation, which is slower with "jsr .getNewBit" being used and ".copyWithNewOffset" maths would need updating.
+
+
+
+
+* File is way too big with -cu considering it is empty space: features/CheckSelfExtraction.feature
+    | len1  | len2  | len3  |
+    | $02   | $f000 | $02   |
+	-t $fd00 -c64mu C:\Work\C64\Decompression\target\memory.prg C:\Work\C64\Decompression\target\memory-sfx.prg $400
+	> Added MAX_BLOCK_MATCH_LEN
+	Note nMatchOffset $f010 showing the data exercises the long offset code:
+		Input length = $002e Original output length = $f700
+		nMatchOffset $8 nMatchLen $8
+		nMatchOffset $1 nMatchLen $4001
+		nMatchOffset $1 nMatchLen $3fff
+		nMatchOffset $1 nMatchLen $3fff
+		nMatchOffset $1 nMatchLen $2ffd
+		nMatchOffset $f010 nMatchLen $10
+		nMatchOffset $1 nMatchLen $6dc
+		Decompressed length = $f700
+
+
+
+
+* Have a variation of: C:\Work\C64\Decompression\features\CheckMemory.feature
+	This would assemble configured ranges of memory, then use the -c64 options with all the compression options to compress and run.
+	Make sure the data is structured to explicitly test long offset copies.
+		for example, a group of 5/10 literals, then a large bunch of repeating data that doesn't use those literals, then at the end the same group of starting literals again.
+	Make sure to include some guard bytes before and after...
+	Will need a write memory range to file option, with two byte header...
+	Then assert that file "String" is binary equal to file "String"
+	>>	When save 6502 memory without two byte header from "$410" to "$418" to file "target/mem2.bin"
+	>>	Then assert that file "target/mem1.bin" is binary equal to file "target/mem2.bin"
+	>> CheckSelfExtraction.feature
+
+
+
+
+* Add final literal, match, literal, match optimisation pass
+
+
+
+
+* For each of the self extracting decompression types, store their label files and pdb files.
+	This is to aid debugging of each of them when things go wrong. Store in the bin directory?
+	>> C64\Decompression\DebugFiles

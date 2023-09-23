@@ -14,6 +14,10 @@ int gXPCompressionTweak1 = 5;
 int gXPCompressionTweak2 = 5;
 int gXPCompressionTweak3 = 5;
 int gXPCompressionTweak4 = 9;
+bool gXPCompressionTweak5 = false;
+bool gXPCompressionTweak6 = false;
+
+u32 LONG_OFFSET_THRESHOLD = 0xd00;
 
 #define HISTORY_MATCH
 
@@ -380,12 +384,26 @@ void Compression::EncodeMatch(u32 len , const u32 offset)
 	mLastOffset = offset;
 }
 
+u32 Compression::LiteralRunLength(u32 currentLitNum)
+{
+	return currentLitNum * 9;
+}
+
 void Compression::EncodeLiteralRun(const u8 *litRun, u32 currentLitNum)
 {
 	if (currentLitNum == 0)
 	{
 		return;
 	}
+
+//	static int totalBitsOld = 0;
+//	static int totalBitsNew = 0;
+
+//	totalBitsOld += currentLitNum;
+//	totalBitsNew += PackValueLen(currentLitNum-1);
+
+//	printf("currentLitNum = %d  old %d new %d\n" , currentLitNum , totalBitsOld , totalBitsNew);
+
 	if (currentLitNum > mLastLit)
 	{
 		mLastLit = currentLitNum;
@@ -540,6 +558,7 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 	u32 currentLitNum = 0;			// Number of literals to encode
 
 	u32 curPos = 0;
+	u32 lastDictionaryAddPos = 0;
 
 	mLastMatchPos = FORCE_UNSIGNED(-1);
 
@@ -547,8 +566,21 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 
 	while (curPos < inLen)
 	{
-		if (estimatedBitsOut > mEarlyOut)
+		if (gXPCompressionTweak6)
 		{
+			if (curPos > 2)
+			{
+				for ( ; lastDictionaryAddPos < curPos-2 ; lastDictionaryAddPos++)
+				{
+					DictionaryAdd(lastDictionaryAddPos);
+				}
+			}
+		}
+
+		if ((u32)estimatedBitsOut > mEarlyOut)
+		{
+			DictionaryFree();
+			NodesFree();
 			return -1;
 		}
 
@@ -565,7 +597,7 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 		}
 
 		// Is length of the proposed match smaller than the number of bits needed for a literal version of the match length?
-		if ((dictionaryBits != -1) && dictionaryBits < (matchLen * 9))
+		if ((dictionaryBits != -1) && dictionaryBits < (int)LiteralRunLength(matchLen))
 		{
 			// Yes, so the match results in a smaller size so we use it.
 
@@ -583,8 +615,28 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 					bool history;
 					dictionaryBits2 = CodedMatchLength(matchLen2,matchOffset2,history);
 
-					if ((dictionaryBits2 != -1) && dictionaryBits2 < (matchLen2 * 9))
+					if ((dictionaryBits2 != -1) && dictionaryBits2 < (int)LiteralRunLength(matchLen2))
 					{
+						if (gXPCompressionTweak5)
+						{
+							int endCompPos1 = curPos + matchLen;
+							int endCompPos2 = curPos2 + matchLen2;
+							int extraCompressed = endCompPos2 - endCompPos1;
+							int optionBitsLength1 = LiteralRunLength(currentLitNum) + dictionaryBits;
+							int optionBitsLength2 = LiteralRunLength(currentLitNum2) + dictionaryBits2;
+							int compressedBytes1 = currentLitNum + matchLen;
+							int compressedBytes2 = currentLitNum2 + matchLen2;
+							// This has no effect, at all...
+	//						compressedBytes1 += gXPCompressionTweak3-5;
+	//						compressedBytes2 += gXPCompressionTweak4-5;
+							// Test the compression ratio for the portion being encoded
+							if ( (float(compressedBytes1) / float(optionBitsLength1)) < (float(compressedBytes2) / float(optionBitsLength2)) )
+							{
+								firstMatchIsBetter = false;
+							}
+						}
+						else
+						{
 //						u32 forward = curPos2 - curPos;
 
 						// Figure out if it is shorter (in terms of bits saved to the file) to skip the first match and encode using this second try instead
@@ -593,9 +645,10 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 //						if ( (dictionaryBits + (int) (int(forward) + int(matchLen2) - int(matchLen)) * 5) > (dictionaryBits2 + int(forward) * 9))
 //						if ( (dictionaryBits + (int) (1 + int(matchLen2) - int(matchLen)) * 5) > (dictionaryBits2 + 9))
 //						if ( (dictionaryBits + (int) 5 + (int(matchLen2) * 5) - (int(matchLen) * 5) ) > (dictionaryBits2 + 9))
-						if ( (dictionaryBits + (int) gXPCompressionTweak1 + (int(matchLen2) * gXPCompressionTweak2) - (int(matchLen) * gXPCompressionTweak3) ) > (dictionaryBits2 + gXPCompressionTweak4))
-						{
-							firstMatchIsBetter = false;
+							if ( (dictionaryBits + (int) gXPCompressionTweak1 + (int(matchLen2) * gXPCompressionTweak2) - (int(matchLen) * gXPCompressionTweak3) ) > (dictionaryBits2 + gXPCompressionTweak4))
+							{
+								firstMatchIsBetter = false;
+							}
 						}
 					}
 				}
@@ -605,14 +658,25 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 			{
 				if (mIgnoreChoicePos.find(curPos) == mIgnoreChoicePos.end())
 				{
-					// Pick some interesting matches to investgate later on
+					// Pick some interesting matches to investigate later on
 //					if ((currentLitNum <= 1) && (matchLen <= 3) && (matchOffset < 192))
 					{
 						mChoicesPos.push_back(curPos);
 					}
+					for (u32 toAdd = curPos ; toAdd < curPos + currentLitNum ; toAdd++)
+					{
+						// Why does doing this extra DictionaryAdd cause the compression size to get worse?
+//						DictionaryAdd(toAdd);
+					}
 					// Store any literals we have not already output
 					EncodeLiteralRun(litRun,currentLitNum);
-					estimatedBitsOut += currentLitNum * 9;
+					estimatedBitsOut += LiteralRunLength(currentLitNum);
+
+					for (u32 toAdd = matchOffset ; toAdd < matchOffset + matchLen ; toAdd++)
+					{
+						// Why does doing this extra DictionaryAdd cause the compression size to get worse?
+//						DictionaryAdd(toAdd);
+					}
 
 					// Store the match
 					EncodeMatch(matchLen,matchOffset);
@@ -710,7 +774,7 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 						}
 					}
 					u8 theBestEscape = 0;
-					for (i = 1 ; i < (1<<mNumEscapeBits) ; i++)
+					for (i = 1 ; i < (u32)(1<<mNumEscapeBits) ; i++)
 					{
 						if (totalEscapes[i] < totalEscapes[theBestEscape])
 						{
@@ -756,6 +820,8 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 	{
 		if (mTotalBitsOut > mEarlyOut)
 		{
+			DictionaryFree();
+			NodesFree();
 			return -1;
 		}
 		(*st++)->Write(*this);
@@ -779,14 +845,8 @@ int Compression::Compress(const u8 *in, u32 inLen,u8 *out, u32 *outLen,int compL
 
 	// Makes sure the dictionary is freed
 	DictionaryFree();
+	NodesFree();
 
-	st = mNodes.begin();
-	while (st != mNodes.end())
-	{
-		Node *node = *st++;
-		delete node;
-	}
-	mNodes.clear();
 	return GBA_E_OK;
 }
 
@@ -805,6 +865,18 @@ void Compression::DictionaryFree(void)
 	mValueByBytes.clear();
 	mByAge.clear();
 	mValueByPos.clear();
+}
+
+void Compression::NodesFree(void)
+{
+	std::list<Node *>::iterator st;
+	st = mNodes.begin();
+	while (st != mNodes.end())
+	{
+		Node *node = *st++;
+		delete node;
+	}
+	mNodes.clear();
 }
 
 void Compression::DictionaryAdd(const u32 fromStartPos)
@@ -837,6 +909,7 @@ void Compression::DictionaryAdd(const u32 fromStartPos)
 	// In most optimised STL implementation x.size() uses a counter variable so it isn't slow.
 	if (mValueByBytes.size() > mMaximumDictionaryBlocks)
 	{
+//		printf("Freeing dictionary block\n");
 		// Get the oldest used block from the head of the list
 		Value *value = mByAge.front();
 		DictionaryFreeValue(value);
@@ -912,7 +985,7 @@ bool Compression::DictionaryFindMatch(const u32 fromStartPos,u32 &len,u32 &match
 		{
 			continue;
 		}
-		int proposedBitLength = (proposedMatchLen * 9) - proposedBits;
+		int proposedBitLength = LiteralRunLength(proposedMatchLen) - proposedBits;
 
 		if (proposedBitLength > bestBitLength)
 		{
@@ -971,7 +1044,7 @@ bool Compression::DictionaryFindMatch(const u32 fromStartPos,u32 &len,u32 &match
 			{
 				continue;
 			}
-			int proposedBitLength = (proposedMatchLen * 9) - proposedBits;
+			int proposedBitLength = LiteralRunLength(proposedMatchLen) - proposedBits;
 
 			if (proposedBitLength > bestBitLength)
 			{

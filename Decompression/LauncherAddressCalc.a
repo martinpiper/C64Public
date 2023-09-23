@@ -1,7 +1,7 @@
 LauncherAddress_startC64Code				= NOTE_CompressedDataExecute + 1 - Decompression_Part1Addr + RNXPCompressionDecompress_Part1Start
 LauncherAddress_compressedDataEndMinus256	= NOTE_CompressedDataEndMinus256 + 1  - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
 LauncherAddress_endOfMemoryMinus256			= NOTE_EndOfMemoryMinus256 + 1  - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
-LauncherAddress_endMinusOutSize				= RNXPCompressionDecompress_GetByte + 1  - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
+LauncherAddress_endMinusOutSize				= RNXPCompressionDecompress_GetBytesmAddr - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
 LauncherAddress_loadC64Code					= RNXPCompressionDecompress_WriteBytesmAddr - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
 
 LauncherCodeSize							= CompressedDataStart - BASICSTART
