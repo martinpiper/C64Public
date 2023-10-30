@@ -1,0 +1,48 @@
+!source "stdlib\stdlib.a"
+
+!source "DeltaDecompressionMacros.a"
+
+!source "stdlib\BASICEntry80d.a"
+
+; Should be page aligned
+DecompressDataTo = SCREENRAM
+
+*=BASICEntry
+	+MBASICTextPrint .pressFire
+
+	sei
+	; This uses a lot of zeropage memory and stack, hence the SEI above
+	jsr DeltaDecompression_InitZP
+
+.loop
+	+WaitForFire_A
+	+MWordValueTo_XY DecompressDataTo
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	+MWordValueTo_XY .frame1
+	jsr RNXPCompressionDecompressDeltaRLE
+	
+	+WaitForFire_A
+	+MWordValueTo_XY DecompressDataTo
+	jsr RNXPCompressionDecompressDeltaRLE_InitStore
+	+MWordValueTo_XY .frame2
+	jsr RNXPCompressionDecompressDeltaRLE
+
+	jmp .loop
+	
+.pressFire
+!pet "press fire" , 0
+
+.frame1
+!bin "c:\temp\f1.cmp"
+
+.frame2
+!bin "c:\temp\f2.cmp"
+
+; This tweaks the decompress RLE address to the be destination buffer
+!macro DeltaDecompression_AddressTweak {
+	clc
+	adc #>DecompressDataTo
+}
+
+DeltaDecompression_JustDecompressionCode = 1	
+!source "DeltaDecompression.a"

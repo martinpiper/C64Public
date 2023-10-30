@@ -22,6 +22,7 @@ mkdir ..\..\Builds\VideoHardwareSDK\ImageToBitplane\target
 
 
 xcopy ..\..\BDD6502\features\* ..\..\Builds\VideoHardwareSDK\BDD6502\features\ /s
+xcopy ..\..\BDD6502\macros\* ..\..\Builds\VideoHardwareSDK\BDD6502\macros\ /s
 xcopy ..\..\BDD6502\target\*jar-with-dependencies.jar ..\..\Builds\VideoHardwareSDK\BDD6502\target\
 copy ..\..\BDD6502\target\syntax.html ..\..\Builds\VideoHardwareSDK\BDD6502\
 copy ..\..\BDD6502\README.md ..\..\Builds\VideoHardwareSDK\BDD6502\
@@ -41,6 +42,8 @@ xcopy ..\..\C64\stdlib\* ..\..\Builds\VideoHardwareSDK\C64\stdlib\ /s
 xcopy ..\..\C64\BerzerkRedux\Rand.a ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux\ /s
 xcopy ..\..\C64\Decompression\Decomp*.a ..\..\Builds\VideoHardwareSDK\C64\Decompression\
 xcopy ..\..\C64\VectorPlotBitmap\*.a ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap\
+xcopy ..\..\C64\VectorPlotBitmap\*.bin ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap\
+xcopy ..\..\C64\MakeCart\asm\*.a ..\..\Builds\VideoHardwareSDK\C64\MakeCart\asm\
 
 xcopy ..\..\C64\VideoHardware\README.md ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 copy "..\..\C64\VideoHardware\SDK README.md" ..\..\Builds\VideoHardwareSDK\README.md
@@ -48,9 +51,13 @@ xcopy ..\..\C64\VideoHardware\BuildIt*.bat ..\..\Builds\VideoHardwareSDK\C64\Vid
 xcopy ..\..\C64\VideoHardware\FeatureEditor.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\asm\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\asm\ /s
 xcopy ..\..\C64\VideoHardware\assets\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\ /s
+del /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\convert2.bat
+xcopy ..\..\C64\VideoHardware\macros\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\macros\ /s
 xcopy ..\..\C64\VideoHardware\features\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\features\ /s
 xcopy ..\..\C64\VideoHardware\testdata\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\testdata\ /s
 
 
 xcopy ..\..\ImageToBitplane\README.md ..\..\Builds\VideoHardwareSDK\ImageToBitplane\
 xcopy ..\..\ImageToBitplane\target\*jar-with-dependencies.jar ..\..\Builds\VideoHardwareSDK\ImageToBitplane\target\
+
+explorer ..\..\Builds\VideoHardwareSDK\

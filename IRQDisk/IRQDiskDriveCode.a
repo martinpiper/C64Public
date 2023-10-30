@@ -1,3 +1,5 @@
+IRQDiskDriveCodeStart
+
 ;***************************************
 ; The code that is sent to the drive
 .driveCodePseudoStart:
@@ -773,3 +775,7 @@ DriveCode_StartReal
 !error "No more drive RAM available"
 }
 
+IRQDiskDriveCodeEnd
+IRQDiskDriveCodeSize = IRQDiskDriveCodeEnd - IRQDiskDriveCodeStart
+
+IRQDiskTotalCodeSize = IRQDiskCodeSize + IRQDiskDriveCodeSize

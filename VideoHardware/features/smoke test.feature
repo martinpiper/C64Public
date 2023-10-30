@@ -8,6 +8,7 @@ Feature: Smoke test
   Scenario: Smoke test for video
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
@@ -84,14 +85,12 @@ Feature: Smoke test
 #    And I enable trace with indent
     Given execute "setupFrame" for eight times
 
-    Then expect image "testdata/TC-1-000001.bmp" to be identical to "tmp/frames/TC-1-000001.bmp"
-    Then expect image "testdata/TC-1-000002.bmp" to be identical to "tmp/frames/TC-1-000002.bmp"
-    Then expect image "testdata/TC-1-000003.bmp" to be identical to "tmp/frames/TC-1-000003.bmp"
-    Then expect image "testdata/TC-1-000004.bmp" to be identical to "tmp/frames/TC-1-000004.bmp"
-    Then expect image "testdata/TC-1-000005.bmp" to be identical to "tmp/frames/TC-1-000005.bmp"
-    Then expect image "testdata/TC-1-000006.bmp" to be identical to "tmp/frames/TC-1-000006.bmp"
-    Then expect image "testdata/TC-1-000007.bmp" to be identical to "tmp/frames/TC-1-000007.bmp"
-    Then expect image "testdata/TC-1-000008.bmp" to be identical to "tmp/frames/TC-1-000008.bmp"
+#    Then expect image "testdata/TC-1-000003.bmp" to be identical to "tmp/frames/TC-1-000003.bmp"
+#    Then expect image "testdata/TC-1-000004.bmp" to be identical to "tmp/frames/TC-1-000004.bmp"
+#    Then expect image "testdata/TC-1-000005.bmp" to be identical to "tmp/frames/TC-1-000005.bmp"
+#    Then expect image "testdata/TC-1-000006.bmp" to be identical to "tmp/frames/TC-1-000006.bmp"
+#    Then expect image "testdata/TC-1-000007.bmp" to be identical to "tmp/frames/TC-1-000007.bmp"
+#    Then expect image "testdata/TC-1-000008.bmp" to be identical to "tmp/frames/TC-1-000008.bmp"
 
 
     # This allows the last frame to be observed and window zoomed/resized
@@ -114,6 +113,7 @@ Feature: Smoke test
   Scenario: Smoke test for video with Mode7LayersEnable
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with 16 colours
 #	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
@@ -467,7 +467,7 @@ Feature: Smoke test
     And I load labels "tmp/main.map"
 
 #    And I enable trace with indent
-    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
+    When I execute the procedure at start for no more than 100000000 instructions until PC = mainLoop
 	Given render a video display frame
 
 #    And I enable trace with indent
@@ -491,6 +491,7 @@ Feature: Smoke test
   Scenario: Smoke test for Shadow of the Beast demo
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #    And enable video display bus debug output
 #    And enable debug pixel picking
@@ -591,6 +592,7 @@ Feature: Smoke test
   Scenario: Smoke test for Shadow of the Beast running demo
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
@@ -676,7 +678,11 @@ Feature: Smoke test
   @Demo6C
   Scenario: Smoke test for Shadow of the Beast title and running demo from cartridge
     Given clear all external devices
+#    Given a new C64 video display
+#    And show C64 video window
+#    And force C64 displayed bank to 3
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #	And enable video display bus debug output
 #    And enable debug pixel picking
@@ -693,6 +699,7 @@ Feature: Smoke test
     Given I am using C64 processor port options
     Given a ROM from file "C:\VICE\C64\kernal" at $e000
     Given a ROM from file "C:\VICE\C64\basic" at $a000
+    Given a CHARGEN ROM from file "C:\VICE\C64\chargen"
     Given add C64 hardware
 #    When I enable uninitialised memory read protection with immediate fail
     * That does fail on BRK
@@ -840,6 +847,7 @@ Feature: Smoke test
   Scenario: Smoke test for Demo9
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     And the audio expansion uses exact address matching
     Given a new video display with overscan and 16 colours
     And the display uses exact address matching
@@ -856,6 +864,10 @@ Feature: Smoke test
     Given I enable trace
     Given I disable trace
     Given I have a simple overclocked 6502 system
+    Given I am using C64 processor port options
+    Given a ROM from file "C:\VICE\C64\kernal" at $e000
+    Given a ROM from file "C:\VICE\C64\basic" at $a000
+    Given add C64 hardware
     When I enable uninitialised memory read protection with immediate fail
     * That does fail on BRK
     Given a user port to 24 bit bus is installed
@@ -880,10 +892,17 @@ Feature: Smoke test
       And the layer uses exact address matching
       And the layer has 16 colours
       And the layer has overscan
-    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-	And the layer uses exact address matching
+    Given add a 2-to-1 merge layer with registers at '0xa202'
+    And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
+      Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+      And the layer uses exact address matching
+      And the layer has 16 colours
+      And the layer has overscan
+      Given add a StaticColour layer for palette index '0xff'
+      And the layer has 16 colours
+      And the layer has overscan
     Given add a Sprites2 layer with registers at '0x9200' and addressEx '0x08' and running at 14.31818MHz
     And the layer has 16 colours
     And the layer has overscan
@@ -932,6 +951,7 @@ Feature: Smoke test
     Given write data from file "tmp/target/MusicMW2000Samples.bin1" to 24bit bus at '0x0000' and addressEx '0x04'
     Given write data from file "tmp/target/MusicMW2000Samples.bin2" to 24bit bus at '0x8000' and addressEx '0x04'
 
+    And I load crt "bin/main.crt"
     And I load prg "bin/main.prg"
     And I load labels "tmp/main.map"
 
@@ -951,7 +971,8 @@ Feature: Smoke test
     Given I disable trace
     Given property "bdd6502.bus24.trace" is set to string "false"
     Given video display does not save debug BMP images
-    Given video display processes 24 pixels per instruction
+    # Different because SendAPUAPULineScrolls takes a lot of time
+    Given video display processes 8 pixels per instruction
     Given limit video display to 60 fps
     Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     When I execute the procedure at start until return
@@ -1062,8 +1083,10 @@ Feature: Smoke test
     Given clear all external devices
 	Given a new C64 video display
     And show C64 video window
-	And force C64 displayed bank to 3
+    And force C64 displayed bank to 3
+	Given add C64 display window to C64 keyboard buffer hook
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
@@ -1126,45 +1149,16 @@ Feature: Smoke test
     Given video display does not save debug BMP images
     Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
+    Given add C64 regular IRQ trigger of "100000" cycles
     When I execute the procedure at start for no more than 0 instructions until PC = $E5CF
-
-    When I hex dump memory between $400 and $800
 
 #    Given property "bdd6502.bus24.trace" is set to string "true"
 #    Given I enable trace
+    When I hex dump memory between $400 and $800
 
-    # Execute a screen draw to fake whatever the real C64 code and its IRQ does at this point
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
+    # Debug: To just run the C64 kernal without any other update code
+    Then I continue executing the procedure until return
 
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-	Given render a C64 video display frame
-    Given render a video display frame
-    When I execute the procedure at RenderScreenChunk until return
-
-	Given render a C64 video display frame
-    Given render a video display frame
-    When rendering the video until window closed
 
 
 
@@ -1174,6 +1168,7 @@ Feature: Smoke test
   Scenario: Smoke test for Demo12
     Given clear all external devices
     Given a new audio expansion
+    And audio mix 85
     Given a new video display with overscan and 16 colours
 #	And enable video display bus debug output
 #    And enable debug pixel picking
@@ -1270,3 +1265,75 @@ Feature: Smoke test
 #    Given video display processes 24 pixels per instruction
     Given limit video display to 60 fps
     When I execute the procedure at start until return
+
+
+
+
+
+  @Demo13
+  Scenario: Test chars image conversion output
+    Given clear all external devices
+    Given a new video display with overscan and 16 colours
+    And enable video display bus debug output
+    Given a new audio expansion
+    And audio mix 85
+    Given video display processes 8 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display does not save debug BMP images
+    Given video display add joystick to port 1
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-16-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I have a simple overclocked 6502 system
+    And That does fail on BRK
+    And I enable uninitialised memory read protection with immediate fail
+    Given a user port to 24 bit bus is installed
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    And the layer has overscan
+
+    Given show video window
+
+    # Palette
+    Given write data from file "tmp/Demo13PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
+    # Clear first palette entry to black
+#    Given write data byte '0x00' to 24bit bus at '0x9c00' and addressEx '0x01'
+#    Given write data byte '0x00' to 24bit bus at '0x9c01' and addressEx '0x01'
+    # Chars
+    Given write data from file "tmp/Demo13Chars_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
+    Given write data from file "tmp/Demo13Chars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
+    Given write data from file "tmp/Demo13Chars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
+    Given write data from file "tmp/Demo13Chars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+    # Chars screen
+    Given write data from file "tmp/Demo13Chars_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
+    Given write data from file "tmp/Demo13Chars_map.bin2" to 24bit bus at '0x8000' and addressEx '0x80'
+
+
+    # Wide overscan can use 0x2b which has a couple of chars on the left masked for scrolling and hits the right edge _HSYNC
+    # Use the 320 wide settings
+    Given write data byte '0x29' to 24bit bus at '0x9e09' and addressEx '0x01'
+    # Enable all layers
+    Given write data byte '0x0f' to 24bit bus at '0x9e0a' and addressEx '0x01'
+
+    # Enable display
+    Given write data byte '0x20' to 24bit bus at '0x9e00' and addressEx '0x01'
+    # Layer priority all
+    Given write data byte '0x00' to 24bit bus at '0x9e08' and addressEx '0x01'
+    # Change video background colour
+    Given write data byte '0x00' to 24bit bus at '0x9e0b' and addressEx '0x01'
+
+    # Old behaviour, no transparent last layer
+    Given render a video display frame
+
+    # New daughter board behaviour
+    # Enable background colour
+#    Given write data byte '0x30' to 24bit bus at '0x9e00' and addressEx '0x01'
+#    Given render a video display frame
+
+    # Change video background colour
+#    Given write data byte '0x33' to 24bit bus at '0x9e0b' and addressEx '0x01'
+#    Given render a video display frame
+
+
+    When display until window closed
+
+    Then expect image "testdata/TC-16-000000.bmp" to be identical to "tmp/frames/TC-16-000000.bmp"

@@ -145,7 +145,7 @@
 		Single step C64, note how drive executes code with C64
 		Note how at C:PC 85e4 A = $6a which is correct
 		Single step C64 for a while and note how drive PC stops executing any code at 59d
-			Interesting to ntoe that when 8:PC = 59d the emulator C64 video frame refreshes
+			Interesting to note that when 8:PC = 59d the emulator C64 video frame refreshes
 		https://sourceforge.net/p/vice-emu/bugs/search/?q=status%3Aopen*+AND+text%3A1541+AND+text%3Acycle
 		C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -moncommands C:\work\c64\IRQDisk\TestIRQDisk.lbl -drive8wobble 0 +autostart-delay-random -remotemonitor -truedrive C:\Work\C64\IRQDisk\test.d64
 		V3.1 rev 34062M (Windows)
@@ -165,3 +165,28 @@
 
 * Needs a large file read. The first half can duplicate the second half and be used to check it.
 	Passes
+
+
+
+
+* Experiment with diffetent interleave in emulation and real drive, to find the best file interleave for speed.
+	C:\Users\marti\Downloads\vice-emu-code-r44576-trunk-vice\vice-emu-code-r44576-trunk-vice\src\vdrive\vdrive-iec.c
+		iec_write_sequential
+			retval = vdrive_bam_alloc_next_free_sector(vdrive, &t_new, &s_new);
+	C:\Users\marti\Downloads\vice-emu-code-r44576-trunk-vice\vice-emu-code-r44576-trunk-vice\src\vdrive\vdrive-bam.c
+		vdrive_bam_get_interleave
+	>> Either create a tool to produce all the different 256 byte blocks from a file...
+	>> Or update C1541 to set the interleave based on a command...
+		> See c:\work\C1541-Tweaks...
+	>> c:\work\C1541-Tweaks\c1541\Debug\c1541.exe -attach test2.d64 -format test,67 -write TestIRQDisk.prg testirqdisk -interleave 15 -write screen1.prg screen1 -write screen2.prg screen2 -write screen3.prg screen3 -write TESTSAVE.PRG testsave
+
+
+
+
+* Add minimal code generation options
+	TestIRQDisk3.a
+		IRQDisk_NoDriveCode = 1
+		IRQDisk_NoCode_Load = 1
+		IRQDisk_NoCode_LoadAfterName = 1
+		IRQDisk_NoCode_Pulse = 1
+		IRQDisk_NoCode_Save = 1

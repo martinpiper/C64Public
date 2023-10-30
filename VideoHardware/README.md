@@ -4,18 +4,12 @@ Video Hardware
 This project contains C64 code that interfaces with the user port 24 bit address and extension video hardware in this project: https://github.com/martinpiper/BombJack
 
 
-Prerequisites
-=============
-
-	Source: https://github.com/martinpiper/C64Public
-	Source: https://github.com/martinpiper/BombJack
-	Release: https://github.com/martinpiper/BDD6502/releases
-	Release: https://github.com/martinpiper/ImageToBitplane/releases
-	Corretto java corretto-1.8.0_252 can be used for better performance
-
-
 To build and run
 ================
+
+
+The assembler used is an updated version of ACME which can use Python as a built-in scripting language for assembly and data parsing or generation. Since this ACME is 32 bit (x86) code then it needs the 32 bit Python DLL to be included. To access most script functionality the Python SDK will need to be installed and accessible via the PATH environment. I installed Python 3.9.0 (final) 32 bit (x86), which is accessible via the environment variable %LOCALAPPDATA%\Programs\Python
+
 
 To convert the artwork assets used in the demo. This does not need to be run every time, only when the assets are changed. Run:
 
@@ -25,6 +19,7 @@ To convert the artwork assets used in the demo. This does not need to be run eve
 	* assets\convert5.bat
 	* assets\convert6.bat
 	* assets\convert7.bat
+	* etc...
 	
 To build the code, execute tests, and run one of the examples by running one of these:
 
@@ -37,6 +32,7 @@ To build the code, execute tests, and run one of the examples by running one of 
 	* BuildIt5.bat
 	* BuildIt6.bat
 	* BuildIt7.bat
+	* etc...
 
 
 Map editor
@@ -54,6 +50,18 @@ Editing tests
 Tests for this projects are authored with BDD6502, which is a framework built around Cucumber that executes readable test cases.
 
 To open the editor, run: FeatureEditor.bat
+
+
+
+Source code repositories
+========================
+
+	Source: https://github.com/martinpiper/C64Public
+	Source: https://github.com/martinpiper/BombJack
+	Release: https://github.com/martinpiper/BDD6502/releases
+	Release: https://github.com/martinpiper/ImageToBitplane/releases
+	Corretto java corretto-1.8.0_252 can be used for better performance
+
 
 
 Credits

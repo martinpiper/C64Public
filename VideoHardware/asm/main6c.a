@@ -27,7 +27,9 @@ zeroPage_Temp1	= $03
 !zn
 * = C64Cartridge_Lo_8K
 !word DoTitleScreen
-!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
+!word DoTitleScreen
++M_CBM80
+
 ; Jump table
 	jmp DoTitleScreen
 	jmp DoGame
@@ -317,6 +319,7 @@ BankDataToC64Dest_hi = *+2
 ;!source "../MakeCart/asm/EasyFlash_Code.a"
 !source "../MakeCart/asm/BankSelect8K.a"
 
++MCheckNotInIOKernal
 DataToTopEndReal
 }
 DataToTopEnd
@@ -337,3 +340,5 @@ DoDataToTop
 	dex
 	bne .cl1
 	rts
+
++MCheckNotInIOKernal

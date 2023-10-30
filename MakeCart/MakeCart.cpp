@@ -1112,7 +1112,7 @@ int main( int argc , char **argv )
 -c <bank offset> <start work buffer> <end work buffer> : Copy Data from start to end work buffer offsets into the temporary bank data with the bank offset. If the data is over the end of the temporary bank size of 8K then it is truncated. Any data from any file can be written to any offset in the temporary bank data\n\
 -a <address> : Sets the bank load address.\n\
 -w : Write the 8K temporary bank data with the chip/bank number from the preceding -b <bank> to the cartridge data buffer\n\
--m <file path wildcard> <max size> : Imports multiple files across banks using the file wildcard and max size per chunk.\n\
+-m <file path wildcard> <max size> : Imports multiple files across banks using the file wildcard and max size per chunk. This adds three bytes to the start of the data, cartridge bank and lo/hi offset (plus compressed flag).\n\
 -f <max size> <num entries> <file name entries> : Imports multiple files across banks using the max size per chunk and file entries.\n\
 -l <compression lower threshold> <compression upper threshold> <path to compression tool> <compression tool command line options before input file> <compression tool command line options before output file>\n\
 -lc Cancels any optional compression configuration\n\

@@ -117,6 +117,8 @@ int main(int argc,char **argv)
 			" -o2 Enable shuffle optimise compression pass (very slow). Must be before other compression options.\n"
 			" -o3 Enable long threshold optimise compression pass (quite slow). Must be before other compression options.\n"
 			" -o4 <num1> <num2> <num3> <num4> Specifies the four tweak values displayed during -o1 which avoids the slow permutation search. Must be before other compression options.\n"
+			" -no Do not output the original file size. Must be before other options.\n"
+			" -yo Output the original load address (first two bytes of the file). Must be before other options.\n"
 		);
 		exit(-1);
 	}
@@ -126,6 +128,9 @@ int main(int argc,char **argv)
 	int offset = 0;
 	int wantedLength = 0;
 	bool outputC64Header = false;
+	bool doNotOutputOriginalSize = false;
+	bool outputOriginalLoadAddress = false;
+	int originalLoadAddress = 0;
 	bool useRLE = false;
 	u32 startC64Code = 0x900;
 	u32 loadC64Code = 0;
@@ -142,6 +147,22 @@ int main(int argc,char **argv)
 	do
 	{
 		handledPreParam = false;
+
+		if (argv[1][0] == '-' && argv[1][1] == 'n' && argv[1][2] == 'o')
+		{
+			doNotOutputOriginalSize = true;
+			argc--;
+			argv++;
+			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'y' && argv[1][2] == 'o')
+		{
+			outputOriginalLoadAddress = true;
+			argc--;
+			argv++;
+			handledPreParam = true;
+		}
 
 		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == '1')
 		{
@@ -282,6 +303,11 @@ int main(int argc,char **argv)
 		exit(-1);
 	}
 
+	// Always read this, then reset the file pointer...
+	originalLoadAddress = fgetc(fp);
+	originalLoadAddress |= fgetc(fp) << 8;
+	fseek(fp , 0 , SEEK_SET);
+
 	// -hex
 	if (argv[1][1] == 'h' && argv[1][2] == 'e' && argv[1][3] == 'x')
 	{
@@ -410,7 +436,15 @@ int main(int argc,char **argv)
 
 		if (!outputC64Header)
 		{
-			fwrite(&inputSize,1,sizeof(inputSize),fp);
+			if (!doNotOutputOriginalSize)
+			{
+				fwrite(&inputSize,1,sizeof(inputSize),fp);
+			}
+			if (outputOriginalLoadAddress)
+			{
+				u16 theLoadAddress = (u16) originalLoadAddress;
+				fwrite(&theLoadAddress,1,sizeof(theLoadAddress),fp);
+			}
 		}
 
 		u32 outSize;

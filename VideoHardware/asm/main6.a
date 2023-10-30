@@ -209,7 +209,7 @@ mainLoopGame
 
 	lda #0
 	jsr CartSelectBank_8K
-	jmp C64Cartridge_Lo_8K + $0a
+	jmp C64Cartridge_Lo_8K + $0c
 
 	rts
 BounceTab
@@ -394,3 +394,5 @@ SpriteYExtentLookup
 }
 		!by .realSize
 	}
+
++MCheckNotInIOKernal

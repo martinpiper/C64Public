@@ -1,18 +1,18 @@
 *=Scroller_ScrollBankEntry
 !for .x , 39 {
 !ifdef ScreenBTemp {
-	lda ScreenA + (9*40) + (38-(.x-1))
+	lda ScreenA + ((9+Scroller_AdditionalCharLinesBankAdjust)*40) + (38-(.x-1))
 	sta ScreenBTemp + (38-(.x-1))
 } else {
-	lda ScreenA + (9*40) + (38-(.x-1))
-	sta ScreenB + 41 + (9*40) + (38-(.x-1))
+	lda ScreenA + ((9+Scroller_AdditionalCharLinesBankAdjust)*40) + (38-(.x-1))
+	sta ScreenB + 41 + ((9+Scroller_AdditionalCharLinesBankAdjust)*40) + (38-(.x-1))
 }
 }
 
-!for .y , 9 {
+!for .y , 9+Scroller_AdditionalCharLinesBankAdjust {
 !for .x , 39 {
-	lda ScreenA + ((8-(.y-1))*40) + (38-(.x-1))
-	sta ScreenB + 41 + ((8-(.y-1))*40) + (38-(.x-1))
+	lda ScreenA + (((8+Scroller_AdditionalCharLinesBankAdjust)-(.y-1))*40) + (38-(.x-1))
+	sta ScreenB + 41 + (((8+Scroller_AdditionalCharLinesBankAdjust)-(.y-1))*40) + (38-(.x-1))
 }
 }
 	rts
@@ -38,7 +38,7 @@
 }
 
 
-!for .y , 9 {
+!for .y , 9-Scroller_AdditionalCharLinesBankAdjust {
 !for .x , 39 {
 	lda ScreenA + ((18-(.y-1))*40) + (38-(.x-1))
 	sta ScreenB + 41 + ((18-(.y-1))*40) + (38-(.x-1))
@@ -48,7 +48,7 @@
 !ifdef ScreenBTemp {
 !for .x , 39 {
 	lda ScreenBTemp + (38-(.x-1))
-	sta ScreenB + 41 + (9*40) + (38-(.x-1))
+	sta ScreenB + 41 + ((9+Scroller_AdditionalCharLinesBankAdjust)*40) + (38-(.x-1))
 }
 }
 	rts

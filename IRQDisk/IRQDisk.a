@@ -1,3 +1,4 @@
+IRQDiskCodeStart
 ; Number of bytes to use during the drive memory transfer
 .driveTransferBytes = $20
 ; Used during transfers so we can get status information
@@ -157,6 +158,7 @@ IRQDisk_InitDrive:
 	jmp SECOND
 }
 
+!ifndef IRQDisk_NoCode_Load {
 ;***************************************
 	; The actual IRQ loader
 .loadError
@@ -165,6 +167,15 @@ rts
 ;	CC = Load OK
 ;	CS = Load error
 IRQDisk_Load:
+	jsr IRQDisk_SendLoadName
+	bcs .loadError
+!ifndef IRQDisk_NoCode_LoadAfterName {
+	jmp IRQDisk_LoadDataAfterName
+} else {
+	rts
+}
+
+IRQDisk_SendLoadName
 	pha
 	; Update the self modify file name address
 	stx .smFileNameIn+1
@@ -172,12 +183,12 @@ IRQDisk_Load:
 
 	; Send the command code to read a file
 	lda #.diskCommandReadFile
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	pla
 	bcs .loadError
 	tay
 	; Send the file name length
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	bcs .loadError
 	; Send file name
 	ldx #0
@@ -185,12 +196,17 @@ IRQDisk_Load:
 	stx .gotAddrB
 }
 .smFileNameIn	lda $0000,x
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	bcs .loadError
 	inx
 	dey
 	bne .smFileNameIn
+	; Caqrry clear here
+	rts
 
+!ifndef IRQDisk_NoCode_LoadAfterName {
+
+IRQDisk_LoadDataAfterName
 !ifdef IRQDisk_UseATN {
 	; Start the disk loading loop
 .diskLoadL:
@@ -198,26 +214,26 @@ IRQDisk_Load:
 	+DelayFor IRQDisk_C64FromBurstGuardTime
 
 	; Gets the number of bytes to process, or the EOF escape code, or an error escape code
-	jsr .computerRecv
+	jsr IRQDisk_computerRecv
 	tay
 
 	; This delay is to allow the drive time to setup the next byte and begin waiting for the ATN strobe
 	+DelayFor IRQDisk_C64ToBurstGuardTime
 
 .diskLoadL2
-	jsr .computerRecvBitsATNBurst
+	jsr IRQDisk_computerRecvBitsATNBurst
 	ldx .gotAddrB
 	bne .gotAddrSkip
 	; Store the start address first time around
 	sta .storeLo
 	dey
-	jsr .computerRecvBitsATNBurst
+	jsr IRQDisk_computerRecvBitsATNBurst
 	sta .storeHi
 	dey
 	lda #1
 	sta .gotAddrB
 	; Now the first char
-	jsr .computerRecvBitsATNBurst
+	jsr IRQDisk_computerRecvBitsATNBurst
 .gotAddrSkip
 	; Check for the rare case of having no more bytes left to process
 	cpy #0
@@ -242,15 +258,15 @@ IRQDisk_Load:
 	jmp .diskLoadL
 .gotAddrB !by 0
 } else {
-	jsr .computerRecv	; get the start address
+	jsr IRQDisk_computerRecv	; get the start address
 	tay
-	jsr .computerRecv
+	jsr IRQDisk_computerRecv
 	sta .storeHi
 
 	; Start the disk loading loop
 .diskLoadL:
 	; Receives the next byte from the drive and exits this loop by popping the stack
-	jsr .computerRecv
+	jsr IRQDisk_computerRecv
 .storeHi = * + 2
 	; Store the data
 	sta $100,y
@@ -265,19 +281,26 @@ IRQDisk_Load:
 	inc .storeHi
 	jmp .diskLoadL
 }
+
+IRQDisk_GetLastStoredHi
+	lda .storeHi
+	rts
+
+} ; <!ifndef IRQDisk_NoCode_LoadAfterName {
+
 	; Gets a byte from the drive with escape byte parsing
-.computerRecv:
-	jsr .computerRecvBits
+IRQDisk_computerRecv:
+	jsr IRQDisk_computerRecvBits
 	cmp #.driveEscapeByte
 	bne .notEscape
 	; We got the escape code so we get another byte
-	jsr .computerRecvBits
+	jsr IRQDisk_computerRecvBits
 	; Is it the escape code again? If yes it is the actual byte
 	cmp #.driveEscapeByte
 	beq .notEscape
 
 	; Compare the status returned from the drive
-	; Transfer finished. 0=ok, nonzero=error.
+	; Transfer finished. 0=ok, nonzero=error. Carry clear or set by this.
 	cmp #1
 	; Pop the return address and go back to to whomever called us
 	pla
@@ -286,10 +309,9 @@ IRQDisk_Load:
 .notEscape:
 	rts
 
-IRQDisk_GetLastStoredHi
-	lda .storeHi
-	rts
+} ;< !ifndef IRQDisk_NoCode_Load {
 
+!ifndef IRQDisk_NoCode_Pulse {
 ;***************************************
 ; Sets the pulse speed
 ; On return:
@@ -299,16 +321,18 @@ IRQDisk_SetPulseSpeed:
 	pha
 	; Send the command code to set the pulse speed
 	lda #.diskCommandSetPulseSpeed
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	pla
 	; If there was a problem then don't send the next byte
 	bcs .end1
 	; Send the pulse speed
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	; Don't wait for a reply from the drive
 .end1
 	rts
-	
+} ;< !ifndef IRQDisk_NoCode_Pulse {
+
+!ifndef IRQDisk_NoCode_Save {
 ;***************************************
 ; The sets the name to start saving data with. It will return quite quickly while the drive tries
 ; to find the file name, hence the user will only know if the name was found when IRQDisk_WriteData
@@ -324,15 +348,15 @@ IRQDisk_WriteSetName:
 
 	; Send the command code to write a file
 	lda #.diskCommandWriteFile
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	pla
 	tay
 	; Send the file name length
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	; Send file name
 	ldx #0
 .smFileNameIn2	lda $0000,x
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	inx
 	dey
 	bne .smFileNameIn2
@@ -344,7 +368,7 @@ IRQDisk_WriteSetName:
 IRQDisk_WriteData
 	stx .diskSaveL + 1
 	sty .diskSaveL + 2
-	jsr .computerRecv	; get the return code or the number of bytes to save to the file
+	jsr IRQDisk_computerRecv	; get the return code or the number of bytes to save to the file
 	tay
 	; Theoretically it is possible to have a file on the disk with 1 or 2 bytes so in these situations
 	; skip saving the start address
@@ -355,9 +379,9 @@ IRQDisk_WriteData
 	dey
 	; Send lo and hi
 	lda .diskSaveL+1
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	lda .diskSaveL+2
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	; Start the disk saving loop
 .diskSaveL:
 	lda $0000
@@ -365,16 +389,16 @@ IRQDisk_WriteData
 	bne .diskSaveL2
 	inc .diskSaveL + 2
 .diskSaveL2
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	dey
 	bne .diskSaveL
 	; Receives the next byte from the drive which might be the number of bytes to send next or
 	; an error code which exits this loop by popping the stack.
-	jsr .computerRecv
+	jsr IRQDisk_computerRecv
 	; We are told how many bytes to transfer next
 	tay
 	jmp .diskSaveL
-
+} ;< !ifndef IRQDisk_NoCode_Save {
 
 	; Used by the sending and receiving code
 .tempStore !by 0,0,0
@@ -387,7 +411,7 @@ IRQDisk_WriteData
 ; C: Loop for the rest of the bits
 ;***************************************
 	; Writes a byte to the drive
-.computerSend:
+IRQDisk_computerSend:
 	sta .tempStore
 	stx .tempStore+1
 	sty .tempStore+2
@@ -460,7 +484,7 @@ IRQDisk_WriteData
 }
 
 	; Gets a byte from the drive without escape byte parsing
-.computerRecvBits:
+IRQDisk_computerRecvBits:
 	; Counter for 8 bits to receive
 	ldx #8
 .waitIdle1:
@@ -532,7 +556,7 @@ IRQDisk_WriteData
 
 IRQDisk_SendClockedRecv:
 	lda #.diskCommandSendClockedData
-	jsr .computerSend
+	jsr IRQDisk_computerSend
 	rts
 
 
@@ -626,7 +650,7 @@ IRQDisk_SafeRasters
 	!by .val1 | .val2
 }
 
-.computerRecvBitsATNBurst:
+IRQDisk_computerRecvBitsATNBurst:
 !ifndef IRQDisk_NoScreenNoIRQ {
 	lda #kVIC2ScreenControlVBits_RasterHi
 	bit VIC2ScreenControlV
@@ -699,3 +723,6 @@ IRQDisk_SafeRasters
 
 	rts
 }
+
+IRQDiskCodeEnd
+IRQDiskCodeSize = IRQDiskCodeEnd - IRQDiskCodeStart

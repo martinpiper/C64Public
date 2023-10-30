@@ -1,13 +1,16 @@
 !zn
 RNXPCompressionDecompressU
 !ifndef RNXPCompressionDecompressU_avoidTempInit {
+	ldy #1
+	sty .smBitCount
 	; Init offset
 	ldy	#-1
 	sty	RNXPCompressionDecompress_TempOffset+0
 	sty	RNXPCompressionDecompress_TempOffset+1
-	; Clear high length
+	; Clear high length Y = 0
 	iny
 	sty	RNXPCompressionDecompress_TempWord1+1
+	sty .currentBits
 } else {
 	ldy #0
 }
@@ -44,8 +47,12 @@ RNXPCompressionDecompressU
 	ror RNXPCompressionDecompress_TempOffset + 1
 
 	; Get offset LSB
+!ifdef RNXPCompressionDecompress_GetBytesmAddrAsMacro {
+	+MRNXPCompressionDecompress_GetBytesmAddrAsMacro
+} else {
 	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
 	+MIncZPAddrWord RNXPCompressionDecompress_GetBytesmAddr
+}
 	; Shift in carry. Also carry used below for length decision
 	ror
 	; To offset LSB
@@ -126,14 +133,21 @@ RNXPCompressionDecompressU
 
 .copyLiteralBytes
 	; Assume CS here
+!ifdef RNXPCompressionDecompress_GetBytesmAddrAsMacro {
+	+MRNXPCompressionDecompress_GetBytesmAddrAsMacro
+} else {
 	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
+}
 	sta	(RNXPCompressionDecompress_WriteBytesmAddr),y
 
+!ifdef RNXPCompressionDecompress_GetBytesmAddrAsMacro {
+} else {
 	inc+1 RNXPCompressionDecompress_GetBytesmAddr + 0
 	bne	.notHigh2
 	+RNXPCompressionIncBorder_A
 	inc+1 RNXPCompressionDecompress_GetBytesmAddr + 1
 .notHigh2
+}
 	+MIncZPAddrWord RNXPCompressionDecompress_WriteBytesmAddr
 	; Any bytes left?
 	dex
@@ -203,8 +217,12 @@ RNXPCompressionDecompressU
 
 	lda #7
 	sta .smBitCount
+!ifdef RNXPCompressionDecompress_GetBytesmAddrAsMacro {
+	+MRNXPCompressionDecompress_GetBytesmAddrAsMacro
+} else {
 	lda	(RNXPCompressionDecompress_GetBytesmAddr),y
 	+MIncZPAddrWord RNXPCompressionDecompress_GetBytesmAddr
+}
 	asl
 	sta .currentBits
 	rts

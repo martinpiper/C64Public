@@ -65,3 +65,12 @@ RNXPCompressionDecompress_GetByte	lda $1234
 	+MDecompressRLEToEBBSAddr .plane2 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_2
 	+MDecompressRLEToEBBSAddr .plane3 , kBus24Bit_SpritePlanes_EBBS , kBus24Bit_SpritePlanes_3
 }
+
+!macro MRLEPlanesDataToDefaultMode7Screen .plane0 , .plane1 {
+	+MDecompressRLEToEBBSAddr .plane0 , kBus24Bit_Mode7ScreenPlanes_EBBS , kBus24Bit_Mode7ScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .plane1 , kBus24Bit_Mode7ScreenPlanes_EBBS , kBus24Bit_Mode7ScreenPlanes_1
+}
+
+!macro MRLEScreenDataToDefaultMode7Screen .data {
+	+MDecompressRLEToEBBSAddr .data , kBus24Bit_Mode7ScreenPlanes_EBBS , kBus24Bit_Mode7ScreenMap
+}

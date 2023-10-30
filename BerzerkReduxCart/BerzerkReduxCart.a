@@ -37,11 +37,7 @@
 *=$8000
 !word Boot
 !word Boot
-	!byte $c3 ;c
-	!byte $c2 ;b
-	!byte $cd ;m
-	!byte $38 ;8
-	!byte $30 ;0
++M_CBM80
 
 Boot
 	sei

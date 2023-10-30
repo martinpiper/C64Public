@@ -17,7 +17,7 @@ Segment size is 2048 ($800) bytes ($c800 - $d000 exclusive).
 Parsing source file '../stdlib/Initialise.a'
 Parsing source file '../Scroller/OneTime.a'
 Parsing source file 'bin/FingerPrint.a'
-Segment size is 526 ($20e) bytes ($400 - $60e exclusive).
+Segment size is 521 ($209) bytes ($400 - $609 exclusive).
 Segment size is 64 ($40) bytes ($680 - $6c0 exclusive).
 Loaded 2048 ($800) bytes from file offset 20 ($14).
 Segment size is 2048 ($800) bytes ($800 - $1000 exclusive).
@@ -448,10 +448,10 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'bin\Intro.prg' read $1441
+File 'bin\Intro.prg' read $143c
 New address $8000
 New bank $1
- Copy from $1 len $1440 to $0
+ Copy from $1 len $143b to $0
  Write bank
 New address $8000
 New bank $2
@@ -472,56 +472,56 @@ New address $8000
 Using new span size $2000
 New bank $7
 File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2da
-File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_1.bin' offset $0 xor $0 len $175f
+File 'bin\Char1To0_1.bin' offset $0 xor $0 len $175f
 File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2da
-File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $175f
+File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $175f
 File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
 File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
 File 'bin\ColouriseRight.bin' offset $0 xor $0 len $196
-File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_41.bin' offset $0 xor $0 len $148f
-File 'bin\Char0To1_39.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_39.bin' offset $0 xor $0 len $148f
-File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1579
-File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1579
-File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_1.bin' offset $0 xor $0 len $148f
-File 'bin\Colour_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Char0To1_41.bin' offset $0 xor $0 len $14a1
+File 'bin\Char1To0_41.bin' offset $0 xor $0 len $14a1
+File 'bin\Char0To1_39.bin' offset $0 xor $0 len $14a1
+File 'bin\Char1To0_39.bin' offset $0 xor $0 len $14a1
+File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1849
+File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1849
+File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Colour_1.bin' offset $0 xor $0 len $175f
+File 'bin\Colour_m1.bin' offset $0 xor $0 len $175f
 File 'bin\Colour_40.bin' offset $0 xor $0 len $15c1
-File 'bin\Colour_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Colour_39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Colour_39.bin' offset $0 xor $0 len $158b
+File 'bin\Colour_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Colour_41.bin' offset $0 xor $0 len $158b
+File 'bin\Colour_m41.bin' offset $0 xor $0 len $1849
 File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
 File 'bin\Scroller1.cmp' offset $0 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $2000 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $4000 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $6000 xor $0 len $2000
-File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ef8
+File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ee2
 File 'bin\Scroller2.cmp' offset $0 xor $0 len $2000
 File 'bin\Scroller2.cmp' offset $2000 xor $0 len $2000
 File 'bin\Scroller2.cmp' offset $4000 xor $0 len $2000
-File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1eb3
+File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1e9f
 File 'bin\Title.cmp' offset $0 xor $0 len $2000
 File 'bin\Title.cmp' offset $2000 xor $0 len $2000
-File 'bin\Title.cmp' offset $4000 xor $0 len $63e
+File 'bin\Title.cmp' offset $4000 xor $0 len $639
 File 'bin\ColouriseTop.bin' read $2da to use $2da
-File 'bin\Char0To1_1.bin' read $148f to use $148f
-File 'bin\Char1To0_1.bin' read $148f to use $148f
+File 'bin\Char0To1_1.bin' read $175f to use $175f
+File 'bin\Char1To0_1.bin' read $175f to use $175f
 New bank $7
  Write multi-bank 7 $8000
 File 'bin\ColouriseBottom.bin' read $2da to use $2da
 New bank $8
  Write multi-bank 8 $8000
-File 'bin\Char0To1_m1.bin' read $148f to use $148f
-File 'bin\Char1To0_m1.bin' read $148f to use $148f
+File 'bin\Char0To1_m1.bin' read $175f to use $175f
+File 'bin\Char1To0_m1.bin' read $175f to use $175f
 New bank $9
  Write multi-bank 9 $8000
 File 'bin\ColouriseLeft.bin' read $196 to use $196
@@ -534,95 +534,95 @@ New bank $b
 File 'bin\ColouriseRight.bin' read $196 to use $196
 New bank $c
  Write multi-bank 12 $8000
-File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1
-File 'bin\Char1To0_m40.bin' read $15c1 to use $15c1
+File 'bin\Char0To1_m40.bin' read $1891 to use $1891
+File 'bin\Char1To0_m40.bin' read $1891 to use $1891
 New bank $d
  Write multi-bank 13 $8000
-File 'bin\Char0To1_41.bin' read $148f to use $148f
+File 'bin\Char0To1_41.bin' read $14a1 to use $14a1
 New bank $e
  Write multi-bank 14 $8000
-File 'bin\Char1To0_41.bin' read $148f to use $148f
+File 'bin\Char1To0_41.bin' read $14a1 to use $14a1
 New bank $f
  Write multi-bank 15 $8000
-File 'bin\Char0To1_39.bin' read $148f to use $148f
+File 'bin\Char0To1_39.bin' read $14a1 to use $14a1
 New bank $10
  Write multi-bank 16 $8000
-File 'bin\Char1To0_39.bin' read $148f to use $148f
+File 'bin\Char1To0_39.bin' read $14a1 to use $14a1
 New bank $11
  Write multi-bank 17 $8000
-File 'bin\Char0To1_m41.bin' read $1579 to use $1579
+File 'bin\Char0To1_m41.bin' read $1849 to use $1849
 New bank $12
  Write multi-bank 18 $8000
-File 'bin\Char1To0_m41.bin' read $1579 to use $1579
+File 'bin\Char1To0_m41.bin' read $1849 to use $1849
 New bank $13
  Write multi-bank 19 $8000
-File 'bin\Char0To1_m39.bin' read $1579 to use $1579
+File 'bin\Char0To1_m39.bin' read $1849 to use $1849
 New bank $14
  Write multi-bank 20 $8000
-File 'bin\Char1To0_m39.bin' read $1579 to use $1579
+File 'bin\Char1To0_m39.bin' read $1849 to use $1849
 New bank $15
  Write multi-bank 21 $8000
-File 'bin\Colour_1.bin' read $148f to use $148f
+File 'bin\Colour_1.bin' read $175f to use $175f
 New bank $16
  Write multi-bank 22 $8000
-File 'bin\Colour_m1.bin' read $148f to use $148f
+File 'bin\Colour_m1.bin' read $175f to use $175f
 New bank $17
  Write multi-bank 23 $8000
 File 'bin\Colour_40.bin' read $15c1 to use $15c1
 New bank $18
  Write multi-bank 24 $8000
-File 'bin\Colour_m40.bin' read $15c1 to use $15c1
+File 'bin\Colour_m40.bin' read $1891 to use $1891
 New bank $19
  Write multi-bank 25 $8000
-File 'bin\Colour_39.bin' read $1579 to use $1579
+File 'bin\Colour_39.bin' read $158b to use $158b
 New bank $1a
  Write multi-bank 26 $8000
-File 'bin\Colour_m39.bin' read $1579 to use $1579
+File 'bin\Colour_m39.bin' read $1849 to use $1849
 New bank $1b
  Write multi-bank 27 $8000
-File 'bin\Colour_41.bin' read $1579 to use $1579
+File 'bin\Colour_41.bin' read $158b to use $158b
 New bank $1c
  Write multi-bank 28 $8000
-File 'bin\Colour_m41.bin' read $1579 to use $1579
+File 'bin\Colour_m41.bin' read $1849 to use $1849
 New bank $1d
  Write multi-bank 29 $8000
 File 'bin\BlockStrips.bin' read $c35 to use $c35
 New bank $1e
  Write multi-bank 30 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $8ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $8ee2
 New bank $1f
  Write multi-bank 31 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $6ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $6ee2
 New bank $20
  Write multi-bank 32 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $4ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $4ee2
 New bank $21
  Write multi-bank 33 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $2ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $2ee2
 New bank $22
  Write multi-bank 34 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $ee2
 New bank $23
  Write multi-bank 35 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $7eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $7e9f
 New bank $24
  Write multi-bank 36 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $5eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $5e9f
 New bank $25
  Write multi-bank 37 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $3eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $3e9f
 New bank $26
  Write multi-bank 38 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $1eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $1e9f
 New bank $27
  Write multi-bank 39 $8000
-File 'bin\Title.cmp' read $463e to use $463e
+File 'bin\Title.cmp' read $4639 to use $4639
 New bank $28
  Write multi-bank 40 $8000
-File 'bin\Title.cmp' read $463e to use $263e
+File 'bin\Title.cmp' read $4639 to use $2639
 New bank $29
  Write multi-bank 41 $8000
-File 'bin\Title.cmp' read $463e to use $63e
+File 'bin\Title.cmp' read $4639 to use $639
 New bank $2a
  Write multi-bank 42 $8000
 New bank $2b
@@ -639,10 +639,10 @@ New address $a000
 New bank $0
  Copy from $2 len $2 to $1ffc
  Write bank
-File 'bin\Intro.prg' read $1441
+File 'bin\Intro.prg' read $143c
 New address $8000
 New bank $1
- Copy from $1 len $1440 to $0
+ Copy from $1 len $143b to $0
  Write bank
 New address $8000
 New bank $2
@@ -667,56 +667,56 @@ File 'bin\Chooser.prg' read $419
 Using new span size $2000
 New bank $7
 File 'bin\ColouriseTop.bin' offset $0 xor $0 len $2da
-File 'bin\Char0To1_1.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_1.bin' offset $0 xor $0 len $175f
+File 'bin\Char1To0_1.bin' offset $0 xor $0 len $175f
 File 'bin\ColouriseBottom.bin' offset $0 xor $0 len $2da
-File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m1.bin' offset $0 xor $0 len $175f
+File 'bin\Char1To0_m1.bin' offset $0 xor $0 len $175f
 File 'bin\ColouriseLeft.bin' offset $0 xor $0 len $196
 File 'bin\Char0To1_40.bin' offset $0 xor $0 len $14d1
 File 'bin\Char1To0_40.bin' offset $0 xor $0 len $14d1
 File 'bin\ColouriseRight.bin' offset $0 xor $0 len $196
-File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Char0To1_41.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_41.bin' offset $0 xor $0 len $148f
-File 'bin\Char0To1_39.bin' offset $0 xor $0 len $148f
-File 'bin\Char1To0_39.bin' offset $0 xor $0 len $148f
-File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1579
-File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1579
-File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_1.bin' offset $0 xor $0 len $148f
-File 'bin\Colour_m1.bin' offset $0 xor $0 len $148f
+File 'bin\Char0To1_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Char1To0_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Char0To1_41.bin' offset $0 xor $0 len $14a1
+File 'bin\Char1To0_41.bin' offset $0 xor $0 len $14a1
+File 'bin\Char0To1_39.bin' offset $0 xor $0 len $14a1
+File 'bin\Char1To0_39.bin' offset $0 xor $0 len $14a1
+File 'bin\Char0To1_m41.bin' offset $0 xor $0 len $1849
+File 'bin\Char1To0_m41.bin' offset $0 xor $0 len $1849
+File 'bin\Char0To1_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Char1To0_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Colour_1.bin' offset $0 xor $0 len $175f
+File 'bin\Colour_m1.bin' offset $0 xor $0 len $175f
 File 'bin\Colour_40.bin' offset $0 xor $0 len $15c1
-File 'bin\Colour_m40.bin' offset $0 xor $0 len $15c1
-File 'bin\Colour_39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_m39.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_41.bin' offset $0 xor $0 len $1579
-File 'bin\Colour_m41.bin' offset $0 xor $0 len $1579
+File 'bin\Colour_m40.bin' offset $0 xor $0 len $1891
+File 'bin\Colour_39.bin' offset $0 xor $0 len $158b
+File 'bin\Colour_m39.bin' offset $0 xor $0 len $1849
+File 'bin\Colour_41.bin' offset $0 xor $0 len $158b
+File 'bin\Colour_m41.bin' offset $0 xor $0 len $1849
 File 'bin\BlockStrips.bin' offset $0 xor $0 len $c35
 File 'bin\Scroller1.cmp' offset $0 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $2000 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $4000 xor $0 len $2000
 File 'bin\Scroller1.cmp' offset $6000 xor $0 len $2000
-File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ef8
+File 'bin\Scroller1.cmp' offset $8000 xor $0 len $ee2
 File 'bin\Scroller2.cmp' offset $0 xor $0 len $2000
 File 'bin\Scroller2.cmp' offset $2000 xor $0 len $2000
 File 'bin\Scroller2.cmp' offset $4000 xor $0 len $2000
-File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1eb3
+File 'bin\Scroller2.cmp' offset $6000 xor $0 len $1e9f
 File 'bin\Title.cmp' offset $0 xor $0 len $2000
 File 'bin\Title.cmp' offset $2000 xor $0 len $2000
-File 'bin\Title.cmp' offset $4000 xor $0 len $63e
+File 'bin\Title.cmp' offset $4000 xor $0 len $639
 File 'bin\ColouriseTop.bin' read $2da to use $2da
-File 'bin\Char0To1_1.bin' read $148f to use $148f
-File 'bin\Char1To0_1.bin' read $148f to use $148f
+File 'bin\Char0To1_1.bin' read $175f to use $175f
+File 'bin\Char1To0_1.bin' read $175f to use $175f
 New bank $7
  Write multi-bank 7 $8000
 File 'bin\ColouriseBottom.bin' read $2da to use $2da
 New bank $8
  Write multi-bank 8 $8000
-File 'bin\Char0To1_m1.bin' read $148f to use $148f
-File 'bin\Char1To0_m1.bin' read $148f to use $148f
+File 'bin\Char0To1_m1.bin' read $175f to use $175f
+File 'bin\Char1To0_m1.bin' read $175f to use $175f
 New bank $9
  Write multi-bank 9 $8000
 File 'bin\ColouriseLeft.bin' read $196 to use $196
@@ -729,95 +729,95 @@ New bank $b
 File 'bin\ColouriseRight.bin' read $196 to use $196
 New bank $c
  Write multi-bank 12 $8000
-File 'bin\Char0To1_m40.bin' read $15c1 to use $15c1
-File 'bin\Char1To0_m40.bin' read $15c1 to use $15c1
+File 'bin\Char0To1_m40.bin' read $1891 to use $1891
+File 'bin\Char1To0_m40.bin' read $1891 to use $1891
 New bank $d
  Write multi-bank 13 $8000
-File 'bin\Char0To1_41.bin' read $148f to use $148f
+File 'bin\Char0To1_41.bin' read $14a1 to use $14a1
 New bank $e
  Write multi-bank 14 $8000
-File 'bin\Char1To0_41.bin' read $148f to use $148f
+File 'bin\Char1To0_41.bin' read $14a1 to use $14a1
 New bank $f
  Write multi-bank 15 $8000
-File 'bin\Char0To1_39.bin' read $148f to use $148f
+File 'bin\Char0To1_39.bin' read $14a1 to use $14a1
 New bank $10
  Write multi-bank 16 $8000
-File 'bin\Char1To0_39.bin' read $148f to use $148f
+File 'bin\Char1To0_39.bin' read $14a1 to use $14a1
 New bank $11
  Write multi-bank 17 $8000
-File 'bin\Char0To1_m41.bin' read $1579 to use $1579
+File 'bin\Char0To1_m41.bin' read $1849 to use $1849
 New bank $12
  Write multi-bank 18 $8000
-File 'bin\Char1To0_m41.bin' read $1579 to use $1579
+File 'bin\Char1To0_m41.bin' read $1849 to use $1849
 New bank $13
  Write multi-bank 19 $8000
-File 'bin\Char0To1_m39.bin' read $1579 to use $1579
+File 'bin\Char0To1_m39.bin' read $1849 to use $1849
 New bank $14
  Write multi-bank 20 $8000
-File 'bin\Char1To0_m39.bin' read $1579 to use $1579
+File 'bin\Char1To0_m39.bin' read $1849 to use $1849
 New bank $15
  Write multi-bank 21 $8000
-File 'bin\Colour_1.bin' read $148f to use $148f
+File 'bin\Colour_1.bin' read $175f to use $175f
 New bank $16
  Write multi-bank 22 $8000
-File 'bin\Colour_m1.bin' read $148f to use $148f
+File 'bin\Colour_m1.bin' read $175f to use $175f
 New bank $17
  Write multi-bank 23 $8000
 File 'bin\Colour_40.bin' read $15c1 to use $15c1
 New bank $18
  Write multi-bank 24 $8000
-File 'bin\Colour_m40.bin' read $15c1 to use $15c1
+File 'bin\Colour_m40.bin' read $1891 to use $1891
 New bank $19
  Write multi-bank 25 $8000
-File 'bin\Colour_39.bin' read $1579 to use $1579
+File 'bin\Colour_39.bin' read $158b to use $158b
 New bank $1a
  Write multi-bank 26 $8000
-File 'bin\Colour_m39.bin' read $1579 to use $1579
+File 'bin\Colour_m39.bin' read $1849 to use $1849
 New bank $1b
  Write multi-bank 27 $8000
-File 'bin\Colour_41.bin' read $1579 to use $1579
+File 'bin\Colour_41.bin' read $158b to use $158b
 New bank $1c
  Write multi-bank 28 $8000
-File 'bin\Colour_m41.bin' read $1579 to use $1579
+File 'bin\Colour_m41.bin' read $1849 to use $1849
 New bank $1d
  Write multi-bank 29 $8000
 File 'bin\BlockStrips.bin' read $c35 to use $c35
 New bank $1e
  Write multi-bank 30 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $8ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $8ee2
 New bank $1f
  Write multi-bank 31 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $6ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $6ee2
 New bank $20
  Write multi-bank 32 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $4ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $4ee2
 New bank $21
  Write multi-bank 33 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $2ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $2ee2
 New bank $22
  Write multi-bank 34 $8000
-File 'bin\Scroller1.cmp' read $8ef8 to use $ef8
+File 'bin\Scroller1.cmp' read $8ee2 to use $ee2
 New bank $23
  Write multi-bank 35 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $7eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $7e9f
 New bank $24
  Write multi-bank 36 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $5eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $5e9f
 New bank $25
  Write multi-bank 37 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $3eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $3e9f
 New bank $26
  Write multi-bank 38 $8000
-File 'bin\Scroller2.cmp' read $7eb3 to use $1eb3
+File 'bin\Scroller2.cmp' read $7e9f to use $1e9f
 New bank $27
  Write multi-bank 39 $8000
-File 'bin\Title.cmp' read $463e to use $463e
+File 'bin\Title.cmp' read $4639 to use $4639
 New bank $28
  Write multi-bank 40 $8000
-File 'bin\Title.cmp' read $463e to use $263e
+File 'bin\Title.cmp' read $4639 to use $2639
 New bank $29
  Write multi-bank 41 $8000
-File 'bin\Title.cmp' read $463e to use $63e
+File 'bin\Title.cmp' read $4639 to use $639
 New bank $2a
  Write multi-bank 42 $8000
 New bank $2b

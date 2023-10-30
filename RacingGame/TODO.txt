@@ -78,3 +78,16 @@
 
 
 * Fork in the road, left and right choice, can be done by rendering up to a limit of the middle section that advances towards the screen like the roadside objects
+
+
+
+
+* For road objects that are horizontally on the screen, no clipping needed, consider using an unrolled plot loop
+	Unroll this...
+		.eachChar
+			lda (data),y
+			beq .skip
+			sta (screen),y
+		.skip
+			iny
+	Jump into .eachChar according to how long the block plot line is going to be, this avoids a comparison with the block width

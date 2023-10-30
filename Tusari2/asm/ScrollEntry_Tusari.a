@@ -57,7 +57,7 @@ DisableUpdateMultiplexorToAnimation = 1
 ;Multiplexor_DebugBorder = 1
 ;Scroller_DebugIRQBorder = 1
 ;Scroller_DebugIRQBorderSound = 1
-Scroller_DebugMainlineBorderForIRQ = 1
+;Scroller_DebugMainlineBorderForIRQ = 1
 ;Scroller_DebugNMIBorder = 1
 ;Scroller_DebugMainlineBorder = 1
 ;Scroller_DebugSoundTimings = 1
@@ -74,17 +74,20 @@ Scroller_ScanForSpace = 1
 
 Scroller_MaxScrollSpeed = 4
 
+IrqTopOfScreenPos = 16
 !ifdef Scroller_FullScreen {
 ;IRQOpenBorders = 1
 } else {
-IrqTopOfScreenPos = 16
 ; PAL
 Scroller_AdditionalCharLines = 2
-TusariCyclesPerRaster = CyclesPerRasterPALC64
 ; NTSC
 ;Scroller_AdditionalCharLines = 0
-;TusariCyclesPerRaster = CyclesPerRasterNTSCC64
 }
+Scroller_AdditionalCharLinesBankAdjust=3
+; PAL
+TusariCyclesPerRaster = CyclesPerRasterPALC64
+; NTSC
+;TusariCyclesPerRaster = CyclesPerRasterNTSCC64
 
 Scroller_UseDemoScorePanel = 1
 Scroller_UseDemoScorePanelStaticMemory = 1

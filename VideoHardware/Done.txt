@@ -694,3 +694,120 @@
 		80	Tiles screen
 	* This will need more precise memory decoding for the hardware and emulation
 	>> "C:\Downloads\tiled-windows-64bit-snapshot\tiled.exe"
+
+
+
+
+* Double check that the last layer, without background transparency enabled, can display the full 16 colours from all 16 palettes.
+	Create a palette and create the blocks?
+	Or convert a suitable image? Colour wheel?
+		>> "C:\Users\marti\Pictures\ColourWheel1.png"
+	Passed. convert13.bar @Demo13
+
+
+
+
+* Demo11
+	Syntax to enable reading the keyboard from the C64 window context and insert the keys into the C64 standard keyboard buffer, or fake them into the CIA like the joystick code does.
+		@TC-12 has an example of text entry via syntax...
+			Then I write memory at $c6 with 1
+			Then I write memory at $277 with $52
+		Given add C64 display window to C64 keyboard buffer hook
+		Given add C64 regular IRQ trigger of "100000" cycles
+
+
+
+
+* There may be a bug when including the ShadowBeast/beast_attract_playfield_1_1024.png
+	The palettes seem to go wrong. May be better to create a separate char palette and include that
+	>> ImageToBitplane fixed
+
+
+
+
+* Demo9: Space Harrier music choice: https://twitter.com/MartinPiper/status/1546801837755355141
+	https://www.youtube.com/watch?v=Hzgrb-mjLaM
+	* This one: https://modarchive.org/index.php?request=view_player&query=57939
+	* Done: Scroll background for movement...
+	* Score panel etc...
+	* Explosions
+	* Tile screen animation for the perspective background?
+		Without APU
+	** Code in Demo9\RenderFloor currently generates a tile/chars screen that uses quite a lot of chars.
+		Really this needs the APU to set the horizontal scroll plus palette to animate the floor.
+		** The code can generate the palette change animation table though :)
+		Code can generate a 256 row image, each row corresponds to that particular distance.
+		The screen position of each row is a function of the height.
+		It would be possible to generate tables for each Y height (byte) to select screen rows (byte) to draw.
+			For around 128 screen lines
+			>> Generated assets\Demo9\RenderFloor\out\floor.png and HeightToRowsX
+		The APU can then render each Y position
+		>> First test mostly works, once the rows table included the position minus the expected screen draw vertical offset
+			Note the word values in APULineScrolls all seem to have > = $300 so optimise this to a byte
+			* Done: The far rows need to select a suitable transparent line instead of repeating the same value...
+			* Done: The Z rows table could use double the resolution to remove some of the jagged lines?
+				>> The jagged lines near the front are due to the several pixel steps from from row 10 to row 11.
+					This is due to the image output being non-linear.
+					It would be better to have more lines options near the player and fewer further away
+					>> Also a problem is that the current tiles conversion of Demo9Tiles.png uses 251 tiles. Which is right on the limit.
+					>> The "for (double z = nearPoint; z < farPoint; z += farPoint / kZEntries) {" could use a non-linear addition
+						e.g. "for (double z = nearPoint; z < farPoint; z += (z / kMultiplier / 5)) {" ** better distribution **
+							Which results in something like ~214 tiles and potentially better distribution of lines
+						However the zTab ("int nextZ = (int)z;") lacks the close to camera accuracy to use these new lines...
+						So the conversion from z double to z int would need some multiplies, and where zTab is accessed in the y height lookup
+							Note the last few entries of HeightToRows127, they should be accessing pixel rows that have smaller horizontal gap... Their index value changes should be smoother, not accessing the pixel rows in chunks of several pixels
+							>> e.g. the last few values of HeightToRows127: ... 40 , 40 , 40 , 40 , 38 , 38 , 38 , 38 , 38 , 36 , 36 , 36 , 36 , 36 , 33 , 33 , 33 , 33 , 33 , 33 , 33 , 33 , 33 , 33 , 33
+								Note the change from 33 to 36 to 38 to 40 going through 34 35 37 39
+							> Add zTabIndexScale
+								> Although this didn't help... Keep it in, for tweaks later
+								>> What really helped was using the "(z / kMultiplier / 5))" better distribution for both loops
+								> Also adjusted yAdjust so the floor isn't so close with HeightToRows0
+			* Done: The current screen pixel row also needs to know its accurate Z position, to allow for the X swing lookup to be applied and also a horizontal pattern to be applied, probably via the combination board EOR or a  palette update
+				>> Added ZedToRowsRebased for the Z swing table lookup
+				>> Added SendAPUAPULineScrolls which does swing the display almost properly. But could do with more closer to the camera rows and therefore better Z resolution
+					> Also it is quite slow so had to adjust: Given video display processes 8 pixels per instruction
+						See: # Different because SendAPUAPULineScrolls takes a lot of time
+				>> See second merge dither control kBus24Bit_MergeLayer_Register_XORMask1: ; Toggling between 0/1 this will swap the floor colours...
+				** Need to reduce APU code size: !for .i , kAPUNumFloorRows {
+					With extra two instructions in "!for .i , kAPUNumFloorRows {" the APU code size limit is hit...
+					Done: Need to optimise APU code for size
+						> Loop instead of unroll?
+							>> Added APUFloorLoop
+						> Reduce the wait value to just the Y position?
+			* Since the APU knows what line it just waited for, can it subtract the line from the table value itself? This would potentially reduce the data needed for the X scroll lookup table entry.
+				Although if the table is expanded, then this wouldn't be possible with only an 8 bit subtract without any carry as the current design has limited ALU capability
+				>> The last HeightToRowsInv127 is used in the Demo9 code as a placeholder, which includes this 8 bit subtract
+			* Reduce chars usage further:
+				No safeDistance = 214 tiles
+				iSafeDistance = 188 tiles
+				safeDistance = 196 tiles
+				iSafeDistance best
+				Far horizon has 27 (for half width) tiles. Adjust threshold...
+				Adjust mid-point for perspective, the center line should be at x=182 (based on borders)
+					>> safeDistance = 0.75f *
+					>> iSafeDistance = 201 tiles
+					>> Game screen coordinates adjusted
+			* Need to move all HeightToRowsInv and ZedToRowsRebased to cartridge data and bank them in as needed
+				Code and some data needs to avoid this area while doing the update...
+				* RenderFloor to output raw binary data with correct swizzle to a directory
+					One chunk per height
+						Linearly arranged
+						Use adds into the block to get the right pointer, to save on cartridge data offset lookups
+				* Create cartridge using data, doesn't have to boot yet.
+				* Use cartridge output mapping file
+				* Ensure code and Sprite2Tab_PerspectiveTabLo , Sprite2Tab_PerspectiveTabHi , Sprite2Tab_Perspective is not in cartridge space
+				* Self modify addresses in SendAPUAPULineScrolls as needed
+				** Mostly works, but Sprite2Tab_PerspectiveTabStart and Sprite2Tab_PerspectiveTabEnd need to be out of the cart/ROM area
+					Done: Can MusicDataStart be moved after this table?
+				** Done: Cache the result of the SendAPUAPULineScrolls calculation, don't update if it's not needed
+
+
+
+* Demo6c adds the C64 display, which shows the C64 side boot message.
+
+
+
+
+* Demo1 adding Mode7 data init, in preparation for testing real mode7 hardware.
+
+

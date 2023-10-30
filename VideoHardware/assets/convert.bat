@@ -37,17 +37,14 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 
 echo Convert the clouds with new palette data
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 255 0 255 --palettesize 256 --loadpalette ../tmp/PaletteData.bin --image "clouds.png" --tilewh 16 16 --fitpalettes --outputtilebytes ../tmp/clouds_tiles.bin --outputscrcol ../tmp/clouds_screen.bin --nostacking --convertwritepass >..\tmp\clouds2.log
-..\..\bin\LZMPi.exe -cut tmp\target\exportedMusicSamples.bin tmp\target\exportedMusicSamples.bin1 0 32768
-..\..\bin\LZMPi.exe -cut tmp\target\exportedMusicSamples.bin tmp\target\exportedMusicSamples.bin2 32768
-..\..\bin\LZMPi.exe -cr tmp\target\exportedMusicSamples.bin1 tmp\target\exportedMusicSamples.cmp1
-..\..\bin\LZMPi.exe -cr tmp\target\exportedMusicSamples.bin2 tmp\target\exportedMusicSamples.cmp2
-
+..\..\bin\LZMPi.exe -cr ..\tmp\clouds_screen.bin ..\tmp\clouds_screen.cmp
+..\..\bin\LZMPi.exe -cr ..\tmp\clouds_tiles.bin ..\tmp\clouds_tiles.cmp
+..\..\bin\LZMPi.exe -cr ..\tmp\clouds_tiles.bin2 ..\tmp\clouds_tiles.cmp2
 
 
 echo Convert music
 cd ..\tmp
 if not exist target mkdir target
 java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod ..\assets\asikwp_-_twistmachine.mod "target/exportedMusic" 1 1
-
 
 popd

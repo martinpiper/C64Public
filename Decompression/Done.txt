@@ -265,3 +265,11 @@
 * For each of the self extracting decompression types, store their label files and pdb files.
 	This is to aid debugging of each of them when things go wrong. Store in the bin directory?
 	>> C64\Decompression\DebugFiles
+
+
+
+* To make it easier to produce compressed assets, add command line options to:
+	Not output the original file size
+		-no Do not output the original file size. Must be before other options.
+	Output the original load address
+		-yo Output the original load address (first two bytes of the file). Must be before other options.

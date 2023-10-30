@@ -33,7 +33,8 @@ CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 !word Boot
 ; This is used by GMod2, since it uses the normal 8K boot ROM location we use the CBM80 magic bytes instead
 !word Boot
-!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
++M_CBM80
+
 Boot
 	sei
 	cld

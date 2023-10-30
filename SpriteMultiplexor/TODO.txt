@@ -1,5 +1,15 @@
 ; TODO
 
+* Add optional check that will "reserve" sprite0 or sprite7 within a certain Y position range.
+	This would be useful to ensure the player is always infront or behind other sprites, or ensure a hires/expanded overlay for the player, etc
+	If the sprite0/7 update would happen for that position then instead jsr to a specific update routine and then progress to the next sprite1/6 in the list instead.
+	Avoid this sprite0/7 in the initial copy if needed.
+	Also for the last update IRQ if the position hasn't been reached then jsr to the specific update routine.
+	
+
+
+
+
 * Precise raster beam tracing in C64DebugGUI reveals the first IRQ is copying the sprites backwards, not top down, which could result in the top most sprite not quite getting its update completed in time?!! Investigate more fully.
 
 

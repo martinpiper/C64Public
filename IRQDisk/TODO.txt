@@ -18,3 +18,16 @@
 	Avoids the broken keyboard and booting the disk
 
 
+
+
+* Pre-calculate .bitPairToSerialData as a 256 byte table, using the last spare buffer, or the first buffer and move the code up...
+	Preferable to use code instead of sending the whole data...
+	This avoids the bitmask to access the small table
+
+
+
+
+* Decompress bytes from the disk into memory as bytes arrive
+
+
+

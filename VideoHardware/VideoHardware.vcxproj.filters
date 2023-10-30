@@ -143,6 +143,9 @@
     <None Include="BuildIt11.bat" />
     <None Include="BuildIt6c.bat" />
     <None Include="BuildIt12.bat" />
+    <None Include="assets\convert13.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -496,11 +499,11 @@
     <Library Include="..\VectorPlotBitmap\TransformVars.a">
       <Filter>Header Files\C64\VectorPlotBitmap</Filter>
     </Library>
-    <Library Include="tmp\_f_index1.a">
-      <Filter>Source Files\asm\ShadowBeast</Filter>
-    </Library>
     <Library Include="..\..\BombJack\stdlib\Video.a">
       <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="tmp\_f_index1.a">
+      <Filter>tmp</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

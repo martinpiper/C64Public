@@ -2,12 +2,15 @@
 !source "bin/LevelTempOptions.a"
 !source "CommonGameData.a"
 
+!ifdef Scroller_ScorePanelTopLeft {
 Scroller_ScorePanelPos = SCREENRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 2
 Scroller_ScorePanelSparklePos = SCREENRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 28
 Scroller_StrengthPanelPosColour = COLOURRAM + Scroller_ScorePanelTopLeft + VIC2ScreenCharsWidth + 34
+kScore_IncludePanelUpdates = 1
+}
 
 kAnimation_IncludeActivationObjectCode = 1
-kScore_IncludePanelUpdates = 1
+
 !source "Animation_macros.a"
 !source "stdlib/LongBranches.a"
 
@@ -26,7 +29,9 @@ ScrollerDemoMainline_ExitTo
 	sta smScrollerDemoMainline_Address
 ScrollerDemoMainline_Exit
 	; Copy the score to the common area for the next part to access
+!ifdef Scroller_ScorePanelPos {
 	+DisplayTextAt_AX Scroller_ScorePanelPos , Scroller_ScorePanelPos + Scroller_ScorePanelLen , Common_ScorePanel
+}
 	lda #6
 	jsr CartSelectBank_8K
 

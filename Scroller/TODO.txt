@@ -2,6 +2,10 @@
 	For ScrollColour_40 and other directions, note when in the screen the colourise happens, for the top edge especially and also the top right/left edge
 	Really going to have to increase the top chunk and also look at positioning the top (also right/left) colourise better. Inbetween the top/bottom update would be ideal
 		This would mean the left/right colourise would need to be split
+	>> This would all be negated if there was a single colourise pass from top to bottom
+		The only complication would be the character based weapons, unless their colours were included in the colour table. This would mean that weapons chars would not have completely controllable colours...
+			Unless they were stored in the colour table...
+		Note: Scroller_AdditionalCharLines and Scroller_AdditionalCharLinesBankAdjust
 
 
 

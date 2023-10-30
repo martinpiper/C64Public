@@ -5,6 +5,8 @@ kBus24Bit_VideoLayer_HasOverscan=1
 !source "stdlib/LongBranches.a"
 !source "BombJack/stdlib/Bus24Bit_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
 
 !to "bin/main.prg", cbm
 !sal
@@ -40,16 +42,21 @@ Initialise_NoIRQServiceRoutine = 1
 !source "BombJack/stdlib/Video.a"
 !source "BombJack/stdlib/HardwareTest.a"
 !source "BombJack/stdlib/Music.a"
+!source "BombJack/stdlib/APU.a"
 
 !zn
 start
 	sei
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+
 !ifdef IncludeGraphicsData {
 	jsr HardwareTest_VideoPattern0
 ;	+WaitForFire_A
 }
+
 	jsr Bus24Bit_Init
 	jsr Video_DisableDisplay
 	jsr Video_InitDisplaySpritesScrollsBackground
@@ -157,6 +164,10 @@ InitGraphicsMemory
 	; Tiles
 	+MRLEPlanesDataToDefaultTileScreen .tilesPlane0 , .tilesPlane1 , .tilesPlane2 , .tilesPlane3
 
+	; Mode7
+	+MRLEScreenDataToDefaultMode7Screen .mode7Screen
+	+MRLEPlanesDataToDefaultMode7Screen .mode7Plane0 , .mode7Plane1
+
 	rts
 ; All
 .palette
@@ -196,7 +207,17 @@ InitGraphicsMemory
 	!bin "tmp/status_map.cmp2"; to 24bit bus at '0x8000' and addressEx '0x80'
 .tilesMap
 	!bin "tmp/map.cmp"; to 24bit bus at '0x2000' and addressEx '0x80'
+
+
+.mode7Plane0
+    !bin "tmp/clouds_tiles.cmp"
+.mode7Plane1
+    !bin "tmp/clouds_tiles.cmp2"
+.mode7Screen
+    !bin "tmp/clouds_screen.cmp"
+
 }
 
 
 EndMainMemory
++MCheckNotInIOKernal

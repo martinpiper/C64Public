@@ -1,3 +1,13 @@
+* Demo1: HardwareTest_VideoPattern0 really needs a APU reset disable
+	Also mode7 init
+
+
+
+* Demo4: .spritesPlane3 etc needs to use the newer macros for data sending
+
+
+
+
 * Using the vectors layer
 	Convert "Bad Apple" video, which is two colours, to RLE encoded screens
 	Have black as transparent
@@ -88,30 +98,12 @@
 
 
 
-* Demo9: Space Harrier music choice: https://twitter.com/MartinPiper/status/1546801837755355141
-	https://www.youtube.com/watch?v=Hzgrb-mjLaM
-	* This one: https://modarchive.org/index.php?request=view_player&query=57939
-	* Done: Scroll background for movement...
-	* Score panel etc...
-	* Explosions
-	* Tile screen animation for the perspective background?
-		Without APU
-	** Code in Demo9\RenderFloor currently generates a tile/chars screen that uses quite a lot of chars.
-		Really this needs the APU to set the horizontal scroll plus palette to animate the floor.
-		** The code can generate the palette change animation table though :)
-		Code can generate a 256 row image, each row corresponds to that particular distance.
-		The screen position of each row is a function of the height.
-		It would be possible to generate tables for each Y height (byte) to select screen rows (byte) to draw.
-			For around 128 screen lines
-			>> Generated assets\Demo9\RenderFloor\out\floor.png and HeightToRowsX
-		The APU can then render each Y position
-		>> First test mostly works, once the rows table included the position minus the expected screen draw vertical offset
-			Note the word values in APULineScrolls all seem to have > = $300 so optimise this to a byte
-			* The far rows need to select a suitable transparent line instead of repeating the same value...
-			* The Z rows table could use double the resolution to remove some of the jagged lines?
-			* Since the APU knows what line it just waited for, can it subtract the line from the table value itself? This would potentially reduce the data needed for the X scroll lookup table entry.
-				Although if the table is expanded, then this wouldn't be possible with only an 8 bit subtract without any carry as the current design has limited ALU capability
-
+* Demo9
+	* MCommonWorld_ViewPosZ is quite slow, it could do with just being in a lookup table. But there is a combination with World_ViewPosZ to consider
+		Perhaps another set of lookup tables based on height and World_ViewPosZ?
+	* Since cartridge is added, might as well add all the data initialisation into the cartridge as well. Like @Demo6C
+	* Done: When going to the game, alter the sprite to display the score along the bottom of the screen
+		DrawScoresSprites
 
 
 
@@ -151,11 +143,6 @@
 * https://www.spriters-resource.com/arcade/streetfighter2/sheet/117307/
 	https://www.spriters-resource.com/arcade/streetfighter2/sheet/27200/
 
-
-
-
-* There may be a bug when including the ShadowBeast/beast_attract_playfield_1_1024.png
-	The palettes seem to go wrong. May be better to create a separate char palette and include that
 
 
 

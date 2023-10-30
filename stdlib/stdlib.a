@@ -10,6 +10,9 @@ kSize_8K	= 8 * 1024
 kSize_16K	= 16 * 1024
 kVIC2NumSprites = 8
 }
+!macro M_CBM80 {
+	!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
+}
 
 ; Zeropage
 
@@ -1712,6 +1715,11 @@ RasterLengthNTSCC64		= 520
 	+MCheckNotInMemoryRange C64Cartridge_Lo_8K , (C64Cartridge_Lo_8K + kSize_8K)
 }
 
+!macro MCheckNotInIOKernal {
+!if * >= VIC {
+	!error "Code/data within IO or kernal"
+}
+}
 
 
 !macro MStopInitStack_X {

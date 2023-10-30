@@ -160,7 +160,7 @@
 			** Check there the music update is happening, it should be underneath the top sprites update, after the NMI timing has been read and initialised.
 				This is because there seems to be not enough time after the score panel, when using the large scrolling area, to update the NMI timers?
 				>> This is a second problem for NTSC. At the start of the level, with the ghosts underneath the split and using Scroller_DebugMainlineBorderForIRQ and Scroller_DebugIRQBorder
-					Can clear see the Scroller_DebugMainlineBorderForIRQ time sometimes not completing before the "top of screen" IRQ.
+					Can clearly see the Scroller_DebugMainlineBorderForIRQ time sometimes not completing before the "top of screen" IRQ.
 					>> IrqTopOfScreenPos = 16
 					.rasterToTimeL also needed adjustment with IrqTopOfScreenPos
 				>> Sometimes with music playing the top screen sprite will flicker, added Multiplex_EnableHookAfterTopSpritesUpdate to adjust when the music routine is called
@@ -185,3 +185,26 @@
 				Move the calculation to after the activation object calc
 				>> After: ActivationObject_UpdateScreenEdges
 					Added: NMIColourSplits_Calculate to split the update even further
+		>> Added: Scroller_AdditionalCharLinesBankAdjust
+
+
+
+
+* Turn this, and similar lines above, into a macro:
+	*=$d000 + ($42 - $40) * $40
+
+
+
+
+
+* Remove magic numbers for:
+	lda #6
+	jsr CartSelectBank_8K
+	jmp C64Cartridge_Lo_8K + $03
+	etc...
+
+
+
+
+* Remove this magic number for:
+	; Lowercase first screen!

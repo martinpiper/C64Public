@@ -1,0 +1,46 @@
+;IRQDisk test code 3, tests minimal code generation options
+
+; Run BuildIt.bat
+
+!source "../stdlib/stdlib.a"
+!to "TestIRQDisk3.prg", cbm
+!sal
+!sl "TestIRQDisk3.map"
+!svl "TestIRQDisk3.lbl"
+!pdb "TestIRQDisk3.pdb"
+!cpu 6510
+!ct pet
+
+!source "IRQDiskVars.a"
+IRQDisk_MachineTarget = IRQDisk_MachineTypeC64
+IRQDisk_Retries = 5
+IRQDisk_LEDFlash = 15
+;IRQDisk_UseATN = 1
+
+; Minimal code
+IRQDisk_NoDriveCode = 1
+;IRQDisk_NoCode_Load = 1
+;IRQDisk_NoCode_LoadAfterName = 1
+IRQDisk_NoCode_Pulse = 1
+IRQDisk_NoCode_Save = 1
+
+* = $400
+; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
+!zn {
+; Include the private code for each machine type
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeVIC20 {
+!source "IRQDiskVIC20.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC16 {
+!source "IRQDiskC16.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC64 {
+!source "IRQDiskC64.a"
+}
+!if IRQDisk_MachineTarget & IRQDisk_MachineTypeC128 {
+!source "IRQDiskC128.a"
+}
+!source "IRQDisk.a"
+!source "stdlib1541.a"
+;!source "IRQDiskDriveCode.a"
+}

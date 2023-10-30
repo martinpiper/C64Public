@@ -31,6 +31,10 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 
 echo Convert scaled sprites
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --paletteoffset 0 --palettesize 16 --rgbshift 4 4 4 --nostacking --newpalettes --loadpaletteraw ../tmp/ShadowBeastPaletteData.bin --resetforcergb --forcergb 255 0 255 --numbitplanes 4 --image "ShadowBeast/sprites2.png" --tilewh 32 32 --fitpalettes --outputscaled ../tmp/Demo6Sprites2 --outputsprites ../tmp/Demo6Sprites2Sheet.txt --namesuffix _scaled_  --convertwritepass
+rem If the scaled sprites are really small, these files might not get created, so copy them
+if not exist ..\tmp\Demo6Sprites21.bin copy ..\tmp\Demo6Sprites20.bin ..\tmp\Demo6Sprites21.bin
+if not exist ..\tmp\Demo6Sprites22.bin copy ..\tmp\Demo6Sprites20.bin ..\tmp\Demo6Sprites22.bin
+if not exist ..\tmp\Demo6Sprites23.bin copy ..\tmp\Demo6Sprites20.bin ..\tmp\Demo6Sprites23.bin
 
 echo Convert music
 cd ..\tmp
