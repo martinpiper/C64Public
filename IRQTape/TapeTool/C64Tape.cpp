@@ -1391,6 +1391,66 @@ int C64Tape::HandleParams( int argc , char ** argv )
 			}
 
 
+			case 'q':
+			{
+				if ( !mForWriting || !mTapeFile )
+				{
+					printf( "No file opened for writing.\n" );
+					exit(-1);
+				}
+
+				AddStream(false);
+				sStreamFile++;
+
+				argv++;
+				argc--;
+
+				// e.g. q c:\temp\t.wav 22050 $4e 65536 64 16
+				FILE *inputFile = fopen(argv[0] , "rb");
+				if (!inputFile)
+				{
+					printf( "Couldn't open '%s' for reading.\n" , argv[0] );
+					exit(-1);
+				}
+
+				int sampleRate = ParamToNum(argv[1]);
+				int fileOffset = ParamToNum(argv[2]);
+				int samplesToGenerate = ParamToNum(argv[3]);
+				int startCyclesOffset = ParamToNum(argv[4]);
+				int cyclesMultiplier = ParamToNum(argv[5]);
+				int cyclesPerSecond = ParamToNum(argv[6]);
+
+				argv += 6;
+				argc -= 6;
+
+				fseek(inputFile , fileOffset , SEEK_SET);
+
+				long long cumulativeCycleTime = 0;
+				while (samplesToGenerate-- > 0)
+				{
+					int theSample = fgetc(inputFile) & 0xff;
+					theSample = theSample >> 4;
+
+					int thePulse = startCyclesOffset + (theSample * cyclesMultiplier);
+
+					thePulse = thePulse / 8; // TAP file limitation. TODO: Perhaps use the cycle accurate timing mode?
+					mCurrentStream->mData.push_back( (char) thePulse );
+					thePulse = thePulse * 8;	// And back again, using the file data just written
+
+					cumulativeCycleTime += thePulse;
+					long long fileByteOffsetTarget = (cumulativeCycleTime * sampleRate) / cyclesPerSecond;
+
+					fseek(inputFile , (int) (fileOffset + fileByteOffsetTarget) , SEEK_SET);
+				}
+
+				fclose(inputFile);
+
+				AddStream();
+
+				break;
+			}
+
+
 			case 'o':
 			{
 				if ( !mForWriting || !mTapeFile )
@@ -2244,6 +2304,8 @@ n <seed> : If seed is non-zero then randomly write blocks using the seed for the
 otps[rep] : Write a turbo short pulse (0) for rep times\n\
 otpm[rep] : Write a turbo medium pulse (1) for rep times\n\
 otpl[rep] : Write a turbo long pulse (1) for rep times\n\
+Quantise sample writes: Use ffmpeg options to force mono pcm_u8 at 22050 hz: -y -acodec pcm_u8 -ar 22050 -ac 1\n\
+q <filename> <sample rate in hz> <number bytes to skip from the start of the file> <number of bytes process in the file> <start cycle offset> <cycle multiplier>\n\
 ");
 }
 

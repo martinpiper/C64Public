@@ -81,6 +81,12 @@ wn "test.tap" ocpl1000 c
 
 wn "test.tap" otps1000 c
 wn "test.tap" otpl1000 c
+
+
+// Sample streaming and conversion
+wn "test.tap" q c:\temp\t.wav 22050 $4e 65536 32 16 985248 c
+
+
 */
 
 #include <stdio.h>

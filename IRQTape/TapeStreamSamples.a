@@ -1,0 +1,77 @@
+; This demonstrates using the CIA timer to stream samples from tape
+!source "../stdlib/stdlib.a"
+!source "../stdlib/PETSCII.a"
+!to "TapeStreamSamples.prg", cbm
+!sal
+!sl "TapeStreamSamples.map"
+!svl "TapeStreamSamples.lbl"
+!cpu 6510
+!ct pet
+!initmem $ea
+
+* = $400
+	sei
+
+	; Turns on cassette motor and removes ROMs
+	lda #ProcessorPortAllRAMWithIO & %111
+	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
+
+	+MACROWaitForTheLastScan_A
+	+BlankScreenBorderSpriteSound_A
+	+MACROCIAIRQControlDisable_A
+	+MACROAckAllIRQs_A
+
+	+MACROCIATimerControlDisable_A
+
+	; The base timer value
+	; 3 = BEQ wobble
+	; This timing reliably causes $fb/$fc to be read for repeating short pulses of 64 cycles ($08 byte in the TAP file)
+	+MWordValueToAddress_A 256 + 64 - 11 - 3 , CIA1TimerALo
+
+	jmp .l1
+
+!align 255,0
+.l1
+	; Check for Signal level on FLAG pin, datasette input.
+	lda #%10000
+.l2
+	bit CIA1InterruptControl
+	beq .l2
+
+	; X to be used to convert the timer into a usable volume
+	ldx CIA1TimerALo
+
+	lda #%11001
+	sta CIA1TimerAControl		; Start timer again, one shot mode.
+
+	lda .timerToSample,x
+	sta SIDVolumeFilter
+
+	inc VIC2BorderColour
+
+	jmp .l1
+
+
+kPerVolumeCycles = 16
+
+; The timer is counting down...
+.timerToSample
+	!fill kPerVolumeCycles , 15
+	!fill kPerVolumeCycles , 14
+	!fill kPerVolumeCycles , 13
+	!fill kPerVolumeCycles , 12
+	!fill kPerVolumeCycles , 11
+	!fill kPerVolumeCycles , 10
+	!fill kPerVolumeCycles , 9
+	!fill kPerVolumeCycles , 8
+	!fill kPerVolumeCycles , 7
+	!fill kPerVolumeCycles , 6
+	!fill kPerVolumeCycles , 5
+	!fill kPerVolumeCycles , 4
+	!fill kPerVolumeCycles , 3
+	!fill kPerVolumeCycles , 2
+	!fill kPerVolumeCycles , 1
+
+	!fill 256 - (* - .timerToSample) , 0
