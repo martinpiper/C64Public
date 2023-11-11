@@ -9,6 +9,9 @@
 !ct pet
 !initmem $ea
 
+kPerVolumeCycles = 16
+kStartCycleOffset = 48
+
 * = $400
 	sei
 
@@ -28,7 +31,7 @@
 	; The base timer value
 	; 3 = BEQ wobble
 	; This timing reliably causes $fb/$fc to be read for repeating short pulses of 64 cycles ($08 byte in the TAP file)
-	+MWordValueToAddress_A 256 + 64 - 11 - 3 , CIA1TimerALo
+	+MWordValueToAddress_A (kPerVolumeCycles*16) + kStartCycleOffset - 11 - 4 , CIA1TimerALo
 
 	jmp .l1
 
@@ -49,12 +52,10 @@
 	lda .timerToSample,x
 	sta SIDVolumeFilter
 
-	inc VIC2BorderColour
+	sta VIC2BorderColour
 
 	jmp .l1
 
-
-kPerVolumeCycles = 16
 
 ; The timer is counting down...
 .timerToSample
@@ -74,4 +75,5 @@ kPerVolumeCycles = 16
 	!fill kPerVolumeCycles , 2
 	!fill kPerVolumeCycles , 1
 
+; Ideally, the shortest pulse time will reliably read this sample.
 	!fill 256 - (* - .timerToSample) , 0

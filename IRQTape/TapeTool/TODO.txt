@@ -121,3 +121,10 @@ Like writing a leadin or leadout.
 	..\acme.exe --lib  ../ -v4 --msvc TapeStreamSamples.a
 	..\bin\LZMPi.exe -c64bmu TapeStreamSamples.prg TapeStreamSamples.prg $400
 	C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -remotemonitor -1 TapeTool\test.tap TapeStreamSamples.prg
+
+	> https://www.youtube.com/watch?v=DkYPge6ZKSQ
+	To save it: https://www.ssyoutube.com/watch?v=DkYPge6ZKSQ
+	C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\marti\Downloads\toms diner.m4a"  -filter:a "volume=1.5" -y -acodec pcm_u8 -ar 22050 -ac 1 c:\temp\t.wav
+	
+	* Improve accuracy using IRQ instead of flag polling.
+		This would allow a mainline routine to scroll or play music etc
