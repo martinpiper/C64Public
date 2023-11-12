@@ -125,6 +125,12 @@ Like writing a leadin or leadout.
 	> https://www.youtube.com/watch?v=DkYPge6ZKSQ
 	To save it: https://www.ssyoutube.com/watch?v=DkYPge6ZKSQ
 	C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\marti\Downloads\toms diner.m4a"  -filter:a "volume=2.5" -y -acodec pcm_u8 -ar 22050 -ac 1 c:\temp\t.wav
+
+	> C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\marti\Downloads\_nice_outfit_.mod"  -filter:a "volume=8.0" -y -acodec pcm_u8 -ar 22050 -ac 1 c:\temp\t.wav
+	> C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\marti\Downloads\xenon2.mod"  -filter:a "volume=4.0" -y -acodec pcm_u8 -ar 22050 -ac 1 c:\temp\t.wav
 	
 	* Improve accuracy using IRQ instead of flag polling.
 		This would allow a mainline routine to scroll or play music etc
+
+	>> Added TapeStreamSamplesIRQ.a which uses an IRQ instead of polling.
+		This also has timer underflow testing which avoids clipping
