@@ -1,0 +1,14 @@
+;SmallLoader = 1
+MartyLoad = 1
+;NovaishLoad = 1
+
+; The number of cycles for half of one pulse
+TapeTurboSpeed = $80
+
+IgnoreSecondLoader = 1
+MainSecondLoaderStart = 2061
+; Start file offset of 2061
+RealCodeStart = $0e
+; TODO: Could read this from the file using Python
+RealCodeEnd = $267
+

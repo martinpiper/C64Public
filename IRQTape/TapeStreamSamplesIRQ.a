@@ -9,35 +9,35 @@
 !ct pet
 !initmem $ea
 
-; With underflow testing the IRQ code takes longer, so need more cycles as a base value
-kStartCycleOffset = 56
+; The short IRQ allows a shorter offset
+kStartCycleOffset = 48
 ; This allows the pulse lengths to be differentiated
 kPerVolumeCycles = 16
 
-* = $400
-	sei
+; Calculate the final /2 timer value
+kMainTimerValue = ((kPerVolumeCycles*16) + kStartCycleOffset - 16)/2
 
+Initialise_NoIRQServiceRoutine = 1
+
+* = $400
 	; Turns on cassette motor and removes ROMs
 	lda #ProcessorPortAllRAMWithIO & %111
-	sta ZPProcessorPort
-	lda #ProcessorPortDDRDefault
-	sta ZPProcessorPortDDR
-
-	+MACROWaitForTheLastScan_A
-	+BlankScreenBorderSpriteSound_A
-	+MACROCIAIRQControlDisable_A
-	+MACROAckAllIRQs_A
-
-	+MACROVICIRQCIATimerControlDisable_A
+	jsr InitialiseMachine
 
 	; The base timer value
-	; The best way to callibrate the tweak value is to fill the TAP file with the shortest allowed pulse length and verift that "ldx CIA1TimerALo" returns a consistent value near $ff and never near $00
+	; The best way to calibrate the tweak value is to fill the TAP file with the shortest allowed pulse length and verift that "ldx CIA1TimerALo" returns a consistent value near $ff and never near $00
+	; Also remove the mainline nop fill below to cause longer instructions to delay and wobble the IRQ slightly.
+	; Test that a consistent value can be read for pulse lengths of the minimum, then the next volume pulse length.
+	; For exampl,e test with TAP byte 07 then 09 for pulse length volume 0 and then 1. Both values should read consistently.
 	; This timing reliably causes $fb-$ff to be read for repeating shortest pulses in the TAP file (kStartCycleOffset / 8)
-;	+MWordValueToAddress_A (kPerVolumeCycles*16) + kStartCycleOffset - 12 , CIA1TimerALo
+	; Count every other cycle
+	+MWordValueToAddress_A 1 , CIA1TimerALo
 	; With underflow testing
-	+MWordValueToAddress_A (kPerVolumeCycles*16) + kStartCycleOffset - 20 , CIA1TimerALo
-	lda #%11001
-	sta CIA1TimerAControl		; Start timer again, one shot mode.
+	+MWordValueToAddress_A kMainTimerValue , CIA1TimerBLo
+	lda #%10001
+	sta CIA1TimerAControl		; Start timer, it automatically repeats
+	lda #%01011001
+	sta CIA1TimerBControl		; Start timer, count timer A underflows
 
 	+MWordValueToAddress_A .irq , KERNALIRQServiceRoutineLo
 	; Enable IRQ on positive edge on FLAG pin from tape
@@ -59,6 +59,11 @@ kPerVolumeCycles = 16
 }
 	jmp .l1
 
+
+!scr "WangFM Tape streaming sample encoding by Martin Piper https://github.com/martinpiper/C64Public/blob/master/IRQTape/TapeStreamSamplesIRQ.a"
+
+!source "../stdlib/Initialise.a"
+
 !align 255,0
 	; With this IRQ, the smallest TAP file byte that reliably allows "some" mainline processing is $07, which is 56 cycles
 .irq
@@ -69,14 +74,10 @@ kPerVolumeCycles = 16
 	lda CIA1InterruptControl
 
 	; X to be used to convert the timer into a usable volume
-	ldx CIA1TimerALo
-	; A hi value indicates a timer issue, either a pulse arriving too ealy or too late, so clamp the volume
-	lda CIA1TimerAHi
-	bne .underflow
+	ldx CIA1TimerBLo
 
-
-	lda #%11001
-	sta CIA1TimerAControl		; Start timer again, one shot mode.
+	lda #%01011001
+	sta CIA1TimerBControl		; Start timer again, one shot mode.
 
 	lda .timerToSample,x
 	sta SIDVolumeFilter
@@ -85,35 +86,30 @@ kPerVolumeCycles = 16
 	lda $fb
 	rti
 
-	; The longest pulse was too long
-.underflow
-	lda #15
-	sta SIDVolumeFilter
-	lda #%11001
-	sta CIA1TimerAControl		; Start timer again, one shot mode.
-	ldx $fc
-	lda $fb
-	rti
-
 
 !align 255,0
 ; The timer is counting down...
 .timerToSample
-	!fill kPerVolumeCycles , 15
-	!fill kPerVolumeCycles , 14
-	!fill kPerVolumeCycles , 13
-	!fill kPerVolumeCycles , 12
-	!fill kPerVolumeCycles , 11
-	!fill kPerVolumeCycles , 10
-	!fill kPerVolumeCycles , 9
-	!fill kPerVolumeCycles , 8
-	!fill kPerVolumeCycles , 7
-	!fill kPerVolumeCycles , 6
-	!fill kPerVolumeCycles , 5
-	!fill kPerVolumeCycles , 4
-	!fill kPerVolumeCycles , 3
-	!fill kPerVolumeCycles , 2
-	!fill kPerVolumeCycles , 1
-
+	!fill kPerVolumeCycles /2 , 15
+	!fill kPerVolumeCycles /2 , 14
+	!fill kPerVolumeCycles /2 , 13
+	!fill kPerVolumeCycles /2 , 12
+	!fill kPerVolumeCycles /2 , 11
+	!fill kPerVolumeCycles /2 , 10
+	!fill kPerVolumeCycles /2 , 9
+	!fill kPerVolumeCycles /2 , 8
+	!fill kPerVolumeCycles /2 , 7
+	!fill kPerVolumeCycles /2 , 6
+	!fill kPerVolumeCycles /2 , 5
+	!fill kPerVolumeCycles /2 , 4
+	!fill kPerVolumeCycles /2 , 3
+	!fill kPerVolumeCycles /2 , 2
+	!fill kPerVolumeCycles /2 , 1
 ; Ideally, the shortest pulse time will reliably read this sample.
-	!fill 256 - (* - .timerToSample) , 0
+	!fill kPerVolumeCycles /2 , 0
+!fill (kMainTimerValue-1) - (*-.timerToSample) , 0
+; Underflow space wrap-around, when the timer underflows it reads its start value
+!if (*-.timerToSample) >= kMainTimerValue {
+	!error "The uderflow table space, when the timer and underflowed, must wrap around to here"
+}
+	!fill 256 - (* - .timerToSample) , 15
