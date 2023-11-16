@@ -1,0 +1,271 @@
+!by        0 ; 00, brk
+!by        1 ; 01, ora (zp,x)
+!by        0 ; 02, jam
+!by        1 ; 03, slo (zp,x)
+!by        0 ; 04, nop
+!by        1 ; 05, ora zp
+!by        1 ; 06, asl zp
+!by        1 ; 07, slo zp
+!by        0 ; 08, php
+!by        1 ; 09, ora #imm
+!by        0 ; 0a, asl
+!by        1 ; 0b, anc #imm
+!by        2 ; 0c, nop abs
+!by        2 ; 0d, ora abs
+!by        2 ; 0e, asl abs
+!by        2 ; 0f, slo abs
+
+!by        1 ; 10, bpl rel
+!by        1 ; 11, ora (zp),y
+!by        0 ; 12, jam
+!by        1 ; 13, slo (zp),y
+!by        1 ; 14, nop zp,x
+!by        1 ; 15, ora zp,x
+!by        1 ; 16, asl zp,x
+!by        1 ; 17, slo zp,x
+!by        0 ; 18, clc
+!by        2 ; 19, ora abs,y
+!by        0 ; 1a, nop
+!by        2 ; 1b, slo abs,y
+!by        2 ; 1c, nop abs,x
+!by        2 ; 1d, ora abs,x
+!by        2 ; 1e, asl abs,x
+!by        2 ; 1f, slo abs,x
+
+!by        2 ; 20, jsr abs
+!by        1 ; 21, and (zp,x)
+!by        0 ; 22, jam
+!by        1 ; 23, rla (zp,x)
+!by        1 ; 24, bit zp
+!by        1 ; 25, and zp
+!by        1 ; 26, rol zp
+!by        1 ; 27, rla zp
+!by        0 ; 28, plp
+!by        1 ; 29, and #imm
+!by        0 ; 2a, rol
+!by        1 ; 2b, anc #imm
+!by        2 ; 2c, bit abs
+!by        2 ; 2d, and abs
+!by        2 ; 2e, rol abs
+!by        2 ; 2f, rla abs
+
+!by        1 ; 30, bmi rel
+!by        1 ; 31, and (zp),y
+!by        0 ; 32, jam
+!by        1 ; 33, rla (zp),y
+!by        1 ; 34, nop zp,x
+!by        1 ; 35, and zp,x
+!by        1 ; 36, rol zp,x
+!by        1 ; 37, rla zp,x
+!by        0 ; 38, sec
+!by        2 ; 39, and abs,y
+!by        0 ; 3a, nop
+!by        1 ; 3b, rla abs,y
+!by        2 ; 3c, nop abs,x
+!by        2 ; 3d, and abs,x
+!by        2 ; 3e, rol abs,x
+!by        2 ; 3f, rla abs,x
+
+!by        0 ; 40, rti
+!by        1 ; 41, eor (zp,x)
+!by        0 ; 42, jam
+!by        1 ; 43, sre (zp,x)
+!by        1 ; 44, nop zp
+!by        1 ; 45, eor zp
+!by        1 ; 46, lsr zp
+!by        1 ; 47, sre zp
+!by        0 ; 48, pha
+!by        1 ; 49, eor #imm
+!by        0 ; 4a, lsr
+!by        1 ; 4b, asl #imm
+!by        2 ; 4c, jmp abs
+!by        2 ; 4d, eor abs
+!by        2 ; 4e, lsr abs
+!by        2 ; 4f, sre abs
+
+!by        1 ; 50, bvs rel
+!by        1 ; 51, eor (zp),y
+!by        0 ; 52, jam
+!by        1 ; 53, sre (zp),y
+!by        1 ; 54, nop zp,x
+!by        1 ; 55, eor zp,x
+!by        1 ; 56, lsr zp,x
+!by        1 ; 57, sre zp,x
+!by        0 ; 58, cli
+!by        2 ; 59, eor abs,y
+!by        0 ; 5a, nop
+!by        2 ; 5b, sre abs,y
+!by        2 ; 5c, nop abs,x
+!by        2 ; 5d, eor abs,x
+!by        2 ; 5e, lsr abs,x
+!by        2 ; 5f, sre abs,x
+
+!by        0 ; 60, rts
+!by        1 ; 61, adc (zp,x)
+!by        0 ; 62, jam
+!by        1 ; 63, rra (zp,x)
+!by        1 ; 64, nop zp
+!by        1 ; 65, adc zp
+!by        1 ; 66, ror zp
+!by        1 ; 67, rra zp
+!by        0 ; 68, pla
+!by        1 ; 69, adc #imm
+!by        0 ; 6a, ror
+!by        1 ; 6b, arr #imm
+!by        2 ; 6c, jmp (abs)
+!by        2 ; 6d, adc abs
+!by        2 ; 6e, ror abs
+!by        2 ; 6f, rra abs
+
+!by        1 ; 70, bvs rel
+!by        1 ; 71, adc (zp),y
+!by        0 ; 72, jam
+!by        1 ; 73, rra (zp),y
+!by        1 ; 74, nop zp,x
+!by        1 ; 75, adc zp,x
+!by        1 ; 76, ror zp,x
+!by        1 ; 77, rra zp,x
+!by        0 ; 78, sei
+!by        2 ; 79, adc abs,y
+!by        0 ; 7a, nop
+!by        2 ; 7b, rra abs,y
+!by        2 ; 7c, nop abs,x
+!by        2 ; 7d, adc abs,x
+!by        2 ; 7e, ror abs,x
+!by        2 ; 7f, rra abs,x
+
+!by        1 ; 80, nop #imm
+!by        1 ; 81, sta (zp,x)
+!by        1 ; 82, nop #imm
+!by        1 ; 83, sax (zp,x)
+!by        1 ; 84, sty zp
+!by        1 ; 85, sta zp
+!by        1 ; 86, stx zp
+!by        1 ; 87, sax zp
+!by        0 ; 88, dey
+!by        1 ; 89, nop #imm
+!by        0 ; 8a, txa
+!by        1 ; 8b, xaa #imm
+!by        2 ; 8c, sty abs
+!by        2 ; 8d, sta abs
+!by        2 ; 8e, stx abs
+!by        2 ; 8f, sax abs
+
+!by        1 ; 90, bcc rel
+!by        1 ; 91, sta (zp),y
+!by        0 ; 92, jam
+!by        1 ; 93, ahx (zp),y
+!by        1 ; 94, sty zp,x
+!by        1 ; 95, sta zp,x
+!by        1 ; 96, stx zp,y
+!by        1 ; 97, sax zp,y
+!by        0 ; 98, tya
+!by        2 ; 99, sta abs,y
+!by        0 ; 9a, txs
+!by        2 ; 9b, tas abs,y
+!by        2 ; 9c, shf abs,x
+!by        2 ; 9d, sta abs,x
+!by        2 ; 9e, shx abs,y
+!by        2 ; 9f, ahx abs,y
+
+!by        1 ; a0, ldy #imm
+!by        1 ; a1, lda (zp,x)
+!by        1 ; a2, ldx #imm
+!by        1 ; a3, lax (zp,x)
+!by        1 ; a4, ldy zp
+!by        1 ; a5, lda zp
+!by        1 ; a6, ldx zp
+!by        1 ; a7, lax zp
+!by        0 ; a8, tay
+!by        1 ; a9, lda #imm
+!by        0 ; aa, tax
+!by        1 ; ab, lax #imm
+!by        2 ; ac, ldy abs
+!by        2 ; ad, lda abs
+!by        2 ; ae, ldx abs
+!by        2 ; af, lax abs
+
+!by        1 ; b0, bcs rel
+!by        1 ; b1, lda (zp),y
+!by        0 ; b2, jam
+!by        1 ; b3, lax (zp),y
+!by        1 ; b4, ldy zp,x
+!by        1 ; b5, lda zp,x
+!by        1 ; b6, ldx zp,y
+!by        1 ; b7, lax zp,y
+!by        0 ; b8, clv
+!by        2 ; b9, lda abs,y
+!by        0 ; ba, tsx
+!by        2 ; bb, las abs,y
+!by        2 ; bc, ldy abs,x
+!by        2 ; bd, lda abs,x
+!by        2 ; be, ldx abs,y
+!by        2 ; bf, lax abs,y
+
+!by        1 ; c0, cpy #imm
+!by        1 ; c1, cmp (zp,x)
+!by        1 ; c2, nop #imm
+!by        1 ; c3, dcp (zp,x)
+!by        1 ; c4, cpy zp
+!by        1 ; c5, cmp zp
+!by        1 ; c6, dec zp
+!by        1 ; c7, dcp zp
+!by        0 ; c8, iny
+!by        1 ; c9, cmp #imm
+!by        0 ; ca, dex
+!by        1 ; cb, sbx #imm
+!by        2 ; cc, cpy abs
+!by        2 ; cd, cmp abs
+!by        2 ; ce, dec abs
+!by        2 ; cf, dcp abs
+
+!by        1 ; d0, bne rel
+!by        1 ; d1, cmp (zp),y
+!by        0 ; d2, jam
+!by        1 ; d3, dcp (zp),y
+!by        1 ; d4, nop zp,x
+!by        1 ; d5, cmp zp,x
+!by        1 ; d6, dec zp,x
+!by        1 ; d7, dcp zp,x
+!by        0 ; d8, cld
+!by        2 ; d9, cmp abs,y
+!by        0 ; da, nop
+!by        2 ; db, dcp abs,y
+!by        2 ; dc, nop abs,x
+!by        2 ; dd, cmp abs,x
+!by        2 ; de, dec abs,x
+!by        2 ; df, dcp abs,x
+
+!by        1 ; e0, cpx #imm
+!by        1 ; e1, sbc (zp,x)
+!by        1 ; e2, nop #imm
+!by        1 ; e3, isc (zp,x)
+!by        1 ; e4, cpx zp
+!by        1 ; e5, sbc zp
+!by        1 ; e6, inc zp
+!by        1 ; e7, isc zp
+!by        0 ; e8, inx
+!by        1 ; e9, sbc #imm
+!by        0 ; ea, nop
+!by        1 ; eb, sbc #imm
+!by        2 ; ec, cpx abs
+!by        2 ; ed, sbc abs
+!by        2 ; ee, inc abs
+!by        2 ; ef, isc abs
+
+!by        1 ; f0, beq rel
+!by        1 ; f1, sbc (zp),y
+!by        0 ; f2, jam
+!by        1 ; f3, isc (zp),y
+!by        1 ; f4, nop zp,x
+!by        1 ; f5, sbc zp,x
+!by        1 ; f6, inc zp,x
+!by        1 ; f7, isc zp,x
+!by        0 ; f8, sed
+!by        2 ; f9, sbc abs,y
+!by        0 ; fa, nop
+!by        2 ; fb, isc abs,y
+!by        2 ; fc, nop abs,x
+!by        2 ; fd, sbc abs,x
+!by        2 ; fe, inc abs,x
+!by        2 ; ff, isc abs,x

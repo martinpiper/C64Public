@@ -541,3 +541,11 @@ Suggestions:
 ** Bigger/more weapons
 ** Circuit hacking addition
 
+
+
+
+
+* Convert char based map to junction coordinate based links.
+	Use A* to solve paths.
+	However... Instead of just using a +/- 1 closer weight (or potential) use a direction based weight, where the path length/cost is adjusted by the direction of the link compared to the destination.
+	

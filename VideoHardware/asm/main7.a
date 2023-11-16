@@ -7,7 +7,19 @@ kBus24Bit_VideoLayer_HasOverscan=1
 ;IncludeGraphicsData_L3 = 1
 ;IncludeGraphicsData_L4 = 1
 
+; When testing the higher speed sprites board
+kEnableMoresprites = 1
+
+!ifndef kEnableMoresprites {
 kMaxGameSprites = 46
+kMaxGameSpritesPerSplit = 23
+}
+!ifdef kEnableMoresprites {
+; At 16MHz, includes the last corrupted sprite
+kBus24Bit_SpritesMaxNum = 32
+kMaxGameSprites = 62
+kMaxGameSpritesPerSplit = 31
+}
 EnableMultiplexing = 1
 ;EnableMultiplexingDebug = 1
 
@@ -109,19 +121,38 @@ mainLoop
 	+MAllocateAnimPos kAnimationType_walker1 , 90 , 90
 	+MAllocateAnimPos kAnimationType_rotate1 , 200 , 70
 !ifdef EnableMultiplexing {
+!ifndef kEnableMoresprites {
 	+MAllocateAnimPos kAnimationType_boss1 , 130 , 243
+} else {
+	+MAllocateAnimPos kAnimationType_boss1 , 130 , 220
+}
+
+!ifdef kEnableMoresprites {
 	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 60
-	+MAllocateAnimPos kAnimationType_red1 , 230 , 120
-;	+MAllocateAnimPos kAnimationType_walker1 , 260 , 60
+	+MAllocateAnimPos kAnimationType_bullet1 , 70 , 70
+
+	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 200
+	+MAllocateAnimPos kAnimationType_bullet1 , 70 , 200
+	+MAllocateAnimPos kAnimationType_bullet1 , 80 , 200
+}
+	+MAllocateAnimPos kAnimationType_bullet1 , 80 , 80
+
+	+MAllocateAnimPos kAnimationType_red1 , 230 , 60
+
+!ifdef kEnableMoresprites {
+	+MAllocateAnimPos kAnimationType_walker1 , 260 , 60
+	+MAllocateAnimPos kAnimationType_rotate1 , 220 , 75
+}
 } else {
 	+MAllocateAnimPos kAnimationType_boss1 , 130 , 253
 }
 
-;	+MAllocateAnimPos kAnimationType_cammy_idle1 , 160 , 120
-
 	jsr Video_WaitVBlank
 
 .l1
+	; Debug frame advance
+;	+WaitForFire_A
+
 	; Simple scroll demo with RType data
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
@@ -167,7 +198,7 @@ mainLoop
 !ifdef EnableMultiplexingDebug {
 	lda GameSpriteSplitPosRaster
 	beq .noSplitPos2
-	+MBus24Bit_SetAddress_AXY kBus24Bit_Sprites_EBBS , kBus24Bit_Sprites + (23 * 4)
+	+MBus24Bit_SetAddress_AXY kBus24Bit_Sprites_EBBS , kBus24Bit_Sprites + (kMaxGameSpritesPerSplit * 4)
 	+MBus24Bit_Send8BitValue 0
 	+MBus24Bit_Send8BitValue 7
 	lda GameSpriteSplitPosRaster
@@ -290,10 +321,13 @@ mainLoop
 MoveGameObjects
 	; Later on in the frame, which is effectively *next* frame now
 	inc AnimationEngine_posY + kAnimationEngine_maxSlots-1
-	inc AnimationEngine_posX + kAnimationEngine_maxSlots-1
-	bne .ol1
-	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-1
-.ol1
+
+	dec AnimationEngine_posY + kAnimationEngine_maxSlots-5
+
+;	inc AnimationEngine_posX + kAnimationEngine_maxSlots-1
+;	bne .ol1
+;	inc AnimationEngine_posXHi + kAnimationEngine_maxSlots-1
+;.ol1
 
 	inc AnimationEngine_posX + kAnimationEngine_maxSlots-4
 	bne .ol2
@@ -457,7 +491,6 @@ AnimationType_tableLoHi
 	+MAnimationType_Create ~kAnimationType_walker1		, AnimationFrames_walker1
 	+MAnimationType_Create ~kAnimationType_rotate1		, AnimationFrames_rotate1
 	+MAnimationType_Create ~kAnimationType_boss1		, AnimationFrames_boss1
-;	+MAnimationType_Create ~kAnimationType_cammy_idle1			, AnimationFrames_cammy_idle1
 
 AnimationFrames_red1
 	+MAnimationFrame_DisplaySpeed		EmitSpriteFrameredframe1 , 4
@@ -528,8 +561,8 @@ TotalAPU_Start
 	+MAPU_LoadEBSFromB1
 	+MAPU_LoadEADDRFromB1
 
-	; Only 23 sprites while multiplexing
-!for .i , 23 {
+	; Only kMaxGameSpritesPerSplit sprites while multiplexing
+!for .i , kMaxGameSpritesPerSplit {
 	+MAPUCopySprite
 }
 
@@ -604,7 +637,7 @@ APUData_Start
 	+MLittleEndian16Bit kBus24Bit_Sprites
 
 .topData
-	!fill 23 * 4 , 0
+	!fill kMaxGameSpritesPerSplit * 4 , 0
 
 	!by kBus24Bit_VideoLayer_EBBS
 	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
@@ -625,7 +658,7 @@ APUData_Start
 	+MLittleEndian16Bit kBus24Bit_Sprites
 
 .bottomData
-	!fill 23 * 4 , 0
+	!fill kMaxGameSpritesPerSplit * 4 , 0
 	
 	!by kBus24Bit_VideoLayer_EBBS
 	+MLittleEndian16Bit kBus24Bit_VideoLayer_LayersEnable
@@ -705,7 +738,7 @@ SetupAPU
 
 	; Count sprites
 	inx
-	cpx #23
+	cpx #kMaxGameSpritesPerSplit
 	+IfURegGreaterThanOrEqualToVal .csl2o
 
 .csl1o
@@ -723,7 +756,7 @@ SetupAPU
 MultiplexCalculation
 	; Check if we need to do any work at all
 	lda EmitSpriteFrame_count
-	cmp #23*4
+	cmp #kMaxGameSpritesPerSplit*4
 	+IfURegLessThanVal .simpleUpdate
 	jmp BeforePopulate
 
@@ -734,7 +767,7 @@ MultiplexCalculation
 	bne .il1
 	+MAPU_SetDataUpdateBus StackedSpriteDataGEReal2
 .il1
-	+MBus24Bit_FastSpeedCopy StackedSpriteData , 23 * 4
+	+MBus24Bit_FastSpeedCopy StackedSpriteData , kMaxGameSpritesPerSplit * 4
 
 	; Just move the split off the bottom of the screen, don't bother updating anything else
 	+MAPU_SetDataUpdateBus StackedSpriteDataLTYPos
@@ -852,7 +885,7 @@ SplitSpritesClearRemaining
 	; Clear any remaining
 	lda #0
 .csl2
-	cpx #23
+	cpx #kMaxGameSpritesPerSplit
 	+IfURegGreaterThanOrEqualToVal .csl2o
 	+MBus24Bit_Send8BitValueFromA
 	+MBus24Bit_Send8BitValueFromA

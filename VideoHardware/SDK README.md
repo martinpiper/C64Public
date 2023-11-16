@@ -32,3 +32,15 @@ Documentation
 =============
 
 Documentation "README.md" files for each component are located in each sub-directory.
+
+
+	* Demo1 : Top down RPG style demo with music
+	* Demo3 : Arkanoid (bat and ball) style demo. Also shows the title screen animation.
+	* Demo4 : Turrican demo, side scrolling platformer
+	* Demo5 : Very simple APU demo showing horizontal scroll splits
+	* Demo6 : Shadow of the beast, title and level 1 demo, with music
+	* Demo7 : Side scrolling shooter, with APU multiplexed sprites
+	* Demo9 : MegaWang intro and 3D flying demo
+	* Demo10 : Dual sprite layer Street Fighter demo
+	* Demo11 : Dual display, C64 running BASIC and MegaWang character screen
+	* Demo12 : 3D vector demo

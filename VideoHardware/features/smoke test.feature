@@ -223,7 +223,7 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
-    Given randomly initialise all memory using seed 4321
+#    Given randomly initialise all memory using seed 4321
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
     # Palette
@@ -778,7 +778,8 @@ Feature: Smoke test
     Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
     And the layer has 16 colours
     And the layer has overscan
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
     And the layer has 16 colours
     And the layer has overscan
 
@@ -837,6 +838,7 @@ Feature: Smoke test
     Given property "bdd6502.bus24.trace" is set to string "false"
     Given video display does not save debug BMP images
     Given video display processes 24 pixels per instruction
+    Given video display processes 8 pixels per instruction
     Given limit video display to 60 fps
     When I execute the procedure at mainLoop until return
 

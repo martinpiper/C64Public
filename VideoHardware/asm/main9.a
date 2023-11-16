@@ -7,12 +7,13 @@ kAPUNumFloorRows = 240 - 128
 kBus24Bit_VideoLayer_HasOverscan=1
 ; Define this to display the static logo
 ;kJustForLogo = 1
+;kJustForLogoMonchrome = 1
 
 ;kSkipToFrameThenWaitForFire = 752
 
 ; Includes music data
 MusicData = 1
-; Minimal music demo test with joystick directionsto play samples in each voice, with optional fire to loop.
+; Minimal music demo test with joystick directions to play samples in each voice, with optional fire to loop.
 ;MinimalMusicDemoTest = 1
 ;MinimalSprites2Test = 1
 ; Includes sample data decompression in parts
@@ -525,6 +526,10 @@ SetScreenScrolls
 !ifdef kJustForLogo {
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel3
+!ifdef kJustForLogoMonchrome {
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_123
+}
 }
 
 	jsr Video_SetAddressCharScrollRegisters
@@ -543,8 +548,12 @@ SetScreenScrolls
 
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_FastSpeedCopy LogoPosX , 2
+!ifdef kJustForLogoMonchrome {
+	+MBus24Bit_SendLE16BitValue -160
+} else {
 !ifdef kJustForLogo {
 	+MBus24Bit_SendLE16BitValue -144
+}
 }
 	lda BackgroundBounceTabYSmall,x
 	sec
@@ -737,6 +746,9 @@ UpdateSprites2B
 
 !zn
 sprites1PosXTarget
+!ifdef kJustForLogoMonchrome {
+	!by 158 , 182 , 206 , 230
+}
 	!by 178 , 198 , 218 , 238
 sprites1PosYCount
 	!by 0 , 50 , 100 , 150
@@ -790,6 +802,9 @@ UpdateSprites1
 	lda Sprites1BounceTabY,y
 !ifdef kJustForLogo {
 	lda #117
+}
+!ifdef kJustForLogoMonchrome {
+	lda #108
 }
 	sta sprites1PosY,x
 
@@ -2076,6 +2091,19 @@ DisplayData
 ;	jsr Video_SetAddressPalette
 ;	+MBus24Bit_SendLE16BitValue 0
 	inc VIC2BorderColour
+!ifdef kJustForLogoMonchrome {
+	jsr Video_SetAddressPalette
+	ldy #16
+.p1
+	ldx #15
+	+MBus24Bit_SendPaletteRGB 255 , 255 , 255
+.p2
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 0
+	dex
+	bne .p2
+	dey
+	bne .p1
+}
 
 !ifdef IncludeGraphicsData_L1 {
 	+MDecompressRLEToEBBSAddr .Sprites2Data0 , $08 , $2000

@@ -31,3 +31,7 @@
 
 
 
+
+* Instead of using kernal to send M-W and M-E, or SETLFS/SETNAM/LOAD, use minimal code to directly send serail bytes via kernal, and then reduce to not using any kernal, i.e. kernal replacement serial routines.
+	This would allow RAM+IO to be mapped in while loading under BASIC and KERNAL.
+	Must be compatible with multiple drives etc.
