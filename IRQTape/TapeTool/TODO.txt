@@ -121,3 +121,7 @@ Add options to include special gaps that disrupt the ability of tape-to-tape aud
 
 
 * Sample streaming. The first X pulses should be saved as volume 8 (the middle), skipping a few at the start, could be summed together to calculate a tape speed adjustment for the eventual timer value to use.
+
+
+
+* Instead of the sample frequency being related to tape stream pulse time (tape speed), playback the samples at a constant relatively high rate using a timer either with an NMI or in the mainline, and instead just buffer (perhaps 256 bytes, or maybe a couple of KB) the values coming from the tape. This uses the fact that the middle pulse is volume 8 and the waveform should naturally average out to be 8. So it would be possible to calculate the average sample playback speed and adjust the buffer size accordingly.
