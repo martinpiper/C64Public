@@ -444,6 +444,7 @@ VIC2SpriteDoubleHeight			= $d017
 ; Bit 3 Bitmap memory location * $2000 (8192) inside current VIC bank selected by $dd00.
 ; Bits 4-7 Screen memory location * $0400 (1024)  inside current VIC bank selected by $dd00.
 ; Default: $15, %00010101
+; Lowercase: $16, %00010110
 !ifndef STDLIB_OnlyAddresses {
 VIC2MemorySetupDefault			= %00010101
 }
@@ -1174,6 +1175,16 @@ RasterLengthNTSCC64		= 520
 	bne .ft1
 .ft2
 	lda CIA1KeyboardRowsJoystickB
+	and #JoystickBits_Fire
+	beq .ft2
+}
+
+!macro WaitForFireALoop_A .to {
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	bne .to
+.ft2
+	lda CIA1KeyboardColumnJoystickA
 	and #JoystickBits_Fire
 	beq .ft2
 }

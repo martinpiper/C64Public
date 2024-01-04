@@ -403,7 +403,7 @@ DecompCodeSize=*-DecompCodeStart
 
 }
 
-!if 1 {
+!if 0 {
 	; Example bitmap screen display
 	+MWordValueTo_XY BitmapLogoColours
 	jsr MemoryCopy_SetSource
@@ -617,7 +617,11 @@ SampleStart
 SampleEnd
 }
 
-!if 0 {
+!if 1 {
+	; Init the music routine
+	lda #0
+	jsr $8000
+
 	; Plots the SID waveform output into sprite X postion, which renders a nice line graph
 	lda #0
 	sta VIC2SpriteXMSB
@@ -656,51 +660,76 @@ SampleEnd
 	lda #%00010001
 	sta SIDVoice3Control
 
+	; Display the sprite "oscilloscope"
 .l1
+	; Moves the sprite down to follow the raster beam of the display, this causes the VIC to render the same sprite as a vertical strip
+	lda VIC2Raster
+	beq .frameUpdate
+	sta VIC2Sprite0Y
+	; Reads SID voice 3 waveform output
 	lda SIDVoice3WaveformOutput
 	lsr
 	ora #128
+	; Stores into the sprite X coordinate
 	sta VIC2Sprite0X
+	jmp .l1
+
+.state !by -1
+.frameUpdate
+	; We don't want the $000 raster, we want the $100 raster, so loop on the 0 high bit...
 	lda VIC2ScreenControlV
 	bpl .l1
+	; $100 raster position
+	lda .state
+	cmp #4
+	bne .o4
+	inc VIC2BorderColour
+	jsr $8003
+	dec VIC2BorderColour
+.o4
+	+WaitForFireALoop_A .l1
 
-.l2
-	lda VIC2ScreenControlV
-	bmi .l2
+	inc .state
 
+	lda .state
+	cmp #5
+	bcc .ok
 	lda #0
-	sta VIC2BorderColour
-	lda #VIC2SpriteYBorderTop
-	sta VIC2Sprite0Y
-	lda #VIC2SpriteYBorderTop + VIC2SpriteSizeY
-	sta VIC2Sprite1Y
-
-;	+MACROWaitForRaster VIC2SpriteYBorderTop
-
-!for .j , 9 {
-!set .jj = .j-1
-
-!set .pos = VIC2SpriteYBorderTop + (.jj * VIC2SpriteSizeY) + VIC2SpriteSizeY
-	ldx #.pos-8
--
-	lda SIDVoice3WaveformOutput
-	lsr
-	ora #128
-	sta VIC2Sprite0X
-	cpx VIC2Raster
-	bcs -
+	sta .state
+.ok
+	cmp #0
+	bne .o0
+	lda #%10000001
+	sta SIDVoice3Control
+.o0
+	cmp #1
+	bne .o1
+	lda #%01000001
+	sta SIDVoice3Control
+.o1
+	cmp #2
+	bne .o2
+	lda #%00100001
+	sta SIDVoice3Control
+.o2
+	cmp #3
+	bne .o3
+	lda #%00010001
+	sta SIDVoice3Control
+.o3
 
 	inc VIC2BorderColour
-	lda #.pos
-	sta VIC2Sprite0Y
-}
-
 	jmp .l1
+
+* = $8000
+!bin "..\Tusari2\bin\Level1.prg",,2
 
 * = $2000
 .theSprite
 !for .i , 21 {
-	+SpriteLine 1
+;	+SpriteLine %########################
+;	+SpriteLine %......................##
+	+SpriteLine %.......................#
 }
 
 }
@@ -874,7 +903,7 @@ SampleEnd
 
 !source "stdlib/Initialise.a"
 
-!if 1 {
+!if 0 {
 !source "stdlib/MemoryCopy.a"
 BitmapLogoColours
 !bin "Tusari.col",,2
