@@ -10,7 +10,7 @@ BitmapDisplay = 1
 ; These three loaders use the TinyHeader (otft) option
 ; No screen, flashing, sound
 ; ~$1bf bytes
-SmallLoader = 1
+;SmallLoader = 1
 
 ; A bit like Cyberload
 ; ~$21a bytes
@@ -18,7 +18,7 @@ SmallLoader = 1
 
 ; A bit like Novaload
 ; ~$1fa bytes
-;NovaishLoad = 1
+NovaishLoad = 1
 
 ; Without selecting one of the above, this enables the loader without TinyHeader (otft option)
 ; Displays the filename in the top left with an otherwise empty screen. Processes the full header as one whole file, but doesn't include block compression.

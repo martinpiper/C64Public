@@ -30,20 +30,20 @@ This creates three files.
 "Loaders.map" the map file of symbols used.
 "Loaders.lbl" VICE monitor format labels, ready for being loaded by VICE if needed.
 
-Next start writing the auto-boot tape header. This contains a simple turbo tape loader that loads data faster than normal.
+Next start writing the auto-run tape header. This contains a simple turbo tape loader that loads data faster than normal.
 This is a special format of the kernal file structure that contains data in the tape buffer and only saves one copy of the
-file rather than two copies of the file. This enables the auto-boot code to load and run quicker than normal.
+file rather than two copies of the file. This enables the auto-run code to load and run quicker than normal.
 >	TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin c
 Explanation:
 (wn "test.tap") This creates a new file "test.tap" for writing.
 (m "Loaders.map") Loads the symbols from "Loaders.map".
-(ocb1 Loaders.bin) Writes the auto-boot header using data from "Loaders.bin" using the default values from the map file.
+(ocb1 Loaders.bin) Writes the auto-run header using data from "Loaders.bin" using the default values from the map file.
 (c) Closes the file and sets the correct data length.
 
 Next write the real turbo loader using turbo tape format that will load the rest of the example files. Because this data
-is loaded from the small auto-boot code it uses a special format of turbo data that doesn't contain much header or
+is loaded from the small auto-run code it uses a special format of turbo data that doesn't contain much header or
 error correction information.
-This real turbo loader is larger than the small auto-boot code and includes routines to scroll a message and play music.
+This real turbo loader is larger than the small auto-run code and includes routines to scroll a message and play music.
 It also loads information with a turbo tape format that includes extra error correction checks and can prompt for the tape
 to be rewound if an error is detected.
 >	TapeTool.exe w "test.tap" a m "Loaders.map" otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd c
@@ -109,12 +109,12 @@ to the turbo data.
 	SmallLoader = 1
 	MartyLoad = 1
 	NovaishLoad = 1
-These enable the different auto-boot loaders:
+These enable the different auto-run loaders:
 The "SmallLoader" doesn't enable the screen until the real loader is started.
 The "MartyLoad" displays some animated bars like the old Cyber loader.
 The "NovaishLoad" displays a screen that looks like the old Nova loader.
 
-If none of the auto-boot loader options are chosen then a different auto-boot loader is used. This loader doesn't use a tiny
+If none of the auto-run loader options are chosen then a different auto-run loader is used. This loader doesn't use a tiny
 header (TinyHeader otft option), instead it uses a header with some extra filename and load address information.
 So instead of the real loader being written with "otft" it needs to be written with "otf" instead.
 For example use: otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart

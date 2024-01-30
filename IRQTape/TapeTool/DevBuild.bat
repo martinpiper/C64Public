@@ -5,10 +5,27 @@ del /q Loaders.bin
 if not exist Loaders.bin goto :error
 
 echo Writing data
-rem Tiny header auto-boot loaders are used so use this...
-..\..\bin\TapeTool.exe n 1 wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUSC000.prg" 1 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.scr" 2 $2 $3eb .BitmapLogoScreen otl$c0 otfbr "..\..\BlankProjectComp\Tusari.col" 3 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.bmp" 4 $2 $1f43 .BitmapLogo otl$c0 otfbr "..\TestMultiplexor.prg" 5 otl$c0 c
-rem If none of the auto-boot loaders are chosen in the "_config.a" file then the real loader written with "otft" needs to use "otf" instead.
-rem ..\..\bin\TapeTool.exe wn "test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 otl$c0 otfbr "..\R.MUSC000.prg" 1 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.scr" 2 $2 $3eb .BitmapLogoScreen otl$c0 otfbr "..\..\BlankProjectComp\Tusari.col" 3 otl$c0 otfbr "..\..\BlankProjectComp\Tusari.bmp" 4 $2 $1f43 .BitmapLogo otl$c0 otfbr "..\TestMultiplexor.prg" 5 otl$c0 c
+
+rem Writes the kernal auto-run data
+..\..\bin\TapeTool.exe n 1 wn "test.tap" m "Loaders.map" ocb1 Loaders.bin c
+
+rem Tiny header auto-run loaders are used so use this...
+rem Writes the first turbo data, the main loader, with the "TinyHeader" option
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd c
+rem If none of the auto-run loaders are chosen in the "_config.a" file then the real loader written with "otft" needs to use "otf" instead.
+rem Writes the first turbo data, the main loader, with the full header
+rem ..\..\bin\TapeTool.exe w  "test.tap" a m "Loaders.map" otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart c
+
+rem Write the rest of the file data, with block compression enabled
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "Loaders.bin" 0 .SpriteDataStart .SpriteDataEnd $200 c
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "..\R.MUSC000.prg" 1 c
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "..\..\BlankProjectComp\Tusari.scr" 2 $2 $3eb .BitmapLogoScreen c
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "..\..\BlankProjectComp\Tusari.col" 3 c
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "..\..\BlankProjectComp\Tusari.bmp" 4 $2 $1f43 .BitmapLogo c
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 otfbr "..\TestMultiplexor.prg" 5 c
+rem Writes a final lead out at the end of the tape
+..\..\bin\TapeTool.exe n 1 w  "test.tap" a m "Loaders.map" otl$c0 c
+
 
 
 rem Produce various testing TAP files with different variance
@@ -43,6 +60,10 @@ copy /Y test.tap test_rm.tap
 
 echo run test.tap
 test.tap
+
+
+rem Debug, skip the rest
+goto end
 
 echo run test_p.tap
 test_p.tap

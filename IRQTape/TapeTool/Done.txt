@@ -220,7 +220,7 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 
 		
 
-* Possible to add some expert code that detects possible auto-boot tape methods based on the discovery work for "Do a bit of research of other commerical tapes, see what they use..."
+* Possible to add some expert code that detects possible auto-run tape methods based on the discovery work for "Do a bit of research of other commerical tapes, see what they use..."
 	Example output:
 		Opened 'test.tap' for reading.
 		The code will attempt to load to address $0302
@@ -245,7 +245,7 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 
 
 * Problems:
-	Sometimes a tape just contains turbo data, or doesn't contain jernal data, so there cannot be any auto-boot code
+	Sometimes a tape just contains turbo data, or doesn't contain jernal data, so there cannot be any auto-run code
 	Also detect loading into BASIC memory, precisely detect loading >= 0x0400
 	* E:\Ultimate tape archive\Ultimate_Tape_Archive_V3.0\Ultimate_Tape_Archive_V3.0\Dancing_Monster_(1983_Commodore)_[1686]\Dancing_Monster.tap
 		Stack $0202 slide!!!
@@ -363,3 +363,26 @@ This means the IRQ executes $ea2f, which executes an illegal opcode NOOP $60,X (
 	Released: https://csdb.dk/release/index.php?id=236896
 	Wide Amplitude Negated Gain Frequency Modulation
 
+
+
+
+
+* kTapeLoaderLoadNewFile_Wildcard for the filename should be a wildcard, meaning load any file.
+	There will need to be a separate "this file was just loaded" variable.
+	This makes it easier to just not save certain files and skip that functionality.
+		For example, not saving the first bitmap file (and other bitmap files) does not trigger the bitmap display code.
+		Nt saving the music, skips the music init and play code.
+		Etc.
+	>> TapeLoaderLoadNewFile entry A and no need inc FileNameByte
+		> "beq .progressHeaderStatus" can be kept, but after it a check for wildcard filename = 0 can also be added which goes to .progressHeaderStatus
+	>> Reverted somewhat because if there is a load error then we don't want to load "any data" when the tape is rewound.
+
+
+
+
+* When a bitmap screen is displayed and there is a load error, the text screen is diaplayed, but the scfrolling message needs to stop as the bottom of the screen shows fragments of scrolling text with the bitmap colours.
+	The screen scroll split should also be disabled.
+
+
+
+* Added kTapeLoaderLoadNewFile_Wildcard, which is 255, not 0.

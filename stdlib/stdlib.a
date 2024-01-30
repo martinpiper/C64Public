@@ -157,8 +157,10 @@ ProcessorStack					= $0100		; $0100 - $01ff
 
 ; $0200 - $0292 Various keyboard buffers and buffers used by BASIC
 EZPCurrentCharColourCode		= $0286		; Uses: VIC2Colour_*
+EZPStringDisplayHiAddress		= $0288		; See: InitKERNALStringDisplay_AXY
 EZPFlagFlagRepeatKeys			= $028a		; 0 = no repeat (default). $ff = repeat all.
 EZPFlagUpperLowerCaseChange		= $0291		; $80 = Keyboard or chr$(8) does not change upper/lower case
+EZPFlagAutoScrollDown			= $0292		; 0 = No auto scroll
 EZPFlagTempIRQDuringTapeIOLoHi	= $029f
 
 ; $0293 - $02ff RS232 and datasette control and buffers
@@ -212,6 +214,7 @@ SPRITEFRAMESCROFF = $03f8
 SCREENRAM = $0400
 SPRITEFRAME = SCREENRAM + SPRITEFRAMESCROFF
 BASICROM  = $A000
+CHARROM   = $D000	; See: ProcessorPortCharROMBASICKERNAL
 VIC       = $D000
 SID       = $D400
 COLORRAM  = $D800
@@ -243,9 +246,10 @@ KERNALTape_TimingAdjustment		= $f9d5
 
 KERNALVIC_DefaultValues = $ecb9
 
-
+; These are used by the RESET routine at $fce2
 KERNALInitIO = $fda3
-
+KERNALRestoreIOVectors = $fd15
+KERNALInitIOAdditional = $ff5b
 
 ; Serial IO internals
 KERNALSerialBus_DelayOneMillisecond			= $eeb3
@@ -571,6 +575,9 @@ VIC2SpriteSizeY = 21*2
 } else {
 VIC2SpriteSizeY = 21
 }
+
+VIC2SpriteByteSize = 3 * 21
+
 ; The left most position for a 40 column wide screen where the sprite is completely visible
 VIC2SpriteXBorderLeft = 24
 ; The left most position for a 38 column wide screen where the sprite is completely visible
@@ -1380,6 +1387,10 @@ RasterLengthNTSCC64		= 520
 	sta .addr
 }
 
+!macro MAlsoToAddress_A .addr {
+	sta .addr
+}
+
 !macro MWordValueToAddress_A .value , .addr {
 	lda #<.value
 	sta .addr
@@ -1729,6 +1740,12 @@ RasterLengthNTSCC64		= 520
 !macro MCheckNotInIOKernal {
 !if * >= VIC {
 	!error "Code/data within IO or kernal"
+}
+}
+
+!macro MCheckInLowerRAM {
+!if * >= C64Cartridge_Lo_8K {
+	!error "Code/data must be in lower RAM range"
 }
 }
 

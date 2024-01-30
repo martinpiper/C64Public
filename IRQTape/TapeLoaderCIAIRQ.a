@@ -36,9 +36,12 @@ TapeLoaderInitialiseIRQ
 
 	rts
 
-; A = Filename
+; Entry:
+; A = Filename. kTapeLoaderLoadNewFile_Wildcard is a wildcard, it will load any file.
+; FileNameByteLoaded is updated with the filename loaded, or the last filename encountered. TurboTapeFinishedLoadingFile is set <>0 when a file is actually loaded.
+kTapeLoaderLoadNewFile_Wildcard = 255
 TapeLoaderLoadNewFile
-	sta FileNameByte
+	sta FileNameByteToLoad
 	txa
 	pha
 
@@ -214,12 +217,19 @@ TurboTapeBlockCounter !by 0
 }
 	jmp .notValidSoReset
 .doingFileNameCheck
-FileNameByte = * + 1
+	; Store the filename encountered, it might be loaded or skipped at this point but this is the only sensible place to store it
+	sta FileNameByteLoaded
+FileNameByteToLoad = * + 1
 	cmp #0	; Self modifying byte for the filename
+	beq .progressHeaderStatus
+	; Wildcard, any file, check
+	ldx FileNameByteToLoad	; Must not corrupt A
+	cpx #255
 	beq .progressHeaderStatus
 	; If the filename isn't correct then tweak the border colour once
 	+MTapeLoader_blockProcess_A
 	jmp .notValidSoReset
+FileNameByteLoaded !by 0
 .doingStartLoByte
 	sta TapeLoaderStoringToLo
 	sta .smZPStartBasicLo+1

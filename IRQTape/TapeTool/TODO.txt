@@ -116,6 +116,7 @@ Add options to include special gaps that disrupt the ability of tape-to-tape aud
 * MainSecondLoaderStart is the loading address...
 	It is also the jmp address...
 	Could do with a way to define a separate jump address...
+		>> Add: MainSecondLoaderExecute
 
 
 
@@ -124,4 +125,7 @@ Add options to include special gaps that disrupt the ability of tape-to-tape aud
 
 
 
-* Instead of the sample frequency being related to tape stream pulse time (tape speed), playback the samples at a constant relatively high rate using a timer either with an NMI or in the mainline, and instead just buffer (perhaps 256 bytes, or maybe a couple of KB) the values coming from the tape. This uses the fact that the middle pulse is volume 8 and the waveform should naturally average out to be 8. So it would be possible to calculate the average sample playback speed and adjust the buffer size accordingly.
+* Instead of the sample frequency being related to tape stream pulse time (tape speed), playback the samples at a constant relatively high rate using a timer either with an NMI or in the mainline, and instead just buffer (perhaps 256 bytes, or maybe a couple of KB) the values coming from the tape. This uses the fact that the middle pulse is volume 8 and the waveform should naturally average out to be 8. So it would be possible to calculate the average sample playback speed and adjust the buffer size accordingly. The CIA timer can also be in auto-restart mode, making the sample playback more accurate.
+
+
+

@@ -83,8 +83,8 @@ MainSecondLoaderStart
 	bne .l2b
 }
 
-	; Enable loading any data now
 	jsr TapeLoaderInitialiseIRQ
+	; Start loading data now, from the filename "0"
 	lda #0
 	jsr TapeLoaderLoadNewFile
 	cli
@@ -151,7 +151,8 @@ MainSecondLoaderStart
 	dec VIC2ScreenColour
 	jmp .MainLoop
 }
-
+	lda .disableScrollingMessage
+	bne .noScrollSplit1
 .s00
 	lda VIC2Raster
 	cmp #.yposSplit
@@ -231,7 +232,7 @@ MainSecondLoaderStart
 	beq .lSkipFileLoaded
 
 	; Check what was just loaded
-	ldx FileNameByte
+	ldx FileNameByteLoaded
 !ifdef StartOnFilenameNumber {
 	cpx #StartOnFilenameNumber
 } else {
@@ -239,9 +240,10 @@ MainSecondLoaderStart
 }
 	beq .startLoadedCode
 
-	; Prepare the IRQ loader to load the next file
-	inc FileNameByte
-	lda FileNameByte
+	; Prepare the IRQ loader to load the next file, using the previously loaded filename+1.
+	txa
+	clc
+	adc #1
 	jsr TapeLoaderLoadNewFile
 
 	; Check the filename
@@ -299,11 +301,11 @@ UnusedSpace = $0334
 	; If you want BASIC to ignore the restore key then comment out the MACROAckAllIRQs_A line below.
 	+MACROAckAllIRQs_A
 
-	jsr $fda3	; Init I/O
-	jsr $fd15	; Restore the normal IRQ
-	jsr $ff5b	; Screen on
+	jsr KERNALInitIO	; Init I/O
+	jsr KERNALRestoreIOVectors	; Restore the normal IRQ
+	jsr KERNALInitIOAdditional	; Screen on
 	cli
-	jsr $e453
+	jsr KERNALInitZPVectors
 
 !ifdef JMPStartAddress {
 	; Either jump directly into the code just loaded... (If the file loaded is just a simple "SYS XXXXX" BASIC program it is usually OK to do this.) ...
@@ -348,6 +350,8 @@ UnusedSpace = $0334
 	lda TurboTapeBlockLoadError
 	beq .noLoadError
 
+	sta .disableScrollingMessage
+
 	; Flash the border with a known colour that is very different to the tape loading effect
 	lda VIC2BorderColour
 	and #VIC2Colour_Red
@@ -358,10 +362,12 @@ UnusedSpace = $0334
 	bne .rrwnd
 	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressStop , .textLoadErrorPressStopEnd , SCREENRAM + (TapeLoadErrorLine*40), VIC2Colour_LightRed
+	jsr .clearScrollingMessageLine
 	jmp .overText
 .rrwnd
 	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressRewind , .textLoadErrorPressRewindEnd , SCREENRAM + (TapeLoadErrorLine*40) , VIC2Colour_LightRed
+	jsr .clearScrollingMessageLine
 .overText
 
 	; Test for stop being pressed
@@ -378,6 +384,16 @@ UnusedSpace = $0334
 	sta ZPProcessorPort
 
 	jmp .endLoadErrorCode
+
+.disableScrollingMessage !by 0
+.clearScrollingMessageLine
+	ldx #40
+	lda #' '
+.cll2
+	sta SCREENRAM-1 + (24*40),x
+	dex
+	bne .cll2
+	rts
 
 .notStop
 	; Play or rewind or FFWD is pressed, was the stop key pressed?
@@ -428,9 +444,12 @@ UnusedSpace = $0334
 	sta SCREENRAM+TapeCounterOffset+2
 .tapeCountEnd
 
+	lda .disableScrollingMessage
+	bne .noScrollSplit3
 	; Update the scroll
 	dec .xpos
 	bmi .doXScroll
+.noScrollSplit3
 	jmp .MainLoop
 .doXScroll
 	lda #7
