@@ -539,10 +539,9 @@ AfterScrollers
 
 	rts
 
-
 CharEffects_SpriteYPosToScreenCharPos
 !fill VIC2SpriteYBorderTop-10-4 , -1
-!for .num , 20 { !fill 8 , (.num-1) }
+!for .num , 20+Scroller_AdditionalCharLines { !fill 8 , (.num-1) }
 !fill 256 - (* - CharEffects_SpriteYPosToScreenCharPos) , -1
 
 CharEffects_SpriteXPosToScreenCharPos

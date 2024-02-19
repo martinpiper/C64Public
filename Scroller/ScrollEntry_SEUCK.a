@@ -95,9 +95,6 @@ IRQOpenBorders = 1
 ; Enables the colour scroll code, without this the colour screen is ignored
 Scroller_NeedFullColourScroll = 1
 
-!ifdef Scroller_MultiDirection {
-} else {
-
 Scroller_DisplayTitleScreen = 1
 
 ; Allows the title screen IRQ animation to be updated external to the Scroller code
@@ -230,8 +227,6 @@ Scroller_NoSpriteYAdjust = 1
 Scroller_SpriteXAdjust = 1
 }
 
-
-}
 
 ;Enable this to allow the enemy AI test code to be enabled with background collision.
 ; This will replace the all enemy object type 24 with an enemy that will run around. (.doRunningMan in AnimationEngine.a)

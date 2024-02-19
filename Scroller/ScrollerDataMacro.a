@@ -1,5 +1,8 @@
-; Changing the "GAME3" to "GAME1" will include the other game example file.
+; Note for the macros "SEUCKFileData*" the ".offset" is changed to work with mostly SEUCK "all data" files saved as P00 files, which have a $1a byte header plus 2 bytes for the start address, and offset by $900
+; If your data file is different, for example it's a full memory dump, then the ".offset" will need different adjustment.
+
 !macro SEUCKFileData .size, .offset {
+!set .offset = $1a + 2 - $900 + .offset
 !bin "../SEUCK/GAME1__I.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.size,.offset
@@ -11,6 +14,8 @@
 ;!bin "../SEUCK/TSTCLLSN.P00",.size,.offset
 ; A debug file to demonstrate what the SEUCK directional animation flags do
 ;!bin "../SEUCK/DIRCTRNL.P00",.size,.offset
+
+;!bin "../SEUCK/AAAA___I.P00",.size,.offset
 
 ; From DirectionalDebug.vsf this doesn't have the normal P00 header so subtract $1a
 ;!bin "../SEUCK/directiondebug.i",.size,.offset-$1a
@@ -41,6 +46,10 @@
 ; Use this to debug/demonstrate "static level" and "redraw" options
 ; Three "disc capacitor" enemies (and other types) should spawn on the left and walk to the right during the game level until it loops
 ;!bin "../SEUCK/tstlvlrwedraw .i",.size,.offset-$1a
+
+; From RedrawTest.d64
+;!bin "../SEUCK/redraw        .i.prg",.size,.offset-$1a
+
 
 ;!bin "../SEUCK/tank2         .i",.size,.offset-$1a
 
@@ -77,6 +86,7 @@
 
 ; This macro includes the LotD extra data
 !macro SEUCKFileData2 .size, .offset {
+!set .offset = $1a + 2 - $900 + .offset
 !bin "../SEUCK/LTDSPLLS.P00",.size,.offset
 }
 
@@ -85,6 +95,7 @@
 ; This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
 !ifdef Paralax_Enable {
 !macro SEUCKFileDataParalaxBlock .size, .offset {
+!set .offset = $1a + 2 - $900 + .offset
 !bin "../SEUCK/PRLXBLCK.P00",.size,.offset
 }
 }

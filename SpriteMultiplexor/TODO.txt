@@ -1,5 +1,16 @@
 ; TODO
 
+* To facilitate a sprite score panel display at the top of the screen, allow the multiplexor to start its IRQs on a different VIC sprite index.
+	The initial sprite setup would also need to reduce the number of sprites initially opied over.
+	For example, score panel is initialised into VIC sprite index 0/1. The multiplexor initial copy then copies into VIC sprite index 2/3/4/5/6/7
+	The next IRQ would then trigger just below sprite 0 (and then 1)
+	> The sprite store order would need to be taken into account.
+	* If the score panel sprites are expanded, or hires, an optional macro would be needed to set the expansion or hires bits appropriately.
+
+
+
+
+
 * Add optional check that will "reserve" sprite0 or sprite7 within a certain Y position range.
 	This would be useful to ensure the player is always infront or behind other sprites, or ensure a hires/expanded overlay for the player, etc
 	If the sprite0/7 update would happen for that position then instead jsr to a specific update routine and then progress to the next sprite1/6 in the list instead.
@@ -51,3 +62,11 @@
 
 * Going to need some feature files to very carefully track expected cycle timings for the various optimisations
 
+
+
+* Compression tests: c:\work\c64\bin\LZMPi.exe -c64mbu c:\work\c64\SpriteMultiplexor\TestMultiplexor.prg c:\temp\t.prg $900
+	Multiplex_itemsSecondPart	= 48
+		* Without music, without unrolled sort, compressed size -c64mbu : $079e
+		* Without music, with unrolled sort, compressed size -c64mbu : $098b
+	Multiplex_itemsSecondPart	= 16
+		* Without music, with unrolled sort, compressed size -c64mbu : $08e5

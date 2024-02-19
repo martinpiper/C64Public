@@ -104,46 +104,46 @@ MapDataEnd
 ;This includes duplicate columns of paralax chars, it makes the speed code much faster since it doesn't have to do a wraparound check
 Paralax_Level1CharData
 !for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
 }
 ; This mask data is processed by ScrollerDemoInitOneTimeData to create a logical mask
 !ifdef Paralax_MaskEnable {
 Paralax_Level1CharDataMask
 !for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
 }
 }
 
 Paralax_Level2CharData
 !for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8,$1a + 2 - $900 + $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
++SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
 }
 }
 
 !align 255,0
 BlockColours
-+SEUCKFileData $80,$1a + 2 - $900 + $1900
++SEUCKFileData $80, $1900
 
 !align 255,0
 BlockData
-+SEUCKFileData $c80,$1a + 2 - $900 + $1a00
++SEUCKFileData $c80, $1a00
 
 ;!align 255,0
 ; This map is 8 blocks wide so it equals $200 (512) blocks high
 MapData
-+SEUCKFileData $1000,$1a + 2 - $900 + $900
++SEUCKFileData $1000, $900
 MapDataEnd
 
 ;$4085,86,87 = VIC2ScreenColour, VIC2ExtraBackgroundColour1, VIC2ExtraBackgroundColour2
 BackgroundFixedColours
-+SEUCKFileData 3,$1a + 2 - $900 + $4085
++SEUCKFileData 3, $4085
 
 SpriteFixedColours
-+SEUCKFileData 1,$1a + 2 - $900 + $4081
-+SEUCKFileData 1,$1a + 2 - $900 + $4083
++SEUCKFileData 1, $4081
++SEUCKFileData 1, $4083
 }
 
 ; Adding different music player support is as simple as:
@@ -225,7 +225,7 @@ MusicPlayerPlaySFX = $8009
 ; Until $ff is encountered
 
 AttackWaves
-+SEUCKFileData $bc0,$1a + 2 - $900 + $340c
++SEUCKFileData $bc0, $340c
 
 ; 36 Enemy properties
 ; $00		- Lo nybble - Bullet sound effect - 0 is no sound
@@ -267,13 +267,13 @@ ObjectPropertiesTabHi !for .table1,36 {!by >(ObjectProperties + (.table1-1) * $7
 }
 ; These properties only exist for enemies so remember to subtract AnimationType_Enemy1 before indexing from the type
 ObjectProperties
-+SEUCKFileData $fc,$1a + 2 - $900 + $3108
++SEUCKFileData $fc, $3108
 
 Player1Properties
-+SEUCKFileData $13,$1a + 2 - $900 + $409d
++SEUCKFileData $13, $409d
 
 Player2Properties
-+SEUCKFileData $13,$1a + 2 - $900 + $40b0
++SEUCKFileData $13, $40b0
 PlayerOffset_LeftStopLo = 0
 PlayerOffset_LeftStopHi = 1
 PlayerOffset_UpStop = 2
@@ -311,12 +311,12 @@ PlayerOffset_Enabled = $12
 ; $06		- $ff = Loop
 ; $06		- $80 = Continue
 LevelProperties
-+SEUCKFileData $9a,$1a + 2 - $900 + $b776
++SEUCKFileData $9a, $b776
 
 
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 SFXTable
-+SEUCKFileData $f0,$1a + 2 - $900 + $b810
++SEUCKFileData $f0, $b810
 }
 
 }
@@ -443,34 +443,34 @@ ObjectAnimationsTabLo !for .table1,58 {!by <(ObjectAnimations + (.table1-1) * $1
 ObjectAnimationsTabHi !for .table1,58 {!by >(ObjectAnimations + (.table1-1) * $14) }
 }
 ObjectAnimations
-+SEUCKFileData $488,$1a + 2 - $900 + $2c80
++SEUCKFileData $488, $2c80
 !ifdef Scroller_LOTD {
 ; Include the extra animations
 ; Fireball trail
-+SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (6*$14)
++SEUCKFileData2 $14, $2c80 + (6*$14)
 ; Wind trail
-+SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (7*$14)
++SEUCKFileData2 $14, $2c80 + (7*$14)
 ; Wind
-+SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (22*$14)
++SEUCKFileData2 $14, $2c80 + (22*$14)
 ; Fireball1
-+SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (23*$14)
++SEUCKFileData2 $14, $2c80 + (23*$14)
 ; Fireball2
-+SEUCKFileData2 $14,$1a + 2 - $900 + $2c80 + (24*$14)
++SEUCKFileData2 $14, $2c80 + (24*$14)
 }
 
 ; Include some demonstration SEUCK data instead
 ; The title screen chars and screen itself are copied to bank 0 $400-$fff by DisplayTitleScreen
 ; each time the title screen is displayed. During the game $400-$fff is used by other VIC data.
 TitleScreenChars
-+SEUCKFileData $208,$1a + 2 - $900 + $3204
++SEUCKFileData $208, $3204
 
 TitleScreenCharData
-+SEUCKFileData $200,$1a + 2 - $900 + $f400
++SEUCKFileData $200, $f400
 
 RasterColourTable
-+SEUCKFileData $40,$1a + 2 - $900 + $41c1
++SEUCKFileData $40, $41c1
 RasterColourTableType
-+SEUCKFileData 1,$1a + 2 - $900 + $409c
++SEUCKFileData 1, $409c
 
 !ifdef TitleScreen_AnimatingSprites {
 TitleScreenBallSprites
@@ -480,7 +480,7 @@ TitleScreenBallSprites
 ; ScorePlayer1Render assumes aligned data
 !align 255,0
 SpriteScoreChars
-+SEUCKFileData $a8,$1a + 2 - $900 + $f508
++SEUCKFileData $a8, $f508
 ; One unit of blank data following the player life graphic used by ScorePlayer1Render
 !fill 8,0
 
@@ -613,14 +613,14 @@ EndOfTableMemory = StartOfTableMemory
 ; Lastly, high up in memory goes the sprite data
 *=$c000
 CharData
-+SEUCKFileData $7f8,$1a + 2 - $900 + $f800
++SEUCKFileData $7f8, $f800
 
 *=$d000
 SpriteData
-+SEUCKFileData $1fc0,$1a + 2 - $900 + $c000
++SEUCKFileData $1fc0, $c000
 !ifdef Scroller_LOTD {
 MaxSpriteNumber = 126+12
-+SEUCKFileData2 (12*64),$1a + 2 - $900 + $c000
++SEUCKFileData2 (12*64), $c000
 } else {
 MaxSpriteNumber = 126
 }

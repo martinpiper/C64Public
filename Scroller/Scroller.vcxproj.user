@@ -11,7 +11,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SEUCK|Win32'">
     <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>-warp -remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-remotemonitor +truedrive $(ProjectDir)\Scroller.prg</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MultiDirection|Win32'">
     <LocalDebuggerCommand>C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe</LocalDebuggerCommand>

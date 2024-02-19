@@ -33,3 +33,23 @@ Then reference the saved p00 data file on your PC by putting the path to the fil
 -remotemonitor $(ProjectDir)\Scroller.prg
 -remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt
 -warp -remotemonitor -truedrive -cartcrt $(ProjectDir)\Scroller.crt
+
+
+* To start SEUCK in Vice and allow SEUCK to save "*.p00" files that can be easily imported:
+cd /d C:\Work\C64\SEUCK
+cd /d C:\Work\C64\SEUCK\Debug1
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCK.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskBlank.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskGame1.prg"
+etc.
+In SEUCK, press D for the "Storage" menu, then "Save all data".
+
+Saving all data with "SEUCK.prg" and "SEUCKDiskBlank.prg" produces practically identical data in the p00 file.
+
+
+Some of the old VSF snapshot files use: C:\Backups\OldMachines\OldMachineBackup\C\VICE\x64.exe
+
+
+* The files "SEUCKDisk*.prg" were extracted from the original PAL disk using my expanded version of C1541 with the "-recover" command: https://github.com/martinpiper/DebuggingDetails/blob/main/SEUCK.txt
+
+
