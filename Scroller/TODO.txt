@@ -91,7 +91,7 @@
 
 
 
-; MPi: TODO: If the sort is already after the multiplexor end (and the sprite collisioon is off) then just do the full copy and sort without buffering.
+; MPi: TODO: If the sort is already after the multiplexor end (and the sprite collision is off) then just do the full copy and sort without buffering.
 
 
 
@@ -139,3 +139,9 @@
 ; might have placed their sprites to compensate for this one frame lag. In this case just make
 ; sure the sprite position is correct when the screen is static or stops scrolling (like that 
 ; scroll after a push scroll).
+
+
+
+* SEUCK: When using Multiplex_CollisionIndexes, the table should be approximately sorted, so there is an early out if the Y extent of the boxes do not overlap then there is no point in testing any further.
+	The overlap can be to within 21 or 42 pixels?
+

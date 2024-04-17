@@ -21,16 +21,16 @@ Feature: Verify correct rendering
     When remote monitor wait for hit
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-1-2.png" 2"
 
-	When remote monitor wait for 12 hits
+    When remote monitor wait for 12 hits
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-1-3.png" 2"
 
-	When remote monitor wait for 12 hits
+    When remote monitor wait for 12 hits
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-1-4.png" 2"
 
-	When remote monitor wait for 12 hits
+    When remote monitor wait for 12 hits
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-1-5.png" 2"
 
-	When remote monitor wait for 6 hits
+    When remote monitor wait for 6 hits
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-1-6.png" 2"
 
     When remote monitor wait for hit
@@ -61,14 +61,14 @@ Feature: Verify correct rendering
     Given I run the command line: cmd /c start C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe -autostartprgmode 1 +autostart-delay-random +VICIIdsize +VICIIdscan -VICIIborders 2 -VICIIfilter 0 +sound -warp -remotemonitor
     # Vice is automatically quit at the end of the test
     Given connect to remote monitor at TCP "127.0.0.1" port "6510"
-	When send remote monitor command "break" "titleJoystickTest"
+    When send remote monitor command "break" "titleJoystickTest"
     When send remote monitor command "break" "afterScrollerDemoWaitScorePanel"
     When send remote monitor command without parsing "attach "%WCD%\scroller.crt" 20"
     When send remote monitor command "reset"
     When remote monitor wait for 30 hits
     When send remote monitor command without parsing "scrsh "%WCD%\target\TC-2-1.png" 2"
 
-	# Advance the title screen fire test
+    # Advance the title screen fire test
     When send remote monitor command "n"
     When send remote monitor command "r a=0"
     When remote monitor wait for hit

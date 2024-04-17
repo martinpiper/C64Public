@@ -4,34 +4,34 @@ Feature: Animation tests
 	Or with CPU trace: java -Dbdd6502.trace=true -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar
 
 	Performs animation routine tests using known data
-Data from ANIMTSTS.P00
-Enemy at $340c
-Map pos: 00 00
-Movement address: $3fcb
-X Pos (*2): $24
-Y Pos: $60
-Animation type: 0
-Cycle animation frames $42 to $53 every frame. Movement:
-Speed 3
-  p  d  r  u  l  r  d  r  l  p  l  p
- 10 54 a1 58 82 11 54 91 58 a0 c2 70 ff
-
-MPi: TODO: Implement tests for the above movement
-
-
-MPi: TODO: Document the rest
- Dir hold
- pdpdrup
- f0 f0 f0 f0 40 14 f0 90 34 18 21 38 f0 e0 ff
- Cycle
- drurdlul
- 10 84 81 88 81 84 82 88 82 ff
- Dir
- prprprprplrdudu
- f0 20 31 f0 40 41 60 61 b0 41 50 f2 22 f1 21 54 48 44 58 ff
- Dir hold
-    4r 1p 4l 1p 4d 4u
- 10 41 10 42 10 44 48 ff
+    Data from ANIMTSTS.P00
+    Enemy at $340c
+    Map pos: 00 00
+    Movement address: $3fcb
+    X Pos (*2): $24
+    Y Pos: $60
+    Animation type: 0
+    Cycle animation frames $42 to $53 every frame. Movement:
+    Speed 3
+      p  d  r  u  l  r  d  r  l  p  l  p
+     10 54 a1 58 82 11 54 91 58 a0 c2 70 ff
+    
+    MPi: TODO: Implement tests for the above movement
+    
+    
+    MPi: TODO: Document the rest
+     Dir hold
+     pdpdrup
+     f0 f0 f0 f0 40 14 f0 90 34 18 21 38 f0 e0 ff
+     Cycle
+     drurdlul
+     10 84 81 88 81 84 82 88 82 ff
+     Dir
+     prprprprplrdudu
+     f0 20 31 f0 40 41 60 61 b0 41 50 f2 22 f1 21 54 48 44 58 ff
+     Dir hold
+        4r 1p 4l 1p 4d 4u
+     10 41 10 42 10 44 48 ff
 
 Scenario: Enemy animation allocation test
 	Given I have a simple overclocked 6502 system
@@ -82,8 +82,9 @@ Scenario: Enemy animation allocation test
 	AllocateEnemyTest
 	ldy #AnimationType_Enemy1
 	jmp AnimationFindFreeSlot
-	!macro SEUCKFileData .offset, .size {
-	!bin "../SEUCK/ANIMTSTS.P00",.offset,.size
+	!macro SEUCKFileData .size, .offset {
+	!set .offset = $1a + 2 - $900 + .offset
+	!bin "../SEUCK/ANIMTSTS.P00",.size,.offset
 	}
 
 	!source "ScrollerData.a"
@@ -106,6 +107,8 @@ Scenario: Enemy animation allocation test
 Scenario: Enemy animation looping frames
 	When I execute the procedure at AnimationInit for no more than 300 instructions
 	Then I expect to see AnimationType equal $ff
+
+#  Given I enable trace with indent
 
 	When I execute the procedure at AnimationTriggerEnemies for no more than 200 instructions
 	Then I expect to see AnimationType equal AnimationType_Enemy1

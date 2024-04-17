@@ -403,3 +403,27 @@ Player1Information or Player2Information is used depending on the active players
 
 
 * Moved "jsr ScrollerDrawStripTopColour" to the middle of the colour scroll
+
+
+
+
+* Title screen when using TitleScreen_AnimatingSprites, there is a single frame flicker
+	Probably to do with the top of screen multiplex raster IRQ position
+		> Nope
+	Might be something to do with the animation update code then?
+		> TitleScreenAnimationHook
+			Maybe the raster time for adding two sprites is just too high?
+		>> Added TitleScreen_SpriteAnimateCount2 to offset new sprites by 8 frames (half the shift value) which reduces sort overhead. Also looks better.
+
+
+
+
+* Scroller_NTSC = 1 enables NTSC code tweaks
+	Music speed and frequency table is an issue. Would need dedicated new music.
+
+
+
+* SEUCK: Player should spawn one frame after the enemies spawn
+* SEUCK: Animations should be processed for one frame after spawning
+	Enemy and enemy bullets and player bullets, apparently.
+	>> No. I want the first frames to be visible after being spawned.

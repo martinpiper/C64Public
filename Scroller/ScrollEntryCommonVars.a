@@ -6,3 +6,8 @@ Scroller_AdditionalCharLines = 0
 !ifndef Scroller_AdditionalCharLinesBankAdjust {
 Scroller_AdditionalCharLinesBankAdjust = 0
 }
+
+
+!ifdef Scroller_NTSC {
+Multiplex_TopScreenIRQRaster = 16
+}

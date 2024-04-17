@@ -23,7 +23,9 @@ DisplayTitleScreen
 	jsr TitleScreenWaitForOffScreenFromRaster
 	; Turn off the screen and sprites
 	lda #0
+!ifdef Scroller_DisplayTitleScreen {
 	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
+}
 	sta VIC2ScreenControlV
 	sta VIC2SpriteEnable
 	sta VIC2BorderColour
@@ -152,6 +154,7 @@ DisplayTitleScreen
 }
 !ifdef Scroller_NoMusic {} else {
 	jsr MusicPlayerPlay
+.skipMusicThisFrame
 }
 !ifdef Scroller_DebugMainlineBorder {
 	inc VIC2BorderColour
@@ -242,15 +245,20 @@ DisplayTitleScreen
 	jmp .l3
 
 .joystick0start
+!ifdef Scroller_DisplayTitleScreen {
 	lda #1
 	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
+}
 
 	lda #0
 	sta TitleScreenJoystickStarted
 	rts
+
 .joystick1start
+!ifdef Scroller_DisplayTitleScreen {
 	lda #1
 	sta TitleScreen_Enable_ScrollerDemoWait_Hooks
+}
 
 	lda #1
 	sta TitleScreenJoystickStarted
@@ -268,6 +276,7 @@ DisplayTitleScreen
 
 !ifdef TitleScreen_AnimatingSprites {
 TitleScreen_SpriteAnimateCount !by 0
+TitleScreen_SpriteAnimateCount2 !by 8
 }
 
 !zn
@@ -362,7 +371,9 @@ TitleScreenAnimationHook
 	bne .l2
 
 !if 1 {
-	lda TitleScreen_SpriteAnimateCount
+	inc TitleScreen_SpriteAnimateCount2
+
+	lda TitleScreen_SpriteAnimateCount2
 	clc
 	adc #.spriteOffset1
 	tay
@@ -411,7 +422,7 @@ TitleScreenAnimationHook
 	cpx #.spritePerStroke
 	bne .l3
 
-	lda TitleScreen_SpriteAnimateCount
+	lda TitleScreen_SpriteAnimateCount2
 	clc
 	adc #.spriteOffset2
 	tay

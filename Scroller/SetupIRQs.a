@@ -12,6 +12,13 @@ scorePanelPos2 = scorePanelPos1+7	; The line above where we want to display the 
 Scroller_ScorePanelYScrollTweak = %111
 }
 
+!ifdef Scroller_NTSC {
+Scroller_NMITimerAdjustNTSC = (16 * CyclesPerRasterNTSCC64) - 16
+} else {
+Scroller_NMITimerAdjustNTSC = 0
+}
+
+
 Multiplex_DiscardSpritesYPosForSort = scorePanelPos1
 
 ; MPi: TODO: Think about initialising this in the init?
@@ -238,7 +245,7 @@ IrqTopOfScreen
 ;	lda #$c
 ;	sta CIA2TimerAHi
 
-.timerCountHorizontal = $b60 - Scroller_NMITimerAdjust - 4
+.timerCountHorizontal = $b60 - Scroller_NMITimerAdjust - 4 - Scroller_NMITimerAdjustNTSC
 	; This opens up three more lines at the top of the screen increasing the play area slightly
 	lda #<.timerCountHorizontal	; (46 pixels * 64 cycles) - $20 for timing adjustment for the NMI
 	sta CIA2TimerALo
@@ -265,11 +272,11 @@ IrqTopOfScreen
 ; Interesting effect on the timing here and scroll value here
 ; Fine timings that place the change just beyond the right hand border of the previous line for maximum safe timing
 !ifdef Scroller_UseKernal {
-.timerCountBL = (50*64)+$37 - 4
-.timerCount = (51*64)+$22 - 4
+.timerCountBL = (50*64)+$37 - 4 - Scroller_NMITimerAdjustNTSC
+.timerCount = (51*64)+$22 - 4 - Scroller_NMITimerAdjustNTSC
 } else {
-.timerCountBL = (52*64)-$1d - 4
-.timerCount = (52*64)+$08 - 4
+.timerCountBL = (52*64)-$1d - 4 - Scroller_NMITimerAdjustNTSC
+.timerCount = (52*64)+$08 - 4 - Scroller_NMITimerAdjustNTSC
 }
 	cmp #6
 	bne .otherValues
@@ -900,7 +907,11 @@ BottomBorder2
 	; and bank.
 	; Any higher and the bottom of the score sprites start to get drawn as they come down from
 	; the top of the screen.
+!ifdef Scroller_NTSC {
+	lda #6
+} else {
 	lda #7
+}
 	sta VIC2Raster
 	lda #<BottomBorder3
 	sta Scroller_IRQVectorLo
@@ -942,10 +953,14 @@ BottomBorder3
 }
 }
 
+!ifdef Scroller_NTSC {
+	lda #16
+} else {
 !ifdef IrqTopOfScreenPos {
 	lda #IrqTopOfScreenPos
 } else {
 	lda #0
+}
 }
 	sta VIC2Raster
 !ifdef IRQOpenBorders { } else {

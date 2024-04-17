@@ -2099,6 +2099,12 @@ smSpellEffectRunningPlayerType	lda #$ff
 	jmp .noHit
 }
 
+; Tests if two sprites have overlapping bounding boxes
+; Entry:
+; X/Y = Animation data table index values
+; Exit:
+; CC = Overlapping bound boxes
+; CS = No overlap
 .areSpritesClose
 	lda AnimationYPos,x
 	cmp AnimationYPos,y

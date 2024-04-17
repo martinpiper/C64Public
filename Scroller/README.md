@@ -38,9 +38,9 @@ Then reference the saved p00 data file on your PC by putting the path to the fil
 * To start SEUCK in Vice and allow SEUCK to save "*.p00" files that can be easily imported:
 cd /d C:\Work\C64\SEUCK
 cd /d C:\Work\C64\SEUCK\Debug1
-"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCK.prg"
-"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskBlank.prg"
-"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskGame1.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCK.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskBlank.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskGame1.prg"
 etc.
 In SEUCK, press D for the "Storage" menu, then "Save all data".
 
@@ -53,3 +53,16 @@ Some of the old VSF snapshot files use: C:\Backups\OldMachines\OldMachineBackup\
 * The files "SEUCKDisk*.prg" were extracted from the original PAL disk using my expanded version of C1541 with the "-recover" command: https://github.com/martinpiper/DebuggingDetails/blob/main/SEUCK.txt
 
 
+
+
+* SEUCK Redux videos
+
+Background							https://youtu.be/FKcuB8lMOSQ
+Levels								https://youtu.be/h9aFMf6X3dI
+Sprites	and animations				https://youtu.be/VJbpLoU6OJ0
+Attack waves - Part 1				https://youtu.be/60HR-yhPSy8
+Attack waves - Part 2				https://youtu.be/ri5ATGKv71o
+Enemy bits							https://youtu.be/NUciFe8t0gk
+Player limitations					https://youtu.be/q8H3OIrFiXw
+Sound effects and title screen		https://youtu.be/J_MVIATywr8
+Horizontal scroll and enhancements	https://youtu.be/UENzjhOqlts
