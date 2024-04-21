@@ -376,6 +376,9 @@ IrqTopOfScreen
 !ifdef Scroller_IsHorizontal {
 	lda topScreenScrollPos
 	ora #%10000
+!ifdef Scroller_IsHorizontalLeft {
+	eor #%111
+}
 	sta VIC2ScreenControlH
 } else {
 !ifdef Scroller_MultiDirection {

@@ -114,7 +114,11 @@ Multiplexor_UpdateCollisionDetailsSoftEnable = 1
 Multiplex_LeanAndMean = 1
 
 ; Define this to use horizontal scrolling SEUCK instead
-;Scroller_IsHorizontal = 1
+Scroller_IsHorizontal = 1
+!ifdef Scroller_IsHorizontal {
+; Define this to change the scroll direction
+Scroller_IsHorizontalLeft = 1
+}
 
 ; Define this to cause the extended code for Legion of the Damned to be used.
 ; Press 'S' female wind spell effect

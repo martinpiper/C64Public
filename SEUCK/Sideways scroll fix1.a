@@ -1,0 +1,131 @@
+* = $26db
+	ldy #$17
+	lda $e7ff+1,y
+	sta $ec00-1,y
+	lda $e816+1,y
+	sta $ec17-1,y
+	lda $e82d+1,y
+	sta $ec2e-1,y
+	dey
+	bne $26dd
+	rts
+	ldy #$17
+	lda $e844+1,y
+	sta $ec45-1,y
+	lda $e85b+1,y
+	sta $ec5c-1,y
+	lda $e872+1,y
+	sta $ec73-1,y
+	dey
+	bne $26f5
+	rts
+	ldy #$17
+	lda $e889+1,y
+	sta $ec8a-1,y
+	lda $e8a0+1,y
+	sta $eca1-1,y
+	lda $e8b7+1,y
+	sta $ecb8-1,y
+	dey
+	bne $270d
+	rts
+	ldy #$17
+	lda $e8ce+1,y
+	sta $eccf-1,y
+	lda $e8e5+1,y
+	sta $ece6-1,y
+	lda $e8fc+1,y
+	sta $ecfd-1,y
+	dey
+	bne $2725
+	rts
+	ldy #$17
+	lda $e913+1,y
+	sta $ed14-1,y
+	lda $e92a+1,y
+	sta $ed2b-1,y
+	lda $e941+1,y
+	sta $ed42-1,y
+	dey
+	bne $273d
+	rts
+	ldy #$17
+	lda $e958+1,y
+	sta $ed59-1,y
+	lda $e96f+1,y
+	sta $ed70-1,y
+	lda $e986+1,y
+	sta $ed87-1,y
+	dey
+	bne $2755
+	rts
+	ldy #$17
+	lda $e99d+1,y
+	sta $ed9e-1,y
+	lda $e9b4+1,y
+	sta $edb5-1,y
+	lda $e9cb+1,y
+	sta $edcc-1,y
+	dey
+	bne $276d
+	rts
+	ldy #$17
+	lda $e9e2+1,y
+	sta $ede3-1,y
+	lda $e9f9+1,y
+	sta $edfa-1,y
+	lda $ea10+1,y
+	sta $ee11-1,y
+	dey
+	bne $2785
+	rts
+	ldy #$17
+	lda $ea27+1,y
+	sta $ee28-1,y
+	lda $ea3e+1,y
+	sta $ee3f-1,y
+	lda $ea55+1,y
+	sta $ee56-1,y
+	dey
+	bne $279d
+	rts
+	ldy #$17
+	lda $ea6c+1,y
+	sta $ee6d-1,y
+	lda $ea83+1,y
+	sta $ee84-1,y
+	lda $ea9a+1,y
+	sta $ee9b-1,y
+	dey
+	bne $27b5
+	rts
+	ldy #$17
+	lda $eab1+1,y
+	sta $eeb2-1,y
+	lda $eac8+1,y
+	sta $eec9-1,y
+	lda $eadf+1,y
+	sta $eee0-1,y
+	dey
+	bne $27cd
+	rts
+	ldy #$17
+	lda $eaf6+1,y
+	sta $eef7-1,y
+	lda $eb0d+1,y
+	sta $ef0e-1,y
+	lda $eb24+1,y
+	sta $ef25-1,y
+	dey
+	bne $27e5
+	rts
+	ldy #$17
+	lda $eb3b+1,y
+	sta $ef3c-1,y
+	lda $eb52+1,y
+	sta $ef53-1,y
+	lda $eb69+1,y
+	sta $ef6a-1,y
+	dey
+	bne $27fd
+	rts

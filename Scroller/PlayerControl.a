@@ -411,6 +411,7 @@ DoPlayerPositionLinkCode
 
 
 !ifdef Scroller_IsHorizontal {
+!ifndef Scroller_IsHorizontalLeft {
 	; Check if we are really pushing or just at the left of the screen
 	lda .playerInformation+PlayerGameOffset_TargetVelX
 	bpl .notLeftP
@@ -419,7 +420,7 @@ DoPlayerPositionLinkCode
 	lda #1
 	sta LevelWantPushScroll
 
-	; Check the other player and if they are active then check their y position would not scroll off the bottom
+	; Check the other player and if they are active then check their y position would not scroll off the right
 	; Save the current animation index
 	txa
 	pha
@@ -455,6 +456,7 @@ DoPlayerPositionLinkCode
 	pla
 	tax
 }
+}
 
 
 .notLeftP
@@ -475,6 +477,56 @@ DoPlayerPositionLinkCode
 	lda #1
 .isZero2
 	sta AnimationXPosHi,x
+
+
+!ifdef Scroller_IsHorizontal {
+!ifdef Scroller_IsHorizontalLeft {
+	; Check if we are really pushing or just at the right of the screen
+	lda .playerInformation+PlayerGameOffset_TargetVelX
+	bmi .notRightP
+
+	; Flag we might want a scroll
+	lda #1
+	sta LevelWantPushScroll
+
+	; Check the other player and if they are active then check their y position would not scroll off the left
+	; Save the current animation index
+	txa
+	pha
+!if .playerInformation = Player1Information {
+	ldx Player2Information+PlayerGameOffset_AnimationIndex
+} else {
+	ldx Player1Information+PlayerGameOffset_AnimationIndex
+}
+	bmi .playerIsNotAlive
+	lda AnimationType,x
+	; Only check if the player is alive, if they are animating a death animation then we allow the push to happen.
+!if .playerInformation = Player1Information {
+	cmp #AnimationType_Player2
+} else {
+	cmp #AnimationType_Player1
+}
+	bne .playerIsNotAlive
+	lda AnimationXPosHi,x
+	ror
+	lda AnimationXPosLo,x
+	ror
+!if .playerInformation = Player1Information {
+	cmp Player2Information+PlayerGameOffset_LeftStopDiv2
+} else {
+	cmp Player1Information+PlayerGameOffset_LeftStopDiv2
+}
+	bcs .playerIsNotAlive
+	; Block the scroll from happening
+	lda #0
+	sta LevelWantPushScroll
+.playerIsNotAlive
+	; Restore what was saved
+	pla
+	tax
+}
+}
+
 .notRightP
 
 !if .doLinkCode = 1 {
@@ -562,7 +614,11 @@ DoPlayerPositionLinkCode
 .justFireUp
 	; If no valid moves then default to firing in a certain fixed direction
 !ifdef Scroller_IsHorizontal {
+!ifdef Scroller_IsHorizontalLeft {
+	lda #1
+} else {
 	lda #2
+}
 } else {
 	lda #8
 }

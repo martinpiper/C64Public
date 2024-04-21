@@ -427,3 +427,425 @@ Player1Information or Player2Information is used depending on the active players
 * SEUCK: Animations should be processed for one frame after spawning
 	Enemy and enemy bullets and player bullets, apparently.
 	>> No. I want the first frames to be visible after being spawned.
+
+
+
+
+* Make horizontal SEUCK right to left, not left to right
+	>> All monitor commands are collated into: C:\Work\DebuggingDetails\SEUCK Scroll left.txt
+	>> Replacement version with splash screen from original disk: Sideways-Scrolling-SEUCK-PAL.prg
+		bk 19d8
+		l "C:\work\c64\SEUCK\Sideways-Scrolling-SEUCK-PAL.prg" 0
+		g 80d
+		bank ram
+		> bc22 ea ea ea
+		s "c:\work\c64\seuck\sideways left bc00.prg" 0 200 ffff
+		l "c:\work\c64\seuck\sideways left bc00.prg" 0
+		This allows the "g bc00" to work from reset C64 state
+		> 1 34
+		c:\work\c64\bin\LZMPi.exe -c64mu "c:\work\c64\seuck\sideways left bc00.prg" "c:\work\c64\seuck\sideways left.prg" $bc00
+
+		t ef98 efe7 ef70
+		To update the message:
+			> efc4 "SCROLL LEFT CODE BY MARTIN PIPER"
+			Then OR bytes at efc4-efe3 with $80
+		> efc4 d3 c3 d2 cf  cc cc a0 cc  c5 c6 d4 a0  c3 cf c4 c5  a0 c2 d9 a0  cd c1 d2 d4  c9 ce a0 d0  c9 d0 c5 d2
+	
+	> Note docs on recovering the editor: https://www.c64-wiki.com/wiki/S.E.U.C.K.#Cheats
+		POKE 16964,1 runs the SEUCK editor by pushing the SPACE  in a running SEUCK game.
+		POKE 16964,0 makes the game in the editor stop returning back to the editor.
+		SYS 16595 starts the SEUCK game.
+		SYS 24576 runs the SEUCK editor.
+		Note, using test game->proper test, seems to start code at $40ca which quickly tests for $2444 = 16964, which corresponds to the poke above, and then sets that to be 1
+		24576 = $6000
+		
+	>> "C:\work\c64\SEUCK\breakthr. demo.prg"
+		After what looks like unfreeze code, the entry point seems to be: $840
+			  ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+			.;0840 0a 38 05 a3 2f 15 00100101 271 029    5913902
+		>> Enemies will need to be deleted since they scroll off the left edge...
+		>> Note: This version has broken "save final game" code.
+
+
+	$729c is the editor map draw
+		Change the 5/6 stores, which are x/y
+			> 72a1 0
+		$72d2 change to clc/adc/cmp #$28
+			a 72d2
+				clc
+				adc #5
+				sta 5
+				cmp #$28
+
+
+	$71f6 the $7856 looks like the selection column from the editor
+		bpl and cmp #8 at 71f9 and 7218
+		$7858/$7859 map pos
+
+	Swap the inc/dec map pos code
+		INC $7858
+		BNE $7206
+		INC $7859
+		JSR $2B89
+
+		LDA $7859
+		ORA $7858
+		BEQ $7234
+		DEC $7858
+		LDA $7858
+		CMP #$FF
+		BNE $7234
+		DEC $7859
+
+
+		a 71fe
+			lda $7859
+			ora $7858
+			beq 7215
+			dec $7858
+			lda $7858
+			cmp #$ff
+			bne $7215
+			dec $7859
+
+
+		a 721f
+			inc $7858
+			bne $7227
+			inc $7859
+			jsr $2b89
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+
+		
+
+	Editor map block place?
+		w store 900
+		$729a sta ($07),y
+		Columns need altering
+		JSR $2A2E is the map address calculation
+		chis 30 shows $2b6f alters the column with a 7-column calc using $7856? But the result isn't used?
+
+		a 2b6f
+			lda $7856
+			nop
+			nop
+			nop
+
+
+	Saved "c:\work\c64\seuck\sideways left 44c.prg"
+		Use:
+			bank ram
+			l "c:\work\c64\seuck\sideways left 44c.prg" 0
+			g 44c
+
+
+	Game map read $2b17
+		$2b00 looks like the game full screen map draw
+		Which reads the map backwards
+		$4887 is the block draw using $07/$08 which starts at $ec00 or $e800
+			Which is inited by $47bf
+			And draw columns
+			> Perhaps start at the right hand column and work to the left?
+				>> Adjust the start position to the last right hand column
+					> 47c0 23
+			> $2b3e adjusts to the top of the next column
+				>> Adjust the coordinate backwards
+					> 2b42 ed
+
+
+	Screen scroll routines
+		* Also used by the "insert enemy" editor function, when smooth scrolling
+		$26db to $2963
+		Used routines:
+			26f3
+			270b
+			2723
+			273b
+			2753
+			276b
+			2783
+			279b
+			27b3
+			27cb
+			27e3
+			27fb
+			282b
+			2843
+			285b
+			2873
+			288b
+			28a3
+			28bb
+			28d3
+			28eb
+			2903
+			291b
+			2933
+			294b
+			26db
+		And... 0890 08b4 8d7
+		> Note the segmented scroll across many frames
+		C:\work\c64\SEUCK\Sideways scroll fix1.a
+		C:\work\c64\SEUCK\Sideways scroll fix2.a
+		..\acme.exe -f cbm -o c:\temp\t1.prg "C:\work\c64\SEUCK\Sideways scroll fix1.a"
+		..\acme.exe -f cbm -o c:\temp\t2.prg "C:\work\c64\SEUCK\Sideways scroll fix2.a"
+		..\acme.exe -f cbm -o c:\temp\t3.prg "C:\work\c64\SEUCK\Sideways scroll fix3.a"
+		Since it is copying from onscreen to offscreen then the adjustment pattern can be:
+			+1
+			-1  because of the dey and bne
+		Note $2813 is a jmp which is used for code in: Sideways scroll fix3.a
+			And this changed in some versions of sideays SEUCK. Code found in the old Sideways.vsf in $800-$8ff has been variously relocated since is was causing the "save finished game" to crash.
+			And the jump at $2963
+
+		l "c:\temp\t1.prg" 0
+		l "c:\temp\t2.prg" 0
+		l "c:\temp\t3.prg" 0
+
+		Colour?
+			$298a colour stores with Y coming from $297d ldy $0400,x
+			With X: 0 6 c 12 etc up to #$30
+			$0400 looks like a "column" and then 5 colour entries, times 8 entries (40/5)
+			>> What stores into $0400 $0406 etc?
+				Code at $497b and $2a73 needs to be dec, change ee to ce
+					> 497b ce
+					> 497e ce
+					> 4981 ce
+					> 4984 ce
+					> 2a73 ce
+					> 2a76 ce
+					> 2a79 ce
+					> 2a7c ce
+				$499d needs the test updated to be #$ff
+					> 499e ff
+				$49a1 needs to be #$27 and the sta $06 needs to be 0 not #$27
+					> 49a2 27
+					a 49c2
+					lda #0
+					sta $06
+
+				$2b0c inits $0400 etc, what is $10? The right hand column...
+				$2b08 needs to be the left hand edge of the last column... #$23
+					> 2b09 23
+				$2b5f ... which gets updated with clc/add #5
+					a 2b5f
+					sec
+					sbc #$05
+
+			Horizontal smooth scroll needs to be inverted
+				OLD: > 885 7
+				New? Not triggered: > 1985 7
+				New:
+					> 4902 7
+
+
+
+	Edge map read $49cf while scrolling
+		w load 950 waits for some scroll to happen
+	Screens at $e800 and $ec00
+		$2acd looks like the edge print?
+		* To print on the right hand edge
+			> 2aa1 27
+		* $03 seems to be the block column? Which currently goes backwards from 4 to 0 observed every column draw at $2aa0
+			Which adds at $2ac1
+			$2a80 does some calculation for $03
+			Which comes from #$4 - $4091 then...
+				Needed: > 2b42 ed
+
+			a 4951
+				ldx #$27
+				stx $1e
+				lda #$04
+				sec
+				sbc $03
+				sta $03
+				rts
+
+			a 2aa0
+				jsr 4951
+				nop
+
+
+
+	** Saved and compressed
+
+
+
+	Insert enemy
+		Old: >> Need to delete existing enemies
+		The rough joystick directions are also inverted
+			Since: $2A2E is the map address calculation
+			And $727a uses $408f $4090 as the input to $2a2e
+			What updates $408f/$4090?
+			Uses:
+				89de  AD EA 8A    LDA $8AEA          - A:01 X:00 Y:00 SP:b1   -    C
+				89e1  85 08       STA $08            - A:00 X:00 Y:00 SP:b1   -   ZC
+				89e3  8D 90 40    STA $4090
+				89f3  AD E9 8A    LDA $8AE9          - A:00 X:00 Y:00 SP:b1   -   ZC
+				89f6  8D 8F 40    STA $408F          - A:0b X:00 Y:00 SP:b1   -    C
+			What updates $8AE9 $8AEA?
+				$89a1 A = control bits
+				Two routines: $89a7-$89b1 and $89c2-$89d7 needs to be swapped
+				Using stack memory at $0100 as temp storage:
+				t 89c2 89d7 0100
+				t 89a7 89bc 89c2
+				t 0100 0115 89a7
+			$a028 is the joystick read which returns $64f9?
+
+		The fine joystick direction also needs to be opposite
+			During the fine loop, $8a76 seems to test?
+				$8a7d triggers on fire...
+				$8a87 triggers on left only... Which relies on $31 == 0, what stores into $31?
+					This seems to test for input left: 8a80  20 C5 8A    JSR $8AC5
+						h 0 ffff 20 c5 8a
+							8a80
+						So used only once
+				> 8acd 8
+
+		The enemy push scroll edge test needs to be the other edge
+			In attack wave edit loop: $8ef6 = jsr $a028 which is read input
+			$8f0a triggers on input direction, A = direction $1b = left only
+				$8f11 lda $e774,x seems to be joystick to direction lookup
+				sta $4089	 = Direction result
+				$8f23 = border flash for memory limit
+			After rough, after start pos, a previous bk 8ef6 shows that the push test with the left screen edge is already done
+				What is the fire test in start pos?
+				$8e68 is an input read jsr $a028
+				>> $8ec0 triggers on fire
+					Just single step through code until bk 8ef6, to find the push scroll...
+						Ignoring lots of $4094 $4097 tests which seems to be updated by IRQ?
+							Like at $8f6a
+				>> $8f6a is after the start pos is set, but before the scroll...
+					8f6a is in the middle of a loop that goes around 8 times? Due of $8f62
+					$8f64 A = loop count
+						If the enemy is placed all the way off the left, then when A=7 then the scroll happens...
+							** While debugging, is $2b9b (X index) the animation scroll move code? $2baf is a Y index version? $bc01 is the animation table?
+								$2be9 and $2bfd is a non-index version?
+									(C:$60ca) h 0 ffff 20 fd 2b
+									4e0c
+									(C:$60ca) h 0 ffff 20 e9 2b
+									4afd
+								> Triggered when push scrolling
+						$514f seems to be reading the position? $5168 seems to be a right position test?
+						$58c5? $58f2?
+				>> $8eb2 seems to be the shifted X pos store to $e771
+					$63e1 read input?
+				$2bdf?	2bdf  C9 1C       CMP #$1C
+					Triggers after an input move...
+				a 2bdb beq 2be3
+
+				a 2bdf cmp #$30
+					bcs 2be6
+				
+				a 2b9e sec
+					sbc #$01
+				
+				a 2ba4 bcs 2bae
+
+				a 2bb2 sec
+					sbc #$01
+				
+				a 2bb8 bcs 2bc2
+				
+				a 2bec sec
+					sbc #$01
+					
+				a 2bf2 bcs 2bfc
+				
+				a 2c00 sec
+					sbc #$01
+				
+				a 2c06 bcs 2c10
+				
+
+
+				
+	Player push scroll edge test needs to be the other edge
+		See: PlayerOffset_LeftStopLo in redux $409d $409e
+		$4bc3 code
+		$2bc3
+		$2bc5 triggers on left hit
+		$5dc5 is flag for edge hit? Yes!
+		Instead of $409d/$40b0 two byte value tests for the left edge, it needs to be on the right edge two byte value at $40a0/$40b3
+		So remove the $5dc5 at $2bc8 and squeeze a similar routine at $2bc3 plus a few bytes... ($2bc9) And call it at $4be6 which is the right edge update
+		
+		a 2bc3 bcc 2bc8
+		
+		a 2bc8 rts
+			sta $bc01,x
+			inc $5dc5
+			rts
+		
+		a 4be6 jsr 2bc9
+		
+		a 4ef3 jsr 2bc9
+		
+		
+
+
+	Player default fire direction
+		See: PlayerOffset_Directional
+			$409d + $b = $40a8
+			and $40bb for player 2
+		Code at $4cc6 $4fd2
+			
+		note two eor #$02
+			Should be eor #$01
+			h 200 ffff 49 02
+			$4cd0 $4fdc
+		
+		> 4cd1 1
+		> 4cd3 1
+		> 4fdd 1
+		> 4fdf 1
+		
+
+	Enemy and bullet scroll direction
+		Done above... 2b9b etc
+
+
+	> The original SEUCK (not sideways) displays at splash screen with code starting at $bc00
+		This code is missing from other versions with more data in them
+		> Done with the new original disk version: Sideways-Scrolling-SEUCK.d64
+
+
+
+	* Does saving a complete game backup the extra code in $400?
+		Tape and disk?
+		Currently, all my sideways versions (vsf and prg) crash when trying to save the finsihed game, with tape or disk.
+		Resolved. Located the original disk version with splash screen.
+			"C:\work\c64\SEUCK\Sideways-Scrolling-SEUCK.d64"
+			"C:\work\c64\SEUCK\Sideways-Scrolling-SEUCK-PAL.prg"
+			$19d8 seems to be the logo display entry after decompression...?
+				Which seems to be in the middle of a freeze?
+				Tracing backwards the real code seems to start at $bc00?
+				g bc00 actually shows the normal SEUCK screen without the "sideways" credits.
+				ICU64 shows two screen at $e800 $ec00 showing the normal SEUCK and the extra sideways credit screen.
+				>> It looks like the sideways displayed screen was frozen, hand edited, then saved out!
+			Stepping through the $bc00 init to find what replaces the screen data, to see if it can be easily disabled.
+				>> bc22   20 0E 62   JSR $620E
+			To remove the screen refresh:
+				> bc22 ea ea ea
+		* Need to find some free memory above $900 to replace the "a 454"
+			h 200 ffff ea ea ea ea ea ea ea ea ea ea ea ea
+			Candidates: 2966 44f7 4951 8689
+			Candidates: 2966 4951 8689
+				>> Used: 4951
+
+
+	** Saved and compressed
+
+
+	* What about default fire for enemies that are not moving? Original SEUCK fired upwards...
+		An enemy that is placed with "directional" fire that has not moved, still shoots upwards.
+
+	* Update redux code...
+		See: Scroller_IsHorizontalLeft

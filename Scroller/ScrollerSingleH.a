@@ -158,6 +158,14 @@ NotWantingColourScroll
 }
 
 
+!ifdef Scroller_IsHorizontalLeft {
+kFromOffset = 1
+kToOffset = 0
+} else {
+kFromOffset = 0
+kToOffset = 1
+}
+
 ScrollerTimesFiveTab !by 0,5,10,15,20,25,30,35
 
 !zn
@@ -413,7 +421,11 @@ UpdateMapBlockPointers
 ; Draws the initial map from the coords setup, don't forget it is right to left in memory
 DrawMap
 	jsr UpdateMapBlockPointers
+!ifdef Scroller_IsHorizontalLeft {
+	ldx #0
+} else {
 	ldx #7
+}
 .l1
 	ldy #0
 .l2
@@ -432,9 +444,14 @@ DrawMap
 	jsr UpdateMapBlockPointers
 
 	ldy #0
+!ifdef Scroller_IsHorizontalLeft {
+	inx
+	cpx #8
+	bne .l1
+} else {
 	dex
 	bpl .l1
-
+}
 !ifdef IRQOpenBorders {
 	jsr ScrollerOpenBorderCopyBank0
 }
@@ -462,61 +479,61 @@ ScrollSingle0Bank0To1_1
 }
 	ldx #13
 .l1
-	lda $c800+00+(0*40),x
-	sta $cc00+01+(0*40),x
-	lda $c800+00+(1*40),x
-	sta $cc00+01+(1*40),x
-	lda $c800+00+(2*40),x
-	sta $cc00+01+(2*40),x
-	lda $c800+00+(3*40),x
-	sta $cc00+01+(3*40),x
-	lda $c800+00+(4*40),x
-	sta $cc00+01+(4*40),x
-	lda $c800+00+(5*40),x
-	sta $cc00+01+(5*40),x
-	lda $c800+00+(6*40),x
-	sta $cc00+01+(6*40),x
-	lda $c800+00+(7*40),x
-	sta $cc00+01+(7*40),x
-	lda $c800+00+(8*40),x
-	sta $cc00+01+(8*40),x
-	lda $c800+00+(9*40),x
-	sta $cc00+01+(9*40),x
-	lda $c800+00+(10*40),x
-	sta $cc00+01+(10*40),x
-	lda $c800+00+(11*40),x
-	sta $cc00+01+(11*40),x
-	lda $c800+00+(12*40),x
-	sta $cc00+01+(12*40),x
-	lda $c800+00+(13*40),x
-	sta $cc00+01+(13*40),x
-	lda $c800+00+(14*40),x
-	sta $cc00+01+(14*40),x
-	lda $c800+00+(15*40),x
-	sta $cc00+01+(15*40),x
-	lda $c800+00+(16*40),x
-	sta $cc00+01+(16*40),x
-	lda $c800+00+(17*40),x
-	sta $cc00+01+(17*40),x
-	lda $c800+00+(18*40),x
-	sta $cc00+01+(18*40),x
+	lda $c800+kFromOffset+(0*40),x
+	sta $cc00+kToOffset+(0*40),x
+	lda $c800+kFromOffset+(1*40),x
+	sta $cc00+kToOffset+(1*40),x
+	lda $c800+kFromOffset+(2*40),x
+	sta $cc00+kToOffset+(2*40),x
+	lda $c800+kFromOffset+(3*40),x
+	sta $cc00+kToOffset+(3*40),x
+	lda $c800+kFromOffset+(4*40),x
+	sta $cc00+kToOffset+(4*40),x
+	lda $c800+kFromOffset+(5*40),x
+	sta $cc00+kToOffset+(5*40),x
+	lda $c800+kFromOffset+(6*40),x
+	sta $cc00+kToOffset+(6*40),x
+	lda $c800+kFromOffset+(7*40),x
+	sta $cc00+kToOffset+(7*40),x
+	lda $c800+kFromOffset+(8*40),x
+	sta $cc00+kToOffset+(8*40),x
+	lda $c800+kFromOffset+(9*40),x
+	sta $cc00+kToOffset+(9*40),x
+	lda $c800+kFromOffset+(10*40),x
+	sta $cc00+kToOffset+(10*40),x
+	lda $c800+kFromOffset+(11*40),x
+	sta $cc00+kToOffset+(11*40),x
+	lda $c800+kFromOffset+(12*40),x
+	sta $cc00+kToOffset+(12*40),x
+	lda $c800+kFromOffset+(13*40),x
+	sta $cc00+kToOffset+(13*40),x
+	lda $c800+kFromOffset+(14*40),x
+	sta $cc00+kToOffset+(14*40),x
+	lda $c800+kFromOffset+(15*40),x
+	sta $cc00+kToOffset+(15*40),x
+	lda $c800+kFromOffset+(16*40),x
+	sta $cc00+kToOffset+(16*40),x
+	lda $c800+kFromOffset+(17*40),x
+	sta $cc00+kToOffset+(17*40),x
+	lda $c800+kFromOffset+(18*40),x
+	sta $cc00+kToOffset+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #13
 .l2
-	lda $c800+00+(19*40),x
-	sta $cc00+01+(19*40),x
-	lda $c800+00+(20*40),x
-	sta $cc00+01+(20*40),x
-	lda $c800+00+(21*40),x
-	sta $cc00+01+(21*40),x
-	lda $c800+00+(22*40),x
-	sta $cc00+01+(22*40),x
-	lda $c800+00+(23*40),x
-	sta $cc00+01+(23*40),x
-	lda $c800+00+(24*40),x
-	sta $cc00+01+(24*40),x
+	lda $c800+kFromOffset+(19*40),x
+	sta $cc00+kToOffset+(19*40),x
+	lda $c800+kFromOffset+(20*40),x
+	sta $cc00+kToOffset+(20*40),x
+	lda $c800+kFromOffset+(21*40),x
+	sta $cc00+kToOffset+(21*40),x
+	lda $c800+kFromOffset+(22*40),x
+	sta $cc00+kToOffset+(22*40),x
+	lda $c800+kFromOffset+(23*40),x
+	sta $cc00+kToOffset+(23*40),x
+	lda $c800+kFromOffset+(24*40),x
+	sta $cc00+kToOffset+(24*40),x
 	dex
 	bpl .l2
 }
@@ -530,61 +547,61 @@ ScrollSingle1Bank0To1_1
 }
 	ldx #13
 .l1
-	lda $c800+00+14+(0*40),x
-	sta $cc00+01+14+(0*40),x
-	lda $c800+00+14+(1*40),x
-	sta $cc00+01+14+(1*40),x
-	lda $c800+00+14+(2*40),x
-	sta $cc00+01+14+(2*40),x
-	lda $c800+00+14+(3*40),x
-	sta $cc00+01+14+(3*40),x
-	lda $c800+00+14+(4*40),x
-	sta $cc00+01+14+(4*40),x
-	lda $c800+00+14+(5*40),x
-	sta $cc00+01+14+(5*40),x
-	lda $c800+00+14+(6*40),x
-	sta $cc00+01+14+(6*40),x
-	lda $c800+00+14+(7*40),x
-	sta $cc00+01+14+(7*40),x
-	lda $c800+00+14+(8*40),x
-	sta $cc00+01+14+(8*40),x
-	lda $c800+00+14+(9*40),x
-	sta $cc00+01+14+(9*40),x
-	lda $c800+00+14+(10*40),x
-	sta $cc00+01+14+(10*40),x
-	lda $c800+00+14+(11*40),x
-	sta $cc00+01+14+(11*40),x
-	lda $c800+00+14+(12*40),x
-	sta $cc00+01+14+(12*40),x
-	lda $c800+00+14+(13*40),x
-	sta $cc00+01+14+(13*40),x
-	lda $c800+00+14+(14*40),x
-	sta $cc00+01+14+(14*40),x
-	lda $c800+00+14+(15*40),x
-	sta $cc00+01+14+(15*40),x
-	lda $c800+00+14+(16*40),x
-	sta $cc00+01+14+(16*40),x
-	lda $c800+00+14+(17*40),x
-	sta $cc00+01+14+(17*40),x
-	lda $c800+00+14+(18*40),x
-	sta $cc00+01+14+(18*40),x
+	lda $c800+kFromOffset+14+(0*40),x
+	sta $cc00+kToOffset+14+(0*40),x
+	lda $c800+kFromOffset+14+(1*40),x
+	sta $cc00+kToOffset+14+(1*40),x
+	lda $c800+kFromOffset+14+(2*40),x
+	sta $cc00+kToOffset+14+(2*40),x
+	lda $c800+kFromOffset+14+(3*40),x
+	sta $cc00+kToOffset+14+(3*40),x
+	lda $c800+kFromOffset+14+(4*40),x
+	sta $cc00+kToOffset+14+(4*40),x
+	lda $c800+kFromOffset+14+(5*40),x
+	sta $cc00+kToOffset+14+(5*40),x
+	lda $c800+kFromOffset+14+(6*40),x
+	sta $cc00+kToOffset+14+(6*40),x
+	lda $c800+kFromOffset+14+(7*40),x
+	sta $cc00+kToOffset+14+(7*40),x
+	lda $c800+kFromOffset+14+(8*40),x
+	sta $cc00+kToOffset+14+(8*40),x
+	lda $c800+kFromOffset+14+(9*40),x
+	sta $cc00+kToOffset+14+(9*40),x
+	lda $c800+kFromOffset+14+(10*40),x
+	sta $cc00+kToOffset+14+(10*40),x
+	lda $c800+kFromOffset+14+(11*40),x
+	sta $cc00+kToOffset+14+(11*40),x
+	lda $c800+kFromOffset+14+(12*40),x
+	sta $cc00+kToOffset+14+(12*40),x
+	lda $c800+kFromOffset+14+(13*40),x
+	sta $cc00+kToOffset+14+(13*40),x
+	lda $c800+kFromOffset+14+(14*40),x
+	sta $cc00+kToOffset+14+(14*40),x
+	lda $c800+kFromOffset+14+(15*40),x
+	sta $cc00+kToOffset+14+(15*40),x
+	lda $c800+kFromOffset+14+(16*40),x
+	sta $cc00+kToOffset+14+(16*40),x
+	lda $c800+kFromOffset+14+(17*40),x
+	sta $cc00+kToOffset+14+(17*40),x
+	lda $c800+kFromOffset+14+(18*40),x
+	sta $cc00+kToOffset+14+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #13
 .l2
-	lda $c800+00+14+(19*40),x
-	sta $cc00+01+14+(19*40),x
-	lda $c800+00+14+(20*40),x
-	sta $cc00+01+14+(20*40),x
-	lda $c800+00+14+(21*40),x
-	sta $cc00+01+14+(21*40),x
-	lda $c800+00+14+(22*40),x
-	sta $cc00+01+14+(22*40),x
-	lda $c800+00+14+(23*40),x
-	sta $cc00+01+14+(23*40),x
-	lda $c800+00+14+(24*40),x
-	sta $cc00+01+14+(24*40),x
+	lda $c800+kFromOffset+14+(19*40),x
+	sta $cc00+kToOffset+14+(19*40),x
+	lda $c800+kFromOffset+14+(20*40),x
+	sta $cc00+kToOffset+14+(20*40),x
+	lda $c800+kFromOffset+14+(21*40),x
+	sta $cc00+kToOffset+14+(21*40),x
+	lda $c800+kFromOffset+14+(22*40),x
+	sta $cc00+kToOffset+14+(22*40),x
+	lda $c800+kFromOffset+14+(23*40),x
+	sta $cc00+kToOffset+14+(23*40),x
+	lda $c800+kFromOffset+14+(24*40),x
+	sta $cc00+kToOffset+14+(24*40),x
 	dex
 	bpl .l2
 }
@@ -598,61 +615,61 @@ ScrollSingle2Bank0To1_1
 }
 	ldx #10
 .l1
-	lda $c800+00+14+14+(0*40),x
-	sta $cc00+01+14+14+(0*40),x
-	lda $c800+00+14+14+(1*40),x
-	sta $cc00+01+14+14+(1*40),x
-	lda $c800+00+14+14+(2*40),x
-	sta $cc00+01+14+14+(2*40),x
-	lda $c800+00+14+14+(3*40),x
-	sta $cc00+01+14+14+(3*40),x
-	lda $c800+00+14+14+(4*40),x
-	sta $cc00+01+14+14+(4*40),x
-	lda $c800+00+14+14+(5*40),x
-	sta $cc00+01+14+14+(5*40),x
-	lda $c800+00+14+14+(6*40),x
-	sta $cc00+01+14+14+(6*40),x
-	lda $c800+00+14+14+(7*40),x
-	sta $cc00+01+14+14+(7*40),x
-	lda $c800+00+14+14+(8*40),x
-	sta $cc00+01+14+14+(8*40),x
-	lda $c800+00+14+14+(9*40),x
-	sta $cc00+01+14+14+(9*40),x
-	lda $c800+00+14+14+(10*40),x
-	sta $cc00+01+14+14+(10*40),x
-	lda $c800+00+14+14+(11*40),x
-	sta $cc00+01+14+14+(11*40),x
-	lda $c800+00+14+14+(12*40),x
-	sta $cc00+01+14+14+(12*40),x
-	lda $c800+00+14+14+(13*40),x
-	sta $cc00+01+14+14+(13*40),x
-	lda $c800+00+14+14+(14*40),x
-	sta $cc00+01+14+14+(14*40),x
-	lda $c800+00+14+14+(15*40),x
-	sta $cc00+01+14+14+(15*40),x
-	lda $c800+00+14+14+(16*40),x
-	sta $cc00+01+14+14+(16*40),x
-	lda $c800+00+14+14+(17*40),x
-	sta $cc00+01+14+14+(17*40),x
-	lda $c800+00+14+14+(18*40),x
-	sta $cc00+01+14+14+(18*40),x
+	lda $c800+kFromOffset+14+14+(0*40),x
+	sta $cc00+kToOffset+14+14+(0*40),x
+	lda $c800+kFromOffset+14+14+(1*40),x
+	sta $cc00+kToOffset+14+14+(1*40),x
+	lda $c800+kFromOffset+14+14+(2*40),x
+	sta $cc00+kToOffset+14+14+(2*40),x
+	lda $c800+kFromOffset+14+14+(3*40),x
+	sta $cc00+kToOffset+14+14+(3*40),x
+	lda $c800+kFromOffset+14+14+(4*40),x
+	sta $cc00+kToOffset+14+14+(4*40),x
+	lda $c800+kFromOffset+14+14+(5*40),x
+	sta $cc00+kToOffset+14+14+(5*40),x
+	lda $c800+kFromOffset+14+14+(6*40),x
+	sta $cc00+kToOffset+14+14+(6*40),x
+	lda $c800+kFromOffset+14+14+(7*40),x
+	sta $cc00+kToOffset+14+14+(7*40),x
+	lda $c800+kFromOffset+14+14+(8*40),x
+	sta $cc00+kToOffset+14+14+(8*40),x
+	lda $c800+kFromOffset+14+14+(9*40),x
+	sta $cc00+kToOffset+14+14+(9*40),x
+	lda $c800+kFromOffset+14+14+(10*40),x
+	sta $cc00+kToOffset+14+14+(10*40),x
+	lda $c800+kFromOffset+14+14+(11*40),x
+	sta $cc00+kToOffset+14+14+(11*40),x
+	lda $c800+kFromOffset+14+14+(12*40),x
+	sta $cc00+kToOffset+14+14+(12*40),x
+	lda $c800+kFromOffset+14+14+(13*40),x
+	sta $cc00+kToOffset+14+14+(13*40),x
+	lda $c800+kFromOffset+14+14+(14*40),x
+	sta $cc00+kToOffset+14+14+(14*40),x
+	lda $c800+kFromOffset+14+14+(15*40),x
+	sta $cc00+kToOffset+14+14+(15*40),x
+	lda $c800+kFromOffset+14+14+(16*40),x
+	sta $cc00+kToOffset+14+14+(16*40),x
+	lda $c800+kFromOffset+14+14+(17*40),x
+	sta $cc00+kToOffset+14+14+(17*40),x
+	lda $c800+kFromOffset+14+14+(18*40),x
+	sta $cc00+kToOffset+14+14+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #10
 .l2
-	lda $c800+00+14+14+(19*40),x
-	sta $cc00+01+14+14+(19*40),x
-	lda $c800+00+14+14+(20*40),x
-	sta $cc00+01+14+14+(20*40),x
-	lda $c800+00+14+14+(21*40),x
-	sta $cc00+01+14+14+(21*40),x
-	lda $c800+00+14+14+(22*40),x
-	sta $cc00+01+14+14+(22*40),x
-	lda $c800+00+14+14+(23*40),x
-	sta $cc00+01+14+14+(23*40),x
-	lda $c800+00+14+14+(24*40),x
-	sta $cc00+01+14+14+(24*40),x
+	lda $c800+kFromOffset+14+14+(19*40),x
+	sta $cc00+kToOffset+14+14+(19*40),x
+	lda $c800+kFromOffset+14+14+(20*40),x
+	sta $cc00+kToOffset+14+14+(20*40),x
+	lda $c800+kFromOffset+14+14+(21*40),x
+	sta $cc00+kToOffset+14+14+(21*40),x
+	lda $c800+kFromOffset+14+14+(22*40),x
+	sta $cc00+kToOffset+14+14+(22*40),x
+	lda $c800+kFromOffset+14+14+(23*40),x
+	sta $cc00+kToOffset+14+14+(23*40),x
+	lda $c800+kFromOffset+14+14+(24*40),x
+	sta $cc00+kToOffset+14+14+(24*40),x
 	dex
 	bpl .l2
 }
@@ -672,61 +689,61 @@ ScrollSingle0Bank1To0_1
 }
 	ldx #13
 .l1
-	lda $cc00+00+(0*40),x
-	sta $c800+01+(0*40),x
-	lda $cc00+00+(1*40),x
-	sta $c800+01+(1*40),x
-	lda $cc00+00+(2*40),x
-	sta $c800+01+(2*40),x
-	lda $cc00+00+(3*40),x
-	sta $c800+01+(3*40),x
-	lda $cc00+00+(4*40),x
-	sta $c800+01+(4*40),x
-	lda $cc00+00+(5*40),x
-	sta $c800+01+(5*40),x
-	lda $cc00+00+(6*40),x
-	sta $c800+01+(6*40),x
-	lda $cc00+00+(7*40),x
-	sta $c800+01+(7*40),x
-	lda $cc00+00+(8*40),x
-	sta $c800+01+(8*40),x
-	lda $cc00+00+(9*40),x
-	sta $c800+01+(9*40),x
-	lda $cc00+00+(10*40),x
-	sta $c800+01+(10*40),x
-	lda $cc00+00+(11*40),x
-	sta $c800+01+(11*40),x
-	lda $cc00+00+(12*40),x
-	sta $c800+01+(12*40),x
-	lda $cc00+00+(13*40),x
-	sta $c800+01+(13*40),x
-	lda $cc00+00+(14*40),x
-	sta $c800+01+(14*40),x
-	lda $cc00+00+(15*40),x
-	sta $c800+01+(15*40),x
-	lda $cc00+00+(16*40),x
-	sta $c800+01+(16*40),x
-	lda $cc00+00+(17*40),x
-	sta $c800+01+(17*40),x
-	lda $cc00+00+(18*40),x
-	sta $c800+01+(18*40),x
+	lda $cc00+kFromOffset+(0*40),x
+	sta $c800+kToOffset+(0*40),x
+	lda $cc00+kFromOffset+(1*40),x
+	sta $c800+kToOffset+(1*40),x
+	lda $cc00+kFromOffset+(2*40),x
+	sta $c800+kToOffset+(2*40),x
+	lda $cc00+kFromOffset+(3*40),x
+	sta $c800+kToOffset+(3*40),x
+	lda $cc00+kFromOffset+(4*40),x
+	sta $c800+kToOffset+(4*40),x
+	lda $cc00+kFromOffset+(5*40),x
+	sta $c800+kToOffset+(5*40),x
+	lda $cc00+kFromOffset+(6*40),x
+	sta $c800+kToOffset+(6*40),x
+	lda $cc00+kFromOffset+(7*40),x
+	sta $c800+kToOffset+(7*40),x
+	lda $cc00+kFromOffset+(8*40),x
+	sta $c800+kToOffset+(8*40),x
+	lda $cc00+kFromOffset+(9*40),x
+	sta $c800+kToOffset+(9*40),x
+	lda $cc00+kFromOffset+(10*40),x
+	sta $c800+kToOffset+(10*40),x
+	lda $cc00+kFromOffset+(11*40),x
+	sta $c800+kToOffset+(11*40),x
+	lda $cc00+kFromOffset+(12*40),x
+	sta $c800+kToOffset+(12*40),x
+	lda $cc00+kFromOffset+(13*40),x
+	sta $c800+kToOffset+(13*40),x
+	lda $cc00+kFromOffset+(14*40),x
+	sta $c800+kToOffset+(14*40),x
+	lda $cc00+kFromOffset+(15*40),x
+	sta $c800+kToOffset+(15*40),x
+	lda $cc00+kFromOffset+(16*40),x
+	sta $c800+kToOffset+(16*40),x
+	lda $cc00+kFromOffset+(17*40),x
+	sta $c800+kToOffset+(17*40),x
+	lda $cc00+kFromOffset+(18*40),x
+	sta $c800+kToOffset+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #13
 .l2
-	lda $cc00+00+(19*40),x
-	sta $c800+01+(19*40),x
-	lda $cc00+00+(20*40),x
-	sta $c800+01+(20*40),x
-	lda $cc00+00+(21*40),x
-	sta $c800+01+(21*40),x
-	lda $cc00+00+(22*40),x
-	sta $c800+01+(22*40),x
-	lda $cc00+00+(23*40),x
-	sta $c800+01+(23*40),x
-	lda $cc00+00+(24*40),x
-	sta $c800+01+(24*40),x
+	lda $cc00+kFromOffset+(19*40),x
+	sta $c800+kToOffset+(19*40),x
+	lda $cc00+kFromOffset+(20*40),x
+	sta $c800+kToOffset+(20*40),x
+	lda $cc00+kFromOffset+(21*40),x
+	sta $c800+kToOffset+(21*40),x
+	lda $cc00+kFromOffset+(22*40),x
+	sta $c800+kToOffset+(22*40),x
+	lda $cc00+kFromOffset+(23*40),x
+	sta $c800+kToOffset+(23*40),x
+	lda $cc00+kFromOffset+(24*40),x
+	sta $c800+kToOffset+(24*40),x
 	dex
 	bpl .l2
 }
@@ -740,61 +757,61 @@ ScrollSingle1Bank1To0_1
 }
 	ldx #13
 .l1
-	lda $cc00+00+14+(0*40),x
-	sta $c800+01+14+(0*40),x
-	lda $cc00+00+14+(1*40),x
-	sta $c800+01+14+(1*40),x
-	lda $cc00+00+14+(2*40),x
-	sta $c800+01+14+(2*40),x
-	lda $cc00+00+14+(3*40),x
-	sta $c800+01+14+(3*40),x
-	lda $cc00+00+14+(4*40),x
-	sta $c800+01+14+(4*40),x
-	lda $cc00+00+14+(5*40),x
-	sta $c800+01+14+(5*40),x
-	lda $cc00+00+14+(6*40),x
-	sta $c800+01+14+(6*40),x
-	lda $cc00+00+14+(7*40),x
-	sta $c800+01+14+(7*40),x
-	lda $cc00+00+14+(8*40),x
-	sta $c800+01+14+(8*40),x
-	lda $cc00+00+14+(9*40),x
-	sta $c800+01+14+(9*40),x
-	lda $cc00+00+14+(10*40),x
-	sta $c800+01+14+(10*40),x
-	lda $cc00+00+14+(11*40),x
-	sta $c800+01+14+(11*40),x
-	lda $cc00+00+14+(12*40),x
-	sta $c800+01+14+(12*40),x
-	lda $cc00+00+14+(13*40),x
-	sta $c800+01+14+(13*40),x
-	lda $cc00+00+14+(14*40),x
-	sta $c800+01+14+(14*40),x
-	lda $cc00+00+14+(15*40),x
-	sta $c800+01+14+(15*40),x
-	lda $cc00+00+14+(16*40),x
-	sta $c800+01+14+(16*40),x
-	lda $cc00+00+14+(17*40),x
-	sta $c800+01+14+(17*40),x
-	lda $cc00+00+14+(18*40),x
-	sta $c800+01+14+(18*40),x
+	lda $cc00+kFromOffset+14+(0*40),x
+	sta $c800+kToOffset+14+(0*40),x
+	lda $cc00+kFromOffset+14+(1*40),x
+	sta $c800+kToOffset+14+(1*40),x
+	lda $cc00+kFromOffset+14+(2*40),x
+	sta $c800+kToOffset+14+(2*40),x
+	lda $cc00+kFromOffset+14+(3*40),x
+	sta $c800+kToOffset+14+(3*40),x
+	lda $cc00+kFromOffset+14+(4*40),x
+	sta $c800+kToOffset+14+(4*40),x
+	lda $cc00+kFromOffset+14+(5*40),x
+	sta $c800+kToOffset+14+(5*40),x
+	lda $cc00+kFromOffset+14+(6*40),x
+	sta $c800+kToOffset+14+(6*40),x
+	lda $cc00+kFromOffset+14+(7*40),x
+	sta $c800+kToOffset+14+(7*40),x
+	lda $cc00+kFromOffset+14+(8*40),x
+	sta $c800+kToOffset+14+(8*40),x
+	lda $cc00+kFromOffset+14+(9*40),x
+	sta $c800+kToOffset+14+(9*40),x
+	lda $cc00+kFromOffset+14+(10*40),x
+	sta $c800+kToOffset+14+(10*40),x
+	lda $cc00+kFromOffset+14+(11*40),x
+	sta $c800+kToOffset+14+(11*40),x
+	lda $cc00+kFromOffset+14+(12*40),x
+	sta $c800+kToOffset+14+(12*40),x
+	lda $cc00+kFromOffset+14+(13*40),x
+	sta $c800+kToOffset+14+(13*40),x
+	lda $cc00+kFromOffset+14+(14*40),x
+	sta $c800+kToOffset+14+(14*40),x
+	lda $cc00+kFromOffset+14+(15*40),x
+	sta $c800+kToOffset+14+(15*40),x
+	lda $cc00+kFromOffset+14+(16*40),x
+	sta $c800+kToOffset+14+(16*40),x
+	lda $cc00+kFromOffset+14+(17*40),x
+	sta $c800+kToOffset+14+(17*40),x
+	lda $cc00+kFromOffset+14+(18*40),x
+	sta $c800+kToOffset+14+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #13
 .l2
-	lda $cc00+00+14+(19*40),x
-	sta $c800+01+14+(19*40),x
-	lda $cc00+00+14+(20*40),x
-	sta $c800+01+14+(20*40),x
-	lda $cc00+00+14+(21*40),x
-	sta $c800+01+14+(21*40),x
-	lda $cc00+00+14+(22*40),x
-	sta $c800+01+14+(22*40),x
-	lda $cc00+00+14+(23*40),x
-	sta $c800+01+14+(23*40),x
-	lda $cc00+00+14+(24*40),x
-	sta $c800+01+14+(24*40),x
+	lda $cc00+kFromOffset+14+(19*40),x
+	sta $c800+kToOffset+14+(19*40),x
+	lda $cc00+kFromOffset+14+(20*40),x
+	sta $c800+kToOffset+14+(20*40),x
+	lda $cc00+kFromOffset+14+(21*40),x
+	sta $c800+kToOffset+14+(21*40),x
+	lda $cc00+kFromOffset+14+(22*40),x
+	sta $c800+kToOffset+14+(22*40),x
+	lda $cc00+kFromOffset+14+(23*40),x
+	sta $c800+kToOffset+14+(23*40),x
+	lda $cc00+kFromOffset+14+(24*40),x
+	sta $c800+kToOffset+14+(24*40),x
 	dex
 	bpl .l2
 }
@@ -809,61 +826,61 @@ ScrollSingle2Bank1To0_1
 }
 	ldx #10
 .l1
-	lda $cc00+00+14+14+(0*40),x
-	sta $c800+01+14+14+(0*40),x
-	lda $cc00+00+14+14+(1*40),x
-	sta $c800+01+14+14+(1*40),x
-	lda $cc00+00+14+14+(2*40),x
-	sta $c800+01+14+14+(2*40),x
-	lda $cc00+00+14+14+(3*40),x
-	sta $c800+01+14+14+(3*40),x
-	lda $cc00+00+14+14+(4*40),x
-	sta $c800+01+14+14+(4*40),x
-	lda $cc00+00+14+14+(5*40),x
-	sta $c800+01+14+14+(5*40),x
-	lda $cc00+00+14+14+(6*40),x
-	sta $c800+01+14+14+(6*40),x
-	lda $cc00+00+14+14+(7*40),x
-	sta $c800+01+14+14+(7*40),x
-	lda $cc00+00+14+14+(8*40),x
-	sta $c800+01+14+14+(8*40),x
-	lda $cc00+00+14+14+(9*40),x
-	sta $c800+01+14+14+(9*40),x
-	lda $cc00+00+14+14+(10*40),x
-	sta $c800+01+14+14+(10*40),x
-	lda $cc00+00+14+14+(11*40),x
-	sta $c800+01+14+14+(11*40),x
-	lda $cc00+00+14+14+(12*40),x
-	sta $c800+01+14+14+(12*40),x
-	lda $cc00+00+14+14+(13*40),x
-	sta $c800+01+14+14+(13*40),x
-	lda $cc00+00+14+14+(14*40),x
-	sta $c800+01+14+14+(14*40),x
-	lda $cc00+00+14+14+(15*40),x
-	sta $c800+01+14+14+(15*40),x
-	lda $cc00+00+14+14+(16*40),x
-	sta $c800+01+14+14+(16*40),x
-	lda $cc00+00+14+14+(17*40),x
-	sta $c800+01+14+14+(17*40),x
-	lda $cc00+00+14+14+(18*40),x
-	sta $c800+01+14+14+(18*40),x
+	lda $cc00+kFromOffset+14+14+(0*40),x
+	sta $c800+kToOffset+14+14+(0*40),x
+	lda $cc00+kFromOffset+14+14+(1*40),x
+	sta $c800+kToOffset+14+14+(1*40),x
+	lda $cc00+kFromOffset+14+14+(2*40),x
+	sta $c800+kToOffset+14+14+(2*40),x
+	lda $cc00+kFromOffset+14+14+(3*40),x
+	sta $c800+kToOffset+14+14+(3*40),x
+	lda $cc00+kFromOffset+14+14+(4*40),x
+	sta $c800+kToOffset+14+14+(4*40),x
+	lda $cc00+kFromOffset+14+14+(5*40),x
+	sta $c800+kToOffset+14+14+(5*40),x
+	lda $cc00+kFromOffset+14+14+(6*40),x
+	sta $c800+kToOffset+14+14+(6*40),x
+	lda $cc00+kFromOffset+14+14+(7*40),x
+	sta $c800+kToOffset+14+14+(7*40),x
+	lda $cc00+kFromOffset+14+14+(8*40),x
+	sta $c800+kToOffset+14+14+(8*40),x
+	lda $cc00+kFromOffset+14+14+(9*40),x
+	sta $c800+kToOffset+14+14+(9*40),x
+	lda $cc00+kFromOffset+14+14+(10*40),x
+	sta $c800+kToOffset+14+14+(10*40),x
+	lda $cc00+kFromOffset+14+14+(11*40),x
+	sta $c800+kToOffset+14+14+(11*40),x
+	lda $cc00+kFromOffset+14+14+(12*40),x
+	sta $c800+kToOffset+14+14+(12*40),x
+	lda $cc00+kFromOffset+14+14+(13*40),x
+	sta $c800+kToOffset+14+14+(13*40),x
+	lda $cc00+kFromOffset+14+14+(14*40),x
+	sta $c800+kToOffset+14+14+(14*40),x
+	lda $cc00+kFromOffset+14+14+(15*40),x
+	sta $c800+kToOffset+14+14+(15*40),x
+	lda $cc00+kFromOffset+14+14+(16*40),x
+	sta $c800+kToOffset+14+14+(16*40),x
+	lda $cc00+kFromOffset+14+14+(17*40),x
+	sta $c800+kToOffset+14+14+(17*40),x
+	lda $cc00+kFromOffset+14+14+(18*40),x
+	sta $c800+kToOffset+14+14+(18*40),x
 	dex
 	bpl .l1
 !ifdef Scroller_FullScreen {
 	ldx #10
 .l2
-	lda $cc00+00+14+14+(19*40),x
-	sta $c800+01+14+14+(19*40),x
-	lda $cc00+00+14+14+(20*40),x
-	sta $c800+01+14+14+(20*40),x
-	lda $cc00+00+14+14+(21*40),x
-	sta $c800+01+14+14+(21*40),x
-	lda $cc00+00+14+14+(22*40),x
-	sta $c800+01+14+14+(22*40),x
-	lda $cc00+00+14+14+(23*40),x
-	sta $c800+01+14+14+(23*40),x
-	lda $cc00+00+14+14+(24*40),x
-	sta $c800+01+14+14+(24*40),x
+	lda $cc00+kFromOffset+14+14+(19*40),x
+	sta $c800+kToOffset+14+14+(19*40),x
+	lda $cc00+kFromOffset+14+14+(20*40),x
+	sta $c800+kToOffset+14+14+(20*40),x
+	lda $cc00+kFromOffset+14+14+(21*40),x
+	sta $c800+kToOffset+14+14+(21*40),x
+	lda $cc00+kFromOffset+14+14+(22*40),x
+	sta $c800+kToOffset+14+14+(22*40),x
+	lda $cc00+kFromOffset+14+14+(23*40),x
+	sta $c800+kToOffset+14+14+(23*40),x
+	lda $cc00+kFromOffset+14+14+(24*40),x
+	sta $c800+kToOffset+14+14+(24*40),x
 	dex
 	bpl .l2
 }
@@ -1033,31 +1050,38 @@ ScrollSingleColour_1
 	lda #VIC2Colour_Green
 	sta VIC2BorderColour
 }
+!ifdef Scroller_IsHorizontalLeft {
+	jsr CalcScrollerInvertedMapPos
+}
 !ifdef Scroller_NeedFullColourScroll {
 
+!ifdef Scroller_IsHorizontalLeft {
+	ldy ScrollerInvertedMapPos
+} else {
 	ldy scrollMapLPos
+}
 	ldx .offsetTab,y
 .l1
-	lda COLOURRAM+00+(0*40),x
-	sta COLOURRAM+01+(0*40),x
-	lda COLOURRAM+00+(1*40),x
-	sta COLOURRAM+01+(1*40),x
-	lda COLOURRAM+00+(2*40),x
-	sta COLOURRAM+01+(2*40),x
-	lda COLOURRAM+00+(3*40),x
-	sta COLOURRAM+01+(3*40),x
-	lda COLOURRAM+00+(4*40),x
-	sta COLOURRAM+01+(4*40),x
-	lda COLOURRAM+00+(5*40),x
-	sta COLOURRAM+01+(5*40),x
-	lda COLOURRAM+00+(6*40),x
-	sta COLOURRAM+01+(6*40),x
-	lda COLOURRAM+00+(7*40),x
-	sta COLOURRAM+01+(7*40),x
-	lda COLOURRAM+00+(8*40),x
-	sta COLOURRAM+01+(8*40),x
-	lda COLOURRAM+00+(9*40),x
-	sta COLOURRAM+01+(9*40),x
+	lda COLOURRAM+kFromOffset+(0*40),x
+	sta COLOURRAM+kToOffset+(0*40),x
+	lda COLOURRAM+kFromOffset+(1*40),x
+	sta COLOURRAM+kToOffset+(1*40),x
+	lda COLOURRAM+kFromOffset+(2*40),x
+	sta COLOURRAM+kToOffset+(2*40),x
+	lda COLOURRAM+kFromOffset+(3*40),x
+	sta COLOURRAM+kToOffset+(3*40),x
+	lda COLOURRAM+kFromOffset+(4*40),x
+	sta COLOURRAM+kToOffset+(4*40),x
+	lda COLOURRAM+kFromOffset+(5*40),x
+	sta COLOURRAM+kToOffset+(5*40),x
+	lda COLOURRAM+kFromOffset+(6*40),x
+	sta COLOURRAM+kToOffset+(6*40),x
+	lda COLOURRAM+kFromOffset+(7*40),x
+	sta COLOURRAM+kToOffset+(7*40),x
+	lda COLOURRAM+kFromOffset+(8*40),x
+	sta COLOURRAM+kToOffset+(8*40),x
+	lda COLOURRAM+kFromOffset+(9*40),x
+	sta COLOURRAM+kToOffset+(9*40),x
 	txa
 	clc
 	adc #5
@@ -1068,40 +1092,44 @@ ScrollSingleColour_1
 	lda #VIC2Colour_LightGreen
 	sta VIC2BorderColour
 }
+!ifdef Scroller_IsHorizontalLeft {
+	ldy ScrollerInvertedMapPos
+} else {
 	ldy scrollMapLPos
+}
 	ldx .offsetTab,y
 .l2
-	lda COLOURRAM+00+(10*40),x
-	sta COLOURRAM+01+(10*40),x
-	lda COLOURRAM+00+(11*40),x
-	sta COLOURRAM+01+(11*40),x
-	lda COLOURRAM+00+(12*40),x
-	sta COLOURRAM+01+(12*40),x
-	lda COLOURRAM+00+(13*40),x
-	sta COLOURRAM+01+(13*40),x
-	lda COLOURRAM+00+(14*40),x
-	sta COLOURRAM+01+(14*40),x
-	lda COLOURRAM+00+(15*40),x
-	sta COLOURRAM+01+(15*40),x
-	lda COLOURRAM+00+(16*40),x
-	sta COLOURRAM+01+(16*40),x
-	lda COLOURRAM+00+(17*40),x
-	sta COLOURRAM+01+(17*40),x
-	lda COLOURRAM+00+(18*40),x
-	sta COLOURRAM+01+(18*40),x
-	lda COLOURRAM+00+(19*40),x
-	sta COLOURRAM+01+(19*40),x
+	lda COLOURRAM+kFromOffset+(10*40),x
+	sta COLOURRAM+kToOffset+(10*40),x
+	lda COLOURRAM+kFromOffset+(11*40),x
+	sta COLOURRAM+kToOffset+(11*40),x
+	lda COLOURRAM+kFromOffset+(12*40),x
+	sta COLOURRAM+kToOffset+(12*40),x
+	lda COLOURRAM+kFromOffset+(13*40),x
+	sta COLOURRAM+kToOffset+(13*40),x
+	lda COLOURRAM+kFromOffset+(14*40),x
+	sta COLOURRAM+kToOffset+(14*40),x
+	lda COLOURRAM+kFromOffset+(15*40),x
+	sta COLOURRAM+kToOffset+(15*40),x
+	lda COLOURRAM+kFromOffset+(16*40),x
+	sta COLOURRAM+kToOffset+(16*40),x
+	lda COLOURRAM+kFromOffset+(17*40),x
+	sta COLOURRAM+kToOffset+(17*40),x
+	lda COLOURRAM+kFromOffset+(18*40),x
+	sta COLOURRAM+kToOffset+(18*40),x
+	lda COLOURRAM+kFromOffset+(19*40),x
+	sta COLOURRAM+kToOffset+(19*40),x
 !ifdef Scroller_FullScreen {
-	lda COLOURRAM+00+(20*40),x
-	sta COLOURRAM+01+(20*40),x
-	lda COLOURRAM+00+(21*40),x
-	sta COLOURRAM+01+(21*40),x
-	lda COLOURRAM+00+(22*40),x
-	sta COLOURRAM+01+(22*40),x
-	lda COLOURRAM+00+(23*40),x
-	sta COLOURRAM+01+(23*40),x
-	lda COLOURRAM+00+(24*40),x
-	sta COLOURRAM+01+(24*40),x
+	lda COLOURRAM+kFromOffset+(20*40),x
+	sta COLOURRAM+kToOffset+(20*40),x
+	lda COLOURRAM+kFromOffset+(21*40),x
+	sta COLOURRAM+kToOffset+(21*40),x
+	lda COLOURRAM+kFromOffset+(22*40),x
+	sta COLOURRAM+kToOffset+(22*40),x
+	lda COLOURRAM+kFromOffset+(23*40),x
+	sta COLOURRAM+kToOffset+(23*40),x
+	lda COLOURRAM+kFromOffset+(24*40),x
+	sta COLOURRAM+kToOffset+(24*40),x
 }
 	txa
 	clc
@@ -1132,29 +1160,61 @@ ScrollSingleColour_1
 
 	jmp NotWantingColourScroll
 
+!ifdef Scroller_IsHorizontalLeft {
+ScrollerInvertedMapPos !by 0
+CalcScrollerInvertedMapPos
+	lda #4
+	sec
+	sbc scrollMapLPos
+	sta ScrollerInvertedMapPos
+	rts
+}
 !zn {
+
 ScrollerDrawStripLeftBank0
+!ifdef Scroller_IsHorizontalLeft {
+	lda #39
+} else {
 	lda #0
+}
 	sta tempWork0
 	lda #$c8
 	sta tempWork1
+!ifdef Scroller_IsHorizontalLeft {
+	jsr CalcScrollerInvertedMapPos
+	+MACROScrollerDrawVStrip ScrollerInvertedMapPos , scrollMapHPos , scrollMapHPos2
+} else {
 	+MACROScrollerDrawVStrip scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
 }
 
 !zn {
 ScrollerDrawStripLeftBank1
+!ifdef Scroller_IsHorizontalLeft {
+	lda #39
+} else {
 	lda #0
+}
 	sta tempWork0
 	lda #$cc
 	sta tempWork1
+!ifdef Scroller_IsHorizontalLeft {
+	jsr CalcScrollerInvertedMapPos
+	+MACROScrollerDrawVStrip ScrollerInvertedMapPos , scrollMapHPos , scrollMapHPos2
+} else {
 	+MACROScrollerDrawVStrip scrollMapLPos , scrollMapHPos , scrollMapHPos2
+}
 }
 
 !ifdef Scroller_NeedFullColourScroll {
 
 !zn {
 ScrollerDrawStripLeftColour
+!ifdef Scroller_IsHorizontalLeft {
+	lda #39
+} else {
 	lda #0
+}
 	sta tempWork0
 	lda #$d8
 	sta tempWork1

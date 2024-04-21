@@ -1,0 +1,32 @@
+;Old: * = $0890
+* = $4909
+	ldy #$17
+	lda $eb80+1,y
+	sta $ef81-1,y
+	lda $eb97+1,y
+	sta $ef98-1,y
+	lda $ebae+1,y
+	sta $efaf-1,y
+	lda $ebc5+1,y
+	sta $efc6-1,y
+	lda $ebd8+1,y
+	sta $efd9-1,y
+	dey
+;Old:	bne $0892
+	bne $490b
+	rts
+	ldy #$17
+	lda $ef80+1,y
+	sta $eb81-1,y
+	lda $ef97+1,y
+	sta $eb98-1,y
+	lda $efae+1,y
+	sta $ebaf-1,y
+	lda $efc5+1,y
+	sta $ebc6-1,y
+	lda $efd8+1,y
+	sta $ebd9-1,y
+	dey
+;Old:	bne $08b6
+	bne $492f
+	rts

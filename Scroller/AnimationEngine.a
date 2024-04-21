@@ -1225,6 +1225,17 @@ AnimationUpdateFrameMovement
 	beq .sl1
 .skipTest
 !ifdef Scroller_IsHorizontal {
+!ifdef Scroller_IsHorizontalLeft {
+	lda AnimationXPosLo,x
+	sec
+	sbc scrollerRealMovementYPixels
+	sta AnimationXPosLo,x
+	bcs .sl1
+	dec AnimationXPosHi,x
+	; If when moving left the hi goes from 0 to !0 then fall through to the remove animation test
+	beq .sl1
+.noMSB
+} else {
 	lda AnimationXPosLo,x
 	clc
 	adc scrollerRealMovementYPixels
@@ -1237,6 +1248,7 @@ AnimationUpdateFrameMovement
 	lda AnimationXPosLo,x
 	cmp #<(VIC2SpriteXBorderRight+1)
 	bcc .sl1
+}
 } else {
 	lda AnimationYPos,x
 	clc
