@@ -849,3 +849,9 @@ Player1Information or Player2Information is used depending on the active players
 
 	* Update redux code...
 		See: Scroller_IsHorizontalLeft
+
+
+* Using BRKTHRLF.P00 the coloured blocks seems to have a syncronisation issue with the border chars compared to the "sideways left.prg"
+	Check the map blocks are scrolling in correctly...
+	Or maybe it is the striped colour RAM copy being the issue...
+	> BRKTHR2L.P01 shows this very well... It is the colour RAM strip copy

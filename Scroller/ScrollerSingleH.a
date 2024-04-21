@@ -1044,23 +1044,23 @@ ScrollSingle2Bank1To0_1
 }
 
 !zn
+!ifdef Scroller_IsHorizontalLeft {
+} else {
 .offsetTab !by 3,2,1,0,4
+}
 ScrollSingleColour_1
 !ifdef Scroller_DebugColourScrollTimings {
 	lda #VIC2Colour_Green
 	sta VIC2BorderColour
 }
-!ifdef Scroller_IsHorizontalLeft {
-	jsr CalcScrollerInvertedMapPos
-}
 !ifdef Scroller_NeedFullColourScroll {
 
 !ifdef Scroller_IsHorizontalLeft {
-	ldy ScrollerInvertedMapPos
+	ldx scrollMapLPos
 } else {
 	ldy scrollMapLPos
-}
 	ldx .offsetTab,y
+}
 .l1
 	lda COLOURRAM+kFromOffset+(0*40),x
 	sta COLOURRAM+kToOffset+(0*40),x
@@ -1093,11 +1093,11 @@ ScrollSingleColour_1
 	sta VIC2BorderColour
 }
 !ifdef Scroller_IsHorizontalLeft {
-	ldy ScrollerInvertedMapPos
+	ldx scrollMapLPos
 } else {
 	ldy scrollMapLPos
-}
 	ldx .offsetTab,y
+}
 .l2
 	lda COLOURRAM+kFromOffset+(10*40),x
 	sta COLOURRAM+kToOffset+(10*40),x

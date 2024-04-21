@@ -42,6 +42,7 @@ cd /d C:\Work\C64\SEUCK\Debug1
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskBlank.prg"
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskGame1.prg"
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SidewaysSEUCK.prg"
+"C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\sideways left.prg"
 etc.
 In SEUCK, press D for the "Storage" menu, then "Save all data".
 
