@@ -7,6 +7,9 @@
 ; few lines blanked out and the screen below is moving at a fast rate then you can probably guess
 ; it is using a similar method.
 
+EnableLineCrunch = 1	; Enable this line to include the line crunch code
+;ShowDebug = 1	; Enable this line to show debug during the effect, don't hide the line crunch area
+
 !source "../stdlib/stdlib.a"
 !to "RasterTest.prg", cbm
 !sal
@@ -270,14 +273,16 @@ IrqTopOfScreen
 	; https://csdb.dk/release/?id=115690
 
 	; Do the HSP by tweaking the VIC2ScreenControlV register at the correct time
+!ifndef ShowDebug {
 	lda #%01111011	; Plus ECM/Bitmap to disable the screen output
-;	lda #%00011011	; Enable this line to see what is going on at the top of the screen
+} else {
+	lda #%00011011	; Enable this line to see what is going on at the top of the screen
+}
 	dec VIC2ScreenControlV
 	inc VIC2ScreenControlV
 	sta VIC2ScreenControlV
 
-	; Change the below to "!if 0" to turn off the line crunch
-!if 1 {
+!ifdef EnableLineCrunch {
 	; Display a red border at the start of this routine
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
@@ -287,10 +292,12 @@ IrqTopOfScreen
 	beq .s3
 
 	; The raster line to start crunching on
-	ldx #67
+;	ldx #67
+	ldx #59
 .crunchLoop
 	; Load the next screen value
-	lda .table-67,x
+;	lda .table-67,x
+	lda .table-59,x
 	; Wait for the line...
 	cpx VIC2Raster
 	bne *-3
@@ -311,7 +318,8 @@ IrqTopOfScreen
 	lda VIC2ScreenControlV
 	and #%00011111
 	; Wait for this raster line
-	ldx #67+26
+;	ldx #67+26
+	ldx #59+26
 	cpx VIC2Raster
 	bne *-3
 	; Enable the screen
@@ -343,15 +351,9 @@ IrqTopOfScreen
 
 ; With ECM + bitmap enabled to turn off the top of the screen
 .table
-!by %01111100
-!by %01111101
-!by %01111110
-!by %01111111
-!by %01111000
-!by %01111001
-!by %01111010
-!by %01111011
+!for .i , 4 {
 
+!ifndef ShowDebug {
 !by %01111100
 !by %01111101
 !by %01111110
@@ -360,23 +362,16 @@ IrqTopOfScreen
 !by %01111001
 !by %01111010
 !by %01111011
-
-!by %01111100
-!by %01111101
-!by %01111110
-!by %01111111
-!by %01111000
-!by %01111001
-!by %01111010
-!by %01111011
-
-!by %01111100
-!by %01111101
-!by %01111110
-!by %01111111
-!by %01111000
-!by %01111001
-!by %01111010
-!by %01111011
+} else {
+!by %00011100
+!by %00011101
+!by %00011110
+!by %00011111
+!by %00011000
+!by %00011001
+!by %00011010
+!by %00011011
+}
+}
 
 !source "../stdlib/Initialise.a"

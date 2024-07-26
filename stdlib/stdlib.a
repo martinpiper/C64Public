@@ -1520,6 +1520,22 @@ RasterLengthNTSCC64		= 520
 }
 
 
+!macro MIncAddrWord .word {
+	inc .word
+	bne .o1
+	inc .word+1
+.o1
+}
+
+!macro MDecAddrWord_A .word {
+	lda .word
+	bne .o1
+	dec .word+1
+.o1
+	dec .word
+}
+
+
 !macro MAddAToAddr16 .lo , .hi {
 	clc
 	adc .lo
