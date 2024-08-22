@@ -1,7 +1,7 @@
 ; TODO
 
 * To facilitate a sprite score panel display at the top of the screen, allow the multiplexor to start its IRQs on a different VIC sprite index.
-	The initial sprite setup would also need to reduce the number of sprites initially opied over.
+	The initial sprite setup would also need to reduce the number of sprites initially copied over.
 	For example, score panel is initialised into VIC sprite index 0/1. The multiplexor initial copy then copies into VIC sprite index 2/3/4/5/6/7
 	The next IRQ would then trigger just below sprite 0 (and then 1)
 	> The sprite store order would need to be taken into account.
@@ -41,8 +41,10 @@
 		When the byte EQ 0 then use the normal sprite height
 			This is less efficient
 
-
 	Make it a large value to reserve the sprite
+	>> Multiplexor_UseMulticolour
+	>> Multiplexor_UsePriority
+	>> Multiplexor_UseDoubleWidth
 
 
 

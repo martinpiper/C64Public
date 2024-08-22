@@ -1,0 +1,29 @@
+Multiplex_spritepointer	= SPRITEFRAME
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
+Multiplex_DiscardSpritesYPos=255
+;Multiplexor_DebugBorder = 1
+Multiplex_EnableEarlyOut = 1
+Multiplex_BunchingCheck = 1
+;Multiplexor_UseShiftedYPos = 1
+;Multiplex_MaintainPriority = 1
+;Multiplex_LogCollisions = 1
+;Multiplex_ReverseOrder = 1
+Multiplex_items = 48
+
+defined_Multiplex_YPos			= 1
+defined_Multiplex_XPosLo		= 1
+defined_Multiplex_XPosHi		= 1
+;defined_Multiplex_Colour		= 1
+;defined_Multiplex_SpriteFrame	= 1
+Multiplex_YPos+1			= $02
+Multiplex_XPosLo+1		= Multiplex_YPos + Multiplex_items
+Multiplex_XPosHi+1		= Multiplex_XPosLo + Multiplex_items
+;Multiplex_Colour		= Multiplex_XPosHi + Multiplex_items
+;Multiplex_SpriteFrame	= Multiplex_Colour + Multiplex_items
+
+;Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
+Multiplex_VarBase	= Multiplex_XPosHi + Multiplex_items
+;Multiplex_VarBase	= Multiplex_SpriteFrame + Multiplex_items
+
+Multiplexor_UseMulticolour = 1

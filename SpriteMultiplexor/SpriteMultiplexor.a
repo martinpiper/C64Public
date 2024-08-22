@@ -2,6 +2,24 @@ MarkMultiplexorBeginCode = *
 
 Multiplex_spriteHeightTweak = VIC2SpriteSizeY+2	; Add 2 because the carry is clear when we do "sbc VIC2Raster" and we want to start updating the sprite data on the next line after the sprite bottom.
 
+!ifdef Multiplexor_UseMulticolour {
+	eMultiplexor_UseMulticolour = 2
+} else {
+	eMultiplexor_UseMulticolour = 0
+}
+
+!ifdef Multiplexor_UsePriority {
+	eMultiplexor_UsePriority = 2
+} else {
+	eMultiplexor_UsePriority = 0
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+	eMultiplexor_UseDoubleWidth = 2
+} else {
+	eMultiplexor_UseDoubleWidth = 0
+}
+
 !ifdef Multiplex_rasterHeight { } else {
 !ifdef Multiplex_MaintainPriority {
 Multiplex_rasterHeight = 5
@@ -34,7 +52,7 @@ Multiplex_rasterHeight = 3
 } else {
 eAdjust_Multiplexor_UseShiftedYPos = 0
 }
-Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak
+Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth
 }
 
 
@@ -206,6 +224,39 @@ Multiplex_intNextSpr0Reset = *
 	sta VIC2SpriteEnable
 }
 
+!ifdef Multiplexor_UseMulticolour {
+	lda Multiplex_Multicolour,x
+	beq .nomc0
+	lda #(1 << .spriteIndexReal)
+	ora VIC2SpriteMulticolour
+	bne .yesmc0
+.nomc0	lda #$ff - (1 << .spriteIndexReal)
+	and VIC2SpriteMulticolour
+.yesmc0	sta VIC2SpriteMulticolour
+}
+
+!ifdef Multiplexor_UsePriority {
+	lda Multiplex_Priority,x
+	beq .nopr0
+	lda #(1 << .spriteIndexReal)
+	ora VIC2SpritePriority
+	bne .yespr0
+.nopr0	lda #$ff - (1 << .spriteIndexReal)
+	and VIC2SpritePriority
+.yespr0	sta VIC2SpritePriority
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+	lda Multiplex_DoubleWidth,x
+	beq .nodw0
+	lda #(1 << .spriteIndexReal)
+	ora VIC2SpriteDoubleWidth
+	bne .yesdw0
+.nodw0	lda #$ff - (1 << .spriteIndexReal)
+	and VIC2SpriteDoubleWidth
+.yesdw0	sta VIC2SpriteDoubleWidth
+}
+
 	lda Multiplex_XPosHi,x
 	beq .no0
 	lda #(1 << .spriteIndexReal)
@@ -255,6 +306,38 @@ Multiplex_intNextSpr0Reset = *
 
 	ldy Multiplex_Colour,x
 	sty VIC2Sprite0Colour + .spriteIndexReal
+
+!ifdef Multiplexor_UseMulticolour {
+	ldy Multiplex_Multicolour,x
+	beq .nomc0
+	pha
+	lda VIC2SpriteMulticolour
+	ora #(1 << .spriteIndexReal)
+	sta VIC2SpriteMulticolour
+	pla
+.nomc0
+}
+!ifdef Multiplexor_UsePriority {
+	ldy Multiplex_Priority,x
+	beq .nopr0
+	pha
+	lda VIC2SpritePriority
+	ora #(1 << .spriteIndexReal)
+	sta VIC2SpritePriority
+	pla
+.nopr0
+}
+!ifdef Multiplexor_UseDoubleWidth {
+	ldy Multiplex_DoubleWidth,x
+	beq .nodw0
+	pha
+	lda VIC2SpriteDoubleWidth
+	ora #(1 << .spriteIndexReal)
+	sta VIC2SpriteDoubleWidth
+	pla
+.nodw0
+}
+
 	ldy Multiplex_XPosHi,x
 }
 
@@ -355,7 +438,15 @@ Multiplex_maininterEx
 	lda #$2c							; Set bit $xxxx
 	sta .switch
 	lda #$00
-
+!ifdef Multiplexor_UseMulticolour {
+	sta VIC2SpriteMulticolour
+}
+!ifdef Multiplexor_UsePriority {
+	sta VIC2SpritePriority
+}
+!ifdef Multiplexor_UseDoubleWidth {
+	sta VIC2SpriteDoubleWidth
+}
 
 
 ;--------------------------------------
@@ -633,6 +724,12 @@ Multiplex_StartTopInterrupt
 	bcs .storeRaster
 	lda #0		; MPi: Don't go up beyond the top line
 .storeRaster
+!ifdef Multiplex_TopScreenIRQRaster {
+	cmp #Multiplex_TopScreenIRQRaster
+	bcs .isOK
+	lda #Multiplex_TopScreenIRQRaster
+.isOK
+}
 	sta VIC2Raster
 	rts
 }
@@ -896,6 +993,26 @@ Multiplex_XPosLo
 Multiplex_XPosHi
 	!fill Multiplex_items , $ff
 }
+
+!ifdef Multiplexor_UseMulticolour {
+!ifndef defined_Multiplex_Multicolour {
+Multiplex_Multicolour
+	!fill Multiplex_items , $ff
+}
+}
+!ifdef Multiplexor_UsePriority {
+!ifndef defined_Multiplex_Priority {
+Multiplex_Priority
+	!fill Multiplex_items , $ff
+}
+}
+!ifdef Multiplexor_UseDoubleWidth {
+!ifndef defined_Multiplex_DoubleWidth {
+Multiplex_DoubleWidth
+	!fill Multiplex_items , $ff
+}
+}
+
 
 !ifndef defined_Multiplex_Colour {
 Multiplex_Colour

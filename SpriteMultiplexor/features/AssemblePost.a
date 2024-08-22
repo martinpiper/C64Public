@@ -1,0 +1,152 @@
+Multiplex_CollisionCounter		= SCREENRAM + (16*40)
+Multiplex_CollisionHistory		= SCREENRAM + (18*40)
+Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
+
+!source "SpriteMultiplexorVars.a"
+
+!source "stdlib\BASICEntry80d.a"
+
+*=BASICEntry
+
+;--------------------------------------
+!zn
+Start	
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	lda #0
+	sta VIC2SpriteDoubleWidth
+	sta VIC2SpriteDoubleHeight
+	sta VIC2SpritePriority
+	sta VIC2SpriteMulticolour
+!ifdef Multiplexor_UseMulticolour {
+	lda #VIC2Colour_LightRed
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_LightGreen
+	sta VIC2ExtraSpriteColour2
+}
+!ifdef Multiplexor_UsePriority {
+	ldx #0
+.cl1
+	lda #$a0
+	sta SCREENRAM,x
+	sta SCREENRAM+$100,x
+	sta SCREENRAM+$200,x
+	sta SCREENRAM+$2e8,x
+	txa
+	clc
+	adc #7
+	tax
+	bcc .cl1
+}
+
+	lda #<Multiplex_maininter
+	sta KERNALIRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta KERNALIRQServiceRoutineHi
+
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	; Clear zero page to something we know so that we can display it later on to check none of the variables are out of range.
+	ldx #$02
+	lda #$80
+.3	sta $00,x
+	inx
+	bne .3
+
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
+	jsr Multiplex_Default_Init
+
+	jsr Multiplex_InitSort
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	jsr Multiplex_Sort
+	cli
+
+	; MPi: Just to prove all IRQs save all registers. These characters should never flicker or change from ABC in the top left of the screen.
+	lda #1
+	ldx #2
+	ldy #3
+.2
+	sta SCREENRAM
+	stx SCREENRAM+1
+	sty SCREENRAM+2
+
+	inc Multiplex_areg
+	inc Multiplex_xreg
+	inc Multiplex_yreg
+
+	jmp .2
+
+
+!align 255, 0
+;--------------------------------------
+; This function is defined before including "SpriteMultiplexor.a" which then causes the last IRQ to call this
+!zn
+MultiplexExt_LastIRQ
+	lda #255
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+
+!ifdef Multiplex_LogCollisions {
+	lda VIC2SpriteSpriteCollision
+	jsr Multiplexor_UpdateCollisionDetails
+
+	; Just blank out the extra entries on the screen to make it easier to see
+	lda #' '
+	ldy Multiplex_CollisionCounter
+	sta Multiplex_CollisionIndexes,y
+	sta Multiplex_CollisionIndexes+1,y
+	sta Multiplex_CollisionIndexes+2,y
+	sta Multiplex_CollisionIndexes+3,y
+	sta Multiplex_CollisionIndexes+4,y
+	sta Multiplex_CollisionIndexes+5,y
+}
+
+	inc Multiplex_XPosLo + 4
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	jsr Multiplex_Sort
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	jsr Multiplex_StartTopInterrupt
+	jmp Multiplex_AckExitInterrupt
+
+!zn
+!source "SpriteMultiplexor.a"
+!source "SpriteMultiplexorDefaultPattern.a"
+
+!source "../stdlib/Initialise.a"
+
+*=$3e00
+	!fill VIC2MemorySetup_SpriteSize , $ff
+	!fill VIC2MemorySetup_SpriteSize , $12
+	!fill VIC2MemorySetup_SpriteSize , $6c
+	!fill VIC2MemorySetup_SpriteSize , $55

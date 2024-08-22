@@ -44,3 +44,9 @@
 
 
 * Added Multiplex_DiscardSpritesYPosForSort option to allow better control of when sprites get discarded in situations where the IRQ safety margins are larger
+
+
+
+* Test runner to validate assembled code with options
+	c:\work\c64\bin\LZMPi.exe -c64mbu C:\work\c64\SpriteMultiplexor\target\TestMultiplexor.prg c:\temp\t.prg $80d
+	>> features\CheckForBinaryDifferences.feature

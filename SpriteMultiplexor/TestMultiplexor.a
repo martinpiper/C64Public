@@ -15,13 +15,18 @@ Multiplex_DiscardSpritesYPos=255
 
 ;Multiplex_ReverseOrder = 1
 
-; Uncomment this to allow colision logging to be turned on and update into the screen area
+; Uncomment this to allow collision logging to be turned on and update into the screen area
 ;Multiplex_LogCollisions = 1
 Multiplex_CollisionCounter		= SCREENRAM + (16*40)
 Multiplex_CollisionHistory		= SCREENRAM + (18*40)
 Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
 
 ;Multiplexor_UseShiftedYPos = 1
+
+
+Multiplexor_UseMulticolour = 1
+Multiplexor_UsePriority = 1
+Multiplexor_UseDoubleWidth = 1
 
 ;Multiplex_MaintainPriority = 1
 !ifdef Multiplex_LogCollisions {
@@ -208,6 +213,26 @@ Start
 	sta VIC2SpriteDoubleHeight
 	sta VIC2SpritePriority
 	sta VIC2SpriteMulticolour
+!ifdef Multiplexor_UseMulticolour {
+	lda #VIC2Colour_LightRed
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_LightGreen
+	sta VIC2ExtraSpriteColour2
+}
+!ifdef Multiplexor_UsePriority {
+	ldx #0
+.cl1
+	lda #$a0
+	sta SCREENRAM,x
+	sta SCREENRAM+$100,x
+	sta SCREENRAM+$200,x
+	sta SCREENRAM+$2e8,x
+	txa
+	clc
+	adc #7
+	tax
+	bcc .cl1
+}
 
 	lda #<Multiplex_maininter
 	sta KERNALIRQServiceRoutineLo

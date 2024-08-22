@@ -24,6 +24,36 @@ Multiplex_Default_XPosHi
 	!by $01,$00,$00,$00,$00,$00,$00,$00
 	!by $00,$00,$00,$00,$00,$00,$00,$00
 
+!ifdef Multiplexor_UseMulticolour {
+Multiplex_Default_Multicolour
+	!by $00,$01,$00,$01,$00,$01,$00,$00
+	!by $00,$01,$00,$00,$01,$00,$01,$00
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $01,$00,$01,$00,$01,$00,$00,$00
+	!by $01,$00,$00,$01,$00,$00,$00,$01
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+}
+
+!ifdef Multiplexor_UsePriority {
+Multiplex_Default_Priority
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $00,$01,$00,$00,$01,$00,$01,$00
+	!by $00,$01,$00,$01,$00,$01,$00,$00
+	!by $01,$00,$01,$00,$01,$00,$00,$00
+	!by $01,$00,$00,$01,$00,$00,$00,$01
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+Multiplex_Default_DoubleWidth
+	!by $01,$00,$01,$00,$01,$00,$00,$00
+	!by $01,$00,$00,$01,$00,$00,$00,$01
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $00,$01,$00,$00,$01,$00,$01,$00
+	!by $00,$01,$00,$01,$00,$01,$00,$00
+}
+
 Multiplex_Default_Colour
 	!by $01,$02,$03,$04,$05,$06,$07,$08
 	!by $09,$0a,$0b,$0c,$0d,$0e,$0f,$01
@@ -63,6 +93,20 @@ Multiplex_Default_Init
 
 	lda Multiplex_Default_SpriteFrame,x
 	sta Multiplex_SpriteFrame,x
+
+!ifdef Multiplexor_UseMulticolour {
+	lda Multiplex_Default_Multicolour,x
+	sta Multiplex_Multicolour,x
+}
+!ifdef Multiplexor_UsePriority {
+	lda Multiplex_Default_Priority,x
+	sta Multiplex_Priority,x
+}
+!ifdef Multiplexor_UseDoubleWidth {
+	lda Multiplex_Default_DoubleWidth,x
+	sta Multiplex_DoubleWidth,x
+}
+
 	inx
 .smMultiplex_items	cpx #Multiplex_items
 	bne .l1

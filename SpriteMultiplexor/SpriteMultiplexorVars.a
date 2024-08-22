@@ -69,15 +69,15 @@
 ; Causes each new IRQ to log VIC2SpriteSpriteCollision along with the raster position and
 ; what sprites are used in what VIC slots.
 ; If Multiplex_EnableEarlyOut or MultiplexExt_LastIRQ are defined then "lda VIC2SpriteSpriteCollision;jsr Multiplexor_UpdateCollisionDetails" will have
-; to be called after the last sprite is displayed to log the last collision flags.
+; to be called after the last sprite is displayed, after the last raster line of the last sprite when the VIC updates the collision registers, to log the last collision flags.
 ;Multiplex_LogCollisions = 1
 ; If Multiplex_LogCollisions is enabled then use the below to also detect sprite background collisions
 ; Use the following if this is enabled: "lda VIC2SpriteSpriteCollision;ora VIC2SpriteBackgroundCollision;jsr Multiplexor_UpdateCollisionDetails"
 ;Multiplex_LogCollisionsBackground = 1
 ; The following memory localtions must be defined for storage:
-;	Multiplex_CollisionCounter	- One byte that logs how many entries appear in Multiplex_CollisionRegister
-;	Multiplex_CollisionIndexes	- Potentially up to (Multiplex_items-8)*8 items long
-;	Multiplex_CollisionHistory - 8 Bytes
+;	Multiplex_CollisionCounter	- One byte that logs how many entries appear in Multiplex_CollisionIndexes
+;	Multiplex_CollisionIndexes	- Potentially up to (Multiplex_items-8)*8 items long. The sprite index values that have collisions.
+;	Multiplex_CollisionHistory	- 8 Bytes. Temporary working area for the multiplexor to use.
 
 ;Use this statement to reverse the order that sprites are used, 7 to 0 instead of 0 to 7
 ;Multiplex_ReverseOrder = 1
