@@ -59,6 +59,22 @@ Start
 	stx Multiplex_MaxSpr
 	jsr Multiplex_Default_Init
 
+	; Init the Y Pos
+	ldx #0
+	lda #VIC2SpriteYBorderTop
+.spf1
+	sta Multiplex_YPos,x
+	clc
+!ifdef Multiplexor_UseDoubleHeight {
+	adc #8
+} else {
+	adc #4
+}
+	inx
+	cpx #Multiplex_items
+	bne .spf1
+
+
 	jsr Multiplex_InitSort
 
 	lda #1

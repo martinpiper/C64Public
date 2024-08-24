@@ -20,6 +20,12 @@ Multiplex_spriteHeightTweak = VIC2SpriteSizeY+2	; Add 2 because the carry is cle
 	eMultiplexor_UseDoubleWidth = 0
 }
 
+!ifdef Multiplexor_UseDoubleHeight {
+	eMultiplexor_UseDoubleHeight = 2
+} else {
+	eMultiplexor_UseDoubleHeight = 0
+}
+
 !ifdef Multiplex_rasterHeight { } else {
 !ifdef Multiplex_MaintainPriority {
 Multiplex_rasterHeight = 5
@@ -52,7 +58,7 @@ Multiplex_rasterHeight = 3
 } else {
 eAdjust_Multiplexor_UseShiftedYPos = 0
 }
-Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth
+Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth + eMultiplexor_UseDoubleHeight
 }
 
 
@@ -78,12 +84,20 @@ Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
 	ldx Multiplex_indextable,y
 	lda Multiplex_YPos,x
 	sbc Multiplex_LastGoodSpriteYPosUsed
+!ifdef Multiplexor_UseDoubleHeight {
+	cmp Multiplex_DynamicSpriteHeight2
+} else {
 	cmp #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+}
 	bcc .noReset
 
 	; If there is a gap larger than than this then reset the priority used to ensure consistent sprite sorting
 	lda Multiplex_LastGoodSpriteYPosUsed
+!ifdef Multiplexor_UseDoubleHeight {
+	adc Multiplex_DynamicSpriteHeight
+} else {
 	adc #VIC2SpriteSizeY
+}
 	; Suitable safety margin
 	cmp VIC2Raster
 	bcc .otherCheck
@@ -107,7 +121,11 @@ Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
 
 	lda VIC2Sprite0Y + (.spriteIndexReal * 2)
 	; Carry happens to be always clear at this point due to the code logic
+!ifdef Multiplexor_UseDoubleHeight {
+	adc Multiplex_DynamicSpriteHeight3
+} else {
 	adc #Multiplex_spriteHeightTweak
+}
 	sbc VIC2Raster
 	bcc .blit0		; MPi: Process the sprite now not later since we have finished the bottom of the previous sprite using this slot
 	cmp #Multiplex_rasterHeight
@@ -257,6 +275,21 @@ Multiplex_intNextSpr0Reset = *
 .yesdw0	sta VIC2SpriteDoubleWidth
 }
 
+!ifdef Multiplexor_UseDoubleHeight {
+	lda Multiplex_DoubleHeight,x
+	beq .nodh0
+	jsr Multiplex_SetDoubleSpriteHeight
+	lda #(1 << .spriteIndexReal)
+	ora VIC2SpriteDoubleHeight
+	bne .yesdh0
+.nodh0	lda #$ff - (1 << .spriteIndexReal)
+	and VIC2SpriteDoubleHeight
+.yesdh0	sta VIC2SpriteDoubleHeight
+	bne .someValueSet
+	jsr Multiplex_SetNormalSpriteHeight
+.someValueSet
+}
+
 	lda Multiplex_XPosHi,x
 	beq .no0
 	lda #(1 << .spriteIndexReal)
@@ -337,6 +370,16 @@ Multiplex_intNextSpr0Reset = *
 	pla
 .nodw0
 }
+!ifdef Multiplexor_UseDoubleHeight {
+	ldy Multiplex_DoubleHeight,x
+	beq .nodh0
+	pha
+	lda VIC2SpriteDoubleHeight
+	ora #(1 << .spriteIndexReal)
+	sta VIC2SpriteDoubleHeight
+	pla
+.nodh0
+}
 
 	ldy Multiplex_XPosHi,x
 }
@@ -393,6 +436,23 @@ Multiplex_maininterEx
 }
 
 
+!ifdef Multiplexor_UseMulticolour {
+	lda #0
+	sta VIC2SpriteMulticolour
+}
+!ifdef Multiplexor_UsePriority {
+	lda #0
+	sta VIC2SpritePriority
+}
+!ifdef Multiplexor_UseDoubleWidth {
+	lda #0
+	sta VIC2SpriteDoubleWidth
+}
+!ifdef Multiplexor_UseDoubleHeight {
+	lda #0
+	sta VIC2SpriteDoubleHeight
+	jsr Multiplex_SetNormalSpriteHeight
+}
 
 
 !ifdef Multiplex_MaintainPriority { } else {
@@ -419,6 +479,7 @@ Multiplex_maininterEx
 	sta VIC2SpriteEnable
 }
 
+
 !ifdef Multiplex_MaintainPriority {
 
 	ldy #0
@@ -437,16 +498,9 @@ Multiplex_maininterEx
 	; Self modifying code setup
 	lda #$2c							; Set bit $xxxx
 	sta .switch
-	lda #$00
-!ifdef Multiplexor_UseMulticolour {
-	sta VIC2SpriteMulticolour
-}
-!ifdef Multiplexor_UsePriority {
-	sta VIC2SpritePriority
-}
-!ifdef Multiplexor_UseDoubleWidth {
-	sta VIC2SpriteDoubleWidth
-}
+
+	; Init the sprite control registers
+	lda #0
 
 
 ;--------------------------------------
@@ -516,6 +570,14 @@ Multiplex_maininterEx
 }
 .over	sta VIC2SpriteXMSB
 };< !Multiplex_MaintainPriority
+
+!ifdef Multiplexor_UseDoubleHeight {
+	lda VIC2SpriteDoubleHeight
+	beq .nothingSet
+	jsr Multiplex_SetDoubleSpriteHeight
+.nothingSet
+}
+
 
 !ifdef Multiplex_LogCollisions {
 	; Now "ACK" any pre-existing collisions from the last frame
@@ -1012,6 +1074,12 @@ Multiplex_DoubleWidth
 	!fill Multiplex_items , $ff
 }
 }
+!ifdef Multiplexor_UseDoubleHeight {
+!ifndef defined_Multiplex_DoubleHeight {
+Multiplex_DoubleHeight
+	!fill Multiplex_items , $ff
+}
+}
 
 
 !ifndef defined_Multiplex_Colour {
@@ -1045,6 +1113,26 @@ CopyMultiplexTables
 	; Also copy over the max sprites this frame
 	lda MultiplexSort_MaxSprSorted
 	sta Multiplex_MaxSprSorted
+	rts
+}
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_SetNormalSpriteHeight
+	lda #VIC2SpriteSizeY
+	sta Multiplex_DynamicSpriteHeight
+	lda #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+	sta Multiplex_DynamicSpriteHeight2
+	lda #Multiplex_spriteHeightTweak
+	sta Multiplex_DynamicSpriteHeight3
+	rts
+
+Multiplex_SetDoubleSpriteHeight
+	lda #VIC2SpriteSizeY + VIC2SpriteSizeY
+	sta Multiplex_DynamicSpriteHeight
+	lda #VIC2SpriteSizeY + (VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+	sta Multiplex_DynamicSpriteHeight2
+	lda #VIC2SpriteSizeY + Multiplex_spriteHeightTweak
+	sta Multiplex_DynamicSpriteHeight3
 	rts
 }
 

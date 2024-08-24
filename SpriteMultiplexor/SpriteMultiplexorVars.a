@@ -129,17 +129,28 @@ Multiplex_endIndexInternal2 = Multiplex_endIndexInternal
 !ifdef Multiplex_SplitSort {
 
 MultiplexSort_indextable = Multiplex_endIndexInternal2
-Multiplex_endVars = MultiplexSort_indextable + Multiplex_items
+Multiplex_endIndexInternal3 = MultiplexSort_indextable + Multiplex_items
 
 } else {
 
-Multiplex_endVars = Multiplex_endIndexInternal2
+Multiplex_endIndexInternal3 = Multiplex_endIndexInternal2
 
 MultiplexSort_indextable = Multiplex_indextable
 MultiplexSort_YPos = Multiplex_YPos
 MultiplexSort_MaxSprSorted = Multiplex_MaxSprSorted
 
 }
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_DynamicSpriteHeight = Multiplex_endIndexInternal3		; = VIC2SpriteSizeY
+Multiplex_DynamicSpriteHeight2 = Multiplex_endIndexInternal3 + 1	; = (VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+Multiplex_DynamicSpriteHeight3 = Multiplex_endIndexInternal3 + 2	; = Multiplex_spriteHeightTweak
+Multiplex_endIndexInternal4 = Multiplex_endIndexInternal3 + 3
+} else {
+Multiplex_endIndexInternal4 = Multiplex_endIndexInternal3
+}
+
+Multiplex_endVars = Multiplex_endIndexInternal4
 
 !if Multiplex_endVars >= $100 {
 !error "Multiplex_endVars is out of zeropage"

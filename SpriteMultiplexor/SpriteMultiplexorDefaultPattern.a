@@ -54,6 +54,16 @@ Multiplex_Default_DoubleWidth
 	!by $00,$01,$00,$01,$00,$01,$00,$00
 }
 
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_Default_DoubleHeight
+	!by $00,$01,$00,$01,$00,$01,$00,$00
+	!by $01,$00,$00,$01,$00,$00,$00,$01
+	!by $01,$00,$01,$00,$01,$00,$00,$00
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+	!by $00,$01,$00,$00,$01,$00,$01,$00
+	!by $01,$01,$01,$01,$01,$01,$01,$01
+}
+
 Multiplex_Default_Colour
 	!by $01,$02,$03,$04,$05,$06,$07,$08
 	!by $09,$0a,$0b,$0c,$0d,$0e,$0f,$01
@@ -105,6 +115,10 @@ Multiplex_Default_Init
 !ifdef Multiplexor_UseDoubleWidth {
 	lda Multiplex_Default_DoubleWidth,x
 	sta Multiplex_DoubleWidth,x
+}
+!ifdef Multiplexor_UseDoubleHeight {
+	lda Multiplex_Default_DoubleHeight,x
+	sta Multiplex_DoubleHeight,x
 }
 
 	inx

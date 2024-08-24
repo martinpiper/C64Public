@@ -9,9 +9,8 @@
 
 ; Define what the multiplexor can use
 Multiplex_spritepointer	= SPRITEFRAME
-Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo;
-Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi;
-Multiplex_DiscardSpritesYPos=255
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi
 
 ;Multiplex_ReverseOrder = 1
 
@@ -27,6 +26,7 @@ Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
 Multiplexor_UseMulticolour = 1
 Multiplexor_UsePriority = 1
 Multiplexor_UseDoubleWidth = 1
+Multiplexor_UseDoubleHeight = 1
 
 ;Multiplex_MaintainPriority = 1
 !ifdef Multiplex_LogCollisions {
@@ -39,9 +39,9 @@ Multiplexor_UseDoubleWidth = 1
 	!ifdef Multiplex_MaintainPriority {
 	Multiplex_itemsSecondPart	= 16
 	} else {
-	Multiplex_itemsSecondPart	= 48
+;	Multiplex_itemsSecondPart	= 48
 ;	Multiplex_itemsSecondPart	= 20
-;	Multiplex_itemsSecondPart	= 16
+	Multiplex_itemsSecondPart	= 16
 	}
 }
 
@@ -53,7 +53,10 @@ defined_Multiplex_YPos			= 1
 Multiplex_YPos+1			= $02
 Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
 
+	Multiplex_DiscardSpritesYPos = 255
+
 } else {
+	Multiplex_DiscardSpritesYPos = VIC2SpriteYBorderBottom
 	Multiplex_items = Multiplex_itemsSecondPart
 
 !if 1 {
@@ -197,6 +200,13 @@ yoffset	= Multiplex_endVars+$09
 +SpriteLine %########################
 +SpriteLine %########################
 !byte 0
+
+!ifdef TestMultiplexorOpenBorders {
+; Ensure the border ghost byte is clear
+*=$3fff
+	!by 0
+}
+
 
 *=BASICEntry
 jmp Start

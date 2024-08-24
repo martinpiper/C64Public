@@ -50,3 +50,30 @@
 * Test runner to validate assembled code with options
 	c:\work\c64\bin\LZMPi.exe -c64mbu C:\work\c64\SpriteMultiplexor\target\TestMultiplexor.prg c:\temp\t.prg $80d
 	>> features\CheckForBinaryDifferences.feature
+
+
+
+
+* It should be possible to have other tables (don't use a bitfield, it's slower to extract) to contain multicolour enable and X/Y expansion flags and sprite background priority.
+	The calculation involving Multiplex_spriteHeightTweak will need to be tweaked for Y expanded sprites.
+	Make the code beneath "lda Multiplex_XPosHi,y" generic and able to optionally update the other bitfields for x/y expansion, multicolour and background priority.
+	The code after ".over	sta VIC2SpriteXMSB" would need updating to also include any extra bitfield flags for x/y expansion, multicolour and background priority.
+	* It would be possible to have an array for the currently used hardware sprites that contains the size from the Y expansion flag.
+		Similar to how the collision code maintains the active hardware sprites to multiplexor index lookups.
+
+	Maintain an array of eight height values.
+	Map this to the next physical sprite choice code. Double the value for y expansion.
+		However the above method has issues where sprites will no longer be used sequentially depending on their sorted Y position
+	* An alternative would be to just read the sprite Y expansion register
+		Then when is NE 0 then use double the height for the sprite height.
+		When the byte EQ 0 then use the normal sprite height
+			This is less efficient
+
+	Make it a large value to reserve the sprite
+	>> Multiplexor_UseMulticolour
+	>> Multiplexor_UsePriority
+	>> Multiplexor_UseDoubleWidth
+	> Sprite height is trickier, these references will need some dynamic code...
+		Multiplex_spriteHeightTweak
+		VIC2SpriteSizeY
+	>> Multiplexor_UseDoubleHeight

@@ -18,3 +18,4 @@ Feature: Validates various multiplexor builds
     | 6          |
     | 7          |
     | 8          |
+    | 9          |
