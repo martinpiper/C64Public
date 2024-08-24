@@ -1,0 +1,285 @@
+!source "../stdlib/stdlib.a"
+!to "target/BASICInterface.prg", cbm
+!sal
+!sl "target/BASICInterface.map"
+!svl "target/BASICInterface.lbl"
+!pdb "target/BASICInterface.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib/LongBranches.a"
+
+; Optimise for BASIC zeropage usage, which means not very much
+Multiplex_spritepointer	= SPRITEFRAME
+Multiplex_IRQServiceRoutineLo = IRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = IRQServiceRoutineHi
+Multiplex_IRQExitDefined = 1
+!macro Multiplex_IRQExit {
+	jmp MinimalIRQServiceRoutine;DefaultIRQServiceRoutine
+}
+Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom
+;Multiplexor_DebugBorder = 1
+Multiplex_EnableEarlyOut = 1
+Multiplex_BunchingCheck = 1
+Multiplex_BunchingCheckLongBranch = 1
+Multiplex_OverflowRasterCheck1 = 1
+Multiplex_OverflowRasterCheck2 = 1
+Multiplex_OverflowRasterCheck2LongBranch = 1
+
+Multiplex_items = 32
+
+Multiplex_bal = $fb
+Multiplex_bah = $fc
+
+Multiplexor_UseMulticolour = 1
+Multiplexor_UsePriority = 1
+;Multiplexor_UseDoubleWidth = 1
+;Multiplexor_UseDoubleHeight = 1
+;Multiplex_MaintainPriority = 1
+;Multiplex_LogCollisions = 1
+;Multiplex_ReverseOrder = 1
+Multiplex_DoNotAlignSpriteTables = 1
+
+;* = $8d00
+* = $c000
+	jmp Multiplexor_BASICStart
+Multiplexor_SignalNewData	!by 0
+Multiplexor_SignalNewFrame	!by 0
+
+Multiplexor_MoveLeft	jmp lMultiplexor_MoveLeft
+Multiplexor_MoveRight	jmp lMultiplexor_MoveRight
+Multiplexor_MoveUp		jmp lMultiplexor_MoveUp
+Multiplexor_MoveDown	jmp lMultiplexor_MoveDown
+
+Multiplex_Default_XPosLo
+!for .i , Multiplex_items {
+	!by <(VIC2SpriteXBorderLeft + (.i * 24))
+}
+
+Multiplex_Default_XPosHi
+	!fill Multiplex_items , 0
+
+Multiplex_Default_YPos
+!for .i , Multiplex_items {
+	!by VIC2SpriteYBorderTop + (.i * 6)
+}
+
+Multiplex_Default_Colour
+!for .i , Multiplex_items {
+	!by .i-1
+}
+
+Multiplex_Default_SpriteFrame
+!for .i , Multiplex_items {
+	!by .i-1
+}
+
+!ifdef Multiplexor_UseMulticolour {
+Multiplex_Default_Multicolour
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UsePriority {
+Multiplex_Default_Priority
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+Multiplex_Default_DoubleWidth
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_Default_DoubleHeight
+	!fill Multiplex_items , 0
+}
+
+
+Multiplexor_BASICStart
+	sei
+	+MACROVICIRQCIATimerControlDisable_A
+	+MACROAckAllIRQs_A
+
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
+	jsr Multiplex_Default_Init
+
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+
+	jsr Multiplex_InitSort
+
+	; Stop the high raster bit
+	lda VIC2ScreenControlV
+	and #%01111111
+	sta VIC2ScreenControlV
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	jsr Multiplex_Sort
+	cli
+
+	rts
+
+!source "SpriteMultiplexorDefaultPatternCode.a"
+
+; Define various zeropage working variables
+Multiplex_areg				!by 0
+Multiplex_xreg				!by 0
+Multiplex_yreg				!by 0
+Multiplex_MaxSpr			!by 0
+Multiplex_MaxSprSorted		!by 0
+Multiplex_counter			!by 0
+Multiplex_jumplo			!by 0
+Multiplex_jumphi			!by 0
+;Multiplex_bal				!by 0
+;Multiplex_bah				!by 0
+Multiplex_BottomTriggered	!by 0
+Multiplex_indextable		!fill Multiplex_items , 0
+
+MultiplexSort_indextable = Multiplex_indextable
+MultiplexSort_YPos = Multiplex_YPos
+MultiplexSort_MaxSprSorted = Multiplex_MaxSprSorted
+
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_DynamicSpriteHeight		!by 0
+Multiplex_DynamicSpriteHeight2		!by 0
+Multiplex_DynamicSpriteHeight3		!by 0
+}
+
+Multiplex_endVars
+
+!zn
+MultiplexExt_LastIRQ
+	lda #255
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+
+	lda #1
+	sta Multiplexor_SignalNewFrame
+
+!ifdef Multiplex_LogCollisions {
+	lda VIC2SpriteSpriteCollision
+	jsr Multiplexor_UpdateCollisionDetails
+}
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	; Only copy the specified number of sprites
+	ldx Multiplexor_SignalNewData
+	beq .noNewData
+	jsr Multiplex_Default_Init
+
+	lda #0
+	sta Multiplexor_SignalNewData
+
+	jsr Multiplex_Sort
+
+.noNewData
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jsr Multiplex_StartTopInterrupt
+;	jmp Multiplex_AckExitInterrupt
+
+	+MACROAckRasterIRQ_A
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Cyan : sta VIC2BorderColour
+}
+
+	lda Multiplex_areg
+	ldx Multiplex_xreg
+	ldy Multiplex_yreg
+	jmp DefaultIRQServiceRoutine
+
+!source "SpriteMultiplexor.a"
+
+!zn
+lMultiplexor_MoveLeft
+	sta .sm1 + 1
+.l1
+	lda Multiplex_Default_XPosLo,y
+	sec
+.sm1	sbc #0
+	sta Multiplex_Default_XPosLo,y
+	lda Multiplex_Default_XPosHi,y
+	sbc #0
+	and #1
+	sta Multiplex_Default_XPosHi,y
+	iny
+	dex
+	bne .l1
+	rts
+
+!zn
+lMultiplexor_MoveRight
+	sta .sm1 + 1
+.l1
+	lda Multiplex_Default_XPosLo,y
+	clc
+.sm1	adc #0
+	sta Multiplex_Default_XPosLo,y
+	lda Multiplex_Default_XPosHi,y
+	adc #0
+	and #1
+	sta Multiplex_Default_XPosHi,y
+	iny
+	dex
+	bne .l1
+	rts
+
+!zn
+lMultiplexor_MoveUp
+	sta .sm1 + 1
+.l1
+	lda Multiplex_Default_YPos,y
+	cmp #Multiplex_DiscardSpritesYPos
+	bcs .skip1
+	sec
+.sm1	sbc #0
+	sta Multiplex_Default_YPos,y
+.skip1
+	iny
+	dex
+	bne .l1
+	rts
+
+!zn
+lMultiplexor_MoveDown
+	sta .sm1 + 1
+.l1
+	lda Multiplex_Default_YPos,y
+	cmp #Multiplex_DiscardSpritesYPos
+	bcs .skip1
+	clc
+.sm1	adc #0
+	sta Multiplex_Default_YPos,y
+.skip1
+	iny
+	dex
+	bne .l1
+	rts

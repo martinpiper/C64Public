@@ -141,7 +141,11 @@ Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
 } else {
 	cmp #Multiplex_DiscardSpritesYPos-Multiplex_rasterHeight-1					; Overflow interrupt check
 }
+!ifdef Multiplex_OverflowRasterCheck2LongBranch {
+	+lbcs .intExitInter0
+} else {
 	bcs .intExitInter0
+}
 }
 
 	sta VIC2Raster
@@ -213,7 +217,11 @@ Multiplex_intNextSpr0Reset = *
 	; This time saved can be used to potentially display more sprites later on instead.
 !ifdef Multiplex_BunchingCheck {
 	cmp VIC2Raster			; 28
+!ifdef Multiplex_BunchingCheckLongBranch {
+	+lbcc .skipSprite			; 30
+} else {
 	bcc .skipSprite			; 30
+}
 }
 !ifdef Multiplex_LogCollisions {
 	; Store what sprite is using what index for the collision to use
@@ -1035,8 +1043,45 @@ Multiplex_SetDiscardPosition
 }
 }
 
+!ifdef Multiplex_SplitSort {
+CopyMultiplexTables
+	; Copy over the index table that was sorted during the multiplexor IRQ
+	ldx #Multiplex_items-1
+.mpc1
+	lda MultiplexSort_indextable,x
+	sta Multiplex_indextable,x
+	dex
+	bpl .mpc1
+	; Also copy over the max sprites this frame
+	lda MultiplexSort_MaxSprSorted
+	sta Multiplex_MaxSprSorted
+	rts
+}
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_SetNormalSpriteHeight
+	lda #VIC2SpriteSizeY
+	sta Multiplex_DynamicSpriteHeight
+	lda #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+	sta Multiplex_DynamicSpriteHeight2
+	lda #Multiplex_spriteHeightTweak
+	sta Multiplex_DynamicSpriteHeight3
+	rts
+
+Multiplex_SetDoubleSpriteHeight
+	lda #VIC2SpriteSizeY + VIC2SpriteSizeY
+	sta Multiplex_DynamicSpriteHeight
+	lda #VIC2SpriteSizeY + (VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
+	sta Multiplex_DynamicSpriteHeight2
+	lda #VIC2SpriteSizeY + Multiplex_spriteHeightTweak
+	sta Multiplex_DynamicSpriteHeight3
+	rts
+}
+
 !ifndef Multiplex_LeanAndMean {
+!ifndef Multiplex_DoNotAlignSpriteTables {
 !align 255, 0
+}
 
 ;--------------------------------------
 ; These default Y values show the minimal amount of sprite packing, with 1 y pos increment per sprite, that is available.
@@ -1099,41 +1144,6 @@ Multiplex_Sortlo	!fill Multiplex_items-1
 Multiplex_Sorthi	!fill Multiplex_items-1
 }
 
-}
-
-!ifdef Multiplex_SplitSort {
-CopyMultiplexTables
-	; Copy over the index table that was sorted during the multiplexor IRQ
-	ldx #Multiplex_items-1
-.mpc1
-	lda MultiplexSort_indextable,x
-	sta Multiplex_indextable,x
-	dex
-	bpl .mpc1
-	; Also copy over the max sprites this frame
-	lda MultiplexSort_MaxSprSorted
-	sta Multiplex_MaxSprSorted
-	rts
-}
-
-!ifdef Multiplexor_UseDoubleHeight {
-Multiplex_SetNormalSpriteHeight
-	lda #VIC2SpriteSizeY
-	sta Multiplex_DynamicSpriteHeight
-	lda #(VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
-	sta Multiplex_DynamicSpriteHeight2
-	lda #Multiplex_spriteHeightTweak
-	sta Multiplex_DynamicSpriteHeight3
-	rts
-
-Multiplex_SetDoubleSpriteHeight
-	lda #VIC2SpriteSizeY + VIC2SpriteSizeY
-	sta Multiplex_DynamicSpriteHeight
-	lda #VIC2SpriteSizeY + (VIC2SpriteSizeY+Multiplex_TopRasterHeight)+1
-	sta Multiplex_DynamicSpriteHeight2
-	lda #VIC2SpriteSizeY + Multiplex_spriteHeightTweak
-	sta Multiplex_DynamicSpriteHeight3
-	rts
 }
 
 MarkMultiplexorEndCode = *

@@ -43,6 +43,9 @@
   <ItemGroup>
     <Text Include="Done.txt" />
     <Text Include="TODO.txt" />
+    <Text Include="BASICDemo.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -90,6 +93,18 @@
     </None>
     <None Include="TestData\TestBuildOptions9.a">
       <Filter>TestData</Filter>
+    </None>
+    <None Include="BASICInterface.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="SpriteMultiplexorDefaultPatternCode.a">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\stdlib\LongBranches.a">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="BuildBASICDemo.bat">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
 </Project>

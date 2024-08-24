@@ -1,0 +1,83 @@
+0 print "loading ";l
+1 l=l+1
+2 if l=1 then load"sprites",8,1
+3 if l=2 then load"mplxc000",8,1
+
+100 restore
+109 rem x pos lo
+110 data 54, 78, 0, 0, 0, 0, 114, 162
+111 data 62, 86, 110, 102, 102, 126,126,150
+112 data 130,154,106,130, 0, 138, 174, 134
+120 data 80, 104, 128, 152, 176, 200, 224, 248
+129 rem y pos
+130 data 54, 53, 255, 255, 255, 255, 113, 113
+131 data 175, 175,176,50,71,71,92, 92
+132 data 134, 134, 155, 155, 255, 113, 255, 255
+140 data 225, 225, 225, 225, 225, 225, 225, 225
+
+145 print "this sprite demo displays a large"
+146 print "moving sprite object controlled"
+147 print "from basic"
+
+151 print "start the multiplexor"
+152 sys 49152
+
+201 print "setup screen and sprite colours"
+202 poke 53280,0:poke53281,0
+203 poke 53285,1:poke53286,11
+209 print "setup sprite pointer and multicolour"
+210 fort=0to31:poke 49297+t,213+t:poke49329+t,1:next
+211 print "setup sprite colours"
+212 fort=0to7:poke 49265+t*4,2:poke 49265+t*4+1,6:poke 49265+t*4+2,3:poke 49265+t*4+3,5:next
+219 print "setup positions xpos and ypos"
+220 fort=0to31:read a:poke 49169+t,a:next
+230 fort=0to31:read a:poke 49233+t,a:next
+
+249 print "update 32 sprites"
+250 poke 49155,32
+
+260 for t=0to63
+261 rem clear the frame signal, wait for a new frame
+262 poke 49156,0:wait 49156,1
+263 rem move 24 sprites right two pixels starting at index 0
+264 poke780,2:poke781,24:poke782,0:sys49160:poke49155,24
+265 next
+
+270 for t=0to31
+271 rem clear the frame signal, wait for a new frame
+272 poke 49156,0:wait 49156,1
+273 rem move 24 sprites left four pixels starting at index 0
+274 poke780,4:poke781,24:poke782,0:sys49157:poke49155,24
+275 next
+
+280 for t=0to16
+281 rem clear the frame signal, wait for a new frame
+282 poke 49156,0:wait 49156,1
+283 rem move 24 sprites down one pixels starting at index 0
+284 poke780,1:poke781,24:poke782,0:sys49166:poke49155,24
+285 next
+
+290 for t=0to16
+291 rem clear the frame signal, wait for a new frame
+292 poke 49156,0:wait 49156,1
+293 rem move 24 sprites up one pixels starting at index 0
+294 poke780,1:poke781,24:poke782,0:sys49163:poke49155,24
+295 next
+
+300 for t=0to63
+301 rem clear the frame signal, wait for a new frame
+302 poke 49156,0:wait 49156,1
+303 rem move 8 sprites right two pixels starting at index 24
+304 poke780,2:poke781,8:poke782,24:sys49160:poke49155,32
+305 next
+
+310 for t=0to63
+311 rem clear the frame signal, wait for a new frame
+312 poke 49156,0:wait 49156,1
+313 rem move 8 sprites left two pixels starting at index 24
+314 poke780,2:poke781,8:poke782,24:sys49157:poke49155,32
+315 next
+
+
+320 goto 260
+

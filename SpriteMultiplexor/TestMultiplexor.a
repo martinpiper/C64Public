@@ -23,10 +23,10 @@ Multiplex_CollisionIndexes		= SCREENRAM + (19*40)
 ;Multiplexor_UseShiftedYPos = 1
 
 
-Multiplexor_UseMulticolour = 1
-Multiplexor_UsePriority = 1
-Multiplexor_UseDoubleWidth = 1
-Multiplexor_UseDoubleHeight = 1
+;Multiplexor_UseMulticolour = 1
+;Multiplexor_UsePriority = 1
+;Multiplexor_UseDoubleWidth = 1
+;Multiplexor_UseDoubleHeight = 1
 
 ;Multiplex_MaintainPriority = 1
 !ifdef Multiplex_LogCollisions {
@@ -39,9 +39,9 @@ Multiplexor_UseDoubleHeight = 1
 	!ifdef Multiplex_MaintainPriority {
 	Multiplex_itemsSecondPart	= 16
 	} else {
-;	Multiplex_itemsSecondPart	= 48
+	Multiplex_itemsSecondPart	= 48
 ;	Multiplex_itemsSecondPart	= 20
-	Multiplex_itemsSecondPart	= 16
+;	Multiplex_itemsSecondPart	= 16
 	}
 }
 
@@ -428,8 +428,6 @@ Start
 	sta Multiplex_CollisionIndexes+3,y
 	sta Multiplex_CollisionIndexes+4,y
 	sta Multiplex_CollisionIndexes+5,y
-
-
 }
 }
 

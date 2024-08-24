@@ -824,6 +824,12 @@ CIA2PortASerialBusVICBank_Bank0	= %11
 CIA2PortASerialBusVICBank_Bank1	= %10
 CIA2PortASerialBusVICBank_Bank2	= %01
 CIA2PortASerialBusVICBank_Bank3	= %00
+CIA2PortASerialBusVICBank_PA2			= %00000100
+CIA2PortASerialBusVICBank_Inv_ATN		= %00001000
+CIA2PortASerialBusVICBank_Inv_ClockOut	= %00010000
+CIA2PortASerialBusVICBank_Inv_DataOut	= %00100000
+CIA2PortASerialBusVICBank_Inv_ClockIn	= %01000000
+CIA2PortASerialBusVICBank_Inv_DataIn	= %10000000
 CIA2PortASerialBusVICBankDefault= CIA2PortASerialBusVICBank_Bank0
 CIA2PortASerialBusVICBankMask	= $3fff
 }
@@ -1503,6 +1509,15 @@ RasterLengthNTSCC64		= 520
 	lda .a + 2
 	sbc .b + 2
 	sta .c + 2
+}
+
+!macro MIncAddr24 .lo , .hi , .hihi {
+	inc .lo
+	bne .o1
+	inc .hi
+	bne .o1
+	inc .hihi
+.o1
 }
 
 !macro MIncAddr16 .lo , .hi {

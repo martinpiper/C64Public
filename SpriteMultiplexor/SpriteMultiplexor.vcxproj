@@ -44,10 +44,14 @@
     <CustomBuild Include="..\stdlib\stdlib.a" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="BASICDemo.txt" />
     <Text Include="Done.txt" />
     <Text Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\stdlib\LongBranches.a" />
+    <None Include="BASICInterface.a" />
+    <None Include="BuildBASICDemo.bat" />
     <None Include="FeatureEditor.bat" />
     <None Include="features\AssemblePost.a" />
     <None Include="features\AssemblePre.a" />
@@ -55,6 +59,7 @@
     <None Include="README.md" />
     <None Include="RunTests.bat" />
     <None Include="SpriteMultiplexorDefaultPattern.a" />
+    <None Include="SpriteMultiplexorDefaultPatternCode.a" />
     <None Include="TestData\TestBuildOptions1.a" />
     <None Include="TestData\TestBuildOptions2.a" />
     <None Include="TestData\TestBuildOptions3.a" />
