@@ -7,7 +7,7 @@
 109 rem x pos lo
 110 data 54, 78, 0, 0, 0, 0, 114, 162
 111 data 62, 86, 110, 102, 102, 126,126,150
-112 data 130,154,106,130, 0, 138, 174, 134
+112 data 130,154,106,130, 0, 138, 170, 134
 120 data 80, 104, 128, 152, 176, 200, 224, 248
 129 rem y pos
 130 data 54, 53, 255, 255, 255, 255, 113, 113
@@ -19,19 +19,20 @@
 146 print "moving sprite object controlled"
 147 print "from basic"
 
-151 print "start the multiplexor"
+151 print "starting the multiplexor"
 152 sys 49152
 
 201 print "setup screen and sprite colours"
 202 poke 53280,0:poke53281,0
 203 poke 53285,1:poke53286,11
+
 209 print "setup sprite pointer and multicolour"
-210 fort=0to31:poke 49297+t,213+t:poke49329+t,1:next
+210 fort=0to31:poke 49300+t,213+t:poke49332+t,1:next
 211 print "setup sprite colours"
-212 fort=0to7:poke 49265+t*4,2:poke 49265+t*4+1,6:poke 49265+t*4+2,3:poke 49265+t*4+3,5:next
+212 fort=0to7:poke 49268+t*4,2:poke 49268+t*4+1,6:poke 49268+t*4+2,3:poke 49268+t*4+3,5:next
 219 print "setup positions xpos and ypos"
-220 fort=0to31:read a:poke 49169+t,a:next
-230 fort=0to31:read a:poke 49233+t,a:next
+220 fort=0to31:read a:poke 49172+t,a:next
+230 fort=0to31:read a:poke 49236+t,a:next
 
 249 print "update 32 sprites"
 250 poke 49155,32
@@ -78,6 +79,41 @@
 314 poke780,2:poke781,8:poke782,24:sys49157:poke49155,32
 315 next
 
+320 rem move logo off the bottom of the screen
+321 for t=0to12
+322 poke 49156,0:wait 49156,1
+324 poke780,2:poke781,8:poke782,24:sys49166:poke49155,32
+325 next
 
-320 goto 260
+330 rem move the ship up and left into the borders a bit
+331 for t=0to16
+332 poke 49156,0:wait 49156,1
+334 poke780,2:poke781,24:poke782,0:sys49163
+335 poke780,2:poke781,24:poke782,0:sys49157:poke49155,24
+336 next
+
+
+340 print "expand the sprites for the enemy ship"
+341 fort=0to23:poke49396+t,1:poke49428+t,1:next
+342 fort=0to23
+343 if peek(49236+t)<200 then poke49172+t,peek(49172+t)*1.5:poke49236+t,peek(49236+t)*1.6
+344 next
+349 poke 49155,24
+
+350 rem move the ship
+351 for t=0to7
+352 poke 49156,0:wait 49156,1
+355 poke780,2:poke781,24:poke782,0:sys49163:poke49155,24
+356 next
+
+360 rem move the ship
+361 for t=0to66
+362 poke 49156,0:wait 49156,1
+363 poke780,1:poke781,24:poke782,0:sys49160
+365 poke780,1:poke781,24:poke782,0:sys49166
+366 poke49155,24
+367 next
+
+
+400 list
 

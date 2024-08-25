@@ -15,13 +15,13 @@ Multiplex_spriteHeightTweak = VIC2SpriteSizeY+2	; Add 2 because the carry is cle
 }
 
 !ifdef Multiplexor_UseDoubleWidth {
-	eMultiplexor_UseDoubleWidth = 2
+	eMultiplexor_UseDoubleWidth = 4
 } else {
 	eMultiplexor_UseDoubleWidth = 0
 }
 
 !ifdef Multiplexor_UseDoubleHeight {
-	eMultiplexor_UseDoubleHeight = 2
+	eMultiplexor_UseDoubleHeight = 4
 } else {
 	eMultiplexor_UseDoubleHeight = 0
 }
@@ -838,12 +838,18 @@ Multiplex_InitSort
 	rts
 }
 
+; When using Multiplex_SortRelocate then the user must define Multiplex_Sort and ensure Multiplex_Sort_Real is called
+!ifdef Multiplex_SortRelocate {
+	Multiplex_SortRelocate_Start = *
+	* = Multiplex_SortRelocate
+}
+
 ;--------------------------------------
 !zn {
 !ifdef Multiplexor_UseShiftedYPos {
 MultiplexSort_YPosShifted !fill Multiplex_items , 0
 }
-Multiplex_Sort
+Multiplex_Sort_Real
 	lda Multiplex_MaxSpr
 Multiplex_SortStore
 !ifndef Multiplex_SplitSort {
@@ -1000,6 +1006,13 @@ MACROMultiplex_SortBlockByteLength = .over2 - .over1
 .over47	ldy Multiplex_indextable
 	rts
 }
+
+!ifdef Multiplex_SortRelocate {
+	* = Multiplex_SortRelocate_Start
+} else {
+Multiplex_Sort = Multiplex_Sort_Real
+}
+
 
 ;--------------------------------------
 !zn {

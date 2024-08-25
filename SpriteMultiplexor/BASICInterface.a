@@ -33,12 +33,15 @@ Multiplex_bah = $fc
 
 Multiplexor_UseMulticolour = 1
 Multiplexor_UsePriority = 1
-;Multiplexor_UseDoubleWidth = 1
-;Multiplexor_UseDoubleHeight = 1
+Multiplexor_UseDoubleWidth = 1
+Multiplexor_UseDoubleHeight = 1
 ;Multiplex_MaintainPriority = 1
 ;Multiplex_LogCollisions = 1
 ;Multiplex_ReverseOrder = 1
 Multiplex_DoNotAlignSpriteTables = 1
+
+; This puts the sort routine under the BASIC ROM, allowing for more IRQ code in $c000 RAM
+Multiplex_SortRelocate = $bd00
 
 ;* = $8d00
 * = $c000
@@ -50,6 +53,8 @@ Multiplexor_MoveLeft	jmp lMultiplexor_MoveLeft
 Multiplexor_MoveRight	jmp lMultiplexor_MoveRight
 Multiplexor_MoveUp		jmp lMultiplexor_MoveUp
 Multiplexor_MoveDown	jmp lMultiplexor_MoveDown
+
+lMultiplex_SetSpritePointer	jmp Multiplex_SetSpritePointer
 
 Multiplex_Default_XPosLo
 !for .i , Multiplex_items {
@@ -129,6 +134,19 @@ Multiplexor_BASICStart
 
 	rts
 
+!ifdef Multiplex_SortRelocate {
+; Turns off the BASIC ROM and calls the sort routine in the RAM underneath
+Multiplex_Sort
+	lda ZPProcessorPort
+	pha
+	lda #ProcessorPortKERNALWithIO
+	sta ZPProcessorPort
+	jsr Multiplex_Sort_Real
+	pla
+	sta ZPProcessorPort
+	rts
+}
+
 !source "SpriteMultiplexorDefaultPatternCode.a"
 
 ; Define various zeropage working variables
@@ -160,7 +178,7 @@ Multiplex_endVars
 
 !zn
 MultiplexExt_LastIRQ
-	lda #255
+	lda #VIC2SpriteYBorderBottom
 	sta VIC2Raster
 	lda #<MultiplexExt_LastIRQ2
 	sta Multiplex_IRQServiceRoutineLo
@@ -261,6 +279,9 @@ lMultiplexor_MoveUp
 	bcs .skip1
 	sec
 .sm1	sbc #0
+	bcs .noCarry1
+	lda #$ff
+.noCarry1
 	sta Multiplex_Default_YPos,y
 .skip1
 	iny
@@ -277,6 +298,9 @@ lMultiplexor_MoveDown
 	bcs .skip1
 	clc
 .sm1	adc #0
+	bcc .noCarry1
+	lda #$ff
+.noCarry1
 	sta Multiplex_Default_YPos,y
 .skip1
 	iny
