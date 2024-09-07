@@ -10,6 +10,12 @@
 
 
 
+* Consider using the stdlib sort routines. Only a few bits of extra code, notably using Multiplex_MaxSpr/MultiplexSort_MaxSprSorted and Multiplexor_UseShiftedYPos and Multiplex_EnableEarlyOut
+	Then add in options for other stdlib sort routines
+
+
+
+
 
 * Add optional check that will "reserve" sprite0 or sprite7 within a certain Y position range.
 	This would be useful to ensure the player is always infront or behind other sprites, or ensure a hires/expanded overlay for the player, etc

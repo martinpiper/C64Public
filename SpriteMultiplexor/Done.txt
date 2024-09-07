@@ -77,3 +77,10 @@
 		Multiplex_spriteHeightTweak
 		VIC2SpriteSizeY
 	>> Multiplexor_UseDoubleHeight
+
+
+
+* With more options enabled, like priority and and expansion, is Multiplex_spriteHeightTweak actually large enough?
+	Especially when Multiplex_BunchingCheck is enabled.
+	I think the Multiplex_BunchingCheck is not taking into account that it takes some raster time to actually update registers...
+	>> Added: Multiplex_TopSpriteBeforeRasterPadding

@@ -61,6 +61,7 @@ eAdjust_Multiplexor_UseShiftedYPos = 0
 Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth + eMultiplexor_UseDoubleHeight
 }
 
+Multiplex_TopSpriteBeforeRasterPadding = 2 + ((eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth + eMultiplexor_UseDoubleHeight) / 4)
 
 !ifndef Multiplex_DiscardSpritesYPosForSort {
 Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
@@ -216,12 +217,16 @@ Multiplex_intNextSpr0Reset = *
 	; This indicates we have more sprites on a row than we can handle and saves a tiny bit of time.
 	; This time saved can be used to potentially display more sprites later on instead.
 !ifdef Multiplex_BunchingCheck {
+	sec
+	sbc #Multiplex_TopSpriteBeforeRasterPadding
 	cmp VIC2Raster			; 28
 !ifdef Multiplex_BunchingCheckLongBranch {
 	+lbcc .skipSprite			; 30
 } else {
 	bcc .skipSprite			; 30
 }
+;	inc VIC2BorderColour	; Debugging to indicate when a sprite is discarded
+	lda Multiplex_YPos,x
 }
 !ifdef Multiplex_LogCollisions {
 	; Store what sprite is using what index for the collision to use
@@ -389,6 +394,7 @@ Multiplex_intNextSpr0Reset = *
 .nodh0
 }
 
+	; Must be the last instruction because the returned status is used
 	ldy Multiplex_XPosHi,x
 }
 
