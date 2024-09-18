@@ -285,3 +285,19 @@
 
 
 
+* Look at setting $2d/$2e with the correct end of memory pointer for decompressed code. This would improve compatibility with chaining decompression routines...
+	$2D-$2E/45-46           Pointer: Start of BASIC Variables
+	Like for Delta tape version:
+		break 810
+		s "c:\temp\delta 810.prg" 0 801 b6bf
+		c:\work\c64\bin\LZMPi.exe -c64mbu "c:\temp\delta 810.prg" c:\temp\t.prg $810
+
+
+
+
+* At the end of the decompression, SP is already $ff, but look at setting $01 before the jmp. Make it an option. Will need more code variants.
+
+
+
+* Also the last 4 bytes right at the top of memory could be stored in the decompression code since it is on the stack
+	Make this an option.

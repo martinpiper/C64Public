@@ -1,6 +1,14 @@
 Given setup self extraction test memory using option "*"
   Given I run the command line: ..\bin\LZMPi.exe -t $$fd00 $1 target\memory.prg target\memory-sfx.prg $$400
+  And setup default memory boundary data
 
+
+Given setup self extraction test memory using file "*" and option "*"
+  Given I run the command line: ..\bin\LZMPi.exe -t $$fd00 $2 $1 target\memory-sfx.prg $$400 $$500
+  And setup default memory boundary data
+
+
+Given setup default memory boundary data
   Given I have a simple overclocked 6502 system
   And I start writing memory at $$fd00
   And I write the following hex bytes

@@ -9,9 +9,11 @@
 #include "CompressE.h"
 #include "CompressRLE.h"
 #include "CompressU.h"
+#include "CompressV.h"
 #include "Decompress.h"
 #include "DecompressE.h"
 #include "DecompressU.h"
+#include "DecompressV.h"
 #include "../Common/ParamToNum.h"
 
 using namespace RNReplicaNet::RNXPCompression;
@@ -143,6 +145,7 @@ int main(int argc,char **argv)
 	bool enableOffsetThreshold = false;
 	bool handledPreParam = false;
 	bool useCompressionU = false;
+	bool useCompressionV = false;
 
 	do
 	{
@@ -220,6 +223,10 @@ int main(int argc,char **argv)
 	{
 		useCompressionU = true;
 	}
+	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'v'))
+	{
+		useCompressionV = true;
+	}
 	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'e'))
 	{
 		useRNZipMode = true;
@@ -259,6 +266,12 @@ int main(int argc,char **argv)
 			{
 				printf("Using LZMPiU mode\n");
 				useCompressionU = true;
+			}
+
+			if (subOption.find('v') != std::string::npos)
+			{
+				printf("Using LZMPiV mode\n");
+				useCompressionV = true;
 			}
 
 			startC64Code = ParamToNum(argv[4]);
@@ -456,6 +469,11 @@ int main(int argc,char **argv)
 		if (useCompressionU)
 		{
 			CompressionU comp;
+			comp.Compress(input,inputSize,output,&outSize,10);
+		}
+		else if (useCompressionV)
+		{
+			CompressionV comp;
 			comp.Compress(input,inputSize,output,&outSize,10);
 		}
 		else if (useRLE)
@@ -967,6 +985,11 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
 			}
+			else if (useCompressionV)
+			{
+				printf("!!CompressionV not supported!!\n");
+				exit(-1);
+			}
 			else if (!maxMode && useCompressionU)
 			{
 				printf("!!CompressionU and non-max mode not supported!!\n");
@@ -1091,7 +1114,7 @@ int main(int argc,char **argv)
 
 		fwrite(output,1,outSize,fp);
 
-		printf("Input length = $%04x output length = $%04x\n",(int)inputSize,(int)ftell(fp));
+		printf("Input length = $%04x (%d) output length = $%04x (%d)\n",(int)inputSize,(int)inputSize,(int)ftell(fp),(int)ftell(fp));
 		fclose(fp);
 
 		// Enable the following code to paranoia check the compression is OK
@@ -1143,12 +1166,20 @@ int main(int argc,char **argv)
 		else
 		{
 			inputSize -= compressedDataStart - input;
-			printf("Input length = $%04x Original output length = $%04x\n",(int)inputSize,(int)origSize);
+			printf("Input length = $%04x (%d) Original output length = $%04x (%d)\n",(int)inputSize,(int)inputSize,(int)origSize,(int)origSize);
 		}
 
 
 		u32 outDecomp;
-		if (useCompressionU)
+		if (useCompressionV)
+		{
+			if (DecompressV(compressedDataStart,inputSize,output,&outDecomp))
+			{
+				printf("Problem during decompressionU\n");
+				exit(-1);
+			}
+		}
+		else if (useCompressionU)
 		{
 			if (DecompressU(compressedDataStart,inputSize,output,&outDecomp))
 			{

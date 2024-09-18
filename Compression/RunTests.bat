@@ -20,6 +20,16 @@ Release\Compression.exe -ce TestData\7.bin TempTestData\7.bin2
 Release\Compression.exe -ce TestData\8.bin TempTestData\8.bin2
 Release\Compression.exe -ce TestData\9.bin TempTestData\9.bin2
 
+Release\Compression.exe -cu TestData\1.bin TempTestData\1.bin3
+Release\Compression.exe -cu TestData\2.bin TempTestData\2.bin3
+Release\Compression.exe -cu TestData\3.bin TempTestData\3.bin3
+Release\Compression.exe -cu TestData\4.bin TempTestData\4.bin3
+Release\Compression.exe -cu TestData\5.bin TempTestData\5.bin3
+Release\Compression.exe -cu TestData\6.bin TempTestData\6.bin3
+Release\Compression.exe -cu TestData\7.bin TempTestData\7.bin3
+Release\Compression.exe -cu TestData\8.bin TempTestData\8.bin3
+Release\Compression.exe -cu TestData\9.bin TempTestData\9.bin3
+
 
 Release\Compression.exe -c64 TestData\1.bin TempTestData\1.prg $400 $400
 Release\Compression.exe -c64 TestData\2.bin TempTestData\2.prg $400 $400
