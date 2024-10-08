@@ -1,5 +1,7 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+kBus24Bit_SpritesMaxNum = 32
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -107,6 +109,7 @@ start
 	+MAPUAvoidRastersTableEntry 210 + 25	-1 , 210 + 25
 
 	jsr DisplayScreen
+	jsr Video_WaitVBlank
 	jsr APU_Enable
 
 mainLoop
@@ -145,21 +148,23 @@ mainLoop
 	!by $01
 
 !for .i , 64 {
-	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , 16 + (.i * 2)
-	+MAPUEmitChangePaletteIndex 0*16 ,  <(.i * 16) , .i , .i
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjust , 64 + .i
+	+MAPUEmitChangePaletteIndex 0*16 ,  <.i , <(.i * 4) , <(.i * 2)
 	+MAPUEmitChangeXScrollCharsValueOnly .i
 }
 
 .APUDataSize = * - .APUData
 .do
-	jsr HardwareTest_VideoPattern0
-
 	jsr APU_ResetDisable
+	jsr HardwareTest_VideoPattern0
+	+WaitForFire_A
+
 	jsr APU_SetAddressAPUInstructions
 	+MBus24Bit_FastCopyLarge .APUCode , .APUCodeSize + $100
 	jsr APU_SetAddressAPUData
 	+MBus24Bit_FastCopyLarge .APUData , .APUDataSize + $100
 
+	jsr Video_WaitVBlank	; See note: Debugging APU startup
 	jsr APU_Enable
 .l1
 	jsr Video_WaitVBlank
@@ -204,6 +209,9 @@ mainLoopGame
 ;	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
 ;	jsr SetupAPU
 ;.notLeft
+
+;	+WaitForFire_A
+
 	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , mainLoopGame
 ;	jmp mainLoopGame
 

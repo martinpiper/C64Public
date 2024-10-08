@@ -1,10 +1,12 @@
 ;main test code
+kBus24Bit_SpritesMaxNum = 32
 
 ; GameSpriteWorldInit - The second part of the demo with player control and sprites flying towards the player
 
 kAPUNumFloorRows = 240 - 128
 
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
 ; Define this to display the static logo
 ;kJustForLogo = 1
 ;kJustForLogoMonchrome = 1
@@ -28,6 +30,11 @@ MusicData = 1
 ;IncludeGraphicsData_L2b = 1
 ;IncludeGraphicsData_L3 = 1
 ;IncludeGraphicsData_L4 = 1
+
+!ifndef IncludeGraphicsData {
+IncludeAPUCode = 1
+}
+
 
 !source "stdlib/stdlib.a"
 !source "stdlib/PETSCII.a"
@@ -366,14 +373,18 @@ mainLoop
 	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
 	sta CIA2PortBRS232
 
-;	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BackgroundColour
+	; If the background colour is enabled this should cause bright purple to be used for large parts of the chars background
+	jsr Video_SetAddressVideoBackgroundColour
+	+MBus24Bit_Send8BitValue 255
+!ifdef kJustForLogo {
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BackgroundColour
+} else {
+	; As background with no transparency
 	lda #kVideo_EnableDisplay_Enable
+}
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
-	jsr Video_SetAddressTileBackgroundRegister
-	lda #255
-	sta CIA2PortBRS232
 
 	; Setup both merge layers...
 	jsr Video_SetAddressMergeLayer
@@ -530,6 +541,8 @@ SetScreenScrolls
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_123
 }
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_123
 }
 
 	jsr Video_SetAddressCharScrollRegisters
@@ -615,6 +628,9 @@ UpdateSprites2
 	lda SpriteYTab,x
 	sta Sprite2_data + 1 + (.i * 8)
 	lda SpriteScaleTab,x
+!ifdef kJustForLogo {
+	lda #32
+}
 	sta Sprite2_data + 5 + (.i * 8)
 	sta Sprite2_data + 6 + (.i * 8)
 	tay
@@ -871,7 +887,11 @@ Sprite2_count
 Sprite2_data
 !for .ii , 8 {
 !set .i = .ii-1
+!ifdef kJustForLogo {
+!set .xpos = $37 + (.i * 34.0)
+} else {
 !set .xpos = $37 + (.i * 32.5)
+}
 	!by ((.i/4)+kVarsEmitSpriteFrame_scaled_0_0_0_colour) | ((>.xpos)<<4)  , 0 , 0x20 , <.xpos , 0x20 , 0x20 , 0x20 , kVarsEmitSpriteFrame_scaled_0_0_0_tileIndex + .i
 }
 	; End of list
@@ -1122,13 +1142,13 @@ SortTemp5 = zeroPage_Temp5
 SortTemp6 = zeroPage_Temp6
 SortTemp7 = zeroPage_Temp7
 
-!source "stdlib/QuickSort.a"
+!source "stdlib/GnomeSort.a"
 
-QuickSort_Sortlo !fill kMaxGameSprites , 0
-QuickSort_Sorthi !fill kMaxGameSprites , 0
+GnomeSort_Sortlo !fill kMaxGameSprites , 0
+GnomeSort_Sorthi !fill kMaxGameSprites , 0
 
 GameSpriteWorld_Sort
-	+QuickSort_SortRTS 1 , kMaxGameSprites , MaxGameSprites , GameSpriteWorld_SortIndex , GameSpriteWorld_Z , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLength , ~QuickSort_sortstart
+	+GnomeSort_SortRTS 1 , kMaxGameSprites , MaxGameSprites , GameSpriteWorld_SortIndex , GameSpriteWorld_Z , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLength , ~GnomeSort_sortstart
 
 
 !zn
@@ -1143,19 +1163,21 @@ World_ViewPosZ !by 0
 .playerNumBullets !by 0
 .playerBulletCooldown !by 0
 GameSpriteWorldInit
+!ifdef IncludeAPUCode {
 	jsr SetupAPU
 	lda #0
 	ldy .viewPosY
 	jsr SendAPUAPULineScrolls
 	jsr APU_Enable
+}
 	jsr Video_SetAddressCharScrollRegisters
 	+MBus24Bit_SendLE16BitValue -48
 
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
 
-	+QuickSort_TableInit kMaxGameSprites , SortTemp0 , SortTemp1 , SortBlockByteLength , QuickSort_Sortlo , QuickSort_Sorthi , QuickSort_sortstart
-	+QuickSort_Init MaxGameSprites , GameSpriteWorld_SortIndex
+	+GnomeSort_TableInit kMaxGameSprites , SortTemp0 , SortTemp1 , SortBlockByteLength , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstart
+	+GnomeSort_Init MaxGameSprites , GameSpriteWorld_SortIndex
 
 !if 0 {
 	; See: kSkipToFrameThenWaitForFire
@@ -1525,9 +1547,11 @@ GameSpriteWorldInit
 	jsr MusicPoll
 }
 
+!ifdef IncludeAPUCode {
 	lda .viewPosX
 	ldy .viewPosY
 	jsr SendAPUAPULineScrolls
+}
 
 	; Rest of the frame is dedicated to calculation of the next frame
 	lda CIA1KeyboardColumnJoystickA
@@ -2340,6 +2364,7 @@ MusicDataStart_afterHeader = MusicDataStart + 4
 MusicDataEnd
 }
 
+!ifdef IncludeAPUCode {
 * = VIC2_Bank3
 !macro MCommonWorld_ViewPosZ {
 	clc
@@ -2794,6 +2819,8 @@ HeightToRowsAddress
 +MCheckNotInIOKernal
 
 * = C64Cartridge_Hi_8K
+}
+
 !source "BombJack/stdlib/HardwareTest.a"
 !source "..\BerzerkRedux\Rand.a"
 !ifdef MusicData {
@@ -2809,4 +2836,5 @@ DrawScoresSprites
 	+SpriteOutput2x2Immediate 64 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
 	+SpriteOutput2x2Immediate 86 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
 	+SpriteOutput2x2Immediate 108 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 130 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
 	rts

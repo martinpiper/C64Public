@@ -1,0 +1,311 @@
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+
+kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+; Enable this to send graphics data from code, however this only works if the data is small :)
+;IncludeGraphicsData = 1
+;IncludeGraphicsData_L1=1
+
+!source "stdlib/stdlib.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+	
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/APU.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Audio.a"
+!source "BombJack/stdlib/Video.a"
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisable
+	jsr Audio_Init
+	jsr Video_DisableDisplay
+
+	jsr SetupAPU
+
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+
+	; Layer priority for the "chars"
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_Send8BitValue %11111111
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue %1000
+
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .xpos
+
+	lda #kVideo_EnableDisplay_Enable; | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+
+	; Before APU is active
+	jsr DisplayPalette
+	; See note: Debugging APU startup, maybe this timing is a VBlank in length?
+
+	; Cannot have the APU enabled while decompressing palette data since they both use the palette bank register
+	jsr APU_Enable
+
+	+WaitForFire_A
+
+	jsr DisplayData
+
+	+WaitForFire_A
+
+	; Colour wheel
+mainLoop2
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .xpos
+	+MIncAddr16 .xpos , .xpos+1
+
+	+WaitForFireLoop_A mainLoop2
+
+	; King Tut
+	jsr APU_ResetDisable
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .xypos
+	+MBus24Bit_SendLE16BitValueFromAddress .xypos2
+
+	jsr DisplayData2
+
+mainLoop3
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .xypos
+	+MBus24Bit_SendLE16BitValueFromAddress .xypos2
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	+MIncAddrWord .xypos2
+.notUp
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	+MDecAddrWord_A .xypos2
+.notDown
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	+MIncAddrWord .xypos
+.notLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	+MDecAddrWord_A .xypos
+.notRight
+
+	jmp mainLoop3
+
+.xpos
+	!word -90
+
+.xypos
+	!word -40
+.xypos2
+	!word -30
+
+!source "BombJack/stdlib/HardwareTest.a"
+
+TotalAPU_Start
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Colour changes
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+;	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+;	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+;	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterByte
+;	+MAPU_ProcessRasterWord
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+.ystart = 135
+APUData_Start
+	!by $01
+
+	; Next RHRV to wait for
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjustWide , 0
+	+MAPUEmitChangePaletteBank 0
+;	+MAPUEmitChangeXScrollCharsValueOnly 0
+
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjustWide , 64 - 1
+	+MAPUEmitChangePaletteBank 1
+;	+MAPUEmitChangeXScrollCharsValueOnly 20
+
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjustWide , 128 - 1
+	+MAPUEmitChangePaletteBank 2
+;	+MAPUEmitChangeXScrollCharsValueOnly 40
+
+	+MAPU_EmitWait kBus24Bit_VideoLayer_XPos_HSYNC_start - kMAPUEmitChangePaletteIndexHSyncAdjustWide , 192 - 1
+	+MAPUEmitChangePaletteBank 3
+;	+MAPUEmitChangeXScrollCharsValueOnly 60
+
+APUData_End
+APUData_Size = APUData_End - APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+
+DisplayPalette
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 0
+	+MDecompressRLEToEBBSAddr GamePalette0 , kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 1
+	+MDecompressRLEToEBBSAddr GamePalette1 , kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 2
+	+MDecompressRLEToEBBSAddr GamePalette2 , kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 3
+	+MDecompressRLEToEBBSAddr GamePalette3 , kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette
+
+	inc VIC2BorderColour
+
+	rts
+
+DisplayData
+
+	+MRLEScreenDataToDefaultCharScreen .charsScreen0 , .charsScreen1
+	+MRLEPlanesDataToDefaultCharScreen .chars0 , .chars1 , .chars2 , .chars3
+
+	inc VIC2BorderColour
+
+	rts
+
+DisplayData2
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 0
+	+MDecompressRLEToEBBSAddr GamePaletteB0 , kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette
+
+	+MRLEScreenDataToDefaultCharScreen .charsScreenB0 , .charsScreenB1
+	+MRLEPlanesDataToDefaultCharScreen .charsB0 , .charsB1 , .charsB2 , .charsB3
+
+	inc VIC2BorderColour
+
+	rts
+
+
+GamePalette0
+	!bin "tmp/Demo13PaletteData0.cmp"
+GamePalette1
+	!bin "tmp/Demo13PaletteData1.cmp"
+GamePalette2
+	!bin "tmp/Demo13PaletteData2.cmp"
+GamePalette3
+	!bin "tmp/Demo13PaletteData3.cmp"
+
+.chars0
+	!bin "tmp/Demo13Chars_plane0.cmp"
+.chars1
+	!bin "tmp/Demo13Chars_plane1.cmp"
+.chars2
+	!bin "tmp/Demo13Chars_plane2.cmp"
+.chars3
+	!bin "tmp/Demo13Chars_plane3.cmp"
+
+.charsScreen0
+	!bin "tmp/Demo13Chars_map.cmp"
+.charsScreen1
+	!bin "tmp/Demo13Chars_map.cmp2"
+
+
+GamePaletteB0
+	!bin "tmp/Demo13PaletteData1-0.cmp"
+
+.charsB0
+	!bin "tmp/Demo13Chars1_plane0.cmp"
+.charsB1
+	!bin "tmp/Demo13Chars1_plane1.cmp"
+.charsB2
+	!bin "tmp/Demo13Chars1_plane2.cmp"
+.charsB3
+	!bin "tmp/Demo13Chars1_plane3.cmp"
+
+.charsScreenB0
+	!bin "tmp/Demo13Chars1_map.cmp"
+.charsScreenB1
+	!bin "tmp/Demo13Chars1_map.cmp2"
+
+
++MCheckNotInIOKernal

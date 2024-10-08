@@ -1,5 +1,6 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Bus24Bit_Macros.a"
@@ -13,6 +14,7 @@ kBus24Bit_VideoLayer_HasOverscan=1
 !cpu 6510
 !ct pet
 
+; Sprite plus shadow means half the number of hardware speites
 kMaxSprites = 12
 
 zeroPage_Temp0	= $2

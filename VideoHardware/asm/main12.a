@@ -8,6 +8,7 @@
 
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
 ; Enable this to send graphics data from code, however this only works if the data is small :)
 IncludeGraphicsData = 1
 ;IncludeGraphicsData_L1=1
@@ -60,6 +61,7 @@ Initialise_NoMACROWaitForTheLastScan = 1
 !source "stdlib/Initialise.a"
 
 !source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Audio.a"
 !source "BombJack/stdlib/Video.a"
 
 
@@ -86,6 +88,7 @@ mainLoop
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
 	jsr APU_ResetDisable
+	jsr Audio_Init
 	jsr HardwareTest_VideoPattern0
 
 ;	jsr Video_DisableDisplay
@@ -169,9 +172,40 @@ renderFrame
 	ldy #kSpanPlot_maxHeight
 	jsr Segments_initListHeaders
 
+!if 1 {
 	jsr Transform_calcRotation
 	jsr Transform_transformProjectVerts
 	jsr Transform_renderFaces
+} else {
+	; This renders a full screen height triangle, which demonstrates the Poly2D_scanTriangle works for the whole screen
+	dec .sm1+1
+.sm1	lda #50
+	and #127
+	sta Poly2D_vertexBufferX
+	lda #0
+	sta Poly2D_vertexBufferY
+
+	lda #160
+	sta Poly2D_vertexBufferX+1
+	lda #62
+	sta Poly2D_vertexBufferY+1
+
+	lda Poly2D_vertexBufferX
+	and #3
+	bne .sm2
+	dec .sm2+1
+.sm2	lda #90
+	and #127
+	sta Poly2D_vertexBufferX+2
+	lda #225
+	sta Poly2D_vertexBufferY+2
+
+	jsr Poly2D_scanTriangle
+
+.smc1	lda #1
+	jsr Segments_processLines
+	inc .smc1+1
+}
 
 !if 1 {
 	lda .doAutoRotation

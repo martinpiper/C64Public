@@ -25,18 +25,18 @@
 			https://opengameart.org/content/cloud-set
 
 	Using the ImageToBitplane tool Run/Debug Configuration: Main all conv
-		--rgbshift 4 4 4 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "src/test/resources/map_9 - Copy.png" --tilewh 16 16 --imagequantize 8 --nowritepass --resetforcergb --forcergb 255 0 255 --spritexy 0 0xd0 --startxy 0 0 --image src/test/resources/TestImage1.png --tilewh 16 16 --imagequantize 32 --usestacking --nowritepass --resetforcergb --forcergb 0 0 0 --startxy 0 0 --image "src/test/resources/map_9 - Copy.png" --tilewh 16 16 --imagequantize 8 --outputplanes target/background_plane --outputscrcol target/background_tiles.bin --nostacking --numbitplanes 3 --convertwritepass --nowrite --resetforcergb --forcergb 255 0 255 --spritexy 0 0xd0 --startxy 0 0 --image src/test/resources/TestImage1.png --tilewh 16 16 --imagequantize 32 --outputplanes target/sprite_plane --outputsprites target/spriteSheet.txt --outputpalettes target/PaletteData.bin --usestacking --numbitplanes 3 --convertwritepass
+		--rgbshift 5 6 5 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "src/test/resources/map_9 - Copy.png" --tilewh 16 16 --imagequantize 8 --nowritepass --resetforcergb --forcergb 255 0 255 --spritexy 0 0xd0 --startxy 0 0 --image src/test/resources/TestImage1.png --tilewh 16 16 --imagequantize 32 --usestacking --nowritepass --resetforcergb --forcergb 0 0 0 --startxy 0 0 --image "src/test/resources/map_9 - Copy.png" --tilewh 16 16 --imagequantize 8 --outputplanes target/background_plane --outputscrcol target/background_tiles.bin --nostacking --numbitplanes 3 --convertwritepass --nowrite --resetforcergb --forcergb 255 0 255 --spritexy 0 0xd0 --startxy 0 0 --image src/test/resources/TestImage1.png --tilewh 16 16 --imagequantize 32 --outputplanes target/sprite_plane --outputsprites target/spriteSheet.txt --outputpalettes target/PaletteData.bin --usestacking --numbitplanes 3 --convertwritepass
 	Using GenerateData configuration: Debug2
 
 	This demonstrates stacked multiplexed sprites over a 16x16 tiled background.
 
 	Using the ImageToBitplane tool Run/Debug Configuration: Main old bridge RGB 0 0 0 palette opt rgbfactor 32
-		--rgbshift 4 4 4 --rgbfactor 255 196 112 10 --rgbfactor 255 255 214 50 --rgbfactor 236 98 96 50 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "src/test/resources/oldbridge cropped.bmp" --tilewh 16 16 --imagequantize 8 --nowritepass --palettequantize 32 --image "src/test/resources/oldbridge cropped.bmp" --tilewh 16 16 --fitpalettes --outputplanes target/background_plane --outputscrcol target/background_tiles.bin --outputpalettes target/PaletteData.bin --nostacking --numbitplanes 3 --convertwritepass
+		--rgbshift 5 6 5 --rgbfactor 255 196 112 10 --rgbfactor 255 255 214 50 --rgbfactor 236 98 96 50 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "src/test/resources/oldbridge cropped.bmp" --tilewh 16 16 --imagequantize 8 --nowritepass --palettequantize 32 --image "src/test/resources/oldbridge cropped.bmp" --tilewh 16 16 --fitpalettes --outputplanes target/background_plane --outputscrcol target/background_tiles.bin --outputpalettes target/PaletteData.bin --nostacking --numbitplanes 3 --convertwritepass
 
 	This demonstrates a detailed background picture with 32 palettes of 8 entries each.
 	
 	Using the ImageToBitplane tool Run/Debug Configuration: Main mode7 "map_9 - mode7 test.png"
-		--rgbshift 4 4 4 --palettesize 256 --loadpalette target/PaletteData.bin --image "src/test/resources/map_9 - mode7 test.png" --tilewh 16 16 --fitpalettes --outputtilebytes target/mode7_tiles.bin --outputscrcol target/mode7_screen.bin --nostacking --convertwritepass
+		--rgbshift 5 6 5 --palettesize 256 --loadpalette target/PaletteData.bin --image "src/test/resources/map_9 - mode7 test.png" --tilewh 16 16 --fitpalettes --outputtilebytes target/mode7_tiles.bin --outputscrcol target/mode7_screen.bin --nostacking --convertwritepass
 		And enabling the data load at: ; Write Mode7 registers
 		This will demonstrate how the mode7 export with flipped tile detection works
 
@@ -189,7 +189,7 @@
 		num palettes=9
 	The 20 (or even 16) screens are too many, even for the banked char screen (at 2x2 = 4 banks) to display
 	However when using the tile layer which has 4x4 = 16 screens:
-		java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 255 0 255 --paletteoffset 0 --palettesize 8 --imagequantize 8 --startxy 0 0 --image BatBall\ShipAnim.png --tilewh 16 16 --outputplanes ../tmp/BatBallAnim_plane --outputscrcol ../tmp/BatBallAnim_map.bin --outputpalettes ../tmp/BatBallAnim_palette.bin --numbitplanes 3 --convertwritepass
+		java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --forcergb 255 0 255 --paletteoffset 0 --palettesize 8 --imagequantize 8 --startxy 0 0 --image BatBall\ShipAnim.png --tilewh 16 16 --outputplanes ../tmp/BatBallAnim_plane --outputscrcol ../tmp/BatBallAnim_map.bin --outputpalettes ../tmp/BatBallAnim_palette.bin --numbitplanes 3 --convertwritepass
 		num tiles=114
 		num palettes=10
 	The tile layer can easily store the animations for the intro and outro separately
@@ -811,3 +811,60 @@
 * Demo1 adding Mode7 data init, in preparation for testing real mode7 hardware.
 
 
+
+* Demo7 computed palette fade needs to be converted to fade RGB565 colours
+	It was using a fast byte aligned lookup since the old RGB444 format was aligned to a byte.
+	> It would be possible to use pre-computed palette banks instead, which will result in a faster update during the render!
+
+
+
+
+* Demo9 palettes
+	Perhaps convert the chars with RGB565 and palette quantize to 5 without any transparency as a separate pass
+		Remember, if there is no transparency then there must not be any forcergb in the graphics conversion.
+	Convert the rest of the graphics with RGB565 as another palette chunk and palette quantize to 11 palettes
+		Then merge the palettes
+		This is complicated by the fact that the forceRGB is different...
+
+
+
+* Demo12 fixed VectorHardwareInitPalette
+
+
+
+* Demo13: Need code to run the APU setup, could copy from main12.a
+	Configure the layers to be the same as Demo6
+	Also upload compressed data
+	> +MAPUEmitChangePaletteBank
+
+
+
+
+* Demo6: Used the 16MHz sprite timing in the feature file.
+	    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
+
+
+
+
+* Demo6: SotB better sky gradient colours
+	Look for MAPUEmitChangePaletteIndex
+	Use the source debugger to locate the correct APU code point. The data is relatively easy since it has the wait Y positions...
+	Added Y positions: Note: "; New sky 1234..." comments
+		51 105 127 140 155 161 173 179 189
+	>> Note the "; Should be " comments, perhaps the tree sprite updates could be moved around a bit to give these a better colour change placement?
+	>> Also note the "; Did not add extra sky here, too tight", perhaps there could be some space opened up in the tree sprite updates?
+		* Try moving the sprite splits down to make room
+			> Check before and after the changes:
+				Debug output frame 17, when the scaled sprites first appear, with the tree on the right of the screen
+				and frame 194 with the tree on the left of the screen
+			> Sprite_TreeY = 91
+				APUData_Tree3dData is the problem. Don't forget that EmitSpriteWithAdd inverts the sprite Y coordinate
+					Sprite_TreeY + 64
+				>> With APUData_Tree3dData moved down two lines, the sprites display but with one blank line, indicating...
+					Hmm, the first "; Next tree segment" are all just-in-time, i.e. they update the sprites just before they're needed...
+					Undoing the change and moving Sprite_TreeY up two "Sprite_TreeY = 89" also shows this...
+				>> Moving the first "; Next tree segment" up one line, allows enough time for the "; New sky 4" to be at 139 -1
+				> Second "; Next tree segment" , sky split should be at 147 -1
+					APUData_Tree4aData uses Sprite_TreeY + 80 = 171
+					Moving APUData_Tree4aData APUData_Tree4bData APUData_Tree4cData up two lines opens enough space just before kAPUData_Tree4dNum? For "; New sky 4b"
+				> APUData_Tree5aData is at 165 and uses Sprite_TreeY + 96 = 187

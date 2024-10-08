@@ -44,3 +44,5 @@ Documentation "README.md" files for each component are located in each sub-direc
 	* Demo10 : Dual sprite layer Street Fighter demo
 	* Demo11 : Dual display, C64 running BASIC and MegaWang character screen
 	* Demo12 : 3D vector demo
+	* Demo13 : Using RGB565 colour mode with four palette banks, giving up to 1024 colour on screen at once
+

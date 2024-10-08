@@ -1,5 +1,7 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+kBus24Bit_SpritesMaxNum = 32
 
 !source "stdlib/stdlib.a"
 !source "BombJack/stdlib/Video_Macros.a"
@@ -76,6 +78,7 @@ start
 	+MAPUAvoidRastersTableEntry 210 + 25	-1 , 210 + 25
 
 	jsr DisplayScreen
+	jsr Video_WaitVBlank	; See note: Debugging APU startup
 	jsr APU_Enable
 
 mainLoop
@@ -96,6 +99,8 @@ mainLoopGame
 	jsr MusicPoll
 
 	jsr AnimationFrames_Process
+
+;	+WaitForFire_A
 
 	jmp mainLoopGame
 	rts

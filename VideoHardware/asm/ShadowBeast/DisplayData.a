@@ -5,6 +5,8 @@ DisplayData
 
 
 SetupAPU
+	jsr APU_ResetDisable
+
 	jsr APU_SetAddressAPUInstructions
 	+MWordValueTo_AX APUCode_Start
 	ldy #<APUCode_Size
@@ -21,6 +23,8 @@ SetupAPU
 	ldx #>APUData_Size
 	jsr Bus24Bit_CopySmallDataRepeatForX
 }
+
+	jsr APU_ResetDisable
 	rts
 
 

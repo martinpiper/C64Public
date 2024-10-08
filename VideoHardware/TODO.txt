@@ -1,3 +1,8 @@
+* https://amiga.lychesis.net/applications/DeluxePaint.html
+
+
+
+
 * Demo1: HardwareTest_VideoPattern0 really needs a APU reset disable
 	Also mode7 init
 
@@ -18,11 +23,11 @@
 		0 = end of RLE for frame
 		Then round up to the next byte obviously...
 		C64 can decompress this into vector layer bytes quite quickly
-	>> Using ImageToBitplane: --rgbshift 4 4 4 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 16 --image "C:\work\C64\Animation\RawFrames2\frm00001.bmp" --outputpalettes target/vectors_paletteData.bin --outputvectors 1 20 2 255 target/vectors_Data.bin --convertwritepass
+	>> Using ImageToBitplane: --rgbshift 5 6 5 --newpalettes --forcergb 0 0 0 --paletteoffset 0 --palettesize 16 --image "C:\work\C64\Animation\RawFrames2\frm00001.bmp" --outputpalettes target/vectors_paletteData.bin --outputvectors 1 20 2 255 target/vectors_Data.bin --convertwritepass
 	Probably will need to use cartridge video delta frame file layout to advance frames
 	Add extra screen, like sprite animation, scrolling text screen etc
 	Use vectors layer merged with something else for the current hardware... Once the combination board arrives
-	
+	>> Play Bad Apple mod? https://modarchive.org/index.php?request=view_player&query=178526
 		
 	
 		
@@ -176,7 +181,7 @@
 * Turrican?
 	Clean files: https://github.com/Josef-Friedrich/turrican-clone-assets-collection/tree/master/turrican2
 	The number of unique 16x16 tiles is quite large, more than 256
-		cls && java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 4 4 4 --newpalettes --forcergb 136 170 255 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "C:\temp\1-1 trim.png" --tilewh 16 16 --imagequantize 8 --outputplanes ../tmp/background_plane --outputscrcol ../tmp/map.bin --outputpalettes ../tmp/PaletteData.bin --numbitplanes 3 --convertwritepass
+		cls && java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --forcergb 136 170 255 --paletteoffset 0 --palettesize 8 --startxy 0 0 --image "C:\temp\1-1 trim.png" --tilewh 16 16 --imagequantize 8 --outputplanes ../tmp/background_plane --outputscrcol ../tmp/map.bin --outputpalettes ../tmp/PaletteData.bin --numbitplanes 3 --convertwritepass
 * Turrican: The tiles layer runs out of tiles with the background data as is. Perhaps try the background in the chars layer and check how many chars it uses?
 	Then the score could be in the tiles layer instead? :D
 
@@ -249,3 +254,267 @@
 	C:\Users\Martin Piper\Downloads\ft2-clone-v1.34-win64\ft2-clone-win64
 		https://16-bits.org/ft2.php
 			<Space> for edit mode!
+
+
+
+
+* Transform_transformProjectVerts
+	Has an issue generating 2D Y coordinates greater than 127
+		Poly2D_scanTriangle works. Note: ; This renders a full screen height triangle, which demonstrates the Poly2D_scanTriangle works for the whole screen
+	>> https://www.bbcelite.com/deep_dives/drawing_ships.html
+		https://www.bbcelite.com/cassette/main/subroutine/ll9_part_8_of_12.html
+
+
+
+* Demo13: Make King Tut use four split palettes?
+
+
+
+* Demo9: Include all relevant code in the crt.
+	Run crt from test scenario like main6c
+
+
+
+
+* Demo7: Bullets as scaled sprites?
+	Enemies as normal multiplexed sprites.
+
+
+
+
+* Streamed RLE for cart files, this would make it easier for demos onthe real C64.
+	* Construct a large file consisting of one of more blocks of:
+		Destination EBBS
+			0 = end of file?
+				Although the streamed data format should show end of file data...
+		Destination address lo/hi
+		Flag
+			0 = Reserved... Uncompressed (not implemented)
+			1 = RLE compressed
+		RLE Data
+			For speed, there is scope to reserve the longest RLE length (0) as an end of file marker. Instead of calculating .smEndTestL/H in C64\Decompression\DecompressRLE.a
+				This would need a change to the compression util, as a new variant.
+	* Use the MakeCart streamed file option to save this data
+		Format:
+			0	:	Next bank
+			0/1	:	Next address (0 = end)
+			2/3	:	End of this chunk
+	* Implement the streamed RLE decompression using the start bank/address, this would need the RNXPCompressionDecompress_GetByte to handle the streamed data chunks, like the sample player for the Dragon's Lair demo did
+	** Optional: In the cart boot kernal add a ROM routine that will take the start bank/address, copy itself to the start of the stack?, and run the decompression, then return obviously
+		>> Optional: Display message on C64 screen, but speed would need the screen to be off...
+
+
+
+
+
+* APU macros, could in theory, have immediate mode macros that automatically put values into the data segment for the APU.
+	This would help with instructions not getting out of sync with data, making it much easier to develop and debug.
+	They would need to keep track of the destination write address
+
+
+
+
+* MAME sprite debugger
+	https://docs.mamedev.org/usingmame/defaultkeys.html
+	F4 Shows the game palette, decoded graphics tiles/characters and any tilemaps.
+		Note the keys for palettes, tiles, etc
+	"C:\Downloads\MAME\roms\thndrbld.zip"
+	C:\Downloads\MAME\mame.exe -debug -console
+	Sprite list processing: https://github.com/mamedev/mame/blob/5f54fda4daab98fd0e3ba8958b3e582e5ab67dd1/src/mame/sega/sega16sp.cpp#L1059
+	Memory: Sega X-Board Sprites/:mainpcb:sprites/0/m_buffer
+	Memory mapping: https://github.com/mamedev/mame/blob/5f54fda4daab98fd0e3ba8958b3e582e5ab67dd1/src/mame/sega/segaxbd.cpp#L925
+	memdump
+		110000 - 11ffff: sega_xboard_sprite_device::draw_write
+	Doesn't work?: dump sprites.txt,0:mainpcb:sprites,32
+		Specifying devices and address spaces: https://docs.mamedev.org/debugger/index.html#debugger-devicespec
+	Not working: dump sprites.txt,0:mainpcb:sprites/0/m_buffer,32
+	saver sprites.bin,0,1000,:mainpcb:sprites
+		But doesn't seem to save the data visible in the memory debug view
+
+	for k,v in pairs(manager.machine.memory.shares) do; print(k,v); end
+	for k,v in pairs(manager.machine.memory.regions) do; print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.memory.shares)) do; print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.memory.shares[":mainpcb:sprites"])) do ;print(k,v); end
+
+	manager.machine.memory.shares[":mainpcb:sprites"].read_i8(0)
+
+	-----------------------------------------------------
+	Exception at EIP=00007ff766c4b3f3 (sol::stack::unqualified_getter<sol::detail::as_value_tag<memory_share>, void>::get_no_lua_nil(lua_State*, int, sol::stack::record&)+0x0033): ACCESS VIOLATION
+	While attempting to read memory at 0000000000000000
+
+	Devices route: https://docs.mamedev.org/luascript/ref-devices.html
+	for k,v in pairs(manager.machine.devices) do ;print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.devices[":mainpcb:sprites"])) do ;print(k,v); end
+	print(manager.machine.devices[":mainpcb:sprites"])	
+	This saves a dump of the sprites mirror memory: dump sprites.txt,100000,fff
+		https://github.com/mamedev/mame/blob/master/src/mame/sega/segaxbd.cpp#L924C8-L924C14
+	$0b0 seems to be the helicopter body sprite
+		At the VBlank break (F8), alter memory 0bc (second to last word)  for the palette, then press F10 to step one cycle, and it should render with a different palette
+		0B0   0186  39E8  0952  3200  E200  005E  0000  3B4E   ..9è R2.â..^..;N
+	Perhaps this has been done already?
+		https://reassembler.blogspot.com/2021/04/ripping-sega-system-16-sprites-palettes.html
+		https://github.com/djyt/system16_sprite_viewer/tree/main
+		https://github.com/djyt/system16_sprite_viewer/releases
+		cd /d C:\Users\marti\Downloads\s16_viewer_win64_v031
+		s16_viewer.exe config\outrun.xml
+			Palettes in the config directory to be copied to the relevant roms\directory.
+	cd /d C:\Work\mame
+	C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\autorebase.bat
+	https://docs.mamedev.org/initialsetup/compilingmame.html#building-with-microsoft-visual-studio
+	make vs2019
+		^^ Problems...
+	Use WSL: https://docs.mamedev.org/initialsetup/compilingmame.html#overall-build-options
+		sudo apt update
+		sudo apt install gcc
+		sudo apt install build-essential
+		sudo apt install python3
+		sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev libfontconfig-dev libpulse-dev qtbase5-dev qtbase5-dev-tools qtchooser qt5-qmake
+		cd /mnt/c/Work/mame
+		make IGNORE_GIT=1 vs2019
+			Lots of debug: make -d IGNORE_GIT=1 vs2019
+	Project warnings as errors->No
+	Add compiler options: /utf-8
+	>> "C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\msys2_shell.cmd"
+	cd /c/Work/mame/
+	>> https://docs.mamedev.org/initialsetup/compilingmame.html#id3
+	>> Then: "C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\win32env.bat"
+	cd c:\work\mame
+	make vs2019
+		Still compile probolems...
+	make SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp
+	Parallel build: make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp
+	mytest.exe -debug thndrbld
+	mytest.exe -window thndrbld
+	make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp SYMBOLS=0 ARCHOPTS=/utf-8 MODERN_WIN_API=1 NOWERROR=1 vs2019
+	make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp,src/mame/sega/segaorun.cpp,src/mame/sega/model2.cpp SYMBOLS=0 ARCHOPTS=/utf-8 MODERN_WIN_API=1 NOWERROR=1 vs2019
+	Then open: "C:\work\mame\build\projects\windows\mamemytest\vs2019\mamemytest.sln"
+	Debugging:
+		C:\Work\mame\src\mame\sega\sega16sp.cpp
+			sega_outrun_sprite_device::draw
+			>> Need the palette
+			Stepping out of this a couple of levels gets to: C:\Work\mame\src\mame\sega\segaxbd_v.cpp
+				segaxbd_state::screen_update
+				+		m_paletteram	{m_bytes=0x0000000000004000 }	shared_ptr_finder<unsigned short,1>
+				-		m_palette	{...}	device_finder<palette_device,1>
+		From context: sega_outrun_sprite_device::draw
+			Locals label search: m_paletteram and m_paletteram
+-		(*((segaxbd_state*)&(*((segaxbd_fd1094_state*)(*((device_t*)&(*((sprite_device<unsigned short,bitmap_ind16>*)&(*((sega_16bit_sprite_device*)this)))))).m_owner)))).m_paletteram	{m_bytes=0x0000000000004000 }	shared_ptr_finder<unsigned short,1>
+-		(*((segaxbd_state*)&(*((segaxbd_fd1094_state*)(*((device_t*)&(*((sprite_device<unsigned short,bitmap_ind16>*)&(*((sega_16bit_sprite_device*)this)))))).m_owner)))).m_palette	{...}	device_finder<palette_device,1>	
+		C:\Work\mame\src\mame\sega\segaxbd.cpp
+			segaxbd_state::paletteram_w
+		C:\Work\mame\src\lib\util\palette.cpp
+			palette_t::entry_set_color
+				m_entry_color
+	Converts raw data:
+		del "C:\temp\thunderblade arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\thunderblade arcade\t.png"
+		del "C:\temp\afterburner arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburner arcade\t.png"
+		del "C:\temp\outrun arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\outrun arcade\t.png"
+	Works really well!
+
+	
+	
+	
+* In theory, it would be possible to save notes/volumes/samples from MAME audio hardware in the same format expected by the video hardware tools, compress them, and then play back the music.
+	Or save them as MOD files...
+		Tracing through the code in segam1audio_device
+			Got to: src\devices\sound\multipcm.cpp
+				multipcm_device::init_sample
+			or maybe: multipcm_device::write_slot
+			Note 28 voices indicated: gew_pcm_device(mconfig, MULTIPCM, tag, owner, clock, 28, 224),
+	>> This point seem better: multipcm_device::write_slot
+		Can read details after init_sample is used
+		> Note how slot.m_sample could be used to identify each sample, it is probably better to use sample.m_start, sample.m_loop, sample.m_end to identify max ranges of used sample bytes and save the minimal ranges for detected notes
+		>> Ranges in sample data could overlap (partially) inside notes, then used notes can be merged together etc.
+	* There are two audio devices, identical sample data? or not?
+		mpr-16491.32 and mpr-16492.33
+		mpr-16493.4 and mpr-16494.5
+		>> Sample data is very different
+	>> https://en.wikipedia.org/wiki/Yamaha_YM2612
+	> To play:
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 48000 "C:\Downloads\MAME\roms\daytona\mpr-16491.32"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 48000 "C:\Downloads\MAME\roms\daytona\mpr-16492.33"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 "C:\Downloads\MAME\roms\daytona\mpr-16493.4"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 "C:\Downloads\MAME\roms\daytona\mpr-16494.5"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 c:\temp\SamplesUsed.bin
+	>> The constructor multipcm_device::multipcm_device seems to be called a lot even before the target machine is started?
+		This is a problem because we need to find a good spot to initialise all the potentially used samples across all instances actually used in a game.
+	>> multipcm_device is used for Daytona and other model2 games, it isn't used for After Burner and other X-board games
+		After burner does use: m_soundcpu m_soundcpu2
+			With device_sound_interface, but it is via >	mytestd.exe!ymfm_device_base<ymfm::ym2151>::device_start() Line 196	C++
+				>> ym2151_device and segapcm_device
+				segaxbd_state::xboard_base_mconfig
+				Look for: ROM_START( aburner2 )
+							GAME( 1987, aburner2
+							segaxbd_new_state::init_aburner2
+								ROM_REGION( 0x80000, "mainpcb:pcm", ROMREGION_ERASEFF ) // Sega PCM sound data
+			>> device_sound_interface::stream_alloc is used
+			>> Is used: segapcm_device::write
+				segapcm_device::sound_stream_update and ym2151::generate
+			>> Hmm commenting out ym2151::generate stops samples from being heard?
+				Using that function but commenting out "m_fm.output" results in some music samples being heard, but missing some voices.
+				Using only output->roundtrip_fp() seems to cause samples to be heard?!
+			>> Commenting out the outputs[..] lines in segapcm_device::sound_stream_update results in muting the samples and just hearing the ym2151 output
+			* In conclusion, it shows that the music in after burner uses both the ym2151_device and segapcm_device which would make a purely mod/xm based output a bit harder :)
+				So for now, concentrate on multipcm_device output
+	* Daytona audio plan in more detail:
+		>> Hook into multipcm_device::write_slot to get specific events
+		Looking for "ROM_START( daytona )" and looking for "ROM_LOAD("mpr-16491.32""
+			The line above specifies: ROM_REGION( 0x400000, M1AUDIO_MPCM1_REGION, 0 ) // Samples
+				M1AUDIO_MPCM1_REGION = "m1audio:pcm1"
+				M1AUDIO_TAG = "m1audio"
+				m_m1audio(*this, M1AUDIO_TAG),
+				optional_device<segam1audio_device> m_m1audio
+			segam1audio_device::segam1audio_device
+				Hmm:::
+				required_device<multipcm_device> m_multipcm_1;
+				required_device<multipcm_device> m_multipcm_2;
+				Hmm:::>>>>> required_device<ym3438_device> m_ym;
+					Commenting out ym3438::generate stops all samples and all music
+						m_fm.output seems important for sample output
+						Setting all samples to 0 in gew_pcm_device::sound_stream_update results in no sound, indicating there are no FM sounds generated
+			> ROMs?
+					m_mpcmbank1(*this, "m1pcm1_bank"),
+					m_mpcmbank2(*this, "m1pcm2_bank"),
+			> multipcm_device uses gew_pcm_device::sound_stream_update
+				Which accesses its device_rom_interface<22, 0, 0, ENDIANNESS_BIG>
+					This does a read_byte to get sample ROM contents
+						Note: -		device_rom_interface<22,0,0,1>	{m_rom_region={...} m_rom_space={m_spacenum=0xffffffff m_data_width=0x00 '\0' } m_rom_config={m_name=...} ...}	device_rom_interface<22,0,0,1>
+								+		m_tag	":m1audio:pcm1:bank"	std::string
+		>> This can be used to get the ROM info: const address_space_config *memConfig = memory_space_config().front().second;
+			read_byte() can also be used
+		> Consider, gew_pcm_device could be expanded to return a signed16 sample for an address, which can then be converted appropriately...
+			>> There can be a method to one time init appropriate sample data taking into account the instance and ROM size...
+		>> Sample rate m_stream: 		m_sample_rate	44642	unsigned int
+		>> Can be used to get the curent time, going to be useful for event timing insertion into the output song pattern data:
+			m_stream->sample_time().as_double();
+	>> XM format: https://github.com/milkytracker/MilkyTracker/blob/master/resources/reference/xm-form.txt
+		https://www.celersms.com/doc/XM_file_format.pdf
+			C:\Backups\OldMachines\OldMachineBackup\D\Downloads\aceman_-_mortal_combat.xm
+				$ba4a7 seems to be the start of a sample header $28 in size...
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe"
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe" "C:\Backups\OldMachines\OldMachineBackup\D\Downloads\aceman_-_mortal_combat.xm"
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe" c:\temp\t.xm
+	Note:
+		// Model 2 (TGPs, Model 1 sound board)
+			GAME( 1994, daytona
+		// Model 2A-CRX (TGPs, SCSP sound board)
+			GAME( 1994, vf2
+	>> Interesting to note that when in test mode playing music only up to 32 channels are used (sAnyNotesinChannel) but in the game nearly all 64 channels are used.
+
+	>> note values... https://newt.phys.unsw.edu.au/jw/notes.html
+
+			slot.m_pitchForStep	1002.7203979492188	double
+		slot.m_pitchForStep	2790.1784667968750	double
+
+		m_start	0x001e1894	unsigned int
+		m_loop	0x00008e92	unsigned int
+		m_end	0x00008e93	unsigned int
+		read_byte(0x001e1894+...)
+			fd000504f8fd
+
+
++		this	0x00000154adda4d20 {m_cur_slot=0x00000000 m_address=0x00000000 mInstanceInit=false ...}	gew_pcm_device * {multipcm_device}
+
+
+
+* MAME diffs: https://github.com/mamedev/mame/compare/master...martinpiper:mame:savesprites

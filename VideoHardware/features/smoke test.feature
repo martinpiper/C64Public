@@ -10,6 +10,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
     And audio refresh window every 0 instructions
@@ -34,7 +36,8 @@ Feature: Smoke test
     Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
     And the layer has 16 colours
     And the layer has overscan
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
     And the layer has 16 colours
     And the layer has overscan
 
@@ -115,6 +118,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 8 pixels per instruction
     And audio refresh window every 0 instructions
@@ -192,6 +197,8 @@ Feature: Smoke test
   Scenario: Smoke test for chars with sprites (BatBall)
     Given clear all external devices
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -223,7 +230,7 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
-#    Given randomly initialise all memory using seed 4321
+    Given randomly initialise all memory using seed 4321
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
     # Palette
@@ -273,6 +280,8 @@ Feature: Smoke test
     Given clear all external devices
 #    Given a new video display with 16 colours
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #    And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -352,78 +361,14 @@ Feature: Smoke test
 
 
 
-# Run with Convert4_8.bat
-  @Demo4_8
-  Scenario: Smoke test for Turrican demo with 8 colours
-    Given clear all external devices
-    Given a new video display
-#	And enable video display bus debug output
-    Given video display processes 24 pixels per instruction
-    Given video display refresh window every 32 instructions
-    Given video display add joystick to port 1
-    Given video display add CIA1 timers with raster offset 0 , 0
-#    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-5-"
-    Given property "bdd6502.bus24.trace" is set to string "true"
-    Given I disable trace
-    Given I have a simple overclocked 6502 system
-    When I enable uninitialised memory read protection with immediate fail
-    * That does fail on BRK
-    Given a user port to 24 bit bus is installed
-#    Given add a StaticColour layer for palette index '0x7f'
-    Given add a GetBackground layer fetching from layer index '1'
-    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-    Given add a Chars layer with registers at '0x9000' and addressEx '0x20'
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
-    Given show video window
-
-    # Instead of writing this data via the 6502 CPU, just send it straight to memory
-    # Palette
-#    Given write data from file "tmp/TurricanPaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
-    # Sprites
-#    Given write data from file "tmp/TurricanSprites_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x10'
-#    Given write data from file "tmp/TurricanSprites_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x10'
-#    Given write data from file "tmp/TurricanSprites_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x10'
-    # Tiles
-#    Given write data from file "tmp/TurricanTiles_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
-#    Given write data from file "tmp/TurricanTiles_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x40'
-#    Given write data from file "tmp/TurricanTiles_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x40'
-#    Given write data from file "tmp/TurricanTiles_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x40'
-    # Chars
-#    Given write data from file "tmp/TurricanStatus_map.bin" to 24bit bus at '0x9000' and addressEx '0x01'
-#    Given write data from file "tmp/TurricanStatus_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
-#    Given write data from file "tmp/TurricanStatus_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
-#    Given write data from file "tmp/TurricanStatus_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
-
-
-    And I load prg "bin/main.prg"
-    And I load labels "tmp/main.map"
-
-#    And I enable trace with indent
-    When I execute the procedure at start for no more than 1000000 instructions until PC = mainLoop
-	Given render a video display frame
-
-#    And I enable trace with indent
-
-    # This allows the last frame to be observed and window zoomed/resized
-#    When rendering the video until window closed
-
-    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
-    Given I disable trace
-    Given property "bdd6502.bus24.trace" is set to string "false"
-    Given video display does not save debug BMP images
-    Given video display processes 24 pixels per instruction
-    Given limit video display to 60 fps
-    When I execute the procedure at mainLoop until return
-
-
-
-
 # Run with Convert5.bat
   @Demo5
   Scenario: Smoke test for Road demo
     Given clear all external devices
 #    Given a new video display with 16 colours
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -493,6 +438,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #    And enable video display bus debug output
 #    And enable debug pixel picking
     Given video display processes 24 pixels per instruction
@@ -525,7 +472,8 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     # Layer 0
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
@@ -594,6 +542,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -625,7 +575,8 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     # Layer 0
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
@@ -684,6 +635,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
 #    And enable debug pixel picking
     Given video display processes 24 pixels per instruction
@@ -719,7 +672,8 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     # Layer 0
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
@@ -751,6 +705,8 @@ Feature: Smoke test
   Scenario: Smoke test for just the video layer
     Given clear all external devices
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -852,6 +808,8 @@ Feature: Smoke test
     And audio mix 85
     And the audio expansion uses exact address matching
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
     And the display uses exact address matching
 #    And enable video display bus debug output
 #    And enable debug pixel picking
@@ -908,12 +866,13 @@ Feature: Smoke test
     Given add a Sprites2 layer with registers at '0x9200' and addressEx '0x08' and running at 14.31818MHz
     And the layer has 16 colours
     And the layer has overscan
-    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
-	And the layer uses exact address matching
+#    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
+    And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
     Given show video window
-    Given randomly initialise all memory using seed 4321
+    Given randomly initialise all memory using seed 43211
 
     # Instead of writing this data via the 6502 CPU, just send it straight to memory
     # Palette
@@ -953,9 +912,11 @@ Feature: Smoke test
     Given write data from file "tmp/target/MusicMW2000Samples.bin1" to 24bit bus at '0x0000' and addressEx '0x04'
     Given write data from file "tmp/target/MusicMW2000Samples.bin2" to 24bit bus at '0x8000' and addressEx '0x04'
 
+    And I load labels "tmp/main.map"
+    # Because the prg is very large we load in the RAM underneath the IO etc
+    Then I write memory at ZPProcessorPort with ProcessorPortAllRAM
     And I load crt "bin/main.crt"
     And I load prg "bin/main.prg"
-    And I load labels "tmp/main.map"
 
     When enable remote debugging
 #    And wait for debugger connection
@@ -986,6 +947,8 @@ Feature: Smoke test
   Scenario: Smoke test for just the video layer
     Given clear all external devices
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -1090,6 +1053,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
     Given video display processes 24 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -1172,6 +1137,8 @@ Feature: Smoke test
     Given a new audio expansion
     And audio mix 85
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
 #	And enable video display bus debug output
 #    And enable debug pixel picking
     # Segments_initListHeaders completes at: 22
@@ -1228,7 +1195,7 @@ Feature: Smoke test
 
 
     Given show video window
-#	Given randomly initialise all memory using seed 4321
+	Given randomly initialise all memory using seed 4321
 
 
     Given write data from file "tmp/Demo9PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
@@ -1276,6 +1243,8 @@ Feature: Smoke test
   Scenario: Test chars image conversion output
     Given clear all external devices
     Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
     And enable video display bus debug output
     Given a new audio expansion
     And audio mix 85
@@ -1289,53 +1258,58 @@ Feature: Smoke test
     And That does fail on BRK
     And I enable uninitialised memory read protection with immediate fail
     Given a user port to 24 bit bus is installed
+    And enable user port bus debug output
+    And enable APU mode
+    And APU clock divider 1
+    And APU memory clock divider 2
+
+
+    # Layer 3
     Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    And the layer has overscan
+    # Layer 2
+    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+    And the layer has 16 colours
+    And the layer has overscan
+    # Layer 1
+    Given add a Sprites2 layer with registers at '0x9200' and addressEx '0x08' and running at 14.31818MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    # Layer 0
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
     And the layer has 16 colours
     And the layer has overscan
 
     Given show video window
+    Given randomly initialise all memory using seed 4321
+    # Disable display
+    Given write data byte '0x00' to 24bit bus at '0x9e00' and addressEx '0x01'
 
-    # Palette
-    Given write data from file "tmp/Demo13PaletteData.bin" to 24bit bus at '0x9c00' and addressEx '0x01'
-    # Clear first palette entry to black
-#    Given write data byte '0x00' to 24bit bus at '0x9c00' and addressEx '0x01'
-#    Given write data byte '0x00' to 24bit bus at '0x9c01' and addressEx '0x01'
-    # Chars
-    Given write data from file "tmp/Demo13Chars_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x20'
-    Given write data from file "tmp/Demo13Chars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
-    Given write data from file "tmp/Demo13Chars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
-    Given write data from file "tmp/Demo13Chars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
-    # Chars screen
-    Given write data from file "tmp/Demo13Chars_map.bin" to 24bit bus at '0x4000' and addressEx '0x80'
-    Given write data from file "tmp/Demo13Chars_map.bin2" to 24bit bus at '0x8000' and addressEx '0x80'
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
 
 
-    # Wide overscan can use 0x2b which has a couple of chars on the left masked for scrolling and hits the right edge _HSYNC
-    # Use the 320 wide settings
-    Given write data byte '0x29' to 24bit bus at '0x9e09' and addressEx '0x01'
-    # Enable all layers
-    Given write data byte '0x0f' to 24bit bus at '0x9e0a' and addressEx '0x01'
-
-    # Enable display
-    Given write data byte '0x20' to 24bit bus at '0x9e00' and addressEx '0x01'
-    # Layer priority all
-    Given write data byte '0x00' to 24bit bus at '0x9e08' and addressEx '0x01'
-    # Change video background colour
-    Given write data byte '0x00' to 24bit bus at '0x9e0b' and addressEx '0x01'
-
-    # Old behaviour, no transparent last layer
-    Given render a video display frame
-
-    # New daughter board behaviour
-    # Enable background colour
-#    Given write data byte '0x30' to 24bit bus at '0x9e00' and addressEx '0x01'
-#    Given render a video display frame
-
-    # Change video background colour
-#    Given write data byte '0x33' to 24bit bus at '0x9e0b' and addressEx '0x01'
-#    Given render a video display frame
+#    Then expect image "testdata/TC-16-000000.bmp" to be identical to "tmp/frames/TC-16-000000.bmp"
+#    Then expect image "testdata/TC-16-000001.bmp" to be identical to "tmp/frames/TC-16-000001.bmp"
+#    Then expect image "testdata/TC-16-000002.bmp" to be identical to "tmp/frames/TC-16-000002.bmp"
+#    Then expect image "testdata/TC-16-000003.bmp" to be identical to "tmp/frames/TC-16-000003.bmp"
 
 
-    When display until window closed
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
 
-    Then expect image "testdata/TC-16-000000.bmp" to be identical to "tmp/frames/TC-16-000000.bmp"
+#    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+    Given limit video display to 60 fps
+    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
+    When I execute the procedure at start until return

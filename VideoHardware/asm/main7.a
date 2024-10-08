@@ -1,5 +1,7 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+
 ; Enable this to send graphics data from code, however this only works if the data is small :)
 ;IncludeGraphicsData = 1
 ;IncludeGraphicsData_L1 = 1
@@ -105,6 +107,8 @@ mainLoop
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Background , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Chars
+	; Used to reduce the visible layers and debug rendering issues with the real hardware. Usually it's the vectors of Sprites2 layer being active and hiding all the other graphics.
+;	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars
 	jsr Video_SetAddressTileBackgroundRegister
 	lda #255
 	sta CIA2PortBRS232
@@ -144,6 +148,17 @@ mainLoop
 	+MAllocateAnimPos kAnimationType_rotate1 , 220 , 75
 }
 } else {
+!ifdef kEnableMoresprites {
+	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 60
+	+MAllocateAnimPos kAnimationType_bullet1 , 70 , 70
+
+	+MAllocateAnimPos kAnimationType_bullet1 , 60 , 200
+	+MAllocateAnimPos kAnimationType_bullet1 , 70 , 202
+	+MAllocateAnimPos kAnimationType_bullet1 , 80 , 204
+	+MAllocateAnimPos kAnimationType_bullet1 , 90 , 206
+	+MAllocateAnimPos kAnimationType_bullet1 , 100 , 208
+}
+
 	+MAllocateAnimPos kAnimationType_boss1 , 130 , 253
 }
 
@@ -173,22 +188,15 @@ mainLoop
 	lda .tiles+1
 	sta CIA2PortBRS232
 
-!if 1 {
-	lda .paletteUpdated
-	+lbeq .skipPaletteUpdate
-	lda #0
-	sta .paletteUpdated
-	; Optimal data copy of new faded palette data
-	lda #kBus24Bit_VideoLayer_EBBS
-	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
-	jsr Bus24Bit_SetAddressBus
-	; Just the tiles palettes
-!for .dc , 5*16*2 {
-	lda PaletteNew + .dc -1
-	sta CIA2PortBRS232
-}
-.skipPaletteUpdate
-}
+	jsr Video_SetAddressVideoPaletteBankRegister
+	inc .paletteShift
+	lda .paletteShift
+	lsr
+	lsr
+	and #$3f
+	tay
+	lda .fadeBounceTab,y
+	+MBus24Bit_Send8BitValueFromA
 
 	; When not using multiplexing the CPU copies the sprites. When multiplexing the APU copies the sprite data at various points down the screen.
 !ifndef EnableMultiplexing {
@@ -229,83 +237,17 @@ mainLoop
 	inc .tiles+1
 .oc2
 
-!if 1 {
-	; Calculate faded palette data
-	ldx #5*16*2 ; For this many entries
-
-	inc .paletteShift
-	lda .paletteShift
-	lsr
-	lsr
-	and #$3f
-	tay
-	lda .fadeBounceTab,y
-	cmp .lastFadeUsed
-	beq .palEnd	; Cache check
-	sta .lastFadeUsed
-	inc .paletteUpdated
-	cmp #0
-	bne .someValue
-
-	lda #0
-.spl2
-	sta PaletteNew - 1,x
-	dex
-	bne .spl2
-	jmp .palEnd
-
-.someValue
-	cmp #15
-	bne .doFade
-
-.spl3
-	lda GamePalette - 1,x
-	sta PaletteNew - 1,x
-	dex
-	bne .spl3
-	jmp .palEnd
-
-.doFade
-	clc
-	adc #(>.shiftedPalettes) - 1	; -1 since the table doesn't have a zero entry
-	sta .smpl1+2
-
-.spl1
-	ldy GamePalette - 1,x
-.smpl1 lda .shiftedPalettes,y
-	sta PaletteNew - 1,x
-	dex
-	bne .spl1
-.palEnd
-}
-
 	jmp .l1
 
 .yposIndex !by 0
 .bestMultiplexPos !by 0
 .chars !by 0,0
 .tiles !by 0,0
-!if 1 {
-.paletteUpdated !by 0
-.lastFadeUsed !by -1
 .fadeBounceTab
 	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15
 	!fill 32 , 15
 	!by 15 , 14 , 13 , 12 , 11 , 10 , 9 , 8 , 7 , 6 , 5 , 4 , 3 , 2 , 1 , 0
 .paletteShift	!by 0
-!align 255 , 0
-.shiftedPalettes
-!for .shift , 14 {
-!for .palette , 256 {
-!set .rpalette = .palette - 1
-	!set .r = .rpalette & 0x0f
-	!set .g = (.rpalette >> 4) & 0x0f
-	!set .r = (.shift * .r) / 15;
-	!set .g = (.shift * .g) / 15;
-	!by .r | (.g << 4)
-}
-}
-}
 
 .waitVBlankSetPalAddress
 	jsr Video_WaitVBlank
@@ -352,14 +294,6 @@ FillMemory
 	bne .fl1
 	rts
 
-!if 0 {
-GamePalette
-!for .i , 256 {
-!set .ii = .i - 1
-	+MBus24Bit_MakePaletteRGB .ii * 16 , (255 - .ii) * 16 , .ii / 4
-}
-}
-
 RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
 !source "asm/DecompressRLECommon.a"
 
@@ -369,16 +303,113 @@ RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
 	jsr .s0
 }
 
+!align 255 , 0
+.colourFadeBits
+!for .i , 16 {
+!set .ii = .i - 1
+!for .palette , 256 {
+!set .ipalette = .palette - 1
+	!by (.ipalette * .ii) / 15
+}
+}
+
 
 DisplayData
-	lda #kBus24Bit_VideoLayer_EBBS
-	+MWordValueTo_XY kBus24Bit_VideoLayer_Palette
-	jsr Bus24Bit_SetAddressBus
+
+	; Pre-calculate RGB565 shifted palettes and store into each palette bank
+.sendNewPalette
+	jsr Video_SetAddressVideoPaletteBankRegister
+.smPalBank	lda #15
+	+MBus24Bit_Send8BitValueFromA
+
+
+	jsr Video_SetAddressPalette
 	+MWordValueTo_AX GamePalette
 	ldy #0
 	jsr Bus24Bit_FastCopySmallData
 	jsr Bus24Bit_FastCopySmallDataAgain
 	inc VIC2BorderColour
+
+	; Calculate a fade value...
+	lda .smPalBank+1
+	clc
+	adc #>.colourFadeBits
+	sta .smcolRed+2
+	sta .smcolGreen+2
+	sta .smcolBlue+2
+
+	jsr Video_SetAddressPalette
+
+	ldx #0
+.fp1
+
+	; Red
+	lda GamePalette,x
+	and #%11111
+	tay
+.smcolRed	lda .colourFadeBits,y
+	sta zeroPage_Temp0
+
+	; Setup the colour work area
+	lda GamePalette,x
+	sta zeroPage_Temp1
+	lda GamePalette+1,x
+	sta zeroPage_Temp2
+
+	; Shift out the red bits
+!for .i , 5 {
+	lsr zeroPage_Temp2
+	ror zeroPage_Temp1
+}
+
+	; Green
+	lda zeroPage_Temp1
+	and #%111111
+	tay
+.smcolGreen	lda .colourFadeBits,y
+	sta zeroPage_Temp3
+
+	; Shift out the green bits
+!for .i , 6 {
+	lsr zeroPage_Temp2
+	ror zeroPage_Temp1
+}
+
+	; Blue
+	lda zeroPage_Temp1
+	and #%11111
+	tay
+.smcolBlue	lda .colourFadeBits,y
+	; We have blue in A
+
+	; Now shift enough bits for each colour being added
+	; Green
+!for .i , 6 {
+	asl
+	rol zeroPage_Temp2
+}
+	ora zeroPage_Temp3
+
+	; Red
+!for .i , 5 {
+	asl
+	rol zeroPage_Temp2
+}
+	ora zeroPage_Temp0
+
+	+MBus24Bit_Send8BitValueFromA
+	lda zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+
+	inx
+	inx
+	; Number of palette entries to fade...
+	cpx #5*16*2
+	+lbne .fp1
+
+
+	dec .smPalBank+1
+	+lbpl .sendNewPalette
 
 
 	+MBus24Bit_SetAddress_AXY 1 , $a000
