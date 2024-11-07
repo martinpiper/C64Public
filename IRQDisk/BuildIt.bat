@@ -21,4 +21,4 @@ goto end
 echo TestIRQDisk.prg not created!
 exit -1
 :end
-..\ExternalTools\C1541\c1541.exe -attach test.d64 -format test,67 -write TestIRQDisk.prg testirqdisk -write screen1.prg screen1 -write screen2.prg screen2 -write screen3.prg screen3 -write TESTSAVE.PRG testsave
+..\ExternalTools\C1541\c1541.exe -interleave 15 -attach test.d64 -format test,67 -write TestIRQDisk.prg testirqdisk -write screen1.prg screen1 -write screen2.prg screen2 -write screen3.prg screen3 -write TESTSAVE.PRG testsave

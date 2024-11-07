@@ -6,6 +6,7 @@ IRQDiskDriveCodeStart
 
 DriveCode_Start
 !pseudopc $500 {
+!device 8 {
 DriveCode_StartReal
 
 ; Unused according to http://unusedino.de/ec64/technical/aay/c1541/ra41main.htm
@@ -769,6 +770,7 @@ DriveCode_StartReal
 .temp2 !by 0
 
 .driveCodeRealEnd:
+}
 } ; < !pseudopc
 
 !if .driveCodeRealEnd >= .driveRAMEnd {

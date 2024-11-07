@@ -69,9 +69,22 @@ IRQDisk_UpdateRegisterOnDataStore = VIC2BorderColour
 TestIteration = $200
 TestIterationBreakAt = $2b2
 
+* = $500
+ThisIsSomeOverlappingCode
+.bph
+	nop
+	lda #1
+	lda #2
+	lda #3
+	lda #4
+	rts
+
+
+
 * = $8000
 	lda #ProcessorPortKERNALWithIO
 	jsr InitialiseMachine
+	jsr ThisIsSomeOverlappingCode
 	+InitKERNALIO_AXY
 	+SetDefaultScreen_A
 	lda #1
@@ -445,3 +458,15 @@ ValidateScreenWithExpected3
 	!error "Code too large"
 }
 
+
+
+!pseudopc $500 {
+ThisIsSomeOverlappingCode2
+.bph2
+	bit $1234
+	ldx #1
+	ldx #2
+	ldx #3
+	ldx #4
+	rts
+}

@@ -1,3 +1,5 @@
+!device 8 {
+
 ; From http://unusedino.de/ec64/technical/aay/c1541/ra41main.htm
 
 .commandCodeBuffer0	= $00
@@ -81,3 +83,5 @@ http://www.unusedino.de/ec64/technical/aay/c1541/jobcodes.htm
 .commandJobCodeBump		= $c0
 .commandJobCodeJump		= $d0
 .commandJobCodeExecute	= $e0
+
+}

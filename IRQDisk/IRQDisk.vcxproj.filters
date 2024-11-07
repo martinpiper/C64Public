@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="BuildIt.bat">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="IRQDisk.a">
       <Filter>Source Files</Filter>
     </CustomBuild>
@@ -69,6 +66,7 @@
     <CustomBuild Include="..\DoBackup.bat">
       <Filter>Source Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="BuildIt.bat" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -78,5 +76,6 @@
     <None Include="TestIRQDisk3.a">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="RunIt.bat" />
   </ItemGroup>
 </Project>

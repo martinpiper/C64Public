@@ -1,0 +1,26 @@
+; ..\acme.exe -v4 --msvc -f cbm -o c:\temp\t.prg SmallestBoot.a
+; ..\ExternalTools\C1541\c1541.exe -interleave 15 -attach c:\temp\t.d64 -format test,67 -write c:\temp\t.prg boot
+
+; Smallest disk file boot code
+; Because the disk store byte at $f51c quickly calls the STOP vector at $328 which usually points to $f6ed
+; we can alter the low byte to point to a brk instruction at $f616
+; Since no other vectors from $316 (BRK) to $328 (STOP) are accessed during a disk load, we can put code there.
+
+; Claim the BRK vector
+*=$316
+	!word start
+
+; This overwrites the NMI vector onwards, but they are not called during a load...
+start
+	jsr $ee13
+.sm1 sta $c000
+	inc .sm1+1
+	bne start
+	jmp $c000
+*=$328
+	!by $16	; Point STOP vector to $f616 instead of the default $f6ed
+
+!pseudopc $c000 {
+	inc $d020
+	jmp $c000
+}
