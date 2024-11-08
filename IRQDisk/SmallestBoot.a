@@ -1,5 +1,4 @@
-; ..\acme.exe -v4 --msvc -f cbm -o c:\temp\t.prg SmallestBoot.a
-; ..\ExternalTools\C1541\c1541.exe -interleave 15 -attach c:\temp\t.d64 -format test,67 -write c:\temp\t.prg boot
+!source "../stdlib/stdlib.a"
 
 ; Smallest disk file boot code
 ; Because the disk store byte at $f51c quickly calls the STOP vector at $328 which usually points to $f6ed
@@ -11,17 +10,17 @@ CodeStart = $c000
 }
 
 ; Claim the BRK vector
-*=$316
+*=BRKServiceRoutineLo
 	!word start
 
 ; This overwrites the NMI vector onwards, but they are not called during a load...
 start
-	jsr $ee13
+	jsr KERNALSerialBus_ReceiveData
 .sm1 sta CodeStart
 	inc .sm1+1
 	bne start
 	jmp CodeStart
-*=$328
+*=STOPVectorLo
 	!by $16	; Point STOP vector to $f616 instead of the default $f6ed
 
 !labelredefine
@@ -29,11 +28,56 @@ start
 !pseudopc CodeStart {
 RelocStart
 .start = *
-	inc $d020
-	jmp .start
+	+MStopInitStack_X
+	jsr KERNALRestoreIOVectors
+
+	jsr CLRSCR
+
+	lda #0
+	sta VIC2ScreenColour
+	jsr SETMSG
+
+	lda #<StopKeyCheck
+	sta STOPVectorLo
+	lda #>StopKeyCheck
+	sta STOPVectorHi
+
+	lda #8
+	ldx ZPCurrentFileDeviceNumber
+	ldy #1
+	jsr SETLFS
+	lda #.fileNameEnd-.fileNameStart
+	ldx #<.fileNameStart
+	ldy #>.fileNameStart
+	jsr SETNAM
+	lda #0
+	ldx #$ff
+	ldy #$ff
+	jsr LOAD
+;	stx ZPStartVariableLo
+;	sty ZPStartVariableHi
+
+	jmp $80d
+
+StopKeyCheck
+	; This flashes the border during loading because the load routine checks the stop key.
+	lda #1
+	sta VIC2BorderColour
+	dec VIC2BorderColour
+	; Tell the kernal we are not pressing the stop key, honest
+	lda #$ff
+	rts
+
+.fileNameStart !pet "testirqdisk"
+.fileNameEnd
+
 RelocEnd
 }
 
-CodeStart = $c100 - (RelocEnd - RelocStart)
+!if RelocEnd > VIC {
+!error "Code too large"
+}
+
+CodeStart = VIC - (RelocEnd - RelocStart)
 
 !labelredefineend
