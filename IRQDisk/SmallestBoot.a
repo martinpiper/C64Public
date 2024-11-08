@@ -6,6 +6,10 @@
 ; we can alter the low byte to point to a brk instruction at $f616
 ; Since no other vectors from $316 (BRK) to $328 (STOP) are accessed during a disk load, we can put code there.
 
+!ifndef CodeStart {
+CodeStart = $c000
+}
+
 ; Claim the BRK vector
 *=$316
 	!word start
@@ -13,14 +17,23 @@
 ; This overwrites the NMI vector onwards, but they are not called during a load...
 start
 	jsr $ee13
-.sm1 sta $c000
+.sm1 sta CodeStart
 	inc .sm1+1
 	bne start
-	jmp $c000
+	jmp CodeStart
 *=$328
 	!by $16	; Point STOP vector to $f616 instead of the default $f6ed
 
-!pseudopc $c000 {
+!labelredefine
+
+!pseudopc CodeStart {
+RelocStart
+.start = *
 	inc $d020
-	jmp $c000
+	jmp .start
+RelocEnd
 }
+
+CodeStart = $c100 - (RelocEnd - RelocStart)
+
+!labelredefineend

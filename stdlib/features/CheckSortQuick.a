@@ -1,28 +1,17 @@
 !source "stdlib/stdlib.a"
 !source "stdlib/Comparisons.a"
-!source "stdlib/LongBranches.a"
 
 !source "stdlib/QuickSort.a"
 !source "features/CheckSortCommon.a"
 
-SortHardMaxEntries = 8	; The hard maximum for entries for the sort
-QuickSort_Sortlo !fill SortHardMaxEntries , 0
-QuickSort_Sorthi !fill SortHardMaxEntries , 0
-
 !zn
-SortSortGT
-	+QuickSort_SortRTS 1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthGT , ~QuickSort_sortstartGT
-	rts
-
 SortInitGT
-	+QuickSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLengthGT , QuickSort_Sortlo , QuickSort_Sorthi , QuickSort_sortstartGT
+SortInitLT
 	+QuickSort_Init SortMaxEntries , SortIndexTable
 	rts
+
+SortSortGT
+	+QuickSort_SortRTS 1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1
 
 SortSortLT
-	+QuickSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , QuickSort_Sortlo , QuickSort_Sorthi , ~SortBlockByteLengthLT , ~QuickSort_sortstartLT
-
-SortInitLT
-	+QuickSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLengthLT , QuickSort_Sortlo , QuickSort_Sorthi , QuickSort_sortstartLT
-	+QuickSort_Init SortMaxEntries , SortIndexTable
-	rts
+	+QuickSort_SortRTS -1 , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1

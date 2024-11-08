@@ -1,0 +1,28 @@
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+!source "stdlib/LongBranches.a"
+
+!source "stdlib/GnomeSort.a"
+!source "features/CheckSortCommon.a"
+
+SortHardMaxEntries = 8	; The hard maximum for entries for the sort
+GnomeSort_Sortlo !fill SortHardMaxEntries , 0
+GnomeSort_Sorthi !fill SortHardMaxEntries , 0
+
+!zn
+SortSortGT
+	+GnomeSort_SortRTS 1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLengthGT , ~GnomeSort_sortstartGT
+	rts
+
+SortInitGT
+	+GnomeSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLengthGT , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstartGT
+	+GnomeSort_Init SortMaxEntries , SortIndexTable
+	rts
+
+SortSortLT
+	+GnomeSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLengthLT , ~GnomeSort_sortstartLT
+
+SortInitLT
+	+GnomeSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLengthLT , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstartLT
+	+GnomeSort_Init SortMaxEntries , SortIndexTable
+	rts

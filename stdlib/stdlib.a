@@ -588,6 +588,7 @@ VIC2SpriteXBorderRight = 256+88
 VIC2SpriteXBorderRight38 = VIC2SpriteXBorderRight-8
 ; Middle X for a 38 column wide screen
 VIC2SpriteXBorderMiddle38 = ((VIC2SpriteXBorderRight38 - VIC2SpriteSizeX) + VIC2SpriteXBorderLeft) / 2
+VIC2SpriteXBorderMiddle40 = ((VIC2SpriteXBorderRight - VIC2SpriteSizeX) + VIC2SpriteXBorderLeft) / 2
 ; The top most position for a 25 row screen where the sprite is completely visible
 VIC2SpriteYBorderTop = 50
 ; The top most position for a 24 row screen where the sprite is completely visible
@@ -1402,6 +1403,18 @@ RasterLengthNTSCC64		= 520
 	sta .addr
 	lda #>.value
 	sta .addr+1
+}
+!macro MWordValueToAddress_X .value , .addr {
+	ldx #<.value
+	stx .addr
+	ldx #>.value
+	stx .addr+1
+}
+!macro MWordValueToAddress_Y .value , .addr {
+	ldy #<.value
+	sty .addr
+	ldy #>.value
+	sty .addr+1
 }
 
 !macro MWordValueToAddressLoHi_A .value , .addrLo , .addrHi {
