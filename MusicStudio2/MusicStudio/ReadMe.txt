@@ -311,7 +311,7 @@ HTI:XX - Sets the hard restart frame time, must be greater than 0.
 
 - FLUENT NOTES: slur command
 
-SLE - This block command enables slurring (or ties) of the next notes, the note will note release until SLD is disabled. Envelope commands have no effect on the sound until the SLD command is used. Hard restart is also disabled for the voice by this command.
+SLE - This block command enables slurring (or ties) of the next notes, the note will not release until SLE is disabled. Envelope commands have no effect on the sound until the SLR command is used. Hard restart is also disabled for the voice by this command.
 
 SLR - Releases the slur (or ties) of the next note. Hard restart is also enabled for the voice by this command.
 
@@ -551,7 +551,7 @@ These options can be concatenated together and are executed in sequence. For exa
 New in this release
 -------------------
 
-* Exporting to MIDI
+* Improved MIDI import options
 
 
 Credits:

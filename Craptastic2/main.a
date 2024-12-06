@@ -1,0 +1,327 @@
+;Craptastic2 test code
+
+!source "stdlib/stdlib.a"
+!to "Craptastic2.prg", cbm
+!sl "Craptastic2.map"
+!sal
+!svl "Craptastic2.lbl"
+!pdb "Craptastic2.pdb"
+!cpu 6510
+!ct pet
+!initmem $0
+
+; Comment out this line to remove debug border timings
+;kEnableDebugMainlineBorder = 1
+
+!source "stdlib/Comparisons.a"
+!source "stdlib/LongBranches.a"
+!source "stdlib/PETSCII.a"
+
+kEntityMax = 8
+kNumberOfFramesForAMonster = 8
+!macro MNumberOfFramesForAMonsterMultiply_A {
+	asl
+	asl
+	asl
+}
+kNumberOfMonsterTypesPerLevel = 8
+
+SpriteWorking = $7fc0
+SpriteFinal = $7f80
+SpriteDisplay = $7f40
+
+PlayerBulletCharacter = 42
+
+; Zeropage usage
+tempZP0 = $fb
+tempZP1 = $fc
+tempZP2 = $fd
+tempZP3 = $fe
+tempZP4 = $ff
+
+tempWork0 = tempZP0
+tempWork1 = tempZP1
+tempWork2 = tempZP2
+tempWork3 = tempZP3
+
+Score_ZeroPage = $02	; And $03
+
+
+Characters = VIC2_Bank1
+CharScreen = VIC2_Bank1 + VIC2MemorySetup_CharsSize
+GameSpriteStartAddress = CharScreen + VIC2MemorySetup_ScreenSize
+GameSpriteStartFrame = (GameSpriteStartAddress & CIA2PortASerialBusVICBankMask) / VIC2MemorySetup_SpriteSize
+
+*=$800
+CommandBuffer
+	; Head
+	!by kSpriteIndexToWorking , 11
+	!by kSpriteScrollRight , 2
+	!by kSpriteSquishTopToMiddle , 5
+	!by kSpriteSquishBottomToMiddle , 6
+	!by kSpriteScrollUp , 5
+PlayerSprite_part0	!by kSpriteScrollDown , 0
+	!by kSpriteWorkingToFinalMaskMulticolour
+
+	; Body
+	!by kSpriteIndexToWorking , 9
+	!by kSpriteSquishTopToMiddle , 5
+	!by kSpriteSquishBottomToMiddle , 6
+	!by kSpriteScrollDown , 4
+PlayerSprite_part1	!by kSpriteScrollUp , 0
+	!by kSpriteWorkingToFinalMaskMulticolour
+
+	; Feet
+	!by kSpriteIndexToWorking , 13
+	!by kSpriteSquishTopToMiddle , 5
+	!by kSpriteSquishBottomToMiddle , 9
+	!by kSpriteScrollDown , 10
+PlayerSprite_part2	!by kSpriteScrollUp , 0
+	!by kSpriteWorkingToFinalMaskMulticolour
+	!by kSpriteIndexToWorking , 13
+	!by kSpriteSquishTopToMiddle , 5
+	!by kSpriteSquishBottomToMiddle , 9
+	!by kSpriteScrollDown , 10
+PlayerSprite_part3	!by kSpriteScrollUp , 0
+	!by kSpriteScrollRight , 14
+	!by kSpriteWorkingToFinalMaskMulticolour
+
+	; Eyes
+	!by kSpriteIndexToWorking , 0
+;	!by kSpriteSquishTopToMiddle , 1	; Shorter eyes
+	!by kSpriteScrollUp , 6
+	!by kSpriteScrollRight , 2
+PlayerSprite_part4	!by kSpriteScrollDown , 0
+	!by kSpriteWorkingToFinalMaskMulticolour
+	!by kSpriteIndexToWorking , 0
+;	!by kSpriteSquishTopToMiddle , 1	; Shorter eyes
+	!by kSpriteScrollUp , 6
+	!by kSpriteScrollRight , 12
+PlayerSprite_part5	!by kSpriteScrollDown , 0
+	!by kSpriteWorkingToFinalMaskMulticolour
+	!by kSpriteEnd
+	
+!source "FingerPrint.a"
+
+; Enough space for the command buffer etc
+* = $900
+start
+	sei
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	jsr CharacterSetInit
+
+	jsr SFXSIDInit
+
+	+MByteValueToAddress_A %1 , VIC2InteruptControl
+	+MByteValueToAddress_A 128 , VIC2Raster
+	+MWordValueToAddress_A RasterIRQ , IRQServiceRoutineLo
+	cli
+
+	+MSetTextCursor 0 , 5
+	+MBASICTextPrint Text_MakingPlayer
+	
+	jsr GameCreatePlayerSpriteFrames
+
+.gameStartAgain
+	jsr CLRSCR
+	+MSetTextCursor 0 , 0
+	; Display the title screen
+	+MBASICTextPrint TitleText
+
+	+MSetTextCursor 5 , 5
+	+MBASICTextPrint TitleText2
+
+	+MSetTextCursor 10 , 15
+	+MBASICTextPrint Text_PressFire
+
+	+MSetSpriteXYColFrame_A 0 , VIC2SpriteXBorderLeft + 8, VIC2SpriteYBorderTop + 24 + 4 , VIC2Colour_LightGreen , GameSpriteStartFrame , CharScreen
+	+MByteValueToAddress_A  %1 , VIC2SpriteEnable
+
+	+WaitForFire_A
+
+	jsr GameInit
+	
+.l1
+	; Calculate how many monsters for this level
+	jsr Rand
+	and #15
+	clc
+	adc #15
+	sta GameLevelNumMonstersLeft
+	lda #0
+	sta GameLevelNumMonstersAlive
+
+
+	; Gives a little pause at the end of the level
+	lda #25
+	sta GameLevelCompleteCounter
+
+	+MSetTextCursor 0 , 14
+	jsr GameCreateMonsterSprites
+
+	jsr ClearAllButTheTopLine
+	jsr CharEffects_Init
+	jsr GameDrawBackground
+	jsr GameLevelLoop
+
+	jsr ClearAllButTheTopLine
+	+MByteValueToAddress_A 0 , VIC2SpriteEnable
+
+	lda PlayerHealth
+	beq .playerDied
+	bmi .playerDied
+	jsr ClearAllButTheTopLine
+
+	+MSetTextCursor 2 , 11
+	+MBASICTextPrint Text_Congratulations
+
+	jmp .l1
+
+.playerDied
+	; Some delay counter for the death screen
+	lda #50
+	sta tempWork0
+
+.wl1
+	+MACROWaitForTheLastScan_A
+	; Need some delay due to waiting for the raster position, without wasting bytes
+	+MSetTextCursor 10 , 10
+	+MBASICTextPrint Text_YouDied
+	; Repeatedly play some sad sound effects on player death
+	lda tempWork0
+	and #15
+	bne .ns1
+	lda #1
+	jsr SafeSFXInit
+	lda #3
+	jsr SafeSFXInit
+.ns1
+	dec tempWork0
+	bne .wl1
+
+	+MSetTextCursor 10 , 12
+	+MBASICTextPrint Text_PressFire
+	+WaitForFire_A
+
+
+
+	jmp .gameStartAgain
+
+SpriteData
+!bin "Sprites.spd" , , $9
+
+; For CharEffects
+ScrollerBankVisible			!by >CharScreen
+ScrollerScreenCharMovedY	!by 0
+ScrollerScreenCharMovedX	!by 0
+ScreenTabL !for .table1,25 {!by <((.table1-1) * 40) }
+ScreenTabH !for .table1,25 {!by >(((.table1-1) * 40)) }
+MapSolidCharsUpper = 255
+Scroller_AdditionalCharLines = 5	; Full screen
+
+
+Initialise_NoPreserveStack = 1
+!source "stdlib/Initialise.a"
+
+!source "SpriteComposite.a"
+!source "BerzerkRedux/Rand.a"
+!source "Monster.a"
+!source "stdlib/MemoryCopy.a"
+!source "Entity.a"
+!source "Game.a"
+kNumCharEffects = 30
+!source "Scroller/CharEffects.a"
+!source "Citadel2/asm/Score.a"
+!source "Background.a"
+!source "CharacterSet.a"
+
+!source "SFX/SFX.a"
+SFXTable
+!bin "SEUCK/GAME3__I.P00",$f0,$1a + 2 - $900 + $b810
+
+
+TitleText
+	!by CHR_ReverseOff , CHR_White
+	!tx "Craptastic 2" , CHR_Return , CHR_Green , "   The revenge of the blobby thingies"
+	!by 0
+
+TitleText2
+	!by CHR_ReverseOff , CHR_LightGreen
+	!tx "This is you, the other monsters are jealous of your light green colour." , CHR_Return
+	!by CHR_LightRed
+	!tx "Find freedom from the monster factory!" , CHR_Return
+	!tx "Shoot the monsters." , CHR_Return , CHR_Return
+	!by CHR_White
+	!tx "Joystick in port 2."
+	!by 0
+
+Text_MakingPlayer
+	!by CHR_ReverseOff, CHR_Yellow
+	!tx "Making player graphics..."
+	!by 0
+
+Text_Congratulations
+	!by CHR_ReverseOff, CHR_White
+	!tx "Level complete, next level..."
+	!by 0
+
+Text_YouDied
+	!by CHR_ReverseOff, CHR_LightRed
+	!tx "You died!"
+	!by 0
+
+TopLine
+	!by CHR_ReverseOff, CHR_White
+	!tx "Score:          Energy: "
+	!by CHR_ReverseOn
+	!by CHR_Red
+	!fill 4 , $e7
+	!by CHR_Yellow
+	!fill 5 , $e7
+	!by CHR_Green
+	!fill 7 , $e7
+	!by 0
+
+Text_PressFire
+	!by CHR_ReverseOff , CHR_White
+	!tx "Press fire"
+	!by 0
+
+
+ClearAllButTheTopLine
+	lda #' '
+	ldx #0
+.dm1
+	sta CharScreen + VIC2ScreenCharsWidth,x
+	sta CharScreen + $100,x
+	sta CharScreen + $200,x
+	sta CharScreen + $2e8,x
+	dex
+	bne .dm1
+	rts
+
+
+!zn
+SafeSFXInit
+	sei
+	jsr SFXInit
+	cli
+	rts
+
+!zn
+RasterIRQ
+;	inc VIC2BorderColour
+	jsr SFXPlay
+;	dec VIC2BorderColour
+
+	+MACROAckRasterIRQ_A
+	jmp MinimalIRQServiceRoutine
+
+
+
+;**********************************************
+; Last of all, the safety memory check
++MCheckNotInMemoryRange Characters , VIC2_Bank3
+;**********************************************

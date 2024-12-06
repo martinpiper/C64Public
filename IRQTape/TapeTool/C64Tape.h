@@ -67,6 +67,7 @@ private:
 	int mTurboZeroPulse;
 	int mTurboOnePulse;
 	bool mTurboLittleEndian;
+	bool mOverRideTurboHeaderBytes;
 	std::vector<unsigned char> mTurboHeaderBytes;
 	unsigned char mChecksumRegister;
 	bool mTurboGotSync;
@@ -86,4 +87,12 @@ private:
 
 	Stream *mCurrentStream;
 	std::list< Stream* > mStreams;
+
+	// These are only valid when saving files...
+	std::string mFilenameRoot;
+	int mOffsetFilenameStart , mOffsetFilenameEnd;
+	int mOffsetStartAddressLo , mOffsetStartAddressHi;
+	int mOffsetEndAddressLo , mOffsetEndAddressHi;
+	int mOffsetDataStart;
+	int mOffsetXORByte;
 };

@@ -86,9 +86,6 @@
     <ClCompile Include="CompressV.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DecompressV.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="RunTests.bat">
@@ -173,6 +170,18 @@
       <Filter>asm</Filter>
     </None>
     <None Include="..\Decompression\DecompressionUReferenceLongOffset.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionV.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DecompressionVVars.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\TestDecompression5V.a">
+      <Filter>asm</Filter>
+    </None>
+    <None Include="..\Decompression\DefineDoExtraWorkMemoryHigh.a">
       <Filter>asm</Filter>
     </None>
   </ItemGroup>

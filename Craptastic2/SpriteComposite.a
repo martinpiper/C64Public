@@ -1,0 +1,274 @@
+
+kSpriteEnd								= 0
+kSpriteIndexToWorking					= 1
+kSpriteScrollRight						= 2
+kSpriteSquishTopToMiddle				= 3
+kSpriteSquishBottomToMiddle				= 4
+kSpriteScrollDown						= 5
+kSpriteScrollUp							= 6
+kSpriteWorkingToFinalMaskMulticolour	= 7
+
+!zn
+; Entry: a/x = lo/hi address of command buffer
+SpriteExecuteCommands
+	sta .sm1+1
+	stx .sm1+2
+.l1
+	jsr SpriteGetNextCommand
+	cpy #kSpriteEnd
+	bne .o1
+
+	rts
+
+.o1
+	cpy #kSpriteIndexToWorking
+	bne .o2
+
+	jsr SpriteGetNextCommand
+	jsr SpriteIndexToWorkingByY
+	jmp .l1
+
+.o2
+	cpy #kSpriteScrollRight
+	bne .o3
+
+	jsr SpriteGetNextCommand
+	jsr SpriteScrollRightByY
+	jmp .l1
+
+.o3
+	cpy #kSpriteSquishTopToMiddle
+	bne .o4
+
+	jsr SpriteGetNextCommand
+	jsr SpriteSquishTopToMiddleByY
+	jmp .l1
+
+.o4
+	cpy #kSpriteSquishBottomToMiddle
+	bne .o5
+
+	jsr SpriteGetNextCommand
+	jsr SpriteSquishBottomToMiddleByY
+	jmp .l1
+
+.o5
+	cpy #kSpriteScrollDown
+	bne .o6
+
+	jsr SpriteGetNextCommand
+	jsr SpriteScrollDownByY
+	jmp .l1
+
+.o6
+	cpy #kSpriteScrollUp
+	bne .o7
+
+	jsr SpriteGetNextCommand
+	jsr SpriteScrollUpByY
+	jmp .l1
+
+.o7
+	cpy #kSpriteWorkingToFinalMaskMulticolour
+	bne .o8
+
+	jsr SpriteWorkingToFinalMaskMulticolour
+	jmp .l1
+
+.o8
+	; Unknown, so return
+	rts
+
+; Exit: Y = The next command byte
+SpriteGetNextCommand
+.sm1	ldy $1234
+	+MIncAddr16 .sm1+1 , .sm1+2
+	rts
+
+
+!zn
+SpriteIndexToWorkingByY
+	+MWordValueToAddress_A SpriteData , .sm1+1
+	cpy #0
+	beq .l2
+
+.l3
+	+MAddU8ToAddr16 VIC2MemorySetup_SpriteSize , .sm1+1 , .sm1+2
+	dey
+	bne .l3
+
+.l2
+	ldx #VIC2SpriteByteSize - 1
+.l1
+.sm1	lda $1234,x
+	sta SpriteWorking,x
+	dex
+	bpl .l1
+	rts
+
+!macro MSpriteRejectYValue .i {
+	cpy #.i
+	bne .ok1
+	rts
+.ok1
+}
+
+!zn
+SpriteScrollRightByY
+	+MSpriteRejectYValue 0
+.l2
+	ldx #0
+.l1
+	lsr SpriteWorking , x
+	ror SpriteWorking + 1 , x
+	ror SpriteWorking + 2 , x
+	inx
+	inx
+	inx
+	cpx #VIC2SpriteByteSize
+	bne .l1
+	dey
+	bne .l2
+	rts
+
+
+!zn
+SpriteSquishTopToMiddleByY
+	+MSpriteRejectYValue 0
+.l2
+	ldx #((VIC2SpriteSizeY/2) * 3) - 1
+.l1
+	lda SpriteWorking , x
+	sta SpriteWorking + 3 , x
+	dex
+	bpl .l1
+
+	lda #0
+	sta SpriteWorking
+	sta SpriteWorking+1
+	sta SpriteWorking+2
+
+	dey
+	bne .l2
+	rts
+
+
+!zn
+SpriteSquishBottomToMiddleByY
+	+MSpriteRejectYValue 0
+.l2
+	ldx #((VIC2SpriteSizeY/2) * 3)
+.l1
+	lda SpriteWorking + 3, x
+	sta SpriteWorking , x
+	inx
+	cpx #VIC2SpriteByteSize
+	bne .l1
+
+	lda #0
+	sta SpriteWorking + VIC2SpriteByteSize - 1
+	sta SpriteWorking + VIC2SpriteByteSize - 2
+	sta SpriteWorking + VIC2SpriteByteSize - 3
+
+	dey
+	bne .l2
+	rts
+
+
+!zn
+SpriteScrollDownByY
+	+MSpriteRejectYValue 0
+.l2
+	ldx #VIC2SpriteByteSize - 1
+.l1
+	lda SpriteWorking , x
+	sta SpriteWorking + 3 , x
+	dex
+	bpl .l1
+
+	lda #0
+	sta SpriteWorking
+	sta SpriteWorking+1
+	sta SpriteWorking+2
+
+	dey
+	bne .l2
+	rts
+
+
+!zn
+SpriteScrollUpByY
+	+MSpriteRejectYValue 0
+.l2
+	ldx #0
+.l1
+	lda SpriteWorking + 3, x
+	sta SpriteWorking , x
+	inx
+	cpx #VIC2SpriteByteSize
+	bne .l1
+
+	lda #0
+	sta SpriteWorking + VIC2SpriteByteSize - 1
+	sta SpriteWorking + VIC2SpriteByteSize - 2
+	sta SpriteWorking + VIC2SpriteByteSize - 3
+
+	dey
+	bne .l2
+	rts
+
+!zn
+SpriteClearFinal
+	lda #0
+	ldx #VIC2SpriteByteSize-1
+.l1
+	sta SpriteFinal,x
+	dex
+	bpl .l1
+	rts
+
+!zn
+.sprColMaskTab
+	!by %00000011
+	!by %00001100
+	!by %00110000
+	!by %11000000
+.sprColMaskInvertTab
+	!by %11111100
+	!by %11110011
+	!by %11001111
+	!by %00111111
+
+SpriteWorkingToFinalMaskMulticolour
+	ldx #VIC2SpriteByteSize-1
+.l1
+	ldy #3
+.l2
+	; Back to front ordering
+!if 1 {
+	lda SpriteWorking,x
+	and .sprColMaskTab,y
+	beq .no0
+	sta tempZP0
+	lda SpriteFinal,x
+	and .sprColMaskInvertTab,y
+	ora tempZP0
+	sta SpriteFinal,x
+.no0
+}
+	; Front to back ordering
+!if 0 {
+	lda SpriteFinal,x
+	and .sprColMaskTab,y
+	bne .no0
+	lda SpriteWorking,x
+	and .sprColMaskTab,y
+	ora SpriteFinal,x
+	sta SpriteFinal,x
+.no0
+}
+	dey
+	bpl .l2
+	dex
+	bpl .l1
+	rts

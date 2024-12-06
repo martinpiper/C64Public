@@ -40,8 +40,7 @@ Given assemble DecompressU test
 
 
 
-
-Then expect correct memory writes during decompression
+Then expect correct memory writes during decompression with RNXPCompressionDecompressU
   Given load binary file "C:\temp\wizball_ocean_6389_min.prg" into temporary memory
   And trim "2" bytes from the start of temporary memory
 

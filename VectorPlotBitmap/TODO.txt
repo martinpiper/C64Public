@@ -53,3 +53,24 @@ TODO
 * There is an optmisation for the cart bank packing where the code, because it's position independant, can be put anywhere.
 	The MakeCart option can be optimised to use the same space packing technique as the streaming cartridge link list output, but without the link list header.
 	If each raw chunk of code saved to a 00 or x00 aligned filename and MakCart also saved to _f_index.a file it would be easier to create the lookup table from the CartFile1_Bank_X and CartFile1_Start_X labels
+
+
+
+
+* Consider updating the accuracy of the maths, especially useful for the vector hardware demo.
+	Perhaps get Elite working with filled 3D vectors?
+	https://www.bbcelite.com/elite-a/
+	https://www.bbcelite.com/deep_dives/
+	https://www.bbcelite.com/elite-a/articles/map_of_the_source_code.html
+	https://www.bbcelite.com/elite-a/indexes/a-z.html
+	https://www.bbcelite.com/elite-a/docked/subroutine/ll28.html
+	https://www.bbcelite.com/elite-a/docked/subroutine/mvs4.html
+	https://www.bbcelite.com/deep_dives/pitching_and_rolling.html
+	https://www.bbcelite.com/deep_dives/rotating_the_universe.html
+	https://www.bbcelite.com/deep_dives/orientation_vectors.html
+	https://github.com/markmoxon/elite-a-beebasm
+	https://www.bbcelite.com/deep_dives/line-clipping.html
+	https://www.bbcelite.com/deep_dives/extended_screen_coordinates.html
+	https://www.bbcelite.com/deep_dives/shift-and-subtract_division.html
+	https://www.bbcelite.com/deep_dives/multiplication_and_division_using_logarithms.html
+	

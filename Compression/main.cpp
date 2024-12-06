@@ -95,10 +95,13 @@ int main(int argc,char **argv)
 			" -ce <input file> <outfile file> [offset from the start of the file]\n"
 			"To use LZMPiU mode (Better compression, slightly more complex decompression) then use:"
 			" -cu <input file> <outfile file> [offset from the start of the file]\n"
+			"To use LZMPiV mode (Better compression, much slower and more complex decompression) then use:"
+			" -cv <input file> <outfile file> [offset from the start of the file]\n"
+			" The -c64 with vh option will use $600 of tables at $fa00, whereas the v option will use tables at $200. When using vh, the top most memory address is reduced appropriately. The vh option allows meory to be used starting from $200, the v option allows memory to be used starting from $800.\n"
 			"To use RLE mode then use:"
 			" -cr <input file> <outfile file> [offset from the start of the file]\n"
 			"To create a C64 self extracting binary use:\n"
-			" -c64[m][b][r][e][u] <input file> <outfile file> <run address> [start address]\n\n"
+			" -c64[m][b][r][e][u][v][vh] <input file> <outfile file> <run address> [start address] [skip start bytes]\n\n"
 			"-c64 will compress a C64 prg file with the start address being the first two\n"
 			"bytes of the file. The optional start address will override the start address\n"
 			"read from the first two bytes of the prg file.\n"
@@ -119,6 +122,7 @@ int main(int argc,char **argv)
 			" -o2 Enable shuffle optimise compression pass (very slow). Must be before other compression options.\n"
 			" -o3 Enable long threshold optimise compression pass (quite slow). Must be before other compression options.\n"
 			" -o4 <num1> <num2> <num3> <num4> Specifies the four tweak values displayed during -o1 which avoids the slow permutation search. Must be before other compression options.\n"
+			" -ol <typical number 1-10> Default 10. Sets the compression optimisation level, from 1 being the least to 10 being a sensible maximum. Numbers larger than 10 will probably significantly increase compression times with little benefit.\n"
 			" -no Do not output the original file size. Must be before other options.\n"
 			" -yo Output the original load address (first two bytes of the file). Must be before other options.\n"
 		);
@@ -146,6 +150,8 @@ int main(int argc,char **argv)
 	bool handledPreParam = false;
 	bool useCompressionU = false;
 	bool useCompressionV = false;
+	bool useCompressionWithHigh = false;
+	int compressionLevel = 10;
 
 	do
 	{
@@ -164,6 +170,15 @@ int main(int argc,char **argv)
 			outputOriginalLoadAddress = true;
 			argc--;
 			argv++;
+			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'o' && argv[1][2] == 'l')
+		{
+			compressionLevel = ParamToNum(argv[2]);
+
+			argc-=2;
+			argv+=2;
 			handledPreParam = true;
 		}
 
@@ -212,8 +227,10 @@ int main(int argc,char **argv)
 		}
 	} while (handledPreParam);
 
-	int machineMemoryTopMinus256 = machineMemoryTop - 0x100;
-
+	if (argv[1][1] == 'c')
+	{
+		printf("Compression level %d\n" , compressionLevel);
+	}
 
 	if (((argv[1][1] == 'c') || (argv[1][1] == 'd')) && (argv[1][2] == 'r'))
 	{
@@ -238,6 +255,13 @@ int main(int argc,char **argv)
 		{
 			std::string subOption(argv[1]+4);
 			outputC64Header = true;
+
+			if (subOption.find('h') != std::string::npos)
+			{
+				printf("Using high mode\n");
+				useCompressionWithHigh = true;
+			}
+
 			if (subOption.find('e') != std::string::npos)
 			{
 				printf("Using LZMPiE mode\n");
@@ -272,6 +296,11 @@ int main(int argc,char **argv)
 			{
 				printf("Using LZMPiV mode\n");
 				useCompressionV = true;
+				if (useCompressionWithHigh)
+				{
+					machineMemoryTop = std::min(0xfa00 , machineMemoryTop);
+					printf("Mem top now $%x\n" , machineMemoryTop);
+				}
 			}
 
 			startC64Code = ParamToNum(argv[4]);
@@ -306,6 +335,8 @@ int main(int argc,char **argv)
 			wantedLength = ParamToNum(argv[5]);
 		}
 	}
+
+	int machineMemoryTopMinus256 = machineMemoryTop - 0x100;
 
 	FILE *fp;
 	printf("Opening '%s' for reading...\n",argv[2]);
@@ -469,12 +500,12 @@ int main(int argc,char **argv)
 		if (useCompressionU)
 		{
 			CompressionU comp;
-			comp.Compress(input,inputSize,output,&outSize,10);
+			comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 		}
 		else if (useCompressionV)
 		{
 			CompressionV comp;
-			comp.Compress(input,inputSize,output,&outSize,10);
+			comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 		}
 		else if (useRLE)
 		{
@@ -490,26 +521,26 @@ int main(int argc,char **argv)
 			if (useRNZipMode)
 			{
 				CompressionE comp;
-				comp.Compress(input,inputSize,output,&outSize,10);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 				outBitSizeTrue = comp.mTotalBitsOut;
 			}
 			else
 			{
 				Compression comp;
-				comp.Compress(input,inputSize,output,&outSize,10,1);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				outBitSizeTrue = comp.mTotalBitsOut;
 			}
 			gXPCompressionTweak6 = false;
 			if (useRNZipMode)
 			{
 				CompressionE comp;
-				comp.Compress(input,inputSize,output,&outSize,10);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 				outBitSizeFalse = comp.mTotalBitsOut;
 			}
 			else
 			{
 				Compression comp;
-				comp.Compress(input,inputSize,output,&outSize,10,1);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				outBitSizeFalse = comp.mTotalBitsOut;
 			}
 			printf("Out bit sizes: %d %d\n" , outBitSizeTrue , outBitSizeFalse);
@@ -529,26 +560,26 @@ int main(int argc,char **argv)
 			if (useRNZipMode)
 			{
 				CompressionE comp;
-				comp.Compress(input,inputSize,output,&outSize,10);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 				outBitSizeTrue = comp.mTotalBitsOut;
 			}
 			else
 			{
 				Compression comp;
-				comp.Compress(input,inputSize,output,&outSize,10,1);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				outBitSizeTrue = comp.mTotalBitsOut;
 			}
 			gXPCompressionTweak5 = false;
 			if (useRNZipMode)
 			{
 				CompressionE comp;
-				comp.Compress(input,inputSize,output,&outSize,10);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 				outBitSizeFalse = comp.mTotalBitsOut;
 			}
 			else
 			{
 				Compression comp;
-				comp.Compress(input,inputSize,output,&outSize,10,1);
+				comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				outBitSizeFalse = comp.mTotalBitsOut;
 			}
 			printf("Out bit sizes: %d %d\n" , outBitSizeTrue , outBitSizeFalse);
@@ -569,13 +600,13 @@ int main(int argc,char **argv)
 				if (useRNZipMode)
 				{
 					CompressionE comp;
-					comp.Compress(input,inputSize,output,&outSize,10);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 					outBitSize = comp.mTotalBitsOut;
 				}
 				else
 				{
 					Compression comp;
-					comp.Compress(input,inputSize,output,&outSize,10,1);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 					outBitSize = comp.mTotalBitsOut;
 				}
 				printf("Out bytes: %d\n" , outSize);
@@ -603,14 +634,14 @@ int main(int argc,char **argv)
 								if (useRNZipMode)
 								{
 									CompressionE comp2;
-									ret = comp2.Compress(input,inputSize,output,&outSize,10);
+									ret = comp2.Compress(input,inputSize,output,&outSize,compressionLevel);
 									comp2mTotalBitsOut = comp2.mTotalBitsOut;
 								}
 								else
 								{
 									Compression comp2;
 									comp2.mEarlyOut = outBitSize;
-									ret = comp2.Compress(input,inputSize,output,&outSize,10,1);
+									ret = comp2.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 									comp2mTotalBitsOut = comp2.mTotalBitsOut;
 								}
 								printf("Working %d : %d %d %d %d                \r",outBitSize - comp2mTotalBitsOut , a , b ,c , d);
@@ -645,13 +676,13 @@ int main(int argc,char **argv)
 				if (useRNZipMode)
 				{
 					CompressionE comp;
-					comp.Compress(input,inputSize,output,&outSize,10);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 					outBitSize = comp.mTotalBitsOut;
 				}
 				else
 				{
 					Compression comp;
-					comp.Compress(input,inputSize,output,&outSize,10,1);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 					outBitSize = comp.mTotalBitsOut;
 				}
 				printf("Out bit size threshold: %d\n" , outBitSize);
@@ -665,13 +696,13 @@ int main(int argc,char **argv)
 					if (useRNZipMode)
 					{
 						CompressionE comp;
-						comp.Compress(input,inputSize,output,&outSize,10);
+						comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 						comp2mTotalBitsOut = comp.mTotalBitsOut;
 					}
 					else
 					{
 						Compression comp;
-						comp.Compress(input,inputSize,output,&outSize,10,1);
+						comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 						comp2mTotalBitsOut = comp.mTotalBitsOut;
 					}
 					if (comp2mTotalBitsOut < outBitSize)
@@ -687,13 +718,13 @@ int main(int argc,char **argv)
 				if (useRNZipMode)
 				{
 					CompressionE comp;
-					comp.Compress(input,inputSize,output,&outSize,10);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel);
 					outBitSize = comp.mTotalBitsOut;
 				}
 				else
 				{
 					Compression comp;
-					comp.Compress(input,inputSize,output,&outSize,10,1);
+					comp.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 					outBitSize = comp.mTotalBitsOut;
 				}
 
@@ -720,7 +751,7 @@ int main(int argc,char **argv)
 						comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
 						u32 outSize2;
 						u32 outBitSize2;
-						comp2.Compress(input,inputSize,output,&outSize2,10);
+						comp2.Compress(input,inputSize,output,&outSize2,compressionLevel);
 						outBitSize2 = comp2.mTotalBitsOut;
 						if (outBitSize2 < outBitSize)
 						{
@@ -738,14 +769,14 @@ int main(int argc,char **argv)
 
 					printf("Compression stage: Final\n");
 					// Final compress with the choices
-					comp3.Compress(input,inputSize,output,&outSize,10);
+					comp3.Compress(input,inputSize,output,&outSize,compressionLevel);
 				}
 			}
 			else
 			{
 				printf("Compression stage: First attempt\n");
 				Compression comp3;
-				comp3.Compress(input,inputSize,output,&outSize,10,1);
+				comp3.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				outBitSize = comp3.mTotalBitsOut;
 
 				// This tries to optimise the compression choices even more by optionally trying each
@@ -763,7 +794,7 @@ int main(int argc,char **argv)
 						comp2.mIgnoreChoicePos.insert(comp3.mChoicesPos[choiceIndex]);
 						u32 outSize2;
 						u32 outBitSize2;
-						comp2.Compress(input,inputSize,output,&outSize2,10,1);
+						comp2.Compress(input,inputSize,output,&outSize2,compressionLevel,1);
 						outBitSize2 = comp2.mTotalBitsOut;
 						if (outBitSize2 < outBitSize)
 						{
@@ -783,19 +814,19 @@ int main(int argc,char **argv)
 					// Final compress with the choices
 					comp3.mEarlyOut = -1;
 					comp3.mEnableChoicesOutput = true;
-					comp3.Compress(input,inputSize,output,&outSize,10,1);
+					comp3.Compress(input,inputSize,output,&outSize,compressionLevel,1);
 				}
 			}
 		}
 
 #else
-		comp.Compress(input,inputSize,output,&outSize,10,0);
+		comp.Compress(input,inputSize,output,&outSize,compressionLevel,0);
 		int i;
 		for (i = 1; i < 4 ; i++)
 		{
 			u32 tSize;
 			printf("Trying optimise %d... ",i);
-			comp.Compress(input,inputSize,output,&tSize,10,i);
+			comp.Compress(input,inputSize,output,&tSize,compressionLevel,i);
 			if (tSize < outSize)
 			{
 				printf("Better!\n",i);
@@ -807,7 +838,7 @@ int main(int argc,char **argv)
 				printf("\n",i);
 			}
 		}
-		comp.Compress(input,inputSize,output,&outSize,10,bestBits);
+		comp.Compress(input,inputSize,output,&outSize,compressionLevel,bestBits);
 #endif
 
 		if (outputC64Header)
@@ -919,6 +950,39 @@ int main(int argc,char **argv)
 #error sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code
 #endif
 
+// Check the low and high variants of this are the same
+#if sC64DecompNoEffectMaxRNZipV_LauncherAddress_startC64Code != sC64DecompNoEffectMaxRNZipVH_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRNZipV_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRNZipV_LauncherAddress_endMinusOutSize != sC64DecompNoEffectMaxRNZipVH_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRNZipV_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRNZipV_LauncherAddress_compressedDataEndMinus256 != sC64DecompNoEffectMaxRNZipVH_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZipV_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipV_LauncherAddress_endOfMemoryMinus256 != sC64DecompNoEffectMaxRNZipVH_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRNZipV_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipV_LauncherAddress_loadC64Code != sC64DecompNoEffectMaxRNZipVH_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRNZipV_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompBorderEffectMaxRNZipV_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRNZipVH_LauncherAddress_startC64Code
+#error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_startC64Code
+#endif
+#if sC64DecompBorderEffectMaxRNZipV_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZipVH_LauncherAddress_endMinusOutSize
+#error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompBorderEffectMaxRNZipV_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZipVH_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompBorderEffectMaxRNZipV_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZipVH_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompBorderEffectMaxRNZipV_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZipVH_LauncherAddress_loadC64Code
+#error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_loadC64Code
+#endif
+
 			// The commented values are for the super expanded decompression code that makes $200-$fff9 available
 			if (maxMode && useRLE)
 			{
@@ -985,9 +1049,71 @@ int main(int argc,char **argv)
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
 			}
-			else if (useCompressionV)
+			else if (useCompressionV && !maxMode && !flashBorder)
 			{
-				printf("!!CompressionV not supported!!\n");
+				if (!useCompressionWithHigh && loadC64Code < 0x800)
+				{
+					printf("!!CompressionV does not support load addresses less than $0800!!\n");
+					exit(-1);
+				}
+
+				theC64Code = sC64DecompNoEffectRNZipV_Data;
+				if (useCompressionWithHigh)
+				{
+					theC64Code = sC64DecompNoEffectRNZipVH_Data;
+				}
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZipV_Data) + outSize;
+				sizeToWrite = sizeof(sC64DecompNoEffectRNZipV_Data);
+
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
+
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
+				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+			}
+			else if (useCompressionV && !maxMode && flashBorder)
+			{
+				if (!useCompressionWithHigh && loadC64Code < 0x800)
+				{
+					printf("!!CompressionV does not support load addresses less than $0800!!\n");
+					exit(-1);
+				}
+
+				theC64Code = sC64DecompBorderEffectRNZipV_Data;
+				if (useCompressionWithHigh)
+				{
+					theC64Code = sC64DecompBorderEffectRNZipVH_Data;
+				}
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZipV_Data) + outSize;
+				sizeToWrite = sizeof(sC64DecompBorderEffectRNZipV_Data);
+
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
+
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
+
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
+				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+			}
+			else if (useCompressionV && maxMode)
+			{
+				printf("!!CompressionV max mode not supported!!\n");
 				exit(-1);
 			}
 			else if (!maxMode && useCompressionU)
@@ -1175,7 +1301,7 @@ int main(int argc,char **argv)
 		{
 			if (DecompressV(compressedDataStart,inputSize,output,&outDecomp))
 			{
-				printf("Problem during decompressionU\n");
+				printf("Problem during decompressionV\n");
 				exit(-1);
 			}
 		}

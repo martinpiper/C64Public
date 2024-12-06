@@ -13,4 +13,4 @@ Feature: Checks the DecompressU reference implementation
 #    When I enable trace with indent
     And I enable uninitialised memory read protection with immediate fail
 
-    Then expect correct memory writes during decompression
+    Then expect correct memory writes during decompression with RNXPCompressionDecompressU

@@ -1,0 +1,394 @@
+!zn
+
+MonsterCreateParams_Eyes !by 0
+MonsterCreateParams_Parts !by 0
+MonsterCreateParams_Feet !by 0
+
+
+; Entry:
+; Relies on Sequence3Value and Seed being appropriately set
+MonsterCreate
+	lda #0
+	sta MonsterCreateParams_Eyes
+	sta MonsterCreateParams_Parts
+	sta MonsterCreateParams_Feet
+
+	jsr CommandBufferReset
+	jsr Rand123
+	cmp #1
+	+lbeq .bodyPart1
+	cmp #2
+	+lbeq .bodyPart2
+.bodyPart3
+	inc MonsterCreateParams_Parts
+	; Head - 2
+;	!by kSpriteIndexToWorking , 11
+;	!by kSpriteScrollRight , 2
+;	!by kSpriteSquishTopToMiddle , 5
+;	!by kSpriteSquishBottomToMiddle , 6
+;	!by kSpriteScrollUp , 4
+;	!by kSpriteWorkingToFinalMaskMulticolour
+
+	lda #kSpriteIndexToWorking
+	jsr CommandBufferPush
+	jsr Rand012
+	tay
+	clc
+	adc #11
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollRight
+	jsr CommandBufferPush
+	lda .bodyCanShift + 2 , y
+	jsr RandLEToA
+	and #%11111110
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishTopToMiddle
+	jsr CommandBufferPush
+	lda #7
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishBottomToMiddle
+	jsr CommandBufferPush
+	lda #6
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollUp
+	jsr CommandBufferPush
+	lda #8
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Sequence3Next_Y
+	jsr CommandBufferPush
+
+	lda #kSpriteWorkingToFinalMaskMulticolour
+	jsr CommandBufferPush
+
+
+.bodyPart2
+	inc MonsterCreateParams_Parts
+	; Head
+;	!by kSpriteIndexToWorking , 11
+;	!by kSpriteScrollRight , 2
+;	!by kSpriteSquishTopToMiddle , 5
+;	!by kSpriteSquishBottomToMiddle , 6
+;	!by kSpriteScrollUp , 4
+;	!by kSpriteWorkingToFinalMaskMulticolour
+
+	lda #kSpriteIndexToWorking
+	jsr CommandBufferPush
+	jsr Rand01234
+	tay
+	clc
+	adc #9
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollRight
+	jsr CommandBufferPush
+	lda .bodyCanShift , y
+	jsr RandLEToA
+	and #%11111110
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishTopToMiddle
+	jsr CommandBufferPush
+	lda #5
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishBottomToMiddle
+	jsr CommandBufferPush
+	lda #6
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollUp
+	jsr CommandBufferPush
+	lda #5
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Rand012
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Sequence3Next_Y
+	jsr CommandBufferPush
+
+	lda #kSpriteWorkingToFinalMaskMulticolour
+	jsr CommandBufferPush
+
+.bodyPart1
+	inc MonsterCreateParams_Parts
+	; Body
+;	!by kSpriteIndexToWorking , 9
+;	!by kSpriteSquishTopToMiddle , 5
+;	!by kSpriteSquishBottomToMiddle , 6
+;	!by kSpriteScrollDown , 4
+;	!by kSpriteWorkingToFinalMaskMulticolour
+
+	lda #kSpriteIndexToWorking
+	jsr CommandBufferPush
+	jsr Rand012
+	tay
+	clc
+	adc #9
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollRight
+	jsr CommandBufferPush
+	lda .bodyCanShift , y
+	jsr RandLEToA
+	and #%11111110
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishTopToMiddle
+	jsr CommandBufferPush
+	lda #5
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishBottomToMiddle
+	jsr CommandBufferPush
+	lda #6
+	jsr CommandBufferPush
+
+;	lda #kSpriteScrollUp
+;	jsr CommandBufferPush
+;	lda #2
+;	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Rand012
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Sequence3Next_Y
+	jsr CommandBufferPush
+
+	lda #kSpriteWorkingToFinalMaskMulticolour
+	jsr CommandBufferPush
+
+	; Any feet?
+	jsr Rand012
+	cmp #0
+	+lbeq .noFeet
+	sta tempZP0
+.doFoot
+	inc MonsterCreateParams_Feet
+	; Feet
+;	!by kSpriteIndexToWorking , 13
+;	!by kSpriteSquishTopToMiddle , 5
+;	!by kSpriteSquishBottomToMiddle , 9
+;	!by kSpriteScrollDown , 10
+;	!by kSpriteWorkingToFinalMaskMulticolour
+
+	lda #kSpriteIndexToWorking
+	jsr CommandBufferPush
+	lda #13
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishTopToMiddle
+	jsr CommandBufferPush
+	lda #5
+	jsr CommandBufferPush
+
+	lda #kSpriteSquishBottomToMiddle
+	jsr CommandBufferPush
+	lda #9
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	lda #10
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollRight
+	jsr CommandBufferPush
+	Jsr Rand01234
+	asl
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollUp
+	jsr CommandBufferPush
+	jsr Sequence3Next_Y
+	lsr
+	jsr CommandBufferPush
+
+	lda #kSpriteWorkingToFinalMaskMulticolour
+	jsr CommandBufferPush
+
+	dec tempZP0
+	bne .doFoot
+
+.noFeet
+
+
+
+	; Any eyes?
+	jsr Rand012
+	cmp #0
+	+lbeq .noEyes
+	sta tempZP0
+.doEye
+	inc MonsterCreateParams_Eyes
+	; Eyes
+;	!by kSpriteIndexToWorking , 0
+;;	!by kSpriteSquishTopToMiddle , 1	; Shorter eyes
+;	!by kSpriteScrollUp , 6
+;	!by kSpriteWorkingToFinalMaskMulticolour
+;	!by kSpriteScrollRight , 12
+;	!by kSpriteScrollDown , 1
+;	!by kSpriteWorkingToFinalMaskMulticolour
+;	!by kSpriteEnd
+
+	lda #kSpriteIndexToWorking
+	jsr CommandBufferPush
+	jsr Rand012345
+	jsr CommandBufferPush
+
+	jsr Rand
+	and #1
+	beq .noShortEye
+	lda #kSpriteSquishTopToMiddle
+	jsr CommandBufferPush
+	lda #1
+	jsr CommandBufferPush
+	lda #kSpriteScrollUp
+	jsr CommandBufferPush
+	lda #10
+	jsr CommandBufferPush
+.noShortEye
+
+	lda #kSpriteScrollUp
+	jsr CommandBufferPush
+	lda #6
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Rand012
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollRight
+	jsr CommandBufferPush
+	jsr Rand012345
+	asl
+	jsr CommandBufferPush
+
+	lda #kSpriteScrollDown
+	jsr CommandBufferPush
+	jsr Sequence3Next_Y
+	lsr
+	jsr CommandBufferPush
+
+	lda #kSpriteWorkingToFinalMaskMulticolour
+	jsr CommandBufferPush
+
+	dec tempZP0
+	bne .doEye
+
+.noEyes
+
+	lda #kSpriteEnd
+	jsr CommandBufferPush
+
+	rts
+
+; The amount the body parts can shift
+.bodyCanShift
+	!by 0 , 4 , 8 , 12 , 14
+
+
+!zn
+Rand012
+	jsr Rand
+	tay
+	lda .randTab012,y
+	rts
+
+Rand123
+	jsr Rand012
+	clc
+	adc #1
+	rts
+
+.randTab012
+!for .i , (256/3)+1 {
+	!by 0 , 1 , 2
+}
+
+
+Rand01234
+	jsr Rand
+	tay
+	lda .randTab01234,y
+	rts
+
+.randTab01234
+!for .i , (256/5)+1 {
+	!by 0 , 1 , 2 , 3 , 4
+}
+
+Rand012345
+	jsr Rand
+	tay
+	lda .randTab012345,y
+	rts
+
+.randTab012345
+!for .i , (256/6)+1 {
+	!by 0 , 1 , 2 , 3 , 4 , 5
+}
+
+!zn
+RandLEToA
+	cmp #0
+	beq .ok
+	sta .sm1+1
+	jsr Rand
+.sm1	cmp #0
+	+IfURegLessThanOrEqualToVal .ok
+	clc	; Deliberate, adds one to the subtract amount
+	sbc .sm1 + 1
+	jmp .sm1
+.ok
+	rts
+
+
+!zn
+.sequence3
+	!by 0 , 1 , 2 , 3 , 3 , 2 , 1 , 0
+.sequence3Size = * - .sequence3
++MAssertEquals kNumberOfFramesForAMonster , .sequence3Size
+Sequence3Value !by 0
+Sequence3Next_Y
+	inc Sequence3Value
+	lda Sequence3Value
+.sequenceTest
+	cmp #.sequence3Size
+	bcc .sequenceOK
+	sec
+	sbc #.sequence3Size
+	jmp .sequenceTest
+.sequenceOK
+	sta Sequence3Value
+	tay
+	lda .sequence3,y
+	rts
+
+
+!zn
+CommandBufferReset
+	+MWordValueToAddress_A CommandBuffer , .sm1 + 1
+	rts
+
+CommandBufferPush
+.sm1 sta $1234
+	+MIncAddr16 .sm1 + 1 , .sm1 + 2
+
+	rts

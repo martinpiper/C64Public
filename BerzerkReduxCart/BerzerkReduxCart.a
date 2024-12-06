@@ -43,8 +43,8 @@ Boot
 	sei
 	jsr $fda3 ;prepare irq
 	jsr $fd50 ;init memory
-	jsr $fd15 ;init i/o
-;	jsr $ff5b ;init video
+	jsr KERNALRestoreIOVectors ;init i/o
+;	jsr KERNALInitIOAdditional ;init video
 
 	lda #0
 	sta ZPCurrentFileDeviceNumber

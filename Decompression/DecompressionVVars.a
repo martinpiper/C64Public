@@ -1,0 +1,27 @@
+!ifdef RNXPCompressionDecompress_WriteByteAddr { } else {
+RNXPCompressionDecompress_WriteByteAddr = $400
+}
+!ifdef RNXPCompressionDecompress_GetByteAddr { } else {
+RNXPCompressionDecompress_GetByteAddr = $401
+}
+
+; Setup zeropage indirect registers and their values
+; These are used with indirect addressing mode
+RNXPCompressionDecompress_GetBytesmAddr		!word RNXPCompressionDecompress_GetByteAddr
+RNXPCompressionDecompress_WriteBytesmAddr	!word RNXPCompressionDecompress_WriteByteAddr
+
+sRNXPCompressionDecompress_tempCopy				!word 0
+sRNXPCompressionDecompress_factor = sRNXPCompressionDecompress_tempCopy
+sRNXPCompressionDecompress_table				!word RNXPCompressionDecompress_extraWorkMemory
+sRNXPCompressionDecompress_numberWork			!word 0
+sRNXPCompressionDecompress_compute				!word 0
+sRNXPCompressionDecompress_data1				!word 0
+sRNXPCompressionDecompress_data2				!word 1
+sRNXPCompressionDecompress_fractionWork			!word 0
+sRNXPCompressionDecompress_workBitsByte			!by 0
+
+; RNXPCompressionDecompress_extraWorkMemory Needs to be $600 bytes
+sRNXPCompressionDecompress_probabilities		=	RNXPCompressionDecompress_extraWorkMemory
+sRNXPCompressionDecompress_probabilitiesRef		=	RNXPCompressionDecompress_extraWorkMemory+$200
+sRNXPCompressionDecompress_probabilitiesLength	=	sRNXPCompressionDecompress_probabilitiesRef
+sRNXPCompressionDecompress_probabilitiesOffset	=	sRNXPCompressionDecompress_probabilitiesRef+$200

@@ -1,0 +1,581 @@
+!zn
+
+EntityType				!fill kEntityMax , 0
+EntityXPos				!fill kEntityMax , 0	; Note: Half horizontal resolution, no MSB
+EntityYPos				!fill kEntityMax , 0
+EntityColour			!fill kEntityMax , 0
+EntityFrame				!fill kEntityMax , 0
+EntityFrameStart		!fill kEntityMax , 0
+EntityFrameEnd			!fill kEntityMax , 0	; Exclusive, this value causes a reset to EntityFrameStart when ti is reached
+EntityFrameSpeed		!fill kEntityMax , 0
+EntityFrameCounter		!fill kEntityMax , 0
+
+EntityMoveSpeed			!fill kEntityMax , 0
+EntityMoveType			!fill kEntityMax , 0
+EntityMoveTypeOffset	!fill kEntityMax , 0
+
+
+EntityMoveTargetOffsetX	!fill kEntityMax , 0
+EntityMoveTargetOffsetY	!fill kEntityMax , 0
+
+EntityMoveInvertCount	!fill kEntityMax , 0
+
+
+kEntityType_NotAllocated	= 0	; Must always be 0
+kEntityType_Player			= 1
+kEntityType_Monster			= 2
+
+Entity_Init
+	ldx #kEntityMax-1
+	lda #kEntityType_NotAllocated
+.cl1
+	sta EntityType , x
+	dex
+	bpl .cl1
+	rts
+
+
+
+!zn
+; Exit:
+; CS = Found free slot, and X = Index of next free entity. To be passed in to Entity_AnimInit
+; CC = No free slot
+Entity_FindFree
+	ldx #0
+.fl1
+	lda EntityType , x
+	beq .found
+	inx
+	cpx #kEntityMax
+	bne .fl1
+	clc
+	rts
+.found
+	sec
+	rts
+
+
+
+; Entry:
+; A = Entity type from kEntityType_
+; X = Index from Entity_FindFree
+Entity_AnimInit
+	sta EntityType,x
+	lda EntityFrameStart,x
+	sta EntityFrame,x
+	lda EntityFrameSpeed,x
+	sta EntityFrameCounter,x
+	rts
+
+
+
+!zn
+; Updates the entity sprites to real sprites for display
+Entity_UpdateSprites
+	ldx #0
+	stx VIC2SpriteXMSB
+	stx VIC2SpriteEnable
+	ldy #0
+.l1
+	lda EntityType,x
+	beq .emptySprite
+	; Minimal sprite enable for the frame
+	sec
+	ror VIC2SpriteEnable
+	lda EntityXPos,x
+	asl
+	sta VIC2Sprite0X,y
+	ror VIC2SpriteXMSB
+	lda EntityYPos,x
+	sta VIC2Sprite0Y,y
+	lda EntityColour,x
+	sta VIC2Sprite0Colour,x
+	lda EntityFrame,x
+	sta CharScreen + SPRITEFRAMESCROFF,x
+.spriteReturn
+	iny
+	iny
+	inx
+	cpx #kEntityMax
+	bne .l1
+	rts
+
+.emptySprite
+	sta VIC2Sprite0Y,y
+	ror VIC2SpriteXMSB
+	clc
+	ror VIC2SpriteEnable
+	jmp .spriteReturn
+
+
+!zn
+Entity_FrameCounter !by 0,0
+Entity_Tick
+	+MIncAddr16 Entity_FrameCounter , Entity_FrameCounter + 1
+
+	ldx #kEntityMax-1
+.tl1
+	lda EntityType , x
+	bne .found2
+.tl2
+	dex
+	bpl .tl1
+	rts
+
+.found2
+	cmp #kEntityType_Player
+	+lbeq EntityUpdate_Player
+	cmp #kEntityType_Monster
+	+lbeq EntityUpdate_Monster
+
+EntityTick_Return
+	dec EntityFrameCounter,x
+	beq .frameAdvance
+	jmp .tl2
+
+.frameAdvance
+	lda EntityFrameSpeed,x
+	sta EntityFrameCounter,x
+
+	inc EntityFrame,x
+	lda EntityFrame,x
+	cmp EntityFrameEnd,x
+	beq .gotLoop
+
+	jmp .tl2
+
+.gotLoop
+	lda EntityFrameStart,x
+	sta EntityFrame,x
+	jmp .tl2
+
+
+
+!zn
+.wasFire !by 0
+EntityUpdate_Player
+
+	lda #0
+	sta .smmx1+1
+	sta .smmy1+1
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	lda EntityYPos,x
+	sec
+	sbc #3
+	sta EntityYPos,x
+	lda #-1
+	sta .smmy1+1
+.notUp
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	lda EntityYPos,x
+	clc
+	adc #3
+	sta EntityYPos,x
+	lda #1
+	sta .smmy1+1
+.notDown
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	lda EntityXPos,x
+	sec
+	sbc #2
+	sta EntityXPos,x
+	lda #-1
+	sta .smmx1+1
+.notLeft
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	lda EntityXPos,x
+	clc
+	adc #2
+	sta EntityXPos,x
+	lda #1
+	sta .smmx1+1
+.notRight
+
+	jsr EntityScreenBoundsTest
+
+	stx tempWork2
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+
+	lda .wasFire
+	bne .overFire
+
+	lda .smmx1+1
+	ora .smmy1+1
+	beq .notFire
+
+	lda EntityXPos,x
+	sta tempWork0
+	lda EntityYPos,x
+	sta tempWork1
+
+	jsr AllocateCharacterEffect
+	bcs .notFire
+
+.smmx1	lda #1
+	sta CharEffectsXVel,x
+.smmy1	lda #-1
+	sta CharEffectsYVel,x
+	jsr Rand
+	and #15
+	bne .ok1
+	lda #1	; Avoid black
+.ok1
+	sta CharEffectsCol,x
+	lda #40
+	sta CharEffectsTime,x
+	lda #PlayerBulletCharacter
+	sta CharEffectsChar,x
+
+	ldy tempWork1
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta CharEffectsY,x
+
+	ldy tempWork0
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta CharEffectsX,x
+
+	lda #0
+	jsr SafeSFXInit
+
+	lda #1
+	sta .wasFire
+
+	jmp .overFire
+
+.lnoBulletSpawned
+	lda #-1
+	sta CharEffectsY,x
+
+.notFire
+	lda #0
+	sta .wasFire
+
+.overFire
+	ldx tempWork2
+
+	jmp EntityTick_Return
+
+
+
+!zn
+EntityUpdate_Monster
+
+	; Check collision with the player
+	lda EntityXPos,x
+	clc
+	adc #8
+	sec
+	sbc EntityXPos
+	cmp #12
+	bcs .noHitPlayer
+	lda EntityYPos,x
+	clc
+	adc #8
+	sec
+	sbc EntityYPos
+	cmp #21
+	bcs .noHitPlayer
+
+	inc PlayerHit
+	jmp .gotHit	; A monster will explode on contact with the player
+
+.noHitPlayer
+
+
+	inc EntityMoveInvertCount,x
+	beq .doInvert
+	lda EntityMoveInvertCount,x
+	cmp #200
+	beq .doInvert
+	jmp .notInvert
+.doInvert
+	lda #0
+	sec
+	sbc EntityMoveSpeed,x
+	sta EntityMoveSpeed,x
+.notInvert
+
+	lda EntityMoveTypeOffset,x
+	clc
+	adc Entity_FrameCounter
+	bne .testMovement
+	; Once every while, calculate a new target
+	jsr MonsterCalculateNewTargetOffset
+	jmp .notOKToMove
+.testMovement
+	cmp EntityMoveType,x
+	+lbcc .notOKToMove
+
+	lda EntityXPos,x
+	clc
+	adc EntityMoveTargetOffsetX,x
+	sec
+	sbc EntityXPos
+	beq .testY
+
+	+IfURegGreaterThanOrEqualToVal .isRight
+
+.isLeft
+	; Test for too close to the player sprite
+	cmp #-9
+	bcs .testY
+
+	lda EntityXPos,x
+	clc
+	adc EntityMoveSpeed,x
+	sta EntityXPos,x
+	jmp .testY
+
+.isRight
+	; Test for too close to the player sprite
+	cmp #9
+	bcc .testY
+
+	lda EntityXPos,x
+	sec
+	sbc EntityMoveSpeed,x
+	sta EntityXPos,x
+	jmp .testY
+
+.testY
+
+	lda EntityYPos,x
+	clc
+	adc EntityMoveTargetOffsetY,x
+	sec
+	sbc EntityYPos
+	beq .testDone
+
+	+IfURegGreaterThanOrEqualToVal .isDown
+
+.isUp
+	; Test for too close to the player sprite
+	cmp #-15
+	bcs .testDone
+
+	lda EntityYPos,x
+	clc
+	adc EntityMoveSpeed,x
+	sta EntityYPos,x
+	jmp .testDone
+
+.isDown
+	; Test for too close to the player sprite
+	cmp #15
+	bcc .testDone
+
+	lda EntityYPos,x
+	sec
+	sbc EntityMoveSpeed,x
+	sta EntityYPos,x
+	jmp .testDone
+
+.testDone
+	jsr EntityScreenBoundsTest
+
+.notOKToMove
+
+	; Test for bullets
+	ldy EntityYPos,x
+	lda CharEffects_SpriteYPosToScreenCharPos-8,y
+	tay
+	lda ScreenTabL,y
+	sta tempWork0
+	lda ScreenTabH,y
+	ora #>CharScreen
+	sta tempWork1
+
+	ldy EntityXPos,x
+	lda CharEffects_SpriteXPosToScreenCharPos-4,y
+	tay
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+
+	; Next line down...
+	tya
+	clc
+	adc #VIC2ScreenCharsWidth
+	tay
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+	iny
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+	iny
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+
+	; Next line down...
+	tya
+	clc
+	adc #VIC2ScreenCharsWidth-2
+	tay
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+
+	; Next line down...
+	tya
+	clc
+	adc #VIC2ScreenCharsWidth
+	tay
+	lda (tempWork0),y
+	cmp #PlayerBulletCharacter
+	beq .gotHit
+
+	jmp EntityTick_Return
+
+.gotHit
+	lda #kEntityType_NotAllocated
+	sta EntityType,x
+	dec GameLevelNumMonstersAlive
+
+	stx .tmpx+1
+
+	; Pick an explosion effect
+	jsr Rand
+	and #3
+	tay
+	lda .explodeSFXTab,y
+	jsr SafeSFXInit
+
+	; Pick any old value to add, as long as it's consistent for the monster type
+	lda EntityFrame,x
+	and #7
+	sta .scoreNum
+	lda EntityFrame,x
+	lsr
+	lsr
+	and #7
+	sta .scoreNum+1
+
+	+MWordValueTo_AX .score
+	jsr ScoreAdd
+
+.tmpx ldx #0
+
+	; Calculate a character explosion effect
+
+	ldy EntityYPos,x
+	lda CharEffects_SpriteYPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta tempWork1
+;	sta CharEffectsY,x
+
+	ldy EntityXPos,x
+	lda CharEffects_SpriteXPosToScreenCharPos,y
+	bmi .lnoBulletSpawned
+	sta tempWork0
+;	sta CharEffectsX,x
+
+	lda #1
+	ldy #0
+	jsr AllocateExplodeEffectWithDirection
+	lda #-1
+	ldy #0
+	jsr AllocateExplodeEffectWithDirection
+	lda #0
+	ldy #1
+	jsr AllocateExplodeEffectWithDirection
+	lda #0
+	ldy #-1
+	jsr AllocateExplodeEffectWithDirection
+
+.lnoBulletSpawned
+	ldx .tmpx+1
+	jmp EntityTick_Return
+
+.explodeSFXTab
+	!by 15 + 1
+	!by 15 + 4
+	!by 15 + 7
+	!by 15 + 7
+
+.score
+	!by 5
+	!by 2
+.scoreNum	!by 0,0
+
+AllocateExplodeEffectWithDirection
+	sta .smmx1+1
+	sty .smmy1+1
+	jsr AllocateCharacterEffect
+	bcs .noSpace
+.smmx1	lda #1
+	sta CharEffectsXVel,x
+.smmy1	lda #-1
+	sta CharEffectsYVel,x
+	lda #VIC2Colour_Yellow
+	sta CharEffectsCol,x
+	lda #10
+	sta CharEffectsTime,x
+	lda #35
+	sta CharEffectsChar,x
+
+	lda tempWork0
+	sta CharEffectsX,x
+	lda tempWork1
+	sta CharEffectsY,x
+.noSpace
+	rts
+
+MonsterCalculateNewTargetOffset
+	; Target offset
+	jsr Rand
+	and #%11111
+	eor #$ff
+	clc
+	adc #16
+	sta EntityMoveTargetOffsetX,x
+	jsr Rand
+	and #%111111
+	eor #$ff
+	clc
+	adc #32
+	sta EntityMoveTargetOffsetY,x
+	rts
+
+
+!zn
+EntityScreenBoundsTest
+	lda EntityYPos,x
+	cmp #VIC2SpriteYBorderTop+8
+	bcs .ok1
+
+	lda #VIC2SpriteYBorderTop+8
+	sta EntityYPos,x
+	jmp .ok2
+
+.ok1
+	cmp #VIC2SpriteYBorderBottom-VIC2SpriteSizeY
+	bcc .ok2
+	lda #VIC2SpriteYBorderBottom-VIC2SpriteSizeY
+	sta EntityYPos,x
+
+.ok2
+	lda EntityXPos,x
+	cmp #VIC2SpriteXBorderLeft/2
+	bcs .ok3
+
+	lda #VIC2SpriteXBorderLeft/2
+	sta EntityXPos,x
+	rts
+
+.ok3
+	cmp #(VIC2SpriteXBorderRight-VIC2SpriteSizeX)/2
+	bcc .ok4
+	lda #(VIC2SpriteXBorderRight-VIC2SpriteSizeX)/2
+	sta EntityXPos,x
+
+.ok4
+	rts

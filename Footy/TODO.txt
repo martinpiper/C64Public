@@ -51,3 +51,32 @@
 
 
 * When near the goal, shoot towards the goal
+
+
+
+* Use compressed sample player for voiceover, commentators, crowd noises etc. Should be possible to get that working while scrolling.
+
+
+
+
+* When choosing the closest player to control, don't swap too often,have a countdown that doesn't allow a swap again for a short time.
+	Kicking the ball, or bumping into it, resets the timer allowing the next nearest player to be chosen.
+	This timer only starts when a new player is switched to.
+
+
+
+
+* For more than 8 sprites limit, multiplexor flags when a sprite is drawn, or when it is skipped, and the next frame will flicker to the other sprite.
+	Basically the game will remove for one frame a previously drawn sprite from the first not drawn sprite during the copy and before the sort.
+
+
+
+
+* When not controlling the ball, a fire button quick tap with a direction will start a tackle slide in that direction.
+
+
+
+
+* When not controlling the ball, a fire button quick tap without a direction will start a jump.
+	While jumping a direction input will push the ball in that direction and very slowly move the player in that direction.
+

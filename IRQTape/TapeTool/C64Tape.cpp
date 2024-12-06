@@ -53,6 +53,8 @@ C64Tape::C64Tape()
 	mTapeFile = 0;
 
 	mCurrentStream = new Stream();
+
+	mOverRideTurboHeaderBytes = false;
 }
 
 void C64Tape::SetDefaultLabels(void)
@@ -620,7 +622,91 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 			case 'f':
 			{
-				if ( argv[0][1] == 't' )
+				if (argv[0][1] == 'r')
+				{
+					argc--;
+					argv++;
+
+					mFilenameRoot = argv[0];
+
+					break;
+				}
+				else if (argv[0][1] == 'f')
+				{
+					argc--;
+					argv++;
+					mOffsetFilenameStart = ParamToNum(*argv);
+					argc--;
+					argv++;
+					mOffsetFilenameEnd = ParamToNum(*argv);
+
+					break;
+				}
+				else if (argv[0][1] == 's')
+				{
+					argc--;
+					argv++;
+					mOffsetStartAddressLo = ParamToNum(*argv);
+					argc--;
+					argv++;
+					mOffsetStartAddressHi = ParamToNum(*argv);
+
+					break;
+				}
+				else if (argv[0][1] == 'e')
+				{
+					argc--;
+					argv++;
+					mOffsetEndAddressLo = ParamToNum(*argv);
+					argc--;
+					argv++;
+					mOffsetEndAddressHi = ParamToNum(*argv);
+
+					break;
+				}
+				else if (argv[0][1] == 'd')
+				{
+					argc--;
+					argv++;
+					mOffsetDataStart = ParamToNum(*argv);
+
+					break;
+				}
+				else if (argv[0][1] == 'x')
+				{
+					argc--;
+					argv++;
+					mOffsetXORByte = ParamToNum(*argv);
+
+					break;
+				}
+				else if ( argv[0][1] == 'h' )
+				{
+					argc--;
+					argv++;
+
+					if ( argc <= 0 )
+					{
+						printf("Error: Number of turbo header bytes expected\n");
+						exit(-1);
+					}
+
+					mOverRideTurboHeaderBytes = true;
+					mTurboHeaderBytes.clear();
+
+					int numHeaderBytes = ParamToNum(*argv);
+
+					while (numHeaderBytes > 0)
+					{
+						argc--;
+						argv++;
+						mTurboHeaderBytes.push_back(ParamToNum(*argv));
+						numHeaderBytes--;
+					}
+
+					break;
+				}
+				else if ( argv[0][1] == 't' )
 				{
 					argc--;
 					argv++;
@@ -719,7 +805,12 @@ int C64Tape::HandleParams( int argc , char ** argv )
 					int gotBits = 0;
 					std::vector<unsigned char> bytesGot;
 					bytesGot.reserve(128);
-					while ( rep > 0 )
+					FILE *outFP = 0;
+					int fileStart = 0;
+					int fileEnd = 0;
+					unsigned char fileXOR = 0;
+					int fileIndex = 0;
+					while ( !mFilenameRoot.empty() || rep > 0 )
 					{
 						unsigned char in1;
 
@@ -780,7 +871,10 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 							gotBits = 0;
 							gotOneGoodByte = true;
-							printf( " $%02x" , rollingByteInput );
+							if (!outFP)
+							{
+								printf( " $%02x" , rollingByteInput );
+							}
 							bytesGot.push_back( rollingByteInput );
 
 							mChecksumRegister = mChecksumRegister ^ rollingByteInput;
@@ -796,6 +890,74 @@ int C64Tape::HandleParams( int argc , char ** argv )
 									bytesGot.clear();
 									continue;
 								}
+							}
+							else if (!mFilenameRoot.empty())
+							{
+								// Check bytesGot with the data structure definitions
+								int numBytes = (int) bytesGot.size();
+								if (!outFP)
+								{
+									if (numBytes > mOffsetFilenameStart && numBytes > mOffsetFilenameEnd)
+									{
+										std::string filename;
+										for (int i = mOffsetFilenameStart ; i <= mOffsetFilenameEnd ; i++)
+										{
+											filename.push_back((char) bytesGot[i]);
+										}
+										printf("\nFound filename: \"%s\"\n" , filename.c_str());
+										printf("  at $%x\n" , ftell( mTapeFile ) );
+										fileIndex++;
+										char tempBuf[32];
+										sprintf(tempBuf , "%02d_" , fileIndex );
+										filename = mFilenameRoot + tempBuf + filename + ".prg";
+										outFP = fopen(filename.c_str() , "wb");
+									}
+								}
+								if (outFP)
+								{
+									// XOR handling
+									if (numBytes == (mOffsetDataStart + (fileEnd - fileStart) + mOffsetXORByte + 1))
+									{
+										if (rollingByteInput == fileXOR)
+										{
+											printf("\nChecksum is good\n");
+										}
+										fclose(outFP);
+										outFP = 0;
+										fileStart = 0;
+										fileEnd = 0;
+										fileXOR = 0;
+										bytesGot.clear();
+										mTurboGotSync = false;
+										printf("End file data at $%x\n" , ftell( mTapeFile ) );
+									}
+								}
+								if (outFP)
+								{
+									if ((numBytes == mOffsetStartAddressLo+1 || numBytes == mOffsetStartAddressHi+1) && (numBytes > mOffsetStartAddressLo && numBytes > mOffsetStartAddressHi))
+									{
+										fileStart = bytesGot[mOffsetStartAddressLo] | (bytesGot[mOffsetStartAddressHi] << 8);
+									}
+									if ((numBytes == mOffsetEndAddressLo+1 || numBytes == mOffsetEndAddressHi+1) && (numBytes > mOffsetEndAddressLo && numBytes > mOffsetEndAddressHi))
+									{
+										fileEnd = bytesGot[mOffsetEndAddressLo] | (bytesGot[mOffsetEndAddressHi] << 8);
+									}
+									if (numBytes == mOffsetDataStart+1)
+									{
+										fileXOR = 0;
+										fputc(fileStart , outFP);
+										fputc(fileStart >>8 , outFP);
+									}
+									if (numBytes >= mOffsetDataStart+1 && numBytes <= (mOffsetDataStart + (fileEnd - fileStart)))
+									{
+										fputc(rollingByteInput , outFP);
+										fileXOR = fileXOR ^ rollingByteInput;
+									}
+								}
+							}
+							else if (mOverRideTurboHeaderBytes)
+							{
+								// Special case, just dump data
 							}
 							else if ( bytesGot.size() == ( mTurboHeaderBytes.size() + 7 ) )
 							{
@@ -828,6 +990,8 @@ int C64Tape::HandleParams( int argc , char ** argv )
 
 						rep--;
 					} //< while ( rep > 0 )
+
+					printf( "\nFile position $%x\n" , ftell( mTapeFile ) );
 				}
 				else if ( argv[0][1] == 'c' )
 				{
@@ -2271,6 +2435,7 @@ r : Open a tape file for reading.\n\n\
 w[n] : Open a tape file for writing. If 'n' is supplied the file is created as a new file.\n\n\
 a : Start to append data to the tape file.\n\n\
 ft <pulse width 0> <pulse width 1> <endian 0/1> <sync byte> : Default 0x100 0x200 1 0xaa : Sets the tape turbo parameters to be used. The pulse width 0 and 1 parameters define the timing in cycles for 0 and 1 bits. The endian is little if 0 and big if 1. There must be one sync byte which signifies the start pattern of bits to use for loading subsequent bytes.\n\n\
+fh <num entries> <header bytes to match>... : Sets the header bytes to match when scanning a file. Default: 2 TapeHeaderByteEx TapeHeaderByteEx2\n\n\
 x <value>: Reset the checksum XOR register to the optional value or zero by default. This can be used by both the kernal and turbo file writers. Every byte read/written after this will accumulate into the checksum register.\n\n\
 t : If reading or writing truncate the tape file to the current position.\n\n\
 p <position> : Skip to the file position.\n\n\
@@ -2301,9 +2466,9 @@ otf[b][r] <file name> <file name byte> [start offset] [end offset] [load address
 otft <file name> [start offset] [end offset] : Writes turbo data with a tiny header without a filename or a load address. The checksum register is always reset. The start offset and end offset are optional, they are calculated assuming a PRG format file.\n\n\
 s : Interleave the next file with the previous file when using turbo checksum block method.\n\n\
 n <seed> : If seed is non-zero then randomly write blocks using the seed for the random number generator. A value of 0, the default, will write blocks in memory order.\n\n\
-otps[rep] : Write a turbo short pulse (0) for rep times\n\
-otpm[rep] : Write a turbo medium pulse (1) for rep times\n\
-otpl[rep] : Write a turbo long pulse (1) for rep times\n\
+otps[rep] : Write a short pulse or turbo short pulse (0) for rep times\n\
+otpm[rep] : Write a medium pulse or turbo long (1) for rep times\n\
+otpl[rep] : Write a long pulse or turbo long (1) for rep times\n\
 Quantise sample writes: Use ffmpeg options to force mono pcm_u8 at 22050 hz: -y -acodec pcm_u8 -ar 22050 -ac 1\n\
 q <filename> <sample rate in hz> <number bytes to skip from the start of the file> <number of bytes process in the file> <start cycle offset> <cycle multiplier>\n\
 ");

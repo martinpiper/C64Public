@@ -25,16 +25,19 @@ VectorHardwareInit
 
 !zn
 .colTab
-	!by $0f , $11 , $22 , $33 , $44 , $55 , $66 , $77 , $88 , $99 , $aa , $bb , $cc , $dd , $ee , $ff
+	+MBus24Bit_MakePaletteRGB 255 , 0 , 255
+!for .i , 15 {
+	+MBus24Bit_MakePaletteRGB (.i * 16) + 15 , (.i * 16) + 15 , (.i * 16) + 15
+
+}
 VectorHardwareInitPalette
-	+MBus24Bit_SetAddress_AXY kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + $100
+	+MBus24Bit_SetAddress_AXY kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (8 * kBus24Bit_VideoLayer_BytesPerPalette)
 	ldx #0
 .cl1
 	lda .colTab,x
 	+MBus24Bit_Send8BitValueFromA
-	+MBus24Bit_Send8BitValueFromA
 	inx
-	cpx #16
+	cpx #kBus24Bit_VideoLayer_BytesPerPalette
 	bne .cl1
 
 	rts

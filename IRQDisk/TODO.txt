@@ -35,3 +35,17 @@
 * Instead of using kernal to send M-W and M-E, or SETLFS/SETNAM/LOAD, use minimal code to directly send serail bytes via kernal, and then reduce to not using any kernal, i.e. kernal replacement serial routines.
 	This would allow RAM+IO to be mapped in while loading under BASIC and KERNAL.
 	Must be compatible with multiple drives etc.
+	For example: open 1,8,15,"M-R0123456789abcdef"
+		
+	8:e9c9 reads a serial byte
+		file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c1541/romlisting.htm#e9c9
+		Return: file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c1541/romlisting.htm#ea2d
+	8:e884 is the first byte read for a new command
+		file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c1541/romlisting.htm#E884
+	Disk command words (bytes): file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c1541/romlisting.htm#FE89
+		Command interpret uses above table and jump table for routines: file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c1541/romlisting.htm#C146
+	For example: load "$",8
+	Translates to bytes received on the drive side: 28 f0 24 3f	<pause dur to 8:c146 execution>	48 60
+	c:f3d5 is the open command for serial devices file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c64/romlisting.htm#F3D5
+	
+		

@@ -208,3 +208,12 @@
 
 * Remove this magic number for:
 	; Lowercase first screen!
+
+
+
+
+* When parsing the properties file for the level conversion, avoid the need for prefixing/postfixing numbers to maintain a unique key:
+	0.object.name=AnimationObject_bat
+	1.object.name=AnimationObject_dragonBody
+	Instead parse each line in order and not using the System properties accessor
+

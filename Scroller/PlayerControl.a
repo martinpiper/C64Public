@@ -28,6 +28,8 @@ Player2Information !fill 13
 
 PlayerInvulnerableTime = 200
 
+;Scroller_AddGravity=1
+
 !macro MACROPlayerInit .playerInformation , .playerProperties {
 !ifdef Scroller_LOTD {
 	lda #1
@@ -224,7 +226,17 @@ DoPlayerPositionLinkCode
 	bmi .notHitDown
 	lda #0
 	sta .playerInformation+PlayerGameOffset_TargetVelY
+!ifdef Scroller_AddGravity {
+	jmp .notHitDownOver	; Do not process any gravity, since we hit something below...
+}
 .notHitDown
+!ifdef Scroller_AddGravity {
+	; Add 1 gravity downwards since there is no collision below
+;	inc .playerInformation+PlayerGameOffset_TargetVelY
+	inc AnimationYPos,x
+.notHitDownOver
+}
+
 	ldy #40
 	lda (tempWork0),y
 	cmp .playerProperties+PlayerOffset_CharacterCollision

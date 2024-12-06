@@ -54,5 +54,7 @@ public:
 	int mBytesUsed13;
 	int mBytesUsed14;
 	int mBytesUsed15;
+	BOOL mIgnoreNoteOffEvents;
+	BOOL mAddHRDCommand;
 };
 

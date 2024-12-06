@@ -3,7 +3,7 @@
 
 !macro SEUCKFileData .size, .offset {
 !set .offset = $1a + 2 - $900 + .offset
-;!bin "../SEUCK/GAME1__I.P00",.size,.offset
+!bin "../SEUCK/GAME1__I.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
 ;!bin "../SEUCK/GAME2__I.P00",.size,.offset
 ;!bin "../SEUCK/GAME3__I.P00",.size,.offset
@@ -62,13 +62,17 @@
 ; Enable Scroller_LOTD for game file LOTD___I to add all the extra super weapon spells and tweaks
 ;!bin "../SEUCK/LOTD___I.P00",.size,.offset
 ;!bin "../SEUCK/SIDEWAYS.P00",.size,.offset
-!bin "../SEUCK/BRKTHRLF.P00",.size,.offset
+;!bin "../SEUCK/BRKTHRLF.P00",.size,.offset
 ;!bin "../SEUCK/BRKTHR2L.P01",.size,.offset	; Debug colour draw and scroll code
 ;!bin "../SEUCK/BAPHOMET.P00",.size,.offset
 ;!bin "../SEUCK/AEONDATA.P00",.size,.offset
 ;!bin "../SEUCK/PLMBAMSE___I.P00",.size,.offset
 ;!bin "../SEUCK/NYAAAAHI.P00",.size,.offset
 ;!bin "../SEUCK/PURGE101.P00",.size,.offset
+
+; Test for Multiplex_MaintainPriority and Multiplex_ReverseOrder
+;!bin "../SEUCK/testpriority  .i",.size,.offset-$1a
+
 
 ;Needs Multiplex_MaintainPriority Multiplex_ReverseOrder Scroller_IsHorizontal Scroller_LinkedPlayers Scroller_LinkedPlayersOffsetX = 0 Scroller_LinkedPlayersOffsetY = -21 Scroller_SetSpriteBackgroundPriority
 ;!bin "../SEUCK/STREETS_I.P00",.size,.offset

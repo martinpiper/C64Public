@@ -1,0 +1,46 @@
+!zn
+CharacterSetInit
+	+MCheckInLowerRAM
+	; Copy CHARROM lowercase
+	+MByteValueToAddress_A ProcessorPortCharROMBASICKERNAL , ZPProcessorPort
+	+MWordValueTo_XY CHARROM + VIC2MemorySetup_CharsSize
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY Characters
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY VIC2MemorySetup_CharsSize
+	jsr MemoryCopy_ForSize
+	+MByteValueToAddress_A ProcessorPortDefault , ZPProcessorPort
+	+MCheckInLowerRAM
+
+	; Distort the characters
+	+MWordValueToAddress_A Characters , tempZP0
+	ldx #$5b	; Up to uppercase Z
+.dl1
+	ldy #3
+	lda (tempZP0),y
+	asl
+	sta (tempZP0),y
+	iny
+	lda (tempZP0),y
+	asl
+	sta (tempZP0),y
+	+MAddU8ToAddr16 8 , tempZP0 , tempZP1
+	dex
+	bne .dl1
+
+	; And setup the graphics screen and kernal ROM routines
+	+MByteValueToAddress_A >CharScreen , EZPStringDisplayHiAddress
+	jsr CLRSCR
+
+	+MByteValueToAddress_A VIC2ScreenControlHDefault , VIC2ScreenControlH
+	+MVIC2MemorySetup_ScreenChar_A CharScreen , Characters
+	sta VIC2MemorySetup
+	+MByteValueToAddress_A CIA2PortASerialBusVICBank_Bank1 , CIA2PortASerialBusVICBank
+	+MByteValueToAddress_A VIC2ScreenControlVDefault , VIC2ScreenControlV
+	+MByteValueToAddress_A  %11111111 , VIC2SpriteMulticolour
+
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2BorderColour
+	+MByteValueToAddress_A VIC2Colour_DarkGrey , VIC2ExtraSpriteColour1
+	+MByteValueToAddress_A VIC2Colour_White , VIC2ExtraSpriteColour2
+
+	rts

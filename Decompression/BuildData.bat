@@ -3,6 +3,7 @@
 ..\bin\LZMPi.exe -ce Scroller.bin Scroller.cmp2
 ..\bin\LZMPi.exe -cr Scroller.bin Scroller.rle
 ..\bin\LZMPi.exe -cu Scroller.bin Scroller.cmp4
+..\bin\LZMPi.exe -cv Scroller.bin Scroller.cmp5
 
 mkdir DebugFiles
 
@@ -24,3 +25,9 @@ call BuildDataFragment.bat c64mbr sC64DecompBorderEffectMaxRLE DefineDoBorderEff
 
 call BuildDataFragment.bat c64mu sC64DecompNoEffectMaxRNZipU TestDecompression4U.a
 call BuildDataFragment.bat c64mbu sC64DecompBorderEffectMaxRNZipU DefineDoBorderEffect.a TestDecompression4U.a
+
+call BuildDataFragment.bat c64v sC64DecompNoEffectRNZipV TestDecompression5V.a
+call BuildDataFragment.bat c64bv sC64DecompBorderEffectRNZipV DefineDoBorderEffect.a TestDecompression5V.a
+
+call BuildDataFragment.bat c64vh sC64DecompNoEffectRNZipVH DefineDoExtraWorkMemoryHigh.a TestDecompression5V.a
+call BuildDataFragment.bat c64bvh sC64DecompBorderEffectRNZipVH DefineDoExtraWorkMemoryHigh.a DefineDoBorderEffect.a TestDecompression5V.a

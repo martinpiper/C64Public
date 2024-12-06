@@ -1,0 +1,769 @@
+;Craptastic3 test code
+
+!source "stdlib/stdlib.a"
+!to "Craptastic3.prg", cbm
+!sl "Craptastic3.map"
+!sal
+!svl "Craptastic3.lbl"
+!pdb "Craptastic3.pdb"
+!cpu 6510
+!ct pet
+!initmem $55
+
+; Comment out this line to remove debug border timings
+;kEnableDebugMainlineBorder = 1
+;Multiplexor_DebugBorder = 1
+
+;kDoScreenshot = 1
+
+
+kDelaySpray = 8
+kMaxStartXVelocity = 1000
+kMaxStartYVelocity = -1000
+kMinStartYVelocity = -500
+kBlobLifetime = 125
+
+kFrameStartWater = $e0
+kNumWaterFrames = 12
+
+kFrameStartSpider = $ec
+kFrameStartPOW = $ed
+
+kSpiderFrequency = 50
+
+kAnimationType_Empty = 0	; Must be 0
+kAnimationType_Water = 1
+kAnimationType_Enemy = 2
+kAnimationType_POW = 3
+
+kPowerXPos = SCREENRAM + VIC2ScreenCharsWidth + 10
+kPowerYPos = SCREENRAM + VIC2ScreenCharsWidth + VIC2ScreenCharsWidth + 10
+
+!source "stdlib/Comparisons.a"
+!source "stdlib/LongBranches.a"
+!source "stdlib/PETSCII.a"
+
+Multiplex_spritepointer	= SPRITEFRAME
+;Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo
+;Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi
+Multiplex_IRQServiceRoutineLo = IRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = IRQServiceRoutineHi
+Multiplex_IRQExitDefined = 1
+!macro Multiplex_IRQExit {
+	jmp MinimalIRQServiceRoutine;DefaultIRQServiceRoutine
+}
+Multiplexor_UseMulticolour = 1
+;Multiplexor_UsePriority = 1
+Multiplexor_UseDoubleWidth = 1
+Multiplexor_UseDoubleHeight = 1
+Multiplex_ReverseOrder = 1
+Multiplex_items = 24
+Multiplex_EnableEarlyOut = 1
+Multiplex_BunchingCheck = 1
+Multiplex_DiscardSpritesYPos = VIC2SpriteYBorderBottom
+
+Score_ZeroPage = $02	; And $03
+defined_Multiplex_YPos			= 1
+Multiplex_YPos+1			= Score_ZeroPage + 2
+Multiplex_VarBase	= Multiplex_YPos + Multiplex_items
+!source "SpriteMultiplexorVars.a"
+
+
+*=$800
+!source "FingerPrint.a"
+
+; Enough space for the command buffer etc
+* = $900
+start
+	sei
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	+M_RAMTAS
+	+InitKERNALStringDisplay_AXY
+	jsr CINT
+	sei
+	+MACROCIAIRQControlDisable_A
+	+MACROVICIRQCIATimerControlDisable_A
+	+MACROAckAllIRQs_A
+	+BlankScreenBorderSpriteSound_A
+
+	jsr SFXSIDInit
+
+	jsr CLRSCR
+
+	+MSetTextCursor 0 , 5
+	; Display the title screen
+	+MBASICTextPrint TitleText
+
+	+SetDefaultScreenLowerCase_A
+
+!ifndef kDoScreenshot {
+	+WaitForFire_A
+}
+
+	jsr CLRSCR
+	+MSetTextCursor 0 , 0
+	+MBASICTextPrint TopLine
+
+!ifndef kDoScreenshot {
+.si1
+	ldy #4
+.si2
+	lda #CHR_ReverseOn
+	jsr CHROUT
+	jsr Rand
+	and #3
+	tax
+	lda .randToColour,x
+	jsr CHROUT
+	jsr Rand
+	and #3
+	tax
+	lda .randToChar,x
+	jsr CHROUT
+	dey
+	bne .si2
+
+	jsr Rand
+	dec .scrInit
+	bne .si1
+}
+
+	+MWordValueTo_AX SCREENRAM + 7
+	jsr ScoreSetAddress
+	ldy #6
+	jsr ScoreInit
+
+	lda #$ff
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_White
+	sta VIC2ExtraSpriteColour2
+
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+
+	lda #VIC2Colour_Blue
+	sta VIC2ScreenColour
+
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
+	jsr Multiplex_InitSort
+	jsr Multiplex_CopyAnimations
+	jsr Multiplex_Sort
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	cli
+
+.l1
+.notYet	lda Multiplex_BottomTriggered
+	beq .notYet
+
+!ifdef kEnableDebugMainlineBorder {
+	lda #VIC2Colour_Cyan
+	sta VIC2BorderColour
+}
+
+	lda #0
+	sta Multiplex_BottomTriggered
+
+	dec .delaySpider
+	bne .noSpider
+
+	lda #kSpiderFrequency
+	sta .delaySpider
+	jsr AnimationFindFreeSlot
+	bcs .noSpider
+
+	lda #kAnimationType_Enemy
+	sta Animation_Type,x
+	lda #kFrameStartSpider
+	sta Multiplex_Default_SpriteFrame,x
+	lda #VIC2Colour_Black
+	sta Multiplex_Default_Colour,x
+
+	lda #0
+	sta Animation_YPosLo,x
+	sta Multiplex_Default_Multicolour,x
+	lda #1
+	sta Multiplex_Default_DoubleWidth,x
+	sta Multiplex_Default_DoubleHeight,x
+
+	jsr Rand
+	and #63
+	adc #60
+	sta Animation_YPosHi,x
+
+	jsr Rand
+	and #63
+	adc #30
+	sta Animation_XPosHi,x
+
+	jsr Rand
+	sta Animation_XVelocityLo,x
+	jsr Rand
+	and #3
+	sec
+	sbc #2
+	sta Animation_XVelocityHi,x
+	lda #0
+	sta Animation_YVelocityLo,x
+	sta Animation_YVelocityHi,x
+
+
+.noSpider
+
+!ifndef kDoScreenshot {
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+}
+
+	jsr AnimationFindFreeSlot
+	bcs .notFire
+
+	lda DelaySprayCount
+	bne .notFire
+
+	lda #0
+	jsr SafeSFXInit
+
+	lda #kDelaySpray
+	sta DelaySprayCount
+
+	lda #kAnimationType_Water
+	sta Animation_Type,x
+	lda #1
+	sta Multiplex_Default_Multicolour,x
+	lda #0
+	sta Multiplex_Default_DoubleWidth,x
+	sta Multiplex_Default_DoubleHeight,x
+
+	lda #0
+	sta Animation_YPosLo,x
+	lda #220
+	sta Animation_YPosHi,x
+
+	lda #0
+	sta Animation_XPosLo,x
+	lda #<(VIC2SpriteXBorderMiddle40/2)
+	sta Animation_XPosHi,x
+
+	; Velocity
+	ldy .leftRightNess
+	lda .leftRightnessToVelocityLo,y
+	sta Animation_XVelocityLo,x
+	lda .leftRightnessToVelocityHi,y
+	sta Animation_XVelocityHi,x
+	ldy .upness
+	lda .upnessToVelocityLo,y
+	sta Animation_YVelocityLo,x
+	lda .upnessToVelocityHi,y
+	sta Animation_YVelocityHi,x
+
+	lda #$e0
+	sta Multiplex_Default_SpriteFrame,x
+	lda #VIC2Colour_LightBlue
+	sta Multiplex_Default_Colour,x
+
+	lda #kBlobLifetime
+	sta Animation_Lifetime,x
+
+.notFire
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	lda .upness
+	cmp #28*4
+	bcs .notUpOver
+	inc .upness
+	lda .upness
+	lsr
+	lsr
+	tax
+	lda #$e7
+	sta kPowerYPos,x
+	lda #' '
+	sta kPowerYPos+1,x
+	jmp .notUpOver
+.notUp
+	lda .upness
+	beq .notUpOver
+	dec .upness
+	lda .upness
+	lsr
+	lsr
+	tax
+	lda #' '
+	sta kPowerYPos+1,x
+.notUpOver
+
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	lda .leftRightNess
+	cmp #2
+	bcc .wasLeftRightOver
+	dec .leftRightNess
+	dec .leftRightNess
+	lda .leftRightNess
+	lsr
+	lsr
+	tax
+	lda #' '
+	sta kPowerXPos+1,x
+	jmp .wasLeftRightOver
+.notLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	lda .leftRightNess
+	cmp #28*4
+	bcs .wasLeftRightOver
+	inc .leftRightNess
+	inc .leftRightNess
+	lda .leftRightNess
+	lsr
+	lsr
+	tax
+	lda #$e7
+	sta kPowerXPos,x
+	lda #' '
+	sta kPowerXPos+1,x
+	jmp .wasLeftRightOver
+.notRight
+
+!ifdef kDoScreenshot {
+	lda #80
+	sta .leftRightNess
+.smFrames	lda #247
+	beq .smFrames
+	dec .smFrames+1
+}
+
+	lda .leftRightNess
+	cmp #(14*4)+2
+	beq .wasLeftRightOver
+	bcs .isMore
+	inc .leftRightNess
+	lda .leftRightNess
+	lsr
+	lsr
+	tax
+	lda #$e7
+	sta kPowerXPos,x
+	lda #' '
+	sta kPowerXPos+1,x
+	jmp .wasLeftRightOver
+.isMore
+	dec .leftRightNess
+	lda .leftRightNess
+	lsr
+	lsr
+	tax
+	lda #' '
+	sta kPowerXPos+1,x
+.wasLeftRightOver
+
+
+!ifdef kEnableDebugMainlineBorder {
+	lda #VIC2Colour_Green
+	sta VIC2BorderColour
+}
+
+	jsr Animation_Update
+
+!ifdef kEnableDebugMainlineBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+
+	jmp .l1
+
+.randToColour
+!by CHR_Brown , CHR_Orange , CHR_Green , CHR_DarkGrey
+
+.randToChar
+!by $ab , $ad , $b1 , $b3
+
+.upnessToVelocityLo
+.upnessToVelocityHi = .upnessToVelocityLo + 29*4
+!for .ii , 29*4 {
+!set .i = .ii - 1
+	!word kMinStartYVelocity + (((kMaxStartYVelocity - kMinStartYVelocity) * .i) / (29*4))
+}
+!swizzle .upnessToVelocityLo , 29*4 , 2
+
+.scrInit !by 200
+
+.leftRightnessToVelocityLo
+.leftRightnessToVelocityHi = .leftRightnessToVelocityLo + 29*4
+!for .ii , 29*4 {
+!if .ii < 14*4 {
+!set .i = -((14*4) - (.ii - 1))
+} else {
+!set .i = .ii - 14*4 - 1
+}
+	!word ((kMaxStartXVelocity * .i) / (29*4))
+}
+!swizzle .leftRightnessToVelocityLo , 29*4 , 2
+
+.upness !by 28*4
+.leftRightNess !by 14*4
+.delaySpider !by 12
+
+MultiplexExt_LastIRQ
+	jsr SFXPlay
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_White
+	sta VIC2BorderColour
+}
+	jsr Multiplex_CopyAnimations
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+	jsr Multiplex_Sort
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jsr Multiplex_StartTopInterrupt
+	jmp Multiplex_AckExitInterrupt
+
+
+!source "SpriteMultiplexor.a"
+;!source "SpriteMultiplexorDefaultPattern.a"
+;!source "SpriteMultiplexorDefaultPatternCode.a"
+
+!zn
+AnimationFindFreeSlot
+	ldx #Multiplex_items-1
+.l1
+	lda Animation_Type,x
+	beq .found
+
+	dex
+	bpl .l1
+	sec
+	rts
+
+.found
+	clc
+	rts
+
+!zn
+DelaySprayCount !by 0
+Animation_Update
+	lda DelaySprayCount
+	beq .no1
+	dec DelaySprayCount
+.no1
+
+	; Update animations during the whole of the remaining screen time if necessary
+	ldx #Multiplex_items-1
+.l1
+	lda Animation_Type,x
+	+lbeq .emptySlot
+
+	lda Animation_Type,x
+	cmp #kAnimationType_Water
+	bne .notWater
+
+	dec Animation_Lifetime,x
+	+lbeq .deleteSlot
+
+	ldy Animation_Lifetime,x
+	lda BlobAnimationFramesTable,y
+	sta Multiplex_Default_SpriteFrame,x
+.notWater
+
+	lda Animation_Type,x
+	cmp #kAnimationType_Enemy
+	bne .notEnemy
+
+	; Check against water
+	ldy #Multiplex_items-1
+.ecl1
+	lda Animation_Type,y
+	cmp #kAnimationType_Water
+	bne .notWaterCheck
+
+	lda Animation_YPosHi,x
+	sec
+	sbc Animation_YPosHi,y
+	cmp #30
+	bcs .notWaterCheck
+	lda Animation_XPosHi,x
+	clc
+	adc #25
+	sec
+	sbc Animation_XPosHi,y
+	cmp #25
+	bcs .notWaterCheck
+
+	lda #kAnimationType_POW
+	sta Animation_Type,x
+	lda #kFrameStartPOW
+	sta Multiplex_Default_SpriteFrame,x
+	lda #VIC2Colour_Yellow
+	sta Multiplex_Default_Colour,x
+	lda #0
+	sta Animation_XVelocityLo,x
+	sta Animation_XVelocityHi,x
+
+	lda #16
+	jsr SafeSFXInit
+
+	jsr SafeScoreAdd
+
+
+.notWaterCheck
+	dey
+	bpl .ecl1
+
+.notEnemy
+
+	lda Animation_YPosLo,x
+	clc
+	adc Animation_YVelocityLo,x
+	sta Animation_YPosLo,x
+	lda Animation_YPosHi,x
+	adc Animation_YVelocityHi,x
+	cmp #10
+	bcc .deleteSlot
+	cmp #250
+	bcs .deleteSlot
+	sta Animation_YPosHi,x
+
+	lda Animation_XPosLo,x
+	clc
+	adc Animation_XVelocityLo,x
+	sta Animation_XPosLo,x
+	lda Animation_XPosHi,x
+	adc Animation_XVelocityHi,x
+	cmp #192
+	bcs .deleteSlot
+	sta Animation_XPosHi,x
+
+	; Final X coord update
+	lda Animation_XPosLo,x
+	rol
+	lda Animation_XPosHi,x
+	rol
+	sta Multiplex_Default_XPosLo,x
+	; Get carry
+	lda #0
+	rol
+	sta Multiplex_Default_XPosHi,x
+
+	lda Animation_YVelocityLo,x
+	clc
+	adc #11
+	sta Animation_YVelocityLo,x
+	lda Animation_YVelocityHi,x
+	adc #0
+	sta Animation_YVelocityHi,x
+
+.emptySlot
+
+	dex
+	+lbpl .l1
+	rts
+
+.deleteSlot
+	lda #kAnimationType_Empty
+	sta Animation_Type,x
+	lda #$ff
+	sta Animation_YPosHi,x
+
+	jmp .emptySlot
+
+Animation_Type
+	!fill Multiplex_items , 0
+
+Animation_YPosLo
+	!fill Multiplex_items , $ff
+Animation_YPosHi = Multiplex_Default_YPos
+;	!fill Multiplex_items , $ff
+
+Animation_XPosLo
+	!fill Multiplex_items , 0
+Animation_XPosHi
+	!fill Multiplex_items , 0
+
+Animation_XVelocityLo
+	!fill Multiplex_items , 0
+Animation_XVelocityHi
+	!fill Multiplex_items , 0
+
+Animation_YVelocityLo
+	!fill Multiplex_items , 0
+Animation_YVelocityHi
+	!fill Multiplex_items , 0
+
+Animation_Lifetime
+	!fill Multiplex_items , 0
+
+; These default Y values show the minimal amount of sprite packing, with 1 y pos increment per sprite, that is available.
+; Note with Multiplexor_DebugBorder this shows eight sprites updated every IRQ band
+Multiplex_Default_YPos
+	!fill Multiplex_items , $ff
+
+Multiplex_Default_XPosLo
+	!fill Multiplex_items , 0
+
+Multiplex_Default_XPosHi
+	!fill Multiplex_items , 0
+
+!ifdef Multiplexor_UseMulticolour {
+Multiplex_Default_Multicolour
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UsePriority {
+Multiplex_Default_Priority
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+Multiplex_Default_DoubleWidth
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_Default_DoubleHeight
+	!fill Multiplex_items , 0
+}
+
+Multiplex_Default_Colour
+	!fill Multiplex_items , 0
+
+Multiplex_Default_SpriteFrame
+	!fill Multiplex_items , 0
+
+
+
+!zn
+Multiplex_CopyAnimations
+	ldx #Multiplex_items-1
+.l1
+	lda Multiplex_Default_YPos,x
+	sta Multiplex_YPos,x
+
+	lda Multiplex_Default_XPosLo,x
+	sta Multiplex_XPosLo,x
+
+	lda Multiplex_Default_XPosHi,x
+	sta Multiplex_XPosHi,x
+
+	lda Multiplex_Default_Colour,x
+	sta Multiplex_Colour,x
+
+	lda Multiplex_Default_SpriteFrame,x
+	sta Multiplex_SpriteFrame,x
+
+!ifdef Multiplexor_UseMulticolour {
+	lda Multiplex_Default_Multicolour,x
+	sta Multiplex_Multicolour,x
+}
+!ifdef Multiplexor_UsePriority {
+	lda Multiplex_Default_Priority,x
+	sta Multiplex_Priority,x
+}
+!ifdef Multiplexor_UseDoubleWidth {
+	lda Multiplex_Default_DoubleWidth,x
+	sta Multiplex_DoubleWidth,x
+}
+!ifdef Multiplexor_UseDoubleHeight {
+	lda Multiplex_Default_DoubleHeight,x
+	sta Multiplex_DoubleHeight,x
+}
+
+	dex
+	bpl .l1
+	rts
+
+!zn
+!source "Citadel2/asm/Score.a"
+!source "BerzerkRedux/Rand.a"
+
+TitleText
+	!by CHR_ReverseOff , CHR_White
+	!tx "Craptastic 3" , CHR_Return , CHR_LightGreen , "   The revenge of the spiders" , CHR_Return , CHR_Return
+	!tx CHR_Green , "Just kill the spiders by spraying the   water at them." , CHR_Return , CHR_Return
+	!tx "Joystick left/right/up will control the hose strength." , CHR_Return , CHR_Return
+	!tx "Joystick fire will spray water" , CHR_Return , CHR_Return , CHR_Return , CHR_Return
+	!tx CHR_Yellow , "Press fire to start"
+	!by 0
+
+TopLine
+	!by CHR_ReverseOff, CHR_White
+	!tx "Score:                " , CHR_Return
+	!tx "Power X: "
+	!by CHR_ReverseOn
+	!by CHR_Red
+	!fill 4 , $e7
+	!by CHR_Yellow
+	!fill 5 , $e7
+	!by CHR_Green
+	!fill 6 , $e7
+	!by CHR_White
+	!by $e7
+	!by CHR_ReverseOff
+	!by CHR_Green
+	!fill 6 , ' '
+	!by CHR_Yellow
+	!fill 5 , ' '
+	!by CHR_Red
+	!fill 4 , ' '
+	!by CHR_ReverseOff, CHR_White
+	!tx "Power Y: "
+	!by CHR_ReverseOn
+	!by CHR_Green
+	!fill 13 , $e7
+	!by CHR_Yellow
+	!fill 10 , $e7
+	!by CHR_Red
+	!fill 7 , $e7
+	!by CHR_Return
+	!by 0
+
+
+BlobAnimationFramesTable
+!for .ii , kBlobLifetime {
+!set .i = kBlobLifetime - .ii
+	!by kFrameStartWater + ((.i * kNumWaterFrames)/kBlobLifetime)
+}
+
+!source "SFX/SFX.a"
+SFXTable
+!bin "SEUCK/GAME3__I.P00",$f0,$1a + 2 - $900 + $b810
+
+!zn
+SafeSFXInit
+	sei
+	jsr SFXInit
+	cli
+	rts
+
+SafeScoreAdd
+	txa
+	pha
+	+MWordValueTo_AX .score
+	jsr ScoreAdd
+	pla
+	tax
+	rts
+.score
+	!by 5
+	!by 2
+.scoreNum	!by 3,1
+
+*=$3800
+SpriteData
+!bin "Sprites.spd" , , $9

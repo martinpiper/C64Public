@@ -1,0 +1,156 @@
+* A sequence of commands to build sprites to do:
+		Select sprite to working
+		Scroll right
+		Scroll down
+		Scroll up
+		Squish top to middle
+		Squish bottom to middle
+		Mask working to final
+		And final to destination index
+	A 0 ends the sequence of commands. This would allow simple or complex sprites to be defined with a few bytes.
+	Animation of this would need ways to change values within the commands to generate movement of the parts in the definition.
+	>> SpriteExecuteCommands
+
+
+
+
+* Move eyes and other parts to the middle. The squish and scroll up can be used more effectively from there.
+	It will also allow sizing of those parts.
+
+
+
+* Enable kernal and BASIC ROMs
+
+
+
+* Use VIC2_Bank1
+
+
+
+* Copy kernal chars to VIC2_Bank1
+	Screen just after
+
+
+* Entity system, very simple looped animation
+
+
+
+* Player sprite animation, using the hand tweaked CommandBuffer
+
+
+
+* Monsters chase the player
+
+
+
+* Quick distort of the text chars from the CHARROM
+
+
+
+
+* Add eyes to EntityUpdate_Monster
+	Eyes mean the monster will stop moving and start moving. More eyes means the moving period is longer
+	Probably a simple counter for the monster and a comparison with a shifted eye value
+
+
+
+
+* Each monster needs an ideal target position around the player, to help spread out the monsters
+	Choose the position offset a cycle when spawning and store in the entity preferences
+	>> MonsterCalculateNewTargetOffset
+
+
+
+
+* Reuse char bullet routine from Scroller?
+
+
+
+
+* Procedurally generated sprite animations
+	Single eye blink
+	Single body part, wide, narrow
+	Single "arm" narrow
+	Single "foot" narrow
+	All can be vertically squished and positioned
+	Can composite multiple parts (eyes, body etc) with various horizontal shifts to the right. Each part is kept to the left.
+	All can be merged, with masking, into different composite sprites with varying number of frames and shown at different speeds.
+	The frames are created according to various enemy characteristics, such as speed, aggression, etc.
+	* Done: Generate a command buffer using Rand.a
+	* Done: Have a bounce value that steps for each submitted sprite. Then it can start at a different cycle value when each frame is created with the same seed.
+		Then each entry in the command buffer can decide if it wants to add a bounce value, either down or up depending on the body part etc.
+		The same seed, but with a different bounce cycle value will generate the same monster but with nice animation.
+		Also the bounce value can affect top/bottom squish.
+	* Add mouth
+	* Add tail
+	* Add hair
+	* Store the behaviour attributes and return them to the game code for usage
+		MonsterCreateParams_Eyes
+		MonsterCreateParams_Parts
+		MonsterCreateParams_Feet => EntityMoveSpeed
+
+
+
+
+* Could use the multiplexor
+	The IRQ copies from off-screen positions buffer, and triggers the mainline update which updates the off-screen data
+	mainline calculation can take a while screen to calculate, so doesn't have to be speedy unrolled code.
+	>> No room
+
+
+
+* Score routines
+
+
+
+* Sometimes monsters run away from the player
+
+
+
+* Need a level win condition test, when all monsters are dead.
+	Or the player is dead
+	>> GameLevelNumMonstersLeft and GameLevelNumMonstersAlive
+
+
+
+
+* Vary monster explosion SFX
+
+
+
+* Debounce player fire
+
+
+
+* Player collision and energy
+
+
+
+* Screen edge boundary
+
+
+
+* Background draw using CHARROM segments
+
+
+
+* Stop all grey monster colours... Background conflicts...
+
+
+
+* Add title screen explanation, "this is you, other monsters don't like your light green colour, you must escape..."
+
+
+
+
+* jsr SFXPlay should be in an IRQ
+	>> SafeSFXInit
+
+
+
+* Monster explosion as chars
+	Probably eight way effect?
+
+
+
+* Better player died sequence, perhaps play each sound effect in sequence?

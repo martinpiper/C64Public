@@ -1,0 +1,99 @@
+; ..\acme.exe -v9 --lib ..\ vccc2023.a && vccc2023.prg
+; $801 - $8c2 exclusive
+
+; s "c:\temp\t.bin" 0 400 6e0
+; ..\bin\LZMPi.exe -no -cu c:\temp\t.bin c:\temp\t.cmp 2
+; 
+
+
+!source "stdlib\stdlib.a"
+
+!to "vccc2023.prg", cbm
+!sal
+!sl "vccc2023.map"
+!svl "vccc2023.lbl"
+!pdb "vccc2023.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib\BASICEntry80d.a"
+!source "stdlib\PETSCII.a"
+
+*=BASICEntry
+	lda #VIC2Colour_Black
+	sta VIC2ScreenColour
+	+MWordValueTo_AY ClearWhite
+	jsr BASICTextPrint
+.l1
+	jsr Line1
+	jsr Line2
+	jsr Line3
+	jsr Line4
+	jsr Line3
+	jsr Line2
+	dec .cnt
+	bne .l1
+	jsr Line1
+	rts
+
+.cnt
+	!by 3
+	
+Line1
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+Line4B
+	+MWordValueTo_AY FiveSpacesStar
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar
+	jsr BASICTextPrint
+DoReturn
+	lda #CHR_Return
+	jmp CHROUT
+
+Line2
+	+MWordValueTo_AY FiveSpacesStar+3
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	jmp DoReturn
+
+Line3
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+4
+	jsr BASICTextPrint
+	+MWordValueTo_AY FiveSpacesStar+2
+	jsr BASICTextPrint
+	jmp DoReturn
+	
+Line4
+	lda #'*'
+	jsr CHROUT
+	+MWordValueTo_AY FiveSpacesStar
+	jsr BASICTextPrint
+	jmp Line4B
+
+ClearWhite
+	!by CHR_Clear
+	!by CHR_White
+	!by 0
+
+
+FiveSpacesStar
+	!tx "     *"
+	!by 0

@@ -1,0 +1,52 @@
+Given compressed V test data
+  Given I run the command line: ..\bin\LZMPi.exe -cv "Scroller.bin" "c:\temp\t.cmp5"
+
+
+
+Given assemble DecompressV test
+  And I create file "target\test.a" with
+    """
+    !source "../stdlib/stdlib.a"
+    !to "target/test.prg", cbm
+    !sal
+    !sl "target/test.map"
+    !svl "target/test.lbl"
+    !cpu 6510
+    !ct pet
+    
+    !source "../stdlib/LongBranches.a"
+    
+    !macro RNXPCompressionIncBorder_A {}
+    
+    RNXPCompressionDecompress_WriteByteAddr = $$801
+    RNXPCompressionDecompress_extraWorkMemory = $$200
+    
+    ; This should be fine, ends near the end of memory
+    *=$$C333
+    RNXPCompressionDecompress_GetByteAddr
+    !bin "c:\temp\t.cmp5",,2
+    ; Avoids unitialised memory reads whenin .getOffset for end of file...
+    ; When the end of file compressed data is reached, this does reads extra bytes, but the last byte written is the real end of the data, so all good.
+    ; This saves a couple of terminating compressed data bytes.
+    !by 0,0
+    
+
+    RNXPCompressionDecompressV_avoidTempInit = 1
+    *=$$02
+    !source "DecompressionVVars.a"
+    !source "DecompressionV.a"
+    """
+  
+  Given I run the command line: ..\acme.exe -v4 target\test.a
+  And I load prg "target\test.prg"
+  And I load labels "target\test.map"
+  When enable remote debugging
+
+
+
+Then expect correct memory writes during decompression with RNXPCompressionDecompressV
+  Given load binary file "Scroller.bin" into temporary memory
+
+  Then for memory from "$$800" to "$$ffff" expect writes at "$$801" with temporary memory
+  When I reset the cycle count
+  Then I execute the procedure at RNXPCompressionDecompressV until return

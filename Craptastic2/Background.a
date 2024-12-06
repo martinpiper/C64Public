@@ -1,0 +1,101 @@
+!zn
+GameDrawBackground
+	; Draw floor tile grid
+	+MSetTextCursor 0 , 1
+
+	lda #4
+	sta tempWork1
+.l2
+	lda #10
+	sta tempWork0
+.l1
+	lda #CHR_Grey
+	jsr CHROUT
+	jsr Rand
+	and #1
+	bne .o1
+	lda #CHR_LightGrey
+	jsr CHROUT
+.o1
+	jsr Rand
+	and #1
+	bne .o4
+	+MBASICTextPrint .tileGrid0
+	jmp .o5
+.o4
+	+MBASICTextPrint .tileGrid1
+.o5
+	dec tempWork0
+	bne .l1
+	+MBASICTextPrint .tileGrid0Row
+	dec tempWork1
+	bne .l2
+
+	lda #10
+	sta tempWork0
+.l3
+	lda #CHR_Grey
+	jsr CHROUT
+	jsr Rand
+	and #1
+	bne .o3
+	lda #CHR_LightGrey
+	jsr CHROUT
+.o3
+	+MBASICTextPrint .tileGrid0Bot
+	dec tempWork0
+	bne .l3
+
+	; And suplicate the bottom line to avoid screen scrolling issues with the 
+	ldx #VIC2ScreenCharsWidth-1
+.cl1
+	lda CharScreen + (23 * VIC2ScreenCharsWidth),x
+	sta CharScreen + (24 * VIC2ScreenCharsWidth),x
+	lda COLOURRAM + (23 * VIC2ScreenCharsWidth),x
+	sta COLOURRAM + (24 * VIC2ScreenCharsWidth),x
+	dex
+	bpl .cl1
+
+	rts
+
+.tileGrid0
+	!by CHR_ReverseOn
+	!by $f0 , $60 , $60 , $ee
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $20 , $20 , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $20 , $20 , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $20 , $20 , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $ed , $60 , $60 , $bd
+	!by CHR_Up , CHR_Up , CHR_Up , CHR_Up
+	!by 0
+
+.tileGrid1
+	!by CHR_ReverseOn
+	!by $f0 , $60 , $60 , $ee
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $de , $de , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $de , $de , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $de , $de , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $ed , $60 , $60 , $bd
+	!by CHR_Up , CHR_Up , CHR_Up , CHR_Up , CHR_ReverseOff
+	!by 0
+
+.tileGrid0Row
+	!by CHR_Down , CHR_Down , CHR_Down , CHR_Down
+	!by 0
+
+.tileGrid0Bot
+	!by CHR_ReverseOn
+	!by $f0 , $60 , $60 , $ee
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $20 , $20 , $7d
+	!by CHR_Left , CHR_Left , CHR_Left , CHR_Left , CHR_Down
+	!by $7d , $20 , $20 , $7d
+	!by CHR_Up , CHR_Up
+	!by 0

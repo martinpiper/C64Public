@@ -1,0 +1,252 @@
+!zn
+RNXPCompressionDecompressV
+!ifndef RNXPCompressionDecompressV_avoidTempInit {
+	+MWordValueToAddress_Y	1 , sRNXPCompressionDecompress_data2
+	sty	sRNXPCompressionDecompress_data1
+	sty	sRNXPCompressionDecompress_data1+1
+	lda	#<RNXPCompressionDecompress_extraWorkMemory
+	sta sRNXPCompressionDecompress_table
+!if <RNXPCompressionDecompress_extraWorkMemory != 0 {
+	tya
+}
+} else {
+	ldy #0
+	tya
+}
+	ldx	#>sRNXPCompressionDecompress_probabilitiesOffset+$100
+.initWorkArea
+	stx	sRNXPCompressionDecompress_table+1
+.fl1	sta (sRNXPCompressionDecompress_table),y
+	iny
+	bne .fl1
+	sta	sRNXPCompressionDecompress_workBitsByte
+	eor	#$80
+	dex
+	cpx	#>RNXPCompressionDecompress_extraWorkMemory
+	bcs	.initWorkArea
+	tax	; Always 0
+
+.getLiteral
+	+RNXPCompressionIncBorder_A
+	ldy	#1
+.getLiteralBits
+	jsr	.getBit
+	tya
+	rol
+	tay
+	bcc	.getLiteralBits
+	sta	(RNXPCompressionDecompress_WriteBytesmAddr,x)
+	+MIncAddrWord	RNXPCompressionDecompress_WriteBytesmAddr
+	jsr	.getWhatKind
+	bcc	.getLiteral
+
+	lda	#>sRNXPCompressionDecompress_probabilitiesRef
+	jsr	.getBitUsingTable
+	bcc	.getOffset
+
+.getLength
+	lda	#>sRNXPCompressionDecompress_probabilitiesLength
+	jsr	.decodeNumber
+.smoffsetL	=	*+1
+	lda	#$ff
+	adc	RNXPCompressionDecompress_WriteBytesmAddr	; C=0
+	sta	sRNXPCompressionDecompress_tempCopy
+.smoffsetH = *+1
+	lda	#$ff
+	adc	RNXPCompressionDecompress_WriteBytesmAddr+1
+	sta	sRNXPCompressionDecompress_tempCopy+1
+
+	ldx	sRNXPCompressionDecompress_numberWork+1
+	beq	.copyLastChunk
+.copyAligned
+.cl1
+	lda	(sRNXPCompressionDecompress_tempCopy),y
+	sta (RNXPCompressionDecompress_WriteBytesmAddr),y
+	iny
+	bne .cl1 
+	inc	sRNXPCompressionDecompress_tempCopy+1
+	inc	RNXPCompressionDecompress_WriteBytesmAddr+1
+	dex
+	bne	.copyAligned
+
+.copyLastChunk
+	ldx	sRNXPCompressionDecompress_numberWork
+	beq	.copyComplete
+.copyBytes
+	lda	(sRNXPCompressionDecompress_tempCopy),y
+	sta (RNXPCompressionDecompress_WriteBytesmAddr),y
+	iny
+	dex
+	bne	.copyBytes
+	tya
+	clc
+	adc	RNXPCompressionDecompress_WriteBytesmAddr
+	sta	RNXPCompressionDecompress_WriteBytesmAddr
+	bcc .o1
+	inc	RNXPCompressionDecompress_WriteBytesmAddr+1
+.o1
+
+.copyComplete
+	jsr	.getWhatKind
+	bcc	.getLiteral
+
+.getOffset
+	lda	#>sRNXPCompressionDecompress_probabilitiesOffset
+	jsr	.decodeNumber
+	lda	#3
+	sbc	sRNXPCompressionDecompress_numberWork	; C=0
+	sta	.smoffsetL
+	tya	; #0
+	sbc	sRNXPCompressionDecompress_numberWork+1
+	sta	.smoffsetH
+	bcc	.getLength
+!ifdef RNXPCompressionDecompress_ExitCodeDefined {
+	+RNXPCompressionDecompress_ExitCode
+} else {
+	rts
+}
+
+!if (>sRNXPCompressionDecompress_probabilities) = 0 {
+	!error ">sRNXPCompressionDecompress_probabilities must not be 0"
+}
+
+.getWhatKind
+	ldy	#0
+	lda	#>sRNXPCompressionDecompress_probabilities
+.getBitUsingTable
+	sta	sRNXPCompressionDecompress_table+1
+	bne	.getBit	; Always
+
+.readBitContext
+	asl	sRNXPCompressionDecompress_data2
+	rol	sRNXPCompressionDecompress_data2+1
+	asl	sRNXPCompressionDecompress_workBitsByte
+	bne	.gotBit
+	lda	(RNXPCompressionDecompress_GetBytesmAddr,x)	; X=0
+	+MIncAddrWord RNXPCompressionDecompress_GetBytesmAddr
+	rol	; C=1
+	sta	sRNXPCompressionDecompress_workBitsByte
+.gotBit
+	rol	sRNXPCompressionDecompress_data1
+	rol	sRNXPCompressionDecompress_data1+1
+
+.getBit
+	lda	sRNXPCompressionDecompress_data2+1
+	bpl	.readBitContext
+
+	lda (sRNXPCompressionDecompress_table),y
+	sta sRNXPCompressionDecompress_factor+1
+	sta	sRNXPCompressionDecompress_fractionWork+1
+
+	inc	sRNXPCompressionDecompress_table+1
+	lda	(sRNXPCompressionDecompress_table),y
+	sta	sRNXPCompressionDecompress_factor
+
+	ldx	#4
+.calcFraction
+	lsr	sRNXPCompressionDecompress_fractionWork+1
+	ror
+	dex
+	bne	.calcFraction
+	sta	sRNXPCompressionDecompress_fractionWork
+
+	; Multiply
+	; sRNXPCompressionDecompress_compute = (sRNXPCompressionDecompress_factor * sRNXPCompressionDecompress_data2) >> 16
+	; https://codebase64.org/doku.php?id=base:16bit_multiplication_32-bit_product
+	; Discards the lower two bytes
+	; Exit:
+	; sRNXPCompressionDecompress_compute
+	; A also = sRNXPCompressionDecompress_compute
+.bph
+	txa	; =0
+	sta	sRNXPCompressionDecompress_compute+1
+	ldx	#16
+.doMulitplySteps
+	lsr	sRNXPCompressionDecompress_factor+1
+	ror	sRNXPCompressionDecompress_factor
+	bcc	.skipMultiplyBit
+	clc
+	adc	sRNXPCompressionDecompress_data2
+	pha
+	lda	sRNXPCompressionDecompress_compute+1
+	adc	sRNXPCompressionDecompress_data2+1
+	sta	sRNXPCompressionDecompress_compute+1
+	pla
+.skipMultiplyBit
+	ror	sRNXPCompressionDecompress_compute+1
+	ror
+	dex
+	bne	.doMulitplySteps
+	sta	sRNXPCompressionDecompress_compute
+	; End multiply
+.bph2
+
+	eor	#$ff
+	sec
+	adc	sRNXPCompressionDecompress_data1
+
+	tax
+	lda	sRNXPCompressionDecompress_data1+1
+	sbc	sRNXPCompressionDecompress_compute+1
+	bcs	.isZero
+
+	ldx	sRNXPCompressionDecompress_compute
+	lda	sRNXPCompressionDecompress_compute+1
+	bcc	.retData2	; Always
+
+.isZero
+	stx	sRNXPCompressionDecompress_data1
+	sta	sRNXPCompressionDecompress_data1+1
+	lda	sRNXPCompressionDecompress_data2
+	sbc	sRNXPCompressionDecompress_compute	; C=1
+	tax
+	lda	sRNXPCompressionDecompress_data2+1
+	sbc	sRNXPCompressionDecompress_compute+1
+
+.retData2
+	stx	sRNXPCompressionDecompress_data2
+	sta	sRNXPCompressionDecompress_data2+1
+	php
+	lda	(sRNXPCompressionDecompress_table),y
+	sbc	sRNXPCompressionDecompress_fractionWork
+	sta	(sRNXPCompressionDecompress_table),y
+	dec	sRNXPCompressionDecompress_table+1
+	lda	(sRNXPCompressionDecompress_table),y
+	sbc	sRNXPCompressionDecompress_fractionWork+1
+	plp
+	bcs	.retZero
+	sbc	#$ef	; C=0
+	sec
+	; Immediate fake instruction, with following clc, to skip clc without changing C flag and minimise code size
+	!by $80 ; noop #..
+;	!by $a2 ; ldx #..
+.retZero
+	clc
+	sta	(sRNXPCompressionDecompress_table),y
+	ldx	#0
+	rts
+
+
+
+.decodeNumber
+	sta	sRNXPCompressionDecompress_table+1
+	+MWordValueToAddress_A	1 ,sRNXPCompressionDecompress_numberWork
+	sty	sRNXPCompressionDecompress_numberWork+1	; 0
+.decodeNumberCount
+	iny
+	iny
+	jsr	.getBit
+	bcs	.decodeNumberCount
+
+.decodeNumberBit
+	dey
+	jsr	.getBit
+	rol	sRNXPCompressionDecompress_numberWork
+	rol	sRNXPCompressionDecompress_numberWork+1
+	dey
+	bne	.decodeNumberBit
+	rts
+
+
+
+

@@ -345,6 +345,17 @@ then start the sample to play.
 
 
 
+Sample playback
+	Find: RLE Sample playing
+		This uses a new compressed sample format, which could be useful.
+	C64\MusicStudio2\MusicStudioConvert\SamplePlayer.a
+		This uses low and high nybble ordering...
+	* Find out what kind of NMI timing can be used in the SID player.
+	
+
+
+
+
 Have the option to specify what variables can be stored in zeropage, so speed up memory access.
 *Perhaps even have the option to automatically calculate what variables will benefit the raster time most by timing assembled code with different variables set.
 *The whole music could be played to find out the peak and average raster time and allow the automatic system to find the best match for either peak or average or both combined.
@@ -391,3 +402,93 @@ Have the option to specify what variables can be stored in zeropage, so speed up
 ; To avoid the slightly expensive always copy to the SID we will store directly to the SID instead.
 ; These variables can be stored directly and only those with a * have some read access:
 ; *.atde , .sure , 
+
+
+
+
+* Track editing mode: === - Gate off, releases the current note.
+	But is SLE is used then this does not release the note?!
+	> The conversion to the DUR block mode might be missing this context...
+	Also check +++ which is meant to be a silent rest
+	>> Manually editing a DUR block to do this, works:
+		VOL:0F
+		SLE
+		ENV:1
+		DUR:8
+		C-5
+		; Gate off
+		===
+		; These notes play, with sluring, but are played during the gate off time.
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		>> So it's the conversion from a tracker block using === to a DUR block that is wrong.
+	>> Clicking "Tracker block edit mode" then removing one = from the rest and then adding = back again, to force a tracker to DUR block conversion, results in this incorrect sequence:
+		;Tracker block
+		VOL:0F
+		SLE
+		ENV:01
+		DUR:10
+		C-5
+		DUR:8
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		B-4
+		A-4
+		F-4
+		E-4
+		D-4
+		>> Note that DUR:10 is wrong, it should be DUR:8 and the note should have a following ===
+	>> CMusicStudioDoc::UpdateTrackerBlockToInternal
+		> if (mBlockTrackerRows[currentBlock][j][0] == "===")
+		> if ( ( (mBlockTrackerRows[currentBlock][j][0] == "===") || mBlockTrackerRows[currentBlock][j][0].IsEmpty()) && mBlockTrackerRows[currentBlock][j][1].IsEmpty() && !mBlockTrackerRows[currentBlock][j][2].IsEmpty())
+		> else if (mBlockTrackerRows[currentBlock][j][0] == "===")
+	>>> The voice commands, if any, should probably be parsed before the note parsing...
+		bool anyEffectOutputThisRow = false;
+
+
+
+
+
+* https://github.com/martinpiper/C64Public/issues/7
+	>> /openFile "$(ProjectDir)\..\Single note sustain then release.msmus"
+	At the moment, the play routine code only support blocks up to $100 bytes long, so you'll need to split the blocks into smaller chunks.
+	I could update the play routine to support longer blocks, but this will use more CPU time. It could be an automatic option to use long block code if the editor detects long blocks. :)
+	> C64\MusicStudio2\MusicStudioConvert\MusicPlayer2.a
+	> These parts will need 16 bit address updates for the block ffset
+		.block
+		.blockWaitForNextNote
+		And updates of .blcn
+	>> A good way would be to maintain the address for the block offset and add on Y when .blockWaitForNextNote is encountered?
+		But this needs some changes to how the block number is pulled from the track, instead the address would need to be calculated once from the track
+			.handleseq calculates which block to play...
+			.endblock would need improvements, especially for Y index (no 16 address handler) and .blcn handling
+		When there isn't an initialised block address then the track needs to be read...
+	>> Or increment a high address add-on value when Y overflows? i.e. when Y is less than the previous Y
+		This would involve less change and still allow the lda(),y and Y register to be used, which is faster than updating a 16 but address all the time...
+		.endblock would need improvements, especially for Y index (no 16 address handler) and .blcn handling
+	> Editor code uses mC64blcn which comes from .blcn, this would need to calculate the block offset using 16 bits, not just 8 bits...
+		
+
+
+

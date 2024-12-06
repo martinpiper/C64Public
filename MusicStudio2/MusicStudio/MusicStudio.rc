@@ -447,8 +447,8 @@ CAPTION "About MusicStudio"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,20,20
-    LTEXT           "MusicStudio, Version 2.2.0.8",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2010-2021 Element 114 Software",IDC_STATIC,42,26,142,8
+    LTEXT           "MusicStudio, Version 2.2.0.9",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2010-2024 Element 114 Software",IDC_STATIC,42,26,142,8
     DEFPUSHBUTTON   "OK",IDOK,134,69,50,14,WS_GROUP
     LTEXT           "Portions of this software use source code from RESID-FP http://sidplay-residfp.sourceforge.net/",IDC_STATIC,7,41,177,25
 END
@@ -550,8 +550,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,8
- PRODUCTVERSION 2,2,0,8
+ FILEVERSION 2,2,0,9
+ PRODUCTVERSION 2,2,0,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -568,12 +568,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Element 114 Software"
             VALUE "FileDescription", "Music Studio music editor"
-            VALUE "FileVersion", "2.2.0.8"
+            VALUE "FileVersion", "2.2.0.9"
             VALUE "InternalName", "MusicStudio.exe"
-            VALUE "LegalCopyright", "(c) 2010-2021 Element 114 Software.  All rights reserved."
+            VALUE "LegalCopyright", "(c) 2010-2024 Element 114 Software.  All rights reserved."
             VALUE "OriginalFilename", "MusicStudio.exe"
             VALUE "ProductName", "Music Studio"
-            VALUE "ProductVersion", "2.2.0.8"
+            VALUE "ProductVersion", "2.2.0.9"
         END
     END
     BLOCK "VarFileInfo"
@@ -994,10 +994,10 @@ BEGIN
     DEFPUSHBUTTON   "Import",IDOK,205,165,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,308,165,50,14
     EDITTEXT        IDC_EDIT1,7,18,40,14,ES_AUTOHSCROLL | ES_WANTRETURN | ES_NUMBER
-    LTEXT           "Time multiplier",IDC_STATIC,50,21,46,8
+    LTEXT           "Time multiplier to time ticks",IDC_STATIC,50,21,101,8
     EDITTEXT        IDC_EDIT61,7,36,40,14,ES_AUTOHSCROLL | ES_WANTRETURN | ES_NUMBER
-    LTEXT           "Block length",IDC_STATIC,49,40,39,8
-    LTEXT           "MIDI Channel to track",IDC_STATIC,7,57,83,8
+    LTEXT           "Block length in time ticks",IDC_STATIC,49,40,106,8
+    LTEXT           "MIDI Channel to track. Use the track number 1/2/3 or 0 for no track.",IDC_STATIC,7,57,235,8
     EDITTEXT        IDC_EDIT2,7,70,20,12,ES_WANTRETURN | ES_NUMBER
     EDITTEXT        IDC_EDIT39,29,70,20,12,ES_WANTRETURN | ES_NUMBER
     EDITTEXT        IDC_EDIT40,51,70,20,12,ES_WANTRETURN | ES_NUMBER
@@ -1032,6 +1032,9 @@ BEGIN
     EDITTEXT        IDC_EDIT26,315,96,22,12,ES_READONLY | ES_WANTRETURN | ES_NUMBER | NOT WS_BORDER | NOT WS_TABSTOP
     EDITTEXT        IDC_EDIT75,337,96,22,12,ES_READONLY | ES_WANTRETURN | ES_NUMBER | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT           "MIDI Bytes used for channel. Generally, choose the channels to convert that have more bytes.",IDC_STATIC,8,85,350,8
+    CONTROL         "Ignore note off events",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,129,89,10
+    CONTROL         "Add HRD command at start of each block",IDC_CHECK3,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,143,147,10
 END
 
 IDD_RIPSID DIALOGEX 0, 0, 233, 164

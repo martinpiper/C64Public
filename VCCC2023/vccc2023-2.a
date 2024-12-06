@@ -1,0 +1,65 @@
+; ..\acme.exe -v9 --lib ..\ vccc2023-2.a && vccc2023-2.prg
+; $801 - $883 exclusive
+
+
+!source "stdlib\stdlib.a"
+
+!to "vccc2023-2.prg", cbm
+!sal
+!sl "vccc2023-2.map"
+!svl "vccc2023-2.lbl"
+!pdb "vccc2023-2.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib\BASICEntry80d.a"
+!source "stdlib\PETSCII.a"
+
+*=BASICEntry
+	lda #VIC2Colour_Black
+	sta VIC2ScreenColour
+	jsr CLRSCR
+	lda #CHR_White
+	jsr CHROUT
+.l3
+	jsr ExecutePattern
+	lda #CHR_Return
+	jsr CHROUT
+	dec .cnt
+	bne .l3
+	lda #-1
+	sta TableModify-1
+	jsr ExecutePattern
+	rts
+
+.cnt	!by 3
+
+ExecutePattern
+	+MWordValueToAddress_A Table , .smt + 1
+.l2
+
+	lda #' '
+.smt	ldy Table
+	bmi .end
+
+.l1
+	JSR CHROUT
+	dey
+	bne .l1
+	+MIncAddr16 .smt+1 , .smt+2
+	lda #'*'
+	jsr CHROUT
+	jmp .l2
+
+.end
+	rts
+
+Table
+	!by 3 , 5 , 5 , 26
+TableModify
+	!by 1 , 3 , 1 , 3 , 1 , 24
+	!by 3 , 1 , 3 , 1 , 3 , 22
+	!by 5 , 5 , 5 , 22
+	!by 3 , 1 , 3 , 1 , 3 , 24
+	!by 1 , 3 , 1 , 3 , 1
+	!by -1

@@ -29,8 +29,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
-    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression4U.a</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression4U.a</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression5V.a</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\acme.exe -v3 --msvc DefineDoBorderEffect.a TestDecompression5V.a</NMakeReBuildCommandLine>
     <NMakeOutput>Decompression.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -62,11 +62,14 @@
     <None Include="DecompressionU.a" />
     <None Include="DecompressionUReferenceLongOffset.a" />
     <None Include="DecompressionUVars.a" />
+    <None Include="DecompressionV.a" />
+    <None Include="DecompressionVVars.a" />
     <None Include="DecompressRLE.a" />
     <None Include="DecompressRLEVars.a" />
     <None Include="DefineDecompress_RNZip.a" />
     <None Include="DefineDoBorderEffect.a" />
     <None Include="DefineDoCheckMemory.a" />
+    <None Include="DefineDoExtraWorkMemoryHigh.a" />
     <None Include="FeatureEditor.bat" />
     <None Include="features\CheckFiles.feature" />
     <None Include="features\CheckMemory.feature" />
@@ -81,6 +84,7 @@
     <None Include="TestDecompression3CyberLoad.a" />
     <None Include="TestDecompression3RLE.a" />
     <None Include="TestDecompression4U.a" />
+    <None Include="TestDecompression5V.a" />
     <None Include="TestDecompressionRNZip.a" />
   </ItemGroup>
   <ItemGroup>

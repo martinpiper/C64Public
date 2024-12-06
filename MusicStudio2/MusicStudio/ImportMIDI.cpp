@@ -48,6 +48,8 @@ CImportMIDI::CImportMIDI(CWnd* pParent /*=NULL*/)
 	, mBytesUsed13(0)
 	, mBytesUsed14(0)
 	, mBytesUsed15(0)
+	, mIgnoreNoteOffEvents(FALSE)
+	, mAddHRDCommand(FALSE)
 {
 }
 
@@ -111,6 +113,8 @@ void CImportMIDI::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT25, mBytesUsed13);
 	DDX_Text(pDX, IDC_EDIT26, mBytesUsed14);
 	DDX_Text(pDX, IDC_EDIT75, mBytesUsed15);
+	DDX_Check(pDX, IDC_CHECK2, mIgnoreNoteOffEvents);
+	DDX_Check(pDX, IDC_CHECK3, mAddHRDCommand);
 }
 
 

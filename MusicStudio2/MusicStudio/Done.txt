@@ -552,9 +552,10 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 	** Done: Need to remove tracks with no items, can pre-process this
 	** Example1 seems to be creating a lot of duplicate blocks, try to spot them and remove as an option
 
-2.2.0.8
+* Release 2.2.0.8
 
 
+* Start 2.2.0.9
 
 
 * Reaper import, include a configuration dialog window for import options
@@ -569,3 +570,42 @@ Fixed a bug where an effect envelope with a note table will cause a music voice 
 		// Check for any duplicates
 		kC64FramesPerSecond = 50;
 		outBlockTempo = 1;
+
+
+
+* Improved SLE/SLR documentation.
+
+
+
+
+* channelToTrackMap[] could do with writing to the real track...
+
+
+
+* MIDI: The add release for half duration should be a post process? The current code isn't adding a release for C:\Users\marti\Downloads\claro-de-luna
+	/openFile "C:\Users\marti\Downloads\claro-de-luna\claro-de-luna - track-1.mid"
+	/openFile "C:\Users\marti\Downloads\claro-de-luna\claro-de-luna.mid"
+	Originaly converted from the MIDI file: claro-de-luna.mid
+	Conversion options:
+	Time multiplier 20 Block Length 480
+	With release note after half duration.
+	MIDI Channel 0 to track 1
+	MIDI Channel 1 to track 2
+
+
+
+
+* For MIDI import: Set tracker view by default in the doc view
+
+
+
+
+* Insert HRD into the start of each track?
+
+
+
+* C:\Users\marti\Downloads\claro-de-luna
+	Could do with "ignore MIDI file release" information option.
+
+
+* Release 2.2.0.9

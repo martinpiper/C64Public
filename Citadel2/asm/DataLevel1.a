@@ -241,8 +241,8 @@ EnemyFlags
 
 ; Map tile positions
 EnemyPositionsX
-;	!by 8	; Default start position
-	!by 1	; Teleport
+	!by 8	; Default start position
+;	!by 1	; Teleport
 ;	!by 10	; Beside door to the trap room
 ;	!by 12	; Teleport to the trap room
 ;	!by 38
@@ -260,8 +260,8 @@ EnemyPositionsX
 	!fill numMaxEnemySlotsToOnScreenCheck - (*-EnemyPositionsX),-1	; Fill the rest with nothing
 
 EnemyPositionsY
-;	!by 3
-	!by 23
+	!by 3
+;	!by 23
 ;	!by 23
 ;	!by 23
 ;	!by 7

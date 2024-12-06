@@ -102,7 +102,6 @@
     <ClCompile Include="Decompress.cpp" />
     <ClCompile Include="DecompressE.cpp" />
     <ClCompile Include="DecompressU.cpp" />
-    <ClCompile Include="DecompressV.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -115,12 +114,15 @@
     <None Include="..\Decompression\DecompressionU.a" />
     <None Include="..\Decompression\DecompressionUReferenceLongOffset.a" />
     <None Include="..\Decompression\DecompressionUVars.a" />
+    <None Include="..\Decompression\DecompressionV.a" />
     <None Include="..\Decompression\DecompressionVars.a" />
+    <None Include="..\Decompression\DecompressionVVars.a" />
     <None Include="..\Decompression\DecompressRLE.a" />
     <None Include="..\Decompression\DecompressRLEVars.a" />
     <None Include="..\Decompression\DefineDecompress_RNZip.a" />
     <None Include="..\Decompression\DefineDoBorderEffect.a" />
     <None Include="..\Decompression\DefineDoCheckMemory.a" />
+    <None Include="..\Decompression\DefineDoExtraWorkMemoryHigh.a" />
     <None Include="..\Decompression\features\CheckFiles.feature" />
     <None Include="..\Decompression\features\CheckMemory.feature" />
     <None Include="..\Decompression\features\Checks.a" />
@@ -131,6 +133,7 @@
     <None Include="..\Decompression\TestDecompression3CyberLoad.a" />
     <None Include="..\Decompression\TestDecompression3RLE.a" />
     <None Include="..\Decompression\TestDecompression4U.a" />
+    <None Include="..\Decompression\TestDecompression5V.a" />
     <None Include="..\stdlib\BASICEntry80d.a" />
     <None Include="..\stdlib\stdlib.a" />
     <None Include="RunTests.bat" />

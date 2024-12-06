@@ -91,6 +91,8 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 
 	OnNewDocument();
 
+	mTrackerBlockEditState = true;
+
 	mGenericInfo = CString(_T("Originaly converted from the MIDI file: ")) + ar.GetFile()->GetFileName() + _T("\x0d\x0a");
 
 	// Track data
@@ -157,8 +159,6 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 		}
 	}
 
-	theFile.SetSize( 0 );
-
 	// Some sensible default values
 	CImportMIDI dlg;
 
@@ -182,6 +182,8 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 	dlg.mTimeMultiplier = 10;
 	dlg.mBlockLength = 256;
 	dlg.mReleaseNoteAfterHalfDuration = FALSE;
+	dlg.mIgnoreNoteOffEvents = FALSE;
+	dlg.mAddHRDCommand = FALSE;
 	INT_PTR ret = dlg.DoModal();
 
 	if (ret != IDOK)
@@ -192,6 +194,8 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 	int timeMultiplier = dlg.mTimeMultiplier;
 	int blockLength = dlg.mBlockLength;
 	bool releaseNoteAfterHalfDuration = dlg.mReleaseNoteAfterHalfDuration?true:false;
+	bool ignoreNoteOffEvents = dlg.mIgnoreNoteOffEvents?true:false;
+	bool addHRDCommand = dlg.mAddHRDCommand?true:false;
 
 	// MPi: TODO: channelToTrackMap should map channels to the tracks, but at the moment it just flags if a channel should be converted to track 1 ( not track 2 or 3 )
 	int channelToTrackMap[16];
@@ -234,194 +238,214 @@ bool CMusicStudioDoc::LoadMIDIFile(CArchive &ar)
 		mTracks[i][0] = MusicStudio1::kMusicPlayer_StopTrack;
 	}
 
-	len = ReadMSBInt( theFile );
-	format = ReadMSBShort( theFile );
-	numTrackBlocks = ReadMSBShort( theFile );
-	timeDivision = ReadMSBShort( theFile );
+	int blockOffset = 0;
+	int maxBlockSoFar = 0;
 
-	for ( channel = 0 ; channel < numTrackBlocks ; channel++ )
+	for (int realTrack = 1 ; realTrack <= 3 ; realTrack++)
 	{
-		LONGLONG theTime = 0;
-		LONGLONG lastNoteTime = 0;
+		theFile.SetSize( 0 );
 
-		int header = ReadMSBInt( theFile );
 		len = ReadMSBInt( theFile );
+		format = ReadMSBShort( theFile );
+		numTrackBlocks = ReadMSBShort( theFile );
+		timeDivision = ReadMSBShort( theFile );
 
-		if ( header != 0x4d54726b )
+		for ( channel = 0 ; channel < numTrackBlocks ; channel++ )
 		{
-			return ReportParseError();
-		}
+			LONGLONG theTime = 0;
+			LONGLONG lastNoteTime = 0;
 
-		sLenLeft = len;
+			int header = ReadMSBInt( theFile );
+			len = ReadMSBInt( theFile );
 
-		// Skip channels we don't want to map to a track
-		if ( !channelToTrackMap[ channel ] )
-		{
+			if ( header != 0x4d54726b )
+			{
+				return ReportParseError();
+			}
+
+			sLenLeft = len;
+
+			// Skip channels we don't want to map to a track
+			if ( channelToTrackMap[ channel ] != realTrack )
+			{
+				while ( sLenLeft > 0 )
+				{
+					unsigned char temp = ReadUChar( theFile );
+				}
+				continue;
+			}
+
+			unsigned char lastEvent = 0;
 			while ( sLenLeft > 0 )
 			{
-				unsigned char temp = ReadUChar( theFile );
-			}
-			continue;
-		}
+				int deltaTime = ReadVTime( theFile );
+				theTime += deltaTime;
+				unsigned char theEvent = ReadUChar( theFile );
 
-		unsigned char lastEvent = 0;
-		while ( sLenLeft > 0 )
-		{
-			int deltaTime = ReadVTime( theFile );
-			theTime += deltaTime;
-			unsigned char theEvent = ReadUChar( theFile );
-
-			// Running mode check
-			if ( theEvent <= 127 )
-			{
-				sDataPushed = true;
-				sThePushedData = theEvent;
-				theEvent = lastEvent;
-			}
-			else
-			{
-				lastEvent = theEvent;
-			}
-
-			if ( theEvent == 0xff )
-			{
-				// Meta event
-				unsigned char theCommand = ReadUChar( theFile );
-				unsigned char commandLength = ReadUChar( theFile );
-				while ( commandLength != 0 )
+				// Running mode check
+				if ( theEvent <= 127 )
 				{
-					// Just skip the data
-					unsigned char temp = ReadUChar( theFile );
-					commandLength--;
+					sDataPushed = true;
+					sThePushedData = theEvent;
+					theEvent = lastEvent;
 				}
-			}
-			else //<! if ( theEvent == 0xff )
-			{
-				LONGLONG realTime = ( theTime * timeMultiplier ) / timeDivision; // 50 frames per second
-
-				int blockPos = (int) (realTime % blockLength);
-				int theBlock = (int) (realTime / blockLength);
-				if ( theBlock >= MusicStudio1::MusicFile::kMaxBlocks )
+				else
 				{
-					int i = 0;
-//					return ReportParseError();
+					lastEvent = theEvent;
 				}
 
-				if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+				if ( theEvent == 0xff )
 				{
-					mBlockLastEditedAsTracker[ theBlock ] = true;
-					if ( blockLength > mBlockTrackerLengths[ theBlock ] )
+					// Meta event
+					unsigned char theCommand = ReadUChar( theFile );
+					unsigned char commandLength = ReadUChar( theFile );
+					while ( commandLength != 0 )
 					{
-						mBlockTrackerLengths[ theBlock ] = blockLength;
-						mBlockEditTrackerMaxCalcedRow[ theBlock ] = blockLength;
+						// Just skip the data
+						unsigned char temp = ReadUChar( theFile );
+						commandLength--;
 					}
-					mTracks[0][ theBlock ] = theBlock;
-					mTracks[0][ theBlock + 1] = MusicStudio1::kMusicPlayer_StopTrack;
 				}
-
-				switch( theEvent & 0xf0 )
+				else //<! if ( theEvent == 0xff )
 				{
-					case 0x80:
-					{
-						// Note off
-						unsigned char noteNumber = ReadUChar( theFile );
-						unsigned char velocity = ReadUChar( theFile );
+					LONGLONG realTime = ( theTime * timeMultiplier ) / timeDivision; // 50 frames per second
 
-						if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+					int blockPos = (int) (realTime % blockLength);
+					int theBlockTime = (int) (realTime / blockLength);
+					int theBlock = blockOffset + theBlockTime;
+					maxBlockSoFar = max(maxBlockSoFar , theBlock);
+
+					if ( theBlock >= MusicStudio1::MusicFile::kMaxBlocks )
+					{
+						int i = 0;
+	//					return ReportParseError();
+					}
+
+					if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+					{
+						mBlockLastEditedAsTracker[ theBlock ] = true;
+						if ( blockLength > mBlockTrackerLengths[ theBlock ] )
 						{
-							mBlockTrackerRows[ theBlock ][ blockPos ][0] = "===";
-							lastNoteTime = 0;
+							mBlockTrackerLengths[ theBlock ] = blockLength;
+							mBlockEditTrackerMaxCalcedRow[ theBlock ] = blockLength;
 						}
-						break;
+						mTracks[realTrack-1][ theBlockTime ] = theBlock;
+						mTracks[realTrack-1][ theBlockTime + 1] = MusicStudio1::kMusicPlayer_StopTrack;
 					}
 
-					case 0x90:
+					switch( theEvent & 0xf0 )
 					{
-						// Note on
-						unsigned char noteNumber = ReadUChar( theFile );
-						unsigned char velocity = ReadUChar( theFile );
-
-						// Any previous note to release?
-						if ( releaseNoteAfterHalfDuration && ( lastNoteTime > 0 ) )
+						case 0x80:
 						{
-							LONGLONG theDiff = theTime - lastNoteTime;
+							// Note off
+							unsigned char noteNumber = ReadUChar( theFile );
+							unsigned char velocity = ReadUChar( theFile );
 
-							if ( theDiff > 0 )
+							if ( !ignoreNoteOffEvents && ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
 							{
-								LONGLONG realTime = ( ( lastNoteTime + ( theDiff / 2 ) ) * timeMultiplier ) / timeDivision; // 50 frames per second
+								mBlockTrackerRows[ theBlock ][ blockPos ][0] = "===";
+								lastNoteTime = 0;
+							}
+							break;
+						}
 
-								int blockPos = (int) (realTime % blockLength);
-								int theBlock = (int) (realTime / blockLength);
-								if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+						case 0x90:
+						{
+							// Note on
+							unsigned char noteNumber = ReadUChar( theFile );
+							unsigned char velocity = ReadUChar( theFile );
+
+							// Any previous note to release?
+							if ( releaseNoteAfterHalfDuration && ( lastNoteTime > 0 ) )
+							{
+								LONGLONG theDiff = theTime - lastNoteTime;
+
+								if ( theDiff > 0 )
 								{
-									// Don't put a release if the position already has something
-									if ( mBlockTrackerRows[ theBlock ][ blockPos ][0].IsEmpty() )
+									LONGLONG realTime = ( ( lastNoteTime + ( theDiff / 2 ) ) * timeMultiplier ) / timeDivision; // 50 frames per second
+
+									int blockPos = (int) (realTime % blockLength);
+									int theBlock = blockOffset + (int) (realTime / blockLength);
+									maxBlockSoFar = max(maxBlockSoFar , theBlock);
+
+									if (addHRDCommand)
 									{
-										mBlockTrackerRows[ theBlock ][ blockPos ][0] = "===";
+										mBlockTrackerRows[ theBlock ][ 0 ][2] = "HRD";
+									}
+
+									if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+									{
+										// Don't put a release if the position already has something
+										if ( mBlockTrackerRows[ theBlock ][ blockPos ][0].IsEmpty() )
+										{
+											mBlockTrackerRows[ theBlock ][ blockPos ][0] = "===";
+										}
 									}
 								}
+
+								lastNoteTime = 0;
 							}
 
-							lastNoteTime = 0;
+							if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+							{
+								mBlockTrackerRows[ theBlock ][ blockPos ][0] = MusicStudio1::BlockEntry::GetNoteFromNumber(noteNumber).c_str();
+								mBlockTrackerRows[ theBlock ][ blockPos ][1] = "1";	// Always envelope 1
+
+								lastNoteTime = theTime;
+							}
+
+							break;
 						}
 
-						if ( ( theBlock >= 0 ) && ( theBlock < MusicStudio1::MusicFile::kMaxBlocks ) )
+						case 0xa0:
 						{
-							mBlockTrackerRows[ theBlock ][ blockPos ][0] = MusicStudio1::BlockEntry::GetNoteFromNumber(noteNumber).c_str();
-							mBlockTrackerRows[ theBlock ][ blockPos ][1] = "1";	// Always envelope 1
-
-							lastNoteTime = theTime;
+							// After touch
+							unsigned char noteNumber = ReadUChar( theFile );
+							unsigned char velocity = ReadUChar( theFile );
+							break;
 						}
 
-						break;
-					}
+						case 0xb0:
+						{
+							// Controller change
+							unsigned char controller = ReadUChar( theFile );
+							unsigned char newValue = ReadUChar( theFile );
+							break;
+						}
 
-					case 0xa0:
-					{
-						// After touch
-						unsigned char noteNumber = ReadUChar( theFile );
-						unsigned char velocity = ReadUChar( theFile );
-						break;
-					}
+						case 0xc0:
+						{
+							// Patch change
+							unsigned char programNumber = ReadUChar( theFile );
+							break;
+						}
 
-					case 0xb0:
-					{
-						// Controller change
-						unsigned char controller = ReadUChar( theFile );
-						unsigned char newValue = ReadUChar( theFile );
-						break;
-					}
+						case 0xd0:
+						{
+							// Channel after touch
+							unsigned char channelNumber = ReadUChar( theFile );
+							break;
+						}
 
-					case 0xc0:
-					{
-						// Patch change
-						unsigned char programNumber = ReadUChar( theFile );
-						break;
-					}
+						case 0xe0:
+						{
+							// Pitch wheel change
+							short wheelChange = ReadMSBShort( theFile );
+							break;
+						}
 
-					case 0xd0:
-					{
-						// Channel after touch
-						unsigned char channelNumber = ReadUChar( theFile );
-						break;
+						default:
+						{
+							return ReportParseError();
+							break;
+						}
 					}
+				} //< if ( theEvent == 0xff )
+			} //< while ( sLenLeft > 0 )
+		}
 
-					case 0xe0:
-					{
-						// Pitch wheel change
-						short wheelChange = ReadMSBShort( theFile );
-						break;
-					}
-
-					default:
-					{
-						return ReportParseError();
-						break;
-					}
-				}
-			} //< if ( theEvent == 0xff )
-		} //< while ( sLenLeft > 0 )
-	}
+		blockOffset = maxBlockSoFar + 1;
+	} //< for (int realTrack = 1 ; realTrack <= 3 ; realTrack++)
 
 	return true;
 }

@@ -1,0 +1,337 @@
+!zn
+GameCreatePlayerSpriteFrames
+	; Create the player sprite frames, using the hand edited commands
+	+MWordValueTo_XY GameSpriteStartAddress
+	jsr MemoryCopy_SetDestination
+
+.sms1	lda #0
+	sta Sequence3Value
+
+	jsr Sequence3Next_Y
+	sta PlayerSprite_part0 + 1
+	jsr Sequence3Next_Y
+	sta PlayerSprite_part1 + 1
+	jsr Sequence3Next_Y
+	lsr
+	sta PlayerSprite_part2 + 1
+	jsr Sequence3Next_Y
+	lsr
+	sta PlayerSprite_part3 + 1
+	jsr Sequence3Next_Y
+	lsr
+	sta PlayerSprite_part4 + 1
+	jsr Sequence3Next_Y
+	lsr
+	sta PlayerSprite_part5 + 1
+
+	jsr SpriteClearFinal
+	+MWordValueTo_AX CommandBuffer
+	jsr SpriteExecuteCommands
+
+	+MWordValueTo_XY SpriteFinal
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY VIC2MemorySetup_SpriteSize
+	jsr MemoryCopy_ForSize
+
+	+MAddU8ToAddr16 VIC2MemorySetup_SpriteSize , MemoryCopy_Destination , MemoryCopy_Destination + 1
+
+	inc .sms1+1
+	lda .sms1+1
+	cmp #8
+	bne .sms1
+	; Reset back again
+	lda #0
+	sta .sms1+1
+
+	rts
+
+
+
+!zn
+GameMonsterMoveSpeeds	!fill kNumberOfMonsterTypesPerLevel , 0
+GameMonsterMoveType		!fill kNumberOfMonsterTypesPerLevel , 0
+
+GameCreateMonsterSprites
+	; Create types of monsters, for each level
+	+MWordValueTo_XY GameSpriteStartAddress + (kNumberOfFramesForAMonster * VIC2MemorySetup_SpriteSize)
+	jsr MemoryCopy_SetDestination
+
+	lda #0
+	sta tempZP2
+.mc1
+	+MBASICTextPrint .makeMonsterText
+
+	; Create the monster sprite frames, using the procedural monster generation
+.smsp1	lda #0
+	sta Sequence3Value
+.smfsp1	lda #0
+.smfsp2	ldy #0
+	jsr Seed
+	jsr MonsterCreate
+
+	jsr SpriteClearFinal
+	+MWordValueTo_AX CommandBuffer
+	jsr SpriteExecuteCommands
+
+	+MWordValueTo_XY SpriteFinal
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY VIC2MemorySetup_SpriteSize
+	jsr MemoryCopy_ForSize
+
+	+MAddU8ToAddr16 VIC2MemorySetup_SpriteSize , MemoryCopy_Destination , MemoryCopy_Destination + 1
+
+	inc .smsp1+1
+	lda .smsp1+1
+	cmp #8
+	bne .smsp1
+	; Reset back again
+	lda #0
+	sta .smsp1+1
+
+	; Loop the creation with a new seed...
+	+MIncAddr16 .smfsp1 + 1 , .smfsp2 + 1
+	ldx tempZP2
+	lda MonsterCreateParams_Feet
+	clc
+	adc #1
+	sta GameMonsterMoveSpeeds,x
+	lda MonsterCreateParams_Eyes
+	clc
+	adc #1
+	asl
+	asl
+	asl
+	asl
+	asl
+	asl
+	sta GameMonsterMoveType,x
+
+	inx
+	stx tempZP2
+	cpx #kNumberOfMonsterTypesPerLevel
+	bne .mc1
+	rts
+
+.makeMonsterText
+	!by CHR_LightBlue
+;	!by CHR_Return
+	!by CHR_ReverseOff
+	!tx "Making monster... "
+	!by 0
+
+
+PlayerHealth !by 16
+PlayerHit !by 0
+
+!zn
+GameInit
+	jsr CLRSCR
+	+MBASICTextPrint TopLine
+
+	lda #16
+	sta PlayerHealth
+	+MByteValueToAddress_A  0 , VIC2SpriteEnable
+	+MAlsoToAddress_A PlayerHit
+
+
+	jsr CharEffects_Init
+	jsr Entity_Init
+
+	+MWordValueTo_AX CharScreen + 7
+	jsr ScoreSetAddress
+	ldy #6
+	jsr ScoreInit
+
+	; Allocate the player, always the first
+	jsr Entity_FindFree
+	lda #84
+	sta EntityXPos,x
+	lda #128
+	sta EntityYPos,x
+	lda #VIC2Colour_LightGreen
+	sta EntityColour,x
+	lda #GameSpriteStartFrame
+	sta EntityFrameStart,x
+	lda #GameSpriteStartFrame + kNumberOfFramesForAMonster
+	sta EntityFrameEnd,x
+	lda #6
+	sta EntityFrameSpeed,x
+	lda #kEntityType_Player
+	jsr Entity_AnimInit
+
+	rts
+
+
+GameLevelNumMonstersLeft !by 0
+GameLevelNumMonstersAlive !by 0
+GameLevelCompleteCounter !by 0
+
+GameLevelLoop
+.l1
+!ifdef kEnableDebugMainlineBorder {
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
+}
+	+MACROWaitForTheLastScan_A
+
+!ifdef kEnableDebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr BeforeScrollers
+
+!ifdef kEnableDebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr Entity_UpdateSprites
+
+!ifdef kEnableDebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr AfterScrollers
+
+	; Check for enemy monster spawns...
+!ifdef kEnableDebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	lda GameLevelNumMonstersLeft
+	+lbeq .noSpawnThisFrame
+
+	; Something to spawn...
+	jsr Rand
+	and #7
+	+lbne .noSpawnThisFrame
+
+	; Allocate a monster if needed
+	jsr Entity_FindFree
+	+lbcc .noSpawnThisFrame
+
+	dec GameLevelNumMonstersLeft
+	inc GameLevelNumMonstersAlive
+
+	lda #0
+	sta EntityMoveInvertCount,x
+
+	; Choose a spawn corner
+	jsr Rand
+	and #$80
+	beq .is01
+	lda #VIC2SpriteXBorderLeft / 2
+	jmp .ois01
+.is01
+	lda #(VIC2SpriteXBorderRight - VIC2SpriteSizeX) / 2
+.ois01
+	sta EntityXPos,x
+
+	jsr Rand
+	and #$80
+	beq .is02
+	lda #VIC2SpriteYBorderTop+8
+	jmp .ois02
+.is02
+	lda #VIC2SpriteYBorderBottom - VIC2SpriteSizeY
+.ois02
+	sta EntityYPos,x
+
+.ca1
+	lda #VIC2Colour_LightBlue
+	jsr RandLEToA
+	; Avoid these colours
+	cmp #VIC2Colour_Black
+	beq .ca1
+	cmp #VIC2Colour_DarkGrey
+	beq .ca1
+	cmp #VIC2Colour_Grey
+	beq .ca1
+	cmp #VIC2Colour_White
+	beq .ca1
+	cmp #VIC2Colour_LightGreen
+	beq .ca1
+	sta EntityColour,x
+
+	; Monster type, cycles through all types continuously, better than random choice as it displays all calculated monsters
+.smmt	lda #kNumberOfMonsterTypesPerLevel-1
+	inc .smmt+1
+	lda .smmt+1
+	and #kNumberOfMonsterTypesPerLevel-1
+	sta .smmt+1
+	pha
+	tay
+
+	; Init the monster preferences
+	lda GameMonsterMoveSpeeds,y
+	sta EntityMoveSpeed,x
+
+	; Introduce variation in the move type, so they all move out of sequence with regard to each other
+	lda GameMonsterMoveType,y
+	sta EntityMoveType,x
+	jsr Rand
+	and #%1111
+	sta .sme1+1
+	txa
+	asl
+	asl
+	asl
+	asl
+	asl
+.sme1 eor #0
+	sta EntityMoveTypeOffset,x
+
+	jsr MonsterCalculateNewTargetOffset
+
+	pla
+	+MNumberOfFramesForAMonsterMultiply_A
+	clc
+	adc #GameSpriteStartFrame + kNumberOfFramesForAMonster
+	sta EntityFrameStart,x
+	adc #kNumberOfFramesForAMonster
+	sta EntityFrameEnd,x
+	jsr Rand
+	and #7
+	clc
+	adc #1
+	sta EntityFrameSpeed,x
+	lda #kEntityType_Monster
+	jsr Entity_AnimInit
+
+.noSpawnThisFrame
+
+!ifdef kEnableDebugMainlineBorder {
+	inc VIC2BorderColour
+}
+	jsr Entity_Tick
+
+	lda GameLevelNumMonstersLeft
+	ora GameLevelNumMonstersAlive
+	bne .noLevelExit
+	dec GameLevelCompleteCounter
+	beq .levelExit
+.noLevelExit
+
+	; Process any player hits
+	lda PlayerHit
+	beq .noHitThisFrame
+
+	lda #0
+	sta PlayerHit
+
+	dec PlayerHealth
+
+	lda #' '
+	ldx PlayerHealth
+	bmi .levelExit	; Safety
+	sta CharScreen + 24,x
+
+	beq .levelExit
+
+.noHitThisFrame
+
+	jmp .l1
+
+.levelExit
+	; Final tick and update
+	jsr Entity_Tick
+	jsr Entity_UpdateSprites
+	rts
+
+
+

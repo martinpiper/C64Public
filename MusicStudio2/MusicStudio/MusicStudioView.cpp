@@ -3036,7 +3036,7 @@ void CMusicStudioView::SetHelpState(const HelpState state)
 				L"HSR:XX - Sets the hard restart SustainRelease.\r\n"
 				L"HWV:XX - Sets the hard restart waveform.\r\n"
 				L"HTI:XX - Sets the hard restart frame time, must be greater than 0.\r\n"
-				L"SLE - This block command enables slurring (or ties) of the next notes, the note will note release until SLD is disabled. Envelope commands have no effect on the sound until the SLD command is used. Hard restart is also disabled for the voice by this command.\r\n"
+				L"SLE - SLE - This block command enables slurring (or ties) of the next notes, the note will not release until SLE is disabled. Envelope commands have no effect on the sound until the SLR command is used. Hard restart is also disabled for the voice by this command.\r\n"
 				L"SLR - Releases the slur (or ties) of the next note. Hard restart is also enabled for the voice by this command.\r\n"
 				L"VIB:XY,VV - Semitone small vibrato. This vibrato will continue for all notes on the channel until it is stopped with VBS.\r\n"
 				L"	X - Vibrato shift going up. 1 is the larger vibrato of 2 semitones. 5 is smaller at a fraction of a semitone.\r\n"
