@@ -83,6 +83,8 @@
     <CustomBuild Include="R.MUS8000.PRG" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Footy\asm\NMISamplesCompressedStreamedBuffered.a" />
+    <None Include="..\Footy\asm\NMISamplesStreamedCommon.a" />
     <None Include="..\MakeCart\asm\EasyFlash.a" />
     <None Include="..\MakeCart\asm\EasyFlash_Code.a" />
     <None Include="..\MakeCart\asm\EasyFlash_Macros.a" />
@@ -141,6 +143,7 @@
     <None Include="SpritePosToScreenPosMacros.a" />
     <None Include="SpritePosToScreenPosMem.a" />
     <None Include="SpritePosToScreenPosMem2.a" />
+    <None Include="_f_index1.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\ACME\docs\AllPOs.txt" />

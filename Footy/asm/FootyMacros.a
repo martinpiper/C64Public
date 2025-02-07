@@ -1,4 +1,4 @@
-kPlayersPerSide = 11
+kPlayersPerSide = 5
 kTotalPlayers = kPlayersPerSide * 2
 kStatusPanelSpriteIndex = 1 + kTotalPlayers
 
@@ -10,12 +10,21 @@ Multiplex_IRQExitDefined = 1
 !macro Multiplex_IRQExit {
 	jmp MinimalIRQServiceRoutine
 }
-Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom-4
+;Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom-4
+Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom-10
+
+!ifdef EnableSamples {
+SampleRateHz = 3500
+; Playing samples means taking longer than the normal IRQ update.
+Multiplex_rasterHeight = 10
+Multiplex_TopRasterHeight = 20
+Multiplex_TopSpriteBeforeRasterPadding = 8
+}
 
 Multiplex_ReverseOrder = 1
 Multiplex_MaintainPriority = 1
 
-Multiplex_items = 25
+Multiplex_items = 16
 
 ; This will move the sprite information into zeropage. With the maximum number of sprites there won't be enough space in zeropage for all of them
 defined_Multiplex_YPos			= 1
@@ -23,7 +32,8 @@ defined_Multiplex_XPosLo		= 1
 defined_Multiplex_XPosHi		= 1
 defined_Multiplex_Colour		= 1
 defined_Multiplex_SpriteFrame	= 1
-Multiplex_YPos+1			= $02
+; $02/$03 are used by the sparse code draw/clear routines
+Multiplex_YPos+1			= $04
 Multiplex_XPosLo+1		= Multiplex_YPos + Multiplex_items
 Multiplex_XPosHi+1		= Multiplex_XPosLo + Multiplex_items
 Multiplex_Colour+1		= Multiplex_XPosHi + Multiplex_items

@@ -1,0 +1,108 @@
+!zn
+NMIEntryStart
+!pseudopc NMISampleCodeStart {
+	; NMI Entry
+NMIEntry
+;	inc VIC2BorderColour
+	; This needs to be reentrant code, hence the pha/pla
+	pha
+	tya
+	pha
+;	sta+1 .sma
+;	sty+1 .smy
+
+.nextSample = *+1
+	lda #0
+	and #$0f
+	sta SIDVolumeFilter
+
+NMIEntry_SampleBank = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+.smAddr = *+1
+NMIEntry_SampleDataLoHi = *+1
+	ldy $1234
+	sty .nextSample
+	lda SampleTimerLo,y
+	sta CIA2TimerALo
+
+	lda SampleTimerHi,y
+	sta CIA2TimerAHi
+
+	inc .smAddr
+	bne .o2
+	inc .smAddr+1
+.o2
+	lda .smAddr
+NMIEntry_SampleDataEndLo = *+1
+	cmp #0
+	bne .o1
+	lda .smAddr+1
+NMIEntry_SampleDataEndHi = *+1
+	cmp #0
+	bne .o1
+
+	jsr NMISamples_HandleNextChunk
+	bcs .itStopped
+.o1
+
+	; Exit the NMI
+	lda CIA2InterruptControl
+.itStopped
+; Was: DeltaDecompression_TheBankToRestore
+NMISamples_TheBankToRestore = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+;.sma = *+1
+;	lda #0
+;.smy = *+1
+;	ldy #0
+	pla
+	tay
+	pla
+;	dec VIC2BorderColour
+	rti
+!if * >= $100 {
+	!error "NMI Sample code should be in zeropage, for speed"
+}
+}
+NMIEntryEnd
+
+!source "NMISamplesStreamedCommonNMI.a"
+
+NMISamples_StartTimer
+	+MWordValueToAddress_A NMIEntryFirst , NMIServiceRoutineLo
+
+	; Start after some small amount of time
+	lda #1
+	sta CIA2TimerALo
+	sta CIA2TimerAHi
+
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+	rts
+
+
+!align 255,0
+SampleTimerLo
+!for .i , 256 {
+;	!by <(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+;	!by <((4 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)
+	!by <((3 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)
+;	!by <((2 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)
+}
+SampleTimerHi
+!for .i , 256 {
+;	!by >(CyclesPerSecondPALC64/(SampleRateHz/     (((.i-1)/16)+1)     ))
+;	!by >((4 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)	; ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 4.0f -h $4e -v -s 22050 Commentary.wav 3909 bin\smp.raw && dir bin\smp.raw
+	!by >((3 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)	; ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 4.0f -h $4e -v -s 22050 Commentary.wav 5212 bin\smp.raw && dir bin\smp.raw
+;	!by >((2 * CyclesPerRasterPALC64 * (((.i-1)/16)+1))-1)	; ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 4.0f -h $4e -v -s 22050 Commentary.wav 7819 bin\smp.raw && dir bin\smp.raw
+}

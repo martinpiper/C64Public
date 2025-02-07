@@ -1,3 +1,4 @@
+Compression level 10
 Using max mode
 Using RLE mode
 Using run address $0400
@@ -6,7 +7,7 @@ Read load address (from first two bytes) as $0400
 End address = $fe00
 Opening 'Scroller.prg' for writing...
 Working...
-Input length = $fa00 output length = $759e
+Input length = $fa00 (64000) output length = $759e (30110)
 Setting EasyFlash mode
 New address $8000
 New bank $0
@@ -151,4 +152,63 @@ New bank $1e
 New bank $1f
  Write multi-bank 31 $8000
 Finished adding chunks
-File 'Scroller.crt' wrote $42250
+File 'bin\StripOffsets.a' read $1f1   Saving $1f1 to bank $20 at $8000
+File 'bin\smp.raw' read $24bf9   Saving $1e07 to bank $20 at $81f4
+   Saving $1ffb to bank $21 at $8000
+   Saving $1ffb to bank $22 at $8000
+   Saving $1ffb to bank $23 at $8000
+   Saving $1ffb to bank $24 at $8000
+   Saving $1ffb to bank $25 at $8000
+   Saving $1ffb to bank $26 at $8000
+   Saving $1ffb to bank $27 at $8000
+   Saving $1ffb to bank $28 at $8000
+   Saving $1ffb to bank $29 at $8000
+   Saving $1ffb to bank $2a at $8000
+   Saving $1ffb to bank $2b at $8000
+   Saving $1ffb to bank $2c at $8000
+   Saving $1ffb to bank $2d at $8000
+   Saving $1ffb to bank $2e at $8000
+   Saving $1ffb to bank $2f at $8000
+   Saving $1ffb to bank $30 at $8000
+   Saving $1ffb to bank $31 at $8000
+   Saving $e47 to bank $32 at $8000
+New bank $20
+ Write multi-bank 32 $8000
+New bank $21
+ Write multi-bank 33 $8000
+New bank $22
+ Write multi-bank 34 $8000
+New bank $23
+ Write multi-bank 35 $8000
+New bank $24
+ Write multi-bank 36 $8000
+New bank $25
+ Write multi-bank 37 $8000
+New bank $26
+ Write multi-bank 38 $8000
+New bank $27
+ Write multi-bank 39 $8000
+New bank $28
+ Write multi-bank 40 $8000
+New bank $29
+ Write multi-bank 41 $8000
+New bank $2a
+ Write multi-bank 42 $8000
+New bank $2b
+ Write multi-bank 43 $8000
+New bank $2c
+ Write multi-bank 44 $8000
+New bank $2d
+ Write multi-bank 45 $8000
+New bank $2e
+ Write multi-bank 46 $8000
+New bank $2f
+ Write multi-bank 47 $8000
+New bank $30
+ Write multi-bank 48 $8000
+New bank $31
+ Write multi-bank 49 $8000
+New bank $32
+ Write multi-bank 50 $8000
+Finished adding chunks wasteage=0 wasteage2=4532 totalbyteSize=151018 compressionSavedBytes=0
+File 'Scroller.crt' wrote $68380

@@ -868,3 +868,109 @@
 					APUData_Tree4aData uses Sprite_TreeY + 80 = 171
 					Moving APUData_Tree4aData APUData_Tree4bData APUData_Tree4cData up two lines opens enough space just before kAPUData_Tree4dNum? For "; New sky 4b"
 				> APUData_Tree5aData is at 165 and uses Sprite_TreeY + 96 = 187
+
+
+
+
+* In theory, it would be possible to save notes/volumes/samples from MAME audio hardware in the same format expected by the video hardware tools, compress them, and then play back the music.
+	Or save them as MOD files...
+		Tracing through the code in segam1audio_device
+			Got to: src\devices\sound\multipcm.cpp
+				multipcm_device::init_sample
+			or maybe: multipcm_device::write_slot
+			Note 28 voices indicated: gew_pcm_device(mconfig, MULTIPCM, tag, owner, clock, 28, 224),
+	>> This point seem better: multipcm_device::write_slot
+		Can read details after init_sample is used
+		> Note how slot.m_sample could be used to identify each sample, it is probably better to use sample.m_start, sample.m_loop, sample.m_end to identify max ranges of used sample bytes and save the minimal ranges for detected notes
+		>> Ranges in sample data could overlap (partially) inside notes, then used notes can be merged together etc.
+	* There are two audio devices, identical sample data? or not?
+		mpr-16491.32 and mpr-16492.33
+		mpr-16493.4 and mpr-16494.5
+		>> Sample data is very different
+	>> https://en.wikipedia.org/wiki/Yamaha_YM2612
+	> To play:
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 48000 "C:\Downloads\MAME\roms\daytona\mpr-16491.32"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 48000 "C:\Downloads\MAME\roms\daytona\mpr-16492.33"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 "C:\Downloads\MAME\roms\daytona\mpr-16493.4"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 "C:\Downloads\MAME\roms\daytona\mpr-16494.5"
+		"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffplay.exe" -f s8 -ar 16000 c:\temp\SamplesUsed.bin
+	>> The constructor multipcm_device::multipcm_device seems to be called a lot even before the target machine is started?
+		This is a problem because we need to find a good spot to initialise all the potentially used samples across all instances actually used in a game.
+	>> multipcm_device is used for Daytona and other model2 games, it isn't used for After Burner and other X-board games
+		After burner does use: m_soundcpu m_soundcpu2
+			With device_sound_interface, but it is via >	mytestd.exe!ymfm_device_base<ymfm::ym2151>::device_start() Line 196	C++
+				>> ym2151_device and segapcm_device
+				segaxbd_state::xboard_base_mconfig
+				Look for: ROM_START( aburner2 )
+							GAME( 1987, aburner2
+							segaxbd_new_state::init_aburner2
+								ROM_REGION( 0x80000, "mainpcb:pcm", ROMREGION_ERASEFF ) // Sega PCM sound data
+			>> device_sound_interface::stream_alloc is used
+			>> Is used: segapcm_device::write
+				segapcm_device::sound_stream_update and ym2151::generate
+			>> Hmm commenting out ym2151::generate stops samples from being heard?
+				Using that function but commenting out "m_fm.output" results in some music samples being heard, but missing some voices.
+				Using only output->roundtrip_fp() seems to cause samples to be heard?!
+			>> Commenting out the outputs[..] lines in segapcm_device::sound_stream_update results in muting the samples and just hearing the ym2151 output
+			* In conclusion, it shows that the music in after burner uses both the ym2151_device and segapcm_device which would make a purely mod/xm based output a bit harder :)
+				So for now, concentrate on multipcm_device output
+	* Daytona audio plan in more detail:
+		>> Hook into multipcm_device::write_slot to get specific events
+		Looking for "ROM_START( daytona )" and looking for "ROM_LOAD("mpr-16491.32""
+			The line above specifies: ROM_REGION( 0x400000, M1AUDIO_MPCM1_REGION, 0 ) // Samples
+				M1AUDIO_MPCM1_REGION = "m1audio:pcm1"
+				M1AUDIO_TAG = "m1audio"
+				m_m1audio(*this, M1AUDIO_TAG),
+				optional_device<segam1audio_device> m_m1audio
+			segam1audio_device::segam1audio_device
+				Hmm:::
+				required_device<multipcm_device> m_multipcm_1;
+				required_device<multipcm_device> m_multipcm_2;
+				Hmm:::>>>>> required_device<ym3438_device> m_ym;
+					Commenting out ym3438::generate stops all samples and all music
+						m_fm.output seems important for sample output
+						Setting all samples to 0 in gew_pcm_device::sound_stream_update results in no sound, indicating there are no FM sounds generated
+			> ROMs?
+					m_mpcmbank1(*this, "m1pcm1_bank"),
+					m_mpcmbank2(*this, "m1pcm2_bank"),
+			> multipcm_device uses gew_pcm_device::sound_stream_update
+				Which accesses its device_rom_interface<22, 0, 0, ENDIANNESS_BIG>
+					This does a read_byte to get sample ROM contents
+						Note: -		device_rom_interface<22,0,0,1>	{m_rom_region={...} m_rom_space={m_spacenum=0xffffffff m_data_width=0x00 '\0' } m_rom_config={m_name=...} ...}	device_rom_interface<22,0,0,1>
+								+		m_tag	":m1audio:pcm1:bank"	std::string
+		>> This can be used to get the ROM info: const address_space_config *memConfig = memory_space_config().front().second;
+			read_byte() can also be used
+		> Consider, gew_pcm_device could be expanded to return a signed16 sample for an address, which can then be converted appropriately...
+			>> There can be a method to one time init appropriate sample data taking into account the instance and ROM size...
+		>> Sample rate m_stream: 		m_sample_rate	44642	unsigned int
+		>> Can be used to get the curent time, going to be useful for event timing insertion into the output song pattern data:
+			m_stream->sample_time().as_double();
+	>> XM format: https://github.com/milkytracker/MilkyTracker/blob/master/resources/reference/xm-form.txt
+		https://www.celersms.com/doc/XM_file_format.pdf
+			C:\Backups\OldMachines\OldMachineBackup\D\Downloads\aceman_-_mortal_combat.xm
+				$ba4a7 seems to be the start of a sample header $28 in size...
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe"
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe" "C:\Backups\OldMachines\OldMachineBackup\D\Downloads\aceman_-_mortal_combat.xm"
+			"C:\Users\marti\Downloads\milkytracker-1.04.00-win64\milkytracker-1.04.00-win64\MilkyTracker.exe" c:\temp\t.xm
+	Note:
+		// Model 2 (TGPs, Model 1 sound board)
+			GAME( 1994, daytona
+		// Model 2A-CRX (TGPs, SCSP sound board)
+			GAME( 1994, vf2
+	>> Interesting to note that when in test mode playing music only up to 32 channels are used (sAnyNotesinChannel) but in the game nearly all 64 channels are used.
+
+	>> note values... https://newt.phys.unsw.edu.au/jw/notes.html
+
+			slot.m_pitchForStep	1002.7203979492188	double
+		slot.m_pitchForStep	2790.1784667968750	double
+
+		m_start	0x001e1894	unsigned int
+		m_loop	0x00008e92	unsigned int
+		m_end	0x00008e93	unsigned int
+		read_byte(0x001e1894+...)
+			fd000504f8fd
+
+
++		this	0x00000154adda4d20 {m_cur_slot=0x00000000 m_address=0x00000000 mInstanceInit=false ...}	gew_pcm_device * {multipcm_device}
+
+* MAME diffs: https://github.com/mamedev/mame/compare/master...martinpiper:mame:savesprites

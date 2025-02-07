@@ -17,6 +17,10 @@
       <Configuration>Release13</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release14|Win32">
+      <Configuration>Release14</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release3Anim|Win32">
       <Configuration>Release3Anim</Configuration>
       <Platform>Win32</Platform>
@@ -141,6 +145,11 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release14|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -203,6 +212,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release13|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release14|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="PropertySheets">
@@ -296,6 +308,12 @@
     <NMakeReBuildCommandLine>BuildIt13.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release14|Win32'">
+    <NMakeBuildCommandLine>BuildIt14.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt14.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt14.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'">
     <NMakeBuildCommandLine>BuildIt9.bat</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BuildIt9.bat</NMakeCleanCommandLine>
@@ -323,6 +341,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\..\ACME\docs\COPYING" />
     <None Include="..\..\BombJack\README.md" />
     <None Include="assets\clouds.tmx" />
     <None Include="assets\clouds.tsx" />
@@ -330,6 +349,7 @@
     <None Include="assets\convert10.bat" />
     <None Include="assets\convert11.bat" />
     <None Include="assets\convert13.bat" />
+    <None Include="assets\convert14.bat" />
     <None Include="assets\convert2.bat" />
     <None Include="assets\convert3.bat" />
     <None Include="assets\convert4.bat" />
@@ -344,6 +364,7 @@
     <None Include="BuildIt11.bat" />
     <None Include="BuildIt12.bat" />
     <None Include="BuildIt13.bat" />
+    <None Include="BuildIt14.bat" />
     <None Include="BuildIt3.bat" />
     <None Include="BuildIt3Anim.bat" />
     <None Include="BuildIt3MultiplexAPU.bat" />
@@ -368,6 +389,8 @@
     <Library Include="..\..\BombJack\stdlib\APU.a" />
     <Library Include="..\..\BombJack\stdlib\APU_Macros.a" />
     <Library Include="..\..\BombJack\stdlib\Audio.a" />
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1.a" />
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1_Macros.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24Bit.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24BitSimple.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24Bit_Macros.a" />
@@ -439,6 +462,7 @@
     <Library Include="asm\main11.a" />
     <Library Include="asm\main12.a" />
     <Library Include="asm\main13.a" />
+    <Library Include="asm\main14.a" />
     <Library Include="asm\main3.a" />
     <Library Include="asm\main3Anim.a" />
     <Library Include="asm\main3MultiplexAPU.a" />
@@ -473,8 +497,18 @@
     <Library Include="asm\Turrican\DisplayData_8.a" />
     <Library Include="asm\Turrican\DisplayScreen.a" />
     <Library Include="asm\Turrican\Sprites.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame0.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame1.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame2.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame3.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame4.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame5.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame6.a" />
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame7.a" />
     <Library Include="tmp\BatBallspriteSheet.txt.a" />
     <Library Include="tmp\Demo10SpritesSheet.txt.a" />
+    <Library Include="tmp\Demo14LargeTablesIncludeFrames.a" />
+    <Library Include="tmp\Demo14ScaledSprites4Sheet.txtVars.a" />
     <Library Include="tmp\Demo7SpritesSheet.txt.a" />
     <Library Include="tmp\Demo9Sprites1Sheet.txt.a" />
     <Library Include="tmp\Demo9Sprites1Sheet.txtVars.a" />
@@ -487,6 +521,18 @@
     <Library Include="tmp\_f_index1.a" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\..\ACME\docs\65816.txt" />
+    <Text Include="..\..\ACME\docs\AddrModes.txt" />
+    <Text Include="..\..\ACME\docs\AllPOs.txt" />
+    <Text Include="..\..\ACME\docs\Changes.txt" />
+    <Text Include="..\..\ACME\docs\Errors.txt" />
+    <Text Include="..\..\ACME\docs\Example.txt" />
+    <Text Include="..\..\ACME\docs\Help.txt" />
+    <Text Include="..\..\ACME\docs\Illegals.txt" />
+    <Text Include="..\..\ACME\docs\Lib.txt" />
+    <Text Include="..\..\ACME\docs\QuickRef.txt" />
+    <Text Include="..\..\ACME\docs\Source.txt" />
+    <Text Include="..\..\ACME\docs\Upgrade.txt" />
     <Text Include="..\..\BombJack\Done.txt" />
     <Text Include="..\..\BombJack\TODO.txt" />
     <Text Include="Done.txt" />

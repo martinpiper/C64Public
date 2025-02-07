@@ -15,6 +15,7 @@
 ; A good way to develop or optimise code is to enable "IRQDisk_NoScreenNoIRQ" first. Make sure optimisations work without worrying about instability.
 ; Then disable "IRQDisk_NoScreenNoIRQ" then tweak IRQDisk_SafeRasters to make the code stable again.
 
+; NOTE: These timings wil be different due to the TestIRQ raster bar effect being wider than before
 ; Current using IRQDisk_DebugElapsedTime no IRQDisk_DebugRepeatLoads, time from .repeatLoad to JAM:
 ; break .repeatLoad then sw reset, then when JAM, use sw
 ; 1 bit screen on:								2872209
@@ -40,6 +41,8 @@ IRQDisk_Retries = 5
 IRQDisk_LEDFlash = 15
 IRQDisk_UseATN = 1
 ;IRQDisk_UseATNACK = 1
+
+TheRasterBarPosition = 148
 
 ; Enable this to disable the screen
 ;IRQDisk_NoScreenNoIRQ = 1
@@ -318,17 +321,34 @@ TestIRQ
 	pha
 	txa
 	pha
-	dec VIC2BorderColour
-	; Waste some time
-	ldx #64
-.il1
-	dex
-	bne .il1
-	lda VIC2Raster
-.il2
-	cmp VIC2Raster
-	beq .il2
-	inc VIC2BorderColour
+
+	; Raster bar effect demo
+	+MACRODelay_X 1
+	+MByteValueToAddress_A VIC2Colour_White , VIC2ScreenColour
+	+MAlsoToAddress_A VIC2BorderColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_Grey , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_DarkGrey , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+
+	+MACRODelay_X 130
+	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
+	+MAlsoToAddress_A VIC2BorderColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_White , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+	+MACRODelay_X 11
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
+	+MAlsoToAddress_A VIC2ScreenColour
+
 	+MACROAckRasterIRQ_A
 	pla
 	tax
@@ -347,7 +367,7 @@ InitIRQ
 	lda #>TestIRQ
 	sta IRQServiceRoutineHi
 	; Raster position
-	ldx #152
+	ldx #TheRasterBarPosition
 	stx VIC2Raster
 !ifdef IRQDisk_UseATN {
 	jsr IRQDisk_MarkUnsafeRaster

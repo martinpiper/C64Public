@@ -1,6 +1,10 @@
 !source "ScrollEntryCommonVars.a"
 !source "ScrollerMacros.a"
 
+!ifdef Scroller_EnableSamples {
+NMISampleCodeStart = Multiplex_endVars
+}
+
 !ifndef Scroller_DisableScreenDataUsage {
 ; This defines the screen data as being used, so that the assembler won't allow other blocks to use it without warning
 *=$c800
@@ -86,7 +90,29 @@ ScrollEntry
 	jsr DecompressGameCode
 }
 	jsr InitialiseGame
+
 	jsr SetupIRQs
+!ifdef Scroller_EnableSamples {
+	jsr NMISamples_Init
+	lda #CartFile1_Bank_smp_raw_fragment0
+	jsr CartSelectBank_8K_NoSEI
+	; Time the sample code to avoid bad lines
+	; Wait for this one first
+	+MACROWaitForRaster 230-32
+	; Then finally this one
+	+MACROWaitForRaster 238-32
+	+DelayFor 7	; Enough delay to cause the sample NMI to start on the start of the scan line
+;	jsr NMISamples_StartTimerWithoutBufferFill
+	+MWordValueTo_AX CartFile1_Start_smp_raw_fragment0
+	ldy #CartFile1_Bank_smp_raw_fragment0
+	jsr NMISamples_StartSample
+.t
+;	inc $d020
+	jsr NMISampleBufferProcess
+;	jmp .t
+
+	jsr CartKillBank
+}
 	jsr ScrollerDemoWaitTopIRQWithReSync
 	jsr ScrollerDemoMainline
 !ifdef ScrollerDemoMainline_ExitHook {
@@ -102,6 +128,11 @@ TitleScreen_Enable_ScrollerDemoWait_Hooks !by 1
 !source "ScrollMain.a"
 ; The multiplexor uses the MultiplexExt_LastIRQ label defined in "SetupIRQs.a"
 !source "../SpriteMultiplexor/SpriteMultiplexor.a"
+
+!ifdef Scroller_EnableSamples {
+!source "Footy/asm/NMISamplesCompressedStreamedBuffered.a"
+!source "Footy/asm/NMISamplesStreamedCommon.a"
+}
 
 !ifdef Scroller_EnableSpeedCode {
 !ifndef Scroller_MultiDirection {

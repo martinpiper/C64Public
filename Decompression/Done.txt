@@ -278,3 +278,9 @@
 
 
 * Added 'v' for compression and decompression which produces smaller files but is very slow to decompress
+
+
+
+
+* At the end of the decompression, SP is already $ff, but look at setting $01 before the jmp. Make it an option. Will need more code variants.
+	-pp <value>

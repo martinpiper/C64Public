@@ -40,6 +40,7 @@ Game_MainLoop
 	beq .l1
 	lda #0
 	sta Multiplex_BottomTriggered
+
 !ifdef Mainline_DebugBorder {
 	lda #VIC2Colour_White
 	sta VIC2BorderColour
@@ -63,6 +64,10 @@ Game_MainLoop
 	sta VIC2BorderColour
 }
 
+
+
+;	lda #0
+;	sta BottomRasterReached
 .l2
 	lda BottomRasterReached
 	beq .l2
@@ -78,6 +83,29 @@ Game_MainLoop
 
 !ifdef Mainline_DebugBorder {
 	dec VIC2BorderColour
+}
+
+!ifdef EnableSamples {
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_LightBlue
+	sta VIC2BorderColour
+}
+!ifdef Mainline_JustSamplesDebugBorder {
+	lda #VIC2Colour_LightBlue
+	sta VIC2BorderColour
+}
+	lda #CartFile1_Bank_smp_raw_fragment0
+	jsr CartSelectBank_8K_NoSEI
+	jsr NMISampleBufferProcess
+	jsr CartKillBank
+!ifdef Mainline_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+!ifdef Mainline_JustSamplesDebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 }
 
 	jmp .mainLoop

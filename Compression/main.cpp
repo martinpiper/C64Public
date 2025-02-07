@@ -125,6 +125,7 @@ int main(int argc,char **argv)
 			" -ol <typical number 1-10> Default 10. Sets the compression optimisation level, from 1 being the least to 10 being a sensible maximum. Numbers larger than 10 will probably significantly increase compression times with little benefit.\n"
 			" -no Do not output the original file size. Must be before other options.\n"
 			" -yo Output the original load address (first two bytes of the file). Must be before other options.\n"
+			" -pp <value> Adds code to set the processor port (memory location $01) to value before starting the code. Must be before other options.\n"
 		);
 		exit(-1);
 	}
@@ -152,6 +153,7 @@ int main(int argc,char **argv)
 	bool useCompressionV = false;
 	bool useCompressionWithHigh = false;
 	int compressionLevel = 10;
+	int processorPortValue = -1;
 
 	do
 	{
@@ -224,6 +226,15 @@ int main(int argc,char **argv)
 			argc-=2;
 			argv+=2;
 			handledPreParam = true;
+		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'p' && argv[1][2] == 'p')
+		{
+			processorPortValue = ParamToNum(argv[2]);
+			argc-=2;
+			argv+=2;
+			handledPreParam = true;
+			printf("Adding processor port value $%x\n" , processorPortValue);
 		}
 	} while (handledPreParam);
 
@@ -983,6 +994,138 @@ int main(int argc,char **argv)
 #error sC64DecompBorderEffectMaxRNZipV_LauncherAddress_loadC64Code
 #endif
 
+// The above with ProcessorPort option
+#if sC64DecompNoEffectProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffect_LauncherAddress_startC64Code
+#error sC64DecompNoEffectProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffect_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffect_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffect_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffect_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompNoEffectMaxProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectMax_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMax_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMax_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMax_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectMax_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectRNZip_LauncherAddress_startC64Code
+#error sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectRNZip_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectRNZip_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectRNZip_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectRNZip_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRNZip_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZip_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZip_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZip_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZip_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRLE_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRLE_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRLE_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRLE_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRLE_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+// Check the low and high variants of this are the same
+#if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_startC64Code
+#error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_endMinusOutSize
+#error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_loadC64Code != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_loadC64Code
+#error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+#if sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code != sC64DecompBorderEffectMaxRNZipVHProcessorPort_LauncherAddress_startC64Code
+#error sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_endMinusOutSize != sC64DecompBorderEffectMaxRNZipVHProcessorPort_LauncherAddress_endMinusOutSize
+#error sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_compressedDataEndMinus256 != sC64DecompBorderEffectMaxRNZipVHProcessorPort_LauncherAddress_compressedDataEndMinus256
+#error sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_endOfMemoryMinus256 != sC64DecompBorderEffectMaxRNZipVHProcessorPort_LauncherAddress_endOfMemoryMinus256
+#error sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZipVHProcessorPort_LauncherAddress_loadC64Code
+#error sC64DecompBorderEffectMaxRNZipVProcessorPort_LauncherAddress_loadC64Code
+#endif
+
+
+
 			// The commented values are for the super expanded decompression code that makes $200-$fff9 available
 			if (maxMode && useRLE)
 			{
@@ -991,12 +1134,30 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffectMaxRLE_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRLE_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectMaxRLE_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectMaxRLEProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRLEProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectMaxRLEProcessorPort_Data);
+				}
 
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffectMaxRLE_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRLE_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffectMaxRLE_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectMaxRLEProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRLEProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectMaxRLEProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectMaxRLEProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectMaxRLE_LauncherAddress_startC64Code += 4;
 				}
 
 
@@ -1027,11 +1188,29 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffectMaxRNZipU_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipU_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipU_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectMaxRNZipUProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipUProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipUProcessorPort_Data);
+				}
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffectMaxRNZipU_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRNZipU_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffectMaxRNZipU_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectMaxRNZipUProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRNZipUProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectMaxRNZipUProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code += 4;
 				}
 
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
@@ -1058,12 +1237,28 @@ int main(int argc,char **argv)
 				}
 
 				theC64Code = sC64DecompNoEffectRNZipV_Data;
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZipV_Data) + outSize;
+				sizeToWrite = sizeof(sC64DecompNoEffectRNZipV_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectRNZipVProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZipVProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectRNZipVProcessorPort_Data);
+				}
 				if (useCompressionWithHigh)
 				{
 					theC64Code = sC64DecompNoEffectRNZipVH_Data;
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompNoEffectRNZipVHProcessorPort_Data;
+					}
 				}
-				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZipV_Data) + outSize;
-				sizeToWrite = sizeof(sC64DecompNoEffectRNZipV_Data);
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectRNZipVProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectRNZipV_LauncherAddress_startC64Code += 4;
+				}
 
 				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectRNZipV_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
@@ -1089,12 +1284,28 @@ int main(int argc,char **argv)
 				}
 
 				theC64Code = sC64DecompBorderEffectRNZipV_Data;
+				endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZipV_Data) + outSize;
+				sizeToWrite = sizeof(sC64DecompBorderEffectRNZipV_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompBorderEffectRNZipVProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZipVProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompBorderEffectRNZipVProcessorPort_Data);
+				}
 				if (useCompressionWithHigh)
 				{
 					theC64Code = sC64DecompBorderEffectRNZipVH_Data;
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectRNZipVHProcessorPort_Data;
+					}
 				}
-				endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZipV_Data) + outSize;
-				sizeToWrite = sizeof(sC64DecompBorderEffectRNZipV_Data);
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompBorderEffectRNZipVProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompBorderEffectRNZipV_LauncherAddress_startC64Code += 4;
+				}
 
 				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompBorderEffectRNZipV_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
@@ -1126,11 +1337,29 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffectMaxRNZip_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZip_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZip_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectMaxRNZipProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipProcessorPort_Data);
+				}
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffectMaxRNZip_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRNZip_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffectMaxRNZip_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectMaxRNZipProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxRNZipProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectMaxRNZipProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectMaxRNZipProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectMaxRNZip_LauncherAddress_startC64Code += 4;
 				}
 
 				theC64Code[sC64DecompNoEffectMaxRNZip_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
@@ -1153,11 +1382,29 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffectMax_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMax_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectMax_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectMaxProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectMaxProcessorPort_Data);
+				}
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffectMax_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMax_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffectMax_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectMaxProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectMaxProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectMaxProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectMaxProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectMax_LauncherAddress_startC64Code += 4;
 				}
 
 				theC64Code[sC64DecompNoEffectMax_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
@@ -1180,12 +1427,31 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffectRNZip_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZip_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectRNZip_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectRNZipProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectRNZipProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectRNZipProcessorPort_Data);
+				}
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffectRNZip_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZip_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffectRNZip_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectRNZipProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectRNZipProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectRNZipProcessorPort_Data);
+					}
 				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectRNZipProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffectRNZip_LauncherAddress_startC64Code += 4;
+				}
+
 
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectRNZip_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
@@ -1207,11 +1473,29 @@ int main(int argc,char **argv)
 				theC64Code = sC64DecompNoEffect_Data;
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffect_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffect_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sC64DecompNoEffectProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sC64DecompNoEffectProcessorPort_Data);
+				}
 				if (flashBorder)
 				{
 					theC64Code = sC64DecompBorderEffect_Data;
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffect_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompBorderEffect_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sC64DecompBorderEffectProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sC64DecompBorderEffectProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sC64DecompBorderEffectProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					theC64Code[sC64DecompNoEffectProcessorPort_LauncherAddress_ProcessorPortValue - sStartOfBASIC] = processorPortValue;
+					sC64DecompNoEffect_LauncherAddress_startC64Code += 4;
 				}
 
 				theC64Code[sC64DecompNoEffect_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);

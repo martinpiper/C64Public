@@ -61,7 +61,9 @@ eAdjust_Multiplexor_UseShiftedYPos = 0
 Multiplex_TopRasterHeight = 8 + eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth + eMultiplexor_UseDoubleHeight
 }
 
+!ifdef Multiplex_TopSpriteBeforeRasterPadding { } else {
 Multiplex_TopSpriteBeforeRasterPadding = 2 + ((eMultiplex_LogCollisions + eMultiplex_MaintainPriority + eAdjust_Multiplexor_UseShiftedYPos + eMultiplex_ExtraIRQHeightTweak + eMultiplexor_UseMulticolour + eMultiplexor_UsePriority + eMultiplexor_UseDoubleWidth + eMultiplexor_UseDoubleHeight) / 4)
+}
 
 !ifndef Multiplex_DiscardSpritesYPosForSort {
 Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos

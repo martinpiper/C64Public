@@ -12,6 +12,8 @@
 * When falling against a vertical edge to the right of the player, without jump pressed...
 	>> Then if left and jump are pressed (and the edge is detected) then start a slightly smaller jump than the main jump?
 	Like an edge grab jump...
+	If right is being pressed and the player is sliding down a vertical wall to the right, then perhaps emit some simple dust particles to indicate a grab jump can be done...
+	A grab jump can have a couple of frames grace period to make the transition to "up and left" to start the jump...
 
 
 
@@ -217,3 +219,14 @@
 	1.object.name=AnimationObject_dragonBody
 	Instead parse each line in order and not using the System properties accessor
 
+
+
+
+* For the bonus section... Using FLD parallax
+	Use new blocks in "exported assets\Level1.ctm"
+	The dark sky to lighter sky transition, the mountains, the bricks/doors/pillars, the new solid blocks, the new even lighter sky with plants
+	The player can jump on sprite based platforms for the parts higher up the screen, the bottom most part can be solid blocks...
+	The different char based sections can be separate level files, then can also use separate multicolours.
+	Update the edges of colour RAM scrolls for the bricks/doors/pillars part? If there are multicolour parts mixed with hires.
+	Since the FLD uses NMI then the IRQ based multiplexor can be used as well...
+	Actually the sky and mountains could be hires, since the background colour can change with the raster

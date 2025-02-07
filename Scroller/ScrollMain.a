@@ -11,8 +11,10 @@ MarkMainCode = *
 InitBank0Data
 	; Init music
 !ifdef Scroller_MultiDirection {
+!ifdef Scroller_NoMusic {} else {
 	lda #0
 	jsr MusicPlayerInit
+}
 }
 
 !ifdef Scroller_MultiDirection {
@@ -485,6 +487,13 @@ ScrollerDemoMainline
 }
 	; Wait for the screen scrollng registers to be updated
 	jsr ScrollerDemoWaitTopIRQ
+
+!ifdef Scroller_EnableSamples {
+	lda #0
+	jsr CartSelectBank_8K_NoSEI
+	jsr NMISampleBufferProcess
+	jsr CartKillBank
+}
 
 !ifdef Scroller_DebugMainlineBorder {
 	lda #VIC2Colour_Green
@@ -1024,10 +1033,12 @@ SkipLevelFrameLogic
 	dec Scroller_CountMusicUpdateInIRQNum
 }
 
+!ifdef Scroller_NoMusic {} else {
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	jsr SFXPlay
 } else {
 	jsr MusicPlayerPlay
+}
 }
 
 !ifdef Scroller_CountMusicUpdateInIRQ {

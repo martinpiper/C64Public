@@ -1,0 +1,78 @@
+!zn
+NMIEntryStart
+!pseudopc NMISampleCodeStart {
+	; NMI Entry
+NMIEntry
+;	inc VIC2BorderColour
+;	sta+1 .sma
+	pha
+
+NMIEntry_SampleBank = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+.smAddr = *+1
+NMIEntry_SampleDataLoHi = *+1
+	lda $1234
+	sta SIDVolumeFilter
+
+	inc .smAddr
+	bne .o2
+	inc .smAddr+1
+.o2
+	lda .smAddr
+NMIEntry_SampleDataEndLo = *+1
+	cmp #0
+	bne .o1
+	lda .smAddr+1
+NMIEntry_SampleDataEndHi = *+1
+	cmp #0
+	bne .o1
+
+;	sty+1 .smy
+	tya
+	pha
+	jsr NMISamples_HandleNextChunk
+;.smy = *+1
+;	ldy #0
+	pla
+	tay
+	bcs .itStopped
+.o1
+
+	; Exit the NMI
+	lda CIA2InterruptControl
+.itStopped
+; Was: DeltaDecompression_TheBankToRestore
+NMISamples_TheBankToRestore = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+;.sma = *+1
+;	lda #0
+	pla
+;	dec VIC2BorderColour
+	rti
+!if * >= $100 {
+	!error "NMI Sample code should be in zeropage, for speed"
+}
+}
+NMIEntryEnd
+
+!source "NMISamplesStreamedCommonNMI.a"
+
+NMISamples_StartTimer
+	+MWordValueToAddress_A NMIEntryFirst , NMIServiceRoutineLo
+
+	; Regularly timed
+	+MWordValueToAddress_A CyclesPerSecondPALC64 / SampleRateHz , CIA2TimerALo
+
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+	rts

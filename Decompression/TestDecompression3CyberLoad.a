@@ -314,10 +314,7 @@ RelocIRQRoutineEnd
 Test1Len = RNXPCompressionDecompress_ZPEnd - RNXPCompressionDecompress_ZPStart
 
 Decompression_UseZPVars = 1
-RNXPCompressionDecompress_ExitCodeDefined = 1
-!macro RNXPCompressionDecompress_ExitCode {
-NOTE_CompressedDataExecute	jmp CompressedDataExecute
-}
+!source "CommonExitCode.a"
 
 !set RNXPCompressionDecompress_WriteByteAddr = CompressedDataStore
 !set RNXPCompressionDecompress_GetByteAddr = EndOfMemory - CompressedDataEnd + CompressedDataStart

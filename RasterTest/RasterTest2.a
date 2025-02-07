@@ -7,7 +7,7 @@
 ; few lines blanked out and the screen below is moving at a fast rate then you can probably guess
 ; it is using a similar method.
 
-EnableLineCrunch = 1	; Enable this line to include the line crunch code
+;EnableLineCrunch = 1	; Enable this line to include the line crunch code
 ;ShowDebug = 1	; Enable this line to show debug during the effect, don't hide the line crunch area
 
 !source "../stdlib/stdlib.a"
@@ -23,12 +23,16 @@ EnableLineCrunch = 1	; Enable this line to include the line crunch code
 
 !source "../stdlib/BASICEntry80d.a"
 
+SampleNMI_DebugBorder = 1
+NMISampleCodeStart = $10
 
 *= BASICEntry
 !zn
-.theLine = 45
+theLine = 45
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
+
+	jsr NMISamples_Init
 
 	; Setup raster IRQ
 	lda #<IrqTopOfScreen
@@ -37,15 +41,13 @@ EnableLineCrunch = 1	; Enable this line to include the line crunch code
 	sta KERNALIRQServiceRoutineHi
 	lda #1
 	sta VIC2InteruptControl
-	lda #.theLine
+	lda #theLine
 	sta VIC2Raster
 	lda #$1b
 	sta VIC2ScreenControlV
 
 	lda #VIC2Colour_Red
 	sta VIC2BorderColour
-
-	+MACROAckAllIRQs_A
 
 	ldx #39
 .fs1
@@ -84,12 +86,64 @@ EnableLineCrunch = 1	; Enable this line to include the line crunch code
 	lda #$39
 	sta $400 + 09*40 ,x
 	sta $400 + 19*40 ,x
+	txa
+	sta $d800,x
+	sta $d8d8,x
+	sta $d900,x
+	sta $d9d8,x
+	sta $da00,x
+	sta $dad8,x
+	sta $db00,x
+	sta $dbd8,x
 
 	dex
 	bpl .fs1
 
+	jmp ContinueCode
+
+CART_SELECT_BANK = $0400
+!source "../Footy/asm/NMISamplesCompressedStreamedBuffered.a"
+!source "../Footy/asm/NMISamplesStreamedCommon.a"
+
+!zn
+ContinueCode
+
+	+MACROWaitForTheLastScan_A
+;	+DelayFor 44+64+64
+	+MACRODelay_X 34
+	+MACROAckAllIRQs_A
+	+MWordValueToAddress_A NMIEntry , KERNALNMIServiceRoutineLo
+	jsr NMISamples_StartTimerWithoutBufferFill
+
 	cli
 .mainLine
+	; Fill the sample buffer if needed
+	lda NMIEntryCurrentBufferPosition
+	cmp NMISampleBufferCurrentPosition2
+	beq .noSampleNeeded
+
+.smAddr = *+1
+NMIEntry_SampleDataLoHi2 = *+1
+	lda $1234
+
+.smAddr2 = *+1
+NMISampleBufferCurrentPosition2 = *+1
+	sta NMISampleBuffer
+	inc .smAddr2
+
+
+	inc .smAddr
+	bne .o2b
+	inc .smAddr+1
+.o2b
+	lda .smAddr+1
+	cmp #>SampleEnd
+	bne .processLoop
+	lda #>SampleStart
+	sta .smAddr+1
+.processLoop
+
+.noSampleNeeded
 	; Wait for the top IRQ to be triggered
 	lda .topIRQDone
 	beq .mainLine
@@ -158,7 +212,10 @@ IrqTopOfScreen
 	tya
 	pha
 
-	inc .topIRQDone
+	; turn off the NMI
+	lda #$01
+	sta CIA2InterruptControl
+
 
 	lda #<.irq2
 	ldx #>.irq2
@@ -222,6 +279,7 @@ IrqTopOfScreen
 	nop
 	nop
 	bit $ea
+
 
 	; Still in line 47
 	; Calculate a variable offset to delay by branching over nops
@@ -332,14 +390,20 @@ IrqTopOfScreen
 	sta VIC2ScreenControlV
 }
 
+	; Start the NMI again
+	lda #$81
+	sta CIA2InterruptControl
+
 	; Restart the IRQ chain
 	lda #<IrqTopOfScreen
 	ldx #>IrqTopOfScreen
-	ldy #.theLine
+	ldy #theLine
 	sta KERNALIRQServiceRoutineLo
 	stx KERNALIRQServiceRoutineHi
 	sty VIC2Raster
 	+MACROAckRasterIRQ_A
+
+	inc .topIRQDone
 
 	; Exit the IRQ
 	pla
@@ -375,3 +439,13 @@ IrqTopOfScreen
 }
 
 !source "../stdlib/Initialise.a"
+
+; ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -l 0 -fps 25.0 -sf 0 -ef 1000 -r 1.0f -h $4e -v -s 22050 c:\temp\t.wav 5212 c:\temp\xenon2u.smp
+!align 255,0
+SampleStart
+!bin "c:\temp\xenon2u.smp",$d000 - SampleStart
+SampleEnd
+
+!if * > $d000 {
+!error "Too much memory, reduce sample size"
+}

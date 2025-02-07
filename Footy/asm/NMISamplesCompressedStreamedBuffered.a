@@ -1,0 +1,163 @@
+!zn
+NMIEntryStart
+!pseudopc NMISampleCodeStart {
+	; NMI Entry
+NMIEntry
+!ifdef SampleNMI_DebugBorder {
+	inc VIC2BorderColour
+}
+	; Even though this is reentrant code, which should use pha/pla, we only use A and can use bit to ack the NMI
+;	pha
+	sta+1 .sma+1
+
+NMIEntryCurrentBufferPosition = * + 1
+	lda NMISampleBuffer
+	sta SIDVolumeFilter
+
+	inc NMIEntryCurrentBufferPosition
+
+	; Exit the NMI
+;	pla
+.sma	lda #0
+	bit CIA2InterruptControl
+!ifdef SampleNMI_DebugBorder {
+	dec VIC2BorderColour
+}
+	rti
+
+	; In zeropage for speed
+NMISampleBufferProcess
+NMIEntry_SampleBank = *+1
+	lda #0
+	sta CART_SELECT_BANK
+
+	; Not compressed and compressed versions...
+.processLoop
+!if 0 {
+	lda NMIEntryCurrentBufferPosition
+	cmp+1 NMISampleBufferCurrentPosition
+	beq .ret
+
+.smAddr = *+1
+NMIEntry_SampleDataLoHi = *+1
+	lda $1234
+
+.smAddr2 = *+1
+NMISampleBufferCurrentPosition = *+1
+	sta NMISampleBuffer
+	inc .smAddr2
+
+} else {
+	lda NMIEntryCurrentBufferPosition
+;	sec
+	sbc+1 NMISampleBufferCurrentPosition
+	bpl .isAhead
+	; Wraparound
+	eor #$ff
+.isAhead
+	cmp #32
+	bcs .canFill	; Because we can process up to 16 bytes (+/- 1 due to the carry not being used), this needs to have more than 16 bytes available
+
+	rts
+
+.canFill
+.smAddr = *+1
+NMIEntry_SampleDataLoHi = *+1
+	ldy $1234
+	ldx .byteToRepeatValue,y
+	tya
+	and #$0f
+.moreToDo
+.smAddr2 = *+1
+NMISampleBufferCurrentPosition = *+1
+	sta NMISampleBuffer
+	inc .smAddr2
+	dex
+	bpl .moreToDo
+}
+
+	inc .smAddr
+	bne .o2
+	inc .smAddr+1
+.o2
+	lda .smAddr
+NMIEntry_SampleDataEndLo = *+1
+	cmp #0
+	bne .processLoop
+	lda .smAddr+1
+NMIEntry_SampleDataEndHi = *+1
+	cmp #0
+	bne .processLoop
+
+
+	jsr NMISamples_HandleNextChunk
+	bcc .processLoop
+
+.ret
+	rts
+
+!if * >= $100 {
+	!error "NMI Sample code should be in zeropage, for speed"
+}
+}
+NMIEntryEnd
+
+NMISamples_StartTimer
+	lda NMIEntry_SampleBank
+	sta CART_SELECT_BANK
+
+	jsr NMISamples_AdjustAddress
+	jsr NMISampleBufferFill
+
+NMISamples_StartTimerWithoutBufferFill
+	+MWordValueToAddress_A NMIEntry , NMIServiceRoutineLo
+
+	; Processes 156 bytes per frame
+	+MWordValueToAddress_A (2 * CyclesPerRasterPALC64)-1 , CIA2TimerALo		; 7819 Hz
+	; Processes 104 bytes per frame
+;	+MWordValueToAddress_A (3 * CyclesPerRasterPALC64)-1 , CIA2TimerALo		; 5212 Hz
+	; Processes 78 bytes per frame
+;	+MWordValueToAddress_A (4 * CyclesPerRasterPALC64)-1 , CIA2TimerALo		; 3909 Hz
+
+	; Start the timer, load the start value and automatically restart
+	lda #%00010001
+	sta CIA2TimerAControl
+	lda #$81
+	sta CIA2InterruptControl
+
+	; ACK Any NMI IRQs due to the timer
+	lda CIA2InterruptControl
+	rts
+
+;There is no concept of NMISamples_TheBankToRestore because the NMI does not access the cartridge bank
+
+!align 255,0
+NMISampleBuffer
+!for .i , 16 {
+	!by 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+}
+.byteToRepeatValue
+!for .ii , 256 {
+!set .i = .ii - 1
+!set .i = .i >> 4
+	!by .i
+}
+
+NMISampleBufferToProcess !by 0
+NMISampleBufferFill
+	; Fill some chunks in the buffer...
+	lda #0
+	sta+1 NMISampleBufferCurrentPosition
+	lda #127
+	sta NMIEntryCurrentBufferPosition
+	jsr NMISampleBufferProcess
+
+	lda #255
+	sta NMIEntryCurrentBufferPosition
+	jsr NMISampleBufferProcess
+
+	; Start the sample reading from the start of the buffer
+	lda #0
+	sta NMIEntryCurrentBufferPosition
+	rts
+

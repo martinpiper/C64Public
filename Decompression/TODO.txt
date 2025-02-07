@@ -295,9 +295,5 @@
 
 
 
-* At the end of the decompression, SP is already $ff, but look at setting $01 before the jmp. Make it an option. Will need more code variants.
-
-
-
 * Also the last 4 bytes right at the top of memory could be stored in the decompression code since it is on the stack
 	Make this an option.

@@ -31,6 +31,7 @@ PitchDrawOptimised
 	lda PitchDrawHi,y
 	sta .smj+2
 	lda PitchDrawBanks,y
+;	sta NMISamples_TheBankToRestore
 	jsr CartSelectBank_8K_NoSEI
 	lda PitchPosY
 	and #3
@@ -40,7 +41,8 @@ PitchDrawOptimised
 	adc PitchPosX
 	tax
 .smj	jsr $1234
-	jmp CartKillBank
+	rts
+;	jmp CartKillBank
 	
 ; This draws the map at any position using speed code
 PitchDrawLSBPos
@@ -135,15 +137,3 @@ PitchDrawHi
 	!by >CartFile1_Start_Scroll24_bin
 	!by >CartFile1_Start_Scroll25_bin
 	!by >CartFile1_Start_Scroll26_bin
-
-
-
-!zn
-Pitch_UpdateVIC
-	lda PitchPosXPixel
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta VIC2ScreenControlH
-	lda PitchPosYPixel
-	ora #kVIC2ScreenControlVBits_ScreenOn
-	sta VIC2ScreenControlV
-	rts

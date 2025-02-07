@@ -1,0 +1,8 @@
+RNXPCompressionDecompress_ExitCodeDefined = 1
+!macro RNXPCompressionDecompress_ExitCode {
+!ifdef DoProcessorPort {
+NOTE_ProcessorPortValue	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+}
+NOTE_CompressedDataExecute	jmp CompressedDataExecute
+}

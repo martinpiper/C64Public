@@ -1,0 +1,26 @@
+; This is the first entry point for the NMI sample player. It reads the sample header data using NMISamples_AdjustAddress within the NMI to ensure the NMI has consistent access to the correct bank.
+; This avoids issues with trying to read the bank during the mainline which might be using the other bank
+NMIEntryFirst
+	pha
+	tya
+	pha
+	txa
+	pha
+
+	lda NMIEntry_SampleBank
+	sta CART_SELECT_BANK
+
+	jsr NMISamples_AdjustAddress
+
+	+MWordValueToAddress_A NMIEntry , NMIServiceRoutineLo
+	lda CIA2InterruptControl
+
+	lda NMISamples_TheBankToRestore
+	sta CART_SELECT_BANK
+
+	pla
+	tax
+	pla
+	tay
+	pla
+	rti

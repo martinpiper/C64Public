@@ -67,6 +67,9 @@
     <Filter Include="Header Files\C64\VectorPlotBitmap">
       <UniqueIdentifier>{b4db12f3-d4ec-43ad-bce2-1fbe872afc1a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\ACME">
+      <UniqueIdentifier>{7ef085b8-96f7-4c5d-965b-0cf545741030}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -147,6 +150,15 @@
       <Filter>Resource Files\assets</Filter>
     </None>
     <None Include="BuildIt13.bat" />
+    <None Include="assets\convert14.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
+    <None Include="BuildIt14.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\..\ACME\docs\COPYING">
+      <Filter>Resource Files\ACME</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -509,6 +521,45 @@
     <Library Include="asm\main13.a">
       <Filter>Source Files\asm</Filter>
     </Library>
+    <Library Include="asm\main14.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Sheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame0.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame1.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame2.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame3.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame4.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame5.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame6.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="assets\Demo14\PerspectiveGen\out\landscape000frame7.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="tmp\Demo14LargeTablesIncludeFrames.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1_Macros.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -542,6 +593,42 @@
     </Text>
     <Text Include="tmp\Demo9Sprites2Sheet.txt">
       <Filter>tmp</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\65816.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\AddrModes.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\AllPOs.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Changes.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Errors.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Example.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Help.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Illegals.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Lib.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\QuickRef.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Source.txt">
+      <Filter>Resource Files\ACME</Filter>
+    </Text>
+    <Text Include="..\..\ACME\docs\Upgrade.txt">
+      <Filter>Resource Files\ACME</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

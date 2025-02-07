@@ -432,10 +432,12 @@ HandleJoystick
 	bmi .lnoBulletSpawned
 	sta CharEffectsX,x
 
+!ifdef Scroller_NoMusic { } else {
 	lda #48
 	ldx #1
 	ldy #2
 	jsr MusicPlayerPlaySFX
+}
 
 	jmp .o5
 

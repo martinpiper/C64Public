@@ -1,0 +1,281 @@
+; ..\acme.exe  -v4 --lib ../ --lib ../../ --lib ../../../ --msvc asm/AfterBurner/LargeTables.a
+; ..\ExternalTools\Gnu\bin\sed.exe -n "/landscapeRotation/p" tmp\Demo14LargeTables.map
+
+!to "bin/Demo14LargeTables.bin", plain
+;!sal
+!sl "tmp/Demo14LargeTables.map"
+!svl "tmp/Demo14LargeTables.lbl"
+!cpu 6510
+!ct pet
+
+!source "stdlib/stdlib.a"
+
+!zn
+* = $0000
+landscape000Frames
+!word landscape000frame7 , landscape000frame6 , landscape000frame5 , landscape000frame4 , landscape000frame3 , landscape000frame2 , landscape000frame1 , landscape000frame0
+landscape015Frames
+!word landscape015frame7 , landscape015frame6 , landscape015frame5 , landscape015frame4 , landscape015frame3 , landscape015frame2 , landscape015frame1 , landscape015frame0
+landscape030Frames
+!word landscape030frame7 , landscape030frame6 , landscape030frame5 , landscape030frame4 , landscape030frame3 , landscape030frame2 , landscape030frame1 , landscape030frame0
+landscape045Frames
+!word landscape045frame7 , landscape045frame6 , landscape045frame5 , landscape045frame4 , landscape045frame3 , landscape045frame2 , landscape045frame1 , landscape045frame0
+landscape060Frames
+!word landscape060frame7 , landscape060frame6 , landscape060frame5 , landscape060frame4 , landscape060frame3 , landscape060frame2 , landscape060frame1 , landscape060frame0
+landscape075Frames
+!word landscape075frame7 , landscape075frame6 , landscape075frame5 , landscape075frame4 , landscape075frame3 , landscape075frame2 , landscape075frame1 , landscape075frame0
+landscape090Frames
+!word landscape090frame7 , landscape090frame6 , landscape090frame5 , landscape090frame4 , landscape090frame3 , landscape090frame2 , landscape090frame1 , landscape090frame0
+landscape105Frames
+!word landscape105frame7 , landscape105frame6 , landscape105frame5 , landscape105frame4 , landscape105frame3 , landscape105frame2 , landscape105frame1 , landscape105frame0
+landscape120Frames
+!word landscape120frame7 , landscape120frame6 , landscape120frame5 , landscape120frame4 , landscape120frame3 , landscape120frame2 , landscape120frame1 , landscape120frame0
+landscape135Frames
+!word landscape135frame7 , landscape135frame6 , landscape135frame5 , landscape135frame4 , landscape135frame3 , landscape135frame2 , landscape135frame1 , landscape135frame0
+landscape150Frames
+!word landscape150frame7 , landscape150frame6 , landscape150frame5 , landscape150frame4 , landscape150frame3 , landscape150frame2 , landscape150frame1 , landscape150frame0
+landscape165Frames
+!word landscape165frame7 , landscape165frame6 , landscape165frame5 , landscape165frame4 , landscape165frame3 , landscape165frame2 , landscape165frame1 , landscape165frame0
+
+
+landscape345Frames
+!word landscape345frame7 , landscape345frame6 , landscape345frame5 , landscape345frame4 , landscape345frame3 , landscape345frame2 , landscape345frame1 , landscape345frame0
+landscape330Frames
+!word landscape330frame7 , landscape330frame6 , landscape330frame5 , landscape330frame4 , landscape330frame3 , landscape330frame2 , landscape330frame1 , landscape330frame0
+landscape315Frames
+!word landscape315frame7 , landscape315frame6 , landscape315frame5 , landscape315frame4 , landscape315frame3 , landscape315frame2 , landscape315frame1 , landscape315frame0
+landscape300Frames
+!word landscape300frame7 , landscape300frame6 , landscape300frame5 , landscape300frame4 , landscape300frame3 , landscape300frame2 , landscape300frame1 , landscape300frame0
+landscape285Frames
+!word landscape285frame7 , landscape285frame6 , landscape285frame5 , landscape285frame4 , landscape285frame3 , landscape285frame2 , landscape285frame1 , landscape285frame0
+landscape270Frames
+!word landscape270frame7 , landscape270frame6 , landscape270frame5 , landscape270frame4 , landscape270frame3 , landscape270frame2 , landscape270frame1 , landscape270frame0
+landscape255Frames
+!word landscape255frame7 , landscape255frame6 , landscape255frame5 , landscape255frame4 , landscape255frame3 , landscape255frame2 , landscape255frame1 , landscape255frame0
+landscape240Frames
+!word landscape240frame7 , landscape240frame6 , landscape240frame5 , landscape240frame4 , landscape240frame3 , landscape240frame2 , landscape240frame1 , landscape240frame0
+landscape225Frames
+!word landscape225frame7 , landscape225frame6 , landscape225frame5 , landscape225frame4 , landscape225frame3 , landscape225frame2 , landscape225frame1 , landscape225frame0
+landscape210Frames
+!word landscape210frame7 , landscape210frame6 , landscape210frame5 , landscape210frame4 , landscape210frame3 , landscape210frame2 , landscape210frame1 , landscape210frame0
+landscape195Frames
+!word landscape195frame7 , landscape195frame6 , landscape195frame5 , landscape195frame4 , landscape195frame3 , landscape195frame2 , landscape195frame1 , landscape195frame0
+landscape180Frames
+!word landscape180frame7 , landscape180frame6 , landscape180frame5 , landscape180frame4 , landscape180frame3 , landscape180frame2 , landscape180frame1 , landscape180frame0
+
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape000frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape015frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape030frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape045frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape060frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape075frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape090frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape105frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape120frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape135frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape150frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape165frame7.a"
+
+
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape345frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape330frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape315frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape300frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape285frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape270frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape255frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape240frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape225frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape210frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape195frame7.a"
+
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame0.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame1.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame2.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame3.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame4.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame5.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame6.a"
+!source "assets\Demo14\PerspectiveGen\out\landscape180frame7.a"

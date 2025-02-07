@@ -56,10 +56,7 @@ EndOfMemory = $10000
 	jmp ContinueZPCode
 
 Decompression_UseZPVars = 1
-RNXPCompressionDecompress_ExitCodeDefined = 1
-!macro RNXPCompressionDecompress_ExitCode {
-NOTE_CompressedDataExecute	jmp CompressedDataExecute
-}
+!source "CommonExitCode.a"
 RNXPCompressionDecompressV_avoidTempInit = 1
 
 !set RNXPCompressionDecompress_WriteByteAddr = CompressedDataStore
@@ -69,7 +66,7 @@ RNXPCompressionDecompressV_avoidTempInit = 1
 RNXPCompressionDecompress_ZPStart
 RNXPCompressionDecompress_Part1Start
 ; This start address still keeps .smoffsetL and .smoffsetH in zeropage, if they are not in zeropage then the code size gets two bytes larger
-!pseudopc $8b {
+!pseudopc $87 {
 RNXPCompressionDecompress_ZPStartReal
 Decompression_Part1Addr
 
@@ -94,6 +91,12 @@ Decomp_assumedStart
 	; code size for the copying phase below.
 
 !source "DecompressionV.a"
+!if .smoffsetL >= $100 {
+!error ".smoffsetL should be in zeropage"
+}
+!if .smoffsetH >= $100 {
+!error ".smoffsetH should be in zeropage"
+}
 
 !if RNXPCompressionDecompressV != Decomp_assumedStart {
 	!error "Will need to enable the jmp RNXPCompressionDecompressV above"

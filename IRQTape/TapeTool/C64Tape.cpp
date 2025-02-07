@@ -2436,6 +2436,12 @@ w[n] : Open a tape file for writing. If 'n' is supplied the file is created as a
 a : Start to append data to the tape file.\n\n\
 ft <pulse width 0> <pulse width 1> <endian 0/1> <sync byte> : Default 0x100 0x200 1 0xaa : Sets the tape turbo parameters to be used. The pulse width 0 and 1 parameters define the timing in cycles for 0 and 1 bits. The endian is little if 0 and big if 1. There must be one sync byte which signifies the start pattern of bits to use for loading subsequent bytes.\n\n\
 fh <num entries> <header bytes to match>... : Sets the header bytes to match when scanning a file. Default: 2 TapeHeaderByteEx TapeHeaderByteEx2\n\n\
+fr <filename root, include a trailing \\ for a directory if needed> : Define filename root path for storage and starts the process of extracting file data\n\n\
+ff <filename start offset> <filename end offset> : The start and end offset for any filename in the header\n\n\
+fs <lo byte offset> <hi byte offset> : Define the lo and hi byte offsets for the start address in the header\n\n\
+fe <lo byte offset> <hi byte offset> : Define the lo and hi byte offsets for the end address in the header\n\n\
+fd <byte offset> : Defines the start offset of any file data in the header\n\n\
+fx <byte offset> : Defines the xor byte offset of any checksum after the data\n\n\
 x <value>: Reset the checksum XOR register to the optional value or zero by default. This can be used by both the kernal and turbo file writers. Every byte read/written after this will accumulate into the checksum register.\n\n\
 t : If reading or writing truncate the tape file to the current position.\n\n\
 p <position> : Skip to the file position.\n\n\

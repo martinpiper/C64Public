@@ -1,0 +1,82 @@
+NMISamples_Init
+	; RLE Sample playing
+	jsr NMISamples_StopTimer
+
+	ldx #NMIEntryEnd-NMIEntryStart
+.cl2
+	lda NMIEntryStart-1,x
+	sta+2 NMIEntry-1,x
+	dex
+	bne .cl2
+
+	rts
+
+; Exit: A Preserved
+NMISamples_StopTimer
+	pha
+
+	lda #$7f
+	sta CIA2InterruptControl
+	lda #0
+	sta CIA2TimerAControl
+
+	pla
+	rts
+
+NMISamples_StartSample
+	jsr NMISamples_StopTimer
+	sta NMIEntry_SampleDataLoHi
+	stx NMIEntry_SampleDataLoHi+1
+	sty NMIEntry_SampleBank
+	jsr NMISamples_StartTimer
+	rts
+
+NMISamples_AdjustAddress
+	ldy #0
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMISamples_NextSampleBank
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMISamples_NextSampleLoHi
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	; Ignore any compressed flag for now
+	ora #>C64Cartridge_Lo_8K
+	sta NMISamples_NextSampleLoHi+1
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMIEntry_SampleDataEndLo
+	iny
+	lda (NMIEntry_SampleDataLoHi),y
+	sta NMIEntry_SampleDataEndHi
+	; Adjust for the real sample data start
+	lda NMIEntry_SampleDataLoHi
+	clc
+	adc #5
+	sta NMIEntry_SampleDataLoHi
+	bcc .sl1
+	inc NMIEntry_SampleDataLoHi+1
+.sl1
+	rts
+
+NMISamples_NextSampleLoHi
+	!by 0,0
+NMISamples_NextSampleBank
+	!by 0
+
+NMISamples_HandleNextChunk
+	lda NMISamples_NextSampleBank
+	bne .moreChunks
+	jsr NMISamples_StopTimer
+	sec
+	rts
+.moreChunks
+	sta NMIEntry_SampleBank
+	sta CART_SELECT_BANK
+	lda NMISamples_NextSampleLoHi
+	sta NMIEntry_SampleDataLoHi
+	lda NMISamples_NextSampleLoHi+1
+	sta NMIEntry_SampleDataLoHi+1
+	jsr NMISamples_AdjustAddress
+	clc
+	rts

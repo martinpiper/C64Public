@@ -84,3 +84,52 @@
 * Computer movement
 	Your team, depending on controller position, other players try to run to a sensible position
 	Opposition team, closest player tries to get the ball, other players try to run to sensible positions
+
+
+
+
+* Use compressed sample player for voiceover, commentators, crowd noises etc. Should be possible to get that working while scrolling.
+	See: NMISamples_StartSample
+	But at 5000 Hz the frame time seems to run out...
+	>> Perhaps try uncompressed samples, which is much simpler code
+	C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i "C:\Users\marti\Documents\Sound Recordings\Recording (5).m4a" -y -acodec pcm_u8 -ar 22050 -ac 1 Commentary.wav
+	From Commentary.kdenlive: C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\ffmpeg.exe -i c:\temp\commentary.mp4 -y -acodec pcm_u8 -ar 22050 -ac 1 Commentary.wav
+	..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 3.5f -h $4e -v -s 22050 Commentary.wav 3500 bin\smp.raw
+	>> If the compressed samples are using a multiple of 2xscanline number of cycles it should be possible to avoid badlines since the timer value is loaded upon automatic restart...
+		As long as the samples are started in a consistant place
+		> It works! See: "Time the sample code to avoid bad lines"
+	>> Done: The sample NMI delay start time should be tuned to start the NMI at the start of a scanline, the initial start delay should check for "not a particular raster" as well to avoid the situation where the code start during the raster.
+		See: "Enough delay to cause the sample NMI to start on the start of the scan line"
+	>> Crazy idea... NMI to play uncompressed samples from a 256 byte circular buffer. Even at 7800 hz that would be about 133 bytes per frame...
+		That would make the sample routine faster as it wouldn't need to handle the high byte
+		Then a couple of times every frame I can fill the 256 byte buffer from compressed data
+		Then there doesn't need to be any "NMISamples_TheBankToRestore" because the NMI reads RAM!
+		> See: NMIEntryCurrentBufferPosition
+		>> Done: Need the buffer calculate code...
+			> NMISampleBufferFill
+			> NMISampleBufferProcess
+	>> Done: Need to double check the compressed samples are reproducing correctly in the volume register.
+		Correct...
+			..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 4.0f -h $4e -v -s 22050 Commentary.wav 5212 bin\smp.raw
+
+			Using "w store d418" and sw and sw reset to time the changes...
+			Value	sw time		Ratio
+			8		10775
+			7		19655		1.824129930394432
+			8		75032		3.817451030272195
+			7		1136		0.0151402068450794
+			8		566			0.4982394366197183
+			7		944			1.667844522968198
+
+			..\BerzerkRedux\MashSamples\Release\MashSamples.exe -l 0 -fps 25.0 -sf 0 -ef 1000 -r 4.0f -h $4e -v -s 22050 Commentary.wav 5212 bin\smpu.raw
+			File values	count
+			Value count			Ratio
+			8		57	
+			7		103			1.807017543859649
+			8		397			3.854368932038835
+			7		6			0.0151133501259446
+			8		3			0.5
+			7		5			1.666666666666667
+
+		Xenon2: ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 1.0f -h $4e -v -s 22050 c:\temp\t.wav 5212 bin\smp.raw && dir bin\smp.raw
+		Commentary: ..\BerzerkRedux\MashSamples\Release\MashSamples.exe -fps 25.0 -sf 0 -ef 1000 -r 2.0f -h $4e -v -s 22050 Commentary.wav 5212 bin\smp.raw && dir bin\smp.raw

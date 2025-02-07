@@ -53,10 +53,7 @@ EndOfMemory = $10000
 	jmp ContinueZPCode
 
 Decompression_UseZPVars = 1
-RNXPCompressionDecompress_ExitCodeDefined = 1
-!macro RNXPCompressionDecompress_ExitCode {
-NOTE_CompressedDataExecute	jmp CompressedDataExecute
-}
+!source "CommonExitCode.a"
 RNXPCompressionDecompressU_avoidTempInit = 1
 
 !set RNXPCompressionDecompress_WriteByteAddr = CompressedDataStore

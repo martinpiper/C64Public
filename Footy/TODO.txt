@@ -54,10 +54,6 @@
 
 
 
-* Use compressed sample player for voiceover, commentators, crowd noises etc. Should be possible to get that working while scrolling.
-
-
-
 
 * When choosing the closest player to control, don't swap too often,have a countdown that doesn't allow a swap again for a short time.
 	Kicking the ball, or bumping into it, resets the timer allowing the next nearest player to be chosen.
@@ -80,3 +76,76 @@
 * When not controlling the ball, a fire button quick tap without a direction will start a jump.
 	While jumping a direction input will push the ball in that direction and very slowly move the player in that direction.
 
+
+
+
+* Compiled binary map draw, with sparse updates
+	lda #value		; 2
+	sta (zp),y		; 6
+	dey				; 2
+	bmi .ret		; 2
+	Cycles 12 Size 7
+	Also if it's the same character, there will be compression because it doesn't need to load the same value. But the jump table for the end of line position will need to have a LDA value, which can of course skip any LDA in the line draw.
+	
+	It is not much better to have a line of unrolled... There needs to be zp1 setup...
+	lda (zp1),y		; 5+1
+	sta (zp2),y		; 6
+	dey				; 2
+	Cycles 13
+	
+
+	Sparse example to skip empty chars, assume carry set:
+	tya				; 2
+	sbc #7			; 2
+	bmi .ret		; 2
+	tay				; 2
+	Cycles 8 Size 6
+	
+	Erase, assume carry set and A is zero
+	sta (zp),y		; 6
+	dey				; 2
+	bmi .ret		; 2
+	And sparse skip
+	tya				; 2
+	sbc #7			; 2
+	bmi .ret		; 2
+	tay				; 2
+	lda #0			; 2
+	With multiple dey detection
+	
+	For the above, there would need to be a lo/hi for each X scroll position into each row, for each compiled map row, for the map width of 60
+		60 x 97 x 2 = 11640 bytes
+	Each row could be, worst case, 420 bytes per row, or 40740 draw code bytes for the whole map
+	Generate assembly files, or just generate the binary blobs?
+	For a sparse entry, the offset table would need to point to the next valid character with an X offset adjustment...
+
+		
+	Compare with
+	lda abs..,y		; 4+1
+	sta abs..		; 4
+	Cycles 8+1 or 8000 cycles for the whole screen, Size 6, total 6000 bytes, plus the 5820 bytes for the map
+
+	Test BASIC draw code, after loading the draw code and table data
+new
+5 poke 2,0:poke 3,4
+10 for i=0 to 20
+20 poke 780,peek(49152+21+21+21+21+i)
+30 poke 782,peek(49152+21+21+21+21+21+i)
+35 print chr$(147)
+36 poke 2040,56 : rem sec and then jmp
+37 poke 2041,76: poke 2042, peek(49152+i): poke 2043, 128 + peek(49152+20+i)
+40 sys 2040
+50 next
+
+run
+
+	> Current sprase code uses more draw time :(
+		Proably because of the bmi .return taking a lot of time
+		>> Even reducing the bmi test in the conversion (rightPosOffset) does nto help that much
+	> The whole screen, when the ball is in the top of the screen and just moving right, uses up to char row ~5
+	>> Perhaps grow an empty, but solid character, around all the really visible chars? Then the clear is not needed...
+	>> Or try uncompressed audio with optimised copy in zeropage
+		Compression does result in lower frame time, on average
+	>> The buffered sample play fills the buffer before tsarting the timer, so the start time is indeterminate and it doesn't miss the bad lines properly...
+		The timer start needs to be precise, not have the buffer fill before it.
+	>> Optimised uncompressed buffered copy can fill the entire buffer with a simpler while != NMI sample buffer position check

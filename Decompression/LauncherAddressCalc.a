@@ -5,3 +5,7 @@ LauncherAddress_endMinusOutSize				= RNXPCompressionDecompress_GetBytesmAddr - R
 LauncherAddress_loadC64Code					= RNXPCompressionDecompress_WriteBytesmAddr - RNXPCompressionDecompress_ZPStartReal + RNXPCompressionDecompress_ZPStart
 
 LauncherCodeSize							= CompressedDataStart - BASICSTART
+
+!ifdef NOTE_ProcessorPortValue {
+LauncherAddress_ProcessorPortValue			= NOTE_ProcessorPortValue + 1 - Decompression_Part1Addr + RNXPCompressionDecompress_Part1Start
+}

@@ -1,0 +1,2023 @@
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+zeroPage_Temp6	= $8
+zeroPage_Temp7	= $9
+zeroPage_Temp8	= $a
+zeroPage_Temp9	= $b
+zeroPage_Temp9	= $b
+zeroPage_Temp10	= $c
+zeroPage_Temp11	= $d
+zeroPage_Temp12	= $e
+zeroPage_Temp13	= $f
+zeroPage_Temp14	= $10
+zeroPage_Temp15	= $11
+
+
+kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+; Enable this to send graphics data from code, however this only works if the data is small :)
+;IncludeGraphicsData = 1
+;IncludeGraphicsData_L1=1
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Bus20To32Bit1_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+ScreenLandscapeOriginYPos = 88
+ScreenLandscapeNumRollSteps = 72
+ScreenLandscapeNumStepsDelta = 360 / ScreenLandscapeNumRollSteps
+ScreenLandscapeNumRollAnimationSpeed = 2
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/APU.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!source "BombJack/stdlib/Bus24Bit.a"
+* = SCREENRAM
+messageMW
+!scr "MegaWang 2000 Turbo Edition : After Burner : Checking for external RAM"
+messageMWEnd
+
+!source "BombJack/stdlib/Bus20To32Bit1.a"
+!source "BombJack/stdlib/Audio.a"
+!source "BombJack/stdlib/Video.a"
+
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+
+!source "tmp\Demo14ScaledSprites4Sheet.txtVars.a"
+
+!zn
+mainLoop
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+	+SetDefaultScreenLowerCase_A
+	lda #VIC2Colour_White
+	ldx #(messageMWEnd - messageMW)-1
+.cl1
+	sta COLOURRAM,x
+	dex
+	bpl .cl1
+
+
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+
+;	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	jsr APU_ResetDisable
+	jsr Audio_Init
+	jsr Video_DisableDisplay
+
+	; TODO: Check for RAM contents
+	; Disable the C64 screen for speed
+	lda #0
+	sta VIC2ScreenControlV
+
+	jsr SetupAPU
+
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 16 , 82 , 255
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+
+	+MBus24Bit_SetAddress_A $01 , $8800
+	; Flag
+	+MBus24Bit_Send8BitValue 0
+	; Border adjustments
+	+MBus24Bit_SendLE16BitValue -16
+	+MBus24Bit_SendLE16BitValue -16
+	; Extents
+	+MBus24Bit_Send8BitValue $a8
+	+MBus24Bit_Send8BitValue $70
+
+	jsr APU_Enable
+
+;	+WaitForFire_A
+
+	jsr TitleSetStartAnimation
+
+mainLoop3
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	; Can happen outside the VBlank
+	jsr RenderSpritesTitle
+
+	+WaitForFireLoop_A mainLoop3
+
+	jsr Bus20To32Bit1_Init
+
+
+mainLoop2
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	; Must happen in the VBlank
+	jsr VBlankUpdateHorizon
+
+	; Can happen outside the VBlank
+	jsr PlayerControl
+	jsr UpdateLandscapeFrame
+
+	jsr UpdateEnemyObjects
+
+	jsr RenderSpritesGame
+
+	jmp mainLoop2
+
+
+TitleSetStartAnimation
+	; Setup the start of the animation
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A $01 , $8808
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValue <titleScreenAnimation1
+	+MBus20To32Bit1_SetLatch1_A
+	+MBus24Bit_Send8BitValue <(titleScreenAnimation1 >> 8)
+	+MBus20To32Bit1_SetLatch2_A
+	+MBus24Bit_Send8BitValue <(titleScreenAnimation1 >> 16)
+	rts
+
+!source "BombJack/stdlib/HardwareTest.a"
+
+MultiplyByThree
+!for .i , 85 {
+!by (.i-1) * 3
+}
+
+.logoScale !by $40
+RenderSpritesTitle
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag not ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A $01 , $8800
+	+MBus24Bit_Send8BitValue 0
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A $01 , $8808
+
+	; Draw logo
+	ldx .logoScale
+	cpx #$20
+	beq .okScale
+	dec .logoScale
+.okScale
+!macro MLogoDraw1 .address , .xoffset , .yoffset {
+	lda #0
+	sta zeroPage_Temp3
+	lda #78 + .xoffset
+	sta zeroPage_Temp5
+	lda #40 + .yoffset
+	sta zeroPage_Temp4
+	jsr .address
+}
+	+MLogoDraw1 TitleDrawA , 0 , 0
+	+MLogoDraw1 TitleDrawF , 40 , 2
+	+MLogoDraw1 TitleDrawT , 68 , 5
+	+MLogoDraw1 TitleDrawE , 102 , 4
+	+MLogoDraw1 TitleDrawR , 130 , 1
+
+!macro MLogoDraw2 .address , .xoffset , .yoffset {
+	lda #0
+	sta zeroPage_Temp3
+	lda #49 + .xoffset
+	sta zeroPage_Temp5
+	lda #100 + .yoffset
+	sta zeroPage_Temp4
+	jsr .address
+}
+	+MLogoDraw2 TitleDraw2B , 0 , 0
+	+MLogoDraw2 TitleDraw2U , 42 , 4
+	+MLogoDraw2 TitleDraw2R , 78 , 4
+	+MLogoDraw2 TitleDraw2N , 115 , 5
+	+MLogoDraw2 TitleDraw2E , 148 , 4
+	+MLogoDraw2 TitleDraw2R2 , 180 , 0
+
+
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	+lbeq .noTitleSprites
+	cmp #255
+	bne .titleDrawSprites0
+
+	jsr TitleSetStartAnimation
+	jmp RenderSpritesTitle
+
+.titleDrawSprites0
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	; Type
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	; MSB
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+	; X pos
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp3
+	; X size
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp4
+	; Y pos
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	; Y size
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp6
+	; Scale
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp7
+
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+	lda zeroPage_Temp1
+	bne .otherBall
+!if 1 {
+	; Palette
+	lda #kVarsEmitSpriteFrame_tc_798_0_0_0_colour
+	ora zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp6
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; Address
+	+MBus24Bit_SendLE24BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	; Stride
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth-1
+	jmp .overBall
+}
+.otherBall
+!if 1 {
+	; Palette
+	lda #kVarsEmitSpriteFrame_tc_800_0_0_0_colour
+	ora zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp6
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; Address
+	+MBus24Bit_SendLE24BitValue kVarsEmitSpriteFrame_tc_800_0_0_0_tileAddress
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	; Stride
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_800_0_0_0_tileWidth-1
+}
+.overBall
+
+	dec zeroPage_Temp0
+	+lbne .titleDrawSprites0
+
+.noTitleSprites
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	; Terminate the sprite list
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+
+;	+WaitForFire_A
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag not ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A $01 , $8800
+	+MBus24Bit_Send8BitValue 1
+
+	rts
+
+RenderSpritesGame
+
+	; Flag not ready
+	+MBus24Bit_SetAddress_A $01 , $8800
+	+MBus24Bit_Send8BitValue 0
+
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A $01 , $8808
+
+!if 0 {
+	; A deliberate large corrupted sprite to show sprite extents
+	; Palette
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_t_678_0_0_0_colour
+	; Y pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue $40
+	; X pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue $40
+	; Address
+	+MBus24Bit_SendLE24BitValue 0
+	; Inv scales
+	+MBus24Bit_Send8BitValue $91
+	+MBus24Bit_Send8BitValue $91
+	; Stride
+	+MBus24Bit_Send8BitValue 170
+}
+
+	jsr RenderSpritePlayer
+
+	; TODO: Sort
+	lda #kNumEnemy-1
+	sta .enemyIndexForRender
+.edl1
+	; Enemy Z calc and reject
+	ldx .enemyIndexForRender
+	ldy enemyZPos,x
+	; TODO: Depending on X register usage, this could just use X all the way through
+	lda realZToHardwareScale,y
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp5
+
+	; Quick 3D position rotation test
+	; Combined transform
+	; Setup $100 - 1 in the add register. -1 because a read advances the address by 1
+	jsr Bus20To32Bit1_SetLatch8
+	+MBus24Bit_Send8BitValue $ff
+	jsr Bus20To32Bit1_SetLatch9
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch10
+	+MBus24Bit_Send8BitValue 0
+
+	; Set the rotation address
+	ldy landscapeRotationsFrame
+	+MBus20To32Bit1_SetLatch1_A
+	lda rotationVectorTableAddrs,y
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	lda rotationVectorTableAddrs + ScreenLandscapeNumRollSteps,y
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus20To32Bit1_SetLatch0_A
+	lda enemyXPos,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp8
+	; Add
+	+MBus20To32Bit1_SetLatch3_A
+	+MBus24Bit_Get8BitValueToA
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp9
+
+	+MBus20To32Bit1_WriteMode_A
+
+	; Set the rotation address
+	ldy landscapeRotationsFrame
+	+MBus20To32Bit1_SetLatch1_A
+	lda rotationVectorTableAddrsNext,y
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	lda rotationVectorTableAddrsNext + ScreenLandscapeNumRollSteps,y
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus20To32Bit1_SetLatch0_A
+	lda enemyYPos,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp12
+	; Add
+	+MBus20To32Bit1_SetLatch3_A
+	+MBus24Bit_Get8BitValueToA
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp13
+
+
+	; Note sign
+	; Y
+	lda zeroPage_Temp9
+	sec
+	sbc zeroPage_Temp12
+	sta zeroPage_Temp9
+	; X
+	lda zeroPage_Temp13
+	clc
+	adc zeroPage_Temp8
+	sta zeroPage_Temp8
+
+	; Half perspective calculation
+	; Set the lookup address
+	; X
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp8
+	+MBus20To32Bit1_SetLatch1_A
+	lda enemyZPos,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	+MBus24Bit_Send8BitValue 0
+	; Get the perspective result
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	cmp #128
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp8
+
+	; Y
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp9
+	; Get the perspective result
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	cmp #128
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp9
+
+
+	; Back to direct write
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	ldy landscapeRotationsFrame
+	lda EnemyPlaneGreen_landscapeRotationsFrame_to_animation,y
+	asl
+	tay
+	; TODO: Better table layout? Swizzle?
+	lda Render_EnemyPlaneGreen_Table,y
+	sta zeroPage_Temp0
+	lda Render_EnemyPlaneGreen_Table+1,y
+	sta zeroPage_Temp1
+	ldy #0
+	lda (zeroPage_Temp0),y
+	sta .smEnemyWidth+1
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyWidth+2
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyHeight+1
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyHeight+2
+	+MAddU8ToAddr16 4 , zeroPage_Temp0 , zeroPage_Temp1
+	lda zeroPage_Temp0
+	sta .smEnemyJSR+1
+	lda zeroPage_Temp1
+	sta .smEnemyJSR+2
+	; Convert transformed coordinates into the screen
+	; Calculate the position tweak due to sprite scale
+	ldx zeroPage_Temp5
+.smEnemyWidth	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab-1,x
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp3
+	lsr
+	lsr
+	sta zeroPage_Temp1
+.smEnemyHeight	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab-1,x
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp4
+	lsr
+	lsr
+	sta zeroPage_Temp2
+
+	; Setup zero MSB
+	lda #0
+	sta zeroPage_Temp0
+	; To screen coordinates
+	lda zeroPage_Temp8
+	clc
+	adc #(328/2/2)
+	sec
+	sbc zeroPage_Temp1
+	asl
+	sta zeroPage_Temp8
+	bcc .noRotMSB1
+	lda zeroPage_Temp0
+	ora #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp0
+.noRotMSB1
+	lda zeroPage_Temp9
+	clc
+	adc #ScreenLandscapeOriginYPos/2
+	sec
+	sbc zeroPage_Temp2
+	sec
+	sbc playerYPositionOffsetForSprites
+	asl
+	sta zeroPage_Temp9
+	bcc .noRotMSB2
+	lda zeroPage_Temp0
+	ora #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp0
+.noRotMSB2
+
+.smEnemyJSR jsr $1234
+
+.skipEnemyDraw
+	+MBus20To32Bit1_WriteMode_A
+
+	dec .enemyIndexForRender
+	+lbpl .edl1
+
+
+	ldx landscapeRotationsFrame
+	lda landscapeRotations,x
+	sta zeroPage_Temp0
+	lda landscapeRotations + ScreenLandscapeNumRollSteps,x
+	sta zeroPage_Temp1
+	lda landscapeRotations + (ScreenLandscapeNumRollSteps * 2),x
+	sta zeroPage_Temp2
+	ldy landscapeFrame
+	lda MultiplyByThree,y
+	+MAddAToAddr24 zeroPage_Temp0 , zeroPage_Temp1 , zeroPage_Temp2
+
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	+MBus20To32Bit1_UsingState_SetLatch1_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+	+MBus20To32Bit1_UsingState_SetLatch2_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp2
+
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+	+MBus20To32Bit1_UsingState_WriteMode_A
+
+
+	+MBus20To32Bit1_UsingState_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	+MBus20To32Bit1_UsingState_SetLatch1_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+	+MBus20To32Bit1_UsingState_SetLatch2_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp2
+
+	; Process landscape frame
+	+MBus20To32Bit1_UsingState_ReadMode_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+
+.dl1
+	; index
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp6
+	clc
+	adc LandscapeMapRowOffset
+	tax
+	ldy LandscapeMap,x
+	; Debug: Test empty object type
+!if 0 {
+	bne .something
+	; Maintain sync with data
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .processNextSprite
+.something
+}
+	lda ObjectDrawLo,y
+	sta .smj1+1
+	lda ObjectDrawHi,y
+	sta .smj1+2
+	lda LandscapeMapXTweak,x
+	sta zeroPage_Temp7
+	lda #0
+	sta zeroPage_Temp3
+
+	; Z
+	+MBus24Bit_Get8BitValueToX
+
+	; Y pos
+	+MBus24Bit_Get8BitValueToA
+	sec
+	sbc playerYPositionOffsetForLandscape
+	; Check and reject for top/bottom screen position
+	sta zeroPage_Temp11
+	tay
+	lda .rejectSpriteYTab,y
+	bne .noSkipSpriteAtY
+	; Maintain sync with data
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .processNextSprite
+.noSkipSpriteAtY
+
+	lda zeroPage_Temp11
+	asl
+	sta zeroPage_Temp4
+	bcc .noMSBY
+	lda #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBY
+
+	; X pos
+	lda zeroPage_Temp7
+	bne .someTweakX
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	+MBus24Bit_Get8BitValueToA
+	ora zeroPage_Temp3
+	sta zeroPage_Temp3
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .continueX
+.someTweakX
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	+MBus24Bit_Get8BitValueToA
+	ora zeroPage_Temp3
+	sta zeroPage_Temp3
+.continueX
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+.smj1	jmp $1234
+ObjectDrawReturn
+
+	+MBus20To32Bit1_UsingState_ReadMode_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
+
+.processNextSprite
+	dec zeroPage_Temp2
+	+lbne .dl1
+.endLandscapeDraw
+
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+	; Shows sprite timeout
+	; Palette
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_colour
+	; Y pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue (kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight * $20) / $a0
+	; X pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue (kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth * $20) / $a0
+	; Address
+	+MBus24Bit_SendLE24BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress
+	; Inv scales
+	+MBus24Bit_Send8BitValue $a0
+	+MBus24Bit_Send8BitValue $a0
+	; Stride
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth-1
+
+	; Terminate the sprite list
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+
+
+	; Exit out of 32 bit mode and back to passthrough mode
+	jsr Bus20To32Bit1_ShortReset
+
+;	+WaitForFire_A
+
+	; Flag ready
+	+MBus24Bit_SetAddress_A $01 , $8800
+	+MBus24Bit_Send8BitValue 1
+	rts
+
+.rejectSpriteYTab
+!for .ii , 256 {
+!set .i = .ii - 1
+!set .enable = 1
+!if .i > 108 {
+!if .i < 250 {
+!set .enable = 0
+}
+}
+	!by .enable
+}
+
+.rejectSpriteXTab
+!for .ii , 256 {
+!set .i = .ii - 1
+!set .enable = 1
+!if .i > 160 {
+!if .i < 230 {
+!set .enable = 0
+}
+}
+	!by .enable
+}
+
+PlayerControl
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	dec landscapeFrameSpeed
+	bne .notDown
+	lda #1
+	sta landscapeFrameSpeed
+.notDown
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	inc landscapeFrameSpeed
+	lda landscapeFrameSpeed
+	cmp #7
+	bcc .notUp
+	lda #7
+	sta landscapeFrameSpeed
+.notUp
+	jmp .overFire
+.notFire
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+
+	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted1
+	lda playerXPositionOffset
+	; Check for roll trigger
+	cmp #28
+	+IfRegLessThanOrEqualToVal .rollAlreadyStarted1
+	lda #-ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
+	sta landscapeRotationsFrameRoll
+.rollAlreadyStarted1
+
+	lda playerXPositionOffset
+	sec
+	sbc #3
+	cmp #-30
+	+IfRegGreaterThanOrEqualToVal .okVal1
+	lda #-30
+.okVal1
+	sta playerXPositionOffset
+	jmp .gotXInput
+.notLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+
+	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted2
+	lda playerXPositionOffset
+	; Check for roll trigger
+	cmp #-28
+	+IfRegGreaterThanOrEqualToVal .rollAlreadyStarted2
+	lda #ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
+	sta landscapeRotationsFrameRoll
+.rollAlreadyStarted2
+
+	lda playerXPositionOffset
+	clc
+	adc #3
+	cmp #30
+	+IfRegLessThanOrEqualToVal .okVal2
+	lda #30
+.okVal2
+	sta playerXPositionOffset
+	jmp .gotXInput
+.notRight
+	; Reduce if there is no input
+	lda playerXPositionOffset
+	beq .gotXInput
+	bpl .isPos1
+	inc playerXPositionOffset
+	jmp .gotXInput
+.isPos1
+	dec playerXPositionOffset
+.gotXInput
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown2
+	lda playerYPositionOffset
+	cmp #-50
+	beq .doReduceAndSkip
+	lda playerYPositionOffsetSpeed
+	sec
+	sbc #1
+	cmp #-5
++IfRegGreaterThanOrEqualToVal .isOK3
+	lda #-5
+.isOK3
+	sta playerYPositionOffsetSpeed
+	jmp .overFire
+.doReduceAndSkip
+	jsr playerYPositionOffsetSpeedReduce
+	jmp .overFire
+.notDown2
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp2
+	lda playerYPositionOffset
+	cmp #50
+	beq .doReduceAndSkip
+	lda playerYPositionOffsetSpeed
+	clc
+	adc #1
+	cmp #5
++IfRegLessThanOrEqualToVal .isOK4
+	lda #5
+.isOK4
+	sta playerYPositionOffsetSpeed
+	jmp .overFire
+
+.notUp2
+
+	jsr playerYPositionOffsetSpeedReduce
+
+	lda playerYPositionOffset
+	beq .overFire
+	bpl .makeLess
+.makeMore
+	clc
+	adc #1
+	jmp .insertUp
+.makeLess
+	sec
+	sbc #1
+	jmp .insertDown
+
+.overFire
+
+	; Process any player Y offset changes
+	lda playerYPositionOffsetSpeed
+	beq .overYOffsetUpdate
+	bpl .isPositive1
+	lda playerYPositionOffset
+	clc
+	adc playerYPositionOffsetSpeed
+.insertDown
+	cmp #-50
+	+IfRegGreaterThanOrEqualToVal .isOK1
+	lda #-50
+.isOK1
+	sta playerYPositionOffset
+	jmp .overYOffsetUpdate
+.isPositive1
+	lda playerYPositionOffset
+	clc
+	adc playerYPositionOffsetSpeed
+.insertUp
+	cmp #50
+	+IfRegLessThanOrEqualToVal .isOK2
+	lda #50
+.isOK2
+	sta playerYPositionOffset
+	jmp .overYOffsetUpdate
+.overYOffsetUpdate
+
+	lda playerYPositionOffset
+	+M_ASR
+;	+M_ASR
+	sta playerYPositionOffsetForSprites
+	clc
+	adc #ScreenLandscapeOriginYPos
+	sta playerYPositionOffsetForLandscape
+
+	; Normalise for horizon
+	lda playerYPositionOffset
+	clc
+	adc #50
+	lsr
+	lsr
+	sta playerYPositionOffsetForHorizon
+
+	; Forced roll stops any banking calculation
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted3
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notInputLeft
+	lda landscapeRotationsFrame
+	cmp #(8 * ScreenLandscapeNumRollSteps) / 24
+	bcc .gotRollInput
+	sec
+	sbc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+.notInputLeft
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notInputRight
+	lda landscapeRotationsFrame
+	cmp #((16 * ScreenLandscapeNumRollSteps) / 24) - 1
+	bcs .gotRollInput
+	clc
+	adc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+.notInputRight
+.rollAlreadyStarted3
+
+	; Don't level the airplane  if it is rolling
+	lda landscapeRotationsFrameRoll
+	bne .gotRollInput
+
+	; Try to level any roll
+	lda landscapeRotationsFrame
+	cmp #(ScreenLandscapeNumRollSteps / 2) - 1
+	beq .gotRollInput
+	bcs .rollLarger
+	clc
+	adc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+
+.rollLarger
+	sec
+	sbc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+
+.gotRollInput
+
+	; Add in any forced roll animation
+	lda landscapeRotationsFrameRoll
+	beq .noRollAtAll
+	bmi .rollLeft
+
+.rollRight
+	dec landscapeRotationsFrameRoll
+	lda landscapeRotationsFrame
+	clc
+	adc #ScreenLandscapeNumRollAnimationSpeed
+	cmp #ScreenLandscapeNumRollSteps
+	bcc .okRollValue1
+	sec
+	sbc #ScreenLandscapeNumRollSteps
+.okRollValue1
+	sta landscapeRotationsFrame
+	jmp .noRollAtAll
+
+.rollLeft
+	inc landscapeRotationsFrameRoll
+	lda landscapeRotationsFrame
+	sec
+	sbc #ScreenLandscapeNumRollAnimationSpeed
+	bpl .okRollValue2
+	clc
+	adc #ScreenLandscapeNumRollSteps
+.okRollValue2
+	sta landscapeRotationsFrame
+	jmp .noRollAtAll
+
+.noRollAtAll
+
+	rts
+
+playerYPositionOffsetSpeedReduce
+	; If there is no vertical input then slowly reduce the offset back to the middle
+	lda playerYPositionOffsetSpeed
+	bmi .makeMore2
+	beq .adjustPositionOffset
+.makeLess2
+	sec
+	sbc #1
+	sta playerYPositionOffsetSpeed
+	jmp .adjustPositionOffset
+.makeMore2
+	clc
+	adc #1
+	sta playerYPositionOffsetSpeed
+.adjustPositionOffset
+	rts
+
+UpdateLandscapeFrame
+	lda landscapeFrame
+	clc
+	adc landscapeFrameSpeed
+	sta landscapeFrame
+	cmp #8
+	bcc .noNewRow
+	and #7
+	sta landscapeFrame
+	lda LandscapeMapRowOffset
+	clc
+	ldy landscapeRotationsFrame
+	adc landscapeRotationsFrameToOffset,y
+	sta LandscapeMapRowOffset
+.noNewRow
+	rts
+
+; Don't forget the rotation for the landscape is from the point of view of up in the air, not on the ground
+;enemyXPos	!by 7*8	; Far right of the landscape
+;enemyXPos	!by 1*8	; First bush on the right
+;enemyXPos	!by 0	; Middle of the screen, for rotation
+
+;enemyYPos	!by 0	; Middle of the screen, for rotation
+;enemyYPos	!by 1	; Just above the player at defaultNeutralScaleIs
+;enemyYPos	!by -4 ; Level with the player, just about
+;enemyYPos	!by -25 ; Roughly on the ground
+
+;enemyZPos	!by 8*8	; The far point of the landscape
+;enemyZPos	!by defaultNeutralScaleIs
+
+enemyXPos
+	!by -2*8 , 0 , 1*8 , 3*8 , 4*8 , 0
+kNumEnemy = * - enemyXPos
+
+enemyYPos
+	!by 0 , 6 , 3 , 9 , -4 , 0
+
+enemyZPos
+	!by 10 , 30 , 50  , 70 , 90 , 160
+
+
+.enemyIndexForRender !by 0
+
+UpdateEnemyObjects
+	ldy #kNumEnemy-1
+.ue1
+!if 1 {
+	ldx landscapeRotationsFrame
+	lda enemyXPos,y
+	sec
+	sbc landscapeRotationsFrameToHorizonSpeed,x
+	sta enemyXPos,y
+}
+
+!if 1 {
+	lda enemyZPos,y
+	sec
+	sbc landscapeFrameSpeed
+;	and #127
+	sta enemyZPos,y
+}
+
+	dey
+	bpl .ue1
+
+
+!if 0 {
+	; While this works to move the enemy up and down, the original After Burner does not allow actual movement in the Y direction beyond what is visible in the screen movement
+	ldx playerYPositionOffsetSpeed
+	lda playerYPositionOffsetSpeedDivideTab,x
+	sta zeroPage_Temp0
+
+	lda enemyYPos
+	clc
+	adc zeroPage_Temp0
+	sta enemyYPos
+}
+	rts
+
+; It is *very* important this happens in the VBlank. The scaled sprite hardware is always a frame behind because it uses the entire frame to calulate data, but the mode7 layer is on the immediately displayed frame.
+; The APU waits for the VBlank to start then updates the mode7 registers, effectively showing the mode7 update a frame after the sprite update is trigered.
+VBlankUpdateHorizon
+	+MAPU_SetDataUpdateBus APUData_Start_Mode7Registers
+
+	ldx landscapeRotationsFrame
+	; Send: dx , dxy , dy , dyx
+!for .i , 12 {
+	lda landscapeRotationHorizonDXDY+((.i-1)*ScreenLandscapeNumRollSteps),x
+	+MBus24Bit_Send8BitValueFromA
+}
+
+!if 1 {
+	ldx landscapeRotationsFrame
+	lda landscapeRotationsFrameToHorizonSpeed,x
+	sta .horizonXOffsetSpeed+1
+	bmi .makeNeg
+	lda #0
+	sta .horizonXOffsetSpeed+2
+	jmp .overCalcHorizonSpeed
+.makeNeg
+	lda #-1
+	sta .horizonXOffsetSpeed+2
+.overCalcHorizonSpeed
+	+MAdd24To24ToOut .horizonXOffset , .horizonXOffsetSpeed, .horizonXOffset
+
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MAPU_SetDataUpdateBusNoReset APUData_Start_Mode7Registers + 12	; After rotations
+
+	; Set the add value, rotation index multiplied by 6
+	ldy landscapeRotationsFrame
+	jsr Bus20To32Bit1_SetLatch8
+	lda MultiplyByMul6,y
+	+MBus24Bit_Send8BitValueFromA
+	jsr Bus20To32Bit1_SetLatch9
+	lda MultiplyByMul6 + ScreenLandscapeNumRollSteps , y
+	+MBus24Bit_Send8BitValueFromA
+	jsr Bus20To32Bit1_SetLatch10
+	+MBus24Bit_Send8BitValue 0
+
+	; Set the address
+	ldx playerYPositionOffsetForHorizon
+	+MBus20To32Bit1_SetLatch0_A
+	lda landscapeRotationHorizonOffsetTab,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch1_A
+	lda landscapeRotationHorizonOffsetTab + 27,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	lda landscapeRotationHorizonOffsetTab + 27 + 27,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; Add offset to address
+	+MBus20To32Bit1_SetLatch3_A
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	; xorg
+	+MBus24Bit_Get8BitValueToA
+	sta .horizonXOffsetWork
+	+MBus24Bit_Get8BitValueToA
+	sta .horizonXOffsetWork+1
+	+MBus24Bit_Get8BitValueToA
+	sta .horizonXOffsetWork+2
+	; yorg
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+
+	+MAdd24To24ToOut .horizonXOffset , .horizonXOffsetWork, .horizonXOffsetWork
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SendLE24BitValueFromAddress .horizonXOffsetWork
+
+	; yorg
+	+MBus24Bit_SendLE24BitValueFromAddress zeroPage_Temp0
+
+	; 24 bit mode, preserving the external address
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone
+}
+
+	rts
+
+
+.horizonXOffset
+	+MLittleEndian24Bit 0
+.horizonXOffsetSpeed
+	+MLittleEndian24Bit 0
+.horizonXOffsetWork
+	+MLittleEndian24Bit 0
+
+
+TotalAPU_Start
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+
+	; Get EBSEADDR values
+	+MAPU kAPU_Load_EBS
+	+MAPU kAPU_Incr_ADDRB1
+
+	; Mode7 changes
+	+MAPU_LoadDoWait
+	+MAPU_LoadEADDRFromB1
+!for .i , 6 * 3 {
+	+MAPU kAPU_ExternalMEWR
+	+MAPU kAPU_Incr_ADDRB1 | kAPU_Incr_EADDR
+}
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+!if APUCode_Size > 8192 {
+	!error "APUCode_Size too large"
+}
+
+APUData_Start
+	!by kBus24Bit_Mode7Screen_EBBS
+
+	; Next RHRV to wait for, the start of the VBlank
+	+MAPU_EmitWait 0 , $f0
+	+MLittleEndian16Bit kBus24Bit_Mode7Screen_Registers
+APUData_Start_Mode7Registers
+	; dx
+	!by 0 , $1 , 0
+	; dxy
+	!by 0 , 0 , 0
+	; dy
+	!by 0 , $1 , 0
+	; dyx
+	!by 0 , 0 , 0
+	; xpos
+	!by 0 , 0 , 0
+	; ypos
+	!by 0 , 0 , 0
+
+APUData_End
+APUData_Size = APUData_End - APUData_Start
+
+!if APUData_Size > 8192 {
+	!error "APUData_Size too large"
+}
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+SetupAPU
+	jsr APU_SetAddressAPUInstructions
+	+MWordValueTo_AX APUCode_Start
+	ldy #<APUCode_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUCode_Size > 0 {
+	ldx #>APUCode_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	jsr APU_SetAddressAPUData
+	+MWordValueTo_AX APUData_Start
+	ldy #<APUData_Size
+	jsr Bus24Bit_CopySmallData
+!if >APUData_Size > 0 {
+	ldx #>APUData_Size
+	jsr Bus24Bit_CopySmallDataRepeatForX
+}
+	rts
+
+ObjectDrawLo
+	!word ObjectDraw0 , ObjectDraw1 , ObjectDraw2 , ObjectDraw3 , ObjectDraw4
+!swizzle ObjectDrawLo , (* - ObjectDrawLo) / 2 , 2
+ObjectDrawHi = (* + ObjectDrawLo) / 2	; Middle :)
+
+!macro MObjectDrawWithScale .colour , .widthScaleTab , .heightScaleTab , .address , .width {
+	; Palette
+	lda #.colour
+	ora zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda zeroPage_Temp4
+	+MBus24Bit_Send8BitValueFromA
+	lda .heightScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromA
+	lda .widthScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromX
+	+MBus24Bit_Send8BitValueFromX
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+}
+
+ObjectDraw0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw2
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw3
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_576_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw4
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_934_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+TitleDrawA
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_692_0_0_0_colour , kVarsEmitSpriteFrame_t_692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_692_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_692_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_692_0_0_0_tileWidth
+	rts
+TitleDrawF
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_693_0_0_0_colour , kVarsEmitSpriteFrame_t_693_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_693_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_693_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_693_0_0_0_tileWidth
+	rts
+TitleDrawT
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_694_0_0_0_colour , kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_694_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_694_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_694_0_0_0_tileWidth
+	rts
+TitleDrawE
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_695_0_0_0_colour , kVarsEmitSpriteFrame_t_695_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_695_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_695_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_695_0_0_0_tileWidth
+	rts
+TitleDrawR
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_696_0_0_0_colour , kVarsEmitSpriteFrame_t_696_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_696_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_696_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_696_0_0_0_tileWidth
+	rts
+
+TitleDraw2B
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_698_0_0_0_colour , kVarsEmitSpriteFrame_t_698_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_698_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_698_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_698_0_0_0_tileWidth
+	rts
+TitleDraw2U
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_699_0_0_0_colour , kVarsEmitSpriteFrame_t_699_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_699_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_699_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_699_0_0_0_tileWidth
+	rts
+TitleDraw2R
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_700_0_0_0_colour , kVarsEmitSpriteFrame_t_700_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_700_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_700_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_700_0_0_0_tileWidth
+	rts
+TitleDraw2N
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_701_0_0_0_colour , kVarsEmitSpriteFrame_t_701_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_701_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_701_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_701_0_0_0_tileWidth
+	rts
+TitleDraw2E
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_702_0_0_0_colour , kVarsEmitSpriteFrame_t_702_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_702_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_702_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_702_0_0_0_tileWidth
+	rts
+TitleDraw2R2
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_703_0_0_0_colour , kVarsEmitSpriteFrame_t_703_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_703_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_703_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_703_0_0_0_tileWidth
+	rts
+
+playerXPositionOffset
+	!by 0
+
+playerYPositionOffsetSpeed
+	!by 0
+
+playerYPositionOffset
+	!by 0
+
+playerYPositionOffsetForHorizon
+	!by 0
+playerYPositionOffsetForLandscape
+	!by ScreenLandscapeOriginYPos
+playerYPositionOffsetForSprites
+	!by 0
+
+playerYPositionOffsetSpeedDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 2
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+	!by .i
+}
+
+; There seem to be 3 roll left animations, that can be flipped for roll right, plus the middle set of animations
+playerXPositionOffsetDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 8
+!if .i > 3 {
+!set .i = 3
+}
+!if .i < -3 {
+!set .i = -3
+}
+	!by (.i + 3) * 2
+}
+
+playerYPositionOffsetDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 16
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+; Invert screen space
+!set .i = -.i
+	!by .i
+}
+
+clampToTwoTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+	!by (.i + 2) * 2
+}
+
+RenderSpritePlayerR0YTab
+	!word RenderSpritePlayerR0YU2 , RenderSpritePlayerR0YU1 , RenderSpritePlayerR0Y0 , RenderSpritePlayerR0YD1 , RenderSpritePlayerR0YD2
+RenderSpritePlayerRL1YTab
+	!word RenderSpritePlayerRL1YU2 , RenderSpritePlayerRL1YU1 , RenderSpritePlayerRL1Y0 , RenderSpritePlayerRL1YD1 , RenderSpritePlayerRL1YD2
+RenderSpritePlayerRL2YTab
+	!word RenderSpritePlayerRL2YU2 , RenderSpritePlayerRL2YU1 , RenderSpritePlayerRL2Y0 , RenderSpritePlayerRL2YD1 , RenderSpritePlayerRL2YD2
+RenderSpritePlayerRL3YTab
+	!word RenderSpritePlayerRL3YU2 , RenderSpritePlayerRL3YU1 , RenderSpritePlayerRL3Y0 , RenderSpritePlayerRL3YD1 , RenderSpritePlayerRL3YD2
+RenderSpritePlayerRR1YTab
+	!word RenderSpritePlayerRR1YU2 , RenderSpritePlayerRR1YU1 , RenderSpritePlayerRR1Y0 , RenderSpritePlayerRR1YD1 , RenderSpritePlayerRR1YD2
+RenderSpritePlayerRR2YTab
+	!word RenderSpritePlayerRR2YU2 , RenderSpritePlayerRR2YU1 , RenderSpritePlayerRR2Y0 , RenderSpritePlayerRR2YD1 , RenderSpritePlayerRR2YD2
+RenderSpritePlayerRR3YTab
+	!word RenderSpritePlayerRR3YU2 , RenderSpritePlayerRR3YU1 , RenderSpritePlayerRR3Y0 , RenderSpritePlayerRR3YD1 , RenderSpritePlayerRR3YD2
+
+RenderSpritePlayerRollTab
+	!word RenderSpritePlayerRL3YTab , RenderSpritePlayerRL2YTab , RenderSpritePlayerRL1YTab , RenderSpritePlayerR0YTab , RenderSpritePlayerRR1YTab , RenderSpritePlayerRR2YTab , RenderSpritePlayerRR3YTab
+
+RenderSpritePlayer
+	; Incorporates Y speed (climb or dive) and screen position
+	ldx playerYPositionOffset
+	lda playerYPositionOffsetDivideTab,x
+	clc
+	ldx playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeedDivideTab,x
+	tax
+	ldy clampToTwoTab,x
+
+	; Get the roll table entry
+	ldx playerXPositionOffset
+	lda playerXPositionOffsetDivideTab,x
+	tax
+	lda RenderSpritePlayerRollTab,x
+	sta .smt1+1
+	sta .smt2+1
+	lda RenderSpritePlayerRollTab+1,x
+	sta .smt1+2
+	sta .smt2+2
+
+.smt1	lda RenderSpritePlayerR0YTab,y
+	sta .smj2+1
+	iny
+.smt2	lda RenderSpritePlayerR0YTab,y
+	sta .smj2+2
+.smj2	jmp RenderSpritePlayerR0Y0
+
+
+
+!macro MRenderSpritePlayer .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	lda playerYPositionOffset
+	clc
+	adc #112
+	sec
+	sbc #.height/2
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+	lda #$aa - (.width/2)
+	clc
+	adc playerXPositionOffset
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+	rts
+}
+
+!macro MRenderSpritePlayerFlipX .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette | kBus24Bit_Video_FlipH
+	; Y pos and size
+	lda playerYPositionOffset
+	clc
+	adc #112
+	sec
+	sbc #.height/2
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+	lda #$aa - (.width/2)
+	clc
+	adc playerXPositionOffset
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address + .width-1
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+	rts
+}
+
+RenderSpritePlayerRL3Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_317_0_0_0_colour , kVarsEmitSpriteFrame_t_317_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_317_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_317_0_0_0_tileAddress
+RenderSpritePlayerRL3YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_213_0_0_0_colour , kVarsEmitSpriteFrame_t_213_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_213_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_213_0_0_0_tileAddress
+RenderSpritePlayerRL3YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_bt_823_0_0_0_colour , kVarsEmitSpriteFrame_bt_823_0_0_0_tileWidth , kVarsEmitSpriteFrame_bt_823_0_0_0_tileHeight , kVarsEmitSpriteFrame_bt_823_0_0_0_tileAddress
+RenderSpritePlayerRL3YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_314_0_0_0_colour , kVarsEmitSpriteFrame_t_314_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_314_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_314_0_0_0_tileAddress
+RenderSpritePlayerRL3YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_468_0_0_0_colour , kVarsEmitSpriteFrame_t_468_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_468_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_468_0_0_0_tileAddress
+
+RenderSpritePlayerRL2Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_172_0_0_0_colour , kVarsEmitSpriteFrame_t_172_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_172_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_172_0_0_0_tileAddress
+RenderSpritePlayerRL2YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_443_0_0_0_colour , kVarsEmitSpriteFrame_t_443_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_443_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_443_0_0_0_tileAddress
+RenderSpritePlayerRL2YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_81_0_0_0_colour , kVarsEmitSpriteFrame_t_81_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_81_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_81_0_0_0_tileAddress
+RenderSpritePlayerRL2YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_373_0_0_0_colour , kVarsEmitSpriteFrame_t_373_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_373_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_373_0_0_0_tileAddress
+RenderSpritePlayerRL2YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_492_0_0_0_colour , kVarsEmitSpriteFrame_t_492_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_492_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_492_0_0_0_tileAddress
+
+RenderSpritePlayerRL1Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_221_0_0_0_colour , kVarsEmitSpriteFrame_t_221_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_221_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_221_0_0_0_tileAddress
+RenderSpritePlayerRL1YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_69_0_0_0_colour , kVarsEmitSpriteFrame_t_69_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_69_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_69_0_0_0_tileAddress
+RenderSpritePlayerRL1YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_97_0_0_0_colour , kVarsEmitSpriteFrame_t_97_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_97_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_97_0_0_0_tileAddress
+RenderSpritePlayerRL1YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_59_0_0_0_colour , kVarsEmitSpriteFrame_t_59_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_59_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_59_0_0_0_tileAddress
+RenderSpritePlayerRL1YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_58_0_0_0_colour , kVarsEmitSpriteFrame_t_58_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_58_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_58_0_0_0_tileAddress
+
+
+RenderSpritePlayerRR3Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_317_0_0_0_colour , kVarsEmitSpriteFrame_t_317_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_317_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_317_0_0_0_tileAddress
+RenderSpritePlayerRR3YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_213_0_0_0_colour , kVarsEmitSpriteFrame_t_213_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_213_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_213_0_0_0_tileAddress
+RenderSpritePlayerRR3YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_bt_823_0_0_0_colour , kVarsEmitSpriteFrame_bt_823_0_0_0_tileWidth , kVarsEmitSpriteFrame_bt_823_0_0_0_tileHeight , kVarsEmitSpriteFrame_bt_823_0_0_0_tileAddress
+RenderSpritePlayerRR3YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_314_0_0_0_colour , kVarsEmitSpriteFrame_t_314_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_314_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_314_0_0_0_tileAddress
+RenderSpritePlayerRR3YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_468_0_0_0_colour , kVarsEmitSpriteFrame_t_468_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_468_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_468_0_0_0_tileAddress
+
+RenderSpritePlayerRR2Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_172_0_0_0_colour , kVarsEmitSpriteFrame_t_172_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_172_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_172_0_0_0_tileAddress
+RenderSpritePlayerRR2YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_443_0_0_0_colour , kVarsEmitSpriteFrame_t_443_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_443_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_443_0_0_0_tileAddress
+RenderSpritePlayerRR2YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_81_0_0_0_colour , kVarsEmitSpriteFrame_t_81_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_81_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_81_0_0_0_tileAddress
+RenderSpritePlayerRR2YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_373_0_0_0_colour , kVarsEmitSpriteFrame_t_373_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_373_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_373_0_0_0_tileAddress
+RenderSpritePlayerRR2YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_492_0_0_0_colour , kVarsEmitSpriteFrame_t_492_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_492_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_492_0_0_0_tileAddress
+
+RenderSpritePlayerRR1Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_221_0_0_0_colour , kVarsEmitSpriteFrame_t_221_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_221_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_221_0_0_0_tileAddress
+RenderSpritePlayerRR1YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_69_0_0_0_colour , kVarsEmitSpriteFrame_t_69_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_69_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_69_0_0_0_tileAddress
+RenderSpritePlayerRR1YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_97_0_0_0_colour , kVarsEmitSpriteFrame_t_97_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_97_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_97_0_0_0_tileAddress
+RenderSpritePlayerRR1YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_59_0_0_0_colour , kVarsEmitSpriteFrame_t_59_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_59_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_59_0_0_0_tileAddress
+RenderSpritePlayerRR1YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_58_0_0_0_colour , kVarsEmitSpriteFrame_t_58_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_58_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_58_0_0_0_tileAddress
+
+
+
+RenderSpritePlayerR0Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_380_0_0_0_colour , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_380_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_380_0_0_0_tileAddress
+RenderSpritePlayerR0YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_6_0_0_0_colour , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_6_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_6_0_0_0_tileAddress
+RenderSpritePlayerR0YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_10_0_0_0_colour , kVarsEmitSpriteFrame_t_10_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_10_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_10_0_0_0_tileAddress
+RenderSpritePlayerR0YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_15_0_0_0_colour , kVarsEmitSpriteFrame_t_15_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_15_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_15_0_0_0_tileAddress
+RenderSpritePlayerR0YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_494_0_0_0_colour , kVarsEmitSpriteFrame_t_494_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_494_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_494_0_0_0_tileAddress
+
+
+
+landscapeFrameSpeed !by 1
+landscapeFrame !by 0
+
+!source "tmp/Demo14LargeTablesIncludeFrames.a"
+;!set UsingMaxHardwareScaleTabValue = maxHardwareScaleTabValue
+!set UsingMaxHardwareScaleTabValue = 255	; Override, more sprite frames into the distance, but more memory
+landscapeRotationsFrame !by (ScreenLandscapeNumRollSteps/2)-1
+landscapeRotationsFrameRoll !by 0
+landscapeRotations
+;!24 landscape165Frames , landscape150Frames , landscape135Frames , landscape120Frames , landscape105Frames , landscape090Frames , landscape075Frames , landscape060Frames , landscape045Frames , landscape030Frames , landscape015Frames , landscape000Frames , landscape345Frames , landscape330Frames , landscape315Frames , landscape300Frames , landscape285Frames , landscape270Frames , landscape255Frames , landscape240Frames , landscape225Frames , landscape210Frames , landscape195Frames , landscape180Frames
+!24 landscape175Frames , landscape170Frames , landscape165Frames , landscape160Frames , landscape155Frames , landscape150Frames , landscape145Frames , landscape140Frames , landscape135Frames , landscape130Frames , landscape125Frames , landscape120Frames , landscape115Frames , landscape110Frames , landscape105Frames , landscape100Frames , landscape095Frames , landscape090Frames , landscape085Frames , landscape080Frames , landscape075Frames , landscape070Frames , landscape065Frames , landscape060Frames , landscape055Frames , landscape050Frames , landscape045Frames , landscape040Frames , landscape035Frames , landscape030Frames , landscape025Frames , landscape020Frames , landscape015Frames , landscape010Frames , landscape005Frames , landscape000Frames
+!24 landscape355Frames , landscape350Frames , landscape345Frames , landscape340Frames , landscape335Frames , landscape330Frames , landscape325Frames , landscape320Frames , landscape315Frames , landscape310Frames , landscape305Frames , landscape300Frames , landscape295Frames , landscape290Frames , landscape285Frames , landscape280Frames , landscape275Frames , landscape270Frames , landscape265Frames , landscape260Frames , landscape255Frames , landscape250Frames , landscape245Frames , landscape240Frames , landscape235Frames , landscape230Frames , landscape225Frames , landscape220Frames , landscape215Frames , landscape210Frames , landscape205Frames , landscape200Frames , landscape195Frames , landscape190Frames , landscape185Frames , landscape180Frames
+!swizzle landscapeRotations , ScreenLandscapeNumRollSteps , 3
+
+landscapeRotationsFrameToOffset
+!by 16, 16, 16 , 16, 16, 16 , 16, 16, 16 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16
+!by 16, 16, 16 , 16, 16, 16 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16
+landscapeRotationsFrameToHorizonSpeed
+!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , -1 , -1 , -1 , -1 , -1 , -1 , -2 , -2 , -2 , -2 , -2 , -2 , -1 , -1 , -1 , -1 , -1 , -1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+!by 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 ,  1 , 1 , 1 ,  2 , 2 , 2 ,  2 , 2 , 2 ,  1 , 1 , 1 ,  1 , 1 , 1 ,  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+
+EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+;!for .i , ScreenLandscapeNumRollSteps {
+;!set .angle = (ScreenLandscapeNumStepsDelta * (.i-1))
+;	!by (.angle * 25) / 360
+;}
+!for .i , (ScreenLandscapeNumRollSteps/4)-1 {
+!set .angle = (ScreenLandscapeNumStepsDelta * (.i-1))
+!set .value = 17 + 9 + 6 + ((.angle * 7) / 90)
+!if .value >= 30 {
+!set .value = .value - 30
+}
+	!by .value
+}
+!for .i , ScreenLandscapeNumRollSteps/4 {
+!set .angle = (ScreenLandscapeNumStepsDelta * (.i-1))
+!set .value = 17 + 9 + 6 + 7 + ((.angle * 8) / 90)
+!if .value >= 30 {
+!set .value = .value - 30
+}
+	!by .value
+}
+; Level
+!for .i , ScreenLandscapeNumRollSteps/4 {
+!set .angle = (ScreenLandscapeNumStepsDelta * (.i-1))
+!set .value = 17 + ((.angle * 9) / 90)
+!if .value >= 30 {
+!set .value = .value - 30
+}
+	!by .value
+}
+!for .i , ScreenLandscapeNumRollSteps/4 {
+!set .angle = (ScreenLandscapeNumStepsDelta * (.i-1))
+!set .value = 17 + 9 + ((.angle * 6) / 90)
+!if .value >= 30 {
+!set .value = .value - 30
+}
+	!by .value
+}
+!set .value = 17 + 9 + 6
+!if .value >= 30 {
+!set .value = .value - 30
+}
+	!by 0
+
+
+!macro MRender_EnemyPlaneGreen .tileWidthScaleTab , .tileHeightScaleTab , .palette , .tileWidth , .tileHeight , .address , .flipX , .flipY {
+!word .tileWidthScaleTab - 1
+!word .tileHeightScaleTab - 1
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	; Palette
+	lda #.palette
+	ora zeroPage_Temp0
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp9
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp8
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	; Stride
+	+MBus24Bit_Send8BitValue .tileWidth-1
+	rts
+}
+
+; 9
+Render_EnemyPlaneGreen0
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_642_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_642_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_642_0_0_0_colour , kVarsEmitSpriteFrame_t_642_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_642_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_642_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen1
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_645_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_colour , kVarsEmitSpriteFrame_t_645_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_645_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen2
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_640_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_colour , kVarsEmitSpriteFrame_t_640_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_640_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen3
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_641_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_colour , kVarsEmitSpriteFrame_t_641_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_641_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen4
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_635_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_colour , kVarsEmitSpriteFrame_t_635_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_635_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen5
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_634_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_colour , kVarsEmitSpriteFrame_t_634_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_634_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen6
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_637_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_colour , kVarsEmitSpriteFrame_t_637_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_637_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen7
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_630_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_colour , kVarsEmitSpriteFrame_t_630_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_630_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen8
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_636_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_colour , kVarsEmitSpriteFrame_t_636_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_636_0_0_0_tileAddress , 0 , 0
+
+; Next 90
+; 6
+Render_EnemyPlaneGreen9
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_633_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_633_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_633_0_0_0_colour , kVarsEmitSpriteFrame_t_633_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_633_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_633_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen10
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_654_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_654_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_654_0_0_0_colour , kVarsEmitSpriteFrame_t_654_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_654_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_654_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen11
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_618_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_618_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_618_0_0_0_colour , kVarsEmitSpriteFrame_t_618_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_618_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_618_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen12
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_td_033_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_td_033_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_td_033_0_0_0_colour , kVarsEmitSpriteFrame_td_033_0_0_0_tileWidth , kVarsEmitSpriteFrame_td_033_0_0_0_tileHeight , kVarsEmitSpriteFrame_td_033_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen13
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_1009_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1009_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1009_0_0_0_colour , kVarsEmitSpriteFrame_t_1009_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1009_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1009_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen14
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_678_0_0_0_colour , kVarsEmitSpriteFrame_t_678_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_678_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_678_0_0_0_tileAddress , 0 , 0
+
+; 7
+Render_EnemyPlaneGreen15
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_1029_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1029_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1029_0_0_0_colour , kVarsEmitSpriteFrame_t_1029_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1029_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1029_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen16
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_tf_67_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tf_67_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tf_67_0_0_0_colour , kVarsEmitSpriteFrame_tf_67_0_0_0_tileWidth , kVarsEmitSpriteFrame_tf_67_0_0_0_tileHeight , kVarsEmitSpriteFrame_tf_67_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen17
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_tf_70_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tf_70_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tf_70_0_0_0_colour , kVarsEmitSpriteFrame_tf_70_0_0_0_tileWidth , kVarsEmitSpriteFrame_tf_70_0_0_0_tileHeight , kVarsEmitSpriteFrame_tf_70_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen18
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_996_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_996_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_996_0_0_0_colour , kVarsEmitSpriteFrame_t_996_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_996_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_996_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen19
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_1023_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1023_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1023_0_0_0_colour , kVarsEmitSpriteFrame_t_1023_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1023_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1023_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen20
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_1734_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1734_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1734_0_0_0_colour , kVarsEmitSpriteFrame_t_1734_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1734_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1734_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen21
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_1738_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1738_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1738_0_0_0_colour , kVarsEmitSpriteFrame_t_1738_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1738_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1738_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen22
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_636_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_colour , kVarsEmitSpriteFrame_t_636_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_636_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen23
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_630_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_colour , kVarsEmitSpriteFrame_t_630_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_630_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen24
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_637_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_colour , kVarsEmitSpriteFrame_t_637_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_637_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen25
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_634_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_colour , kVarsEmitSpriteFrame_t_634_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_634_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen26
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_635_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_colour , kVarsEmitSpriteFrame_t_635_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_635_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen27
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_641_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_colour , kVarsEmitSpriteFrame_t_641_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_641_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen28
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_640_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_colour , kVarsEmitSpriteFrame_t_640_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_640_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen29
++MRender_EnemyPlaneGreen kVarsEmitSpriteFrame_t_645_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_colour , kVarsEmitSpriteFrame_t_645_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_645_0_0_0_tileAddress , 1 , 0
+
+
+
+
+
+
+
+
+
+
+; TODO: Plane animation frames are not equally spaced out across the range of angles
+; Expanding this table would allow the angles to be placed closer to their desired angles. Perhaps measure the angle of the wings?
+Render_EnemyPlaneGreen_Table
+	!word Render_EnemyPlaneGreen13 , Render_EnemyPlaneGreen14 , Render_EnemyPlaneGreen15 , Render_EnemyPlaneGreen16 , Render_EnemyPlaneGreen17 , Render_EnemyPlaneGreen18 , Render_EnemyPlaneGreen19
+	!word Render_EnemyPlaneGreen20 , Render_EnemyPlaneGreen21 , Render_EnemyPlaneGreen22 , Render_EnemyPlaneGreen23 , Render_EnemyPlaneGreen24 , Render_EnemyPlaneGreen25 , Render_EnemyPlaneGreen26
+	!word Render_EnemyPlaneGreen27 , Render_EnemyPlaneGreen28 , Render_EnemyPlaneGreen29
+; 17
+	!word Render_EnemyPlaneGreen0 , Render_EnemyPlaneGreen1 , Render_EnemyPlaneGreen2 , Render_EnemyPlaneGreen3 , Render_EnemyPlaneGreen4 , Render_EnemyPlaneGreen5 , Render_EnemyPlaneGreen6 , Render_EnemyPlaneGreen7 , Render_EnemyPlaneGreen8 , Render_EnemyPlaneGreen9
+	!word Render_EnemyPlaneGreen10 , Render_EnemyPlaneGreen11 , Render_EnemyPlaneGreen12
+	
+
+!macro MMode7RotationDX angle {
+	; dx
+	+MLittleEndian24Bit int(256.0 * sin((float(angle + 90) / 360.0) * 2.0 * 3.14159265))
+	; dxy
+	+MLittleEndian24Bit int(256.0 * sin((float(angle) / 360.0) * 2.0 * 3.14159265))
+}
+
+!macro MMode7RotationDY angle {
+	; dy
+	+MLittleEndian24Bit int(-256.0 * sin((float(angle + 90 + 90 + 90) / 360.0) * 2.0 * 3.14159265))
+	; dyx
+	+MLittleEndian24Bit int(256.0 * sin((float(angle + 90 + 90) / 360.0) * 2.0 * 3.14159265))
+}
+
+!macro MMode7RotationOffset angle , screenYOffset {
+	; Position inside the bitmap
+	; Then the position on the screen for the central rotation point
+	+MLittleEndian24Bit int((220.0 * 256.0) + (184.0 * -256.0 * sin((float(angle + 90) / 360.0) * 2.0 * 3.14159265)) + ((ScreenLandscapeOriginYPos + 24.0 - screenYOffset) * -256.0 * sin((float(angle) / 360.0) * 2.0 * 3.14159265)))
+	+MLittleEndian24Bit int((128.0 * 256.0) + (184.0 * -256.0 * sin((float(angle + 90 + 90) / 360.0) * 2.0 * 3.14159265)) + ((ScreenLandscapeOriginYPos + 24.0 - screenYOffset) * 256.0 * sin((float(angle + 90 + 90 + 90) / 360.0) * 2.0 * 3.14159265)) )
+}
+
+landscapeRotationHorizonDXDY
+!for .i , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationDX 180 - (.i * ScreenLandscapeNumStepsDelta)
+	+MMode7RotationDY 180 - (.i * ScreenLandscapeNumStepsDelta)
+}
+!for .i , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationDX 360 - (.i * ScreenLandscapeNumStepsDelta)
+	+MMode7RotationDY 360 - (.i * ScreenLandscapeNumStepsDelta)
+}
+!swizzle landscapeRotationHorizonDXDY , ScreenLandscapeNumRollSteps , 2*2*3
+
+!if 0 {
+.startOffsets
+!for .ii , 27 {
+!set .thisEntry = *
+!set .i = ((.ii - 1) - 12) * 2 * 2
+!for .a , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationOffset 180 - (.a * ScreenLandscapeNumStepsDelta)	, .i
+}
+!for .a , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationOffset 360 - (.a * ScreenLandscapeNumStepsDelta)	, .i
+}
+!swizzle .thisEntry , ScreenLandscapeNumRollSteps , 2 * 3
+}
+}
+
+landscapeRotationHorizonOffsetTab
+!for .ii , 27 {
+!set .i = .ii - 1
+;	!word .startOffsets + (.i * ScreenLandscapeNumRollSteps * 2 * 3)
+	!24 landscapeRotationHorizonOffsets + (.i * ScreenLandscapeNumRollSteps * 2 * 3)
+}
+!swizzle landscapeRotationHorizonOffsetTab , 27 , 3
+
+MultiplyByMul6
+!for .ii , ScreenLandscapeNumRollSteps {
+!set .i = .ii - 1
+	!word .i * 6
+}
+!swizzle MultiplyByMul6 , ScreenLandscapeNumRollSteps , 2
+
+!macro MGenerateSprite4ScaleTable .value {
+!for .i , UsingMaxHardwareScaleTabValue {
+!set .actualSize = ((.value * 32) / .i)
+!if .actualSize <= 0 {
+	!by 0
+} else {
+!if .actualSize >= 255 {
+	!by 0
+} else {
+	!by <.actualSize
+}
+}
+}
+}
+
+!source "tmp/Demo14ScaledSprites4Sheet.txtTables.a"
+
+
+
+
+TweakScaleTab
+!for .i , 255 {
+	!by <((16 * 32) / .i)
+}
+
+LandscapeMapRowOffset !by 0
+LandscapeMap
+!for .i , ((256 / 5) + 1) {
+!by 0 , 1 , 2 , 3 , 4
+}
+
+LandscapeMapXTweak
+!for .i , ((256 / 6) + 1) {
+!by 0 , 1 , 1 , 0 , 0 , 1
+}
+
+!macro MMakeRotationVector .angle {
+!set .table = *
+!for .ii , 32 {
+!set .x = .ii - 1
+!if .x >= 128 {
+!set .x = -(256 - .x)
+}
+	!by <int(float(.x) * sin((float(.angle + 90) / 360.0) * 2.0 * 3.14159265))
+	!by <int(float(.x) * sin((float(.angle) / 360.0) * 2.0 * 3.14159265))
+}
+!swizzle .table , 32 , 2
+}
+
+rotationVectorTableAddrs
+!for .ii , ScreenLandscapeNumRollSteps {
+	!16 (rotationVectorTable + ((.ii-1)*256*2))>>8
+}
+!swizzle rotationVectorTableAddrs , ScreenLandscapeNumRollSteps , 2
+rotationVectorTableAddrsNext
+!for .ii , ScreenLandscapeNumRollSteps {
+!set .i = .ii-1
+!set .i = .i + (ScreenLandscapeNumRollSteps/4)
+!if .i >= ScreenLandscapeNumRollSteps {
+!set .i = .i - ScreenLandscapeNumRollSteps
+}
+	!16 (rotationVectorTable + ((.ii-1)*256*2))>>8
+}
+!swizzle rotationVectorTableAddrsNext , ScreenLandscapeNumRollSteps , 2
+
+!set defaultNeutralScaleIs = 0
+realZToHardwareScale
+!for .ii , 256 {
+!set .i = .ii -1
+!set .realZ = 16 + .i
+!set .theScale = float(16.0 + 7) / float(.realZ)
+; 48.0 is used by the landscape sprites, this produces reasonably scaled sprites very close to the camera
+;!set .hardwareScale = int(float(48.0) / .theScale)
+; However for airplanes we can go larger, so use a smaller number
+!set .hardwareScale = int(float(32.0) / .theScale)
+!if .hardwareScale <= 0 {
+	!by 0
+} else {
+!if .hardwareScale >= UsingMaxHardwareScaleTabValue {
+	!by 0
+} else {
+	!by <.hardwareScale
+}
+}
+!if .hardwareScale = $20 {
+!set defaultNeutralScaleIs = .i
+}
+}
+!if defaultNeutralScaleIs = 0 {
+!error "No Z value reaches $20 neutral scale, i.e. no scaling."
+}
+
+
++MCheckNotInIOKernal

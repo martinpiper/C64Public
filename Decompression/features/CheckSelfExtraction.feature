@@ -57,6 +57,37 @@ Feature: Test self extraction execution
     Then test self extraction works correctly
     Given setup self extraction test memory using option "-c64mub"
     Then test self extraction works correctly
+
+    # With processor port
+    Given setup self extraction test memory using option "-pp $37 -c64"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64b"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64m"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64mb"
+    Then test self extraction works correctly
+
+    Given setup self extraction test memory using option "-pp $37 -c64e"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64eb"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64me"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64meb"
+    Then test self extraction works correctly
+
+    Given setup self extraction test memory using option "-pp $37 -c64mr"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64mrb"
+    Then test self extraction works correctly
+
+    Given setup self extraction test memory using option "-pp $37 -c64mu"
+    Then test self extraction works correctly
+    Given setup self extraction test memory using option "-pp $37 -c64mub"
+    Then test self extraction works correctly
+
+
     
   Examples:
     | len1  | len2  | len3  |
@@ -100,6 +131,13 @@ Feature: Test self extraction execution
     Then test self extraction works correctly with reduced high memory
     Given setup self extraction test memory using option "-c64vhb" with reduced high memory
     Then test self extraction works correctly with reduced high memory
+
+    # With processor port
+    Given setup self extraction test memory using option "-pp $37 -c64vh" with reduced high memory
+    Then test self extraction works correctly with reduced high memory
+    Given setup self extraction test memory using option "-pp $37 -c64vhb" with reduced high memory
+    Then test self extraction works correctly with reduced high memory
+
 
   Examples:
     | len1  | len2  | len3  |

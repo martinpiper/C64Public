@@ -1,0 +1,9 @@
+!zn
+Pitch_UpdateVIC
+	lda PitchPosXPixel
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+	lda PitchPosYPixel
+	ora #kVIC2ScreenControlVBits_ScreenOn
+	sta VIC2ScreenControlV
+	rts

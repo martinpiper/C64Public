@@ -1,0 +1,63 @@
+;To compress
+;c:\work\c64\bin\LZMPi.exe -no -ol 10000 -cv c:\temp\present.prg c:\temp\present.cmp 2
+;..\acme.exe -v9 "TestDecompression5V - Copy.a"
+
+!source "../stdlib/stdlib.a"
+!to "TestDecompression.prg", cbm
+!sal
+!sl "TestDecompression.map"
+!svl "TestDecompression.lbl"
+!pdb "TestDecompression.pdb"
+!cpu 6510
+!ct pet
+
+!source "../stdlib/BASICEntry80d.a"
+!source "../stdlib/LongBranches.a"
+
+!ifndef EndOfMemory {
+EndOfMemory = $8000
+}
+
+; The contents of this macro can be used to cause the border colour to change while decompressing.
+!macro RNXPCompressionIncBorder_A {
+}
+!macro RNXPCompressionDecompress_WriteByteAddrHi {}
+
+RNXPCompressionDecompress_extraWorkMemory = $1000
+
+; Setup zeropage indirect registers and their values
+; These are used with indirect addressing mode
+RNXPCompressionDecompress_GetBytesmAddr		= $02
+RNXPCompressionDecompress_WriteBytesmAddr	= $04
+
+sRNXPCompressionDecompress_tempCopy			= $06
+sRNXPCompressionDecompress_factor = sRNXPCompressionDecompress_tempCopy
+sRNXPCompressionDecompress_table			= $08
+sRNXPCompressionDecompress_numberWork		= $0a
+sRNXPCompressionDecompress_compute			= $0c
+sRNXPCompressionDecompress_data1			= $0e
+sRNXPCompressionDecompress_data2			= $10
+sRNXPCompressionDecompress_fractionWork		= $12
+sRNXPCompressionDecompress_workBitsByte		= $14
+
+; RNXPCompressionDecompress_extraWorkMemory Needs to be $600 bytes
+sRNXPCompressionDecompress_probabilities		=	RNXPCompressionDecompress_extraWorkMemory
+sRNXPCompressionDecompress_probabilitiesRef		=	RNXPCompressionDecompress_extraWorkMemory+$200
+sRNXPCompressionDecompress_probabilitiesLength	=	sRNXPCompressionDecompress_probabilitiesRef
+sRNXPCompressionDecompress_probabilitiesOffset	=	sRNXPCompressionDecompress_probabilitiesRef+$200
+
+RNXPCompressionDecompress_ExitCodeDefined = 1
+!macro RNXPCompressionDecompress_ExitCode {
+NOTE_CompressedDataExecute	jmp NOTE_CompressedDataExecute
+}
+
+*=BASICEntry
+sei
++MWordValueToAddress_Y $400 , RNXPCompressionDecompress_WriteBytesmAddr
++MWordValueToAddress_Y CompressedDataStart , RNXPCompressionDecompress_GetBytesmAddr
+
+!source "DecompressionV.a"
+
+CompressedDataStart
+!bin "c:\temp\present.cmp"
+CompressedDataEnd

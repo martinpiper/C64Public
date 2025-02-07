@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-ol 10 -cv "C:\work\c64\Compression\TestData\3.bin" c:\temp\t.cmp</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-pp $37 -c64mb C:\work\C64\RacingGame\Original\OriginalData.prg c:\temp\tc.prg 2048</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-dv c:\temp\t.cmp c:\temp\t.bin</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-pp $20 -c64mrb C:\work\C64\RacingGame\Original\OriginalData.prg c:\temp\tc.prg 2048</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

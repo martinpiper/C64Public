@@ -1313,3 +1313,124 @@ Feature: Smoke test
     Given limit video display to 60 fps
     Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     When I execute the procedure at start until return
+
+
+
+
+  @Demo14
+  Scenario: Test scales sprites 4
+    Given clear all external devices
+#    Given a new C64 video display
+#    And show C64 video window
+#    And force C64 displayed bank to 3
+    Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
+    And the display uses exact address matching
+    And enable video display bus debug output
+    Given a new audio expansion
+    And audio mix 85
+    Given video display processes 8 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display does not save debug BMP images
+    Given video display add joystick to port 1
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-17-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I have a simple overclocked 6502 system
+    Given I am using C64 processor port options
+    Given a ROM from file "C:\VICE\C64\kernal" at $e000
+    Given a ROM from file "C:\VICE\C64\basic" at $a000
+    Given a CHARGEN ROM from file "C:\VICE\C64\chargen"
+    Given add C64 hardware
+    And That does fail on BRK
+    And I enable uninitialised memory read protection with immediate fail
+#    Given a user port to 24 bit bus is installed
+    Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
+    And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
+#    And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
+    Given load binary file "bin/Demo14LargeTables.bin" into temporary memory
+    And trim "0" bytes from the start of temporary memory
+    And add temporary memory to the 32 bit interface memory address '0x0'
+    And enable user port bus debug output
+    And enable APU mode
+    And APU clock divider 1
+    And APU memory clock divider 2
+
+
+    # Layer 3
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+    # Layer 2
+    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x04'
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+    # Layer 1
+    Given add a Sprites layer with registers at '0x9800' and addressEx '0x10'
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+    # Layer 0
+    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x08' and running at 14.31818MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+
+    Given show video window
+#    Given randomly initialise all memory using seed 4321
+
+    Given write data from file "tmp\Demo14ScaledSprites4.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+	Given write data byte '0x01' to 24bit bus at '0x8807' and addressEx '0x00'
+    Given write data from file "tmp\ScaledSprites4.bin" to 24bit bus at '0x0000' and addressEx '0x08'
+	Given write data byte '0x01' to 24bit bus at '0x8807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin1" to 24bit bus at '0x0000' and addressEx '0x08'
+	Given write data byte '0x02' to 24bit bus at '0x8807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin2" to 24bit bus at '0x0000' and addressEx '0x08'
+
+    # Mode7
+    Given write data from file "tmp/Demo14Clouds.bin" to 24bit bus at '0x2000' and addressEx '0x04'
+    Given write data from file "tmp/Demo14CloudsTiles.bin" to 24bit bus at '0x4000' and addressEx '0x04'
+    Given write data from file "tmp/Demo14CloudsTiles.bin2" to 24bit bus at '0x8000' and addressEx '0x04'
+
+    # Mode7 registers
+    Given write data byte '0x01' to 24bit bus at '0xa001' and addressEx '0x01'
+
+    Given write data byte '0xb5' to 24bit bus at '0xa003' and addressEx '0x01'
+
+    Given write data byte '0x01' to 24bit bus at '0xa007' and addressEx '0x01'
+
+    Given write data byte '0x4b' to 24bit bus at '0xa009' and addressEx '0x01'
+    Given write data byte '0xff' to 24bit bus at '0xa00a' and addressEx '0x01'
+    Given write data byte '0xff' to 24bit bus at '0xa00b' and addressEx '0x01'
+
+    Given write data byte '0x21' to 24bit bus at '0xa00d' and addressEx '0x01'
+    Given write data byte '0x61' to 24bit bus at '0xa010' and addressEx '0x01'
+
+    Given write data byte '0x00' to 24bit bus at '0xa014' and addressEx '0x01'
+    Given write data byte '0x1f' to 24bit bus at '0xa015' and addressEx '0x01'
+
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+
+
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
+
+    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+#    Given video display processes 16 pixels per instruction
+#    Given video display processes 8 pixels per instruction
+    Given limit video display to 60 fps
+    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
+    When I execute the procedure at start until return

@@ -7,8 +7,12 @@
 !cpu 6510
 !ct pet
 
-;Mainline_DebugBorder = 1
+Mainline_DebugBorder = 1
+;Mainline_JustSamplesDebugBorder = 1
 ;Multiplexor_DebugBorder = 1
+;SampleNMI_DebugBorder = 1
+
+EnableSamples = 1
 
 !source "stdlib/LongBranches.a"
 !source "_f_index1.a"
@@ -16,6 +20,7 @@
 !source "PlayerMacros.a"
 !source "FootyMacros.a"
 !source "BallMacros.a"
+
 !source "SpriteMultiplexor/SpriteMultiplexorVars.a"
 
 Footy_Temp0 = Multiplex_endVars + 0
@@ -24,6 +29,8 @@ Footy_Temp2 = Multiplex_endVars + 2
 Footy_Temp3 = Multiplex_endVars + 3
 Footy_Temp4 = Multiplex_endVars + 4
 Footy_Temp5 = Multiplex_endVars + 5
+
+NMISampleCodeStart = Multiplex_endVars + 6
 
 
 
@@ -38,6 +45,29 @@ Start
 	jsr Screen_PitchInit
 
 	jsr IRQ_GameInit
+
+!ifdef EnableSamples {
+	jsr NMISamples_Init
+;	sei
+	lda #CartFile1_Bank_smp_raw_fragment0
+	jsr CartSelectBank_8K_NoSEI
+
+	; Time the sample code to avoid bad lines
+	; Wait for this one first
+	+MACROWaitForRaster 230
+	; Then finally this one
+	+MACROWaitForRaster 238
+	+DelayFor 7	; Enough delay to cause the sample NMI to start on the start of the scan line
+	+MWordValueTo_AX CartFile1_Start_smp_raw_fragment0
+	ldy #CartFile1_Bank_smp_raw_fragment0
+	jsr NMISamples_StartSample
+.t
+;	inc $d020
+	jsr NMISampleBufferProcess
+;	jmp .t
+	jsr CartKillBank
+}
+
 
 	ldx #$40
 !for .ii , Multiplex_items {
@@ -83,9 +113,16 @@ Start
 +MCheckNotInMemoryRange_C64Cartridge_Lo_8K
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
 CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+;CartKillBank_ProcessorPort		= ProcessorPortDefault	; Only used if the NMI needs to access the cartridge quickly
 !source "../MakeCart/asm/EasyFlash_Code.a"
 !source "IRQ.a"
+;!source "NMISamplesCompressedStreamed.a"
+!source "NMISamplesCompressedStreamedBuffered.a"
+;!source "NMISamplesSingleValueStreamed.a"
+!source "NMISamplesStreamedCommon.a"
 !source "PitchDraw.a"
+;!source "PitchDrawSparse.a"
+!source "PitchDrawCommon.a"
 !source "GameData.a"
 +MCheckNotInMemoryRange_C64Cartridge_Lo_8K
 
@@ -101,7 +138,339 @@ CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
 !source "Animation.a"
 !source "AnimationData.a"
 
++MCheckNotInMemoryRange_C64Cartridge_Lo_8K
 
+RowEntryStart
+!source "bin/row00DrawTable.a"
+!source "bin/row01DrawTable.a"
+!source "bin/row02DrawTable.a"
+!source "bin/row03DrawTable.a"
+!source "bin/row04DrawTable.a"
+!source "bin/row05DrawTable.a"
+!source "bin/row06DrawTable.a"
+!source "bin/row07DrawTable.a"
+!source "bin/row08DrawTable.a"
+!source "bin/row09DrawTable.a"
+
+!source "bin/row10DrawTable.a"
+!source "bin/row11DrawTable.a"
+!source "bin/row12DrawTable.a"
+!source "bin/row13DrawTable.a"
+!source "bin/row14DrawTable.a"
+!source "bin/row15DrawTable.a"
+!source "bin/row16DrawTable.a"
+!source "bin/row17DrawTable.a"
+!source "bin/row18DrawTable.a"
+!source "bin/row19DrawTable.a"
+
+!source "bin/row20DrawTable.a"
+!source "bin/row21DrawTable.a"
+!source "bin/row22DrawTable.a"
+!source "bin/row23DrawTable.a"
+!source "bin/row24DrawTable.a"
+!source "bin/row25DrawTable.a"
+!source "bin/row26DrawTable.a"
+!source "bin/row27DrawTable.a"
+!source "bin/row28DrawTable.a"
+!source "bin/row29DrawTable.a"
+
+!source "bin/row30DrawTable.a"
+!source "bin/row31DrawTable.a"
+!source "bin/row32DrawTable.a"
+!source "bin/row33DrawTable.a"
+!source "bin/row34DrawTable.a"
+!source "bin/row35DrawTable.a"
+!source "bin/row36DrawTable.a"
+!source "bin/row37DrawTable.a"
+!source "bin/row38DrawTable.a"
+!source "bin/row39DrawTable.a"
+
+!source "bin/row40DrawTable.a"
+!source "bin/row41DrawTable.a"
+!source "bin/row42DrawTable.a"
+!source "bin/row43DrawTable.a"
+!source "bin/row44DrawTable.a"
+!source "bin/row45DrawTable.a"
+!source "bin/row46DrawTable.a"
+!source "bin/row47DrawTable.a"
+!source "bin/row48DrawTable.a"
+!source "bin/row49DrawTable.a"
+
+!source "bin/row50DrawTable.a"
+!source "bin/row51DrawTable.a"
+!source "bin/row52DrawTable.a"
+!source "bin/row53DrawTable.a"
+!source "bin/row54DrawTable.a"
+!source "bin/row55DrawTable.a"
+!source "bin/row56DrawTable.a"
+!source "bin/row57DrawTable.a"
+!source "bin/row58DrawTable.a"
+!source "bin/row59DrawTable.a"
+
+!source "bin/row60DrawTable.a"
+!source "bin/row61DrawTable.a"
+!source "bin/row62DrawTable.a"
+!source "bin/row63DrawTable.a"
+!source "bin/row64DrawTable.a"
+!source "bin/row65DrawTable.a"
+!source "bin/row66DrawTable.a"
+!source "bin/row67DrawTable.a"
+!source "bin/row68DrawTable.a"
+!source "bin/row69DrawTable.a"
+
+!source "bin/row70DrawTable.a"
+!source "bin/row71DrawTable.a"
+!source "bin/row72DrawTable.a"
+!source "bin/row73DrawTable.a"
+!source "bin/row74DrawTable.a"
+!source "bin/row75DrawTable.a"
+!source "bin/row76DrawTable.a"
+!source "bin/row77DrawTable.a"
+!source "bin/row78DrawTable.a"
+!source "bin/row79DrawTable.a"
+
+!source "bin/row80DrawTable.a"
+!source "bin/row81DrawTable.a"
+!source "bin/row82DrawTable.a"
+!source "bin/row83DrawTable.a"
+!source "bin/row84DrawTable.a"
+!source "bin/row85DrawTable.a"
+!source "bin/row86DrawTable.a"
+!source "bin/row87DrawTable.a"
+!source "bin/row88DrawTable.a"
+!source "bin/row89DrawTable.a"
+
+!source "bin/row90DrawTable.a"
+!source "bin/row91DrawTable.a"
+!source "bin/row92DrawTable.a"
+!source "bin/row93DrawTable.a"
+!source "bin/row94DrawTable.a"
+!source "bin/row95DrawTable.a"
+!source "bin/row96DrawTable.a"
+
+RowEntriesLo
+RowEntriesHi = * + 97
+!for .ii , 97 {
+!set .i = .ii-1
+!word RowEntryStart + (.i * 21 * 6)
+}
+!swizzle RowEntriesLo , 97 , 2
+
+
+RowDraw00	!bin "bin/row00Draw.prg",,2
+RowDraw01	!bin "bin/row01Draw.prg",,2
+RowDraw02	!bin "bin/row02Draw.prg",,2
+RowDraw03	!bin "bin/row03Draw.prg",,2
+RowDraw04	!bin "bin/row04Draw.prg",,2
+RowDraw05	!bin "bin/row05Draw.prg",,2
+RowDraw06	!bin "bin/row06Draw.prg",,2
+RowDraw07	!bin "bin/row07Draw.prg",,2
+RowDraw08	!bin "bin/row08Draw.prg",,2
+RowDraw09	!bin "bin/row09Draw.prg",,2
+
+RowDraw10	!bin "bin/row10Draw.prg",,2
+RowDraw11	!bin "bin/row11Draw.prg",,2
+RowDraw12	!bin "bin/row12Draw.prg",,2
+RowDraw13	!bin "bin/row13Draw.prg",,2
+RowDraw14	!bin "bin/row14Draw.prg",,2
+RowDraw15	!bin "bin/row15Draw.prg",,2
+RowDraw16	!bin "bin/row16Draw.prg",,2
+RowDraw17	!bin "bin/row17Draw.prg",,2
+RowDraw18	!bin "bin/row18Draw.prg",,2
+RowDraw19	!bin "bin/row19Draw.prg",,2
+
+RowDraw20	!bin "bin/row20Draw.prg",,2
+RowDraw21	!bin "bin/row21Draw.prg",,2
+RowDraw22	!bin "bin/row22Draw.prg",,2
+RowDraw23	!bin "bin/row23Draw.prg",,2
+RowDraw24	!bin "bin/row24Draw.prg",,2
+RowDraw25	!bin "bin/row25Draw.prg",,2
+RowDraw26	!bin "bin/row26Draw.prg",,2
+RowDraw27	!bin "bin/row27Draw.prg",,2
+RowDraw28	!bin "bin/row28Draw.prg",,2
+RowDraw29	!bin "bin/row29Draw.prg",,2
+
+RowDraw30	!bin "bin/row30Draw.prg",,2
+RowDraw31	!bin "bin/row31Draw.prg",,2
+RowDraw32	!bin "bin/row32Draw.prg",,2
+RowDraw33	!bin "bin/row33Draw.prg",,2
+RowDraw34	!bin "bin/row34Draw.prg",,2
+RowDraw35	!bin "bin/row35Draw.prg",,2
+RowDraw36	!bin "bin/row36Draw.prg",,2
+RowDraw37	!bin "bin/row37Draw.prg",,2
+RowDraw38	!bin "bin/row38Draw.prg",,2
+RowDraw39	!bin "bin/row39Draw.prg",,2
+
+RowDraw40	!bin "bin/row40Draw.prg",,2
+RowDraw41	!bin "bin/row41Draw.prg",,2
+RowDraw42	!bin "bin/row42Draw.prg",,2
+RowDraw43	!bin "bin/row43Draw.prg",,2
+RowDraw44	!bin "bin/row44Draw.prg",,2
+RowDraw45	!bin "bin/row45Draw.prg",,2
+RowDraw46	!bin "bin/row46Draw.prg",,2
+RowDraw47	!bin "bin/row47Draw.prg",,2
+RowDraw48	!bin "bin/row48Draw.prg",,2
+RowDraw49	!bin "bin/row49Draw.prg",,2
+
+RowDraw50	!bin "bin/row50Draw.prg",,2
+RowDraw51	!bin "bin/row51Draw.prg",,2
+RowDraw52	!bin "bin/row52Draw.prg",,2
+RowDraw53	!bin "bin/row53Draw.prg",,2
+RowDraw54	!bin "bin/row54Draw.prg",,2
+RowDraw55	!bin "bin/row55Draw.prg",,2
+RowDraw56	!bin "bin/row56Draw.prg",,2
+RowDraw57	!bin "bin/row57Draw.prg",,2
+RowDraw58	!bin "bin/row58Draw.prg",,2
+RowDraw59	!bin "bin/row59Draw.prg",,2
+
+RowDraw60	!bin "bin/row60Draw.prg",,2
+RowDraw61	!bin "bin/row61Draw.prg",,2
+RowDraw62	!bin "bin/row62Draw.prg",,2
+RowDraw63	!bin "bin/row63Draw.prg",,2
+RowDraw64	!bin "bin/row64Draw.prg",,2
+RowDraw65	!bin "bin/row65Draw.prg",,2
+RowDraw66	!bin "bin/row66Draw.prg",,2
+RowDraw67	!bin "bin/row67Draw.prg",,2
+RowDraw68	!bin "bin/row68Draw.prg",,2
+RowDraw69	!bin "bin/row69Draw.prg",,2
+
+RowDraw70	!bin "bin/row70Draw.prg",,2
+RowDraw71	!bin "bin/row71Draw.prg",,2
+RowDraw72	!bin "bin/row72Draw.prg",,2
+RowDraw73	!bin "bin/row73Draw.prg",,2
+RowDraw74	!bin "bin/row74Draw.prg",,2
+RowDraw75	!bin "bin/row75Draw.prg",,2
+RowDraw76	!bin "bin/row76Draw.prg",,2
+RowDraw77	!bin "bin/row77Draw.prg",,2
+RowDraw78	!bin "bin/row78Draw.prg",,2
+RowDraw79	!bin "bin/row79Draw.prg",,2
+
+RowDraw80	!bin "bin/row80Draw.prg",,2
+RowDraw81	!bin "bin/row81Draw.prg",,2
+RowDraw82	!bin "bin/row82Draw.prg",,2
+RowDraw83	!bin "bin/row83Draw.prg",,2
+RowDraw84	!bin "bin/row84Draw.prg",,2
+RowDraw85	!bin "bin/row85Draw.prg",,2
+RowDraw86	!bin "bin/row86Draw.prg",,2
+RowDraw87	!bin "bin/row87Draw.prg",,2
+RowDraw88	!bin "bin/row88Draw.prg",,2
+RowDraw89	!bin "bin/row89Draw.prg",,2
+
+RowDraw90	!bin "bin/row90Draw.prg",,2
+RowDraw91	!bin "bin/row91Draw.prg",,2
+RowDraw92	!bin "bin/row92Draw.prg",,2
+RowDraw93	!bin "bin/row93Draw.prg",,2
+RowDraw94	!bin "bin/row94Draw.prg",,2
+RowDraw95	!bin "bin/row95Draw.prg",,2
+RowDraw96	!bin "bin/row96Draw.prg",,2
+
+
+RowClear00	!bin "bin/row00Clear.prg",,2
+RowClear01	!bin "bin/row01Clear.prg",,2
+RowClear02	!bin "bin/row02Clear.prg",,2
+RowClear03	!bin "bin/row03Clear.prg",,2
+RowClear04	!bin "bin/row04Clear.prg",,2
+RowClear05	!bin "bin/row05Clear.prg",,2
+RowClear06	!bin "bin/row06Clear.prg",,2
+RowClear07	!bin "bin/row07Clear.prg",,2
+RowClear08	!bin "bin/row08Clear.prg",,2
+RowClear09	!bin "bin/row09Clear.prg",,2
+
+RowClear10	!bin "bin/row10Clear.prg",,2
+RowClear11	!bin "bin/row11Clear.prg",,2
+RowClear12	!bin "bin/row12Clear.prg",,2
+RowClear13	!bin "bin/row13Clear.prg",,2
+RowClear14	!bin "bin/row14Clear.prg",,2
+RowClear15	!bin "bin/row15Clear.prg",,2
+RowClear16	!bin "bin/row16Clear.prg",,2
+RowClear17	!bin "bin/row17Clear.prg",,2
+RowClear18	!bin "bin/row18Clear.prg",,2
+RowClear19	!bin "bin/row19Clear.prg",,2
+
+RowClear20	!bin "bin/row20Clear.prg",,2
+RowClear21	!bin "bin/row21Clear.prg",,2
+RowClear22	!bin "bin/row22Clear.prg",,2
+RowClear23	!bin "bin/row23Clear.prg",,2
+RowClear24	!bin "bin/row24Clear.prg",,2
+RowClear25	!bin "bin/row25Clear.prg",,2
+RowClear26	!bin "bin/row26Clear.prg",,2
+RowClear27	!bin "bin/row27Clear.prg",,2
+RowClear28	!bin "bin/row28Clear.prg",,2
+RowClear29	!bin "bin/row29Clear.prg",,2
+
+RowClear30	!bin "bin/row30Clear.prg",,2
+RowClear31	!bin "bin/row31Clear.prg",,2
+RowClear32	!bin "bin/row32Clear.prg",,2
+RowClear33	!bin "bin/row33Clear.prg",,2
+RowClear34	!bin "bin/row34Clear.prg",,2
+RowClear35	!bin "bin/row35Clear.prg",,2
+RowClear36	!bin "bin/row36Clear.prg",,2
+RowClear37	!bin "bin/row37Clear.prg",,2
+RowClear38	!bin "bin/row38Clear.prg",,2
+RowClear39	!bin "bin/row39Clear.prg",,2
+
+RowClear40	!bin "bin/row40Clear.prg",,2
+RowClear41	!bin "bin/row41Clear.prg",,2
+RowClear42	!bin "bin/row42Clear.prg",,2
+RowClear43	!bin "bin/row43Clear.prg",,2
+RowClear44	!bin "bin/row44Clear.prg",,2
+RowClear45	!bin "bin/row45Clear.prg",,2
+RowClear46	!bin "bin/row46Clear.prg",,2
+RowClear47	!bin "bin/row47Clear.prg",,2
+RowClear48	!bin "bin/row48Clear.prg",,2
+RowClear49	!bin "bin/row49Clear.prg",,2
+
+RowClear50	!bin "bin/row50Clear.prg",,2
+RowClear51	!bin "bin/row51Clear.prg",,2
+RowClear52	!bin "bin/row52Clear.prg",,2
+RowClear53	!bin "bin/row53Clear.prg",,2
+RowClear54	!bin "bin/row54Clear.prg",,2
+RowClear55	!bin "bin/row55Clear.prg",,2
+RowClear56	!bin "bin/row56Clear.prg",,2
+RowClear57	!bin "bin/row57Clear.prg",,2
+RowClear58	!bin "bin/row58Clear.prg",,2
+RowClear59	!bin "bin/row59Clear.prg",,2
+
+RowClear60	!bin "bin/row60Clear.prg",,2
+RowClear61	!bin "bin/row61Clear.prg",,2
+RowClear62	!bin "bin/row62Clear.prg",,2
+RowClear63	!bin "bin/row63Clear.prg",,2
+RowClear64	!bin "bin/row64Clear.prg",,2
+RowClear65	!bin "bin/row65Clear.prg",,2
+RowClear66	!bin "bin/row66Clear.prg",,2
+RowClear67	!bin "bin/row67Clear.prg",,2
+RowClear68	!bin "bin/row68Clear.prg",,2
+RowClear69	!bin "bin/row69Clear.prg",,2
+
+RowClear70	!bin "bin/row70Clear.prg",,2
+RowClear71	!bin "bin/row71Clear.prg",,2
+RowClear72	!bin "bin/row72Clear.prg",,2
+RowClear73	!bin "bin/row73Clear.prg",,2
+RowClear74	!bin "bin/row74Clear.prg",,2
+RowClear75	!bin "bin/row75Clear.prg",,2
+RowClear76	!bin "bin/row76Clear.prg",,2
+RowClear77	!bin "bin/row77Clear.prg",,2
+RowClear78	!bin "bin/row78Clear.prg",,2
+RowClear79	!bin "bin/row79Clear.prg",,2
+
+RowClear80	!bin "bin/row80Clear.prg",,2
+RowClear81	!bin "bin/row81Clear.prg",,2
+RowClear82	!bin "bin/row82Clear.prg",,2
+RowClear83	!bin "bin/row83Clear.prg",,2
+RowClear84	!bin "bin/row84Clear.prg",,2
+RowClear85	!bin "bin/row85Clear.prg",,2
+RowClear86	!bin "bin/row86Clear.prg",,2
+RowClear87	!bin "bin/row87Clear.prg",,2
+RowClear88	!bin "bin/row88Clear.prg",,2
+RowClear89	!bin "bin/row89Clear.prg",,2
+
+RowClear90	!bin "bin/row90Clear.prg",,2
+RowClear91	!bin "bin/row91Clear.prg",,2
+RowClear92	!bin "bin/row92Clear.prg",,2
+RowClear93	!bin "bin/row93Clear.prg",,2
+RowClear94	!bin "bin/row94Clear.prg",,2
+RowClear95	!bin "bin/row95Clear.prg",,2
+RowClear96	!bin "bin/row96Clear.prg",,2
 
 ; At the end of memory
 !source "GameGraphics.a"

@@ -1,5 +1,5 @@
 @echo off
-..\acme.exe -v4 --msvc %3 %4 %5
+..\acme.exe -v4 --msvc %3 %4 %5 %6
 copy TestDecompression.map DebugFiles\%1_TestDecompression.map
 copy TestDecompression.lbl DebugFiles\%1_TestDecompression.lbl
 copy TestDecompression.pdb DebugFiles\%1_TestDecompression.pdb
@@ -13,7 +13,7 @@ echo static u8 %2_Data[] = {>>PrgData.cpp
 call t.bat >>PrgData.cpp
 echo };>>PrgData.cpp
 
-
+del TestDecompression.map TestDecompression.lbl TestDecompression.pdb
 del t.txt
 del t.bat
 del sed*

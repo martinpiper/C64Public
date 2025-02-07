@@ -20,7 +20,13 @@
 	adc #0
 	sta Player_Multiplex_YPosHi + .i
 	cmp #1
+	; Remove sprites off the bottom of the screen
 	bcs .plOffScreenSprite
+
+	; Remove sprites at the top of the screen, when YPosHi is 0
+	lda Multiplex_YPos + .i
+	cmp #VIC2SpriteYBorderTop24 - VIC2SpriteSizeY
+	bcc .plOffScreenSprite
 
 	lda PlayersPosX + (.i*2)
 	sec

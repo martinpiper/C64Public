@@ -1032,6 +1032,14 @@ RasterLengthNTSCC64		= 520
 	bne .w1
 }
 
+!macro MACROWaitForRaster_X .raster {
+	; Wait for the specified raster
+	ldx #.raster
+.w1
+	cpx VIC2Raster
+	bne .w1
+}
+
 !macro MACROWaitForRasterChange_A {
 	lda VIC2Raster
 .w1
@@ -1570,6 +1578,16 @@ RasterLengthNTSCC64		= 520
 	sta .lo
 	bcc .o1
 	inc .hi
+.o1
+}
+!macro MAddAToAddr24 .lo , .hi , .hi2 {
+	clc
+	adc .lo
+	sta .lo
+	bcc .o1
+	inc .hi
+	bne .o1
+	inc .hi2
 .o1
 }
 

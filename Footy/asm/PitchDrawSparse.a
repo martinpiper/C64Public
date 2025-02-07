@@ -1,0 +1,122 @@
+!zn
+PitchPosX !by 0
+PitchPosXPixel !by 0
+PitchPosY !by 0
+PitchPosYPixel !by 0
+
+.previousPosX !by -1
+.previousPosY !by -1
+
+PitchDrawOptimised
+
+	lda PitchPosY
+	cmp .previousPosY
+	bne .do
+	ldx PitchPosX
+	cpx .previousPosX
+	bne .do2
+
+	; No difference, nothing to do
+	rts
+
+.do2
+	stx .previousPosX
+.do
+	sta .previousPosY
+
+	+MWordValueToAddress_A $c000 , $02
+
+	lda #24
+	sta Footy_Temp2
+	lda PitchPosY
+	sta Footy_Temp3
+
+.dl1
+	; Run previous frame clear code
+	ldx Footy_Temp2
+
+!if 0 {
+	ldy .previousFrameY,x
+	lda .previousClearLo,x
+	sta .smjc+1
+	lda .previousClearHi,x
+	sta .smjc+2
+	sec
+	lda #0
+.smjc	jsr $1234
+}
+
+	; Now run the sprase draw code for this row
+	ldy Footy_Temp3
+	lda RowEntriesLo,y
+	sta Footy_Temp0
+	lda RowEntriesHi,y
+	sta Footy_Temp1
+
+	ldy PitchPosX
+	lda (Footy_Temp0),y
+	sta .smj+1
+	tya
+	clc
+	adc #21
+	tay
+	lda (Footy_Temp0),y
+	sta .smj+2
+
+!if 0 {
+	tya
+	clc
+	adc #21+21
+	tay
+} else {
+	tya
+	clc
+	adc #21
+	tay
+	lda (Footy_Temp0),y
+	sta .previousClearLo,x
+
+	tya
+	clc
+	adc #21
+	tay
+	lda (Footy_Temp0),y
+	sta .previousClearHi,x
+}
+
+	tya
+	clc
+	adc #21
+	tay
+	lda (Footy_Temp0),y
+	sta .sma+1
+
+	; Satisfy the calling conditions for the sparse draw code
+	tya
+	clc
+	adc #21
+	tay
+	lda (Footy_Temp0),y
+	sta .previousFrameY,x
+	tay
+
+	sec
+.sma	lda #0
+.smj	jsr $1234
+
+	+MAddU8ToAddr16 40 , $02 , $03
+
+	inc Footy_Temp3
+	dec Footy_Temp2
+	bpl .dl1
+
+.fakeRTS	rts
+
+	
+
+.previousFrameY
+	!fill 25 , 39
+.previousClearLo
+	!fill 25 , <.fakeRTS
+.previousClearHi
+	!fill 25 , >.fakeRTS

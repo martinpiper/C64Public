@@ -34,6 +34,17 @@ Scroller_EnableScrollSpritesSpeedCode = 1
 ; Set this to allow the AnimationUpdateMultiplexor to skip sprites above this limit
 Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
 
+; Define this to include example sample code
+;Scroller_EnableSamples = 1
+; Define this to show the sample NMI timing
+SampleNMI_DebugBorder = 1
+!ifdef EnableSamples {
+; Playing samples means taking longer than the normal IRQ update.
+Multiplex_rasterHeight = 10
+Multiplex_TopRasterHeight = 20
+Multiplex_TopSpriteBeforeRasterPadding = 8
+}
+
 !source "ScrollerVars.a"
 ; Define what the multiplexor can use
 Multiplex_VarBase	= scrollerDemo_endVars
@@ -134,6 +145,8 @@ Scroller_ColourScrollRasterAbortLevelFrame = 1
 ;Scroller_DoMusicUpdateInIRQ = 1
 ; Define this to count the number of times the IRQ should update the music, but instead signal this back to the mainline. This reduces IRQ load at the top of the screen.
 Scroller_CountMusicUpdateInIRQ = 1
+
+;Scroller_NoMusic = 1
 
 ; Define this to enable code that demonstrates a typical run and jump style of game
 Scroller_RunJumpDemo = 1
