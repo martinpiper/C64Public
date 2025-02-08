@@ -46,6 +46,290 @@
 	jmp *-3
 }
 
+!if 1 {
+	; Open top/bottom borders
+	; Ten "hires" sprites in the top border
+	+ClearScreenAt_AX SCREENRAM , ' '
+	sei
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+	+MByteValueToAddress_A 0 , VIC2_Bank0_GhostByte
+	+MVIC2SpriteIndex_A SpriteFrame0
+	sta SCREENRAM + SPRITEFRAMESCROFF + 0
+	sta SCREENRAM + SPRITEFRAMESCROFF + 1
+	sta SCREENRAM + SPRITEFRAMESCROFF + 2
+	sta SCREENRAM + SPRITEFRAMESCROFF + 3
+	sta SCREENRAM + SPRITEFRAMESCROFF + 4
+	sta SCREENRAM + SPRITEFRAMESCROFF + 5
+	+MVIC2SpriteIndex_A SpriteFrame1
+	sta SCREENRAM + SPRITEFRAMESCROFF + 6
+	sta SCREENRAM + SPRITEFRAMESCROFF + 7
+
+	+MByteValueToAddress_A $20 , VIC2Sprite0X
+	+MByteValueToAddress_A $40 , VIC2Sprite1X
+	+MByteValueToAddress_A $60 , VIC2Sprite2X
+	+MByteValueToAddress_A $80 , VIC2Sprite3X
+	+MByteValueToAddress_A $38 , VIC2Sprite4X
+	+MByteValueToAddress_A $10 , VIC2Sprite5X
+	+MByteValueToAddress_A %110000 , VIC2SpriteXMSB
+	+MByteValueToAddress_A VIC2SpriteXBorderLeft + (16*8) , VIC2Sprite6X
+	+MByteValueToAddress_A VIC2SpriteXBorderLeft + (16*8) + 48 , VIC2Sprite7X
+	+MByteValueToAddress_A VIC2SpriteYBorderTop - VIC2SpriteSizeY - 12 , VIC2Sprite0Y
+	; Just enable all the sprites on this line for now
+	sta VIC2Sprite0Y
+	sta VIC2Sprite1Y
+	sta VIC2Sprite2Y
+	sta VIC2Sprite3Y
+	sta VIC2Sprite4Y
+	sta VIC2Sprite5Y
+	sta VIC2Sprite6Y
+	sta VIC2Sprite7Y
+
+	+MByteValueToAddress_A VIC2Colour_White , VIC2Sprite0Colour
+	+MByteValueToAddress_A VIC2Colour_Cyan , VIC2Sprite1Colour
+	+MByteValueToAddress_A VIC2Colour_Green , VIC2Sprite2Colour
+	+MByteValueToAddress_A VIC2Colour_Purple , VIC2Sprite3Colour
+	+MByteValueToAddress_A VIC2Colour_Red , VIC2Sprite4Colour
+	+MByteValueToAddress_A VIC2Colour_Orange , VIC2Sprite5Colour
+	+MByteValueToAddress_A VIC2Colour_Grey , VIC2Sprite6Colour
+	+MByteValueToAddress_A VIC2Colour_LightRed , VIC2Sprite7Colour
+
+	+MByteValueToAddress_A %11000000 , VIC2SpriteMulticolour
+	sta VIC2SpriteDoubleWidth
+	+MByteValueToAddress_A VIC2Colour_LightGreen , VIC2ExtraSpriteColour1
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2ExtraSpriteColour2
+	+MVIC2SpriteEnableAll_A
+.l1
+	; Here turn off 25 row mode
+	lda #kVIC2ScreenControlVBits_ScreenOn | %011
+	+MACROWaitForRaster_X $f8
+	sta VIC2ScreenControlV
+
+.smt1	lda #$ff
+	bne .doCount
+
+	inc VIC2Sprite0X
+	dec VIC2Sprite1X
+	inc VIC2Sprite2X
+	inc VIC2Sprite2X
+	dec VIC2Sprite3X
+	dec VIC2Sprite3X
+	dec VIC2Sprite3X
+	inc VIC2Sprite4X
+	lda VIC2Sprite4X
+	and #31
+	sta VIC2Sprite4X
+	dec VIC2Sprite5X
+	lda VIC2Sprite5X
+	and #31
+	sta VIC2Sprite5X
+
+	jmp .overCount
+.doCount
+	dec .smt1 + 1
+.overCount
+
+	; Here turn on 25 row mode
+	lda #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows | %011
+	+MACROWaitForRaster_X $fc
+	sta VIC2ScreenControlV
+
+	; Skip the hi raster positions
+.rh1
+	lda VIC2ScreenControlV
+	bpl .rh1
+.rh2
+	lda VIC2ScreenControlV
+	bmi .rh2
+	
+	; Now use a raster IRQ to get cycle accurate timing
+	+MWordValueToAddress_A StableIRQ , KERNALIRQServiceRoutineLo
+	+MByteValueToAddress_A %1 , VIC2InteruptControl
+	+MACROWaitForRaster_X VIC2SpriteYBorderTop - VIC2SpriteSizeY - 12 - 4
+	inc VIC2Raster
+	+MACROAckRasterIRQ_A
+	tsx
+	cli
+	; Fill remaining code with
+!for .i , 100 {
+	nop
+}
+	; Should never reach this jam, but if it does then we will hit the debugger
+	jam
+
+!align 255,0
+StableIRQ
+	txs
+
+	; Delay for a while
+	ldx #8
+.wl1
+	dex
+	bne .wl1
+	bit $ea
+
+	; Final cycle wobble check.
+	lda VIC2Raster
+	cmp VIC2Raster
+	beq .start
+.start
+
+	; The raster is now stable
+
+	; Now play around with the sprite effects
+	lda #%11111111	; No background pixels exposed
+	sta VIC2_Bank0_GhostByte
+	+MByteValueToAddress_A VIC2Colour_Yellow , VIC2ScreenColour
+
+	; Just some obvious SCREENRAM instructions to use while debugging, these all will start on the same raster line cycle
+	; Next line
+	inc SCREENRAM
+	+DelayFor CyclesPerRasterPALC64 - 6
+
+	; Next line
+	inc SCREENRAM+1
+	+DelayFor CyclesPerRasterPALC64 - 6
+
+	; Next line
+	inc SCREENRAM+2
+	; Extra cycles for sprite memory access
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next line
+	inc SCREENRAM+3
+	; Extra cycles for sprite memory access
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next line
+	inc SCREENRAM+4
+	+DelayFor 2
+	lda #%11100111	; 2 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+	; Next line
+	inc SCREENRAM+5
+	+DelayFor 2
+	lda #%11000011	; 4 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+
+	; Next line
+	inc SCREENRAM+6
+	+DelayFor 2
+	lda #%10000001	; 6 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+	; Next line
+	inc SCREENRAM+7
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next line
+	inc SCREENRAM+8
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next line
+	inc SCREENRAM+9
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next line
+	inc SCREENRAM+10
+	+DelayFor 2
+	lda #%10000001	; 6 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+	; Next line
+	inc SCREENRAM+11
+	+DelayFor 2
+	lda #%11000011	; 4 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+	; Next line
+	inc SCREENRAM+12
+	+DelayFor 2
+	lda #%11100111	; 2 hires background pixels exposed
+	ldx #%11111111
+	sta VIC2_Bank0_GhostByte
+	+DelayFor 8
+	stx VIC2_Bank0_GhostByte
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+
+	lda #0
+	+MACROWaitForRaster_X VIC2SpriteYBorderTop - 12 + 4
+	sta VIC2_Bank0_GhostByte
+
+	jmp .l1
+
+*=$200
+SpriteFrame0
++SpriteLine %....################....
++SpriteLine %...##################...
++SpriteLine %..####################..
++SpriteLine %.######################.
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %.######################.
++SpriteLine %..####################..
++SpriteLine %...##################...
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
+*=$240
+SpriteFrame1
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
+
+}
+
 !if 0 {
 	; Setup PA2 and SERIALATN for writing
 	; Bit 2: RS232 TXD line, output bit.
@@ -617,7 +901,7 @@ SampleStart
 SampleEnd
 }
 
-!if 1 {
+!if 0 {
 	; Init the music routine
 	lda #0
 	jsr $8000

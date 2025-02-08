@@ -14,6 +14,11 @@ kVIC2NumSprites = 8
 	!by $C3 , $C2 , $CD , $38 , $30	; CBM80 magic bytes
 }
 
+VIC2_Bank0_GhostByte	= $3fff
+VIC2_Bank1_GhostByte	= $7fff
+VIC2_Bank2_GhostByte	= $bfff
+VIC2_Bank3_GhostByte	= $ffff
+
 ; Zeropage
 
 ; Each enabled bit sets read and write on the processor port (ZPProcessorPort) otherwise the value can just be read.
