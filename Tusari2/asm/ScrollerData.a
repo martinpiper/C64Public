@@ -41,11 +41,6 @@ acme.source("!by " + str(charpad.getMulticolour1()))
 acme.source("!by " + str(charpad.getMulticolour2()))
 
 acme.source("!align 255,0")
-acme.source("CharColours")
-acme.source("numMapUsedChars = " + str(charpad.getNumCharacters()))
-acme.bytestr(str(charpad.getCharacterAttributes()))
-
-acme.source("!align 255,0")
 acme.source("BlockData")
 acme.source("numMapUsedTiles = " + str(charpad.getNumTiles()))
 acme.bytestr(str(charpad.getTileData()))
@@ -60,6 +55,15 @@ acme.source("MapDataEnd")
 }
 
 !source "AnimationData.a"
+
+!scriptpythoninline {
+import charpad
+charpad.loadCTMFile("bin/LevelTemp.ctm")
+acme.source("*=$7f00")
+acme.source("CharColours")
+acme.source("numMapUsedChars = " + str(charpad.getNumCharacters()))
+acme.bytestr(str(charpad.getCharacterAttributes()))
+}
 
 !ifdef Scroller_NoMusic {} else {
 ; Include demonstration music from the Element 114 music editor

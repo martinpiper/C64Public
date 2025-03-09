@@ -69,8 +69,10 @@ GameTimerPos = (1*40)+31
 	lda #VIC2Colour_Yellow
 	sta VIC2ExtraSpriteColour2
 
-	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
-	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
+;	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
+;	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
+	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 210 , VIC2Colour_LightRed , $ca
+	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 210 , VIC2Colour_LightRed , $d1
 
 	+SetSpriteXYColFrame 2 , 0 , 90 ,  VIC2Colour_Grey , $fe
 	+SetSpriteXYColFrame 3 , 0 , 110 , VIC2Colour_Grey , $fe
@@ -165,7 +167,7 @@ GameTimerPos = (1*40)+31
 	bne .notUp
 	dec Sprites_Y
 	dec Sprites_Y
-	lda #VIC2SpriteYBorderTop + (5*8)
+	lda #VIC2SpriteYBorderTop + (5*8) + 1
 	cmp Sprites_Y
 	bcc .notUp
 	sta Sprites_Y
@@ -176,7 +178,8 @@ GameTimerPos = (1*40)+31
 	bne .notDown
 	inc Sprites_Y
 	inc Sprites_Y
-	lda #180
+;	lda #180
+	lda #210
 	cmp Sprites_Y
 	bcs .notDown
 	sta Sprites_Y
@@ -428,12 +431,12 @@ GameTimerPos = (1*40)+31
 	; Turn the screen off with illegal mode
 ;	lda #$ff
 ;	sta VIC2ScreenControlV
-
+!if 0 {
 	; Update the sprites the create the radar effect at the bottom of the screen
 	ldx #4
 	ldy #2
 .cls1
-	lda #243
+	lda #243-21
 	sta VIC2Sprite0Y,x
 	lda #$ff
 	sta GameScreen2+SPRITEFRAMESCROFF,y
@@ -442,6 +445,7 @@ GameTimerPos = (1*40)+31
 	inx
 	cpx #16
 	bne .cls1
+}
 
 ;	inc VIC2BorderColour
 	jsr ScorePanelColourCycle
@@ -515,11 +519,14 @@ GetRandomNumber
 	!by 0 , 5 , 2 , 1 , 3 , 6 , 2 , 0 , 5 , 6 , 1 , 4 , 3 , 6 , 4 , 1 , 4 , 3 , 5 , 4 , 3 , 2 , 1 , 0
 .randomTabSize = * - .randomTab
 
-.maxPerspective = $17
+;.maxPerspective = $17
+.maxPerspective = 31
 PlayerYToPerspective
 !fill VIC2SpriteYBorderTop + (5*8) , .maxPerspective
-!for .y , 70 {
-	!by (.maxPerspective*(70-.y))/70
+;!for .y , 70 {
+!for .y , 90 {
+;	!by (.maxPerspective*(70-.y))/70
+	!by (.maxPerspective*(90-.y))/90
 }
 !fill 256 - (*-PlayerYToPerspective) , 0
 
@@ -651,5 +658,6 @@ Sprites_UpdateToVIC
 }
 	rts
 
-!source "IRQ.a"
+;!source "IRQ.a"
+!source "IRQSparse.a"
 !source "Data.a"

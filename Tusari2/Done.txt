@@ -806,12 +806,7 @@
 		Include level complete code and load the next level in the cart
 		Also score panel data
 		>> !source "MapPlacementData.a"
-	* Due to cartridge based speed code, these will need to be in the same place across all loads:
-		>> Scroller_EnableBlockColourSpeedCode and Scroller_EnableSpeedCode
-		CharColours	- Move to the start or end of data somewhere Just before the music?
-		topScreenBank		- Hopefully static due to it being in core code, add build check?
-		BankToScreenAddr	- Hopefully static due to it being in core code, add build check?
-		The level CTM files will ned consistent naming, also the filename will need to be handled. Probably by copying to a common filename for each level assembly pass...
+		The level CTM files will need consistent naming, also the filename will need to be handled. Probably by copying to a common filename for each level assembly pass...
 	* BuildIt.bat can build each final level by copying the actual level/music/processed level file etc to common file names
 
 
@@ -917,3 +912,19 @@
 
 * When the scroll reaches the bottom of the map, the limit test needs to be one char row above where it is now. The bottom split is showing the first pixels of corrupt blocks.
 	* Also the row of characters under the score panel top row (for the split) are non-collidable, perhaps they should have collision to stop the player?
+
+
+
+
+* Level2 background block colours are wrong.
+	This is because when Scroller_EnableBlockColourSpeedCode=1 is enabled, then CharColours can move around, since it is in the middle of the data and code.
+	> Move CharColours so that it is in a fixed area of memory.
+
+
+
+* Automatically include dependent objects
+	After the sprite sheet coordinates the actual object definitions can be auto included from fragments.
+	The numerical prefix can be included automatically. 
+	Pre scan the placement then include.
+	>> While the "*.data.*" items are related to the sprite sheet layout and conceivably should be in the properties file...
+	>> ... the other ".activation." and ".code." items are more common and should be retrieved from fragments...

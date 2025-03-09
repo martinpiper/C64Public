@@ -230,3 +230,11 @@
 	Update the edges of colour RAM scrolls for the bricks/doors/pillars part? If there are multicolour parts mixed with hires.
 	Since the FLD uses NMI then the IRQ based multiplexor can be used as well...
 	Actually the sky and mountains could be hires, since the background colour can change with the raster
+
+
+
+	* Due to cartridge based speed code, these will need to be in the same place across all loads:
+		>> Scroller_EnableBlockColourSpeedCode and Scroller_EnableSpeedCode
+		>> Done: CharColours	- Move to the start or end of data somewhere Just before the music?
+		topScreenBank		- Hopefully static due to it being in core code, add build check?
+		BankToScreenAddr	- Hopefully static due to it being in core code, add build check?

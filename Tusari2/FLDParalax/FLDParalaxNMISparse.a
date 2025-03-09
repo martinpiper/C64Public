@@ -1,0 +1,124 @@
+; FLD Paralax reverse engineering from Tusari LV2C
+
+!source "stdlib/stdlib.a"
+!to "FLDParalax.prg", cbm
+!sl "FLDParalax.map"
+!svl "FLDParalax.lbl"
+!pdb "FLDParalax.pdb"
+!cpu 6510
+!ct pet
+!initmem $f2	; JAM
+
+!source "Display_Macros.a"
+!source "Sprites_Macros.a"
+
+Sprites__size = 8
+	
+*=$400
+	jmp GameStart
+!source "FingerPrint.a"
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+GameStart
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	ldx #0
+.cgs1
+	lda GameColours,x
+	sta COLOURRAM,x
+	lda GameColours+$100,x
+	sta COLOURRAM+$100,x
+	lda GameColours+$200,x
+	sta COLOURRAM+$200,x
+	lda GameColours+$300,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .cgs1
+
+
+	lda #%11
+	sta VIC2SpriteMulticolour
+	lda #VIC2Colour_DarkGrey
+	sta VIC2ExtraSpriteColour1
+	lda #VIC2Colour_Yellow
+	sta VIC2ExtraSpriteColour2
+
+	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight-24 , 180 , VIC2Colour_LightRed , $ca
+	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight-24 , 180+21 , VIC2Colour_LightRed , $d1
+
+	+SetSpriteXYColFrame 2 , 30 , 100 ,  VIC2Colour_Grey , $fe
+	+SetSpriteXYColFrame 3 , 50 , 110 , VIC2Colour_Grey , $fe
+	+SetSpriteXYColFrame 4 , 70 , 120 , VIC2Colour_LightGrey , $fe
+	+SetSpriteXYColFrame 5 , 80 , 130 , VIC2Colour_LightGrey , $fe
+	+SetSpriteXYColFrame 6 , 100 , 140 , VIC2Colour_White , $fe
+	+SetSpriteXYColFrame 7 , 120 , 150 , VIC2Colour_White , $fe
+
+	jsr Sprites_UpdateToVIC
+
+	lda #VIC2SpriteYBorderBottom-3
+	sta VIC2Raster
+	lda #1
+	sta VIC2InteruptControl
+	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+	cli
+
+.l1
+.noRaster1
+	lda IRQ_BottomStarted
+	beq .noRaster1
+	lda #0
+	sta IRQ_BottomStarted
+	lda CIA1KeyboardColumnJoystickA
+	sta .currentJoystick
+	+TestForBitsLoop_A JoystickBits_Fire , .notFire
+	lda .currentJoystick
+	eor .previousJoystick
+	+TestForNotBitsLoop_A JoystickBits_Fire , .notFire
+	lda WantFLD
+	clc
+	adc #1
+	and #31
+	sta WantFLD
+.notFire
+	lda .currentJoystick
+	sta .previousJoystick
+	jmp .l1
+
+.currentJoystick !by 0
+.previousJoystick !by 0
+
+!zn
+Sprites_XLo
+	!fill Sprites__size , 0
+Sprites_XHi
+	!fill Sprites__size , 0
+Sprites_Y
+	!fill Sprites__size , 0
+Sprites_Frame
+	!fill Sprites__size , 0
+Sprites_Colour
+	!fill Sprites__size , 0
+
+Sprites_UpdateToVIC
+!macro MSprite_update .i {
+	lda Sprites_XLo + .i
+	sta VIC2Sprite0X + (.i * 2)
+	lda Sprites_Y + .i
+	sta VIC2Sprite0Y + (.i * 2)
+	lda Sprites_Colour + .i
+	sta VIC2Sprite0Colour + .i
+	lda Sprites_Frame + .i
+	sta GameScreen2 + SPRITEFRAMESCROFF + .i
+	lda Sprites_XHi + .i
+	lsr
+	ror VIC2SpriteXMSB
+}
+!for .i , 8 {
+	+MSprite_update .i-1
+}
+	rts
+
+!source "IRQSparse.a"
+!source "Data.a"

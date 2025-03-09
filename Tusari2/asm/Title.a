@@ -159,7 +159,7 @@
 
 	lda #6
 	jsr CartSelectBank_8K
-;	jmp C64Cartridge_Lo_8K + $06
+	jmp C64Cartridge_Lo_8K + $06
 	jmp C64Cartridge_Lo_8K + $03
 
 

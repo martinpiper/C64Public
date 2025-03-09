@@ -196,6 +196,7 @@ if not exist Scroller.prg goto error
 ..\bin\LZMPi.exe -cr Scroller.prg bin\Scroller1.cmp 2 >t.txt
 if not exist bin\Scroller1.cmp goto error
 copy /y "Scroller.pdb" "Scroller1.pdb"
+copy /y "Scroller.lbl" "Scroller1.lbl"
 
 
 rem Level2
@@ -215,6 +216,7 @@ if not exist Scroller.prg goto error
 ..\bin\LZMPi.exe -cr Scroller.prg bin\Scroller2.cmp 2 >t.txt
 if not exist bin\Scroller2.cmp goto error
 copy /y "Scroller.pdb" "Scroller2.pdb"
+copy /y "Scroller.lbl" "Scroller2.lbl"
 
 
 ..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r bin\Intro.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -s $2000 -b 7 -f $2000 %SCROLLER_SPEED_CODE_FILES_NUM% %SCROLLER_SPEED_CODE_FILES% -o Scroller.crt >>tf.txt

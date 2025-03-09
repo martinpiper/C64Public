@@ -23,29 +23,75 @@
 		+AnimationEnemyMapPlacement ~.placedEnemy21 , AnimationObject_bat	, 876 , 810
 		+AnimationEnemyMapPlacement ~.placedEnemy22 , AnimationObject_bat	, 960 , 791
 		+AnimationEnemyMapPlacement ~.placedEnemy23 , AnimationObject_bat	, 1025 , 856
+		+AnimationEnemyMapPlacement ~.placedEnemy24 , AnimationObject_upgradeDagger	, 5 , 902
+		+AnimationEnemyMapPlacement ~.placedEnemy25 , AnimationObject_upgradeDagger	, 2 , 875
+		+AnimationEnemyMapPlacement ~.placedEnemy26 , AnimationObject_upgradeDaggerBehind	, 84 , 880
+		+AnimationEnemyMapPlacement ~.placedEnemy27 , AnimationObject_upgradeDaggerBehind	, 81 , 855
+		+AnimationEnemyMapPlacement ~.placedEnemy28 , AnimationObject_upgradeSword	, 107 , 906
+		+AnimationEnemyMapPlacement ~.placedEnemy29 , AnimationObject_upgradeSword	, 134 , 854
+		+AnimationEnemyMapPlacement ~.placedEnemy30 , AnimationObject_upgradeDaggerUp	, 173 , 904
+		+AnimationEnemyMapPlacement ~.placedEnemy31 , AnimationObject_upgradeDaggerUp	, 171 , 854
+		+AnimationEnemyMapPlacement ~.placedEnemy32 , AnimationObject_upgradeDaggerDown	, 220 , 897
+		+AnimationEnemyMapPlacement ~.placedEnemy33 , AnimationObject_upgradeDaggerDown	, 224 , 842
+		+AnimationEnemyMapPlacement ~.placedEnemy34 , AnimationObject_upgradeSparkle	, 265 , 834
+		+AnimationEnemyMapPlacement ~.placedEnemy35 , AnimationObject_upgradeSparkle	, 261 , 805
+		+AnimationEnemyMapPlacement ~.placedEnemy36 , AnimationObject_upgradeSpellBottle	, 321 , 842
+		+AnimationEnemyMapPlacement ~.placedEnemy37 , AnimationObject_upgradeSpellBottle	, 341 , 872
 
-; Num: + 24 Max: 1025 , 907
+; Num: + 38 Max: 1025 , 907
 AnimationEnemyMapPlacementsX
+.mapX0
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX10 , 0
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy25		; 875
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy24		; 902
+.mapX10
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX13 , .mapX0
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy27		; 855
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy26		; 880
 .mapX13
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX15 , 0
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX15 , .mapX10
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy6		; 822
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy28		; 906
 .mapX15
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX23 , .mapX13
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX16 , .mapX13
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy5		; 890
+.mapX16
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX21 , .mapX15
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy29		; 854
+.mapX21
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX23 , .mapX16
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy31		; 854
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy30		; 904
 .mapX23
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX32 , .mapX15
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX27 , .mapX21
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy0		; 661
+.mapX27
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX28 , .mapX23
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy32		; 897
+.mapX28
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX32 , .mapX27
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy33		; 842
 .mapX32
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX34 , .mapX23
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX33 , .mapX28
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy35		; 805
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy8		; 861
+.mapX33
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX34 , .mapX32
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy34		; 834
 .mapX34
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX38 , .mapX32
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX38 , .mapX33
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy9		; 774
 .mapX38
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX48 , .mapX34
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX40 , .mapX34
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy14		; 883
+.mapX40
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX42 , .mapX38
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy36		; 842
+.mapX42
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapX48 , .mapX40
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy37		; 872
 .mapX48
-	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX59 , .mapX38
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapX59 , .mapX42
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy15		; 851
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy1		; 892
 .mapX59
@@ -108,7 +154,8 @@ AnimationEnemyMapPlacementsY
 	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY100 , .mapY96
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy22		; 960
 .mapY100
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY101 , .mapY98
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY101 , .mapY98
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy35		; 261
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy7		; 476
 .mapY101
 	+AnimationEnemyMapPlacement_PosBlock 3 , .mapY102 , .mapY100
@@ -116,14 +163,22 @@ AnimationEnemyMapPlacementsY
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy11		; 756
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy21		; 876
 .mapY102
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY105 , .mapY101
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY104 , .mapY101
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy6		; 108
+.mapY104
+	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY105 , .mapY102
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy34		; 265
 .mapY105
-	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY106 , .mapY102
+	+AnimationEnemyMapPlacement_PosBlock 4 , .mapY106 , .mapY104
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy33		; 224
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy36		; 321
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy17		; 549
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy4		; 922
 .mapY106
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY107 , .mapY105
+	+AnimationEnemyMapPlacement_PosBlock 4 , .mapY107 , .mapY105
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy27		; 81
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy29		; 134
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy31		; 171
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy15		; 387
 .mapY107
 	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY108 , .mapY106
@@ -133,18 +188,27 @@ AnimationEnemyMapPlacementsY
 	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY109 , .mapY107
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy18		; 664
 .mapY109
-	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY110 , .mapY108
+	+AnimationEnemyMapPlacement_PosBlock 4 , .mapY110 , .mapY108
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy25		; 2
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy37		; 341
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy20		; 820
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy3		; 929
 .mapY110
-	+AnimationEnemyMapPlacement_PosBlock 1 , .mapY111 , .mapY109
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY111 , .mapY109
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy26		; 84
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy14		; 308
 .mapY111
-	+AnimationEnemyMapPlacement_PosBlock 4 , .mapY113 , .mapY110
+	+AnimationEnemyMapPlacement_PosBlock 4 , .mapY112 , .mapY110
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy5		; 123
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy1		; 387
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy16		; 476
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy2		; 577
+.mapY112
+	+AnimationEnemyMapPlacement_PosBlock 2 , .mapY113 , .mapY111
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy24		; 5
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy32		; 220
 .mapY113
-	+AnimationEnemyMapPlacement_PosBlock 1 , 0 , .mapY111
+	+AnimationEnemyMapPlacement_PosBlock 3 , 0 , .mapY112
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy28		; 107
+	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy30		; 173
 	+AnimationEnemyMapPlacement_PosBlockEntry .placedEnemy13		; 854
