@@ -1,27 +1,17 @@
-!macro DisplayPanelScreen {
-	lda #VIC2ScreenControlHDefault | %10000
-	sta VIC2ScreenControlH
-
-	+MVIC2MemorySetup_ScreenChar_A PanelScreen , PanelChars
-	sta VIC2MemorySetup
-	lda #CIA2PortASerialBusVICBank_Bank2
-	sta CIA2PortASerialBusVICBank
-
-	lda #VIC2Colour_LightRed
-	sta VIC2ExtraBackgroundColour1
-	lda #VIC2Colour_Red
-	sta VIC2ExtraBackgroundColour2
-}
-
-!macro DisplayGameScreenTop {
-	lda #%10000
-	sta VIC2ScreenControlH
-
+!macro DisplayGameScreenClouds {
 	+MVIC2MemorySetup_ScreenChar_A GameScreen2 , GameChars
 	sta VIC2MemorySetup
 	lda #CIA2PortASerialBusVICBank_Bank1
 	sta CIA2PortASerialBusVICBank
 
+	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
+	lda #VIC2Colour_LightGrey
+	sta VIC2ExtraBackgroundColour1
+	lda #VIC2Colour_Grey
+	sta VIC2ExtraBackgroundColour2
+}
+
+!macro DisplayGameScreenTop {
 	lda #VIC2Colour_Orange
 	sta VIC2ExtraBackgroundColour1
 	lda #VIC2Colour_Red

@@ -1,13 +1,21 @@
-GameColours
-!bin "data/game.col",,2
+!scriptpythoninline {
+import charpad
 
-* = $4400
-GameScreen2
-!bin "data/game.scr",,2
+charpad.loadCTMFile("data/game.ctm")
 
-* = $4800
-GameChars
-!bin "data/game.chr",8*256,2
+acme.source("GameColours")
+acme.bytestr(str(charpad.getCharacterAttributes()))
+
+acme.source("* = $4400")
+acme.source("GameScreen2")
+acme.bytestr(str(charpad.getMapData()))
+
+acme.source("* = $4800")
+acme.source("GameChars")
+acme.bytestr(str(charpad.getCharacters()))
+
+}
+
 
 * = $7000
 GameSprites
@@ -32,3 +40,4 @@ PanelChars
 * = $b000
 MusicBinary
 !bin "data/game.mus",,2
+

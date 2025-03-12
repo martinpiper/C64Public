@@ -13,43 +13,59 @@
 !source "Sprites_Macros.a"
 
 Sprites__size = 8
+
+tempWork0 = $02
 	
 *=$400
 	jmp GameStart
 !source "FingerPrint.a"
 !source "stdlib/Initialise.a"
+!source "stdlib/LongBranches.a"
 GameStart
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 
 	ldx #0
 .cgs1
-	lda GameColours,x
-	sta COLOURRAM,x
-	lda GameColours+$100,x
-	sta COLOURRAM+$100,x
-	lda GameColours+$200,x
-	sta COLOURRAM+$200,x
-	lda GameColours+$300,x
-	sta COLOURRAM+$300,x
+!for .ii , 4 {
+!set .i = (.ii - 1) * $100
+	ldy GameScreen2 + .i,x
+	lda GameColours,y
+	sta COLOURRAM + .i,x
+}
 	dex
 	bne .cgs1
 
+!macro MSetCharLineColour .line , .colour {
+	ldx #40
+	lda #.colour
+.fl1
+	sta COLOURRAM + (.line * 40) - 1,x
+	dex
+	bne .fl1
+}
+
+	+MSetCharLineColour 0 , VIC2Multicolour_White
+	+MSetCharLineColour 1 , VIC2Multicolour_Yellow
+	+MSetCharLineColour 2 , VIC2Multicolour_Purple
+	+MSetCharLineColour 3 , VIC2Multicolour_Red
+
+	+MSetCharLineColour 14 , VIC2Multicolour_Green
+	+MSetCharLineColour 15 , VIC2Multicolour_Green
+	+MSetCharLineColour 16 , VIC2Multicolour_Green
+	+MSetCharLineColour 17 , VIC2Multicolour_Green
+
+	+MSetCharLineColour 18 , VIC2Multicolour_Red
+	+MSetCharLineColour 19 , VIC2Multicolour_Yellow
+	+MSetCharLineColour 20 , VIC2Multicolour_Yellow
+	+MSetCharLineColour 21 , VIC2Multicolour_Cyan
+	+MSetCharLineColour 22 , VIC2Multicolour_Cyan
+	+MSetCharLineColour 23 , VIC2Multicolour_Blue
+	+MSetCharLineColour 24 , VIC2Multicolour_Blue
 
 !if 1 {
 	lda #0
 	jsr MusicBinary
-
-GameTimerPos = (1*40)+31
-	; Remove daggers and make it a timer
-	lda #VIC2Colour_Black
-	sta COLOURRAM+(1*40)+29
-	sta COLOURRAM+(1*40)+30
-	lda #'0'
-	sta PanelScreen+GameTimerPos
-	sta PanelScreen+GameTimerPos+1
-	sta PanelScreen+GameTimerPos+2
-
 
 ;	+DisplayPanelScreen
 ;	+WaitForFire_A
@@ -69,15 +85,13 @@ GameTimerPos = (1*40)+31
 	lda #VIC2Colour_Yellow
 	sta VIC2ExtraSpriteColour2
 
-;	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
-;	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
-	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 210 , VIC2Colour_LightRed , $ca
-	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 210 , VIC2Colour_LightRed , $d1
+	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
+	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
 
-	+SetSpriteXYColFrame 2 , 0 , 90 ,  VIC2Colour_Grey , $fe
-	+SetSpriteXYColFrame 3 , 0 , 110 , VIC2Colour_Grey , $fe
-	+SetSpriteXYColFrame 4 , 0 , 130 , VIC2Colour_LightGrey , $fe
-	+SetSpriteXYColFrame 5 , 0 , 150 , VIC2Colour_LightGrey , $fe
+	+SetSpriteXYColFrame 2 , 0 , 90 ,  VIC2Colour_White , $fe
+	+SetSpriteXYColFrame 3 , 0 , 110 , VIC2Colour_White , $fe
+	+SetSpriteXYColFrame 4 , 0 , 130 , VIC2Colour_White , $fe
+	+SetSpriteXYColFrame 5 , 0 , 150 , VIC2Colour_White , $fe
 	+SetSpriteXYColFrame 6 , 0 , 170 , VIC2Colour_White , $fe
 	+SetSpriteXYColFrame 7 , 0 , 190 , VIC2Colour_White , $fe
 
@@ -135,28 +149,6 @@ GameTimerPos = (1*40)+31
 	jmp .noHuman
 
 .humanMove
-	lda Game_playerTimer
-	bne .doHuman
-
-	inc Sprites_Y
-	inc Sprites_Y
-	lda #180
-	cmp Sprites_Y
-	bcs .notDownYet
-	sta Sprites_Y
-
-.complete
-	sei
-	lda #0
-	sta VIC2ScreenControlV
-	sta SIDVolumeFilter
-	inc VIC2BorderColour
-	jmp .complete
-
-.notDownYet
-
-	jmp .noHuman
-.doHuman
 	lda #$ca
 	sta Sprites_Frame + 0
 	lda #$d1
@@ -167,7 +159,7 @@ GameTimerPos = (1*40)+31
 	bne .notUp
 	dec Sprites_Y
 	dec Sprites_Y
-	lda #VIC2SpriteYBorderTop + (5*8) + 1
+	lda #VIC2SpriteYBorderTop + (1*8) + 1
 	cmp Sprites_Y
 	bcc .notUp
 	sta Sprites_Y
@@ -295,11 +287,95 @@ GameTimerPos = (1*40)+31
 
 	jsr Sprites_UpdateToVIC
 
+!macro MProcessCharLine .line {
+	lda GameScreen2 + (.line * 40) + 39
+	pha
+ldx #39
+.cl1
+	lda GameScreen2 + (.line * 40) - 1 , x
+	sta GameScreen2 + (.line * 40) , x
+	dex
+	bne .cl1
+	pla
+	sta GameScreen2 + (.line * 40)
+}
+
+	; Clouds processing
+.every1 lda #0
+	and #1
+	bne .oevery1
+	inc Cloud1_XScroll
+	lda Cloud1_XScroll
+	and #7
+	sta Cloud1_XScroll
+	bne .oevery1
+	+MProcessCharLine 0
+.oevery1
+	inc .every1+1
+	; This is not in the IRQ because at this point the raster has already progressed
+Cloud1_XScroll = * + 1
+	lda #0
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+
+.every2 lda #0
+	and #3
+	bne .oevery2
+	inc Cloud2_XScroll
+	lda Cloud2_XScroll
+	and #7
+	sta Cloud2_XScroll
+	bne .oevery2
+	+MProcessCharLine 1
+.oevery2
+	inc .every2+1
+
+.every3 lda #0
+	and #7
+	bne .oevery3
+	inc Cloud3_XScroll
+	lda Cloud3_XScroll
+	and #7
+	sta Cloud3_XScroll
+	bne .oevery3
+	+MProcessCharLine 2
+.oevery3
+	inc .every3+1
+
+.every4 lda #0
+	and #15
+	bne .oevery4
+	inc Cloud4_XScroll
+	lda Cloud4_XScroll
+	and #7
+	sta Cloud4_XScroll
+	bne .oevery4
+	+MProcessCharLine 3
+.oevery4
+	inc .every4+1
+
+.every5 lda #0
+	and #31
+	bne .oevery5
+;	inc VIC2BorderColour
+	inc FLDSize1_XScroll
+	lda FLDSize1_XScroll
+	and #7
+	sta FLDSize1_XScroll
+	bne .no2
+	+MProcessCharLine 6
+	+MProcessCharLine 7
+	+MProcessCharLine 8
+.no2
+;	dec VIC2BorderColour
+.oevery5
+	inc .every5+1
+
 	inc FLDSize2b_smx1
 	lda FLDSize2b_smx1
 	and #7
 	sta FLDSize2b_smx1
-	bne .nox1
+	+lbne .nox1
 
 ;	inc VIC2BorderColour
 
@@ -314,15 +390,37 @@ GameTimerPos = (1*40)+31
 	pha
 	lda GameScreen2 + (13*40) + 39
 	pha
+	lda COLOURRAM + (9*40) + 39
+	pha
+	lda COLOURRAM + (10*40) + 39
+	pha
+	lda COLOURRAM + (11*40) + 39
+	pha
+	lda COLOURRAM + (12*40) + 39
+	pha
+	lda COLOURRAM + (13*40) + 39
+	pha
 	ldx #39
 .scrx1
 !for .y , 5 {
 !set .yy = 9 +.y-1
 	lda GameScreen2 + (.yy*40) -1 ,x
 	sta GameScreen2 + (.yy*40) ,x
+	lda COLOURRAM + (.yy*40) -1 ,x
+	sta COLOURRAM + (.yy*40) ,x
 }
 	dex
 	bne .scrx1
+	pla
+	sta COLOURRAM + (13*40)
+	pla
+	sta COLOURRAM + (12*40)
+	pla
+	sta COLOURRAM + (11*40)
+	pla
+	sta COLOURRAM + (10*40)
+	pla
+	sta COLOURRAM + (9*40)
 	pla
 	sta GameScreen2 + (13*40)
 	pla
@@ -338,39 +436,29 @@ GameTimerPos = (1*40)+31
 
 .nox1
 
+;	inc VIC2BorderColour
+	jsr UpdateHiresChars
+;	dec VIC2BorderColour
 
 
+;	inc VIC2BorderColour
 	inc FLDSize3_smx2
 	inc FLDSize3_smx2
 	lda FLDSize3_smx2
 	and #7
 	sta FLDSize3_smx2
+	bne .no1
+	+MProcessCharLine 14
+	+MProcessCharLine 15
+	+MProcessCharLine 16
+	+MProcessCharLine 17
+.no1
+;	dec VIC2BorderColour
 
 	ldx Sprites_Y
 	lda PlayerYToPerspective,x
-	sta FLDSize4
-	lsr
-	sta FLDSize3
-	lsr
-	sta FLDSize2
-	lsr
-	sta FLDSize1
+	sta WantFLD
 
-
-!if 1 {
-	inc FLDSize1
-	inc FLDSize2
-	inc FLDSize3
-	inc FLDSize4
-}
-
-!if 0 {
-	lda #1
-	sta FLDSize1
-	sta FLDSize2
-	sta FLDSize3
-	sta FLDSize4
-}
 
 !if 1 {
 ;	inc VIC2BorderColour
@@ -420,35 +508,7 @@ GameTimerPos = (1*40)+31
 
 	jsr MusicBinary+6
 
-	jsr RenderPlayerTimer
-
-
-
-	lda #VIC2SpriteYBorderTop + (21*8) - 1
-.w1
-	cmp VIC2Raster
-	bcs .w1
-	; Turn the screen off with illegal mode
-;	lda #$ff
-;	sta VIC2ScreenControlV
-!if 0 {
-	; Update the sprites the create the radar effect at the bottom of the screen
-	ldx #4
-	ldy #2
-.cls1
-	lda #243-21
-	sta VIC2Sprite0Y,x
-	lda #$ff
-	sta GameScreen2+SPRITEFRAMESCROFF,y
-	iny
-	inx
-	inx
-	cpx #16
-	bne .cls1
-}
-
 ;	inc VIC2BorderColour
-	jsr ScorePanelColourCycle
 ;	dec VIC2BorderColour
 
 
@@ -522,7 +582,7 @@ GetRandomNumber
 ;.maxPerspective = $17
 .maxPerspective = 31
 PlayerYToPerspective
-!fill VIC2SpriteYBorderTop + (5*8) , .maxPerspective
+!fill VIC2SpriteYBorderTop + (1*8) , .maxPerspective
 ;!for .y , 70 {
 !for .y , 90 {
 ;	!by (.maxPerspective*(70-.y))/70
@@ -594,37 +654,6 @@ PlayerMoveLeft
 	sta Sprites_XLo
 .onRight
 	rts
-
-
-!zn
-Game_playerTimer !by 200
-.countDown !by 70
-RenderPlayerTimer
-	lda Game_playerTimer
-	beq .noTime
-	dec .countDown
-	bpl .noTime
-	lda #8
-	sta .countDown
-	dec Game_playerTimer
-.noTime
-	ldx Game_playerTimer
-	lda TableDiv100,x
-	clc
-	adc #'0'
-	sta PanelScreen+GameTimerPos
-	lda TableDiv10,x
-	clc
-	adc #'0'
-	sta PanelScreen+GameTimerPos+1
-	lda TableMod10,x
-	clc
-	adc #'0'
-	sta PanelScreen+GameTimerPos+2
-	rts
-TableMod10 !for .t,256 {!by (.t-1) % 10}
-TableDiv10 !for .t,256 {!by ((.t-1) / 10)%10}
-TableDiv100 !for .t,256 {!by ((.t-1) / 100)%10}
 }
 
 !zn
@@ -658,6 +687,60 @@ Sprites_UpdateToVIC
 }
 	rts
 
-;!source "IRQ.a"
+!zn
+UpdateHiresChars
+	; Update the hires background chars
+	; 138/139
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (138*8) + .i
+	and #128
+	beq +
+	sec
++
+	rol GameChars + (139*8) + .i
+	rol GameChars + (138*8) + .i
+}
+.smEveryOther1 lda #0
+	+lbeq .skipEverOther2
+
+	; 115-118
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (115*8) + .i
+	and #128
+	beq +
+	sec
++
+	rol GameChars + (118*8) + .i
+	rol GameChars + (117*8) + .i
+	rol GameChars + (116*8) + .i
+	rol GameChars + (115*8) + .i
+}
+	jmp .skipEverOther1
+.skipEverOther2
+	; 119-122
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (119*8) + .i
+	and #128
+	beq +
+	sec
++
+	rol GameChars + (122*8) + .i
+	rol GameChars + (121*8) + .i
+	rol GameChars + (120*8) + .i
+	rol GameChars + (119*8) + .i
+}
+
+.skipEverOther1
+	lda .smEveryOther1+1
+	eor #1
+	sta .smEveryOther1+1
+	rts
+
 !source "IRQSparse.a"
 !source "Data.a"

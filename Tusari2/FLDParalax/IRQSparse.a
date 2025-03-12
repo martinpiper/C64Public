@@ -7,12 +7,8 @@ IRQ_BottomBorder
 	beq .wl1
 
 	; Blank out the bottom
-	lda #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended
+	lda #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows | kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended
 	sta VIC2ScreenControlV
-
-	; Really there should be no active sprites anywhere here due to timing of the NMI
-	; Note: This isn't good enough, but it gives a good reminder
-	+MByteValueToAddress_A 0 , VIC2SpriteEnable
 
 	lda #VIC2SpriteYBorderBottom
 	sta VIC2Raster
@@ -32,7 +28,7 @@ IRQ_Bottom
 	lda #$7f
 	sta CIA2InterruptControl
 	lda CIA2InterruptControl
-	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
+	+MWordValueToAddress_A NMI_Cloud1 , KERNALNMIServiceRoutineLo
 	lda #0
 	sta CIA2TimerAControl
 	+MWordValueToAddress_A CyclesPerRasterPALC64 - 1, CIA2TimerALo
@@ -41,85 +37,89 @@ IRQ_Bottom
 
 	lda #0
 	sta CIA2TimerBControl
-	+MWordValueToAddress_A 149 , CIA2TimerBLo
+	+MWordValueToAddress_A 118 , CIA2TimerBLo
 	lda #%01010001	; Counting timer A iterations, repeating
 	sta CIA2TimerBControl
+
+	; Once started, the next start value can be set
+	+MByteValueToAddress_A 7 , CIA2TimerBLo
+
+	lda #$82	; NMI On timer B
+	sta CIA2InterruptControl
 
 	; Update the code with the desired sparse FLD parameters
 	ldx WantFLD
 	lda TableFLDSize1_YScroll,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
-	sta NMI_FLDSize1_YScroll2
-	ora #kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize1_YScroll1
 	and #%111
 	clc
 	adc TableFLDSize1B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize1B_YScroll
 
 	; Next split
 	and #%111
 	clc
 	adc TableFLDSize2_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize2_YScroll
 	and #%111
 	clc
 	adc TableFLDSize2B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize2B_YScroll
 	and #%111
 	clc
 	adc TableFLDSize2C_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize2C_YScroll
 	and #%111
 	clc
 	adc TableFLDSize2D_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize2D_YScroll
 
 	; Next split
 	and #%111
 	clc
 	adc TableFLDSize3_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3B_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3C_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3C_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3D_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3D_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3E_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3E_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3F_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3F_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3G_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3G_YScroll
 	and #%111
 	clc
 	adc TableFLDSize3H_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize3H_YScroll
 
 
@@ -140,16 +140,14 @@ IRQ_Bottom
 	adc TableFLDSize2_NextNextLines,x
 	sta NMI_FLDSize2_NextNextLines
 
-	; Once started, the next start value can be set
-	+MByteValueToAddress_A 4 , CIA2TimerBLo
-
-	lda #$82	; NMI On timer B
-	sta CIA2InterruptControl
+	lda #1
+	clc
+	adc TableFLDSize3_NextNextLines,x
+	sta NMI_FLDSize3_NextNextLines
 
 	inc IRQ_BottomStarted
 
-	+DisplayPanelScreen
-	+MByteValueToAddress_A VIC2Colour_Black , VIC2ScreenColour
+	+DisplayGameScreenClouds
 
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
@@ -165,11 +163,7 @@ IRQ_Bottom
 	rti
 
 
-FLDSize4
 WantFLD !by 0
-FLDSize3 !by 0
-FLDSize2 !by 0
-FLDSize1 !by 0
 
 TableFLDSize1_YScroll
 	!by 3 , 3 , 3 , 3
@@ -211,6 +205,18 @@ TableFLDSize2_NextNextLines
 	!by 10 , 10 , 11 , 11
 	!by 12 , 12 , 13 , 13
 	!by 14 , 14 , 15 , 15
+
+TableFLDSize3_NextNextLines
+	!by 0 , 1 , 2 , 3
+	!by 4 , 5 , 6 , 7
+	!by 8 , 9 , 10 , 11
+	!by 12 , 13 , 14 , 15
+	!by 16 , 17 , 18 , 19
+	!by 20 , 21 , 22 , 23
+	; Note the last few entries stop the colour changes from moving off the bottom of the screen
+	!by 24 , 25 , 26 , 27
+	!by 27 , 27 , 26 , 26
+
 
 TableFLDSize2_YScrollPlus
 	!by 2 , 2 , 3 , 3
@@ -333,46 +339,72 @@ TableFLDSize3H_YScrollPlus
 	!by 0 , 0 , 0 , 0
 	!by 1 , 2 , 3 , 4
 
-;TableFLDSize2_NextNMILo
-;	!by <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3
-;	!by <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3
-;	!by <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3
-;	!by <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3 , <NMI_FLDSize3
-;	!by <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b
-;	!by <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b
-;	!by <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b
-;	!by <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b , <NMI_FLDSize2b
-;
-;TableFLDSize2_NextNMIHi
-;	!by >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3
-;	!by >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3
-;	!by >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3
-;	!by >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3 , >NMI_FLDSize3
-;	!by >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b
-;	!by >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b
-;	!by >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b
-;	!by >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b , >NMI_FLDSize2b
-
 !align 255,0
 !zn
+NMI_Cloud1
+	pha
+
+;	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
+Cloud2_XScroll = * + 1
+	lda #0
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+
+	+MByteValueToAddress_A 7 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_Cloud2 , KERNALNMIServiceRoutineLo
+
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_Cloud2
+	pha
+
+;	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+Cloud3_XScroll = * + 1
+	lda #0
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+
+	+MByteValueToAddress_A 14 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_Cloud3 , KERNALNMIServiceRoutineLo
+
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_Cloud3
+	pha
+
+;	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
+Cloud4_XScroll = * + 1
+	lda #0
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
+
+	+MByteValueToAddress_A 4 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
+
+	lda CIA2InterruptControl
+	pla
+	rti
+
 NMI_FLDSize1
 	pha
 	; Initial sparse FLD, no need for ugly wasteful updates every raster line
 NMI_FLDSize1_YScroll1 = * + 1
-	+MByteValueToAddress_A 0 | kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended , VIC2ScreenControlV	; Causes a badline on $60
+	+MByteValueToAddress_A 0 , VIC2ScreenControlV	; Causes a badline on $60
+
+FLDSize1_XScroll = * + 1
+	lda #0
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta VIC2ScreenControlH
 
 	+DisplayGameScreenTop
 
 NMI_FLDSize1_NextNextLines = * + 1
 	+MByteValueToAddress_A 4 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize1b , KERNALNMIServiceRoutineLo
-
-	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
-
-NMI_FLDSize1_YScroll2 = * + 1
-	+MByteValueToAddress_A 0 , VIC2ScreenControlV
-
-	+MByteValueToAddress_A $ff , VIC2SpriteEnable
 
 	lda CIA2InterruptControl
 	pla
@@ -404,8 +436,7 @@ NMI_FLDSize2_YScroll = * + 1
 NMI_FLDSize2N
 	pha
 
-;	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
-	+MByteValueToAddress_A VIC2Colour_Orange , VIC2ScreenColour
+	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
 	+DisplayGameScreenMiddle
 FLDSize2b_smx1 = * + 1
 	lda #0

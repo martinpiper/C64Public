@@ -710,10 +710,10 @@ SIDFilterControl				= $d417		; Write only
 ; Bit 7: 1 = Voice #3 disabled.
 SIDVolumeFilter					= $d418		; Write only
 
-; Paddle is selected by memory address $dd00
+; Paddle is selected by memory address $dc00
 SIDPaddleX						= $d419		; Read only
 
-; Paddle is selected by memory address $dd00
+; Paddle is selected by memory address $dc00
 SIDPaddleY						= $d41a		; Read only
 
 SIDVoice3WaveformOutput			= $d41b		; Read only
@@ -1248,6 +1248,15 @@ RasterLengthNTSCC64		= 520
 	lda .port
 	and #.value
 	beq .ft2
+}
+
+!macro TestForBitsLoop_A .value , .notTo {
+	and #.value
+	bne .notTo
+}
+!macro TestForNotBitsLoop_A .value , .notTo {
+	and #.value
+	beq .notTo
 }
 
 !macro TestForPortBitsLoop_A .port , .value , .notTo {
