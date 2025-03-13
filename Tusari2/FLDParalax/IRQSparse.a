@@ -347,7 +347,6 @@ NMI_Cloud1
 ;	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
 Cloud2_XScroll = * + 1
 	lda #0
-	ora #kVIC2ScreenControlHBits_Multicolour
 	sta VIC2ScreenControlH
 
 	+MByteValueToAddress_A 7 , CIA2TimerBLo
@@ -363,7 +362,6 @@ NMI_Cloud2
 ;	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
 Cloud3_XScroll = * + 1
 	lda #0
-	ora #kVIC2ScreenControlHBits_Multicolour
 	sta VIC2ScreenControlH
 
 	+MByteValueToAddress_A 14 , CIA2TimerBLo
@@ -379,8 +377,9 @@ NMI_Cloud3
 ;	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 Cloud4_XScroll = * + 1
 	lda #0
-	ora #kVIC2ScreenControlHBits_Multicolour
 	sta VIC2ScreenControlH
+
+	jsr Sprites_UpdateToVIC
 
 	+MByteValueToAddress_A 4 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
@@ -397,7 +396,6 @@ NMI_FLDSize1_YScroll1 = * + 1
 
 FLDSize1_XScroll = * + 1
 	lda #0
-	ora #kVIC2ScreenControlHBits_Multicolour
 	sta VIC2ScreenControlH
 
 	+DisplayGameScreenTop
@@ -440,7 +438,6 @@ NMI_FLDSize2N
 	+DisplayGameScreenMiddle
 FLDSize2b_smx1 = * + 1
 	lda #0
-	ora #%10000
 	sta VIC2ScreenControlH
 	+MByteValueToAddress_A 3 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize2b , KERNALNMIServiceRoutineLo
@@ -506,7 +503,6 @@ NMI_FLDSize3B_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 FLDSize3_smx2 = * + 1
 	lda #0
-	ora #%10000
 	sta VIC2ScreenControlH
 	+MWordValueToAddress_A NMI_FLDSize3c , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl

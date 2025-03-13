@@ -78,8 +78,6 @@ GameStart
 
 	+MVIC2SpriteEnableAll_A
 
-	lda #%11
-	sta VIC2SpriteMulticolour
 	lda #VIC2Colour_DarkGrey
 	sta VIC2ExtraSpriteColour1
 	lda #VIC2Colour_Yellow
@@ -95,8 +93,13 @@ GameStart
 	+SetSpriteXYColFrame 6 , 0 , 170 , VIC2Colour_White , $fe
 	+SetSpriteXYColFrame 7 , 0 , 190 , VIC2Colour_White , $fe
 
-	jsr Sprites_UpdateToVIC
-;	+WaitForFire_A
+!for .ii , 4 {
+!set .i = .ii - 1
+	+SetSpriteXYColFrame 10 + .i , 30 + (.i * 24) , 50 ,  VIC2Colour_LightGrey , $f8 + .i
+}
+
+	+SetSpriteXYColFrame 14 , 80 , 55 ,  VIC2Colour_LightGrey , $f0
+	+SetSpriteXYColFrame 15 , 104 , 55 ,  VIC2Colour_LightGrey , $f1
 
 	lda #VIC2SpriteYBorderBottom
 	sta VIC2Raster
@@ -285,7 +288,34 @@ GameStart
 	cpx #Sprites__size
 	bne .col1
 
-	jsr Sprites_UpdateToVIC
+	; Update cloud positions
+!for .ii , 4 {
+!set .i = .ii - 1 + 10
+	lda Sprites_XLo + .i
+	clc
+	adc #2
+	sta Sprites_XLo + .i
+	bcc +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+!for .ii , 2 {
+!set .i = .ii - 1 + 14
+	lda Sprites_XLo + .i
+	clc
+	adc #1
+	sta Sprites_XLo + .i
+	bcc +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+
+	jsr Sprites_UpdateToVIC2
+
 
 !macro MProcessCharLine .line {
 	lda GameScreen2 + (.line * 40) + 39
@@ -354,6 +384,20 @@ Cloud1_XScroll = * + 1
 .oevery4
 	inc .every4+1
 
+
+	lda Cloud1_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud1_XScroll
+	lda Cloud2_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud2_XScroll
+	lda Cloud3_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud3_XScroll
+	lda Cloud4_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud4_XScroll
+
 .every5 lda #0
 	and #31
 	bne .oevery5
@@ -367,6 +411,10 @@ Cloud1_XScroll = * + 1
 	+MProcessCharLine 7
 	+MProcessCharLine 8
 .no2
+	lda FLDSize1_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize1_XScroll
+
 ;	dec VIC2BorderColour
 .oevery5
 	inc .every5+1
@@ -435,6 +483,9 @@ Cloud1_XScroll = * + 1
 ;	dec VIC2BorderColour
 
 .nox1
+	lda FLDSize2b_smx1
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize2b_smx1
 
 ;	inc VIC2BorderColour
 	jsr UpdateHiresChars
@@ -453,6 +504,10 @@ Cloud1_XScroll = * + 1
 	+MProcessCharLine 16
 	+MProcessCharLine 17
 .no1
+	lda FLDSize3_smx2
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize3_smx2
+
 ;	dec VIC2BorderColour
 
 	ldx Sprites_Y
@@ -659,16 +714,26 @@ PlayerMoveLeft
 !zn
 Sprites_XLo
 	!fill Sprites__size , 0
+	!fill Sprites__size , 0
 Sprites_XHi
+	!fill Sprites__size , 0
 	!fill Sprites__size , 0
 Sprites_Y
 	!fill Sprites__size , 0
+	!fill Sprites__size , 0
 Sprites_Frame
+	!fill Sprites__size , 0
 	!fill Sprites__size , 0
 Sprites_Colour
 	!fill Sprites__size , 0
+	!fill Sprites__size , 0
 
 Sprites_UpdateToVIC
+	lda #%11
+	sta VIC2SpriteMulticolour
+;	inc VIC2BorderColour
+	lda #0
+	sta tempWork0
 !macro MSprite_update .i {
 	lda Sprites_XLo + .i
 	sta VIC2Sprite0X + (.i * 2)
@@ -680,11 +745,46 @@ Sprites_UpdateToVIC
 	sta GameScreen2 + SPRITEFRAMESCROFF + .i
 	lda Sprites_XHi + .i
 	lsr
-	ror VIC2SpriteXMSB
+	ror tempWork0
 }
 !for .i , 8 {
 	+MSprite_update .i-1
 }
+	lda tempWork0
+	sta VIC2SpriteXMSB
+;	dec VIC2BorderColour
+	rts
+
+Sprites_UpdateToVIC2
+	lda #%11111111
+	sta VIC2SpriteMulticolour
+;	inc VIC2BorderColour
+	lda #0
+	sta tempWork0
+	; Include player
+!for .i , 2 {
+	+MSprite_update .i-1
+}
+	; Include clouds etc
+!macro MSprite_update2 .i {
+	lda Sprites_XLo + .i + 8
+	sta VIC2Sprite0X + (.i * 2)
+	lda Sprites_Y + .i + 8
+	sta VIC2Sprite0Y + (.i * 2)
+	lda Sprites_Colour + .i + 8
+	sta VIC2Sprite0Colour + .i
+	lda Sprites_Frame + .i + 8
+	sta GameScreen2 + SPRITEFRAMESCROFF + .i
+	lda Sprites_XHi + .i + 8
+	lsr
+	ror tempWork0
+}
+!for .i , 6 {
+	+MSprite_update2 2 + .i-1
+}
+	lda tempWork0
+	sta VIC2SpriteXMSB
+;	dec VIC2BorderColour
 	rts
 
 !zn
