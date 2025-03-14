@@ -47,81 +47,34 @@ IRQ_Bottom
 	lda #$82	; NMI On timer B
 	sta CIA2InterruptControl
 
+
+!macro MProcessSplitYPos .table , .split {
+	and #7 ; This causes the calculation to cycle around the scroll bits and also avoids any carry situation
+	adc .table,x
+	; Note: It is not required to enable the 25 row screen since the screen is already enabled for this frame and it cannot be switched off again during the display portion of the frame.
+	; But not enabling the screen causes the deug display in C64DebugGUI to be displayed as empty, so we include these bits to enable the debug display.
+;	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
+	sta .split
+}
 	; Update the code with the desired sparse FLD parameters
 	ldx WantFLD
 	lda TableFLDSize1_YScroll,x
 	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta NMI_FLDSize1_YScroll1
-	and #%111
 	clc
-	adc TableFLDSize1B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize1B_YScroll
-
-	; Next split
-	and #%111
-	clc
-	adc TableFLDSize2_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize2_YScroll
-	and #%111
-	clc
-	adc TableFLDSize2B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize2B_YScroll
-	and #%111
-	clc
-	adc TableFLDSize2C_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize2C_YScroll
-	and #%111
-	clc
-	adc TableFLDSize2D_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize2D_YScroll
-
-	; Next split
-	and #%111
-	clc
-	adc TableFLDSize3_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3B_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3B_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3C_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3C_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3D_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3D_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3E_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3E_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3F_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3F_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3G_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3G_YScroll
-	and #%111
-	clc
-	adc TableFLDSize3H_YScrollPlus,x
-	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
-	sta NMI_FLDSize3H_YScroll
-
+	+MProcessSplitYPos TableFLDSize1B_YScrollPlus , NMI_FLDSize1B_YScroll
+	+MProcessSplitYPos TableFLDSize2_YScrollPlus , NMI_FLDSize2_YScroll
+	+MProcessSplitYPos TableFLDSize2B_YScrollPlus , NMI_FLDSize2B_YScroll
+	+MProcessSplitYPos TableFLDSize2C_YScrollPlus , NMI_FLDSize2C_YScroll
+	+MProcessSplitYPos TableFLDSize2D_YScrollPlus , NMI_FLDSize2D_YScroll
+	+MProcessSplitYPos TableFLDSize3_YScrollPlus , NMI_FLDSize3_YScroll
+	+MProcessSplitYPos TableFLDSize3B_YScrollPlus , NMI_FLDSize3B_YScroll
+	+MProcessSplitYPos TableFLDSize3C_YScrollPlus , NMI_FLDSize3C_YScroll
+	+MProcessSplitYPos TableFLDSize3D_YScrollPlus , NMI_FLDSize3D_YScroll
+	+MProcessSplitYPos TableFLDSize3E_YScrollPlus , NMI_FLDSize3E_YScroll
+	+MProcessSplitYPos TableFLDSize3F_YScrollPlus , NMI_FLDSize3F_YScroll
+	+MProcessSplitYPos TableFLDSize3G_YScrollPlus , NMI_FLDSize3G_YScroll
+	+MProcessSplitYPos TableFLDSize3H_YScrollPlus , NMI_FLDSize3H_YScroll
 
 	; C64DebugGUI, in right border
 	; Row counter = 1 = bad line
@@ -437,7 +390,7 @@ NMI_FLDSize2N
 	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
 	+DisplayGameScreenMiddle
 FLDSize2b_smx1 = * + 1
-	lda #0
+	lda #2	; Start at this offset so it never coincides with the wall layer scroll above
 	sta VIC2ScreenControlH
 	+MByteValueToAddress_A 3 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize2b , KERNALNMIServiceRoutineLo

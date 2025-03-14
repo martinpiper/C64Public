@@ -2,6 +2,7 @@
 
 !source "stdlib/stdlib.a"
 !to "FLDParalax.prg", cbm
+!sal
 !sl "FLDParalax.map"
 !svl "FLDParalax.lbl"
 !pdb "FLDParalax.pdb"
@@ -110,9 +111,16 @@ GameStart
 	cli
 
 .l1
+	; Debug: Mainline timing
+;	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
 .noRaster1
+	; Debug: Shows where the IRQ/NMI timing is stopping this mainline
+;	inc VIC2BorderColour
 	lda IRQ_BottomStarted
 	beq .noRaster1
+	; Debug: Mainline timing
+;	+MByteValueToAddress_A VIC2Colour_Red , VIC2BorderColour
+
 	lda #0
 	sta IRQ_BottomStarted
 
@@ -211,6 +219,7 @@ GameStart
 	adc #VIC2SpriteSizeY
 	sta Sprites_Y+1
 
+	; Copy the player position to the second sprite
 	lda Sprites_XLo
 	sta Sprites_XLo+1
 	lda Sprites_XHi
@@ -235,6 +244,28 @@ GameStart
 	lda #1
 	sta Sprites_XHi,x
 .csl2
+
+	lda .spriteYWobble,x
+	bne .gotWobble
+	jsr GetRandomNumber
+	asl
+	asl
+	sta .spriteYWobble,x
+.gotWobble
+	ldy .spriteYWobble,x
+	lda .spriteYWobbleTable,y
+	clc
+	adc Sprites_Y,x
+	cmp #VIC2SpriteYBorderTop + (4*8)
+	bcs .okYPos1
+	lda #VIC2SpriteYBorderTop + (4*8)
+.okYPos1
+	cmp #VIC2SpriteYBorderBottom - VIC2SpriteSizeY
+	bcc .okYPos2
+	lda #VIC2SpriteYBorderBottom - VIC2SpriteSizeY
+.okYPos2
+	sta Sprites_Y,x
+	inc .spriteYWobble,x
 
 	; Check for the right screen pos
 	lda Sprites_XHi,x
@@ -283,6 +314,15 @@ GameStart
 	lda .spriteSpeed,x
 	jsr GameAddScore
 	jsr Sprite_Free
+	; Prepare a random Y pos for the next sprite
+	jsr GetRandomNumber
+	asl
+	asl
+	asl
+	asl
+	clc
+	adc #VIC2SpriteYBorderTop + (4*8)
+	sta Sprites_Y,x
 .col2
 	inx
 	cpx #Sprites__size
@@ -398,6 +438,7 @@ Cloud1_XScroll = * + 1
 	ora #kVIC2ScreenControlHBits_Multicolour
 	sta Cloud4_XScroll
 
+	; Mountains
 .every5 lda #0
 	and #31
 	bne .oevery5
@@ -482,6 +523,7 @@ Cloud1_XScroll = * + 1
 
 ;	dec VIC2BorderColour
 
+	; Plants
 .nox1
 	lda FLDSize2b_smx1
 	ora #kVIC2ScreenControlHBits_Multicolour
@@ -608,12 +650,52 @@ Cloud1_XScroll = * + 1
 .nextSpriteDelay !by 60
 .spriteSpeed
 	!fill Sprites__size , 0
+.spriteYWobble
+	!fill Sprites__size , 0
+
+.spriteYWobbleTable
+	!fill 16 , 0
+	!fill 8 , 1
+	!fill 6 , 2
+	!fill 4 , 3
+	!fill 6 , 2
+	!fill 8 , 1
+	!fill 16 , 0
+
+	!fill 16 , 0
+	!fill 8 , -1
+	!fill 6 , -2
+	!fill 4 , -3
+	!fill 6 , -2
+	!fill 8 , -1
+	!fill 16 , 0
+
+	!fill 16 , 0
+	!fill 8 , -1
+	!fill 6 , -2
+	!fill 4 , -3
+	!fill 6 , -2
+	!fill 8 , -1
+	!fill 16 , 0
+
+	!fill 16 , 0
+	!fill 8 , 1
+	!fill 6 , 2
+	!fill 4 , 3
+	!fill 6 , 2
+	!fill 8 , 1
+	!fill 16 , 0
+.spriteYWobbleTableSize = * - .spriteYWobbleTable
+!if .spriteYWobbleTableSize != 256 {
+	!error "Table is not 256 bytes long"
+}
 
 Sprite_Free
 	lda #0
 	sta Sprites_XLo,x
 	sta Sprites_XHi,x
 	sta .spriteSpeed,x
+	sta .spriteYWobble,x
 	rts
 
 GetRandomNumber
