@@ -1,0 +1,530 @@
+!zn
+InitGameLanding
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A 50, .endSequenceTimeout
+	+MByteValueToAddress_A $20, .playerSpecialCaseScale
+	+MByteValueToAddress_A 1 , .everySoOften
+	+MByteValueToAddress_A 1 , .everySoOften2
+	+MByteValueToAddress_A 1 , .everySoOften3
+	+MByteValueToAddress_A 0 , .gradualSlowTabIndex
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
+	+MByteValueToAddress_A 0 , runwayMaxScreenRow
+	+MByteValueToAddress_A 0 , runwayMaxScreenRowUpdated
+	+MByteValueToAddress_A 0 , runwayMinScreenRow
+	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
+
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+
+	; Clear the runway table
+	lda #0
+	ldx #kAPUNumRunwayRows
+.crl1
+	sta .tempRunwayTab-1,x
+	dex
+	bne .crl1
+
+	rts
+
+RunGameLanding
+mainLoop5
+	+MByteValueToAddress_A 0 , runwayMaxScreenRowUpdated
+
+	jsr RunGameLanding_CommonFrame
+
+	; Render the landscape
+	lda #1
+	sta .smIsNotOK+1
+	jsr TryToLevelAnyRoll
+	bcs .needRotationDraw
+
+	jsr LandscapeRenderHeight
+	lda #0
+	sta .smIsNotOK+1
+
+	; Force runway area details into the landscape
+	; Landscape map data position tweak
+	lda LandscapeMapRowOffset
+	sec
+;	sbc #16*7
+	sbc #16*8
+	clc
+	adc #5
+	tax
+	; Blank entries for the runway area
+	lda #0
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+
+	; Add a runway start building and a couple of bushes
+	lda runwayMaxScreenRow
+	bne .gotObjectMax
+	dex	; Note 256 byte wraparound
+	dex	; Note 256 byte wraparound
+	dex	; Note 256 byte wraparound
+	; Special case building
+	lda #9
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	lda #3
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	lda #2
+	sta LandscapeMap,x
+	jmp .gotObjectMax2
+.gotObjectMax
+	cmp #250
+	bcs .gotObjectMax2
+	lda runwayMaxScreenRowUpdated
+	bne .gotObjectMax2
+	inc runwayMaxScreenRow
+	inc runwayMaxScreenRow
+	inc runwayMaxScreenRow
+.gotObjectMax2
+
+
+	jmp .overLandscapeDraw
+.needRotationDraw
+	jsr LandscapeRender
+.overLandscapeDraw
+
+	jsr RunGameLanding_CalculateRunway
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	; Horizon pitch
+	lda playerYPositionOffset
+	cmp #50
+	+IfRegGreaterThanOrEqualToVal .noMorePitch2
+	inc playerYPositionOffset
+.noMorePitch2
+
+	; Gradual slowdown
+	lda landscapeFrameSpeed
+	cmp #1
+	+IfRegGreaterThanValL .noMoreSlowTab1
+	lda landscapeHeightsFrame
+	+lbne .noMoreSlowTab1
+
+	; Landing smoke
+	lda EntityEnableRenderPlayerSpecialCase
+	beq .alreadySpecial1
+	+MGameIntroAllocateSmokeWith -10
+	+MGameIntroAllocateSmokeWith 10
+.alreadySpecial1
+
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	dec .everySoOften2
+	bne .o1
+	lda #3
+	sta .everySoOften2
+	inc .playerSpecialCaseScale
+.o1
+
+	dec .everySoOften3
+	bne .o1b
+	lda #2
+	sta .everySoOften3
+	inc .playerSpecialCaseYPosTweak
+.o1b
+
+	ldx .gradualSlowTabIndex
+	lda .gradualSlowTab,x
+	sta landscapeFrameSpeed
+	cpx #.gradualSlowTabNum-1
+	+IfRegGreaterThanOrEqualToVal .noMoreSlowTab1
+	inc .gradualSlowTabIndex
+.noMoreSlowTab1
+
+	jsr ReducePlayerXPositionForNoInput
+	jsr playerYPositionOffsetSpeedReduce
+
+.smIsNotOK lda #0
+	+lbne mainLoop5
+
+	; Height and speed
+	dec .everySoOften
+	+lbne mainLoop5
+	lda #2
+	sta .everySoOften
+
+	lda landscapeFrameSpeed
+	cmp #1
+	+IfRegLessThanOrEqualToVal .noReduceSpeed1
+	dec landscapeFrameSpeed
+.noReduceSpeed1
+
+	dec landscapeHeightsFrame
+	+lbpl mainLoop5
+
+	+MByteValueToAddress_A 0 , landscapeHeightsFrame
+
+	dec .endSequenceTimeout
+	+lbne mainLoop5
+
+
+	; Now takeoff
+	+MByteValueToAddress_A 0 , .gradualSlowTabIndex
+	+MByteValueToAddress_A 1 , landscapeFrameSpeed
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
+
+	; Last building for the end of the runway
+	lda LandscapeMapRowOffset
+	sec
+	sbc #16*8
+	clc
+	adc #8
+	tax
+	; Special case building
+	lda #10
+	sta LandscapeMap,x
+	; And a couple of objects
+	dex	; Note 256 byte wraparound
+	lda #1
+	sta LandscapeMap,x
+	dex	; Note 256 byte wraparound
+	lda #3
+	sta LandscapeMap,x
+
+
+mainLoop6
+	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
+
+	jsr RunGameLanding_CommonFrame
+
+	jsr LandscapeRenderHeight
+
+	lda runwayMinScreenRow
+	beq .gotObjectMin2
+	cmp #240
+	bcs .gotObjectMin2
+	lda runwayMinScreenRowUpdated
+	bne .gotObjectMin2
+	lda runwayMinScreenRow
+	clc
+	adc #12
+	sta runwayMinScreenRow
+.gotObjectMin2
+
+	jsr RunGameLanding_CalculateRunway
+
+	; Probably more optimal to do this compared to adding comparisons in the calculation loop
+	ldx runwayMinScreenRow
+	beq .noClearRunwayEnd
+	cpx #kAPUNumRunwayRows
+	bcc .okClearValue
+	ldx #kAPUNumRunwayRows-1
+.okClearValue
+
+	lda #0
+.cle1
+	sta .tempRunwayTab,x
+	dex
+	bne .cle1
+.noClearRunwayEnd
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	; And move the plane back again towards the camera
+	dec .everySoOften2
+	bne .o2
+	lda #1
+	sta .everySoOften2
+	dec .playerSpecialCaseYPosTweak
+	dec .playerSpecialCaseScale
+	lda .playerSpecialCaseScale
+	cmp #$20
+	bcs .o3
+	lda #$20
+	sta .playerSpecialCaseScale
+.o3
+.o2
+	dec .playerSpecialCaseYPosTweak
+	bpl .o4
+	lda #0
+	sta .playerSpecialCaseYPosTweak
+.o4
+
+	; Gradually increase speed
+	ldx .gradualSlowTabIndex
+	lda .gradualSpeedTab,x
+	sta landscapeFrameSpeed
+	cpx #.gradualSpeedTabNum-1
+	+IfRegGreaterThanOrEqualToVal .noMoreSpeed1
+	inc .gradualSlowTabIndex
+.noMoreSpeed1
+
+	; Smoke check
+	cpx #20
+	+IfRegLessThanVal .noSmoke
+	cpx #30
+	+IfRegGreaterThanOrEqualToVal .noSmoke
+	dec .everySoOften
+	bne .noSmoke
+	lda #6
+	sta .everySoOften
+
+	+MGameIntroAllocateSmokeWith -10
+	+MGameIntroAllocateSmokeWith 10
+.noSmoke
+
+	ldx .gradualSlowTabIndex
+	; Now start to climb after a certain speed
+	cpx #40
+	+IfRegLessThanVal .heightOK1
+
+	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
+	+MWordValueToAddress_A kSampleInfo11_frequency*2 , Player_EngineTargetFrequency
+	inc landscapeHeightsFrame
+
+	lda landscapeHeightsFrame
+	cmp #landscapeHeightsMax
+	+IfRegLessThanVal .heightOK1
+	; Returns to the game
+	rts
+.heightOK1
+
+
+	lda landscapeFrameSpeed
+	cmp #3
+	+IfRegLessThanVal .noMorePitch3
+
+
+	; Horizon pitch
+	lda playerYPositionOffset
+	cmp #-25
+	+IfRegLessThanOrEqualToVal .noMorePitch3
+	dec playerYPositionOffset
+.noMorePitch3
+
+	jmp mainLoop6
+
+.everySoOften !by 0
+.everySoOften2 !by 0
+.everySoOften3 !by 0
+.endSequenceTimeout !by 0
+.gradualSlowTabIndex !by 0
+.gradualSlowTab
+!by 1,1,1,1,1,1,1,1
+!by 1,1,1,0,1,1,1,0
+!by 1,1,1,0,1,1,1,0
+!by 1,0,1,0,1,0,1,0
+!by 1,0,1,0,1,0,1,0
+!by 1,0,0,0,1,0,0,0
+!by 1,0,0,0,1,0,0,0
+!by 0,0,0,0,0,0,0,0
+.gradualSlowTabNum = *-.gradualSlowTab
+
+.gradualSpeedTab
+!by 0,0,0,1
+!by 0,1,0,1
+!by 0,1,1,1,0,1,1,1
+!by 1,1,1,1,1,1,1,1
+!by 1,1,1,2,1,1,1,2
+!by 1,2,1,2,1,2,1,2
+!by 1,2,2,2,1,2,2,2
+!by 2,2,2,2,2,2,2,2
+!by 2,2,2,3,2,2,2,3
+!by 2,3,2,3,2,3,2,3
+!by 2,3,3,3,2,3,3,3
+!by 3,3,3,3,3,3,3,3
+!by 3,4,3,4,3,4,3,4
+!by 4,4,4,4,4,4,4,4
+!by 5,5,5,5,5,5,5,5
+!by 6,6,6,6,6,6,6,6
+.gradualSpeedTabNum = *-.gradualSpeedTab
+
+RunGameLanding_CommonFrame
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	; Must happen in the VBlank
+	jsr Bus20To32Bit1_Init
+	jsr VBlankUpdatePaletteColours
+	jsr VBlankUpdateHorizon
+	jsr RunGameLanding_UpdateAPU
+
+	; Can happen outside the VBlank
+	jsr EntitySort
+	jsr PlayerEngineSoundControl
+	jsr UpdateLandscapeFrame
+	jsr EntityUpdateObjects
+
+	jsr ResetInterfaceAndStartSendingScaledSprites
+
+	jsr EntityRenderSpritesDirectMode
+
+	lda EntityEnableRenderPlayerSpecialCase
+	+lbne .noSpecialCase1
+	ldx .playerSpecialCaseScale
+
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A 178 , zeroPage_Temp4 , zeroPage_Temp7
+	lda #0
+	sta zeroPage_Temp3
+	lda zeroPage_Temp4
+	sec
+	sbc .playerSpecialCaseYPosTweak
+	sta zeroPage_Temp4
+	lda kVarsEmitSpriteFrame_t_380_0_0_0_tileWidthScaleTab-1,x
+	lsr
+	sta zeroPage_Temp9
+	lda zeroPage_Temp5
+	sec
+	sbc zeroPage_Temp9
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	sbc #0
+	sta zeroPage_Temp6
+	; Y Pos
+	lda zeroPage_Temp4
+	sec
+	sbc kVarsEmitSpriteFrame_t_380_0_0_0_tileHeightScaleTab-1,x
+	sta zeroPage_Temp4
+	lda zeroPage_Temp7
+	sbc #0
+	sta zeroPage_Temp7
+	jsr MSBCalcWith6n7
+
+	cpx #40
+	+lbcc .renderOtherPlayer
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_6_0_0_0_colour , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_6_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_6_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidth
+	jmp .renderOtherPlayerOver
+.renderOtherPlayer
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_10_0_0_0_colour , kVarsEmitSpriteFrame_t_10_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_10_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_10_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_10_0_0_0_tileWidth
+.renderOtherPlayerOver
+.noSpecialCase1
+
+	jsr PlayerPositionToForHorizonAndLandscape
+	rts
+
+.playerSpecialCaseScale !by $20
+.playerSpecialCaseYPosTweak !by 0
+
+.tempRunwayTab !fill kAPUNumRunwayRows , 0
+RunGameLanding_UpdateAPU
+	+MAPU_SetDataUpdateBus APULineScrolls
+
+	+MWordValueToAddress_A -(15) , zeroPage_Temp0
+	ldx #0
+.ccl1
+	lda zeroPage_Temp0
+	clc
+	adc .tempRunwayTab,x
+	+MBus24Bit_Send8BitValueFromA
+	lda zeroPage_Temp1
+	adc #0
+	+MBus24Bit_Send8BitValueFromA
+
+	+MSubU8FromAddr16 1 , zeroPage_Temp0 , zeroPage_Temp1
+	inx
+;	cpx #tempRunwayTabNum
+;	beq .ccl1o
+	cpx #kAPUNumRunwayRows
+	bne .ccl1
+.ccl1o
+	rts
+
+
+runwayMaxScreenRow !by 0
+runwayMaxScreenRowUpdated !by 0
+runwayMinScreenRow !by 0
+runwayMinScreenRowUpdated !by 0
+
+runwayForHeights
+!24 runwayForHeight064Frames , runwayForHeight065Frames , runwayForHeight066Frames , runwayForHeight067Frames , runwayForHeight068Frames , runwayForHeight069Frames , runwayForHeight070Frames , runwayForHeight071Frames , runwayForHeight072Frames , runwayForHeight073Frames , runwayForHeight074Frames , runwayForHeight075Frames , runwayForHeight076Frames , runwayForHeight077Frames , runwayForHeight078Frames , runwayForHeight079Frames , runwayForHeight080Frames , runwayForHeight081Frames , runwayForHeight082Frames , runwayForHeight083Frames , runwayForHeight084Frames , runwayForHeight085Frames , runwayForHeight086Frames , runwayForHeight087Frames , runwayForHeight088Frames , runwayForHeight089Frames , runwayForHeight090Frames , runwayForHeight091Frames , runwayForHeight092Frames , runwayForHeight093Frames , runwayForHeight094Frames , runwayForHeight095Frames , runwayForHeight096Frames , runwayForHeight097Frames , runwayForHeight098Frames , runwayForHeight099Frames , runwayForHeight100Frames , runwayForHeight101Frames , runwayForHeight102Frames , runwayForHeight103Frames , runwayForHeight104Frames , runwayForHeight105Frames , runwayForHeight106Frames , runwayForHeight107Frames , runwayForHeight108Frames , runwayForHeight109Frames , runwayForHeight110Frames , runwayForHeight111Frames , runwayForHeight112Frames , runwayForHeight113Frames , runwayForHeight114Frames , runwayForHeight115Frames , runwayForHeight116Frames , runwayForHeight117Frames , runwayForHeight118Frames , runwayForHeight119Frames , runwayForHeight120Frames , runwayForHeight121Frames , runwayForHeight122Frames , runwayForHeight123Frames , runwayForHeight124Frames , runwayForHeight125Frames , runwayForHeight126Frames , runwayForHeight127Frames , runwayForHeight128Frames
+
+runwayForHeightsNum = (* - runwayForHeights) / 3
+runwayForHeightsMax = runwayForHeightsNum - 1
+!swizzle runwayForHeights , runwayForHeightsNum , 3
+
+; Needs to be run after the landscape calculation
+RunGameLanding_CalculateRunway
+	ldx landscapeHeightsFrame
+	lda runwayForHeights,x
+	sta zeroPage_Temp0
+	lda runwayForHeights + landscapeHeightsNum,x
+	sta zeroPage_Temp1
+	lda runwayForHeights + (landscapeHeightsNum * 2),x
+	sta zeroPage_Temp2
+
+	jsr LandscapeRender_CommonTableCalculation
+
+	; Process runway frame
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	; Horizon start offset
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+	; Length of this table
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp3
+
+	; Add in the horizon offset
+	lda #50
+	sec
+	sbc playerYPositionOffset
+	clc
+	adc #(ScreenLandscapeOriginYPos/2)
+	sta zeroPage_Temp4
+	ldx #0
+	; Add in the player pitch horizon offset
+	lda zeroPage_Temp4
+	beq .hcl3o
+.hcl3
+	cpx runwayMaxScreenRow
+	bcs .hcl1o
+	lda #0
+	sta .tempRunwayTab,x
+	inx
+	cpx #kAPUNumRunwayRows
+	beq .hcl1o
+	dec zeroPage_Temp4
+	bne .hcl3
+.hcl3o
+
+!if 1 {
+	; Add in the horizon offset
+	lda zeroPage_Temp2
+	beq .hcl2o
+.hcl2
+	cpx runwayMaxScreenRow
+	bcs .hcl1o
+	lda #0
+	sta .tempRunwayTab,x
+	inx
+	cpx #kAPUNumRunwayRows
+	beq .hcl1o
+	dec zeroPage_Temp2
+	bne .hcl2
+.hcl2o	
+}
+
+.hcl1
+	cpx runwayMaxScreenRow
+	bcs .hcl1o
+	+MBus24Bit_Get8BitValueToA
+	sta .tempRunwayTab,x
+	inx
+	cpx #kAPUNumRunwayRows
+	beq .hcl1o
+	dec zeroPage_Temp3
+	bne .hcl1
+.hcl1o
+
+	; Needs to be in write mode afterwards
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	rts
+
+

@@ -1,0 +1,708 @@
+Player_EngineVolume !by 0
+Player_EngineVolumeChange !by 0
+Player_EngineFrequency !word 0
+Player_EngineTargetFrequency !word 0
+
+PlayerControl_disableRoll !by 0
+
+.isFireBefore !by 0
+PlayerControl
+	jsr PlayerEngineSoundControl
+
+	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	lda .isFireBefore
+	bne .wasFire
+	jsr EntityFindFreeSlot
+	bcs .noFreeSlot2
+
+	lda #0
+	sta EntityXPos,x
+	lda #0
+	sec
+	sbc playerYPositionOffset
+	+M_ASR
+	+M_ASR
+	sec
+	sbc #6
+	sta EntityYPos,x
+	lda #defaultNeutralScaleIs+1
+	sta EntityZPos,x
+	lda #0
+	sta EntityScaleTweak,x
+	lda #<MissileForward_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>MissileForward_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+
+	lda #<EntityState_MissileForward
+	sta EntityStateLo,x
+	lda #>EntityState_MissileForward
+	sta EntityStateHi,x
+
+.noFreeSlot2
+.wasFire
+	lda #1
+	sta .isFireBefore
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	dec landscapeFrameSpeed
+	bne .notDown2b
+	lda #1
+	sta landscapeFrameSpeed
+.notDown2b
+	ldx landscapeFrameSpeed
+	lda PlayerEngineFrequenciesLo,x
+	sta Player_EngineTargetFrequency
+	lda PlayerEngineFrequenciesHi,x
+	sta Player_EngineTargetFrequency+1
+.notDown
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	+MByteValueToAddress_A 45 , Player_EngineVolumeChange
+	inc landscapeFrameSpeed
+	ldx landscapeFrameSpeed
+	cpx #7
+	bcc .notUp2b
+	ldx #7
+	stx landscapeFrameSpeed
+.notUp2b
+	lda PlayerEngineFrequenciesLo,x
+	sta Player_EngineTargetFrequency
+	lda PlayerEngineFrequenciesHi,x
+	sta Player_EngineTargetFrequency+1
+.notUp
+	jmp .overFire
+.notFire
+	lda #0
+	sta .isFireBefore
+
+.overFire
+!ifndef Debug_SimpleLandscapeRotation {
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+
+	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted1
+	lda playerXPositionOffset
+	; Check for roll trigger
+	cmp #28
+	+IfRegLessThanOrEqualToVal .rollAlreadyStarted1
+	lda #-ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
+	sta landscapeRotationsFrameRoll
+.rollAlreadyStarted1
+
+	lda playerXPositionOffset
+	sec
+	sbc #3
+	cmp #-30
+	+IfRegGreaterThanOrEqualToVal .okVal1
+	lda #-30
+.okVal1
+	sta playerXPositionOffset
+	jmp .gotXInput
+.notLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+
+	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted2
+	lda playerXPositionOffset
+	; Check for roll trigger
+	cmp #-28
+	+IfRegGreaterThanOrEqualToVal .rollAlreadyStarted2
+	lda #ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
+	sta landscapeRotationsFrameRoll
+.rollAlreadyStarted2
+
+	lda playerXPositionOffset
+	clc
+	adc #3
+	cmp #30
+	+IfRegLessThanOrEqualToVal .okVal2
+	lda #30
+.okVal2
+	sta playerXPositionOffset
+	jmp .gotXInput
+.notRight
+	jsr ReducePlayerXPositionForNoInput
+.gotXInput
+}
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown2
+	lda playerYPositionOffset
+	cmp #-50
+	beq .doReduceAndSkip
+	lda playerYPositionOffsetSpeed
+	sec
+	sbc #1
+	cmp #-5
++IfRegGreaterThanOrEqualToVal .isOK3
+	lda #-5
+.isOK3
+	sta playerYPositionOffsetSpeed
+	jmp .overUpDown
+.doReduceAndSkip
+	jsr playerYPositionOffsetSpeedReduce
+	jmp .overUpDown
+.notDown2
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp2
+	lda playerYPositionOffset
+	cmp #50
+	beq .doReduceAndSkip
+	lda playerYPositionOffsetSpeed
+	clc
+	adc #1
+	cmp #5
++IfRegLessThanOrEqualToVal .isOK4
+	lda #5
+.isOK4
+	sta playerYPositionOffsetSpeed
+	jmp .overUpDown
+
+.notUp2
+
+	jsr playerYPositionOffsetSpeedReduce
+
+	lda playerYPositionOffset
+	beq .overUpDown
+	bpl .makeLess
+.makeMore
+	clc
+	adc #1
+	jmp .insertUp
+.makeLess
+	sec
+	sbc #1
+	jmp .insertDown
+
+.overUpDown
+
+	; Process any player Y offset changes
+	lda playerYPositionOffsetSpeed
+	beq .overYOffsetUpdate
+	bpl .isPositive1
+	lda playerYPositionOffset
+	clc
+	adc playerYPositionOffsetSpeed
+.insertDown
+	cmp #-50
+	+IfRegGreaterThanOrEqualToVal .isOK1
+	lda #-50
+.isOK1
+	sta playerYPositionOffset
+	jmp .overYOffsetUpdate
+.isPositive1
+	lda playerYPositionOffset
+	clc
+	adc playerYPositionOffsetSpeed
+.insertUp
+	cmp #50
+	+IfRegLessThanOrEqualToVal .isOK2
+	lda #50
+.isOK2
+	sta playerYPositionOffset
+	jmp .overYOffsetUpdate
+.overYOffsetUpdate
+
+	jsr PlayerPositionToForHorizonAndLandscape
+
+!ifdef Debug_SimpleLandscapeRotation {
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notInputLeft
+	dec landscapeRotationsFrame
+.notInputLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notInputRight
+	inc landscapeRotationsFrame
+.notInputRight
+	lda landscapeRotationsFrame
+.normaliseValue1
+	cmp #ScreenLandscapeNumRollSteps
+	bcc .isOKValue1
+	sbc #ScreenLandscapeNumRollSteps
+	jmp .normaliseValue1
+.isOKValue1
+	sta landscapeRotationsFrame
+}
+
+!ifndef Debug_SimpleLandscapeRotation {
+	lda PlayerControl_disableRoll
+	bne .noRollAtAll
+
+	; Forced roll stops any banking calculation
+	lda landscapeRotationsFrameRoll
+	bne .rollAlreadyStarted3
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notInputLeft
+	lda landscapeRotationsFrame
+	cmp #(8 * ScreenLandscapeNumRollSteps) / 24
+	bcc .gotRollInput
+	sec
+	sbc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+.notInputLeft
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notInputRight
+	lda landscapeRotationsFrame
+	cmp #((16 * ScreenLandscapeNumRollSteps) / 24) - 1
+	bcs .gotRollInput
+	clc
+	adc #1
+	sta landscapeRotationsFrame
+	jmp .gotRollInput
+.notInputRight
+.rollAlreadyStarted3
+
+	; Don't level the airplane  if it is rolling
+	lda landscapeRotationsFrameRoll
+	bne .gotRollInput
+
+	jsr TryToLevelAnyRoll
+.gotRollInput
+
+	; Add in any forced roll animation
+	lda landscapeRotationsFrameRoll
+	beq .noRollAtAll
+	bmi .rollLeft
+
+.rollRight
+	dec landscapeRotationsFrameRoll
+	lda landscapeRotationsFrame
+	clc
+	adc #ScreenLandscapeNumRollAnimationSpeed
+	cmp #ScreenLandscapeNumRollSteps
+	bcc .okRollValue1
+	sec
+	sbc #ScreenLandscapeNumRollSteps
+.okRollValue1
+	sta landscapeRotationsFrame
+	jmp .noRollAtAll
+
+.rollLeft
+	inc landscapeRotationsFrameRoll
+	lda landscapeRotationsFrame
+	sec
+	sbc #ScreenLandscapeNumRollAnimationSpeed
+	bpl .okRollValue2
+	clc
+	adc #ScreenLandscapeNumRollSteps
+.okRollValue2
+	sta landscapeRotationsFrame
+	jmp .noRollAtAll
+
+.noRollAtAll
+}
+
+	rts
+
+PlayerPositionToForHorizonAndLandscape
+	lda playerYPositionOffset
+	+M_ASR
+;	+M_ASR
+	sta playerYPositionOffsetForSprites
+	clc
+	adc #ScreenLandscapeOriginYPos
+	sta playerYPositionOffsetForLandscape
+
+	; Normalise for horizon
+	lda playerYPositionOffset
+	clc
+	adc #50
+	lsr
+	lsr
+	sta playerYPositionOffsetForHorizon
+	rts
+
+playerYPositionOffsetSpeedReduce
+	; If there is no vertical input then slowly reduce the offset back to the middle
+	lda playerYPositionOffsetSpeed
+	bmi .makeMore2
+	beq .adjustPositionOffset
+.makeLess2
+	sec
+	sbc #1
+	sta playerYPositionOffsetSpeed
+	jmp .adjustPositionOffset
+.makeMore2
+	clc
+	adc #1
+	sta playerYPositionOffsetSpeed
+.adjustPositionOffset
+	rts
+
+
+
+playerXPositionOffset
+	!by 0
+
+playerYPositionOffsetSpeed
+	!by 0
+
+playerYPositionOffset
+	!by 0
+
+playerYPositionOffsetForHorizon
+	!by 0
+playerYPositionOffsetForLandscape
+	!by ScreenLandscapeOriginYPos
+playerYPositionOffsetForSprites
+	!by 0
+
+playerYPositionOffsetSpeedDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 2
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+	!by .i
+}
+
+; There seem to be 3 roll left animations, that can be flipped for roll right, plus the middle set of animations
+playerXPositionOffsetDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 8
+!if .i > 3 {
+!set .i = 3
+}
+!if .i < -3 {
+!set .i = -3
+}
+	!by (.i + 3) * 2
+}
+
+playerYPositionOffsetDivideTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!set .i = .i / 16
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+; Invert screen space
+!set .i = -.i
+	!by .i
+}
+
+clampToTwoTab
+!for .ii , 256 {
+!set .i = .ii-1
+!if .i >= 128 {
+!set .i = -(256 - .i)
+}
+!if .i > 2 {
+!set .i = 2
+}
+!if .i < -2 {
+!set .i = -2
+}
+	!by (.i + 2) * 2
+}
+
+
+RenderSpritePlayerR0YTab
+	!word RenderSpritePlayerR0YU2 , RenderSpritePlayerR0YU1 , RenderSpritePlayerR0Y0 , RenderSpritePlayerR0YD1 , RenderSpritePlayerR0YD2
+RenderSpritePlayerRL1YTab
+	!word RenderSpritePlayerRL1YU2 , RenderSpritePlayerRL1YU1 , RenderSpritePlayerRL1Y0 , RenderSpritePlayerRL1YD1 , RenderSpritePlayerRL1YD2
+RenderSpritePlayerRL2YTab
+	!word RenderSpritePlayerRL2YU2 , RenderSpritePlayerRL2YU1 , RenderSpritePlayerRL2Y0 , RenderSpritePlayerRL2YD1 , RenderSpritePlayerRL2YD2
+RenderSpritePlayerRL3YTab
+	!word RenderSpritePlayerRL3YU2 , RenderSpritePlayerRL3YU1 , RenderSpritePlayerRL3Y0 , RenderSpritePlayerRL3YD1 , RenderSpritePlayerRL3YD2
+RenderSpritePlayerRR1YTab
+	!word RenderSpritePlayerRR1YU2 , RenderSpritePlayerRR1YU1 , RenderSpritePlayerRR1Y0 , RenderSpritePlayerRR1YD1 , RenderSpritePlayerRR1YD2
+RenderSpritePlayerRR2YTab
+	!word RenderSpritePlayerRR2YU2 , RenderSpritePlayerRR2YU1 , RenderSpritePlayerRR2Y0 , RenderSpritePlayerRR2YD1 , RenderSpritePlayerRR2YD2
+RenderSpritePlayerRR3YTab
+	!word RenderSpritePlayerRR3YU2 , RenderSpritePlayerRR3YU1 , RenderSpritePlayerRR3Y0 , RenderSpritePlayerRR3YD1 , RenderSpritePlayerRR3YD2
+
+RenderSpritePlayerRollTab
+	!word RenderSpritePlayerRL3YTab , RenderSpritePlayerRL2YTab , RenderSpritePlayerRL1YTab , RenderSpritePlayerR0YTab , RenderSpritePlayerRR1YTab , RenderSpritePlayerRR2YTab , RenderSpritePlayerRR3YTab
+
+RenderSpritePlayer
+	; Incorporates Y speed (climb or dive) and screen position
+	ldx playerYPositionOffset
+	lda playerYPositionOffsetDivideTab,x
+	clc
+	ldx playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeedDivideTab,x
+	tax
+	ldy clampToTwoTab,x
+
+	; Get the roll table entry
+	ldx playerXPositionOffset
+	lda playerXPositionOffsetDivideTab,x
+	tax
+	lda RenderSpritePlayerRollTab,x
+	sta .smt1+1
+	sta .smt2+1
+	lda RenderSpritePlayerRollTab+1,x
+	sta .smt1+2
+	sta .smt2+2
+
+.smt1	lda RenderSpritePlayerR0YTab,y
+	sta .smj2+1
+	iny
+.smt2	lda RenderSpritePlayerR0YTab,y
+	sta .smj2+2
+.smj2	jmp RenderSpritePlayerR0Y0
+
+
+
+!macro MRenderSpritePlayer .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	lda playerYPositionOffset
+	clc
+	adc #112
+	sec
+	sbc #.height/2
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+;	lda #$aa - (.width/2)
+	lda #(328/2) - (.width/2)	; This is more in the middle of the screen
+	clc
+	adc playerXPositionOffset
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+	rts
+}
+
+!macro MRenderSpritePlayerFlipX .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette | kBus24Bit_Video_FlipH
+	; Y pos and size
+	lda playerYPositionOffset
+	clc
+	adc #112
+	sec
+	sbc #.height/2
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+	lda #$aa - (.width/2)
+	clc
+	adc playerXPositionOffset
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address + .width-1
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+	rts
+}
+
+RenderSpritePlayerRL3Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_317_0_0_0_colour , kVarsEmitSpriteFrame_t_317_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_317_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_317_0_0_0_tileAddress
+RenderSpritePlayerRL3YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_213_0_0_0_colour , kVarsEmitSpriteFrame_t_213_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_213_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_213_0_0_0_tileAddress
+RenderSpritePlayerRL3YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_bt_823_0_0_0_colour , kVarsEmitSpriteFrame_bt_823_0_0_0_tileWidth , kVarsEmitSpriteFrame_bt_823_0_0_0_tileHeight , kVarsEmitSpriteFrame_bt_823_0_0_0_tileAddress
+RenderSpritePlayerRL3YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_314_0_0_0_colour , kVarsEmitSpriteFrame_t_314_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_314_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_314_0_0_0_tileAddress
+RenderSpritePlayerRL3YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_468_0_0_0_colour , kVarsEmitSpriteFrame_t_468_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_468_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_468_0_0_0_tileAddress
+
+RenderSpritePlayerRL2Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_172_0_0_0_colour , kVarsEmitSpriteFrame_t_172_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_172_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_172_0_0_0_tileAddress
+RenderSpritePlayerRL2YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_443_0_0_0_colour , kVarsEmitSpriteFrame_t_443_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_443_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_443_0_0_0_tileAddress
+RenderSpritePlayerRL2YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_81_0_0_0_colour , kVarsEmitSpriteFrame_t_81_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_81_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_81_0_0_0_tileAddress
+RenderSpritePlayerRL2YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_373_0_0_0_colour , kVarsEmitSpriteFrame_t_373_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_373_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_373_0_0_0_tileAddress
+RenderSpritePlayerRL2YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_492_0_0_0_colour , kVarsEmitSpriteFrame_t_492_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_492_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_492_0_0_0_tileAddress
+
+RenderSpritePlayerRL1Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_221_0_0_0_colour , kVarsEmitSpriteFrame_t_221_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_221_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_221_0_0_0_tileAddress
+RenderSpritePlayerRL1YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_69_0_0_0_colour , kVarsEmitSpriteFrame_t_69_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_69_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_69_0_0_0_tileAddress
+RenderSpritePlayerRL1YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_97_0_0_0_colour , kVarsEmitSpriteFrame_t_97_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_97_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_97_0_0_0_tileAddress
+RenderSpritePlayerRL1YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_59_0_0_0_colour , kVarsEmitSpriteFrame_t_59_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_59_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_59_0_0_0_tileAddress
+RenderSpritePlayerRL1YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_58_0_0_0_colour , kVarsEmitSpriteFrame_t_58_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_58_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_58_0_0_0_tileAddress
+
+
+RenderSpritePlayerRR3Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_317_0_0_0_colour , kVarsEmitSpriteFrame_t_317_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_317_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_317_0_0_0_tileAddress
+RenderSpritePlayerRR3YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_213_0_0_0_colour , kVarsEmitSpriteFrame_t_213_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_213_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_213_0_0_0_tileAddress
+RenderSpritePlayerRR3YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_bt_823_0_0_0_colour , kVarsEmitSpriteFrame_bt_823_0_0_0_tileWidth , kVarsEmitSpriteFrame_bt_823_0_0_0_tileHeight , kVarsEmitSpriteFrame_bt_823_0_0_0_tileAddress
+RenderSpritePlayerRR3YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_314_0_0_0_colour , kVarsEmitSpriteFrame_t_314_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_314_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_314_0_0_0_tileAddress
+RenderSpritePlayerRR3YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_468_0_0_0_colour , kVarsEmitSpriteFrame_t_468_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_468_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_468_0_0_0_tileAddress
+
+RenderSpritePlayerRR2Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_172_0_0_0_colour , kVarsEmitSpriteFrame_t_172_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_172_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_172_0_0_0_tileAddress
+RenderSpritePlayerRR2YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_443_0_0_0_colour , kVarsEmitSpriteFrame_t_443_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_443_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_443_0_0_0_tileAddress
+RenderSpritePlayerRR2YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_81_0_0_0_colour , kVarsEmitSpriteFrame_t_81_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_81_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_81_0_0_0_tileAddress
+RenderSpritePlayerRR2YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_373_0_0_0_colour , kVarsEmitSpriteFrame_t_373_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_373_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_373_0_0_0_tileAddress
+RenderSpritePlayerRR2YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_492_0_0_0_colour , kVarsEmitSpriteFrame_t_492_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_492_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_492_0_0_0_tileAddress
+
+RenderSpritePlayerRR1Y0
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_221_0_0_0_colour , kVarsEmitSpriteFrame_t_221_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_221_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_221_0_0_0_tileAddress
+RenderSpritePlayerRR1YU1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_69_0_0_0_colour , kVarsEmitSpriteFrame_t_69_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_69_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_69_0_0_0_tileAddress
+RenderSpritePlayerRR1YU2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_97_0_0_0_colour , kVarsEmitSpriteFrame_t_97_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_97_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_97_0_0_0_tileAddress
+RenderSpritePlayerRR1YD1
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_59_0_0_0_colour , kVarsEmitSpriteFrame_t_59_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_59_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_59_0_0_0_tileAddress
+RenderSpritePlayerRR1YD2
+	+MRenderSpritePlayerFlipX kVarsEmitSpriteFrame_t_58_0_0_0_colour , kVarsEmitSpriteFrame_t_58_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_58_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_58_0_0_0_tileAddress
+
+
+
+RenderSpritePlayerR0Y0
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_380_0_0_0_colour , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_380_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_380_0_0_0_tileAddress
+RenderSpritePlayerR0YU1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_6_0_0_0_colour , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_6_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_6_0_0_0_tileAddress
+RenderSpritePlayerR0YU2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_10_0_0_0_colour , kVarsEmitSpriteFrame_t_10_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_10_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_10_0_0_0_tileAddress
+RenderSpritePlayerR0YD1
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_15_0_0_0_colour , kVarsEmitSpriteFrame_t_15_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_15_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_15_0_0_0_tileAddress
+RenderSpritePlayerR0YD2
+	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_494_0_0_0_colour , kVarsEmitSpriteFrame_t_494_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_494_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_494_0_0_0_tileAddress
+
+
+PlayerEngineFrequenciesLo
+PlayerEngineFrequenciesHi = * + 8
+!for .i , 8 {
+!word (kSampleInfo11_frequency - (kSampleInfo11_frequency/2)) + (((.i-1) * kSampleInfo11_frequency) / 4)
+}
+!swizzle PlayerEngineFrequenciesLo , 8 , 2
+
+PlayerEngineSoundControl
+	lda Player_EngineVolumeChange
+	beq .noVolChange1
+	bpl .posChange1
+	inc Player_EngineVolumeChange
+	lda Player_EngineVolume
+	cmp #32
+	+lbcc .noVolChange2
+	dec Player_EngineVolume
+	dec Player_EngineVolume
+	+MSampleSetVolume_fromAddr8 0 , Player_EngineVolume
+	jmp .noVolChange2
+.posChange1
+	dec Player_EngineVolumeChange
+	lda Player_EngineVolume
+	cmp #250
+	bcs .noVolChange2
+	inc Player_EngineVolume
+	inc Player_EngineVolume
+	+MSampleSetVolume_fromAddr8 0 , Player_EngineVolume
+	jmp .noVolChange2
+.noVolChange1
+	; If there is no programmed change, then slowly reduce to volume 32 anyway
+	lda Player_EngineVolume
+	cmp #32
+	bcc .noVolChange2
+	dec Player_EngineVolume
+	+MSampleSetVolume_fromAddr8 0 , Player_EngineVolume
+.noVolChange2
+
+	lda Player_EngineFrequency+1
+	cmp Player_EngineTargetFrequency+1
+	beq .engineSame1
+	bcc .engineLess1
+	; greater than
+	+MSubU8FromAddr16 25 , Player_EngineFrequency , Player_EngineFrequency + 1
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+	jmp .engineOK1
+.engineLess1
+	+MAddU8ToAddr16 25 , Player_EngineFrequency , Player_EngineFrequency + 1
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+	jmp .engineOK1
+.engineSame1
+
+	lda Player_EngineFrequency
+	cmp Player_EngineTargetFrequency
+	beq .engineSame2
+	bcc .engineLess2
+	; greater than
+	+MSubU8FromAddr16 25 , Player_EngineFrequency , Player_EngineFrequency + 1
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+	jmp .engineOK1
+.engineLess2
+	+MAddU8ToAddr16 25 , Player_EngineFrequency , Player_EngineFrequency + 1
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+	jmp .engineOK1
+.engineSame2
+
+.engineOK1
+
+
+	rts
+
+
+!zn
+TryToLevelAnyRoll
+	; Try to level any roll
+	lda landscapeRotationsFrame
+	cmp #(ScreenLandscapeNumRollSteps / 2) - 1
+	beq .gotRollInput
+	bcs .rollLarger
+	clc
+	adc #1
+	sta landscapeRotationsFrame
+	sec
+	rts
+
+.rollLarger
+	sec
+	sbc #1
+	sta landscapeRotationsFrame
+	sec
+	rts
+
+.gotRollInput
+	clc
+	rts
+
+
+!zn
+ReducePlayerXPositionForNoInput
+	; Reduce if there is no input
+	lda playerXPositionOffset
+	beq .gotXInput
+	bpl .isPos1
+	inc playerXPositionOffset
+	rts
+.isPos1
+	dec playerXPositionOffset
+.gotXInput
+	rts

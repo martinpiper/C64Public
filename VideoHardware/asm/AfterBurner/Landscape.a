@@ -1,0 +1,745 @@
+MultiplyByThree
+!for .i , 85 {
+!by (.i-1) * 3
+}
+
+
+
+
+.rejectSpriteYTab
+!for .ii , 256 {
+!set .i = .ii - 1
+!set .enable = 1
+!if .i > 108 {
+!if .i < 250 {
+!set .enable = 0
+}
+}
+	!by .enable
+}
+
+.rejectSpriteXTab
+!for .ii , 256 {
+!set .i = .ii - 1
+!set .enable = 1
+!if .i > 160 {
+!if .i < 230 {
+!set .enable = 0
+}
+}
+	!by .enable
+}
+
+LandscapeRender_CommonTableCalculation
+	ldy landscapeFrame
+	lda MultiplyByThree,y
+	+MAddAToAddr24 zeroPage_Temp0 , zeroPage_Temp1 , zeroPage_Temp2
+
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	+MBus20To32Bit1_UsingState_SetLatch1_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+	+MBus20To32Bit1_UsingState_SetLatch2_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp2
+
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+	+MBus20To32Bit1_UsingState_WriteMode_A
+
+
+	+MBus20To32Bit1_UsingState_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	+MBus20To32Bit1_UsingState_SetLatch1_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+	+MBus20To32Bit1_UsingState_SetLatch2_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp2
+	rts
+
+
+LandscapeRenderHeight
+	ldx landscapeHeightsFrame
+	lda landscapeHeights,x
+	sta zeroPage_Temp0
+	lda landscapeHeights + landscapeHeightsNum,x
+	sta zeroPage_Temp1
+	lda landscapeHeights + (landscapeHeightsNum * 2),x
+	sta zeroPage_Temp2
+	jmp .continueLandscapeRender
+
+LandscapeRenderScrollX
+	ldx landscapeScrollXFrame
+	lda landscapeScrollX,x
+	sta zeroPage_Temp0
+	lda landscapeScrollX + landscapeScrollXNum,x
+	sta zeroPage_Temp1
+	lda landscapeScrollX + (landscapeScrollXNum * 2),x
+	sta zeroPage_Temp2
+	jmp .continueLandscapeRender
+
+LandscapeRender
+	ldx landscapeRotationsFrame
+	lda landscapeRotations,x
+	sta zeroPage_Temp0
+	lda landscapeRotations + ScreenLandscapeNumRollSteps,x
+	sta zeroPage_Temp1
+	lda landscapeRotations + (ScreenLandscapeNumRollSteps * 2),x
+	sta zeroPage_Temp2
+.continueLandscapeRender
+	jsr LandscapeRender_CommonTableCalculation
+
+	; Process landscape frame
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+
+.dl1
+	; index
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp6
+	clc
+	adc LandscapeMapRowOffset
+	tax
+	ldy LandscapeMap,x
+	; Test for empty object type
+!if 1 {
+	bne .something
+	; Maintain sync with data
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .processNextSprite
+.something
+}
+	lda ObjectDrawLo-1,y
+	sta .smj1+1
+	lda ObjectDrawHi-1,y
+	sta .smj1+2
+	lda LandscapeMapXTweak,x
+	sta zeroPage_Temp7
+	lda #0
+	sta zeroPage_Temp3
+
+	; Z
+	+MBus24Bit_Get8BitValueToX
+
+	; Y pos
+	+MBus24Bit_Get8BitValueToA
+	sec
+	sbc playerYPositionOffsetForLandscape
+	; Check and reject for top/bottom screen position
+	sta zeroPage_Temp11
+	tay
+	lda .rejectSpriteYTab,y
+	bne .noSkipSpriteAtY
+	; Maintain sync with data
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .processNextSprite
+.noSkipSpriteAtY
+
+	lda zeroPage_Temp11
+	asl
+	sta zeroPage_Temp4
+	bcc .noMSBY
+	lda #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBY
+
+	; X pos
+	lda zeroPage_Temp7
+	bne .someTweakX
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	+MBus24Bit_Get8BitValueToA
+	ora zeroPage_Temp3
+	sta zeroPage_Temp3
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	jmp .continueX
+.someTweakX
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	+MBus24Bit_Get8BitValueToA
+	ora zeroPage_Temp3
+	sta zeroPage_Temp3
+.continueX
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+.smj1	jmp $1234
+ObjectDrawReturn
+
+	+MBus20To32Bit1_UsingState_ReadMode_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
+
+.processNextSprite
+	dec zeroPage_Temp2
+	+lbne .dl1
+.endLandscapeDraw
+
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+	rts
+
+
+
+UpdateLandscapeFrame
+	lda landscapeFrame
+	clc
+	adc landscapeFrameSpeed
+	sta landscapeFrame
+	cmp #8
+	bcc .noNewRow
+	and #7
+	sta landscapeFrame
+
+	; Update the palette bank for the current map row type
+	ldy LandscapeMapRowsDataOffset
+	lda LandscapeMapRowsData,y
+	sta GamePaletteBank
+	lda LandscapeMapRowsData + 1,y
+	sta GroundColours
+
+	; Calculate new map data into the row we are just about to move over
+	jsr Rand
+	eor #%10110101
+	sta .sme1+1
+	; This adjusts the row that gets updated to the new map row type is introduced right at the far visible edge of the horizon
+	lda LandscapeMapRowOffset
+	sec
+	sbc #16*7
+	tax
+	lda #17	; Add one to remove any previous data due to banking or moving right in the level map
+	sta zeroPage_Temp0
+.umd1
+	jsr Rand
+.sme1	eor #%10110101
+	and #7
+	clc
+	adc LandscapeMapRowsDataOffset
+	tay
+	lda LandscapeMapRowsData + 2,y
+	sta LandscapeMap,x
+	inx
+	inc .sme1+1
+	ror .sme1+1
+	dec zeroPage_Temp0
+	bne .umd1
+
+	lda LandscapeMapRowOffset
+	clc
+	ldy landscapeRotationsFrame
+	adc landscapeRotationsFrameToOffset,y
+	sta LandscapeMapRowOffset
+	and #$f0
+	bne .noAdvanceLandscapeMapRowsDataOffset
+	; Advance through the map data row types with each whole landscape pass
+	lda LandscapeMapRowsDataOffset
+	clc
+	adc #10
+	cmp #LandscapeMapRowsDataSize
+	bcc .okStore1
+	lda #0
+.okStore1
+	sta LandscapeMapRowsDataOffset
+.noAdvanceLandscapeMapRowsDataOffset
+
+
+.noNewRow
+	rts
+
+
+
+
+
+ObjectDrawLo
+	!word ObjectDraw1 , ObjectDraw2 , ObjectDraw3 , ObjectDraw4 , ObjectDraw5 , ObjectDraw6 , ObjectDraw7 , ObjectDraw8 , ObjectDraw9 , ObjectDraw10 , ObjectDraw11
+	!word ObjectDraw12 , ObjectDraw13 , ObjectDraw14 , ObjectDraw15
+!swizzle ObjectDrawLo , (* - ObjectDrawLo) / 2 , 2
+ObjectDrawHi = (* + ObjectDrawLo) / 2	; Middle :)
+
+
+ObjectDraw1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw2
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_934_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw3
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_576_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw4
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_576_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw5
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_934_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw6
+	ldy landscapeRotationsFrame
+	lda ObjectDraw6Rotations,y
+	sta .smj3+1
+	lda ObjectDraw6Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj3+2
+.smj3 jmp $1234
+
+ObjectDraw6Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw6_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw6_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw6Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw6_10
+ObjectDraw6_5
+ObjectDraw6_0
+ObjectDraw6_350
+ObjectDraw6_355
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565_0_0_0_colour , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_345
+ObjectDraw6_340
+ObjectDraw6_335
+ObjectDraw6_330
++MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_325
+ObjectDraw6_320
+ObjectDraw6_315
+ObjectDraw6_310
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_305
+ObjectDraw6_300
+ObjectDraw6_295
+ObjectDraw6_290
+ObjectDraw6_285
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_280
+ObjectDraw6_275
+ObjectDraw6_270
+ObjectDraw6_265
+ObjectDraw6_260
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565rot_0_0_0_colour , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_255
+ObjectDraw6_250
+ObjectDraw6_245
+ObjectDraw6_240
+ObjectDraw6_235
+ObjectDraw6_230
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_225
+ObjectDraw6_220
+ObjectDraw6_215
+ObjectDraw6_210
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_205
+ObjectDraw6_200
+ObjectDraw6_195
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_190
+ObjectDraw6_185
+ObjectDraw6_180
+ObjectDraw6_175
+ObjectDraw6_170
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565_0_0_0_colour , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_165
+ObjectDraw6_160
+ObjectDraw6_155
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_150
+ObjectDraw6_145
+ObjectDraw6_140
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_135
+ObjectDraw6_130
+ObjectDraw6_125
+ObjectDraw6_120
+ObjectDraw6_115
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_110
+ObjectDraw6_105
+ObjectDraw6_100
+ObjectDraw6_95
+ObjectDraw6_90
+ObjectDraw6_85
+ObjectDraw6_80
+ObjectDraw6_75
+ObjectDraw6_70
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565rot_0_0_0_colour , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_65
+ObjectDraw6_60
+ObjectDraw6_55
+ObjectDraw6_50
+ObjectDraw6_45
+ObjectDraw6_40
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw6_35
+ObjectDraw6_30
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw6_25
+ObjectDraw6_20
+ObjectDraw6_15
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+
+ObjectDraw7
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1145_0_0_0_colour , kVarsEmitSpriteFrame_t_1145_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1145_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1145_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1145_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw8
+	+MAdjustObjectScaleBy 12 , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileHeightScaleTab , 2 , 1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3081_0_0_0_colour , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw9
+	lda zeroPage_Temp4
+	cmp runwayMaxScreenRow
+	bcc .norunwayMaxScreenRow1
+	sta runwayMaxScreenRow
+.norunwayMaxScreenRow1
+	inc runwayMaxScreenRowUpdated
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3112_0_0_0_colour , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw10
+	lda zeroPage_Temp4
+	cmp runwayMinScreenRow
+	bcc .norunwayMinScreenRow1
+	sta runwayMinScreenRow
+.norunwayMinScreenRow1
+	inc runwayMinScreenRowUpdated
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3112_0_0_0_colour , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+
+ObjectDraw11
+	ldy landscapeRotationsFrame
+	lda ObjectDraw11Rotations,y
+	sta .smj4+1
+	lda ObjectDraw11Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj4+2
+.smj4 jmp $1234
+
+ObjectDraw11Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw11_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw11_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw11Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw11_25
+ObjectDraw11_20
+ObjectDraw11_15
+ObjectDraw11_10
+ObjectDraw11_5
+ObjectDraw11_0
+ObjectDraw11_355
+ObjectDraw11_350
+ObjectDraw11_345
+ObjectDraw11_340
+ObjectDraw11_335
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14_0_0_0_colour , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+
+ObjectDraw11_330
+ObjectDraw11_325
+ObjectDraw11_320
+ObjectDraw11_315
+ObjectDraw11_310
+ObjectDraw11_305
+ObjectDraw11_300
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_295
+ObjectDraw11_290
+ObjectDraw11_285
+ObjectDraw11_280
+ObjectDraw11_275
+ObjectDraw11_270
+ObjectDraw11_265
+ObjectDraw11_260
+ObjectDraw11_255
+ObjectDraw11_250
+ObjectDraw11_245
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14rot_0_0_0_colour , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_240
+ObjectDraw11_235
+ObjectDraw11_230
+ObjectDraw11_225
+ObjectDraw11_220
+ObjectDraw11_215
+ObjectDraw11_210
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_205
+ObjectDraw11_200
+ObjectDraw11_195
+ObjectDraw11_190
+ObjectDraw11_185
+ObjectDraw11_180
+ObjectDraw11_175
+ObjectDraw11_170
+ObjectDraw11_165
+ObjectDraw11_160
+ObjectDraw11_155
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14_0_0_0_colour , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_150
+ObjectDraw11_145
+ObjectDraw11_140
+ObjectDraw11_135
+ObjectDraw11_130
+ObjectDraw11_125
+ObjectDraw11_120
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_115
+ObjectDraw11_110
+ObjectDraw11_105
+ObjectDraw11_100
+ObjectDraw11_95
+ObjectDraw11_90
+ObjectDraw11_85
+ObjectDraw11_80
+ObjectDraw11_75
+ObjectDraw11_70
+ObjectDraw11_65
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14rot_0_0_0_colour , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_60
+ObjectDraw11_55
+ObjectDraw11_50
+ObjectDraw11_45
+ObjectDraw11_40
+ObjectDraw11_35
+ObjectDraw11_30
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw12
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1692_0_0_0_colour , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+!zn
+ObjectDraw13
+	+MAdjustObjectScaleBy 15 , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileHeightScaleTab , 1 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1728_0_0_0_colour , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw14
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1862_0_0_0_colour , kVarsEmitSpriteFrame_t_1862_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1862_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1862_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1862_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw15
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1745_0_0_0_colour , kVarsEmitSpriteFrame_t_1745_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1745_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1745_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1745_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+
+landscapeFrameSpeed !by 1
+landscapeFrame !by 0
+
+landscapeRotationsFrame !by (ScreenLandscapeNumRollSteps/2)-1
+landscapeRotationsFrameRoll !by 0
+landscapeRotations
+!24 landscape175Frames , landscape170Frames , landscape165Frames , landscape160Frames , landscape155Frames , landscape150Frames , landscape145Frames , landscape140Frames , landscape135Frames , landscape130Frames , landscape125Frames , landscape120Frames , landscape115Frames , landscape110Frames , landscape105Frames , landscape100Frames , landscape095Frames , landscape090Frames , landscape085Frames , landscape080Frames , landscape075Frames , landscape070Frames , landscape065Frames , landscape060Frames , landscape055Frames , landscape050Frames , landscape045Frames , landscape040Frames , landscape035Frames , landscape030Frames , landscape025Frames , landscape020Frames , landscape015Frames , landscape010Frames , landscape005Frames , landscape000Frames
+!24 landscape355Frames , landscape350Frames , landscape345Frames , landscape340Frames , landscape335Frames , landscape330Frames , landscape325Frames , landscape320Frames , landscape315Frames , landscape310Frames , landscape305Frames , landscape300Frames , landscape295Frames , landscape290Frames , landscape285Frames , landscape280Frames , landscape275Frames , landscape270Frames , landscape265Frames , landscape260Frames , landscape255Frames , landscape250Frames , landscape245Frames , landscape240Frames , landscape235Frames , landscape230Frames , landscape225Frames , landscape220Frames , landscape215Frames , landscape210Frames , landscape205Frames , landscape200Frames , landscape195Frames , landscape190Frames , landscape185Frames , landscape180Frames
+!swizzle landscapeRotations , ScreenLandscapeNumRollSteps , 3
+
+
+landscapeHeights
+!24 landscapeHeight064Frames , landscapeHeight065Frames , landscapeHeight066Frames , landscapeHeight067Frames , landscapeHeight068Frames , landscapeHeight069Frames , landscapeHeight070Frames , landscapeHeight071Frames , landscapeHeight072Frames , landscapeHeight073Frames , landscapeHeight074Frames , landscapeHeight075Frames , landscapeHeight076Frames , landscapeHeight077Frames , landscapeHeight078Frames , landscapeHeight079Frames , landscapeHeight080Frames , landscapeHeight081Frames , landscapeHeight082Frames , landscapeHeight083Frames , landscapeHeight084Frames , landscapeHeight085Frames , landscapeHeight086Frames , landscapeHeight087Frames , landscapeHeight088Frames , landscapeHeight089Frames , landscapeHeight090Frames , landscapeHeight091Frames , landscapeHeight092Frames , landscapeHeight093Frames , landscapeHeight094Frames , landscapeHeight095Frames , landscapeHeight096Frames , landscapeHeight097Frames , landscapeHeight098Frames , landscapeHeight099Frames , landscapeHeight100Frames , landscapeHeight101Frames , landscapeHeight102Frames , landscapeHeight103Frames , landscapeHeight104Frames , landscapeHeight105Frames , landscapeHeight106Frames , landscapeHeight107Frames , landscapeHeight108Frames , landscapeHeight109Frames , landscapeHeight110Frames , landscapeHeight111Frames , landscapeHeight112Frames , landscapeHeight113Frames , landscapeHeight114Frames , landscapeHeight115Frames , landscapeHeight116Frames , landscapeHeight117Frames , landscapeHeight118Frames , landscapeHeight119Frames , landscapeHeight120Frames , landscapeHeight121Frames , landscapeHeight122Frames , landscapeHeight123Frames , landscapeHeight124Frames , landscapeHeight125Frames , landscapeHeight126Frames , landscapeHeight127Frames , landscapeHeight128Frames
+
+landscapeHeightsNum = (* - landscapeHeights) / 3
+landscapeHeightsMax = landscapeHeightsNum - 1
+!swizzle landscapeHeights , landscapeHeightsNum , 3
+landscapeHeightsFrame !by landscapeHeightsMax
+
+
+landscapeScrollX
+!24 landscapeScrollX000Frames , landscapeScrollX001Frames , landscapeScrollX002Frames , landscapeScrollX003Frames , landscapeScrollX004Frames , landscapeScrollX005Frames , landscapeScrollX006Frames , landscapeScrollX007Frames
+
+landscapeScrollXNum = (* - landscapeScrollX) / 3
+landscapeScrollXMax = landscapeScrollXNum - 1
+!swizzle landscapeScrollX , landscapeScrollXNum , 3
+landscapeScrollXFrame !by 0
+
+
+landscapeRotationsFrameToOffset
+!by 16, 16, 16 , 16, 16, 16 , 16, 16, 16 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 15, 15, 15 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16
+!by 16, 16, 16 , 16, 16, 16 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 17, 17, 17 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16 , 16, 16, 16
+landscapeRotationsFrameToHorizonSpeed
+!by 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , -1 , -1 , -1 , -1 , -1 , -1 , -2 , -2 , -2 , -2 , -2 , -2 , -1 , -1 , -1 , -1 , -1 , -1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+!by 0 , 0 , 0 , 0 , 0 , 0 , 1 , 1 , 1 ,  1 , 1 , 1 ,  2 , 2 , 2 ,  2 , 2 , 2 ,  1 , 1 , 1 ,  1 , 1 , 1 ,  0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0
+
+
+
+!macro MMode7RotationDX angle {
+	; dx
+	+MLittleEndian24Bit int(256.0 * sin((float(angle + 90) / 360.0) * 2.0 * 3.14159265))
+	; dxy
+	+MLittleEndian24Bit int(256.0 * sin((float(angle) / 360.0) * 2.0 * 3.14159265))
+}
+
+!macro MMode7RotationDY angle {
+	; dy
+	+MLittleEndian24Bit int(-256.0 * sin((float(angle + 90 + 90 + 90) / 360.0) * 2.0 * 3.14159265))
+	; dyx
+	+MLittleEndian24Bit int(256.0 * sin((float(angle + 90 + 90) / 360.0) * 2.0 * 3.14159265))
+}
+
+!macro MMode7RotationOffset angle , screenYOffset {
+	; Position inside the bitmap
+	; Then the position on the screen for the central rotation point
+	+MLittleEndian24Bit int((220.0 * 256.0) + (184.0 * -256.0 * sin((float(angle + 90) / 360.0) * 2.0 * 3.14159265)) + ((ScreenLandscapeOriginYPos + 24.0 - screenYOffset) * -256.0 * sin((float(angle) / 360.0) * 2.0 * 3.14159265)))
+	+MLittleEndian24Bit int((128.0 * 256.0) + (184.0 * -256.0 * sin((float(angle + 90 + 90) / 360.0) * 2.0 * 3.14159265)) + ((ScreenLandscapeOriginYPos + 24.0 - screenYOffset) * 256.0 * sin((float(angle + 90 + 90 + 90) / 360.0) * 2.0 * 3.14159265)) )
+}
+
+landscapeRotationHorizonDXDY
+!for .i , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationDX 180 - (.i * ScreenLandscapeNumStepsDelta)
+	+MMode7RotationDY 180 - (.i * ScreenLandscapeNumStepsDelta)
+}
+!for .i , ScreenLandscapeNumRollSteps/2 {
+	+MMode7RotationDX 360 - (.i * ScreenLandscapeNumStepsDelta)
+	+MMode7RotationDY 360 - (.i * ScreenLandscapeNumStepsDelta)
+}
+!swizzle landscapeRotationHorizonDXDY , ScreenLandscapeNumRollSteps , 2*2*3
+
+
+
+
+landscapeRotationHorizonOffsetTab
+!for .ii , 27 {
+!set .i = .ii - 1
+;	!word .startOffsets + (.i * ScreenLandscapeNumRollSteps * 2 * 3)
+	!24 landscapeRotationHorizonOffsets + (.i * ScreenLandscapeNumRollSteps * 2 * 3)
+}
+!swizzle landscapeRotationHorizonOffsetTab , 27 , 3
+
+MultiplyByMul6
+!for .ii , ScreenLandscapeNumRollSteps {
+!set .i = .ii - 1
+	!word .i * 6
+}
+!swizzle MultiplyByMul6 , ScreenLandscapeNumRollSteps , 2
+
+
+
+; Map row data...
+; 1 Byte palette bank, followed by
+; 8 bytes of LandscapeMapRowsData contains the object types that can be randomly selected for every entire cycle through the whole range of the landscape with LandscapeMapRowOffset
+LandscapeMapRowsDataOffset !by 0
+LandscapeMapRowsData
+!by 0	,0	, 6,6,6,6,6,6,6,6
+!by 0	,0	, 6,6,6,6,6,6,6,6
+!by 0	,4	, 11,11,11,11,11,11,11,11
+!by 0	,4	, 11,11,11,11,11,11,11,11
+
+!by 0	,0	, 6,6,6,1,6,6,6,6
+!by 0	,0	, 6,6,6,6,6,1,2,3
+; Landing zone when there is no carrier sequence
+!by 0	,1	, 6,1,2,3,4,5,0,1
+!by 0	,2	, 1,2,3,4,5,0,1,2
+!by 0	,3	, 1,1,1,1,1,0,0,0
+; Landing zone when there is a carrier
+!by 1	,2	, 0,1,2,8,8,8,0,8
+!by 1	,3	, 1,1,0,1,1,0,0,0
+!by 1	,3	, 1,1,0,1,1,0,0,0
+
+!by 0	,2	, 2,2,7,2,1,7,7,0
+!by 0	,3	, 2,7,2,2,7,0,0,0
+!by 0	,2	, 3,3,3,3,0,0,0,0
+!by 0	,1	, 3,3,3,3,4,0,0,0
+!by 0	,2	, 4,4,7,4,0,0,0,0
+
+!by 0	,3	, 1,1,0,1,1,0,2,2
+!by 2	,1	, 12,0,0,0,14,0,15,0
+!by 2	,2	, 0,13,0,14,0,15,0,0
+!by 2	,2	, 0,13,0,0,0,14,0,0
+!by 2	,2	, 0,13,0,12,0,14,0,0
+!by 2	,2	, 0,0,0,14,0,15,0,0
+!by 2	,3	, 1,1,2,1,1,0,0,0
+!by 0	,3	, 4,1,2,1,1,3,2,0
+
+;!by 0	,2	, 4,4,4,7,0,0,0,0
+;!by 0	,1	, 4,4,4,5,5,7,0,0
+;!by 0	,1	, 5,5,5,5,0,0,0,0
+;!by 0	,1	, 6,1,2,3,4,5,0,1
+;!by 0	,0	, 6,6,6,6,6,1,2,3
+LandscapeMapRowsDataSize = * - LandscapeMapRowsData
+!if LandscapeMapRowsDataSize >= $100 {
+!error "LandscapeMapRowsDataSize too large"
+}
+
+
+LandscapeMapRowOffset !by 0
+LandscapeMap
+!for .z , 16 {
+!if .z <= 2 {
+!by 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+} else {
+!if .z >= 12 {
+!by 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+} else {
+!by 6,6,6,6,6,0,0,0,0,0,6,6,6,6,6,6
+}
+}
+}
+
+LandscapeMapXTweak
+!for .i , ((256 / 6) + 1) {
+!by 0 , 1 , 1 , 0 , 0 , 1
+}
+

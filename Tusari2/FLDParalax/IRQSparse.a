@@ -1,30 +1,39 @@
+!align 255,0
 !zn
 IRQ_BottomBorder
-	sta .smA2
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+	; Disable NMI sources. This neatly stops any NMI FLD or colour split effects or scrolling without needing any complex NMI termination calculation.
+	lda #$7f
+	sta CIA2InterruptControl
+
+	; Blank out the bottom, part 1
+	ldx #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended
+	; Wait...
 	lda #VIC2SpriteYBorderBottom-3
 .wl1
 	cmp VIC2Raster
 	beq .wl1
-
-	; Blank out the bottom
-	lda #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows | kVIC2ScreenControlVBits_Bitmap | kVIC2ScreenControlVBits_Extended
-	sta VIC2ScreenControlV
+	; Blank out the bottom, part 2
+	stx VIC2ScreenControlV
 
 	lda #VIC2SpriteYBorderBottom
 	sta VIC2Raster
 	+MWordValueToAddress_A IRQ_Bottom , KERNALIRQServiceRoutineLo
 	+MACROAckRasterIRQ_A
-.smA2=*+1
-	lda #0
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
 
 	rti
 
 IRQ_BottomStarted !by 0
 IRQ_Bottom
-	sta .smA
+	sta tempWorkIRQA
+	stx tempWorkIRQX
 
-	; This tries to make the NMI, just after the initial PHA, start on the right hand border, repeatedly and precisely
-	+DelayFor 42
+	; This tries to make the NMI, just after the initial entry code above, start on the right hand border, repeatedly and precisely
+	+DelayFor 39
+	; Disable NMI sources and ACK anything
 	lda #$7f
 	sta CIA2InterruptControl
 	lda CIA2InterruptControl
@@ -53,7 +62,7 @@ IRQ_Bottom
 	adc .table,x
 	; Note: It is not required to enable the 25 row screen since the screen is already enabled for this frame and it cannot be switched off again during the display portion of the frame.
 	; But not enabling the screen causes the deug display in C64DebugGUI to be displayed as empty, so we include these bits to enable the debug display.
-;	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
+	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta .split
 }
 	; Update the code with the desired sparse FLD parameters
@@ -75,8 +84,14 @@ IRQ_Bottom
 	+MProcessSplitYPos TableFLDSize3F_YScrollPlus , NMI_FLDSize3F_YScroll
 	+MProcessSplitYPos TableFLDSize3G_YScrollPlus , NMI_FLDSize3G_YScroll
 	+MProcessSplitYPos TableFLDSize3H_YScrollPlus , NMI_FLDSize3H_YScroll
+	+MProcessSplitYPos TableFLDSize4_YScrollPlus , NMI_FLDSize4_YScroll
+	+MProcessSplitYPos TableFLDSize4B_YScrollPlus , NMI_FLDSize4B_YScroll
+	+MProcessSplitYPos TableFLDSize4C_YScrollPlus , NMI_FLDSize4C_YScroll
+	+MProcessSplitYPos TableFLDSize4D_YScrollPlus , NMI_FLDSize4D_YScroll
+	+MProcessSplitYPos TableFLDSize4E_YScrollPlus , NMI_FLDSize4E_YScroll
+	+MProcessSplitYPos TableFLDSize4F_YScrollPlus , NMI_FLDSize4F_YScroll
 
-	; C64DebugGUI, in right border
+	; Using C64DebugGUI, place cursor in right border, at least one character inside, where the row counter changes:
 	; Row counter = 1 = bad line
 	; One line before: Row counter = 7 Sequencer state = idle
 	; One line before that: Row counter = 7 Sequencer state = display	<< Ideal FLD start by adding 2 lines, it gives an extra line grace period
@@ -98,20 +113,47 @@ IRQ_Bottom
 	adc TableFLDSize3_NextNextLines,x
 	sta NMI_FLDSize3_NextNextLines
 
+;	lda #(1*8)+2
+;	clc
+;	adc TableFLDSize4_NextNextLines,x
+;	sta NMI_FLDSize4_NextNextLines
+
 	inc IRQ_BottomStarted
 
-	+DisplayGameScreenClouds
+;	+DisplayGameScreenClouds
+	+MByteValueToAddress_A VIC2Colour_Red , VIC2ScreenColour
 
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
+
+	; Displays score sprites
+	jsr Sprites_UpdateToVIC3
+
+	lda #0
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQ_TopBorder , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+
+	rti
+
+IRQ_TopBorder
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+	+DisplayGameScreenClouds
+
+	jsr Sprites_UpdateToVIC2
 
 	lda #VIC2SpriteYBorderBottom-3
 	sta VIC2Raster
 	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
 	+MACROAckRasterIRQ_A
 
-.smA=*+1
-	lda #0
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
 
 	rti
 
@@ -166,9 +208,18 @@ TableFLDSize3_NextNextLines
 	!by 12 , 13 , 14 , 15
 	!by 16 , 17 , 18 , 19
 	!by 20 , 21 , 22 , 23
-	; Note the last few entries stop the colour changes from moving off the bottom of the screen
 	!by 24 , 25 , 26 , 27
-	!by 27 , 27 , 26 , 26
+	!by 28 , 29 , 30 , 31
+
+TableFLDSize4_NextNextLines
+	!by 0 , 2 , 4 , 6
+	!by 8 , 10 , 12 , 14
+	!by 16 , 18 , 20 , 22
+	!by 24 , 26 , 28 , 30
+	!by 32 , 34 , 36 , 38
+	!by 30 , 42 , 44 , 46
+	!by 48 , 50 , 52 , 54
+	!by 56 , 58 , 60 , 62
 
 
 TableFLDSize2_YScrollPlus
@@ -291,6 +342,66 @@ TableFLDSize3H_YScrollPlus
 	!by 0 , 0 , 0 , 0
 	!by 0 , 0 , 0 , 0
 	!by 1 , 2 , 3 , 4
+
+TableFLDSize4_YScrollPlus
+	!by 2 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+
+TableFLDSize4B_YScrollPlus
+	!by 0 , 0 , 2 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+
+TableFLDSize4C_YScrollPlus
+	!by 0 , 0 , 0 , 0
+	!by 2 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+
+TableFLDSize4D_YScrollPlus
+	!by 0 , 0 , 0 , 0
+	!by 0 , 0 , 2 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+
+TableFLDSize4E_YScrollPlus
+	!by 0 , 0 , 0 , 0
+	!by 0 , 0 , 0 , 0
+	!by 2 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+
+TableFLDSize4F_YScrollPlus
+	!by 0 , 0 , 0 , 0
+	!by 0 , 0 , 0 , 0
+	!by 0 , 0 , 2 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
+	!by 4 , 4 , 4 , 4
 
 !align 255,0
 !zn
@@ -522,6 +633,7 @@ NMI_FLDSize3H_YScroll = * + 1
 NMI_FLDSize4a
 	pha
 	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
+	+MByteValueToAddress_A 0 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize4b , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
@@ -530,14 +642,74 @@ NMI_FLDSize4a
 NMI_FLDSize4b
 	pha
 	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
-	+MWordValueToAddress_A NMI_FLDSize4End , KERNALNMIServiceRoutineLo
+	+MWordValueToAddress_A NMI_FLDSize4c , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
 	rti
 
-NMI_FLDSize4End
+
+NMI_FLDSize4c
+	pha
+NMI_FLDSize4_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
+	+MByteValueToAddress_A 2 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_FLDSize4c2 , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4c2
 	pha
 	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
+FLDSize4_smx2 = * + 1
+	lda #0
+	sta VIC2ScreenControlH
+	+MByteValueToAddress_A 3 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_FLDSize4d , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4d
+	pha
+NMI_FLDSize4B_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
+	+MWordValueToAddress_A NMI_FLDSize4e , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4e
+	pha
+NMI_FLDSize4C_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
+	+MWordValueToAddress_A NMI_FLDSize4f , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4f
+	pha
+NMI_FLDSize4D_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
+	+MWordValueToAddress_A NMI_FLDSize4g , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4g
+	pha
+NMI_FLDSize4E_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
+	+MWordValueToAddress_A NMI_FLDSize4h , KERNALNMIServiceRoutineLo
+	lda CIA2InterruptControl
+	pla
+	rti
+
+NMI_FLDSize4h
+	pha
+NMI_FLDSize4F_YScroll = * + 1
+	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	lda #$7f
 	sta CIA2InterruptControl
 	pla

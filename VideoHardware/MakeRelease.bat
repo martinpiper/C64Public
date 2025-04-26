@@ -52,6 +52,9 @@ xcopy ..\..\C64\VideoHardware\FeatureEditor.bat ..\..\Builds\VideoHardwareSDK\C6
 xcopy ..\..\C64\VideoHardware\asm\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\asm\ /s
 xcopy ..\..\C64\VideoHardware\assets\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\ /s
 del /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\convert2.bat
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.idea
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\out
 xcopy ..\..\C64\VideoHardware\macros\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\macros\ /s
 xcopy ..\..\C64\VideoHardware\features\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\features\ /s
 xcopy ..\..\C64\VideoHardware\testdata\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\testdata\ /s

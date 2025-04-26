@@ -1,0 +1,380 @@
+!zn
+InitTitleScreen
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	jsr EntityInit
+	jsr Bus20To32Bit1_Init
+	jsr Audio_Init
+	jsr TitleSetStartAnimation
+
+	lda #2
+	sta landscapeFrameSpeed
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue $0f
+
+	rts
+
+RunTitleScreen
+mainLoop3
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jsr TitleRunLogic
+	jsr EntityUpdateObjects
+	jsr EntitySort
+	jsr RenderSpritesTitle
+
+	+WaitForFireLoop_A mainLoop3
+	rts
+
+.animationFrameAddr !24 0
+
+.timeToMissiles !by 0
+.timeToAirplanes !by 0
+.timeToStopMissiles !by 0
+.missileZPos !by 0
+
+TitleSetStartAnimation
+	lda #<titleScreenAnimation1
+	sta .animationFrameAddr
+	lda #<(titleScreenAnimation1 >> 8)
+	sta .animationFrameAddr+1
+	lda #<(titleScreenAnimation1 >> 16)
+	sta .animationFrameAddr+2
+
+	lda #125
+	sta .timeToMissiles
+
+	lda #20
+	sta .timeToStopMissiles
+
+	lda #20
+	sta .missileZPos
+	.missileZPosAdd = 7
+
+	lda #120
+	sta .timeToAirplanes
+
+	rts
+
+
+
+.logoScale !by $40
+RenderSpritesTitle
+
+	jsr ResetInterfaceAndStartSendingScaledSprites
+
+!if 0 {
+	; TODO: This shows a built hardware difference compared to the simulation (and emulation). One right hand edge pixel is missing for these widths.
+	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 0 , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + 100 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 16 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+
+	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 10 + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4), kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 8 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+
+	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 20 + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4), kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+}
+
+
+	; Draw logo
+	ldx .logoScale
+	cpx #$20
+	beq .okScale
+	dec .logoScale
+.okScale
+!macro MLogoDraw1 .address , .xoffset , .yoffset {
+	lda #0
+	sta zeroPage_Temp3
+	lda #78 + .xoffset
+	sta zeroPage_Temp5
+	lda #40 + .yoffset
+	sta zeroPage_Temp4
+	jsr .address
+}
+	+MLogoDraw1 TitleDrawA , 0 , 0
+	+MLogoDraw1 TitleDrawF , 40 , 2
+	+MLogoDraw1 TitleDrawT , 68 , 5
+	+MLogoDraw1 TitleDrawE , 102 , 4
+	+MLogoDraw1 TitleDrawR , 130 , 1
+
+!macro MLogoDraw2 .address , .xoffset , .yoffset {
+	lda #0
+	sta zeroPage_Temp3
+	lda #49 + .xoffset
+	sta zeroPage_Temp5
+	lda #100 + .yoffset
+	sta zeroPage_Temp4
+	jsr .address
+}
+	+MLogoDraw2 TitleDraw2B , 0 , 0
+	+MLogoDraw2 TitleDraw2U , 42 , 4
+	+MLogoDraw2 TitleDraw2R , 78 , 4
+	+MLogoDraw2 TitleDraw2N , 115 , 5
+	+MLogoDraw2 TitleDraw2E , 148 , 4
+	+MLogoDraw2 TitleDraw2R2 , 180 , 0
+
+	jsr EntityRenderSpritesDirectMode
+
+.retryFrame
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress .animationFrameAddr
+	+MBus20To32Bit1_SetLatch1_A
+	+MBus24Bit_Send8BitValueFromAddress .animationFrameAddr+1
+	+MBus20To32Bit1_SetLatch2_A
+	+MBus24Bit_Send8BitValueFromAddress .animationFrameAddr+2
+
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	+lbeq .noTitleSprites
+	cmp #255
+	bne .titleDrawSprites0
+
+	jsr TitleSetStartAnimation
+	jmp .retryFrame
+
+.titleDrawSprites0
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	; Type
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	; MSB
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp2
+	; X pos
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp3
+	; X size
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp4
+	; Y pos
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp5
+	; Y size
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp6
+	; Scale
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp7
+
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+	lda zeroPage_Temp1
+	bne .otherBall
+!if 1 {
+	; Palette
+	lda #kVarsEmitSpriteFrame_tc_798_0_0_0_colour
+	ora zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp6
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; Address
+	+MBus24Bit_SendLE24BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	; Stride
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth-1
+	jmp .overBall
+}
+.otherBall
+!if 1 {
+	; Palette
+	lda #kVarsEmitSpriteFrame_tc_800_0_0_0_colour
+	ora zeroPage_Temp2
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp6
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; Address
+	+MBus24Bit_SendLE24BitValue kVarsEmitSpriteFrame_tc_800_0_0_0_tileAddress
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp7
+	; Stride
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_tc_800_0_0_0_tileWidth-1
+}
+.overBall
+
+	dec zeroPage_Temp0
+	+lbne .titleDrawSprites0
+
+.noTitleSprites
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+
+	+MBus24Bit_Get8BitValueToA
+	sta .animationFrameAddr
+	+MBus24Bit_Get8BitValueToA
+	sta .animationFrameAddr+1
+	+MBus24Bit_Get8BitValueToA
+	sta .animationFrameAddr+2
+
+	+MBus20To32Bit1_UsingState_WriteMode_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+;	+WaitForFire_A
+
+	rts
+
+
+
+
+
+TitleDrawA
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_692_0_0_0_colour , kVarsEmitSpriteFrame_t_692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_692_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_692_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_692_0_0_0_tileWidth
+	rts
+TitleDrawF
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_693_0_0_0_colour , kVarsEmitSpriteFrame_t_693_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_693_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_693_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_693_0_0_0_tileWidth
+	rts
+TitleDrawT
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_694_0_0_0_colour , kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_694_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_694_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_694_0_0_0_tileWidth
+	rts
+TitleDrawE
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_695_0_0_0_colour , kVarsEmitSpriteFrame_t_695_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_695_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_695_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_695_0_0_0_tileWidth
+	rts
+TitleDrawR
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_696_0_0_0_colour , kVarsEmitSpriteFrame_t_696_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_696_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_696_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_696_0_0_0_tileWidth
+	rts
+
+TitleDraw2B
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_698_0_0_0_colour , kVarsEmitSpriteFrame_t_698_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_698_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_698_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_698_0_0_0_tileWidth
+	rts
+TitleDraw2U
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_699_0_0_0_colour , kVarsEmitSpriteFrame_t_699_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_699_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_699_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_699_0_0_0_tileWidth
+	rts
+TitleDraw2R
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_700_0_0_0_colour , kVarsEmitSpriteFrame_t_700_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_700_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_700_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_700_0_0_0_tileWidth
+	rts
+TitleDraw2N
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_701_0_0_0_colour , kVarsEmitSpriteFrame_t_701_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_701_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_701_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_701_0_0_0_tileWidth
+	rts
+TitleDraw2E
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_702_0_0_0_colour , kVarsEmitSpriteFrame_t_702_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_702_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_702_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_702_0_0_0_tileWidth
+	rts
+TitleDraw2R2
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_703_0_0_0_colour , kVarsEmitSpriteFrame_t_703_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_703_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_703_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_703_0_0_0_tileWidth
+	rts
+
+
+
+TitleRunLogic
+	; Can happen outside the VBlank
+.smc1	lda #0
+	bne .noFreeSlot1
+
+	lda #2
+	sta .smc1+1
+
+	lda .timeToAirplanes
+	bmi .noMoreAirplanes
+	dec .timeToAirplanes
+	beq .runAirplanes1
+
+.noMoreAirplanes
+	lda .timeToMissiles
+	beq .runMissles1
+
+	dec .timeToMissiles
+	jmp .noFreeSlot1
+
+.runAirplanes1
+	jsr EntityFindFreeSlot
+	lda #0
+	sta EntityXPos,x
+	lda #-20
+	sta EntityYPos,x
+	lda #1
+	sta EntityZPos,x
+	lda #0
+	sta EntityScaleTweak,x
+	sta EntityRotationTweak,x
+	lda #<EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+	lda #<EntityState_EnemyPlaneGreenForward
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyPlaneGreenForward
+	sta EntityStateHi,x
+
+	jmp .noFreeSlot1
+
+.runMissles1
+	lda .timeToStopMissiles
+	beq .noFreeSlot1
+
+	jsr EntityFindFreeSlot
+	bcs .noFreeSlot1
+
+	dec .timeToStopMissiles
+
+	lda #-16
+	sta EntityXPos,x
+	lda #-16
+	sta EntityYPos,x
+	lda .missileZPos
+	clc 
+	adc #.missileZPosAdd
+	sta .missileZPos
+	sta EntityZPos,x
+	lda #0
+	sta EntityScaleTweak,x
+	lda #<WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+
+.noFreeSlot1
+	dec .smc1+1
+	rts
+
+
+EntityState_EnemyPlaneGreenForward
+	lda EntityZPos,y
+	clc
+	adc landscapeFrameSpeed
+	+lbcs EntityState_RemoveEntity
+	clc
+	adc #1
+	cmp #60
+	+lbcs EntityState_RemoveEntity
+	sta EntityZPos,y
+
+	lda EntityXPos,y
+	sec
+	sbc #2
+	sta EntityXPos,y
+
+	lda EntityYPos,y
+	clc
+	adc #1
+	sta EntityYPos,y
+
+	lda EntityStateValue1,y
+	clc
+	adc #1
+	sta EntityStateValue1,y
+	and #3
+	bne .slowRotation1
+	lda EntityRotationTweak,y
+	clc
+	adc #1
+	sta EntityRotationTweak,y
+.slowRotation1
+
+	rts

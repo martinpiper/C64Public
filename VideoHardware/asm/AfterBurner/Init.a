@@ -1,0 +1,49 @@
+OneTimeInit
+	jsr EntitySortInit
+
+	jsr SetupAPU
+
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressMergeLayer
+	lda #kBus24Bit_MergeLayer_Register_Control_Default
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	; To stop the APU memory being displayed in the Vectors layer
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_ForceOut_0
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Mode7
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+
+	; Note: Not using kVideo_EnableDisplay_Use_BGColour so that the mode7 or character layer can have access to more palette entries, if it is the last layer in the list
+	lda #kVideo_EnableDisplay_Enable; | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+;	jsr Video_SetAddressVideoBackgroundColour
+;	+MBus24Bit_Send8BitValue 255
+
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	; Flag
+	+MBus24Bit_Send8BitValue 2
+	; Border adjustments
+	+MBus24Bit_SendLE16BitValue -14
+	+MBus24Bit_SendLE16BitValue -16
+	; Extents
+	+MBus24Bit_Send8BitValue $a3
+	+MBus24Bit_Send8BitValue $70
+
+	jsr Video_SetAddressVideoLayersEnable
+;	+MBus24Bit_Send8BitValue %1011
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_Default
+
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue 84
+	jsr APU_Enable
+
+	rts
+

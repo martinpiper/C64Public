@@ -928,3 +928,15 @@
 	Pre scan the placement then include.
 	>> While the "*.data.*" items are related to the sprite sheet layout and conceivably should be in the properties file...
 	>> ... the other ".activation." and ".code." items are more common and should be retrieved from fragments...
+
+
+
+
+* For the bonus section... Using FLD parallax
+	Use new blocks in "exported assets\Level1.ctm"
+	The dark sky to lighter sky transition, the mountains, the bricks/doors/pillars, the new solid blocks, the new even lighter sky with plants
+	The player can jump on sprite based platforms for the parts higher up the screen, the bottom most part can be solid blocks...
+	The different char based sections can be separate level files, then can also use separate multicolours.
+	Update the edges of colour RAM scrolls for the bricks/doors/pillars part? If there are multicolour parts mixed with hires.
+	Since the FLD uses NMI then the IRQ based multiplexor can be used as well...
+	Actually the sky and mountains could be hires, since the background colour can change with the raster

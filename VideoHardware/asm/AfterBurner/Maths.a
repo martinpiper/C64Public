@@ -1,0 +1,55 @@
+!macro MMakeRotationVector .angle {
+!set .table = *
+!for .ii , 32 {
+!set .x = .ii - 1
+!if .x >= 128 {
+!set .x = -(256 - .x)
+}
+	!by <int(float(.x) * sin((float(.angle + 90) / 360.0) * 2.0 * 3.14159265))
+	!by <int(float(.x) * sin((float(.angle) / 360.0) * 2.0 * 3.14159265))
+}
+!swizzle .table , 32 , 2
+}
+
+rotationVectorTableAddrs
+!for .ii , ScreenLandscapeNumRollSteps {
+	!16 (rotationVectorTable + ((.ii-1)*256*2))>>8
+}
+!swizzle rotationVectorTableAddrs , ScreenLandscapeNumRollSteps , 2
+rotationVectorTableAddrsNext
+!for .ii , ScreenLandscapeNumRollSteps {
+!set .i = .ii-1
+!set .i = .i + (ScreenLandscapeNumRollSteps/4)
+!if .i >= ScreenLandscapeNumRollSteps {
+!set .i = .i - ScreenLandscapeNumRollSteps
+}
+	!16 (rotationVectorTable + ((.ii-1)*256*2))>>8
+}
+!swizzle rotationVectorTableAddrsNext , ScreenLandscapeNumRollSteps , 2
+
+!set defaultNeutralScaleIs = 0
+realZToHardwareScale
+!for .ii , 256 {
+!set .i = .ii -1
+!set .realZ = 16 + .i
+!set .theScale = float(16.0 + 7) / float(.realZ)
+; 48.0 is used by the landscape sprites, this produces reasonably scaled sprites very close to the camera
+;!set .hardwareScale = int(float(48.0) / .theScale)
+; However for airplanes we can go larger, so use a smaller number
+!set .hardwareScale = int(float(32.0) / .theScale)
+!if .hardwareScale <= 0 {
+	!by 0
+} else {
+!if .hardwareScale >= UsingMaxHardwareScaleTabValue {
+	!by 0
+} else {
+	!by <.hardwareScale
+}
+}
+!if .hardwareScale = $20 {
+!set defaultNeutralScaleIs = .i
+}
+}
+!if defaultNeutralScaleIs = 0 {
+!error "No Z value reaches $20 neutral scale, i.e. no scaling."
+}

@@ -1,0 +1,55 @@
+ResetInterfaceAndStartSendingScaledSprites
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag not ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 2
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+	rts
+
+TerminateScaledSpritesAndSignalReady
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	jsr TerminateScaledSpritesList
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 3
+
+	rts
+
+
+TerminateScaledSpritesList
+	; Terminate the sprite list
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+	rts
+
+
+
+Exit32BitModeAndSignalReady
+	; Exit out of 32 bit mode and back to passthrough mode
+	jsr Bus20To32Bit1_ShortReset
+
+	; Flag ready
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 3
+
+	rts

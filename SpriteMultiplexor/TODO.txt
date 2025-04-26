@@ -22,7 +22,16 @@
 	If the sprite0/7 update would happen for that position then instead jsr to a specific update routine and then progress to the next sprite1/6 in the list instead.
 	Avoid this sprite0/7 in the initial copy if needed.
 	Also for the last update IRQ if the position hasn't been reached then jsr to the specific update routine.
-	
+	>> Reserve the first N sprites, or the last N sprites. Note these parts of the code:
+		Multiplex_intNextSpr0
+		.jumplo
+		"; A=0 is used" this needs to preserve the first or last N bits
+		"; Init the sprite control registers" ^^ ditto
+		MACROMultiplex_SpriteChunk
+		MACROMultiplex_SpriteStrip
+		sta VIC2SpriteEnable
+		cpy #$09 would need minus N sprites
+		lda #$08 ^^ ditto
 
 
 

@@ -61,3 +61,31 @@
 !previouscontext
    bpl .goto
 }
+
+!macro IfRegLessThanValL .goto {
+!previouscontext
+   +lbmi .goto
+}
+
+!macro IfRegEqualToValL .goto {
+!previouscontext
+   +lbeq .goto
+}
+
+!macro IfRegGreaterThanValL .goto {
+!previouscontext
+   beq .skip
+   +lbpl .goto
+.skip
+}
+
+!macro IfRegLessThanOrEqualToValL .goto {
+!previouscontext
+   +lbmi .goto
+   +lbeq .goto
+}
+
+!macro IfRegGreaterThanOrEqualToValL .goto {
+!previouscontext
+   +lbpl .goto
+}

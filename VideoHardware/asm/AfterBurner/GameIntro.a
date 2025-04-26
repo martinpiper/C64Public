@@ -1,0 +1,356 @@
+!zn
+ksms1CarrierScale_SmallestValue = 12	; At 13.7 MHz
+;ksms1CarrierScale_SmallestValue = 15	; At 12.096 MHZ
+
+InitGameIntro
+	jsr Bus20To32Bit1_Init
+
+	; Init state
+	+MByteValueToAddress_A 0 , GroundColours
+	+MByteValueToAddress_A 0 , GamePaletteBank
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 0 , playerXPositionOffset
+	jsr EntityInit
+	lda #0
+	sta smOffsetY1Carrier+1
+	lda #$20
+	sta sms1CarrierScale+1
+	lda #1
+	sta landscapeFrameSpeed
+
+	; Engine
+	+MPlaySampleLoop 0 , 32 , kSampleInfo11_start , kSampleInfo11_length , kSampleInfo11_loopStart , kSampleInfo11_looplength , kSampleInfo11_frequency / 2
+	lda #32
+	sta Player_EngineVolume
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineFrequency
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
+	; Get ready
+	+MPlaySample 1 , 255 , kSampleInfo8_start , kSampleInfo8_length , kSampleInfo8_frequency
+
+	rts
+
+RunGameIntro
+mainLoop4
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	; Must happen in the VBlank
+	jsr Bus20To32Bit1_Init
+	jsr VBlankUpdatePaletteColours
+	jsr VBlankUpdateHorizon
+
+	; Can happen outside the VBlank
+	jsr EntitySort
+	jsr CarrierUpdateLogic
+
+	jsr ResetInterfaceAndStartSendingScaledSprites
+	jsr EntityRenderSpritesDirectMode
+	jsr RenderSpritesCarrier
+	jsr PlayerPositionToForHorizonAndLandscape
+	jsr LandscapeRender
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda smOffsetY1Carrier+1
+	cmp #250
+	bcc mainLoop4
+	rts
+
+
+RenderSpritesCarrier
+
+	; Render a fake player with scale based on the carrier
+	lda sms1CarrierScale+1
+	clc
+	adc #32-ksms1CarrierScale_SmallestValue
+	tax
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A 172 , zeroPage_Temp4 , zeroPage_Temp7
+	lda smOffsetY1Carrier+1
+	lsr
+	lsr
+	sta zeroPage_Temp8
+	+MSubU8AddrToAddr16 zeroPage_Temp8 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_380_0_0_0_tileWidthScaleTab-1,x
+	lsr
+	sta zeroPage_Temp9
+	lda zeroPage_Temp5
+	sec
+	sbc zeroPage_Temp9
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	sbc #0
+	sta zeroPage_Temp6
+	; Y Pos
+	lda zeroPage_Temp4
+	sec
+	sbc kVarsEmitSpriteFrame_t_380_0_0_0_tileHeightScaleTab-1,x
+	sta zeroPage_Temp4
+	lda zeroPage_Temp7
+	sbc #0
+	sta zeroPage_Temp7
+	jsr MSBCalcWith6n7
+
+	lda sms1CarrierScale+1
+	cmp #18
+	+lbcs .renderOtherPlayer
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_6_0_0_0_colour , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_6_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_6_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_6_0_0_0_tileWidth
+	jmp .renderOtherPlayerOver
+.renderOtherPlayer
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_380_0_0_0_colour , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_380_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_380_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth
+.renderOtherPlayerOver
+sms1CarrierScale	ldx #$20
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	; Simple 16 bit calculation to center the sprites
+	; Accumulate in steps
+!for .i , 2 {
+	lda zeroPage_Temp5
+	sec
+	sbc kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4-1,x
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	sbc #0
+	sta zeroPage_Temp6
+}
+	; Y calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos + 50 , zeroPage_Temp4 , zeroPage_Temp7
+smOffsetY1Carrier	lda #0
+	+MAddAToAddr16 zeroPage_Temp4 , zeroPage_Temp7
+	lda zeroPage_Temp4
+	sec
+	sbc kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2-1,x
+	sta zeroPage_Temp4
+	lda zeroPage_Temp7
+	sbc #0
+	sta zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw1
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_715_0_0_0_colour , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+.noDraw1
+
+!for .i , 3 {
+!set thisI = .i
+!zn {
+	; Simple 16 bit calculation to center the sprites
+	lda zeroPage_Temp5
+	clc
+	adc kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4-1,x
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	adc #0
+	sta zeroPage_Temp6
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw2
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_715_0_0_0_colour , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + ((kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth/4)*thisI) , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+.noDraw2
+}
+}
+
+	lda smOffsetY1Carrier+1
+	cmp #85	; Tweaked
+	+lbcs .noSecondRow1
+
+	; Next row
+	; Y calc
+	lda zeroPage_Temp4
+	clc
+	adc kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2-1,x
+	sta zeroPage_Temp4
+	lda zeroPage_Temp7
+	adc #0
+	sta zeroPage_Temp7
+
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	; Simple 16 bit calculation to center the sprites
+	; Accumulate in steps
+!for .i , 2 {
+	lda zeroPage_Temp5
+	sec
+	sbc kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4-1,x
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	sbc #0
+	sta zeroPage_Temp6
+}
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw12
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_715_0_0_0_colour , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth * kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight/2) , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+.noDraw12
+
+!for .i , 3 {
+!set thisI = .i
+!zn {
+	; Simple 16 bit calculation to center the sprites
+	lda zeroPage_Temp5
+	clc
+	adc kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4-1,x
+	sta zeroPage_Temp5
+	lda zeroPage_Temp6
+	adc #0
+	sta zeroPage_Temp6
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw22
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_715_0_0_0_colour , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth * kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight/2) + ((kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth/4)*thisI) , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
+.noDraw22
+}
+}
+.noSecondRow1
+	rts
+
+
+
+!macro MGameIntroAllocateSmokeWith .xpos {
+	jsr EntityFindFreeSlot
+	bcs .noFreeSlot1
+	lda #.xpos
+	sta EntityXPos,x
+	lda #-64
+	sec
+	sbc playerYPositionOffset
+	+M_ASR
+	sta EntityYPos,x
+	lda #48	; Should be defaultNeutralScaleIs, but in the game intro mode these smokes are a special case, tweaked to look really nice
+	sta EntityZPos,x
+	lda #10
+	sta EntityScaleTweak,x
+	lda #<WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+.noFreeSlot1
+}
+
+CarrierUpdateLogic
+	lda sms1CarrierScale+1
+	cmp #18	; Trigger transition
+	bcc .noMoreScale1
+
+	+MAddU8ToAddr16 3 , Player_EngineFrequency , Player_EngineFrequency + 1
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+
+.smtt1	lda #10
+	bne .notTime1
+	lda #4
+	sta .smtt1+1
+	dec sms1CarrierScale+1
+;	inc smOffsetY1Carrier+1
+	lda #1
+	sta landscapeFrameSpeed
+	jsr UpdateLandscapeFrame
+	jsr EntityUpdateObjects
+
+
+.notTime1
+	dec .smtt1+1
+
+	rts
+
+.noMoreScale1
+	+MAddU8ToAddr16 12 , Player_EngineFrequency , Player_EngineFrequency + 1
+	lda Player_EngineVolume
+	cmp #250
+	bcs .enoughVolume
+	inc Player_EngineVolume
+	inc Player_EngineVolume
+.enoughVolume
+	+MSampleSetFrequency_fromAddr16 0 , Player_EngineFrequency
+	+MSampleSetVolume_fromAddr8 0 , Player_EngineVolume
+
+
+	lda smOffsetY1Carrier+1
+	clc
+	adc #3
+	sta smOffsetY1Carrier+1
+
+.everySoOften1	lda #4
+	+lbne .everySoOften1Over
+
+	lda sms1CarrierScale+1
+	cmp #ksms1CarrierScale_SmallestValue	; Beyond this, the maths breaks down a lot
+	bcc .noMoreScale2
+	dec sms1CarrierScale+1
+
+.noMoreScale2
+
+	lda #4
+	sta .everySoOften1+1
+
+	lda smOffsetY1Carrier+1
+	cmp #150
+	bcs .decreaseSpeed1
+
+	+MGameIntroAllocateSmokeWith -10
+	+MGameIntroAllocateSmokeWith 10
+
+	lda landscapeFrameSpeed
+	cmp #7
+	bcs .noMoreSpeed1
+	inc landscapeFrameSpeed
+	jmp .noMoreSpeed1
+.decreaseSpeed1
+	lda landscapeFrameSpeed
+	cmp #3
+	bcc .noMoreSpeed1
+	dec landscapeFrameSpeed
+.noMoreSpeed1
+
+.everySoOften1Over
+	dec .everySoOften1+1
+	jsr UpdateLandscapeFrame
+	jsr EntityUpdateObjects
+
+	lda playerYPositionOffset
+	cmp #-25
+	+IfRegLessThanVal .noMorePitch1
+	dec playerYPositionOffset
+.noMorePitch1
+
+	rts
+
+MSBCalcWith6n7
+	lda zeroPage_Temp6
+	beq .okToDraw1
+	cmp #1
+	beq .okToDraw1
+	cmp #-1
+	beq .okToDraw1
+	jmp .rejectDraw
+.okToDraw1
+	lda zeroPage_Temp7
+	beq .okToDraw2
+	cmp #1
+	beq .okToDraw2
+	cmp #-1
+	beq .okToDraw2
+	jmp .rejectDraw
+.okToDraw2
+	; MSB calc
+	lda #0
+	ldy zeroPage_Temp6
+	beq .not1
+	ora #kBus24Bit_Sprites2_MSBX
+.not1
+	ldy zeroPage_Temp7
+	beq .not2
+	ora #kBus24Bit_Sprites2_MSBY
+.not2
+	sta zeroPage_Temp3
+	clc
+	rts
+.rejectDraw
+	sec
+	rts
+
+kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv4
+	+MGenerateSprite4ScaleTable kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth/4
+kVarsEmitSpriteFrame_t_715_0_0_0_tileWidthScaleTabDiv2
+	+MGenerateSprite4ScaleTable kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth/2
+kVarsEmitSpriteFrame_t_715_0_0_0_tileHeightScaleTabDiv2
+	+MGenerateSprite4ScaleTable kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight/2
+

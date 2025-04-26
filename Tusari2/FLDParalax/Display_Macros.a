@@ -4,11 +4,12 @@
 	lda #CIA2PortASerialBusVICBank_Bank1
 	sta CIA2PortASerialBusVICBank
 
-	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 	lda #VIC2Colour_LightGrey
 	sta VIC2ExtraBackgroundColour1
 	lda #VIC2Colour_Grey
 	sta VIC2ExtraBackgroundColour2
+
+	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 }
 
 !macro DisplayGameScreenTop {

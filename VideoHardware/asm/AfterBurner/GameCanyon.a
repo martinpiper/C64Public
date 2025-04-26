@@ -1,0 +1,212 @@
+!zn
+InitGameCanyon
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A 250, .endSequenceTimeout
+	+MByteValueToAddress_A 1 , PlayerControl_disableRoll
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 0 , landscapeScrollXFrame
+	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
+
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+
+	rts
+
+RunGameCanyon
+mainLoop5b
+	jsr RunGameCanyon_CommonFrame
+
+	; Render the landscape
+	lda #1
+	sta .smIsNotOK+1
+	jsr TryToLevelAnyRoll
+	bcs .needRotationDraw
+
+	jsr LandscapeRenderHeight
+	lda #0
+	sta .smIsNotOK+1
+
+!if 0 {
+	; Force runway area details into the landscape
+	; Landscape map data position tweak
+	lda LandscapeMapRowOffset
+	sec
+;	sbc #16*7
+	sbc #16*8
+	clc
+	adc #5
+	tax
+	; Blank entries for the runway area
+	lda #0
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+
+	; Add a runway start building and a couple of bushes
+	lda runwayMaxScreenRow
+	bne .gotObjectMax
+	dex	; Note 256 byte wraparound
+	dex	; Note 256 byte wraparound
+	dex	; Note 256 byte wraparound
+	; Special case building
+	lda #9
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	lda #3
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	lda #2
+	sta LandscapeMap,x
+	jmp .gotObjectMax2
+.gotObjectMax
+	cmp #250
+	bcs .gotObjectMax2
+	lda runwayMaxScreenRowUpdated
+	bne .gotObjectMax2
+	inc runwayMaxScreenRow
+	inc runwayMaxScreenRow
+	inc runwayMaxScreenRow
+.gotObjectMax2
+}
+
+	jmp .overLandscapeDraw
+.needRotationDraw
+	jsr LandscapeRender
+.overLandscapeDraw
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	; Slow down the player
+	lda landscapeFrameSpeed
+	cmp #1
+	+IfRegLessThanOrEqualToVal .noMoreSpeed1
+	dec landscapeFrameSpeed
+.noMoreSpeed1
+
+	; Horizon pitch
+	lda playerYPositionOffset
+	cmp #25
+	+IfRegGreaterThanOrEqualToVal .noMorePitch2
+	inc playerYPositionOffset
+.noMorePitch2
+
+	jsr ReducePlayerXPositionForNoInput
+	jsr playerYPositionOffsetSpeedReduce
+
+.smIsNotOK lda #0
+	+lbne mainLoop5b
+
+	dec landscapeHeightsFrame
+;	lda landscapeHeightsFrame
+;	cmp #landscapeHeightsMax/2
+	+lbne mainLoop5b
+
+	; Now the game portion of the canyon
+;	+MByteValueToAddress_A 0 , landscapeHeightsFrame
+
+mainLoop5c
+	jsr RunGameCanyon_CommonFrame
+
+	jsr LandscapeRenderScrollX
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda playerXPositionOffset
+	cmp #10
+	+IfRegGreaterThanOrEqualToVal .mvLeft
+	cmp #-10
+	+IfRegLessThanOrEqualToVal .mvRight
+
+	jmp .mv1
+
+.mvLeft
+	dec landscapeScrollXFrame
+	bpl .mv1
+	+MByteValueToAddress_A landscapeScrollXMax , landscapeScrollXFrame
+	inc LandscapeMapRowOffset
+	jmp .mv1
+.mvRight
+	inc landscapeScrollXFrame
+	lda landscapeScrollXFrame
+	cmp #landscapeScrollXMax+1
+	bne .mv1
+	+MByteValueToAddress_A 0 , landscapeScrollXFrame
+	dec LandscapeMapRowOffset
+	jmp .mv1
+.mv1
+
+	; Delay timing
+	inc .smo1+1
+.smo1 lda #0
+	and #1
+	+lbne mainLoop5c
+
+	dec .endSequenceTimeout
+	+lbne mainLoop5c
+;	jmp mainLoop5c
+
+
+	; Now gain height again
+	+MByteValueToAddress_A 2 , landscapeFrameSpeed
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
+
+mainLoop6b
+	jsr RunGameCanyon_CommonFrame
+
+	jsr LandscapeRenderHeight
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
+	inc landscapeHeightsFrame
+
+	lda landscapeHeightsFrame
+	cmp #landscapeHeightsMax
+	+IfRegLessThanVal .heightOK1
+	; Returns to the game
+	+MByteValueToAddress_A 0 , PlayerControl_disableRoll
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	rts
+.heightOK1
+
+	; Horizon pitch
+	lda playerYPositionOffset
+	cmp #0
+	+IfRegLessThanOrEqualToVal .noMorePitch3
+	dec playerYPositionOffset
+.noMorePitch3
+
+	jmp mainLoop6b
+
+.endSequenceTimeout !by 0
+
+
+RunGameCanyon_CommonFrame
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	; Must happen in the VBlank
+	jsr Bus20To32Bit1_Init
+	jsr VBlankUpdatePaletteColours
+	jsr VBlankUpdateHorizon
+
+	; Can happen outside the VBlank
+	jsr PlayerControl
+	jsr UpdateLandscapeFrame
+	jsr EntityUpdateObjects
+
+	jsr EntitySort
+
+	jsr ResetInterfaceAndStartSendingScaledSprites
+
+	jsr EntityRenderSpritesDirectMode
+	rts

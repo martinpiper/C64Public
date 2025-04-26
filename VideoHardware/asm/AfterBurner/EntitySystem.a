@@ -1,0 +1,396 @@
+!source "stdlib/GnomeSort.a"
+
+; Don't forget the rotation for the landscape is from the point of view of up in the air, not on the ground
+; So it is possible to have negative Y coordinates, closer to the ground
+; Positive Y coordinates are above the player
+;EntityXPos	!by 7*8	; Far right of the landscape
+;EntityXPos	!by 1*8	; First bush on the right
+;EntityXPos	!by 0	; Middle of the screen, for rotation
+
+;EntityYPos	!by 0	; Middle of the screen, for rotation
+;EntityYPos	!by 1	; Just above the player at defaultNeutralScaleIs
+;EntityYPos	!by -4 ; Level with the player, just about
+;EntityYPos	!by -25 ; Roughly on the ground
+
+;EntityZPos	!by 8*8	; The far point of the landscape
+;EntityZPos	!by defaultNeutralScaleIs
+
+EntityXPos
+	!by 0	; Player
+	!fill SortHardMaxEntries-1 , 0
+
+EntityYPos
+	!by 0	; Player
+	!fill SortHardMaxEntries-1 , 0
+
+EntityZPos
+	!by defaultNeutralScaleIs	; Player
+	!fill SortHardMaxEntries-1 , 0
+
+EntityScaleTweak
+	!by 0
+	!fill SortHardMaxEntries-1 , 0
+
+EntityRotationTweak
+	!by 0
+	!fill SortHardMaxEntries-1 , 0
+
+EntityTypeLo
+	!fill SortHardMaxEntries , 0
+EntityTypeHi
+	!fill SortHardMaxEntries , 0
+
+EntityStateLo
+	!fill SortHardMaxEntries , 0
+EntityStateHi
+	!fill SortHardMaxEntries , 0
+
+
+EntityStateValue1
+	!fill SortHardMaxEntries , 0
+
+EntityInit
+	ldx #SortHardMaxEntries
+	lda #0
+.ecl1
+	sta EntityTypeHi-1,x
+	sta EntityStateHi-1,x
+	dex
+	bne .ecl1
+	rts
+
+GnomeSort_Sortlo !fill SortHardMaxEntries , 0
+GnomeSort_Sorthi !fill SortHardMaxEntries , 0
+SortIndexTable !fill SortHardMaxEntries , 0
+SortValueTable = EntityZPos
+SortMaxEntries !by SortHardMaxEntries
+
+EntitySort
+	+GnomeSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLength , ~GnomeSort_sortstart
+	rts
+
+EntitySortInit
+	+GnomeSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLength , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstart
+	+GnomeSort_Init SortMaxEntries , SortIndexTable
+	rts
+
+; Return: X = Index , C = 0 on success
+;	C = 1 no free slot
+EntityFindFreeSlot
+	ldx #SortHardMaxEntries-1
+.fff1
+	lda EntityTypeHi,x
+	beq .isFree1
+	dex
+	bne .fff1	; Note: Not bpl, since the zero index entry is always the player special case
+	sec
+	rts
+
+.isFree1
+	lda #0
+	sta EntityStateHi,x
+	clc
+	rts
+
+
+EntityUpdateObjects
+	ldy #SortHardMaxEntries-1
+.ue1
+	; Skip empty entries
+	lda EntityTypeHi,y
+	beq .over1
+
+	lda EntityStateHi,y
+	beq .noState
+	sta .smjsr1+2
+	lda EntityStateLo,y
+	sta .smjsr1+1
+.smjsr1	jsr $1234
+.noState
+!if 1 {
+	ldx landscapeRotationsFrame
+	lda EntityXPos,y
+	sec
+	sbc landscapeRotationsFrameToHorizonSpeed,x
+	sta EntityXPos,y
+}
+
+!if 0 {
+	; While this works to move the enemy up and down, the original After Burner does not allow actual movement in the Y direction beyond what is visible in the screen movement
+	ldx playerYPositionOffsetSpeed
+	lda playerYPositionOffsetSpeedDivideTab,x
+	sta zeroPage_Temp0
+
+	lda EntityYPos
+	clc
+	adc zeroPage_Temp0
+	sta EntityYPos
+}
+
+!if 1 {
+	lda EntityZPos,y
+	sec
+	sbc landscapeFrameSpeed
+	bcs .noCull1
+	lda #0
+	sta EntityTypeHi,y
+	jmp .over1
+.noCull1
+	sta EntityZPos,y
+}
+.over1
+	dey
+	bne .ue1	; Note: Not bpl, since the zero index entry is always the player special case
+
+
+
+	rts
+
+
+.enemyIndexForRender !by 0
+EntityRenderSpritesDirectMode
+	; Render sorted entities
+	lda #SortHardMaxEntries-1
+	sta .enemyIndexForRender
+.edl1
+	; Enemy Z calc and reject
+	ldy .enemyIndexForRender
+	ldx SortIndexTable,y
+	beq .checkPlayerRenderSpecialCase
+	lda EntityTypeHi,x
+	bne .isEntityObject
+	jmp .skipEnemyDraw
+
+.checkPlayerRenderSpecialCase
+EntityEnableRenderPlayerSpecialCase = *+1
+	lda #0
+	+lbeq .skipEnemyDraw
+
+	; Player special case draw
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+	jsr RenderSpritePlayer
+	jmp .skipEnemyDraw
+
+.isEntityObject
+	sta zeroPage_Temp17
+	lda EntityTypeLo,x
+	sta zeroPage_Temp16
+	ldy EntityZPos,x
+	; TODO: Depending on X register usage, this could just use X all the way through
+	lda realZToHardwareScale,y
+	+lbeq .skipEnemyDraw
+	clc
+	adc EntityScaleTweak,x
+	+lbcs .skipEnemyDraw
+	sta zeroPage_Temp5
+
+	; Quick 3D position rotation test
+	; Combined transform
+	; Setup $100 - 1 in the add register. -1 because a read advances the address by 1
+	jsr Bus20To32Bit1_SetLatch8
+	+MBus24Bit_Send8BitValue $ff
+	jsr Bus20To32Bit1_SetLatch9
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch10
+	+MBus24Bit_Send8BitValue 0
+
+	; Set the rotation address
+	ldy landscapeRotationsFrame
+	+MBus20To32Bit1_SetLatch1_A
+	lda rotationVectorTableAddrs,y
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	lda rotationVectorTableAddrs + ScreenLandscapeNumRollSteps,y
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus20To32Bit1_SetLatch0_A
+	lda EntityXPos,x
+!if 1 {
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp8
+	; Add
+	+MBus20To32Bit1_SetLatch3_A
+	+MBus24Bit_Get8BitValueToA
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp9
+} else {
+	sta zeroPage_Temp8
+	lda #0
+	sta zeroPage_Temp9
+}
+
+	+MBus20To32Bit1_WriteMode_A
+
+	; Set the rotation address
+	ldy landscapeRotationsFrame
+	+MBus20To32Bit1_SetLatch1_A
+	lda rotationVectorTableAddrsNext,y
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	lda rotationVectorTableAddrsNext + ScreenLandscapeNumRollSteps,y
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus20To32Bit1_SetLatch0_A
+	lda EntityYPos,x
+!if 1 {
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp12
+	; Add
+	+MBus20To32Bit1_SetLatch3_A
+	+MBus24Bit_Get8BitValueToA
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp13
+} else {
+	sta zeroPage_Temp12
+	lda #0
+	sta zeroPage_Temp13
+}
+
+
+	; Note sign
+	; Y
+	lda zeroPage_Temp9
+	sec
+	sbc zeroPage_Temp12
+	sta zeroPage_Temp9
+	; X
+	lda zeroPage_Temp13
+	clc
+	adc zeroPage_Temp8
+	sta zeroPage_Temp8
+
+	; Half perspective calculation
+	; Set the lookup address
+	; X
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp8
+	+MBus20To32Bit1_SetLatch1_A
+	lda EntityZPos,x
+	+MBus24Bit_Send8BitValueFromA
+	+MBus20To32Bit1_SetLatch2_A
+	+MBus24Bit_Send8BitValue 0
+	; Get the perspective result
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	cmp #128
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp8
+
+	; Y
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch0_A
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp9
+	; Get the perspective result
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
+	+MBus24Bit_Get8BitValueToA
+	cmp #128
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp9
+
+
+	; Back to direct write
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	lda landscapeRotationsFrame
+	clc
+	adc EntityRotationTweak,x
+.testAgain1
+	cmp #ScreenLandscapeNumRollSteps
+	bcc .isOKRotation1
+	sbc #ScreenLandscapeNumRollSteps
+	jmp .testAgain1
+.isOKRotation1
+	asl
+	tay
+	lda (zeroPage_Temp16),y
+	sta zeroPage_Temp0
+	iny
+	lda (zeroPage_Temp16),y
+	sta zeroPage_Temp1
+	ldy #0
+	lda (zeroPage_Temp0),y
+	sta .smEnemyWidth+1
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyWidth+2
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyHeight+1
+	iny
+	lda (zeroPage_Temp0),y
+	sta .smEnemyHeight+2
+	+MAddU8ToAddr16 4 , zeroPage_Temp0 , zeroPage_Temp1
+	lda zeroPage_Temp0
+	sta .smEnemyJSR+1
+	lda zeroPage_Temp1
+	sta .smEnemyJSR+2
+	; Convert transformed coordinates into the screen
+	; Calculate the position tweak due to sprite scale
+	ldx zeroPage_Temp5
+.smEnemyWidth	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab-1,x
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp3
+	lsr
+	lsr
+	sta zeroPage_Temp1
+.smEnemyHeight	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab-1,x
+	+lbeq .skipEnemyDraw
+	sta zeroPage_Temp4
+	lsr
+	lsr
+	sta zeroPage_Temp2
+
+	; Setup zero MSB
+	lda #0
+	sta zeroPage_Temp0
+	; To screen coordinates
+	lda zeroPage_Temp8
+	clc
+	adc #(328/2/2)
+	sec
+	sbc zeroPage_Temp1
+	asl
+	sta zeroPage_Temp8
+	bcc .noRotMSB1
+	lda zeroPage_Temp0
+	ora #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp0
+.noRotMSB1
+	lda zeroPage_Temp9
+	clc
+	adc #ScreenLandscapeOriginYPos/2
+	sec
+	sbc zeroPage_Temp2
+	sec
+	sbc playerYPositionOffsetForSprites
+	asl
+	sta zeroPage_Temp9
+	bcc .noRotMSB2
+	lda zeroPage_Temp0
+	ora #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp0
+.noRotMSB2
+
+.smEnemyJSR jsr $1234
+
+.skipEnemyDraw
+	+MBus20To32Bit1_WriteMode_A
+
+	dec .enemyIndexForRender
+	+lbpl .edl1
+
+
+	; Send data to the sprite hardware using direct mode
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	rts

@@ -1,0 +1,408 @@
+!zn
+InitGame
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
+	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 0 , PlayerControl_disableRoll
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 0 , playerXPositionOffset
+!ifdef Debug_GameStartZeroSpeed {
+	+MByteValueToAddress_A 0 , landscapeFrameSpeed
+} else {
+	+MByteValueToAddress_A 3 , landscapeFrameSpeed
+}
+
+	+MByteValueToAddress_A -75 , Player_EngineVolumeChange
+	+MByteValueToAddress_A 250 , .smtc1+1
+
+	rts
+
+RunGame
+mainLoop2
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	; Must happen in the VBlank
+	jsr VBlankUpdatePaletteColours
+	jsr VBlankUpdateHorizon
+
+	; Can happen outside the VBlank
+	jsr PlayerControl
+	jsr UpdateLandscapeFrame
+	jsr EntityUpdateObjects
+
+	jsr EntitySort
+
+	jsr RenderSpritesGame
+
+	jsr CheckSpawnEnemy
+
+.smtc1	lda #250
+!ifndef Debug_SimpleLandscapeRotation {
+	bne .ot1
+	inc .smc1+1
+.smc1	lda #0
+	and #1
+	bne .gameToLanding
+	beq .gameToCanyon
+.ot1
+}
+	dec .smtc1+1
+
+	jmp mainLoop2
+
+.gameToLanding
+	jsr InitGameLanding
+	jsr RunGameLanding
+
+	+MByteValueToAddress_A 3 , landscapeFrameSpeed
+	+MByteValueToAddress_A 250 , .smtc1+1
+
+	jmp mainLoop2
+
+.gameToCanyon
+	jsr InitGameCanyon
+	jsr RunGameCanyon
+
+	+MByteValueToAddress_A 250 , .smtc1+1
+
+	jmp mainLoop2
+
+
+RenderSpritesGame
+	; Flag not ready
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 2
+
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+
+!if 0 {
+	; A deliberate large corrupted sprite to show sprite extents
+	; Palette
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_t_678_0_0_0_colour
+	; Y pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue $40
+	; X pos and size
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue $40
+	; Address
+	+MBus24Bit_SendLE24BitValue 0
+	; Inv scales
+	+MBus24Bit_Send8BitValue $91
+	+MBus24Bit_Send8BitValue $91
+	; Stride
+	+MBus24Bit_Send8BitValue 33
+}
+
+	jsr EntityRenderSpritesDirectMode
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+
+	jsr TerminateScaledSpritesList
+
+	jsr Exit32BitModeAndSignalReady
+
+	rts
+
+; Shows sprite timeout. This is a small sprite, rendered last in the top left of the screen, that will not be displayed if the sprite hardware runs out of frame draw time.
+RenderTimeout
+	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 0 , 0 , $a0 , $a0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+	rts
+
+.enemyTypes
+	!word EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
+!swizzle .enemyTypes , 8 , 2
+
+.spawnEverySoOften !by 1
+CheckSpawnEnemy
+	inc .sms1+1
+	bne .o1
+	inc .sms2+1
+.o1
+	dec .spawnEverySoOften
+	beq .checkSpawn1
+	rts
+
+.checkSpawn1
+	lda #20
+	sta .spawnEverySoOften
+
+	jsr EntityFindFreeSlot
+	bcc .gotFreeSlot1
+	rts
+
+.gotFreeSlot1
+.sms1	lda #0
+.sms2	ldy #0
+	jsr Seed
+
+
+	jsr Rand
+	and #127
+	sec
+	sbc #64
+	sta EntityXPos,x
+
+	jsr Rand
+	and #31
+	sec
+	sbc #16
+	sta EntityYPos,x
+
+	lda #127
+	sta EntityZPos,x
+
+	lda #0
+	sta EntityScaleTweak,x
+	jsr Rand
+	and #15
+	sec
+	sbc #8
+	sta EntityRotationTweak,x
+
+	jsr Rand
+	and #7
+	tay
+	lda .enemyTypes,y
+	sta EntityTypeLo,x
+	lda .enemyTypes+8,y
+	sta EntityTypeHi,x
+
+
+	jsr Rand
+	and #15
+	+lbne .noSoundSpawn1
+	jsr Rand
+	and #4
+	+lbeq .noSoundSpawn2
+	; Be careful
+	+MPlaySample 1 , 255 , kSampleInfo6_start , kSampleInfo6_length , kSampleInfo6_frequency
+	jmp .noSoundSpawn1
+.noSoundSpawn2
+	; The enemy
+	+MPlaySample 1 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
+.noSoundSpawn1
+
+
+	rts
+
+
+
+.emitSmokeCounter !by 0
+EntityState_MissileForward
+	lda EntityZPos,y
+	clc
+	adc landscapeFrameSpeed
+	bcs EntityState_RemoveEntity
+	clc
+	adc #3
+	cmp #127
+	bcs EntityState_RemoveEntity
+	sta EntityZPos,y
+
+	tya
+	and #1
+	beq .noUp1
+	lda EntityYPos,y
+	clc
+	adc #1
+	sta EntityYPos,y
+	jmp .overUp
+.noUp1
+	lda EntityYPos,y
+	sec
+	sbc #1
+	sta EntityYPos,y
+.overUp
+
+	tya
+	and #2
+	beq .noLeft1
+	lda EntityXPos,y
+	clc
+	adc #1
+	sta EntityXPos,y
+	jmp .overLeft
+.noLeft1
+	lda EntityXPos,y
+	sec
+	sbc #1
+	sta EntityXPos,y
+.overLeft
+
+	dec .emitSmokeCounter
+	bpl .noSmoke1
+	lda #2
+	sta .emitSmokeCounter
+
+	jsr EntityFindFreeSlot
+	bcs .noSmoke1
+	lda EntityXPos,y
+	sta EntityXPos,x
+	lda EntityYPos,y
+	sta EntityYPos,x
+	lda EntityZPos,y
+	sec
+	sbc #1
+	sta EntityZPos,x
+	lda #60
+	sta EntityScaleTweak,x
+	lda #<WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>WhiteSmoke_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+
+.noSmoke1
+
+	rts
+EntityState_RemoveEntity
+	lda #0
+	sta EntityTypeHi,y
+	rts
+
+
+!zn
+.engineColourIndex !by 0
+GroundColours !by 0
+GamePaletteBank !by 0
+VBlankUpdatePaletteColours
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+
+	lda GroundColours
+	+lbmi .noChange
+	cmp #0
+	bne .o1
+
+	; Blue water
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 128 , 128 , 255
+	+MBus24Bit_SendPaletteRGB 64 , 64 , 230
+	+MBus24Bit_SendPaletteRGB 48 , 48 , 220
+	+MBus24Bit_SendPaletteRGB 32 , 32 , 192
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 168
+	jmp .noChange
+
+.o1
+	cmp #1
+	bne .o2
+
+	; Green
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 32 , 166 , 71
+	+MBus24Bit_SendPaletteRGB 29 , 148 , 63
+	+MBus24Bit_SendPaletteRGB 26 , 135 , 58
+	+MBus24Bit_SendPaletteRGB 23 , 117 , 50
+	+MBus24Bit_SendPaletteRGB 20 , 102 , 44
+	jmp .noChange
+
+.o2
+	cmp #2
+	bne .o3
+	; Desert2
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 255 , 173 , 32
+	+MBus24Bit_SendPaletteRGB 219 , 149 , 28
+	+MBus24Bit_SendPaletteRGB 176 , 120 , 22
+	+MBus24Bit_SendPaletteRGB 150 , 102 , 19
+	+MBus24Bit_SendPaletteRGB 115 , 78 , 14
+	jmp .noChange
+
+.o3
+	cmp #3
+	bne .o4
+	; Desert
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 255 , 225 , 24
+	+MBus24Bit_SendPaletteRGB 230 , 202 , 22
+	+MBus24Bit_SendPaletteRGB 207 , 182 , 19
+	+MBus24Bit_SendPaletteRGB 168 , 148 , 16
+	+MBus24Bit_SendPaletteRGB 128 , 112 , 12
+	jmp .noChange
+.o4
+	cmp #4
+	bne .o5
+	; Sky
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 250 , 250 , 250
+	+MBus24Bit_SendPaletteRGB 240 , 240 , 240
+	+MBus24Bit_SendPaletteRGB 230 , 230 , 230
+	+MBus24Bit_SendPaletteRGB 200 , 200 , 200
+	+MBus24Bit_SendPaletteRGB 170 , 170 , 170
+	jmp .noChange
+.o5
+.noChange
+	lda #-1
+	sta GroundColours
+
+	; Update the engine colours
+	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (kVarsEmitSpriteFrame_t_10_0_0_0_colour * kBus24Bit_VideoLayer_BytesPerPalette) + kBus24Bit_VideoLayer_BytesPerColour
+	inc .engineColourIndex
+	lda .engineColourIndex
+	and #15
+	tax
+	lda .engineColourTabLo,x
+	sta .smuc1+1
+	lda .engineColourTabHi,x
+	sta .smuc1+2
+.smuc1	jmp $1234
+
+.engineColourTabLo
+.engineColourTabHi = .engineColourTabLo + 16
+	!word .engineColour0 , .engineColour1 , .engineColour2 , .engineColour3 , .engineColour4 , .engineColour5 , .engineColour6 , .engineColour7
+	!word .engineColour7 , .engineColour6 , .engineColour5 , .engineColour4 , .engineColour3 , .engineColour2 , .engineColour1 , .engineColour0
+!swizzle .engineColourTabLo , 16 , 2
+
+!macro MGenerateEnglineColour .level {
+	+MBus24Bit_SendPaletteRGB .level,0,0
+	+MBus24Bit_SendPaletteRGB (.level * 2) / 3,0,0
+	+MBus24Bit_SendPaletteRGB .level / 3,0,0
+}
+.engineColour0
+	+MGenerateEnglineColour 255
+	rts
+
+.engineColour1
+	+MGenerateEnglineColour 220
+	rts
+
+.engineColour2
+	+MGenerateEnglineColour 200
+	rts
+
+.engineColour3
+	+MGenerateEnglineColour 180
+	rts
+
+.engineColour4
+	+MGenerateEnglineColour 160
+	rts
+
+.engineColour5
+	+MGenerateEnglineColour 120
+	rts
+
+.engineColour6
+	+MGenerateEnglineColour 80
+	rts
+
+.engineColour7
+	+MGenerateEnglineColour 30
+	rts
+

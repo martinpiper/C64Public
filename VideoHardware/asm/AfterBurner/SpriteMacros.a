@@ -1,0 +1,203 @@
+!macro MObjectDrawWithScale .colour , .widthScaleTab , .heightScaleTab , .address , .width {
+	; Palette
+	lda #.colour
+	ora zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda zeroPage_Temp4
+	+MBus24Bit_Send8BitValueFromA
+	lda .heightScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromA
+	lda .widthScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromX
+	+MBus24Bit_Send8BitValueFromX
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+}
+
+!macro MObjectDrawWithScaleFlips .palette , .widthScaleTab , .heightScaleTab , .address , .tileWidth , .tileHeight , .flipX , .flipY {
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+
+	; Palette
+	lda #.palette
+	ora zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda zeroPage_Temp4
+	+MBus24Bit_Send8BitValueFromA
+	lda .heightScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromA
+	lda .widthScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromX
+	+MBus24Bit_Send8BitValueFromX
+	; Stride
+	+MBus24Bit_Send8BitValue .tileWidth-1
+}
+
+!macro MObjectDrawWithScaleSizeCheck .colour , .widthScaleTab , .heightScaleTab , .address , .width {
+	lda .widthScaleTab-1,x
+	beq .skipDraw
+	lda .heightScaleTab-1,x
+	beq .skipDraw
+	; Palette
+	lda #.colour
+	ora zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda zeroPage_Temp4
+	+MBus24Bit_Send8BitValueFromA
+	lda .heightScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromA
+	lda .widthScaleTab-1,x
+;	clc	; TODO: Why is this different on the hardware compared to the simulation and emulation?!
+;	adc #1
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromX
+	+MBus24Bit_Send8BitValueFromX
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+.skipDraw
+}
+
+!macro MGenerateSprite4ScaleTable .value {
+!for .i , UsingMaxHardwareScaleTabValue {
+;!set .actualSize = (float(.value * 32) / float(.i))
+!set .actualSize = ( (float(.value * 32) + (0.5 * 32.0)) / float(.i) ) ; Rounding up for half a pixel...
+; If the size is too big or too small then ensure it gets written as 0 to flag this case
+!if <.actualSize <= 1 {
+!set .actualSize = 0
+}
+!if .actualSize > 255 {
+!set .actualSize = 0
+}
+	!by <.actualSize
+; Check the "no scale" value results in the exact sprite size
+!if .i = $20 {
+!if <.actualSize != .value {
+!error "oops"
+}
+}
+
+}
+}
+
+
+!macro MRenderFixedSpriteWithStride .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
+!if >.xpos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBX
+}
+!if >.ypos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBY
+}
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	; Shows sprite timeout
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	+MBus24Bit_Send8BitValue <.ypos
+	+MBus24Bit_Send8BitValue (.tileHeight * $20) / .scaleY
+	; X pos and size
+	+MBus24Bit_Send8BitValue <.xpos
+	+MBus24Bit_Send8BitValue (.tileWidth * $20) / .scaleX
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue .scaleY
+	+MBus24Bit_Send8BitValue .scaleX
+	; Stride
+	+MBus24Bit_Send8BitValue .tileStride-1
+}
+
+!macro MRenderFixedSprite .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight {
+	+MRenderFixedSpriteWithStride .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileWidth
+}
+
+!macro MAdjustObjectScaleBy .scale , .widthTab , .heightTab , .widthShifts , .heightShifts {
+	; Make the object larger
+	txa
+	clc
+	sbc #.scale
+	+lbcc ObjectDrawReturn
+	+lbeq ObjectDrawReturn
+	tax
+	lda .heightTab-1,x
+	+lbeq ObjectDrawReturn
+!if .heightShifts > 0 {
+!for .i , .heightShifts {
+	lsr
+}
+}
+	sta .smYTweak2+1
+	lda zeroPage_Temp4
+	sec
+.smYTweak2	sbc #0
+	sta zeroPage_Temp4
+	bcs .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBYTweak2
+	lda .widthTab-1,x
+	+lbeq ObjectDrawReturn
+!if .widthShifts > 0 {
+!for .i , .widthShifts {
+	lsr
+}
+}
+	sta .smXTweak2+1
+	lda zeroPage_Temp5
+	sec
+.smXTweak2	sbc #0
+	sta zeroPage_Temp5
+	bcs .noMSBXTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBXTweak2
+}

@@ -974,3 +974,471 @@
 +		this	0x00000154adda4d20 {m_cur_slot=0x00000000 m_address=0x00000000 mInstanceInit=false ...}	gew_pcm_device * {multipcm_device}
 
 * MAME diffs: https://github.com/mamedev/mame/compare/master...martinpiper:mame:savesprites
+
+
+
+
+* MAME sprite debugger
+	https://docs.mamedev.org/usingmame/defaultkeys.html
+	F4 Shows the game palette, decoded graphics tiles/characters and any tilemaps.
+		Note the keys for palettes, tiles, etc
+	"C:\Downloads\MAME\roms\thndrbld.zip"
+	C:\Downloads\MAME\mame.exe -debug -console
+	Sprite list processing: https://github.com/mamedev/mame/blob/5f54fda4daab98fd0e3ba8958b3e582e5ab67dd1/src/mame/sega/sega16sp.cpp#L1059
+	Memory: Sega X-Board Sprites/:mainpcb:sprites/0/m_buffer
+	Memory mapping: https://github.com/mamedev/mame/blob/5f54fda4daab98fd0e3ba8958b3e582e5ab67dd1/src/mame/sega/segaxbd.cpp#L925
+	memdump
+		110000 - 11ffff: sega_xboard_sprite_device::draw_write
+	Doesn't work?: dump sprites.txt,0:mainpcb:sprites,32
+		Specifying devices and address spaces: https://docs.mamedev.org/debugger/index.html#debugger-devicespec
+	Not working: dump sprites.txt,0:mainpcb:sprites/0/m_buffer,32
+	saver sprites.bin,0,1000,:mainpcb:sprites
+		But doesn't seem to save the data visible in the memory debug view
+
+	for k,v in pairs(manager.machine.memory.shares) do; print(k,v); end
+	for k,v in pairs(manager.machine.memory.regions) do; print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.memory.shares)) do; print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.memory.shares[":mainpcb:sprites"])) do ;print(k,v); end
+
+	manager.machine.memory.shares[":mainpcb:sprites"].read_i8(0)
+
+	-----------------------------------------------------
+	Exception at EIP=00007ff766c4b3f3 (sol::stack::unqualified_getter<sol::detail::as_value_tag<memory_share>, void>::get_no_lua_nil(lua_State*, int, sol::stack::record&)+0x0033): ACCESS VIOLATION
+	While attempting to read memory at 0000000000000000
+
+	Devices route: https://docs.mamedev.org/luascript/ref-devices.html
+	for k,v in pairs(manager.machine.devices) do ;print(k,v); end
+	for k,v in pairs(getmetatable(manager.machine.devices[":mainpcb:sprites"])) do ;print(k,v); end
+	print(manager.machine.devices[":mainpcb:sprites"])	
+	This saves a dump of the sprites mirror memory: dump sprites.txt,100000,fff
+		https://github.com/mamedev/mame/blob/master/src/mame/sega/segaxbd.cpp#L924C8-L924C14
+	$0b0 seems to be the helicopter body sprite
+		At the VBlank break (F8), alter memory 0bc (second to last word)  for the palette, then press F10 to step one cycle, and it should render with a different palette
+		0B0   0186  39E8  0952  3200  E200  005E  0000  3B4E   ..9è R2.â..^..;N
+	Perhaps this has been done already?
+		https://reassembler.blogspot.com/2021/04/ripping-sega-system-16-sprites-palettes.html
+		https://github.com/djyt/system16_sprite_viewer/tree/main
+		https://github.com/djyt/system16_sprite_viewer/releases
+		cd /d C:\Users\marti\Downloads\s16_viewer_win64_v031
+		s16_viewer.exe config\outrun.xml
+			Palettes in the config directory to be copied to the relevant roms\directory.
+	cd /d C:\Work\mame
+	C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\autorebase.bat
+	https://docs.mamedev.org/initialsetup/compilingmame.html#building-with-microsoft-visual-studio
+	make vs2019
+		^^ Problems...
+	Use WSL: https://docs.mamedev.org/initialsetup/compilingmame.html#overall-build-options
+		sudo apt update
+		sudo apt install gcc
+		sudo apt install build-essential
+		sudo apt install python3
+		sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev libfontconfig-dev libpulse-dev qtbase5-dev qtbase5-dev-tools qtchooser qt5-qmake
+		cd /mnt/c/Work/mame
+		make IGNORE_GIT=1 vs2019
+			Lots of debug: make -d IGNORE_GIT=1 vs2019
+	Project warnings as errors->No
+	Add compiler options: /utf-8
+	>> "C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\msys2_shell.cmd"
+	cd /c/Work/mame/
+	>> https://docs.mamedev.org/initialsetup/compilingmame.html#id3
+	>> Then: "C:\Users\marti\Downloads\msys64-2022-01-12-mame\msys64\win32env.bat"
+	cd c:\work\mame
+	make vs2019
+		Still compile probolems...
+	make SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp
+	Parallel build: make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp
+	mytest.exe -debug thndrbld
+	mytest.exe -window thndrbld
+	make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp SYMBOLS=0 ARCHOPTS=/utf-8 MODERN_WIN_API=1 NOWERROR=1 vs2019
+	make -j 16 SUBTARGET=mytest SOURCES=src/mame/sega/segaxbd.cpp,src/mame/sega/segaorun.cpp,src/mame/sega/model2.cpp SYMBOLS=0 ARCHOPTS=/utf-8 MODERN_WIN_API=1 NOWERROR=1 vs2019
+	Then open: "C:\work\mame\build\projects\windows\mamemytest\vs2019\mamemytest.sln"
+	>> https://github.com/martinpiper/mame/tree/savesprites
+	Debugging:
+		C:\Work\mame\src\mame\sega\sega16sp.cpp
+			sega_outrun_sprite_device::draw
+			>> Need the palette
+			Stepping out of this a couple of levels gets to: C:\Work\mame\src\mame\sega\segaxbd_v.cpp
+				segaxbd_state::screen_update
+				+		m_paletteram	{m_bytes=0x0000000000004000 }	shared_ptr_finder<unsigned short,1>
+				-		m_palette	{...}	device_finder<palette_device,1>
+		From context: sega_outrun_sprite_device::draw
+			Locals label search: m_paletteram and m_paletteram
+-		(*((segaxbd_state*)&(*((segaxbd_fd1094_state*)(*((device_t*)&(*((sprite_device<unsigned short,bitmap_ind16>*)&(*((sega_16bit_sprite_device*)this)))))).m_owner)))).m_paletteram	{m_bytes=0x0000000000004000 }	shared_ptr_finder<unsigned short,1>
+-		(*((segaxbd_state*)&(*((segaxbd_fd1094_state*)(*((device_t*)&(*((sprite_device<unsigned short,bitmap_ind16>*)&(*((sega_16bit_sprite_device*)this)))))).m_owner)))).m_palette	{...}	device_finder<palette_device,1>	
+		C:\Work\mame\src\mame\sega\segaxbd.cpp
+			segaxbd_state::paletteram_w
+		C:\Work\mame\src\lib\util\palette.cpp
+			palette_t::entry_set_color
+				m_entry_color
+	"C:\work\mame\mytest.exe" -window aburner2
+	Converts raw data:
+		del "C:\temp\thunderblade arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\thunderblade arcade\t.png"
+		del "C:\temp\afterburnerarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburnerarcade\t.png"
+		del "C:\temp\outrun arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\outrun arcade\t.png"
+	Works really well!
+	* To help extraction, make the palette change code optional. Also have the option of filtering out any flips and only saving unflipped data.
+
+	>> How to spot and remove pulsating or flashing dynamic palette colours, especially those in After Burner
+		Use convert.exe (as above) to extract all sprite frames from a playthrough in mame
+			"C:\work\mame\mytest.exe"
+				DIP Switches -> Easy
+				The mame analogue controls X/Y speed can be set to 64 each which will help cause barrel rolls and extract more sprite frames
+			Insert coin: 5
+			Throttle down: A
+			Every second alternate left/right to roll and use as many rotations as possible
+			It is safe to use "DIP Switches -> Reset System" to capture several passes through the opening of the game
+		
+		Examine output sprites, look for sprites with changing engine colours, not the sprite number. For example sprite t-7 or t-10
+		In "C:\temp\t.pal" look for :s00000006 or :s00000010 for sprite index 6 or 10 respectively.
+		Note their palette number: p00000f20
+			Notepad++->Edit->Line operation->sort...
+			Look for p00000f20 again
+			Note the palette colour index entries that change, in this case they are 1,2,4 (0 based)
+		In C:\Work\mame\src\mame\sega\sega16sp.cpp update CheckPaleteAndForceColour() and update with RGB mask colours like 200,0,200, 150,0,150 , 100,0,100 etc
+
+	>> Processing image files:
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\Work\C64\VideoHardware\assets\Demo14\ToUse\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\Work\C64\VideoHardware\assets\Demo14\ToUse\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\temp\afterburnerarcade\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\temp\afterburnerarcade\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\Work\C64\VideoHardware\assets\Demo14\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\work\c64\VideoHardware\assets\Demo14\PlayerAirplane\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\work\c64\VideoHardware\assets\Demo14\EnemyPlaneGreen\*.png
+
+	>> For the new scaled sprites, since they are variable in size, will need image conversion changes to take entire batches of sprite files and convert them for best fit palettes
+		For example this needs batch processing: java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --image "C:\Work\C64\VideoHardware\assets\Demo14\t-6.png" --imagequantize 16 --outputpalettes c:\temp\t.pal --convertwritepass
+		New batch format for palettes: --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --batchimagequantize 16 --batchimages "C:\Work\C64\VideoHardware\assets\Demo14\t-6.png" "C:\Work\C64\VideoHardware\assets\Demo14\t-10.png" "C:\Work\C64\VideoHardware\assets\Demo14\t-787.png" --outputpalettes c:\temp\t.pal --writepass
+			Note: preserveData = true is implied during --batchimages
+		This calculates palettes and writes data: java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --nostacking --outputscaled4 c:\temp\TScaledSprites4 --outputsprites c:\temp\TScaledSprites4Sheet.txt --outputpalettes c:\temp\t.pal --batchimagequantize 16 --batchimages "C:\Work\C64\VideoHardware\assets\Demo14\t-6.png" "C:\Work\C64\VideoHardware\assets\Demo14\t-10.png" --resetforcergb --forcergb 255 0 255 --batchimages "C:\Work\C64\VideoHardware\assets\Demo14\t-787.png" --writepass
+
+	>> Analysis of "C:\Users\marti\Videos\Captures\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-01-19 11-08-34.mp4"
+		>> "D:\Video files\old\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-01-19 11-08-34.mp4"
+		>> "C:\Users\marti\Videos\Captures\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-04-11 09-44-55.mp4"
+		At 30 fps, and the slowest speed, it takes 5 frames for an object to approximately move "a row" towards the camera.
+		At 60 fps that gives approximately 8-10 smooth steps for each row.
+		The closest row is 3.5 objects wide (a bush)
+		The farthest row is approximately 14 objects wide
+		There are approximately 8 rows
+		This could be represetned by a 14x8 table of entries: sprite frame index (into a 16x8 grid that contains "scrolled" map data), X and Y screen position (0-255 that can be multiplied by 2 for a full screen), Z scale/position for table lookup for sprite sizes.
+		Might also need a delta X/Y per sprite (or Z table based)
+	>> Landscape is on average 85 sprites, 4 bytes per sprite, 24 rotation steps, each 8 frames for Z movement
+		> For X movement, it does not have to be independant of the Z movement, there could be an optional "X and Y position addition" bytes for each sprite that gets ignroed or or added/subbed depending on if needed
+		> Then each 8 steps, like the existing LandscapeMapRowOffset update, it steps +1 or -1
+		Done: >> Perhaps only certain rotations have X movement baked into the landscape data? Then a separate landscape rotation table can contain the required add value (15/16/17) for LandscapeMapRowOffset
+	>> Done: It should be possible to store these landscape rotation tables into either cartridge banks, or external RAM car data.
+		>> External RAM would theoretically allow faster sequential access since it can automatically increment the address pointer without the CPU
+		> See C64\VideoHardware\asm\AfterBurner\LargeTables.a
+			And the comments at the top of the file for label extraction
+		> If the number of rotations is to be increased, there doesnt need to be any padding and instead a table of pointers produced
+		> Perhaps landscapeRotations can be in RAM
+		> As well as mode7 rotation addresses
+			To avoid too much external RAM double lookups
+		>> Bus20To32Bit1_Init added
+		>> Updated code to read from the external RAM
+	>> Done: Horizon (sky/land) that rotates can use the mode7 layer
+		> Done: The only issue is that the mode7 rotation is updated on the vsync, and the scales sprites need a full frame to actually show the new position, so the mode7 is one frame ahead of the scaled sprites.
+			To fix this, the mode7 update would need to update in the vsync area a frame *after* during the processing of the next frame of scaled sprite data
+			This is problematic, since the 24bit address bus would need to handle the restart since there would be two separate sources accessing the 24 bit address bus.
+			* The APU could handle this, the simplest solution would be to disable the APU, have a very simple wait for a frame, then write the stored mode7 data, then stop (or loop).
+				This is because the APU has its own internal 24 bit address independant of the userport 24 bit address bus.
+	>> Done: If I want rotations in more detail than 15 degree steps, or more frames, then using source files and acme will not work since Demo14LargeTables.bin has already reached the 64K limit
+		The binary file will need to be output by the python tool directly. Which is doable.
+		See: binaryDataFile and dataOffsetsFile
+			Worked first time! :)
+		> Used 24 bit values in the binary file
+		> Added the text at the start, for later data checking: MW2000-AfterBurner
+		> ScreenLandscapeNumRollSteps now equals 72
+	>> The large intro aircraft carrier can be sprites, as long as the sea sprites behind are not rendered. Special case empty sprite draw will skip the landscape table entry.
+	>> Animated intro balls could be pre-sorted sprite animations, stored in RAM/cart bank
+	>> For enemy movement, each rotation angle could have a position up and to the left/right at several Z positions. This could be accumulated with other position, as vectors, to provide variation in position.
+		>> Done: Works, but the rotation tables need moving to external RAM because the current range limits in C64 RAM (0-15) are too small
+			The "+MAddU8ToAddr16 32" can be replaced with a latch add, or perhaps it is more optimal to store the values as pairs and asl landscapeRotationsFrame and handle the hi bit?
+		>> ; Quick 3D position rotation test
+		> ; Individual tests
+		> ; Combined transform
+		>> EntityUpdateObjects
+		> Done: rotationVectorTableAddrs and rotationVectorTableAddrsNext can be 16 bit because they are always $100 bytes aligned
+		> ; TODO: Hack scale, will probably need a Z pos to scale table
+			>> realZToHardwareScale
+			>> defaultNeutralScaleIs is technically the Z position of the player
+			Returned scale of 0 in the width/height ScaleTab means the sprite is too large, so skip it
+				>> MGenerateSprite4ScaleTable updated
+			> return partial X/Y perspective for the rotation stage, around 0,0 origin still
+				> 128 in X or Y means the point clipped outside the visible range, so reject it
+				> This could be a large 256 x 256 table in external RAM
+	> When selecting player airplaner graphics keep the ones with more engine colours. There appear to be some "dark" versions.
+	>> Done: Need to use playerYPositionOffsetForHorizon in the horizon lookup...
+		Adjust MMode7RotationOffset
+	>> Done: Adjust the sprite4 extents so that the left hand and top part of the screen are on the border edges, this should allow the hardware sprite culling to work better
+	>> Done: While there seems to be Demo14\PlayerAirplane\Left3 with one "up" frame missing, there also seem to be all the "up" frames missing from "Left4" starting with t-149.png
+		> See missing frame for RenderSpritePlayerRL3YU1 and RenderSpritePlayerRL3YU2
+			Found new frame: bt-823.png
+	>> Done: Change to introduce a roll check...
+	>> Done: Improve bcs .noMSBX2 kBus24Bit_Sprites2_MSBX and kBus24Bit_Sprites2_MSBY checks by incrementing a zeropage location and testing the result without stacking etc
+		No need for this. The entire screen is 0-255 X and Y coordinate base, until the final shift left
+	>> Done: ; TODO: Bake in this adjustment
+	>> Done: With improved Y clipping, playerYPositionOffsetForLandscape could be twice as large now.
+	>> Done: Check (and wait for with on screen display) the external RAM for expected binary header: MW2000-AfterBurner
+		> ; TODO: Check for RAM contents
+			> GameExpectedIdentifier
+	>> Done: Write out MSBX for the sprite and include full resolution position, avoid extra shifts.
+		> Due to "sbc zeroPage_Temp7" which uses TweakScaleTab and relies on LandscapeMapXTweak, this means it is tricky...
+			It might be better instead to store out two X+MSBX for each entry...
+		> .someTweakX
+	>> Done: Move landscapeRotationHorizonOffsetTab referenced data into external RAM
+		> landscapeRotationHorizonOffsetTab swizzled
+		Currently: Saving 35244 ($89ac) bytes ($200 - $8bac exclusive).
+		Now: Saving 24019 ($5dd3) bytes ($200 - $5fd3 exclusive).
+	>> Done: Automate ScaleTab output
+		> maxHardwareScaleTabValue and Demo14ScaledSprites4Sheet.txtTables.a
+	>> Done: Use macros for latch setting, not jsr
+		Improved framerate and code size
+	>> Done: Enemy airplane rotation frames, for its own roll and also landscape rotation
+		; Done: Plane animation frames are not equally spaced out across the range of angles
+			; Expanding this table would allow the angles to be placed closer to their desired angles. Perhaps measure the angle of the wings?
+			>> Handling each 90 degrees quadrant seems to be a good option
+		> Done: The animation angles for the green plane look a bit wrong, the nose points in the wrong direction probably due to flips, consider the EnemyPlaneHarrier instead
+			> Or capture many more frames and extract
+	>> EnemyPlaneWhite
+		EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+		Render_EnemyPlaneGreen_Table
+		; Done: No: TODO: Better table layout? Swizzle?
+			Done: Combine both of these into one table, less indirection
+				> EnemyPlaneGreen_landscapeRotationsFrame_to_animation is not swizzled, one pointer to update for different types, not clc/adc #ScreenLandscapeNumRollSteps/etc
+					Removed Render_EnemyPlaneGreen_Table
+		> EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+		>> Done: Add EnemyTypeLo/Hi that points to EnemyPlaneGreen_landscapeRotationsFrame_to_animation (or similar), 0 can be for the player render
+			See: enemyTypeLo/enemyTypeHo and associated code
+	>> Done: EnemyPlaneHarrier
+	>> Done: Empty entity slot can be EntityZPos=255, which causes a skip. Z = 0 can be useful for rendered enemies behind the player.
+		> See: EntityZPos_Inactive
+		>> Removed, the hi type is now used
+	>> Add more _UsingState macros in enemy draw
+	>> Add Entity Z rotation offset that will wrap around and accumulate with the landscape rotation
+	>> Done: Animate and draw multiple enemy objects
+	>> Done: Make player and enemy objects sort with Z value
+		> EntityZPos
+	>> Done: Smoke trails from missiles in title screen
+		>> Hit the title animation grid, explode...
+		>> Tricky... Cannot alter the animation read position...
+			> Added next frame address, instead of just streaming data from the external RAM
+	>> Animation editor
+		Display sprite frames and test sync with rotation table order. Hand editing the tables is prone to erros and time consuming.
+			> Test with EnemyPlaneGreen graphics as this is the most troublesome so far
+		Display the horizon rotation
+		Support flips for each sprite
+		Also test global flips for the whole animation, to see if the animation can be used for up/down/left/right parts of the screen area
+		Export code that can be !source included
+			See how EnemyPlaneWhite_landscapeRotationsFrame_to_animation references Render_EnemyPlaneWhiteXXX labels
+		>> Tkinter https://coderslegacy.com/python/python-gui/
+	>> Animated takeoff and landing sequence can be added as extra landscape frames, while horizontal (like the arcade)
+	>> The lower down canyon left/right movement can also be added as extra horizontal frames
+	>> Rotated landscape frames
+	>> Update landscape map data when "scrolled". The game access a specific grid inside the map while "scroling", the map is not itself scrolled, the map grid wraps around. The "horizontal or vertical" edges not being rendered can be updated.
+	>> Landscape render skips empty landscape slot
+	>> Aircraft carrier, renders with bandwidth saved from empty slots
+		> RenderSpritesCarrier
+			MObjectDrawWithScaleSizeCheck with suffix Accurate could use 16 bit X/Y coords and include the relevant MSB calculations
+		> LandscapeMap needs empty objects
+		Improved algorithmic generation with LandscapeMapRowsData and LandscapeMapRowsDataOffset
+	>> Done: Code tidy, move bits to separate files
+	>> Enemy rotation animation seems to be a bit jerky as they move towards the camera. Is this due to the scaled sprite rotation point adjustment or due to the perspective calculation?
+	>> Done: Algorithmic landscape to include ground RGB changes.
+		Done: The horizon and ground palette will need to be fixed in place at the start of the palette.
+		Done: The mode7 palette entries do not need a transparent forced rgb 255,0,255 bright purple.
+		Done: The ground entries could probably be first in the forced list
+		Done: The algorithmic landscape can then include the palette bank to change to, which contains pre-computed colour changes
+			> LandscapeMapRowsData expanded 1 byte
+	>> Done: Intro smoke from engines
+		Note: No entity system active here...
+		> Tidy RenderSpritesCarrier, separate player draw and also generify the position MSB check for kVarsEmitSpriteFrame_t_241 for the smoke
+	* Done: Intro smoke trails can use the entity system, start with empty entity list
+		Allocate entity in empty slot, when it moves behind the camera, remove the entity and push the Z to the back
+			>> EntityFindFreeSlot EntityUpdateObjects
+		Game will need to allocate new enemies
+			>> CheckSpawnEnemy
+	* Done: Entity list can have rotation tweak, will need a range clamp of course...
+		>> EntityRotationTweak
+	* Done: Player takeoff, alter smoke spawn height
+	* Done: Entity handler code. Optional. Will allow more complex behaviour.
+		>> EntityStateLo/EntityStateHi
+	* Done: Ball explosion, should move away from the central point, which means the vectors need to be normalised etc.
+	* Done: Player missle
+	* Done: Title sequence enemy plane and missle, using the state machine
+		> EntityState_EnemyPlaneGreenForward
+	* Done: Game audio: "c64\VideoHardware\assets\AfterBurner sound effects.xm"
+		>> "C:\work\c64\VideoHardware\assets\AfterBurner sound effects reduced.xm"
+		Save notes/start/end/repeat as assembler include during conversion. Using macro.
+		>> --exportmod "C:\work\c64\VideoHardware\assets\AfterBurner sound effects reduced.xm" "target/exportedAfterBurnerSoundEffects" 65535 168864
+		>> kMusicCommandSetSampleData and kMusicCommandPlayNote and setDebugMusicData
+		> ASSEMBLY_DEFINES_TXT, debugAssembly, setDebugAssembly(), writtenSampleFrequencyForAssembly
+		> Player_EngineVolumeChange MPlaySample MPlaySampleLoop MSampleSetVolumeFrequency MSampleSetVolume_fromAddr8 MSampleSetFrequency_fromAddr16
+	* Done: Enemy spawn alert
+	* MPlaySample is quite large, table and subroutine instead?
+		; Explosion 1
+		+MPlaySample 0 , 255 , kSampleInfo0_start , kSampleInfo0_length , kSampleInfo0_frequency
+		; Explosion 2
+		+MPlaySample 0 , 255 , kSampleInfo1_start , kSampleInfo1_length , kSampleInfo1_frequency
+		; Explosion 3
+		+MPlaySample 0 , 255 , kSampleInfo2_start , kSampleInfo2_length , kSampleInfo2_frequency
+		; ??
+		+MPlaySample 0 , 255 , kSampleInfo3_start , kSampleInfo3_length , kSampleInfo3_frequency
+		; Hit
+		+MPlaySample 0 , 255 , kSampleInfo4_start , kSampleInfo4_length , kSampleInfo4_frequency
+		; Fire
+		+MPlaySample 0 , 255 , kSampleInfo5_start , kSampleInfo5_length , kSampleInfo5_frequency
+		; Be careful
+		+MPlaySample 0 , 255 , kSampleInfo6_start , kSampleInfo6_length , kSampleInfo6_frequency
+		; The enemy
+		+MPlaySample 0 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
+		; Get ready
+		+MPlaySample 0 , 255 , kSampleInfo8_start , kSampleInfo8_length , kSampleInfo8_frequency
+		; Break right
+		+MPlaySample 0 , 255 , kSampleInfo9_start , kSampleInfo9_length , kSampleInfo9_frequency
+		; Wow
+		+MPlaySample 0 , 255 , kSampleInfo10_start , kSampleInfo10_length , kSampleInfo10_frequency
+		; Engine
+		+MPlaySampleLoop 0 , 255 , kSampleInfo11_start , kSampleInfo11_length , kSampleInfo11_loopStart , kSampleInfo11_looplength , kSampleInfo11_frequency
+	* Need a resource packing tool, probably using a variation on RLE, that will enable the C64 to send large streams of data for the hardware from the external RAM
+		>> ResourceGenerator\main.py
+		* Or just DMA everything from external RAM without compression as it's currently 318,475 bytes
+		>> SendResourceData
+	* Need to add HardwareTest_VideoPattern0 to Demo14 and also pass in an option to init Sprites4
+		>> kHardwareTest_UsingSprites4 = 1
+	* Done: kBus24Bit_Sprites4Planes_EBBS		= $04	; Note: Conflict with default Audio
+		Could make this $05 since video now has exact address separation
+		Update code to use kBus24Bit_Sprites4_MSBX and kBus24Bit_Sprites4_MSBY etc
+		>> Schematic and layout updated
+	* Need kHardwareTest_UsingMode7 = 1 support
+		Like kHardwareTest_UsingSprites4
+	* Done: Sea sprites to rotate with the landscape
+		ObjectDraw6
+		> Like the Render_EnemyPlaneHarrier generation, just create all the angle labels
+		> Using landscapeRotationsFrame
+	* Resource packer needs an option to include checksums of chunks of data at certain positions
+		Variable length chunks, probably 64K default
+		Start and end chunks checksums
+		Full chunk checksum
+		Variable length checksum
+		>> To be included at a specific offset, or appended onto the end of the data?
+			>> Appended
+		>> python ResourceGenerator\main.py tmp/Demo14FinalData.bin checksum 0x10000 0x100 2 tmp/Demo14FinalData_Checksums.a
+		> Add checks in the memory check stage
+		>> This sent and verified checksums OK. Alsothe DMA chunk sending now works.
+			cd /d C:\Work\C64\VideoHardware
+			C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\main.cmp.prg
+			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FinalData.bin
+	>> "C:\work\mame\mytest.exe" -window aburner2
+
+
+
+* Demo14 : Separate the title screen palette (and its unique asstes) compared to the game and its unique assets.
+
+
+
+* Demo14 : Update engine exhaust colours
+	>> VBlankUpdateEngineColours
+
+
+
+
+* Demo14: Landing on the runway and taking off from the runway sequence thoughts
+	>> "C:\Users\marti\Videos\Captures\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-04-11 09-44-55.mp4"
+		Time: 3:35 ...
+	In the arcade the horizon is forced to be level, this means the runway (road) does not need to rotate
+	The runway (road) has some horizontal colour stripes, plus some ground stripes that coincide with the ground
+		Notice how the ground stripes immediately appear at 3:37 but the runway (road) comes in from the distance
+		The near part of the runway as some ground sprites covering the start
+	The top sky+cloud+ground layer can still be mode7 while below the level horizon the runway (road) can be a tile/chars layer that has priority behind the sprites but infront of the mode7 background
+	The runway (road) lines and the width and start/end position can all be controlled by the APU a lot like the chequerboard ground in Demo9
+	This can all be table driven updates (from python) to choose exactly the desired APU coordinates to pick from the chars/tile screen
+	While landing the camera points down more and the horizon is very near (but not quite) the top of the screen
+	Since there is no rotation, the entire sequence could be a table and the landscape draw can use a special case
+	I think for each desired height the full landscape move sequence can be included, because there is no rotation.
+	>> Look for landscape175Frames and how it is created by C:\Work\C64\VideoHardware\assets\Demo14\PerspectiveGen\main.py
+		Note how it is referenced by landscapeRotations and how that table is referenced by LandscapeRender
+		Expand this data creation to labels named landscapeHeight175Frames and redirect the offset into the hteight table then continue to call into near the start of LandscapeRender
+			>> Note that because the horizon could move further up, potentially make the bottom vertical clip check larger
+				playerYPositionOffset and PlayerPositionToForHorizonAndLandscape
+				>> #50 and #-50 remove these magic numbers, the mid-point could definitely be altered by 100 inetad of 50
+				When "diving" during normal game play the horizon reaches just below the top right screen box artificial horizon "radar"
+				But when landing the horizon is above this nearer the top of the screen
+		Create LandscapeRenderHeight to do this
+	>> Consider the road could be scaled sprites instead of a char screen effect... Like Power Drift arcade. This would be easier than a raster line based APU effect
+		>> Does not look good
+			However "; Force runway area details into the landscape" can be used to add blank area for the runway and also runway related objects, like buildings trucks etc
+	>> Before size: 1,225,254 Demo14FinalData.bin
+		After size (64 to 128 height step 2 adjustment): 1,389,356 Demo14FinalData.bin
+	>> Added this which recovers from any roll input and player X offset and lands the airplane:
+		jsr InitGameLanding
+		jsr RunGameLanding
+	>> Note: ;	beq .gameToLanding
+	* When the airplane is nearly landing and centered to the bottom of the screen, switch to special case rendering (like the carrier takeoff sequence) and scale down the airplane (and move it slightly up)?
+		* Done: Add landing smoke?
+			** ; TODO: Why does this allocation cause the special case rendered sprite to fail when the smoke gets large?
+			>> Because the interface was not in direct write mode at all times after exiting the entity draw
+		* Done: The takeoff can then reverse this special case sequence and then switch to real rendering
+		* Done: Takeoff add slowly moving camera, the reverse of the landing slow moving camera.
+	* For the runway check code: APUFloorLoop APULineScrolls in main9.a
+		>> Note: APULineScrolls in APU.a
+			>> And the maths needed to select specific rows: ;	!by <(-((.i-1)+15) + 0)	; Selects row 0, the empty line
+		> APULineScrolls needs to be 16 bit values to account for the full range of selectable rows in the runway source screen
+		>> ; Test for maths involved in processing the runway tables
+	>> Coordinates need adjusting, see: PlayerPositionToForHorizonAndLandscape
+	>> Added RunGameLanding_CalculateRunway which is nicely syncronised with the landscape and horizon
+	* Need a way to synchronise the start and end of the runway to the landscape
+		Proably by logging the Y screen position of a landscape object for the landing, and then the take-off
+		>> ObjectDraw9 and ObjectDraw10 updates runwayMaxScreenRow and runwayMinScreenRow
+
+
+
+
+* Demo14: Game palettes have reached the 16 limit
+	> If each layer had the option of toggling the upper two bits of the output palette bank, by using a register similar to the priority register that uses two bits per layer
+		it would be possible to have palettes for each layer, this would have one palette for the cloud, one for the tiles, one for the chars, and one for the sprites
+		This would free up 2 palettes in the sprites layer
+		It would also remove the dependency of the clouds/chars layer and make their conversion more stable
+	> Different stages of the game could use different palettes with different enemies and different landscape
+		There could be a small number of common enemies and landscapes (EnemyPlaneGreen and t-787 (water))
+		>> e.g. Using: java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --nostacking --outputscaled4 ..\tmp\ScaledSprites4 --outputsprites ..\tmp\Demo14ScaledSprites4Sheet.txt --outputpalettes ..\tmp\Demo14ScaledSprites4.pal --batchimagequantize 16 --batchimages Demo14\PlayerAirplane\Level\*.png Demo14\PlayerAirplane\Left1\*.png Demo14\PlayerAirplane\Left2\*.png Demo14\PlayerAirplane\Left3\*.png Demo14\PlayerAirplane\*.png --resetforcergb --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14TitleChars.pal --batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlaneGreen\Roll2\*.png Demo14\t-241.png Demo14\t-90.png --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --batchimages "Demo14\t-787.png" --writepass
+			>> Gives 7 palettes
+		>> Or using: java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --nostacking --outputscaled4 ..\tmp\ScaledSprites4 --outputsprites ..\tmp\Demo14ScaledSprites4Sheet.txt --outputpalettes ..\tmp\Demo14ScaledSprites4.pal --batchimagequantize 16 --batchimages Demo14\PlayerAirplane\Level\*.png Demo14\PlayerAirplane\Left1\*.png Demo14\PlayerAirplane\Left2\*.png Demo14\PlayerAirplane\Left3\*.png Demo14\PlayerAirplane\*.png --resetforcergb --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14TitleChars.pal --batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlaneGreen\Roll2\*.png Demo14\t-241.png Demo14\t-90.png --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --batchimages "Demo14\t-787.png" "Demo14\t-576.png" "Demo14\t-934.png" --writepass
+			>> Gives 9 palettes
+		>> The second uses common enemy sprites, plus water plus brown and green bushes
+		>> Would need to add some explosions as common game sprites
+			>> Also perhaps the clouds landscape objects?
+		>> Then map out landscape types and enemy types that can be used (there are 32 palette banks giving quite a lot of variation)
+		>> Done: Instead of using palette banks for the ground colour change, the ground colour change can be applied to the active palette bank
+			>> The LandscapeMapRowsData "palette bank" can be changed to update the palette directly from the ground palette
+				>> Done: GamePaletteBank is renamed to be GroundColours and when changed from -1 will store the ground colours into the palette during the vsync then will reset it to be -1
+			>> The landscape data can include a few enemy types that can be spawned during this section
+			>> Done: The landscape data will need an extra real palette bank to use, which shares the landscape and the enemy palettes
+				>> Can use: GamePaletteBank
+				>> See: Demo14ScaledSprites4Game0.pal and Demo14ScaledSprites4Game1.pal
+		>> This would provide even more variation in palettes
+			> Title screen now uses palette $0f
+		>> Note in some arcade game transitions between sections the horizon will be force moved off the bottom of the screen so the landscape is not visible
+		>> If I was extra fancy, I could reserve palettes (zero based) 10-12 for the landscape and 13-15 for the enemies, given that 0-8 are common game + title + clouds palettes
+			But that is quite complex conversion scripting work as specific palettes would need to be forced for specific objects/enemies and to avoid the enemy/landscape object palettes
+		>> The landscape code that transitions between sections can delay the landscape transition while there are any "non-common" enemies active
+			The common landscape objects, probably water and the two bushes, can then spawn common enemies and switch palettes at the end of the landscape section.
+				The transition landscape section could also be shorter...
+		>> It would be possible to make all palettes within the bank dynamic and cover them in, but this would make the sprite palette entry lookup much more expensive.
+			Probably don't do this.
+		>> The LandscapeMapRowsData should contain flags to trigger the landing etc
+	* Done: Add cloud landscape sprite objects: "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png"
+		>> ObjectDraw11
+
+
+
+
+* Demo14: The canyon sprites, to shift the camera view part of the landing sequence could be used, the canyon does not rotate
+	Like the rotation or height encoding (instead of height or rotation) there can be a more accurate shift lefts or right (8 frames) along with the 8 frames for the forward movement
+	"C:\work\mame\mytest.exe" -window aburner2
+	Stage 8 is canyon
+	Then ImageMagick convert
+	Then --shiftTopLeft --minimiseArea
+	Then --removeDuplicates
+	>> C:\work\c64\VideoHardware\assets\Demo14\Canyon
+	>> ObjectDraw12 ObjectDraw13 ObjectDraw14 ObjectDraw15
+	>> InitGameCanyon RunGameCanyon

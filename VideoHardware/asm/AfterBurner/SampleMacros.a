@@ -1,0 +1,58 @@
+!macro MDeactivateVoice .sampleVoice {
+;	+MBus24Bit_SetAddress_A $01 , $8000 + (11*4) + 1
+	+MBus24Bit_SetAddress_A $01 , $8000 + (11*4)
+	lda AudioActiveFlags
+	and #!(1<<.sampleVoice)
+	sta AudioActiveFlags
+	; (Current built) Hardware needs both bits always set
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+}
+!macro MActivateVoice .sampleVoice {
+;	+MBus24Bit_SetAddress_A $01 , $8000 + (11*4) + 1
+	+MBus24Bit_SetAddress_A $01 , $8000 + (11*4)
+	lda AudioActiveFlags
+	ora #1<<.sampleVoice
+	sta AudioActiveFlags
+	; (Current built) Hardware needs both bits always set
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromA
+}
+!macro MPlaySample .sampleVoice , .sampleVolume , .sampleStart , .sampleEnd , .sampleFrequency {
+	+MDeactivateVoice .sampleVoice
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11)
+	+MBus24Bit_Send8BitValue .sampleVolume
+	+MBus24Bit_SendLE16BitValue .sampleStart
+	+MBus24Bit_SendLE16BitValue .sampleEnd
+	+MBus24Bit_SendLE16BitValue .sampleFrequency
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+	+MActivateVoice .sampleVoice
+}
+!macro MPlaySampleLoop .sampleVoice , .sampleVolume , .sampleStart , .sampleEnd , .sampleLoopStart , .sampleLoopEnd , .sampleFrequency {
+	+MDeactivateVoice .sampleVoice
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11)
+	+MBus24Bit_Send8BitValue .sampleVolume
+	+MBus24Bit_SendLE16BitValue .sampleStart
+	+MBus24Bit_SendLE16BitValue .sampleEnd
+	+MBus24Bit_SendLE16BitValue .sampleFrequency
+	+MBus24Bit_SendLE16BitValue .sampleLoopStart
+	+MBus24Bit_SendLE16BitValue .sampleLoopEnd
+	+MActivateVoice .sampleVoice
+}
+
+!macro MSampleSetVolumeFrequency .sampleVoice , .sampleVolume , .sampleFrequency {
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11)
+	+MBus24Bit_Send8BitValue .sampleVolume
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11) + 5
+	+MBus24Bit_SendLE16BitValue .sampleFrequency
+}
+!macro MSampleSetVolume_fromAddr8 .sampleVoice , .addr {
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11)
+	+MBus24Bit_SendLE16BitValueFromAddress .addr
+}
+
+!macro MSampleSetFrequency_fromAddr16 .sampleVoice , .addr {
+	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11) + 5
+	+MBus24Bit_SendLE16BitValueFromAddress .addr
+}

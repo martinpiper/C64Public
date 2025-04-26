@@ -1053,72 +1053,72 @@ RasterLengthNTSCC64		= 520
 }
 
 ; Can only be used for small chunks <= 256 bytes. Inclusive!
-!macro SetMemory_AX .start , .end , .data {
-	ldx #<((.end-.start)+1)
+!macro SetMemory_AX .addrstart , .end , .data {
+	ldx #<((.end-.addrstart)+1)
 	lda #.data
 .dm1
-	sta .start-1,x
+	sta .addrstart-1,x
 	dex
 	bne .dm1
 }
 
-!macro ClearScreenAt_AX .start , .data {
+!macro ClearScreenAt_AX .addrstart , .data {
 	ldx #0
 	lda #.data
 .dm1
-	sta .start,x
-	sta .start + $100,x
-	sta .start + $200,x
-	sta .start + $2e8,x
+	sta .addrstart,x
+	sta .addrstart + $100,x
+	sta .addrstart + $200,x
+	sta .addrstart + $2e8,x
 	dex
 	bne .dm1
 }
 
-!macro ClearScreenAtWithA_X .start {
+!macro ClearScreenAtWithA_X .addrstart {
 	ldx #0
 .dm1
-	sta .start,x
-	sta .start + $100,x
-	sta .start + $200,x
-	sta .start + $2e8,x
+	sta .addrstart,x
+	sta .addrstart + $100,x
+	sta .addrstart + $200,x
+	sta .addrstart + $2e8,x
 	dex
 	bne .dm1
 }
 
-!macro DisplayTextMiddle_AX .start , .end , .scr {
-	ldx #.end-.start
+!macro DisplayTextMiddle_AX .addrstart , .end , .scr {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
-	sta .scr + ((39-(.end-.start))/2),x
+	lda .addrstart-1,x
+	sta .scr + ((39-(.end-.addrstart))/2),x
 	dex
 	bne .dm1
 }
 
 ; Useful for displaying text strings or copying small chunks of memory <= 256 bytes long
-!macro DisplayTextAt_AX .start , .end , .scr {
-	ldx #.end-.start
+!macro DisplayTextAt_AX .addrstart , .end , .scr {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	sta .scr-1,x
 	dex
 	bne .dm1
 }
 
-!macro DisplayColourTextMiddle_AX .start , .end , .scr , .col {
-	ldx #.end-.start
+!macro DisplayColourTextMiddle_AX .addrstart , .end , .scr , .col {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
-	sta .scr + ((39-(.end-.start))/2),x
+	lda .addrstart-1,x
+	sta .scr + ((39-(.end-.addrstart))/2),x
 	lda #.col
-	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.start))/2),x
+	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.addrstart))/2),x
 	dex
 	bne .dm1
 }
 
-!macro DisplayColourTextAt_AX .start , .end , .scr , .col {
-	ldx #.end-.start
+!macro DisplayColourTextAt_AX .addrstart , .end , .scr , .col {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	sta .scr-1,x
 	lda #.col
 	sta COLOURRAM -1 + (.scr & $3ff),x
@@ -1126,43 +1126,43 @@ RasterLengthNTSCC64		= 520
 	bne .dm1
 }
 
-!macro DisplayReversedTextMiddle_AX .start , .end , .scr {
-	ldx #.end-.start
+!macro DisplayReversedTextMiddle_AX .addrstart , .end , .scr {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	ora #128
-	sta .scr + ((39-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.addrstart))/2),x
 	dex
 	bne .dm1
 }
 
-!macro DisplayReversedColourTextMiddle_AX .start , .end , .scr , .col {
-	ldx #.end-.start
+!macro DisplayReversedColourTextMiddle_AX .addrstart , .end , .scr , .col {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	ora #128
-	sta .scr + ((39-(.end-.start))/2),x
+	sta .scr + ((39-(.end-.addrstart))/2),x
 	lda #.col
-	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.start))/2),x
+	sta COLOURRAM + (.scr & $3ff) + ((39-(.end-.addrstart))/2),x
 	dex
 	bne .dm1
 }
 
 
-!macro DisplayReversedTextAt_AX .start , .end , .scr {
-	ldx #.end-.start
+!macro DisplayReversedTextAt_AX .addrstart , .end , .scr {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	ora #128
 	sta .scr-1,x
 	dex
 	bne .dm1
 }
 
-!macro DisplayColourTextZeroSkipAt_AX .start , .end , .scr , .col , .space {
-	ldx #.end-.start
+!macro DisplayColourTextZeroSkipAt_AX .addrstart , .end , .scr , .col , .space {
+	ldx #.end-.addrstart
 .dm1
-	lda .start-1,x
+	lda .addrstart-1,x
 	bne .plot
 	lda #.space
 .plot

@@ -72,9 +72,9 @@ Multiplex_DiscardSpritesYPosForSort = Multiplex_DiscardSpritesYPos
 
 !macro MACROMultiplex_SpriteStrip ~.Multiplex_LBLISFP9 , .spriteIndex {
 !ifdef Multiplex_ReverseOrder {
-.spriteIndexReal = 7 - .spriteIndex;
+.spriteIndexReal = 7 - .spriteIndex
 } else {
-.spriteIndexReal = .spriteIndex;
+.spriteIndexReal = .spriteIndex
 }
 ;--------------------------------------
 ; MPi: Calculate with this current raster position and the bottom of the last sprite Y pos

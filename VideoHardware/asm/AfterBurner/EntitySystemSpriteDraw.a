@@ -1,0 +1,383 @@
+!source "tmp/Demo14ScaledSprites4Sheet.txtTables.a"
+
+
+EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word Render_EnemyPlaneHarrier" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word Render_EnemyPlaneHarrier" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+
+EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word Render_EnemyPlaneWhite" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word Render_EnemyPlaneWhite" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+
+EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+!scriptpythoninline (ScreenLandscapeNumRollSteps/4)-1 , ScreenLandscapeNumStepsDelta {
+for i in range (acmeParameters[0]):
+	angle = (acmeParameters[1] * i)
+	value = 9 + 6 + int((angle * 7) / (acmeParameters[0] * acmeParameters[1]))
+	acme.source("	!word Render_EnemyPlaneGreen" + str(value) + "\n")
+}
+!scriptpythoninline ScreenLandscapeNumRollSteps/4 , ScreenLandscapeNumStepsDelta {
+for i in range (acmeParameters[0]):
+	angle = (acmeParameters[1] * i)
+	value = 9 + 6 + 7 + int((angle * 8) / (acmeParameters[0] * acmeParameters[1]))
+	acme.source("	!word Render_EnemyPlaneGreen" + str(value) + "\n")
+}
+!scriptpythoninline ScreenLandscapeNumRollSteps/4 , ScreenLandscapeNumStepsDelta {
+for i in range (acmeParameters[0]):
+	angle = (acmeParameters[1] * i)
+	value = int((angle * 9) / (acmeParameters[0] * acmeParameters[1]))
+	acme.source("	!word Render_EnemyPlaneGreen" + str(value) + "\n")
+}
+!scriptpythoninline ScreenLandscapeNumRollSteps/4 , ScreenLandscapeNumStepsDelta {
+for i in range (acmeParameters[0]):
+	angle = (acmeParameters[1] * i)
+	value = 9 + int((angle * 6) / (acmeParameters[0] * acmeParameters[1]))
+	acme.source("	!word Render_EnemyPlaneGreen" + str(value) + "\n")
+acme.source("	!word Render_EnemyPlaneGreen" + str(9 + 6) + "\n")
+}
+
+
+WhiteSmoke_landscapeRotationsFrame_to_animation
+!for .i , ScreenLandscapeNumRollSteps {
+	!word Render_WhiteSmoke
+}
+
+MissileForward_landscapeRotationsFrame_to_animation
+!for .i , ScreenLandscapeNumRollSteps {
+	!word Render_MissileForward
+}
+
+!macro MRender_EntityObject .tileWidthScaleTab , .tileHeightScaleTab , .palette , .tileWidth , .tileHeight , .address , .flipX , .flipY {
+!word .tileWidthScaleTab - 1
+!word .tileHeightScaleTab - 1
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	; Palette
+	lda #.palette
+	ora zeroPage_Temp0
+	+MBus24Bit_Send8BitValueFromA
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp9
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp4
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp8
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp3
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp5
+	; Stride
+	+MBus24Bit_Send8BitValue .tileWidth-1
+	rts
+}
+
+Render_WhiteSmoke
++MRender_EntityObject kVarsEmitSpriteFrame_t_241_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_241_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_241_0_0_0_colour , kVarsEmitSpriteFrame_t_241_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_241_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_241_0_0_0_tileAddress , 1 , 0
+
+Render_MissileForward
++MRender_EntityObject kVarsEmitSpriteFrame_t_90_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_90_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_90_0_0_0_colour , kVarsEmitSpriteFrame_t_90_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_90_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_90_0_0_0_tileAddress , 1 , 0
+
+; 9
+Render_EnemyPlaneGreen0
++MRender_EntityObject kVarsEmitSpriteFrame_t_642_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_642_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_642_0_0_0_colour , kVarsEmitSpriteFrame_t_642_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_642_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_642_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen1
++MRender_EntityObject kVarsEmitSpriteFrame_t_645_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_colour , kVarsEmitSpriteFrame_t_645_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_645_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen2
++MRender_EntityObject kVarsEmitSpriteFrame_t_640_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_colour , kVarsEmitSpriteFrame_t_640_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_640_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen3
++MRender_EntityObject kVarsEmitSpriteFrame_t_641_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_colour , kVarsEmitSpriteFrame_t_641_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_641_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen4
++MRender_EntityObject kVarsEmitSpriteFrame_t_635_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_colour , kVarsEmitSpriteFrame_t_635_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_635_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen5
++MRender_EntityObject kVarsEmitSpriteFrame_t_634_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_colour , kVarsEmitSpriteFrame_t_634_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_634_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen6
++MRender_EntityObject kVarsEmitSpriteFrame_t_637_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_colour , kVarsEmitSpriteFrame_t_637_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_637_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen7
++MRender_EntityObject kVarsEmitSpriteFrame_t_630_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_colour , kVarsEmitSpriteFrame_t_630_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_630_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen8
++MRender_EntityObject kVarsEmitSpriteFrame_t_636_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_colour , kVarsEmitSpriteFrame_t_636_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_636_0_0_0_tileAddress , 0 , 0
+
+; Next 90
+; 6
+Render_EnemyPlaneGreen9
++MRender_EntityObject kVarsEmitSpriteFrame_t_633_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_633_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_633_0_0_0_colour , kVarsEmitSpriteFrame_t_633_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_633_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_633_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen10
++MRender_EntityObject kVarsEmitSpriteFrame_t_654_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_654_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_654_0_0_0_colour , kVarsEmitSpriteFrame_t_654_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_654_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_654_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen11
++MRender_EntityObject kVarsEmitSpriteFrame_t_618_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_618_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_618_0_0_0_colour , kVarsEmitSpriteFrame_t_618_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_618_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_618_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen12
++MRender_EntityObject kVarsEmitSpriteFrame_td_033_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_td_033_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_td_033_0_0_0_colour , kVarsEmitSpriteFrame_td_033_0_0_0_tileWidth , kVarsEmitSpriteFrame_td_033_0_0_0_tileHeight , kVarsEmitSpriteFrame_td_033_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen13
++MRender_EntityObject kVarsEmitSpriteFrame_t_1009_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1009_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1009_0_0_0_colour , kVarsEmitSpriteFrame_t_1009_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1009_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1009_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen14
++MRender_EntityObject kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_678_0_0_0_colour , kVarsEmitSpriteFrame_t_678_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_678_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_678_0_0_0_tileAddress , 0 , 0
+
+; 7
+Render_EnemyPlaneGreen15
++MRender_EntityObject kVarsEmitSpriteFrame_t_1029_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1029_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1029_0_0_0_colour , kVarsEmitSpriteFrame_t_1029_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1029_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1029_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen16
++MRender_EntityObject kVarsEmitSpriteFrame_tf_67_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tf_67_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tf_67_0_0_0_colour , kVarsEmitSpriteFrame_tf_67_0_0_0_tileWidth , kVarsEmitSpriteFrame_tf_67_0_0_0_tileHeight , kVarsEmitSpriteFrame_tf_67_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen17
++MRender_EntityObject kVarsEmitSpriteFrame_tf_70_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tf_70_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tf_70_0_0_0_colour , kVarsEmitSpriteFrame_tf_70_0_0_0_tileWidth , kVarsEmitSpriteFrame_tf_70_0_0_0_tileHeight , kVarsEmitSpriteFrame_tf_70_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen18
++MRender_EntityObject kVarsEmitSpriteFrame_t_996_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_996_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_996_0_0_0_colour , kVarsEmitSpriteFrame_t_996_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_996_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_996_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen19
++MRender_EntityObject kVarsEmitSpriteFrame_t_1023_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1023_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1023_0_0_0_colour , kVarsEmitSpriteFrame_t_1023_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1023_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1023_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen20
++MRender_EntityObject kVarsEmitSpriteFrame_t_1734_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1734_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1734_0_0_0_colour , kVarsEmitSpriteFrame_t_1734_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1734_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1734_0_0_0_tileAddress , 0 , 0
+
+Render_EnemyPlaneGreen21
++MRender_EntityObject kVarsEmitSpriteFrame_t_1738_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1738_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1738_0_0_0_colour , kVarsEmitSpriteFrame_t_1738_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1738_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1738_0_0_0_tileAddress , 0 , 0
+
+; 8
+Render_EnemyPlaneGreen22
++MRender_EntityObject kVarsEmitSpriteFrame_t_636_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_636_0_0_0_colour , kVarsEmitSpriteFrame_t_636_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_636_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_636_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen23
++MRender_EntityObject kVarsEmitSpriteFrame_t_630_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_630_0_0_0_colour , kVarsEmitSpriteFrame_t_630_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_630_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_630_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen24
++MRender_EntityObject kVarsEmitSpriteFrame_t_637_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_637_0_0_0_colour , kVarsEmitSpriteFrame_t_637_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_637_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_637_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen25
++MRender_EntityObject kVarsEmitSpriteFrame_t_634_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_634_0_0_0_colour , kVarsEmitSpriteFrame_t_634_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_634_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_634_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen26
++MRender_EntityObject kVarsEmitSpriteFrame_t_635_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_635_0_0_0_colour , kVarsEmitSpriteFrame_t_635_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_635_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_635_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen27
++MRender_EntityObject kVarsEmitSpriteFrame_t_641_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_641_0_0_0_colour , kVarsEmitSpriteFrame_t_641_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_641_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_641_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen28
++MRender_EntityObject kVarsEmitSpriteFrame_t_640_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_640_0_0_0_colour , kVarsEmitSpriteFrame_t_640_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_640_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_640_0_0_0_tileAddress , 1 , 0
+
+Render_EnemyPlaneGreen29
++MRender_EntityObject kVarsEmitSpriteFrame_t_645_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_645_0_0_0_colour , kVarsEmitSpriteFrame_t_645_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_645_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_645_0_0_0_tileAddress , 1 , 0
+
+
+
+Render_EnemyPlaneWhite175
++MRender_EntityObject kVarsEmitSpriteFrame_t_963_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_colour , kVarsEmitSpriteFrame_t_963_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_963_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite170
+Render_EnemyPlaneWhite165
++MRender_EntityObject kVarsEmitSpriteFrame_t_965_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_colour , kVarsEmitSpriteFrame_t_965_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_965_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneWhite160
+Render_EnemyPlaneWhite155
+Render_EnemyPlaneWhite150
++MRender_EntityObject kVarsEmitSpriteFrame_t_967_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_colour , kVarsEmitSpriteFrame_t_967_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_967_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneWhite145
+Render_EnemyPlaneWhite140
+Render_EnemyPlaneWhite135
+Render_EnemyPlaneWhite130
++MRender_EntityObject kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_colour , kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1095_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneWhite125
+Render_EnemyPlaneWhite120
+Render_EnemyPlaneWhite115
++MRender_EntityObject kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_colour , kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1105_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneWhite110
+Render_EnemyPlaneWhite105
+Render_EnemyPlaneWhite100
++MRender_EntityObject kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_colour , kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidth , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeight , kVarsEmitSpriteFrame_tg_32_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneWhite95
+Render_EnemyPlaneWhite90
+
+Render_EnemyPlaneWhite85
+Render_EnemyPlaneWhite80
++MRender_EntityObject kVarsEmitSpriteFrame_t_963V_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_963V_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_963V_0_0_0_colour , kVarsEmitSpriteFrame_t_963V_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_963V_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_963V_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite75
+Render_EnemyPlaneWhite70
+Render_EnemyPlaneWhite65
++MRender_EntityObject kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_colour , kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidth , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeight , kVarsEmitSpriteFrame_tg_32_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite60
+Render_EnemyPlaneWhite55
+Render_EnemyPlaneWhite50
++MRender_EntityObject kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_colour , kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1105_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite45
+Render_EnemyPlaneWhite40
+Render_EnemyPlaneWhite35
++MRender_EntityObject kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_colour , kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1095_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite30
+Render_EnemyPlaneWhite25
+Render_EnemyPlaneWhite20
++MRender_EntityObject kVarsEmitSpriteFrame_t_967_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_colour , kVarsEmitSpriteFrame_t_967_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_967_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite15
+Render_EnemyPlaneWhite10
++MRender_EntityObject kVarsEmitSpriteFrame_t_965_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_colour , kVarsEmitSpriteFrame_t_965_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_965_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneWhite5
+Render_EnemyPlaneWhite0
+
+Render_EnemyPlaneWhite355
+Render_EnemyPlaneWhite350
++MRender_EntityObject kVarsEmitSpriteFrame_t_963_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_colour , kVarsEmitSpriteFrame_t_963_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_963_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite345
+Render_EnemyPlaneWhite340
+Render_EnemyPlaneWhite335
++MRender_EntityObject kVarsEmitSpriteFrame_t_965_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_colour , kVarsEmitSpriteFrame_t_965_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_965_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite330
+Render_EnemyPlaneWhite325
+Render_EnemyPlaneWhite320
++MRender_EntityObject kVarsEmitSpriteFrame_t_967_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_colour , kVarsEmitSpriteFrame_t_967_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_967_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite315
+Render_EnemyPlaneWhite310
+Render_EnemyPlaneWhite305
++MRender_EntityObject kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_colour , kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1095_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite300
+Render_EnemyPlaneWhite295
+Render_EnemyPlaneWhite290
++MRender_EntityObject kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_colour , kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1105_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite285
+Render_EnemyPlaneWhite280
++MRender_EntityObject kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_colour , kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidth , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeight , kVarsEmitSpriteFrame_tg_32_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite275
+Render_EnemyPlaneWhite270
+Render_EnemyPlaneWhite265
+Render_EnemyPlaneWhite260
++MRender_EntityObject kVarsEmitSpriteFrame_t_963V_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_963V_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_963V_0_0_0_colour , kVarsEmitSpriteFrame_t_963V_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_963V_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_963V_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneWhite255
+Render_EnemyPlaneWhite250
+Render_EnemyPlaneWhite245
++MRender_EntityObject kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_tg_32_0_0_0_colour , kVarsEmitSpriteFrame_tg_32_0_0_0_tileWidth , kVarsEmitSpriteFrame_tg_32_0_0_0_tileHeight , kVarsEmitSpriteFrame_tg_32_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite240
+Render_EnemyPlaneWhite235
+Render_EnemyPlaneWhite230
++MRender_EntityObject kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1105_0_0_0_colour , kVarsEmitSpriteFrame_t_1105_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1105_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1105_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite225
+Render_EnemyPlaneWhite220
+Render_EnemyPlaneWhite215
++MRender_EntityObject kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1095_0_0_0_colour , kVarsEmitSpriteFrame_t_1095_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1095_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_1095_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite210
+Render_EnemyPlaneWhite205
+Render_EnemyPlaneWhite200
++MRender_EntityObject kVarsEmitSpriteFrame_t_967_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_967_0_0_0_colour , kVarsEmitSpriteFrame_t_967_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_967_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_967_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite195
+Render_EnemyPlaneWhite190
++MRender_EntityObject kVarsEmitSpriteFrame_t_965_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_965_0_0_0_colour , kVarsEmitSpriteFrame_t_965_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_965_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_965_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneWhite185
+Render_EnemyPlaneWhite180
++MRender_EntityObject kVarsEmitSpriteFrame_t_963_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_963_0_0_0_colour , kVarsEmitSpriteFrame_t_963_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_963_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_963_0_0_0_tileAddress , 0 , 1
+
+
+
+
+Render_EnemyPlaneHarrier175
+Render_EnemyPlaneHarrier170
+Render_EnemyPlaneHarrier165
+Render_EnemyPlaneHarrier160
++MRender_EntityObject kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_colour , kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2835_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneHarrier155
+Render_EnemyPlaneHarrier150
+Render_EnemyPlaneHarrier145
++MRender_EntityObject kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_colour , kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2840_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneHarrier140
+Render_EnemyPlaneHarrier135
+Render_EnemyPlaneHarrier130
+Render_EnemyPlaneHarrier125
+Render_EnemyPlaneHarrier120
+Render_EnemyPlaneHarrier115
+Render_EnemyPlaneHarrier110
+Render_EnemyPlaneHarrier105
++MRender_EntityObject kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_colour , kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2836_0_0_0_tileAddress , 1 , 1
+Render_EnemyPlaneHarrier100
+Render_EnemyPlaneHarrier95
+Render_EnemyPlaneHarrier90
+
+Render_EnemyPlaneHarrier85
+Render_EnemyPlaneHarrier80
+Render_EnemyPlaneHarrier75
++MRender_EntityObject kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_colour , kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2833_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneHarrier70
+Render_EnemyPlaneHarrier65
+Render_EnemyPlaneHarrier60
++MRender_EntityObject kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_colour , kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2836_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneHarrier55
+Render_EnemyPlaneHarrier50
+Render_EnemyPlaneHarrier45
+Render_EnemyPlaneHarrier40
+Render_EnemyPlaneHarrier35
+Render_EnemyPlaneHarrier30
++MRender_EntityObject kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_colour , kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2840_0_0_0_tileAddress , 1 , 0
+Render_EnemyPlaneHarrier25
+Render_EnemyPlaneHarrier20
+Render_EnemyPlaneHarrier15
+Render_EnemyPlaneHarrier10
+Render_EnemyPlaneHarrier5
+Render_EnemyPlaneHarrier0
+
+Render_EnemyPlaneHarrier355
+Render_EnemyPlaneHarrier350
+Render_EnemyPlaneHarrier345
++MRender_EntityObject kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_colour , kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2835_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneHarrier340
+Render_EnemyPlaneHarrier335
+Render_EnemyPlaneHarrier330
++MRender_EntityObject kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_colour , kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2840_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneHarrier325
+Render_EnemyPlaneHarrier320
+Render_EnemyPlaneHarrier315
+Render_EnemyPlaneHarrier310
+Render_EnemyPlaneHarrier305
+Render_EnemyPlaneHarrier300
++MRender_EntityObject kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_colour , kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2836_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneHarrier295
+Render_EnemyPlaneHarrier290
+Render_EnemyPlaneHarrier285
++MRender_EntityObject kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_colour , kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2833_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneHarrier280
+Render_EnemyPlaneHarrier275
+Render_EnemyPlaneHarrier270
+
+Render_EnemyPlaneHarrier265
+Render_EnemyPlaneHarrier260
+Render_EnemyPlaneHarrier255
++MRender_EntityObject kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2833_0_0_0_colour , kVarsEmitSpriteFrame_t_2833_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2833_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2833_0_0_0_tileAddress , 0 , 0
+Render_EnemyPlaneHarrier250
+Render_EnemyPlaneHarrier245
+Render_EnemyPlaneHarrier240
+Render_EnemyPlaneHarrier235
+Render_EnemyPlaneHarrier230
+Render_EnemyPlaneHarrier225
++MRender_EntityObject kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2836_0_0_0_colour , kVarsEmitSpriteFrame_t_2836_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2836_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2836_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneHarrier220
+Render_EnemyPlaneHarrier215
+Render_EnemyPlaneHarrier210
+Render_EnemyPlaneHarrier205
++MRender_EntityObject kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2840_0_0_0_colour , kVarsEmitSpriteFrame_t_2840_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2840_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2840_0_0_0_tileAddress , 0 , 1
+Render_EnemyPlaneHarrier200
+Render_EnemyPlaneHarrier195
+Render_EnemyPlaneHarrier190
+Render_EnemyPlaneHarrier185
+Render_EnemyPlaneHarrier180
++MRender_EntityObject kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_colour , kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2835_0_0_0_tileAddress , 0 , 1

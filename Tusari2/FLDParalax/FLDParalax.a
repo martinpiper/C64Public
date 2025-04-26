@@ -16,6 +16,10 @@
 Sprites__size = 8
 
 tempWork0 = $02
+tempWorkIRQA = $03
+tempWorkIRQX = $04
+tempWorkIRQY = $05
+
 	
 *=$400
 	jmp GameStart
@@ -182,7 +186,7 @@ GameStart
 	inc Sprites_Y
 	inc Sprites_Y
 ;	lda #180
-	lda #210
+	lda #208
 	cmp Sprites_Y
 	bcs .notDown
 	sta Sprites_Y
@@ -260,9 +264,9 @@ GameStart
 	bcs .okYPos1
 	lda #VIC2SpriteYBorderTop + (4*8)
 .okYPos1
-	cmp #VIC2SpriteYBorderBottom - VIC2SpriteSizeY
+	cmp #VIC2SpriteYBorderBottom - VIC2SpriteSizeY - 6
 	bcc .okYPos2
-	lda #VIC2SpriteYBorderBottom - VIC2SpriteSizeY
+	lda #VIC2SpriteYBorderBottom - VIC2SpriteSizeY - 6
 .okYPos2
 	sta Sprites_Y,x
 	inc .spriteYWobble,x
@@ -328,7 +332,7 @@ GameStart
 	cpx #Sprites__size
 	bne .col1
 
-	; Update cloud positions
+	; Update sprite cloud positions
 !for .ii , 4 {
 !set .i = .ii - 1 + 10
 	lda Sprites_XLo + .i
@@ -354,7 +358,7 @@ GameStart
 +
 }
 
-	jsr Sprites_UpdateToVIC2
+;	jsr Sprites_UpdateToVIC2
 
 
 !macro MProcessCharLine .line {
@@ -370,7 +374,7 @@ ldx #39
 	sta GameScreen2 + (.line * 40)
 }
 
-	; Clouds processing
+	; Char clouds processing
 .every1 lda #0
 	and #1
 	bne .oevery1
@@ -560,45 +564,29 @@ Cloud1_XScroll = * + 1
 !if 1 {
 ;	inc VIC2BorderColour
 
+	inc FLDSize4_smx2
+	inc FLDSize4_smx2
+	inc FLDSize4_smx2
+	inc FLDSize4_smx2
+	lda FLDSize4_smx2
+	and #7
+	sta FLDSize4_smx2
+	+lbne .no3
+
+
 	; This update is for the last three char rows of the far background, the near plane
-.smxscr1	lda #0
-	beq .nox2
-	lda GameScreen2 + (18*40) + 39
-	pha
-	ldx #39
-.scrx3
-	lda GameScreen2 + (18*40) -1 ,x
-	sta GameScreen2 + (18*40) ,x
-	dex
-	bne .scrx3
-	pla
-	sta GameScreen2 + (18*40)
-.nox2
-	lda .smxscr1+1
-	eor #1
-	sta .smxscr1+1
+	+MProcessCharLine 18
+	+MProcessCharLine 19
+	+MProcessCharLine 20
+	+MProcessCharLine 21
+	+MProcessCharLine 22
+	+MProcessCharLine 23
 
-	; The bottom bricks
-	lda GameScreen2 + (19*40) + 39
-	pha
-	lda GameScreen2 + (20*40) + 39
-	pha
-	ldx #39
-.scrx2
-!for .y , 2 {
-!set .yy = 19 +.y-1
-	lda GameScreen2 + (.yy*40) -1 ,x
-	sta GameScreen2 + (.yy*40) ,x
-}
-	dex
-	bne .scrx2
-	pla
-	sta GameScreen2 + (20*40)
-	pla
-	sta GameScreen2 + (19*40)
 
-	jsr .another3Lines
-	jsr .another3Lines
+.no3
+	lda FLDSize4_smx2
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize4_smx2
 
 ;	dec VIC2BorderColour
 }
@@ -865,6 +853,32 @@ Sprites_UpdateToVIC2
 	+MSprite_update2 2 + .i-1
 }
 	lda tempWork0
+	sta VIC2SpriteXMSB
+;	dec VIC2BorderColour
+	rts
+
+
+Sprites_UpdateToVIC3
+	lda #%11111111
+	sta VIC2SpriteMulticolour
+;	inc VIC2BorderColour
+	lda #0
+!macro MSprite_update3 .i , .x , .y , .frame , .colour {
+	ldx #<.x
+	stx VIC2Sprite0X + (.i * 2)
+	ldx #.y
+	stx VIC2Sprite0Y + (.i * 2)
+	ldx #.colour
+	stx VIC2Sprite0Colour + .i
+	ldx #.frame
+	stx GameScreen2 + SPRITEFRAMESCROFF + .i
+	rol
+	ora #(>.x) & 1
+}
+!for .ii , 8 {
+!set .i = 8 - .ii
+	+MSprite_update3 .i , VIC2SpriteXBorderLeft + 64 + (.i * VIC2SpriteSizeX) , 8 , 64 + 26 + .i , VIC2Colour_White
+}
 	sta VIC2SpriteXMSB
 ;	dec VIC2BorderColour
 	rts
