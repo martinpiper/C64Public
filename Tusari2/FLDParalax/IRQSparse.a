@@ -56,6 +56,9 @@ IRQ_Bottom
 	lda #$82	; NMI On timer B
 	sta CIA2InterruptControl
 
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
 
 !macro MProcessSplitYPos .table , .split {
 	and #7 ; This causes the calculation to cycle around the scroll bits and also avoids any carry situation
@@ -134,6 +137,10 @@ IRQ_Bottom
 	+MWordValueToAddress_A IRQ_TopBorder , KERNALIRQServiceRoutineLo
 	+MACROAckRasterIRQ_A
 
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
 	ldx tempWorkIRQX
 	lda tempWorkIRQA
 
@@ -145,12 +152,19 @@ IRQ_TopBorder
 
 	+DisplayGameScreenClouds
 
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
 	jsr Sprites_UpdateToVIC2
 
 	lda #VIC2SpriteYBorderBottom-3
 	sta VIC2Raster
 	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
 	+MACROAckRasterIRQ_A
+
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
 
 	ldx tempWorkIRQX
 	lda tempWorkIRQA
@@ -410,7 +424,7 @@ NMI_Cloud1
 
 ;	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
 Cloud2_XScroll = * + 1
-	lda #0
+	lda #4
 	sta VIC2ScreenControlH
 
 	+MByteValueToAddress_A 7 , CIA2TimerBLo
@@ -425,7 +439,7 @@ NMI_Cloud2
 
 ;	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
 Cloud3_XScroll = * + 1
-	lda #0
+	lda #3
 	sta VIC2ScreenControlH
 
 	+MByteValueToAddress_A 14 , CIA2TimerBLo
@@ -440,10 +454,16 @@ NMI_Cloud3
 
 ;	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 Cloud4_XScroll = * + 1
-	lda #0
+	lda #4
 	sta VIC2ScreenControlH
 
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
 	jsr Sprites_UpdateToVIC
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
 
 	+MByteValueToAddress_A 4 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
@@ -662,7 +682,7 @@ NMI_FLDSize4c2
 	pha
 	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 FLDSize4_smx2 = * + 1
-	lda #0
+	lda #4
 	sta VIC2ScreenControlH
 	+MByteValueToAddress_A 3 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize4d , KERNALNMIServiceRoutineLo

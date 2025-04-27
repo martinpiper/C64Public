@@ -13,12 +13,17 @@
 !source "Display_Macros.a"
 !source "Sprites_Macros.a"
 
-Sprites__size = 8
+;DebugTiming_Mainline = 1
+;DebugTiming_IRQ = 1
 
-tempWork0 = $02
-tempWorkIRQA = $03
-tempWorkIRQX = $04
-tempWorkIRQY = $05
+Sprites__size = 8
+kMaxSpeed = 5
+
+tempWorkIRQA = $02
+tempWorkIRQX = $03
+tempWorkIRQY = $04
+tempWork0 = $05
+tempWork1 = $06
 
 	
 *=$400
@@ -116,15 +121,18 @@ GameStart
 
 .l1
 	; Debug: Mainline timing
-;	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
+}
 .noRaster1
 	; Debug: Shows where the IRQ/NMI timing is stopping this mainline
 ;	inc VIC2BorderColour
 	lda IRQ_BottomStarted
 	beq .noRaster1
 	; Debug: Mainline timing
-;	+MByteValueToAddress_A VIC2Colour_Red , VIC2BorderColour
-
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Red , VIC2BorderColour
+}
 	lda #0
 	sta IRQ_BottomStarted
 
@@ -332,34 +340,84 @@ GameStart
 	cpx #Sprites__size
 	bne .col1
 
-	; Update sprite cloud positions
-!for .ii , 4 {
-!set .i = .ii - 1 + 10
-	lda Sprites_XLo + .i
-	clc
-	adc #2
-	sta Sprites_XLo + .i
-	bcc +
-	lda Sprites_XHi + .i
-	eor #1
-	sta Sprites_XHi + .i
-+
-}
-!for .ii , 2 {
-!set .i = .ii - 1 + 14
-	lda Sprites_XLo + .i
-	clc
-	adc #1
-	sta Sprites_XLo + .i
-	bcc +
-	lda Sprites_XHi + .i
-	eor #1
-	sta Sprites_XHi + .i
-+
+	ldx Sprites_Y
+	lda PlayerYToPerspective,x
+	sta WantFLD
+
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Green , VIC2BorderColour
 }
 
-;	jsr Sprites_UpdateToVIC2
+	lda Sprites_XHi
+	ror
+	lda Sprites_XLo
+	ror
+	cmp #160
+	bcc .oc2
+	lda #160
+.oc2
+	sta tempWork1
+	lda #160
+	sec
+	sbc tempWork1
+	lsr
+	lsr
+	lsr
+	lsr
+	cmp #kMaxSpeed
+	bcc .oc1
+	lda #kMaxSpeed
+.oc1
+	sta tempWork1
 
+.doxs1
+	lda tempWork1
+	beq .noxs1
+	jsr UpdateSpriteCloudPositions
+	jsr UpdateCharCloudPositions
+	jsr UpdateCharMountainPositions
+	jsr UpdateCharWallPositions
+	jsr UpdateCharPlantsPositions
+	jsr UpdateCharNearPositions
+	dec tempWork1
+	jmp .doxs1
+.noxs1
+
+	lda Cloud1_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud1_XScroll
+	; This is not in the IRQ because at this point the raster has already progressed
+	sta VIC2ScreenControlH
+
+	lda Cloud2_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud2_XScroll
+	lda Cloud3_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud3_XScroll
+	lda Cloud4_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta Cloud4_XScroll
+
+	lda FLDSize1_XScroll
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize1_XScroll
+
+	lda FLDSize2b_smx1
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize2b_smx1
+
+	lda FLDSize3_smx2
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize3_smx2
+
+	lda FLDSize4_smx2
+	ora #kVIC2ScreenControlHBits_Multicolour
+	sta FLDSize4_smx2
+
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2BorderColour
+}
 
 !macro MProcessCharLine .line {
 	lda GameScreen2 + (.line * 40) + 39
@@ -374,103 +432,58 @@ ldx #39
 	sta GameScreen2 + (.line * 40)
 }
 
-	; Char clouds processing
-.every1 lda #0
-	and #1
-	bne .oevery1
-	inc Cloud1_XScroll
-	lda Cloud1_XScroll
-	and #7
-	sta Cloud1_XScroll
-	bne .oevery1
+	; Process any events
+	lda CharWantScroll1
+	beq .noc1
 	+MProcessCharLine 0
-.oevery1
-	inc .every1+1
-	; This is not in the IRQ because at this point the raster has already progressed
-Cloud1_XScroll = * + 1
 	lda #0
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta VIC2ScreenControlH
-
-.every2 lda #0
-	and #3
-	bne .oevery2
-	inc Cloud2_XScroll
-	lda Cloud2_XScroll
-	and #7
-	sta Cloud2_XScroll
-	bne .oevery2
+	sta CharWantScroll1
+.noc1
+	lda CharWantScroll2
+	beq .noc2
 	+MProcessCharLine 1
-.oevery2
-	inc .every2+1
-
-.every3 lda #0
-	and #7
-	bne .oevery3
-	inc Cloud3_XScroll
-	lda Cloud3_XScroll
-	and #7
-	sta Cloud3_XScroll
-	bne .oevery3
+	lda #0
+	sta CharWantScroll2
+.noc2
+	lda CharWantScroll3
+	beq .noc3
 	+MProcessCharLine 2
-.oevery3
-	inc .every3+1
-
-.every4 lda #0
-	and #15
-	bne .oevery4
-	inc Cloud4_XScroll
-	lda Cloud4_XScroll
-	and #7
-	sta Cloud4_XScroll
-	bne .oevery4
+	lda #0
+	sta CharWantScroll3
+.noc3
+	lda CharWantScroll4
+	beq .noc4
 	+MProcessCharLine 3
-.oevery4
-	inc .every4+1
+	lda #0
+	sta CharWantScroll4
+.noc4
 
 
-	lda Cloud1_XScroll
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta Cloud1_XScroll
-	lda Cloud2_XScroll
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta Cloud2_XScroll
-	lda Cloud3_XScroll
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta Cloud3_XScroll
-	lda Cloud4_XScroll
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta Cloud4_XScroll
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Yellow , VIC2BorderColour
+}
 
-	; Mountains
-.every5 lda #0
-	and #31
-	bne .oevery5
-;	inc VIC2BorderColour
-	inc FLDSize1_XScroll
-	lda FLDSize1_XScroll
-	and #7
-	sta FLDSize1_XScroll
-	bne .no2
+
+
+	lda CharWantScroll5
+	beq .noc5
 	+MProcessCharLine 6
 	+MProcessCharLine 7
 	+MProcessCharLine 8
-.no2
-	lda FLDSize1_XScroll
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta FLDSize1_XScroll
+	lda #0
+	sta CharWantScroll5
+.noc5
 
-;	dec VIC2BorderColour
-.oevery5
-	inc .every5+1
 
-	inc FLDSize2b_smx1
-	lda FLDSize2b_smx1
-	and #7
-	sta FLDSize2b_smx1
-	+lbne .nox1
+
+	lda CharWantScroll6
+	+lbeq .nox1
 
 ;	inc VIC2BorderColour
+
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Cyan , VIC2BorderColour
+}
 
 	; This update is for the first char rows of the far background below the mountains
 	lda GameScreen2 + (9*40) + 39
@@ -527,52 +540,33 @@ Cloud1_XScroll = * + 1
 
 ;	dec VIC2BorderColour
 
-	; Plants
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_LightGreen , VIC2BorderColour
+}
+
+	lda #0
+	sta CharWantScroll6
+
 .nox1
-	lda FLDSize2b_smx1
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta FLDSize2b_smx1
 
-;	inc VIC2BorderColour
-	jsr UpdateHiresChars
-;	dec VIC2BorderColour
-
-
-;	inc VIC2BorderColour
-	inc FLDSize3_smx2
-	inc FLDSize3_smx2
-	lda FLDSize3_smx2
-	and #7
-	sta FLDSize3_smx2
-	bne .no1
+	lda CharWantScroll7
+	beq .no1
 	+MProcessCharLine 14
 	+MProcessCharLine 15
 	+MProcessCharLine 16
 	+MProcessCharLine 17
+	lda #0
+	sta CharWantScroll7
 .no1
-	lda FLDSize3_smx2
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta FLDSize3_smx2
 
 ;	dec VIC2BorderColour
 
-	ldx Sprites_Y
-	lda PlayerYToPerspective,x
-	sta WantFLD
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_Purple , VIC2BorderColour
+}
 
-
-!if 1 {
-;	inc VIC2BorderColour
-
-	inc FLDSize4_smx2
-	inc FLDSize4_smx2
-	inc FLDSize4_smx2
-	inc FLDSize4_smx2
-	lda FLDSize4_smx2
-	and #7
-	sta FLDSize4_smx2
-	+lbne .no3
-
+	lda CharWantScroll8
+	+lbeq .no3
 
 	; This update is for the last three char rows of the far background, the near plane
 	+MProcessCharLine 18
@@ -582,13 +576,16 @@ Cloud1_XScroll = * + 1
 	+MProcessCharLine 22
 	+MProcessCharLine 23
 
+	lda #0
+	sta CharWantScroll8
 
 .no3
-	lda FLDSize4_smx2
-	ora #kVIC2ScreenControlHBits_Multicolour
-	sta FLDSize4_smx2
 
 ;	dec VIC2BorderColour
+
+
+!ifdef DebugTiming_Mainline {
+	+MByteValueToAddress_A VIC2Colour_DarkGrey , VIC2BorderColour
 }
 
 	jsr MusicBinary+6
@@ -600,30 +597,6 @@ Cloud1_XScroll = * + 1
 
 	jmp .l1
 
-.another3Lines
-	; The bottom bricks
-	lda GameScreen2 + (21*40) + 39
-	pha
-	lda GameScreen2 + (22*40) + 39
-	pha
-	lda GameScreen2 + (23*40) + 39
-	pha
-	ldx #39
-.scrx4
-!for .y , 3 {
-!set .yy = 21 +.y-1
-	lda GameScreen2 + (.yy*40) -1 ,x
-	sta GameScreen2 + (.yy*40) ,x
-}
-	dex
-	bne .scrx4
-	pla
-	sta GameScreen2 + (23*40)
-	pla
-	sta GameScreen2 + (22*40)
-	pla
-	sta GameScreen2 + (21*40)
-	rts
 
 .introCount !by 80
 
@@ -940,3 +913,173 @@ UpdateHiresChars
 
 !source "IRQSparse.a"
 !source "Data.a"
+
+!zn
+UpdateSpriteCloudPositions
+	inc .smevo2+1
+.smevo2 lda #0
+	and #1
+	bne .o2
+
+	; Update sprite cloud positions
+!for .ii , 4 {
+!set .i = .ii - 1 + 10
+	inc Sprites_XLo + .i
+	bne +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+.o2
+
+	inc .smevo1+1
+.smevo1 lda #0
+	and #3
+	bne .o1
+!for .ii , 2 {
+!set .i = .ii - 1 + 14
+	inc Sprites_XLo + .i
+	bne +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+.o1
+	rts
+
+
+
+!zn
+CharWantScroll1 !by 0
+CharWantScroll2 !by 0
+CharWantScroll3 !by 0
+CharWantScroll4 !by 0
+UpdateCharCloudPositions
+	; Char clouds processing
+.every1 lda #0
+	and #7
+	bne .oevery1
+	inc Cloud1_XScroll
+	lda Cloud1_XScroll
+	and #7
+	sta Cloud1_XScroll
+	bne .oevery1
+	inc CharWantScroll1
+.oevery1
+	inc .every1+1
+	; This is not in the IRQ because at this point the raster has already progressed
+Cloud1_XScroll = * + 1
+	lda #0
+
+.every2 lda #0
+	and #15
+	bne .oevery2
+	inc Cloud2_XScroll
+	lda Cloud2_XScroll
+	and #7
+	sta Cloud2_XScroll
+	bne .oevery2
+	inc CharWantScroll2
+.oevery2
+	inc .every2+1
+
+.every3 lda #0
+	and #31
+	bne .oevery3
+	inc Cloud3_XScroll
+	lda Cloud3_XScroll
+	and #7
+	sta Cloud3_XScroll
+	bne .oevery3
+	inc CharWantScroll3
+.oevery3
+	inc .every3+1
+
+.every4 lda #0
+	and #63
+	bne .oevery4
+	inc Cloud4_XScroll
+	lda Cloud4_XScroll
+	and #7
+	sta Cloud4_XScroll
+	bne .oevery4
+	inc CharWantScroll4
+.oevery4
+	inc .every4+1
+	rts
+
+
+!zn
+CharWantScroll5 !by 0
+UpdateCharMountainPositions
+	; Mountains
+.every5 lda #0
+	and #127
+	bne .oevery5
+;	inc VIC2BorderColour
+	inc FLDSize1_XScroll
+	lda FLDSize1_XScroll
+	and #7
+	sta FLDSize1_XScroll
+	bne .no2
+	inc CharWantScroll5
+.no2
+
+;	dec VIC2BorderColour
+.oevery5
+	inc .every5+1
+	rts
+
+
+!zn
+CharWantScroll6 !by 0
+UpdateCharWallPositions
+.every1	lda #0
+	and #3
+	bne .o1
+	; Wall
+	inc FLDSize2b_smx1
+	lda FLDSize2b_smx1
+	and #7
+	sta FLDSize2b_smx1
+	bne .o2
+	inc CharWantScroll6
+.o2
+	jsr UpdateHiresChars
+.o1
+	inc .every1+1
+	rts
+
+
+!zn
+CharWantScroll7 !by 0
+UpdateCharPlantsPositions
+.every1 lda #0
+	and #1
+	bne .o1
+	; Plants
+	inc FLDSize3_smx2
+	lda FLDSize3_smx2
+	and #7
+	sta FLDSize3_smx2
+	bne .o1
+	inc CharWantScroll7
+.o1
+	inc .every1+1
+	rts
+
+
+
+!zn
+CharWantScroll8 !by 0
+UpdateCharNearPositions
+	inc FLDSize4_smx2
+	lda FLDSize4_smx2
+	and #7
+	sta FLDSize4_smx2
+	bne .o1
+	inc CharWantScroll8
+.o1
+	rts
