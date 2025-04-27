@@ -17,7 +17,7 @@
 ;DebugTiming_IRQ = 1
 
 Sprites__size = 8
-kMaxSpeed = 5
+kMaxSpeed = 4
 
 tempWorkIRQA = $02
 tempWorkIRQX = $03
@@ -347,39 +347,41 @@ GameStart
 !ifdef DebugTiming_Mainline {
 	+MByteValueToAddress_A VIC2Colour_Green , VIC2BorderColour
 }
-
+kMaxSpriteX = 170
 	lda Sprites_XHi
 	ror
 	lda Sprites_XLo
 	ror
-	cmp #160
+	cmp #kMaxSpriteX
 	bcc .oc2
-	lda #160
+	lda #kMaxSpriteX
 .oc2
 	sta tempWork1
-	lda #160
-	sec
-	sbc tempWork1
+;	lda #kMaxSpriteX
+;	sec
+;	sbc tempWork1
 	lsr
 	lsr
 	lsr
 	lsr
-	cmp #kMaxSpeed
+	cmp #kMaxSpeed*2
 	bcc .oc1
-	lda #kMaxSpeed
+	lda #kMaxSpeed*2
 .oc1
+	sec
+	sbc #kMaxSpeed
 	sta tempWork1
 
 .doxs1
 	lda tempWork1
 	beq .noxs1
-	jsr UpdateSpriteCloudPositions
-	jsr UpdateCharCloudPositions
-	jsr UpdateCharMountainPositions
-	jsr UpdateCharWallPositions
-	jsr UpdateCharPlantsPositions
-	jsr UpdateCharNearPositions
+	bmi .noxs1n
+	jsr UpdateScrollPositions
 	dec tempWork1
+	jmp .doxs1
+.noxs1n
+	jsr UpdateScrollPositionsNeg
+	inc tempWork1
 	jmp .doxs1
 .noxs1
 
@@ -431,31 +433,90 @@ ldx #39
 	pla
 	sta GameScreen2 + (.line * 40)
 }
+!macro MProcessCharLineNeg .line {
+	lda GameScreen2 + (.line * 40)
+	pha
+ldx #-39
+.cl1
+	; Note the vareful use of "negative" offset maths
+	lda GameScreen2 + (.line * 40) - 216, x
+	sta GameScreen2 + (.line * 40) - 216 - 1, x
+	inx
+	bne .cl1
+	pla
+	sta GameScreen2 + (.line * 40) + 39
+}
+
+!macro MProcessCharLineColour .line {
+	lda GameScreen2 + (.line * 40) + 39
+	pha
+	lda COLOURRAM + (.line * 40) + 39
+	pha
+ldx #39
+.cl1
+	lda GameScreen2 + (.line * 40) - 1 , x
+	sta GameScreen2 + (.line * 40) , x
+	lda COLOURRAM + (.line * 40) - 1 , x
+	sta COLOURRAM + (.line * 40) , x
+	dex
+	bne .cl1
+	pla
+	sta COLOURRAM + (.line * 40)
+	pla
+	sta GameScreen2 + (.line * 40)
+}
+!macro MProcessCharLineColourNeg .line {
+	lda GameScreen2 + (.line * 40)
+	pha
+	lda COLOURRAM + (.line * 40)
+	pha
+ldx #-39
+.cl1
+	; Note the vareful use of "negative" offset maths
+	lda GameScreen2 + (.line * 40) - 216, x
+	sta GameScreen2 + (.line * 40) - 216 - 1, x
+	lda COLOURRAM + (.line * 40) - 216, x
+	sta COLOURRAM + (.line * 40) - 216 - 1, x
+	inx
+	bne .cl1
+	pla
+	sta COLOURRAM + (.line * 40) + 39
+	pla
+	sta GameScreen2 + (.line * 40) + 39
+}
 
 	; Process any events
 	lda CharWantScroll1
 	beq .noc1
+	bmi .noc1n
 	+MProcessCharLine 0
-	lda #0
-	sta CharWantScroll1
+	jmp .noc1
+.noc1n
+	+MProcessCharLineNeg 0
 .noc1
 	lda CharWantScroll2
 	beq .noc2
+	bmi .noc2n
 	+MProcessCharLine 1
-	lda #0
-	sta CharWantScroll2
+	jmp .noc2
+.noc2n
+	+MProcessCharLineNeg 1
 .noc2
 	lda CharWantScroll3
 	beq .noc3
+	bmi .noc3n
 	+MProcessCharLine 2
-	lda #0
-	sta CharWantScroll3
+	jmp .noc3
+.noc3n
+	+MProcessCharLineNeg 2
 .noc3
 	lda CharWantScroll4
 	beq .noc4
+	bmi .noc4n
 	+MProcessCharLine 3
-	lda #0
-	sta CharWantScroll4
+	jmp .noc4
+.noc4n
+	+MProcessCharLineNeg 3
 .noc4
 
 
@@ -467,96 +528,59 @@ ldx #39
 
 	lda CharWantScroll5
 	beq .noc5
+	bmi .noc5n
 	+MProcessCharLine 6
 	+MProcessCharLine 7
 	+MProcessCharLine 8
-	lda #0
-	sta CharWantScroll5
+	jmp .noc5
+.noc5n
+	+MProcessCharLineNeg 6
+	+MProcessCharLineNeg 7
+	+MProcessCharLineNeg 8
 .noc5
-
-
-
-	lda CharWantScroll6
-	+lbeq .nox1
-
-;	inc VIC2BorderColour
 
 !ifdef DebugTiming_Mainline {
 	+MByteValueToAddress_A VIC2Colour_Cyan , VIC2BorderColour
 }
 
 	; This update is for the first char rows of the far background below the mountains
-	lda GameScreen2 + (9*40) + 39
-	pha
-	lda GameScreen2 + (10*40) + 39
-	pha
-	lda GameScreen2 + (11*40) + 39
-	pha
-	lda GameScreen2 + (12*40) + 39
-	pha
-	lda GameScreen2 + (13*40) + 39
-	pha
-	lda COLOURRAM + (9*40) + 39
-	pha
-	lda COLOURRAM + (10*40) + 39
-	pha
-	lda COLOURRAM + (11*40) + 39
-	pha
-	lda COLOURRAM + (12*40) + 39
-	pha
-	lda COLOURRAM + (13*40) + 39
-	pha
-	ldx #39
-.scrx1
-!for .y , 5 {
-!set .yy = 9 +.y-1
-	lda GameScreen2 + (.yy*40) -1 ,x
-	sta GameScreen2 + (.yy*40) ,x
-	lda COLOURRAM + (.yy*40) -1 ,x
-	sta COLOURRAM + (.yy*40) ,x
-}
-	dex
-	bne .scrx1
-	pla
-	sta COLOURRAM + (13*40)
-	pla
-	sta COLOURRAM + (12*40)
-	pla
-	sta COLOURRAM + (11*40)
-	pla
-	sta COLOURRAM + (10*40)
-	pla
-	sta COLOURRAM + (9*40)
-	pla
-	sta GameScreen2 + (13*40)
-	pla
-	sta GameScreen2 + (12*40)
-	pla
-	sta GameScreen2 + (11*40)
-	pla
-	sta GameScreen2 + (10*40)
-	pla
-	sta GameScreen2 + (9*40)
+	lda CharWantScroll6
+	+lbeq .nox1
+	+lbmi .nox1n
 
-;	dec VIC2BorderColour
+	+MProcessCharLineColour 9
+	+MProcessCharLineColour 10
+	+MProcessCharLineColour 11
+	+MProcessCharLineColour 12
+	+MProcessCharLineColour 13
+	jmp .nox1
 
+.nox1n
+
+	+MProcessCharLineColourNeg 9
+	+MProcessCharLineColourNeg 10
+	+MProcessCharLineColourNeg 11
+	+MProcessCharLineColourNeg 12
+	+MProcessCharLineColourNeg 13
+
+.nox1
 !ifdef DebugTiming_Mainline {
 	+MByteValueToAddress_A VIC2Colour_LightGreen , VIC2BorderColour
 }
 
-	lda #0
-	sta CharWantScroll6
-
-.nox1
-
 	lda CharWantScroll7
-	beq .no1
+	+lbeq .no1
+	+lbmi .no1n
 	+MProcessCharLine 14
 	+MProcessCharLine 15
 	+MProcessCharLine 16
 	+MProcessCharLine 17
-	lda #0
-	sta CharWantScroll7
+	jmp .no1
+.no1n
+	+MProcessCharLineNeg 14
+	+MProcessCharLineNeg 15
+	+MProcessCharLineNeg 16
+	+MProcessCharLineNeg 17
 .no1
 
 ;	dec VIC2BorderColour
@@ -567,6 +591,7 @@ ldx #39
 
 	lda CharWantScroll8
 	+lbeq .no3
+	+lbmi .no3n
 
 	; This update is for the last three char rows of the far background, the near plane
 	+MProcessCharLine 18
@@ -575,9 +600,15 @@ ldx #39
 	+MProcessCharLine 21
 	+MProcessCharLine 22
 	+MProcessCharLine 23
+	jmp .no3
 
-	lda #0
-	sta CharWantScroll8
+.no3n
+	+MProcessCharLineNeg 18
+	+MProcessCharLineNeg 19
+	+MProcessCharLineNeg 20
+	+MProcessCharLineNeg 21
+	+MProcessCharLineNeg 22
+	+MProcessCharLineNeg 23
 
 .no3
 
@@ -587,6 +618,17 @@ ldx #39
 !ifdef DebugTiming_Mainline {
 	+MByteValueToAddress_A VIC2Colour_DarkGrey , VIC2BorderColour
 }
+
+	lda #0
+	sta CharWantScroll1
+	sta CharWantScroll2
+	sta CharWantScroll3
+	sta CharWantScroll4
+	sta CharWantScroll5
+	sta CharWantScroll6
+	sta CharWantScroll7
+	sta CharWantScroll8
+
 
 	jsr MusicBinary+6
 
@@ -911,13 +953,72 @@ UpdateHiresChars
 	sta .smEveryOther1+1
 	rts
 
+
+UpdateHiresCharsNeg
+	; Update the hires background chars
+	; 138/139
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (139*8) + .i
+	and #1
+	beq +
+	sec
++
+	ror GameChars + (138*8) + .i
+	ror GameChars + (139*8) + .i
+}
+	lda .smEveryOther1+1
+	+lbne .skipEverOther2n
+
+	; 115-118
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (118*8) + .i
+	and #1
+	beq +
+	sec
++
+	ror GameChars + (115*8) + .i
+	ror GameChars + (116*8) + .i
+	ror GameChars + (117*8) + .i
+	ror GameChars + (118*8) + .i
+}
+	jmp .skipEverOther1
+.skipEverOther2n
+	; 119-122
+!for .ii , 8 {
+!set .i = .ii - 1
+	clc
+	lda GameChars + (122*8) + .i
+	and #1
+	beq +
+	sec
++
+	ror GameChars + (119*8) + .i
+	ror GameChars + (120*8) + .i
+	ror GameChars + (121*8) + .i
+	ror GameChars + (122*8) + .i
+}
+	jmp .skipEverOther1
+
 !source "IRQSparse.a"
 !source "Data.a"
 
+CharWantScroll1 !by 0
+CharWantScroll2 !by 0
+CharWantScroll3 !by 0
+CharWantScroll4 !by 0
+CharWantScroll5 !by 0
+CharWantScroll6 !by 0
+CharWantScroll7 !by 0
+CharWantScroll8 !by 0
+
 !zn
-UpdateSpriteCloudPositions
-	inc .smevo2+1
-.smevo2 lda #0
+UpdateScrollPositions
+	inc UpdateScrollPositions_smevo2+1
+UpdateScrollPositions_smevo2 lda #0
 	and #1
 	bne .o2
 
@@ -933,8 +1034,8 @@ UpdateSpriteCloudPositions
 }
 .o2
 
-	inc .smevo1+1
-.smevo1 lda #0
+	inc UpdateScrollPositions_smevo1+1
+UpdateScrollPositions_smevo1 lda #0
 	and #3
 	bne .o1
 !for .ii , 2 {
@@ -947,18 +1048,11 @@ UpdateSpriteCloudPositions
 +
 }
 .o1
-	rts
-
-
 
 !zn
-CharWantScroll1 !by 0
-CharWantScroll2 !by 0
-CharWantScroll3 !by 0
-CharWantScroll4 !by 0
-UpdateCharCloudPositions
+;UpdateCharCloudPositions
 	; Char clouds processing
-.every1 lda #0
+UpdateScrollPositions_every1 lda #0
 	and #7
 	bne .oevery1
 	inc Cloud1_XScroll
@@ -968,12 +1062,12 @@ UpdateCharCloudPositions
 	bne .oevery1
 	inc CharWantScroll1
 .oevery1
-	inc .every1+1
+	inc UpdateScrollPositions_every1+1
 	; This is not in the IRQ because at this point the raster has already progressed
 Cloud1_XScroll = * + 1
 	lda #0
 
-.every2 lda #0
+UpdateScrollPositions_every2 lda #0
 	and #15
 	bne .oevery2
 	inc Cloud2_XScroll
@@ -983,9 +1077,9 @@ Cloud1_XScroll = * + 1
 	bne .oevery2
 	inc CharWantScroll2
 .oevery2
-	inc .every2+1
+	inc UpdateScrollPositions_every2+1
 
-.every3 lda #0
+UpdateScrollPositions_every3 lda #0
 	and #31
 	bne .oevery3
 	inc Cloud3_XScroll
@@ -995,9 +1089,9 @@ Cloud1_XScroll = * + 1
 	bne .oevery3
 	inc CharWantScroll3
 .oevery3
-	inc .every3+1
+	inc UpdateScrollPositions_every3+1
 
-.every4 lda #0
+UpdateScrollPositions_every4 lda #0
 	and #63
 	bne .oevery4
 	inc Cloud4_XScroll
@@ -1007,15 +1101,13 @@ Cloud1_XScroll = * + 1
 	bne .oevery4
 	inc CharWantScroll4
 .oevery4
-	inc .every4+1
-	rts
+	inc UpdateScrollPositions_every4+1
 
 
 !zn
-CharWantScroll5 !by 0
-UpdateCharMountainPositions
+;UpdateCharMountainPositions
 	; Mountains
-.every5 lda #0
+UpdateScrollPositions_every5 lda #0
 	and #127
 	bne .oevery5
 ;	inc VIC2BorderColour
@@ -1029,14 +1121,12 @@ UpdateCharMountainPositions
 
 ;	dec VIC2BorderColour
 .oevery5
-	inc .every5+1
-	rts
+	inc UpdateScrollPositions_every5+1
 
 
 !zn
-CharWantScroll6 !by 0
-UpdateCharWallPositions
-.every1	lda #0
+;UpdateCharWallPositions
+UpdateScrollPositions_every1c	lda #0
 	and #3
 	bne .o1
 	; Wall
@@ -1049,14 +1139,12 @@ UpdateCharWallPositions
 .o2
 	jsr UpdateHiresChars
 .o1
-	inc .every1+1
-	rts
+	inc UpdateScrollPositions_every1c+1
 
 
 !zn
-CharWantScroll7 !by 0
-UpdateCharPlantsPositions
-.every1 lda #0
+;UpdateCharPlantsPositions
+UpdateScrollPositions_every1b lda #0
 	and #1
 	bne .o1
 	; Plants
@@ -1067,19 +1155,181 @@ UpdateCharPlantsPositions
 	bne .o1
 	inc CharWantScroll7
 .o1
-	inc .every1+1
-	rts
+	inc UpdateScrollPositions_every1b+1
 
 
 
 !zn
-CharWantScroll8 !by 0
-UpdateCharNearPositions
+;UpdateCharNearPositions
 	inc FLDSize4_smx2
 	lda FLDSize4_smx2
 	and #7
 	sta FLDSize4_smx2
 	bne .o1
 	inc CharWantScroll8
+.o1
+	rts
+
+
+
+!zn
+UpdateScrollPositionsNeg
+	dec UpdateScrollPositions_smevo2+1
+	lda UpdateScrollPositions_smevo2+1
+	and #1
+	bne .o2
+
+	; Update sprite cloud positions
+!for .ii , 4 {
+!set .i = .ii - 1 + 10
+	dec Sprites_XLo + .i
+	lda Sprites_XLo + .i
+	cmp #255
+	bne +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+.o2
+
+	dec UpdateScrollPositions_smevo1+1
+	lda UpdateScrollPositions_smevo1+1
+	and #3
+	bne .o1
+!for .ii , 2 {
+!set .i = .ii - 1 + 14
+	dec Sprites_XLo + .i
+	lda Sprites_XLo + .i
+	cmp #255
+	bne +
+	lda Sprites_XHi + .i
+	eor #1
+	sta Sprites_XHi + .i
++
+}
+.o1
+
+!zn
+;UpdateCharCloudPositions
+	; Char clouds processing
+	lda UpdateScrollPositions_every1+1
+	and #7
+	bne .oevery1
+	dec Cloud1_XScroll
+	lda Cloud1_XScroll
+	and #7
+	sta Cloud1_XScroll
+	cmp #7
+	bne .oevery1
+	dec CharWantScroll1
+.oevery1
+	dec UpdateScrollPositions_every1+1
+
+	lda UpdateScrollPositions_every2+1
+	and #15
+	bne .oevery2
+	dec Cloud2_XScroll
+	lda Cloud2_XScroll
+	and #7
+	sta Cloud2_XScroll
+	cmp #7
+	bne .oevery2
+	dec CharWantScroll2
+.oevery2
+	dec UpdateScrollPositions_every2+1
+
+	lda UpdateScrollPositions_every3+1
+	and #31
+	bne .oevery3
+	dec Cloud3_XScroll
+	lda Cloud3_XScroll
+	and #7
+	sta Cloud3_XScroll
+	cmp #7
+	bne .oevery3
+	dec CharWantScroll3
+.oevery3
+	dec UpdateScrollPositions_every3+1
+
+	lda UpdateScrollPositions_every4+1
+	and #63
+	bne .oevery4
+	dec Cloud4_XScroll
+	lda Cloud4_XScroll
+	and #7
+	sta Cloud4_XScroll
+	cmp #7
+	bne .oevery4
+	dec CharWantScroll4
+.oevery4
+	dec UpdateScrollPositions_every4+1
+
+
+!zn
+;UpdateCharMountainPositions
+	; Mountains
+	lda UpdateScrollPositions_every5+1
+	and #127
+	bne .oevery5
+	dec FLDSize1_XScroll
+	lda FLDSize1_XScroll
+	and #7
+	sta FLDSize1_XScroll
+	cmp #7
+	bne .no2
+	dec CharWantScroll5
+.no2
+
+.oevery5
+	dec UpdateScrollPositions_every5+1
+
+
+!zn
+;UpdateCharWallPositions
+	lda UpdateScrollPositions_every1c+1
+	and #3
+	bne .o1
+	; Wall
+	dec FLDSize2b_smx1
+	lda FLDSize2b_smx1
+	and #7
+	sta FLDSize2b_smx1
+	cmp #7
+	bne .o2
+	dec CharWantScroll6
+.o2
+	jsr UpdateHiresCharsNeg
+.o1
+	dec UpdateScrollPositions_every1c+1
+
+
+!zn
+;UpdateCharPlantsPositions
+	lda UpdateScrollPositions_every1b+1
+	and #1
+	bne .o1
+	; Plants
+	dec FLDSize3_smx2
+	lda FLDSize3_smx2
+	and #7
+	sta FLDSize3_smx2
+	cmp #7
+	bne .o1
+	dec CharWantScroll7
+.o1
+	dec UpdateScrollPositions_every1b+1
+
+
+
+!zn
+;UpdateCharNearPositions
+	dec FLDSize4_smx2
+	lda FLDSize4_smx2
+	and #7
+	sta FLDSize4_smx2
+	cmp #7
+	bne .o1
+	dec CharWantScroll8
 .o1
 	rts
