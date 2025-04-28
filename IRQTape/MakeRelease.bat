@@ -25,3 +25,9 @@ xcopy TurboTapeWrite.a ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\BlankProjectComp\Tusari.scr ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\BlankProjectComp\Tusari.col ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\BlankProjectComp\Tusari.bmp ..\..\TrialBuild2\TapeToolBuild
+
+
+rmdir /s /q ..\..\TrialBuild2\TapeToolBuild\stdlib\.idea
+rmdir /s /q ..\..\TrialBuild2\TapeToolBuild\stdlib\__pycache__
+rmdir /s /q ..\..\TrialBuild2\TapeToolBuild\stdlib\target
+rmdir /s /q ..\..\TrialBuild2\TapeToolBuild\stdlib\venv

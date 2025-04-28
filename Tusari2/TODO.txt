@@ -233,10 +233,4 @@
 
 
 * FLD parallax
-	* For large movement ranges, optionally stop processing subsequent NMIs by turning off the timer. This can be a table of enable values for the lower NMIs
-	* Variable speed, from slow to fast. Re-order the horizontal movement calculation so that the foreground moves one pixel per frame and the rest move slower than that.
-		This is just a simple counter update routine, so very quick and short. It completes before the NMI/IRQ for the next frame starts
-		When a character scroll is needed is can signal the required scroll for later processing chasing the scan fown the next frame.
-		Then call that routine several times per frame for faster movement, up to sa planned 8 pixels per frame for the foreground.
 	* Add multiplexor, sprite sort just after VBLank and just after the vertical FLD time calculation and the horizontal scroll calc
-

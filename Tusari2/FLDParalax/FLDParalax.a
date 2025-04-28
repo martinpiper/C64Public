@@ -13,11 +13,11 @@
 !source "Display_Macros.a"
 !source "Sprites_Macros.a"
 
-;DebugTiming_Mainline = 1
+DebugTiming_Mainline = 1
 ;DebugTiming_IRQ = 1
 
 Sprites__size = 8
-kMaxSpeed = 4
+kMaxSpeed = 5
 
 tempWorkIRQA = $02
 tempWorkIRQX = $03
@@ -76,15 +76,6 @@ GameStart
 !if 1 {
 	lda #0
 	jsr MusicBinary
-
-;	+DisplayPanelScreen
-;	+WaitForFire_A
-
-;	+DisplayGameScreenTop
-
-;	+DisplayGameScreenMiddle
-
-;	+DisplayGameScreenBottom
 
 	+MVIC2SpriteEnableAll_A
 
@@ -347,42 +338,44 @@ GameStart
 !ifdef DebugTiming_Mainline {
 	+MByteValueToAddress_A VIC2Colour_Green , VIC2BorderColour
 }
-kMaxSpriteX = 170
+kMaxSpriteX = 144
 	lda Sprites_XHi
 	ror
 	lda Sprites_XLo
 	ror
+	sec
+	sbc #VIC2SpriteXBorderLeft38/2
 	cmp #kMaxSpriteX
 	bcc .oc2
-	lda #kMaxSpriteX
+	lda #kMaxSpriteX-1
 .oc2
-	sta tempWork1
-;	lda #kMaxSpriteX
-;	sec
-;	sbc tempWork1
-	lsr
-	lsr
-	lsr
-	lsr
-	cmp #kMaxSpeed*2
-	bcc .oc1
-	lda #kMaxSpeed*2
-.oc1
-	sec
-	sbc #kMaxSpeed
+	tax
+	lda .posToSpeedTab,x
 	sta tempWork1
 
 .doxs1
 	lda tempWork1
-	beq .noxs1
+	+lbeq .noxs1
 	bmi .noxs1n
 	jsr UpdateScrollPositions
 	dec tempWork1
 	jmp .doxs1
+
 .noxs1n
 	jsr UpdateScrollPositionsNeg
 	inc tempWork1
 	jmp .doxs1
+
+.posToSpeedTab
+!for .ii , kMaxSpriteX/2 {
+!set .i = (kMaxSpriteX/2) - .ii
+	!by -((kMaxSpeed * .i) / (kMaxSpriteX/2))
+}
+!for .ii , kMaxSpriteX/2 {
+!set .i = .ii - 1
+	!by (kMaxSpeed * .i) / (kMaxSpriteX/2)
+}
+
 .noxs1
 
 	lda Cloud1_XScroll
@@ -424,25 +417,22 @@ kMaxSpriteX = 170
 !macro MProcessCharLine .line {
 	lda GameScreen2 + (.line * 40) + 39
 	pha
-ldx #39
-.cl1
-	lda GameScreen2 + (.line * 40) - 1 , x
-	sta GameScreen2 + (.line * 40) , x
-	dex
-	bne .cl1
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 38 - .i
+	sta GameScreen2 + (.line * 40) + 39 - .i
+}
 	pla
 	sta GameScreen2 + (.line * 40)
 }
 !macro MProcessCharLineNeg .line {
 	lda GameScreen2 + (.line * 40)
 	pha
-ldx #-39
-.cl1
-	; Note the vareful use of "negative" offset maths
-	lda GameScreen2 + (.line * 40) - 216, x
-	sta GameScreen2 + (.line * 40) - 216 - 1, x
-	inx
-	bne .cl1
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 1 + .i
+	sta GameScreen2 + (.line * 40) + .i
+}
 	pla
 	sta GameScreen2 + (.line * 40) + 39
 }
@@ -452,14 +442,13 @@ ldx #-39
 	pha
 	lda COLOURRAM + (.line * 40) + 39
 	pha
-ldx #39
-.cl1
-	lda GameScreen2 + (.line * 40) - 1 , x
-	sta GameScreen2 + (.line * 40) , x
-	lda COLOURRAM + (.line * 40) - 1 , x
-	sta COLOURRAM + (.line * 40) , x
-	dex
-	bne .cl1
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 38 - .i
+	sta GameScreen2 + (.line * 40) + 39 - .i
+	lda COLOURRAM + (.line * 40) + 38 - .i
+	sta COLOURRAM + (.line * 40) + 39 - .i
+}
 	pla
 	sta COLOURRAM + (.line * 40)
 	pla
@@ -470,15 +459,13 @@ ldx #39
 	pha
 	lda COLOURRAM + (.line * 40)
 	pha
-ldx #-39
-.cl1
-	; Note the vareful use of "negative" offset maths
-	lda GameScreen2 + (.line * 40) - 216, x
-	sta GameScreen2 + (.line * 40) - 216 - 1, x
-	lda COLOURRAM + (.line * 40) - 216, x
-	sta COLOURRAM + (.line * 40) - 216 - 1, x
-	inx
-	bne .cl1
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 1 + .i
+	sta GameScreen2 + (.line * 40) + .i
+	lda COLOURRAM + (.line * 40) + 1 + .i
+	sta COLOURRAM + (.line * 40) + .i
+}
 	pla
 	sta COLOURRAM + (.line * 40) + 39
 	pla
@@ -487,32 +474,32 @@ ldx #-39
 
 	; Process any events
 	lda CharWantScroll1
-	beq .noc1
-	bmi .noc1n
+	+lbeq .noc1
+	+lbmi .noc1n
 	+MProcessCharLine 0
 	jmp .noc1
 .noc1n
 	+MProcessCharLineNeg 0
 .noc1
 	lda CharWantScroll2
-	beq .noc2
-	bmi .noc2n
+	+lbeq .noc2
+	+lbmi .noc2n
 	+MProcessCharLine 1
 	jmp .noc2
 .noc2n
 	+MProcessCharLineNeg 1
 .noc2
 	lda CharWantScroll3
-	beq .noc3
-	bmi .noc3n
+	+lbeq .noc3
+	+lbmi .noc3n
 	+MProcessCharLine 2
 	jmp .noc3
 .noc3n
 	+MProcessCharLineNeg 2
 .noc3
 	lda CharWantScroll4
-	beq .noc4
-	bmi .noc4n
+	+lbeq .noc4
+	+lbmi .noc4n
 	+MProcessCharLine 3
 	jmp .noc4
 .noc4n
@@ -527,8 +514,8 @@ ldx #-39
 
 
 	lda CharWantScroll5
-	beq .noc5
-	bmi .noc5n
+	+lbeq .noc5
+	+lbmi .noc5n
 	+MProcessCharLine 6
 	+MProcessCharLine 7
 	+MProcessCharLine 8
@@ -548,20 +535,12 @@ ldx #-39
 	+lbeq .nox1
 	+lbmi .nox1n
 
-	+MProcessCharLineColour 9
-	+MProcessCharLineColour 10
-	+MProcessCharLineColour 11
-	+MProcessCharLineColour 12
-	+MProcessCharLineColour 13
+	jsr CharScroll9
 	jmp .nox1
 
 .nox1n
 
-	+MProcessCharLineColourNeg 9
-	+MProcessCharLineColourNeg 10
-	+MProcessCharLineColourNeg 11
-	+MProcessCharLineColourNeg 12
-	+MProcessCharLineColourNeg 13
+	jsr CharScroll9Neg
 
 .nox1
 !ifdef DebugTiming_Mainline {
@@ -731,21 +710,23 @@ PlayerYToPerspective
 !fill 256 - (*-PlayerYToPerspective) , 0
 
 !zn
-GameScorePos = (3*40) + 3
+kScoreZero = 64 + 26
+GameScorePos !fill 7 , kScoreZero
+!by 0
 GameAddScore
 	stx .smx1
 
-	ldx #4
+	ldx #6
 .asl1
 	clc
-	adc PanelScreen+GameScorePos,x
-	cmp #'9'
+	adc GameScorePos,x
+	cmp #kScoreZero + 9
 	beq .noCarry
 	bcc .noCarry
 	sbc #10
-	inc PanelScreen+GameScorePos-1,x
+	inc GameScorePos-1,x
 .noCarry
-	sta PanelScreen+GameScorePos,x
+	sta GameScorePos,x
 	lda #0
 	dex
 	bpl .asl1
@@ -753,28 +734,6 @@ GameAddScore
 .smx1 = *+1
 	ldx #0
 	rts
-
-!zn
-ScorePanelColourCycle
-	inc .scCount
-	ldy #7
-	ldx .scCount
-	cpx #13
-	bcc .o1
-	ldx #0
-	stx .scCount
-.o1
-	lda .scCols,x
-	sta COLOURRAM + GameScorePos -1 , y
-	inx
-	dey
-	bpl .o1
-	rts
-
-.scCount !by 0
-.scCols
-	!by 1,7,3,5,4,2,6,2,4,5,3,7,1,1,1,1
-	!by 1,7,3,5,4,2,6,2,4,5,3,7,1,1,1,1
 
 !zn
 PlayerMoveLeft
@@ -878,21 +837,21 @@ Sprites_UpdateToVIC3
 	sta VIC2SpriteMulticolour
 ;	inc VIC2BorderColour
 	lda #0
-!macro MSprite_update3 .i , .x , .y , .frame , .colour {
+!macro MSprite_update3 .i , .x , .y , .colour {
 	ldx #<.x
 	stx VIC2Sprite0X + (.i * 2)
 	ldx #.y
 	stx VIC2Sprite0Y + (.i * 2)
 	ldx #.colour
 	stx VIC2Sprite0Colour + .i
-	ldx #.frame
+	ldx GameScorePos + .i
 	stx GameScreen2 + SPRITEFRAMESCROFF + .i
 	rol
 	ora #(>.x) & 1
 }
 !for .ii , 8 {
 !set .i = 8 - .ii
-	+MSprite_update3 .i , VIC2SpriteXBorderLeft + 64 + (.i * VIC2SpriteSizeX) , 8 , 64 + 26 + .i , VIC2Colour_White
+	+MSprite_update3 .i , VIC2SpriteXBorderLeft + 64 + (.i * VIC2SpriteSizeX) , 8 , VIC2Colour_White
 }
 	sta VIC2SpriteXMSB
 ;	dec VIC2BorderColour
@@ -1333,3 +1292,24 @@ UpdateScrollPositionsNeg
 	dec CharWantScroll8
 .o1
 	rts
+
++MCheckNotInIO
+
+* = KERNALROM
+CharScroll9
+	+MProcessCharLineColour 9
+	+MProcessCharLineColour 10
+	+MProcessCharLineColour 11
+	+MProcessCharLineColour 12
+	+MProcessCharLineColour 13
+	rts
+
+CharScroll9Neg
+	+MProcessCharLineColourNeg 9
+	+MProcessCharLineColourNeg 10
+	+MProcessCharLineColourNeg 11
+	+MProcessCharLineColourNeg 12
+	+MProcessCharLineColourNeg 13
+	rts
+
++MCheckNotInKERNALServiceVectors

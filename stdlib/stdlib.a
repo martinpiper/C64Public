@@ -1819,6 +1819,22 @@ RasterLengthNTSCC64		= 520
 }
 }
 
+!macro MCheckNotInIO {
+!if * >= VIC {
+!if * < KERNALROM {
+	!error "Code/data within IO"
+}
+}
+}
+
+!macro MCheckNotInKERNALServiceVectors {
+!if * >= KERNALNMIServiceRoutineLo {
+	!error "Code/data within KERNAL Service vectors"
+}
+}
+
+
+
 !macro MCheckInLowerRAM {
 !if * >= C64Cartridge_Lo_8K {
 	!error "Code/data must be in lower RAM range"
