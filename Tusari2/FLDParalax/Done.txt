@@ -23,3 +23,47 @@
 
 
 * Unroll MProcessCharLine MProcessCharLineColour
+
+
+
+
+* FLD parallax
+	* Nahh: Add multiplexor, sprite sort just after VBLank and just after the vertical FLD time calculation and the horizontal scroll calc
+	* Nahh: JoystickBits_Left JoystickBits_Right acceleration
+	* Done: Player face left or right depending on motion
+	* Done: Crystals etc to move with scroll direction
+	* Done: Ghosts to avoid
+	* Done: Ghosts decrease energy
+	* Done: Energy display using last border sprite
+		>> PlayerHealth
+	* Done: Player death
+	* Done: Title screen, use many sprites to display hiscores/instructions
+		TitleScreenCharset 2x1
+		>> .titlel1
+		>> TitleScreenInitSprites
+		>> TitleScreenText1
+	* Done: Bullets?
+		BulletSprite_XPos * 2 for 20 entries
+		PlayerBullet_Fire PlayerBullet_Update kMaxAvailableBulletYPosIndex
+		>> ; Bullet collision detection
+	* Done: Smart bomb? Uses all bullets?
+		>> PlayerSmartBombs
+	* Done: Border is now open so shift the top cloud sprites up, giving more room for bullets
+	* Done: Sound effects
+		>> +MPlaySFX placeholders
+		> See data build in: C:\Work\C64\Citadel2\Sound\buildSound.bat
+	* Nahh: Collectables for weapons?
+		Rapid fire
+		Extra shots
+		Backwards shot
+	* Nahh: UpdateHiresChars and UpdateHiresCharsNeg take a long time
+		During the faster scrolls they can be called twice, so an optimised routine that shifts twice might help
+		pha/pla might also be a factor
+	>> PlayerCollisionDetection takes around 8-12 lines
+	>> PlayerBullet_Update takes around 2-3 lines
+	* Done: Add credits, calculate text slowly into the sprite data using the 2x1 font
+		Maybe expand and scroll the hires sprites?
+	* Done: Player explosion animation, using the random number generator. Just overwrite the player sprite frames with explosion animations randomly chosen.
+	* Done: Title screen *reduce* WantFLD to 0 instead of setting it
+
+

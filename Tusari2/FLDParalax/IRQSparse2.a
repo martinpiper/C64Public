@@ -1,0 +1,165 @@
+!align 255,0
+!zn
+BulletSprite_XPos
+	!fill kMaxAvailableBulletYPosIndex , $c0
+
+!macro MIRQBulletRow .row , .nextIRQ , .lastIRQ , .updateSprite {
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	sta tempWorkIRQA
+	lda BulletSprite_XPos + .row
+	asl
+	sta VIC2Sprite2X
+	bcc .noMSB1
+	lda VIC2SpriteXMSB
+	ora #%100
+	sta VIC2SpriteXMSB
+	jmp .ret1
+.noMSB1
+	lda VIC2SpriteXMSB
+	and #%11111011
+	sta VIC2SpriteXMSB
+.ret1
+!if .updateSprite = 1 {
+	lda #kFirstAvailableBulletYPos + ((.row+1) * 8)
+	sta VIC2Sprite2Y
+}
+!if .lastIRQ = 1 {
+!if kMaxAvailableBulletYPosIndex != .row+1 {
+!error "kMaxAvailableBulletYPosIndex should be last row + 1"
+}
+	lda #VIC2SpriteYBorderBottom-3
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
+} else {
+	lda #kFirstAvailableBulletYPos + ((.row+1) * 8)
+	sta VIC2Raster
+	+MWordValueToAddress_A .nextIRQ , KERNALIRQServiceRoutineLo
+}
+	+MACROAckRasterIRQ_A
+	lda tempWorkIRQA
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+	rti
+}
+
+IRQBulletRow0	+MIRQBulletRow 0	, IRQBulletRow1		, 0	, 0
+IRQBulletRow1	+MIRQBulletRow 1	, IRQBulletRow2		, 0	, 0
+IRQBulletRow2	+MIRQBulletRow 2	, IRQBulletRow3		, 0	, 1
+IRQBulletRow3	+MIRQBulletRow 3	, IRQBulletRow4		, 0	, 0
+IRQBulletRow4	+MIRQBulletRow 4	, IRQBulletRow5		, 0	, 0
+IRQBulletRow5	+MIRQBulletRow 5	, IRQBulletRow6		, 0	, 1
+IRQBulletRow6	+MIRQBulletRow 6	, IRQBulletRow7		, 0	, 0
+IRQBulletRow7	+MIRQBulletRow 7	, IRQBulletRow8		, 0	, 0
+IRQBulletRow8	+MIRQBulletRow 8	, IRQBulletRow9		, 0	, 1
+IRQBulletRow9	+MIRQBulletRow 9	, IRQBulletRow10	, 0	, 0
+IRQBulletRow10	+MIRQBulletRow 10	, IRQBulletRow11	, 0	, 0
+IRQBulletRow11	+MIRQBulletRow 11	, IRQBulletRow12	, 0	, 1
+IRQBulletRow12	+MIRQBulletRow 12	, IRQBulletRow13	, 0	, 0
+IRQBulletRow13	+MIRQBulletRow 13	, IRQBulletRow14	, 0	, 0
+IRQBulletRow14	+MIRQBulletRow 14	, IRQBulletRow15	, 0	, 1
+IRQBulletRow15	+MIRQBulletRow 15	, IRQBulletRow16	, 0	, 0
+IRQBulletRow16	+MIRQBulletRow 16	, IRQBulletRow17	, 0	, 0
+IRQBulletRow17	+MIRQBulletRow 17	, IRQBulletRow18	, 0	, 1
+IRQBulletRow18	+MIRQBulletRow 18	, IRQBulletRow19	, 0	, 0
+IRQBulletRow19	+MIRQBulletRow 19	, IRQBulletRow20	, 0	, 0
+IRQBulletRow20	+MIRQBulletRow 20	, IRQBulletRow21	, 0	, 1
+IRQBulletRow21	+MIRQBulletRow 21	, IRQBulletRow22	, 0	, 0
+IRQBulletRow22	+MIRQBulletRow 22	, 0					, 1	, 0
+
+
+IRQTitle0
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	jsr SpritesTitle_UpdateToVIC0
+
+	lda #90
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQTitle1 , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+
+	rti
+
+IRQTitle1
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	jsr SpritesTitle_UpdateToVIC1
+
+	lda #122
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQTitle2 , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+
+	rti
+
+
+IRQTitle2
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	jsr SpritesTitle_UpdateToVIC2
+
+	lda #170
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQTitle3 , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+
+	rti
+
+
+IRQTitle3
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	jsr SpritesTitle_UpdateToVIC3
+
+	lda #VIC2SpriteYBorderBottom-3
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+
+	rti

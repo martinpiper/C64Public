@@ -17,6 +17,13 @@ IRQ_BottomBorder
 	; Blank out the bottom, part 2
 	stx VIC2ScreenControlV
 
+	; Forces the "bullet" sprite into the right hand border
+	lda #$c0
+	sta VIC2Sprite2X
+	lda VIC2SpriteXMSB
+	ora #%100
+	sta VIC2SpriteXMSB
+
 	lda #VIC2SpriteYBorderBottom
 	sta VIC2Raster
 	+MWordValueToAddress_A IRQ_Bottom , KERNALIRQServiceRoutineLo
@@ -32,7 +39,8 @@ IRQ_Bottom
 	stx tempWorkIRQX
 
 	; This tries to make the NMI, just after the initial entry code above, start on the right hand border, repeatedly and precisely
-	+DelayFor 39
+	+DelayFor 34	; During the game
+;	+DelayFor 37	; During the title screen
 	; Disable NMI sources and ACK anything
 	lda #$7f
 	sta CIA2InterruptControl
@@ -65,6 +73,8 @@ IRQ_Bottom
 	adc .table,x
 	; Note: It is not required to enable the 25 row screen since the screen is already enabled for this frame and it cannot be switched off again during the display portion of the frame.
 	; But not enabling the screen causes the deug display in C64DebugGUI to be displayed as empty, so we include these bits to enable the debug display.
+	; C64DebugGUI also seems to be prone to freeze/crash more often if the screen is not on during the display portion. This looks like a bug in the debugger rendering.
+;	ora #kVIC2ScreenControlVBits_25Rows
 	ora #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows
 	sta .split
 }
@@ -116,21 +126,15 @@ IRQ_Bottom
 	adc TableFLDSize3_NextNextLines,x
 	sta NMI_FLDSize3_NextNextLines
 
-;	lda #(1*8)+2
-;	clc
-;	adc TableFLDSize4_NextNextLines,x
-;	sta NMI_FLDSize4_NextNextLines
-
-	inc IRQ_BottomStarted
-
-;	+DisplayGameScreenClouds
-	+MByteValueToAddress_A VIC2Colour_Red , VIC2ScreenColour
-
+	; This opens the border and enables the screen for the score display. The timing of this is quite sensitive to earlier timing of the code above.
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2ScreenColour
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 
 	; Displays score sprites
 	jsr Sprites_UpdateToVIC3
+
+	inc IRQ_BottomStarted
 
 	lda #0
 	sta VIC2Raster
@@ -157,9 +161,17 @@ IRQ_TopBorder
 }
 	jsr Sprites_UpdateToVIC2
 
-	lda #VIC2SpriteYBorderBottom-3
+	lda IRQWantTitle
+	beq .runGameIRQ
+	lda #55
 	sta VIC2Raster
-	+MWordValueToAddress_A IRQ_BottomBorder , KERNALIRQServiceRoutineLo
+	+MWordValueToAddress_A IRQTitle0 , KERNALIRQServiceRoutineLo
+	jmp .exitIRQ1
+.runGameIRQ
+	lda #53
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQ_GameSprites , KERNALIRQServiceRoutineLo
+.exitIRQ1
 	+MACROAckRasterIRQ_A
 
 !ifdef DebugTiming_IRQ {
@@ -171,6 +183,29 @@ IRQ_TopBorder
 
 	rti
 
+IRQ_GameSprites
+!ifdef DebugTiming_IRQ {
+	inc VIC2BorderColour
+}
+	sta tempWorkIRQA
+	stx tempWorkIRQX
+
+	jsr Sprites_UpdateToVIC
+
+	lda #kFirstAvailableBulletYPos
+	sta VIC2Raster
+	+MWordValueToAddress_A IRQBulletRow0 , KERNALIRQServiceRoutineLo
+	+MACROAckRasterIRQ_A
+
+	ldx tempWorkIRQX
+	lda tempWorkIRQA
+!ifdef DebugTiming_IRQ {
+	dec VIC2BorderColour
+}
+
+	rti
+
+IRQWantTitle !by 0
 
 WantFLD !by 0
 
@@ -420,6 +455,9 @@ TableFLDSize4F_YScrollPlus
 !align 255,0
 !zn
 NMI_Cloud1
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 
 ;	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
@@ -432,9 +470,15 @@ Cloud2_XScroll = * + 1
 
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_Cloud2
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 
 ;	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
@@ -447,9 +491,16 @@ Cloud3_XScroll = * + 1
 
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_Cloud3
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 
 ;	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
@@ -457,26 +508,24 @@ Cloud4_XScroll = * + 1
 	lda #4
 	sta VIC2ScreenControlH
 
-!ifdef DebugTiming_IRQ {
-	inc VIC2BorderColour
-}
-	jsr Sprites_UpdateToVIC
-!ifdef DebugTiming_IRQ {
-	dec VIC2BorderColour
-}
-
 	+MByteValueToAddress_A 4 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize1 , KERNALNMIServiceRoutineLo
 
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize1
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 	; Initial sparse FLD, no need for ugly wasteful updates every raster line
 NMI_FLDSize1_YScroll1 = * + 1
-	+MByteValueToAddress_A 0 , VIC2ScreenControlV	; Causes a badline on $60
+	+MByteValueToAddress_A 0 , VIC2ScreenControlV
 
 FLDSize1_XScroll = * + 1
 	lda #0
@@ -490,9 +539,15 @@ NMI_FLDSize1_NextNextLines = * + 1
 
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize1b
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize1B_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -500,10 +555,16 @@ NMI_FLDSize1B_YScroll = * + 1
 	+MWordValueToAddress_A NMI_FLDSize2 , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 
 NMI_FLDSize2
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize2_YScroll = * + 1
 	+MByteValueToAddress_A 5 , VIC2ScreenControlV
@@ -513,9 +574,16 @@ NMI_FLDSize2_YScroll = * + 1
 	lda CIA2InterruptControl
 
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize2N
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 
 	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
@@ -528,18 +596,32 @@ FLDSize2b_smx1 = * + 1
 	lda CIA2InterruptControl
 
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize2b
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize2B_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize2c , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize2c
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize2C_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -558,9 +640,16 @@ NMI_FLDSize2D_YScroll = * + 1
 	+MWordValueToAddress_A NMI_FLDSize3 , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -569,19 +658,32 @@ NMI_FLDSize3_YScroll = * + 1
 	lda CIA2InterruptControl
 
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3N
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 	+MByteValueToAddress_A VIC2Colour_DarkGrey , VIC2ScreenColour
 	+DisplayGameScreenBottom
 	+MWordValueToAddress_A NMI_FLDSize3b , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 
 NMI_FLDSize3b
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3B_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -591,9 +693,15 @@ FLDSize3_smx2 = * + 1
 	+MWordValueToAddress_A NMI_FLDSize3c , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize3c
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3C_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -609,27 +717,48 @@ NMI_FLDSize3D_YScroll = * + 1
 	+MWordValueToAddress_A NMI_FLDSize3e , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3e
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3E_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize3f , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3f
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3F_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize3g , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3g
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3G_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -638,9 +767,16 @@ NMI_FLDSize3_NextNextLines = * + 1
 	+MWordValueToAddress_A NMI_FLDSize3h , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize3h
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize3H_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -648,27 +784,47 @@ NMI_FLDSize3H_YScroll = * + 1
 	+MWordValueToAddress_A NMI_FLDSize4a , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize4a
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 	+MByteValueToAddress_A VIC2Colour_Grey , VIC2ScreenColour
 	+MByteValueToAddress_A 0 , CIA2TimerBLo
 	+MWordValueToAddress_A NMI_FLDSize4b , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize4b
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 	+MByteValueToAddress_A VIC2Colour_LightGrey , VIC2ScreenColour
 	+MWordValueToAddress_A NMI_FLDSize4c , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 
 NMI_FLDSize4c
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
@@ -676,9 +832,16 @@ NMI_FLDSize4_YScroll = * + 1
 	+MWordValueToAddress_A NMI_FLDSize4c2 , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize4c2
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2ScreenColour
 FLDSize4_smx2 = * + 1
@@ -688,50 +851,84 @@ FLDSize4_smx2 = * + 1
 	+MWordValueToAddress_A NMI_FLDSize4d , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
+
 NMI_FLDSize4d
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4B_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize4e , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize4e
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4C_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize4f , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize4f
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4D_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize4g , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize4g
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4E_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	+MWordValueToAddress_A NMI_FLDSize4h , KERNALNMIServiceRoutineLo
 	lda CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 
 NMI_FLDSize4h
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
 	pha
 NMI_FLDSize4F_YScroll = * + 1
 	+MByteValueToAddress_A 2 , VIC2ScreenControlV
 	lda #$7f
 	sta CIA2InterruptControl
 	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
 	rti
 

@@ -53,3 +53,62 @@
 	cmp VIC2Raster
 	bcs .l7
 }
+
+
+!macro MProcessCharLine .line {
+	lda GameScreen2 + (.line * 40) + 39
+	pha
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 38 - .i
+	sta GameScreen2 + (.line * 40) + 39 - .i
+}
+	pla
+	sta GameScreen2 + (.line * 40)
+}
+!macro MProcessCharLineNeg .line {
+	lda GameScreen2 + (.line * 40)
+	pha
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 1 + .i
+	sta GameScreen2 + (.line * 40) + .i
+}
+	pla
+	sta GameScreen2 + (.line * 40) + 39
+}
+
+!macro MProcessCharLineColour .line {
+	lda GameScreen2 + (.line * 40) + 39
+	pha
+	lda COLOURRAM + (.line * 40) + 39
+	pha
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 38 - .i
+	sta GameScreen2 + (.line * 40) + 39 - .i
+	lda COLOURRAM + (.line * 40) + 38 - .i
+	sta COLOURRAM + (.line * 40) + 39 - .i
+}
+	pla
+	sta COLOURRAM + (.line * 40)
+	pla
+	sta GameScreen2 + (.line * 40)
+}
+!macro MProcessCharLineColourNeg .line {
+	lda GameScreen2 + (.line * 40)
+	pha
+	lda COLOURRAM + (.line * 40)
+	pha
+!for .ii , 39 {
+!set .i = .ii - 1
+	lda GameScreen2 + (.line * 40) + 1 + .i
+	sta GameScreen2 + (.line * 40) + .i
+	lda COLOURRAM + (.line * 40) + 1 + .i
+	sta COLOURRAM + (.line * 40) + .i
+}
+	pla
+	sta COLOURRAM + (.line * 40) + 39
+	pla
+	sta GameScreen2 + (.line * 40) + 39
+}

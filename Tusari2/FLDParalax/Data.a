@@ -1,3 +1,13 @@
+TitleScreenCharset
+!scriptpythoninline {
+import charpad
+
+charpad.loadCTMFile("data/Etchelon (1x2, Subscii x48) expanded.ctm")
+
+acme.bytestr(str(charpad.getCharacters()))
+}
+TitleScreenCharsetEnd
+
 !scriptpythoninline {
 import charpad
 
@@ -17,25 +27,18 @@ acme.bytestr(str(charpad.getCharacters()))
 }
 
 
-* = $7000
-GameSprites
-!bin "data/game.spr",$640,$2000
-
-* = $7f80
-GameSprites2
-!bin "data/gems.spr",$7f
-
-* = $7c00
-GameSprites3
-!bin "data/more clouds.spd",,$9
-
 * = $5000
-!bin "C:\work\c64\ExternalTools\SpritePad v2b1\Examples\Subchrist - Example Font.spd",,$9
+GameSprites
+!bin "data/game.spd",(255-64)*$40,$1009
 
 * = $7fff
 !by 0
 
+
 * = $b000
 MusicBinary
+Music_Init		= MusicBinary
+Music_Update	= MusicBinary+3
+Music_Stop		= MusicBinary+6
+Music_PlaySFX	= MusicBinary+9
 !bin "data/game.mus",,2
-
