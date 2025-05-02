@@ -65,5 +65,48 @@
 		Maybe expand and scroll the hires sprites?
 	* Done: Player explosion animation, using the random number generator. Just overwrite the player sprite frames with explosion animations randomly chosen.
 	* Done: Title screen *reduce* WantFLD to 0 instead of setting it
-
+	* Player bullets do not update while the smartbomb is active
+		This avoids the bullet hanging around on the left hand edge of the screen problem
+	* Slowly move the exploding player sprites apart
+	* When the player (head?) is over the mountains bottom split there seems to be a higher chance of the screen glitching on real (old) hardware
+		With rapid fire?
+			DebugAutoRapidFire
+		Sprites_Y = $72
+			>> +SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , $72 , VIC2Colour_LightRed , $ca
+		Happens even when stationary in the middle of the screen
+		Not very often
+		33 seconds: "C:\Users\marti\Videos\Captures\VICE_ C64 (x64sc) at 99% speed, 50 fps 2025-05-02 11-42-23.mp4"
+		Seems to be starting from below the mountains
+		>> Also happening without rapid fire
+		>> Reliable reproduction on real hardware, use:
+			+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , $72 , VIC2Colour_LightRed , $ca
+			>> Reliable fix: kFirstAvailableBulletYPos = 67
+			>> Now it's not reliably reproducing with the old code... Aiyoh.
+		>> Reliable reproduction in emulation, for assemble/build:
+			Hold fire and left. Just before frame 628 there is a flicker
+			>> Comment out: bne .notLeft
+				And: +TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .titlel1
+				Happens on frame 640! Even with the fingerprint code enabled.
+			>> kFirstAvailableBulletYPos = 66 seems to fix the reproducible issue
+				>> But enabling "bne .notLeft" caused glitches again if I hold left. sigh.
+					Adding two nop with the commented out code causes glitches on later frames...
+					>> Hmm code position related? !align 255,0 for the next function doesn't seem to change anything, nor with extra nop
+				>> DebugGlitchTest
+				>> This seems to fix it: kFirstAvailableBulletYPos = 67
+	* Made it easier to shoot the ghosts, bigger vertical bounding box.
+	* Ghosts that spawn on the left should move right... Otherwise the player can just sit stationary and rapidly fire to the right.
+		Using Sprites_XDiv2 to check for the middle of the screen works, but because the player to enemy collision only updates this after a successful Y test the ghosts don't always have the correct value
+		This causes a delay in the ghost changing direction, which actually loks good. So no need to fix this.
+	* The Y spawn position seems to be limited to the top half of the game area?
+		Observed in the glitch testing... "C:\Users\marti\Videos\Captures\VICE_ C64 (x64sc) at 99% speed, 50 fps 2025-05-02 11-42-23.mp4"
+		Needs to be between "VIC2SpriteYBorderTop + (4*8) + 2" and "VIC2SpriteYBorderBottom - VIC2SpriteSizeY - 6"
+			>> $54 and $df
+			= $8b
+	* Add level intermission
+		Each level has a goal of how many crystals to collect and enemies to destroy
+		Then there can be a short intermission between levels, with suitable sound effects
+		Display, with sprites and the 2x1 font, "level nnn"
+		Can be up to three digits?
+			>> Just added text instead :)
+		Then start the player in the middle of the screen
 

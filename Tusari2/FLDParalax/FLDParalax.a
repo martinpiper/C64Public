@@ -18,10 +18,11 @@
 ;DebugTiming_NMI = 1
 ;DebugAutoRapidFire = 1
 ;DebugSelectRapidFire = 1
+;DebugGlitchTest = 1
 
 Sprites__size = 8
 kMaxSpeed = 7
-kFirstAvailableBulletYPos = 65
+kFirstAvailableBulletYPos = 67
 kMaxAvailableBulletYPosIndex = 23
 kPlayerBullets_Max = 5
 
@@ -145,7 +146,9 @@ GameStart
 	jsr ProcessScrollEvents
 	jsr TitleUpdatesAfter
 
+!ifndef DebugGlitchTest {
 	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .titlel1
+}
 
 	jsr Music_Stop
 
@@ -172,6 +175,9 @@ GameStart
 
 	+MByteValueToAddress_A 0 , IRQWantTitle
 	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $ca
+!ifdef DebugGlitchTest {
+	+SetSpriteXYColFrame 0 , VIC2SpriteXBorderRight , $72 , VIC2Colour_LightRed , $ca
+}
 	+SetSpriteXYColFrame 1 , VIC2SpriteXBorderRight , 180 , VIC2Colour_LightRed , $d1
 	+MByteValueToAddress_A 1 , Sprites_Multicolour
 	+MByteValueToAddress_A 1 , Sprites_Multicolour + 1
@@ -182,6 +188,8 @@ GameStart
 	+MByteValueToAddress_A 0 , PlayerHealth
 	+MByteValueToAddress_A 2 , PlayerSmartBombs
 	+MByteValueToAddress_A 0 , PlayerSmartBombActive
+	+MByteValueToAddress_A 10 , NeedToKillEnemies
+	+MByteValueToAddress_A 10 , NeedToCollectCrystals
 
 .l1
 	; Debug: Mainline timing
@@ -248,6 +256,11 @@ GameStart
 	cmp #17
 	bcs .doPlayerDeath
 
+	lda NeedToKillEnemies
+	clc
+	adc NeedToCollectCrystals
+	+lbeq .doNextLevel
+
 	jmp .l1
 
 .doPlayerDeath
@@ -282,11 +295,77 @@ GameStart
 	adc #132
 	sta Sprites_Frame + 1
 
+	; Slowly move the explosion sprites apart
+.every1 lda #0
+	and #3
+	bne .every1o
+	dec Sprites_Y + 0
+	inc Sprites_Y + 1
+.every1o
+	inc .every1+1
+
 	dec .smDD1+1
 .smDD1	lda #0
 	bne .death1NoRaster
 
 	jmp .titlel0
+
+RemoveEnemies
+	; Remove enemies etc
+	lda #$80
+!for .i , 5 {
+	sta Sprites_Y + 2 + .i
+}
+	lda #$e0
+!for .i , 5 {
+	sta Sprites_XLo + 2 + .i
+}
+	lda #1
+!for .i , 5 {
+	sta Sprites_XHi + 2 + .i
+}
+	rts
+
+.doNextLevel
+	+MPlaySFX 9
+	jsr RemoveEnemies
+	+SetSpriteXYColFrameMulticolour 3 , 180-24-24 , 100 , VIC2Colour_White , 112 , 0
+	+SetSpriteXYColFrameMulticolour 4 , 180-24 , 100 , VIC2Colour_White , 113 , 0
+	+SetSpriteXYColFrameMulticolour 5 , 180 , 100 , VIC2Colour_White , 114 , 0
+	+SetSpriteXYColFrameMulticolour 6 , 180+24 , 100 , VIC2Colour_White , 115 , 0
+
+	+MByteValueToAddress_A 200 , .smDD2+1
+.nextLevel1NoRaster
+	lda IRQ_BottomStarted
+	beq .nextLevel1NoRaster
+
+	lda #0
+	sta IRQ_BottomStarted
+
+	+MByteValueToAddress_A 0 , .introCount
+	jsr UpdateScrollPositionsNeg
+	jsr TitleUpdatesBeforeTopOfScreen
+	jsr Music_Update
+	jsr ProcessScrollEvents
+
+	lda .smDD2+1
+	cmp #100
+	bne .os1
+	+MPlaySFX 8
+.os1
+
+	dec .smDD2+1
+.smDD2	lda #0
+	bne .nextLevel1NoRaster
+
+	+SetSpriteXYColFrame 0 , 180 , 140 , VIC2Colour_LightRed , $ca
+	+SetSpriteXYColFrame 1 , 180 , 140+21 , VIC2Colour_LightRed , $d1
+	+MByteValueToAddress_A 25 , NeedToKillEnemies
+	+MByteValueToAddress_A 50 , NeedToCollectCrystals
+	jsr RemoveEnemies
+
+	jmp .l1
+
 
 PlayerLogicUpdate
 	lda .introCount
@@ -384,6 +463,12 @@ PlayerLogicUpdate
 	dex
 	bpl .smbs1
 
+	; Remove any existing bullet updates
+	lda #-1
+!for .i , kPlayerBullets_Max {
+	sta PlayerBullets_YPos + .i-1
+}
+
 	lda #25
 	sta PlayerSmartBombActive
 .alreadyActive1
@@ -471,7 +556,12 @@ PlayerLogicUpdate
 
 	lda #JoystickBits_Left
 	bit CIA1KeyboardColumnJoystickA
+!ifndef DebugGlitchTest {
 	bne .notLeft
+}
+	; DebugGlitchTest??!!
+;	nop
+;	nop
 	jsr PlayerMoveLeft
 .notLeft
 
@@ -507,6 +597,7 @@ PlayerLogicUpdate
 	sta Sprites_XHi+1
 	rts
 
+;!align 255,0	; DebugGlitchTest??!!
 PlayerUpdatesBeforeTopOfScreen
 	ldx Sprites_Y
 	lda PlayerYToPerspective,x
@@ -553,6 +644,8 @@ kMaxSpriteX = 144
 PlayerHealth !by 0
 PlayerSmartBombs !by 0
 PlayerSmartBombActive !by 0
+NeedToKillEnemies !by 50
+NeedToCollectCrystals !by 50
 
 .lastGoodSpeed !by 0
 .lastGoodSpeedPos !by 0
@@ -631,6 +724,7 @@ GameLogicUpdate
 	asl
 	asl
 	asl
+	asl
 	clc
 	adc #VIC2SpriteYBorderTop + (4*8) + 8
 	sta Sprites_Y,x
@@ -676,6 +770,21 @@ GameLogicUpdate
 	cmp #1	; Crystal
 	beq .crystalMovement
 	; Ghost
+	lda Sprites_XDiv2,x
+	cmp #80
+	bcs .ghostMoveLeft
+.ghostMoveRight
+	lda Sprites_XLo,x
+	clc
+	adc .spriteSpeed,x
+	sta Sprites_XLo,x
+	bcc .csl22b
+	lda Sprites_XHi,x
+	eor #1
+	sta Sprites_XHi,x
+.csl22b
+	jmp .csl2
+.ghostMoveLeft
 	lda Sprites_XLo,x
 	sec
 	sbc .spriteSpeed,x
@@ -798,6 +907,11 @@ PlayerCollisionDetection
 	lda .spriteType,x
 	cmp #2
 	beq .isGhostHit
+	; Crystal
+	lda NeedToCollectCrystals
+	beq .allDone2
+	dec NeedToCollectCrystals
+.allDone2
 	lda .spriteSpeed,x
 	jsr GameAddScore
 	lda .lastGoodSpeedPos	; The faster the player is moving the more score they get
@@ -829,7 +943,7 @@ PlayerCollisionDetection
 .col2
 	inx
 	cpx #Sprites__size
-	bne .col1
+	+lbne .col1
 	rts
 
 BulletCollisionDetection
@@ -849,18 +963,18 @@ BulletCollisionDetection
 	lda Sprites_Y,x
 	sec
 	sbc PlayerBullets_YPosToSprite,y
-	cmp #12
+	cmp #16
 	bcc .itHit1
-	cmp #-12
+	cmp #-16
 	bcs .itHit1
 	jmp .notActive1
 .itHit1
 	lda Sprites_XDiv2,x
 	sec
 	sbc BulletSprite_XPos,y
-	cmp #16
+	cmp #10
 	bcc .itHit2
-	cmp #-16
+	cmp #-10
 	bcs .itHit2
 	jmp .notActive1
 .itHit2
@@ -868,6 +982,10 @@ BulletCollisionDetection
 	lda #$c0
 	sta BulletSprite_XPos,y
 .itHitSmartBomb
+	lda NeedToKillEnemies
+	beq .allDone1
+	dec NeedToKillEnemies
+.allDone1
 	jsr Sprite_Free
 	lda #9
 	jsr GameAddScore3
@@ -1507,6 +1625,11 @@ PlayerBullets_YPosToSprite
 ; Entry: Y = Desired y pos, as BulletSprite_XPos index
 ; Used: A, Y
 PlayerBullet_Fire
+	; Don't fire bullets while the smartbomb is active
+	lda PlayerSmartBombActive
+	beq .okToFire1
+	rts
+.okToFire1
 !macro MCheckUniqueYPos .slot {
 	; Avoid activating bullets on the same row index
 	cpy PlayerBullets_YPos + .slot
@@ -2030,8 +2153,8 @@ CharScroll9Neg
 	rts
 
 !zn
-Music_PlaySFXSafeNote		!by 32 , 32 , 32 , 32 , 32 , 32 , 32 , 32 , 32
-Music_PlaySFXSafeEnvelope	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8
+Music_PlaySFXSafeNote		!by 32 , 32 , 32 , 32 , 32 , 32 , 32 , 32 , 32 , 32
+Music_PlaySFXSafeEnvelope	!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9
 ; Entry: SFX Index
 Music_PlaySFXSafe
 	stx tempWork3
