@@ -39,13 +39,17 @@ IRQ_Bottom
 	stx tempWorkIRQX
 
 	; This tries to make the NMI, just after the initial entry code above, start on the right hand border, repeatedly and precisely
-	+DelayFor 34	; During the game
-;	+DelayFor 37	; During the title screen
+kNMIDelayStartTime = 34
+!ifdef DebugTiming_NMI {
+	+DelayFor kNMIDelayStartTime - 6
+} else {
+	+DelayFor kNMIDelayStartTime
+}
 	; Disable NMI sources and ACK anything
 	lda #$7f
 	sta CIA2InterruptControl
 	lda CIA2InterruptControl
-	+MWordValueToAddress_A NMI_Cloud1 , KERNALNMIServiceRoutineLo
+	+MWordValueToAddress_A NMI_Cloud0 , KERNALNMIServiceRoutineLo
 	lda #0
 	sta CIA2TimerAControl
 	+MWordValueToAddress_A CyclesPerRasterPALC64 - 1, CIA2TimerALo
@@ -54,12 +58,12 @@ IRQ_Bottom
 
 	lda #0
 	sta CIA2TimerBControl
-	+MWordValueToAddress_A 118 , CIA2TimerBLo
+	+MWordValueToAddress_A 99 , CIA2TimerBLo
 	lda #%01010001	; Counting timer A iterations, repeating
 	sta CIA2TimerBControl
 
 	; Once started, the next start value can be set
-	+MByteValueToAddress_A 7 , CIA2TimerBLo
+	+MByteValueToAddress_A 18 , CIA2TimerBLo
 
 	lda #$82	; NMI On timer B
 	sta CIA2InterruptControl
@@ -150,6 +154,7 @@ IRQ_Bottom
 
 	rti
 
+kIRQ_GameSprites = 53
 IRQ_TopBorder
 	sta tempWorkIRQA
 	stx tempWorkIRQX
@@ -168,7 +173,7 @@ IRQ_TopBorder
 	+MWordValueToAddress_A IRQTitle0 , KERNALIRQServiceRoutineLo
 	jmp .exitIRQ1
 .runGameIRQ
-	lda #53
+	lda #kIRQ_GameSprites
 	sta VIC2Raster
 	+MWordValueToAddress_A IRQ_GameSprites , KERNALIRQServiceRoutineLo
 .exitIRQ1
@@ -183,6 +188,7 @@ IRQ_TopBorder
 
 	rti
 
+IRQ_GameSpritesDone !by 0
 IRQ_GameSprites
 !ifdef DebugTiming_IRQ {
 	inc VIC2BorderColour
@@ -191,6 +197,7 @@ IRQ_GameSprites
 	stx tempWorkIRQX
 
 	jsr Sprites_UpdateToVIC
+	inc IRQ_GameSpritesDone
 
 	lda #kFirstAvailableBulletYPos
 	sta VIC2Raster
@@ -454,6 +461,41 @@ TableFLDSize4F_YScrollPlus
 
 !align 255,0
 !zn
+NMI_Cloud0
+!ifdef DebugTiming_NMI {
+	inc VIC2BorderColour
+}
+	pha
+
+	lda VIC2Sprite6X
+	clc
+	adc #196
+	sta VIC2Sprite6X
+	bcc .noXMSB1
+	lda VIC2SpriteXMSB
+	eor #%1000000
+	sta VIC2SpriteXMSB
+.noXMSB1
+	lda VIC2Sprite7X
+	clc
+	adc #196
+	sta VIC2Sprite7X
+	bcc .noXMSB2
+	lda VIC2SpriteXMSB
+	eor #%10000000
+	sta VIC2SpriteXMSB
+.noXMSB2
+
+	+MByteValueToAddress_A 7 , CIA2TimerBLo
+	+MWordValueToAddress_A NMI_Cloud1 , KERNALNMIServiceRoutineLo
+
+	lda CIA2InterruptControl
+	pla
+!ifdef DebugTiming_NMI {
+	dec VIC2BorderColour
+}
+	rti
+
 NMI_Cloud1
 !ifdef DebugTiming_NMI {
 	inc VIC2BorderColour

@@ -6,8 +6,8 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>FingerPrint.a
 
 ..\..\acme.exe -v4 --msvc --lib ../ --lib ../../ --lib ../../stdlib/ FLDParalax.a
 if not exist FLDParalax.prg goto error
-rem ..\..\bin\LZMPi.exe -t $ff00 -c64mrb FLDParalax.prg FLDParalax.prg $400 >t.txt
-..\..\bin\LZMPi.exe -c64mbu FLDParalax.prg FLDParalax.prg $400 >t.txt
+..\..\bin\LZMPi.exe -t $ff00 -c64mrb FLDParalax.prg FLDParalax.prg $400 >t.txt
+rem ..\..\bin\LZMPi.exe -c64mbu FLDParalax.prg FLDParalax.prg $400 >t.txt
 if not exist FLDParalax.prg goto error
 goto end
 :error
