@@ -1,0 +1,536 @@
+!zn
+ObjectDrawLo
+	!word ObjectDraw1 , ObjectDraw2 , ObjectDraw3 , ObjectDraw4 , ObjectDraw5 , ObjectDraw6 , ObjectDraw7 , ObjectDraw8 , ObjectDraw9 , ObjectDraw10 , ObjectDraw11
+	!word ObjectDraw12 , ObjectDraw13 , ObjectDraw14 , ObjectDraw15 , ObjectDraw16 , ObjectDraw17
+!swizzle ObjectDrawLo , (* - ObjectDrawLo) / 2 , 2
+ObjectDrawHi = (* + ObjectDrawLo) / 2	; Middle :)
+
+
+ObjectDraw1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw2
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_934_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw3
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_576_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw4
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_576_0_0_0_colour , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_576_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_576_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw5
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_934_0_0_0_colour , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_934_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_934_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+ObjectDraw6
+	ldy landscapeRotationsFrame
+	lda ObjectDraw6Rotations,y
+	sta .smj3+1
+	lda ObjectDraw6Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj3+2
+.smj3 jmp $1234
+
+ObjectDraw6Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw6_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw6_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw6Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw6_10
+ObjectDraw6_5
+ObjectDraw6_0
+ObjectDraw6_350
+ObjectDraw6_355
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565_0_0_0_colour , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_345
+ObjectDraw6_340
+ObjectDraw6_335
+ObjectDraw6_330
++MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_325
+ObjectDraw6_320
+ObjectDraw6_315
+ObjectDraw6_310
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_305
+ObjectDraw6_300
+ObjectDraw6_295
+ObjectDraw6_290
+ObjectDraw6_285
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_280
+ObjectDraw6_275
+ObjectDraw6_270
+ObjectDraw6_265
+ObjectDraw6_260
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565rot_0_0_0_colour , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_255
+ObjectDraw6_250
+ObjectDraw6_245
+ObjectDraw6_240
+ObjectDraw6_235
+ObjectDraw6_230
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_225
+ObjectDraw6_220
+ObjectDraw6_215
+ObjectDraw6_210
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_205
+ObjectDraw6_200
+ObjectDraw6_195
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_190
+ObjectDraw6_185
+ObjectDraw6_180
+ObjectDraw6_175
+ObjectDraw6_170
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565_0_0_0_colour , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_165
+ObjectDraw6_160
+ObjectDraw6_155
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_150
+ObjectDraw6_145
+ObjectDraw6_140
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw6_135
+ObjectDraw6_130
+ObjectDraw6_125
+ObjectDraw6_120
+ObjectDraw6_115
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw6_110
+ObjectDraw6_105
+ObjectDraw6_100
+ObjectDraw6_95
+ObjectDraw6_90
+ObjectDraw6_85
+ObjectDraw6_80
+ObjectDraw6_75
+ObjectDraw6_70
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1565rot_0_0_0_colour , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1565rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw6_65
+ObjectDraw6_60
+ObjectDraw6_55
+ObjectDraw6_50
+ObjectDraw6_45
+ObjectDraw6_40
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_786_0_0_0_colour , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_786_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_786_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_786_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw6_35
+ObjectDraw6_30
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1611_0_0_0_colour , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1611_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1611_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1611_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw6_25
+ObjectDraw6_20
+ObjectDraw6_15
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_1607_0_0_0_colour , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1607_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1607_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_1607_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+
+ObjectDraw7
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1145_0_0_0_colour , kVarsEmitSpriteFrame_t_1145_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1145_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1145_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1145_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw8
+	+MAdjustObjectScaleBy 12 , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileHeightScaleTab , 2 , 1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3081_0_0_0_colour , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3081_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3081_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw9
+	lda zeroPage_Temp4
+	cmp runwayMaxScreenRow
+	bcc .norunwayMaxScreenRow1
+	sta runwayMaxScreenRow
+.norunwayMaxScreenRow1
+	inc runwayMaxScreenRowUpdated
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3112_0_0_0_colour , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw10
+	lda zeroPage_Temp4
+	cmp runwayMinScreenRow
+	bcc .norunwayMinScreenRow1
+	sta runwayMinScreenRow
+.norunwayMinScreenRow1
+	inc runwayMinScreenRowUpdated
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_3112_0_0_0_colour , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_3112_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_3112_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+
+ObjectDraw11
+	ldy landscapeRotationsFrame
+	lda ObjectDraw11Rotations,y
+	sta .smj4+1
+	lda ObjectDraw11Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj4+2
+.smj4 jmp $1234
+
+ObjectDraw11Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw11_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw11_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw11Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw11_25
+ObjectDraw11_20
+ObjectDraw11_15
+ObjectDraw11_10
+ObjectDraw11_5
+ObjectDraw11_0
+ObjectDraw11_355
+ObjectDraw11_350
+ObjectDraw11_345
+ObjectDraw11_340
+ObjectDraw11_335
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14_0_0_0_colour , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+
+ObjectDraw11_330
+ObjectDraw11_325
+ObjectDraw11_320
+ObjectDraw11_315
+ObjectDraw11_310
+ObjectDraw11_305
+ObjectDraw11_300
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_295
+ObjectDraw11_290
+ObjectDraw11_285
+ObjectDraw11_280
+ObjectDraw11_275
+ObjectDraw11_270
+ObjectDraw11_265
+ObjectDraw11_260
+ObjectDraw11_255
+ObjectDraw11_250
+ObjectDraw11_245
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14rot_0_0_0_colour , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_240
+ObjectDraw11_235
+ObjectDraw11_230
+ObjectDraw11_225
+ObjectDraw11_220
+ObjectDraw11_215
+ObjectDraw11_210
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_205
+ObjectDraw11_200
+ObjectDraw11_195
+ObjectDraw11_190
+ObjectDraw11_185
+ObjectDraw11_180
+ObjectDraw11_175
+ObjectDraw11_170
+ObjectDraw11_165
+ObjectDraw11_160
+ObjectDraw11_155
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14_0_0_0_colour , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_150
+ObjectDraw11_145
+ObjectDraw11_140
+ObjectDraw11_135
+ObjectDraw11_130
+ObjectDraw11_125
+ObjectDraw11_120
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+
+ObjectDraw11_115
+ObjectDraw11_110
+ObjectDraw11_105
+ObjectDraw11_100
+ObjectDraw11_95
+ObjectDraw11_90
+ObjectDraw11_85
+ObjectDraw11_80
+ObjectDraw11_75
+ObjectDraw11_70
+ObjectDraw11_65
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_14rot_0_0_0_colour , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_14rot_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw11_60
+ObjectDraw11_55
+ObjectDraw11_50
+ObjectDraw11_45
+ObjectDraw11_40
+ObjectDraw11_35
+ObjectDraw11_30
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw12
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1692_0_0_0_colour , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+!zn
+ObjectDraw13
+	+MAdjustObjectScaleBy 15 , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileHeightScaleTab , 1 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1728_0_0_0_colour , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1728_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1728_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw14
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1862_0_0_0_colour , kVarsEmitSpriteFrame_t_1862_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1862_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1862_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1862_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw15
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1745_0_0_0_colour , kVarsEmitSpriteFrame_t_1745_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1745_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1745_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1745_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+ObjectDraw16
+	ldy landscapeRotationsFrame
+	lda ObjectDraw16Rotations,y
+	sta .smj4+1
+	lda ObjectDraw16Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj4+2
+.smj4 jmp $1234
+
+ObjectDraw16Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw16_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw16_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw16Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw16_335
+ObjectDraw16_330
+ObjectDraw16_325
+ObjectDraw16_320
+ObjectDraw16_315
+ObjectDraw16_310
+ObjectDraw16_305
+ObjectDraw16_300
+ObjectDraw16_295
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_258_0_0_0_colour , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+ObjectDraw16_290
+ObjectDraw16_285
+ObjectDraw16_280
+ObjectDraw16_275
+ObjectDraw16_270
+ObjectDraw16_265
+ObjectDraw16_260
+ObjectDraw16_255
+ObjectDraw16_250
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_232___Copy_0_0_0_colour , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw16_245
+ObjectDraw16_240
+ObjectDraw16_235
+ObjectDraw16_230
+ObjectDraw16_225
+ObjectDraw16_220
+ObjectDraw16_215
+ObjectDraw16_210
+ObjectDraw16_205
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_258_0_0_0_colour , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw16_200
+ObjectDraw16_195
+ObjectDraw16_190
+ObjectDraw16_185
+ObjectDraw16_180
+ObjectDraw16_175
+ObjectDraw16_170
+ObjectDraw16_165
+ObjectDraw16_160
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_232_0_0_0_colour , kVarsEmitSpriteFrame_t_232_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_232_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_232_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_232_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_232_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw16_155
+ObjectDraw16_150
+ObjectDraw16_145
+ObjectDraw16_140
+ObjectDraw16_135
+ObjectDraw16_130
+ObjectDraw16_125
+ObjectDraw16_120
+ObjectDraw16_115
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_258_0_0_0_colour , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw16_110
+ObjectDraw16_105
+ObjectDraw16_100
+ObjectDraw16_95
+ObjectDraw16_90
+ObjectDraw16_85
+ObjectDraw16_80
+ObjectDraw16_75
+ObjectDraw16_70
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_232___Copy_0_0_0_colour , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_232___Copy_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+ObjectDraw16_65
+ObjectDraw16_60
+ObjectDraw16_55
+ObjectDraw16_50
+ObjectDraw16_45
+ObjectDraw16_40
+ObjectDraw16_35
+ObjectDraw16_30
+ObjectDraw16_25
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_258_0_0_0_colour , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_258_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_258_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_258_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw16_20
+ObjectDraw16_15
+ObjectDraw16_10
+ObjectDraw16_5
+ObjectDraw16_0
+ObjectDraw16_355
+ObjectDraw16_350
+ObjectDraw16_345
+ObjectDraw16_340
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_232_0_0_0_colour , kVarsEmitSpriteFrame_t_232_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_232_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_232_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_232_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_232_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+
+
+ObjectDraw17
+	ldy landscapeRotationsFrame
+	lda ObjectDraw17Rotations,y
+	sta .smj5+1
+	lda ObjectDraw17Rotations + ScreenLandscapeNumRollSteps,y
+	sta .smj5+2
+.smj5 jmp $1234
+
+ObjectDraw17Rotations
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw17_" + str(180 - (acmeParameters[1] * (i+1))) + "\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!word ObjectDraw17_" + str(360 - (acmeParameters[1] * (i+1))) + "\n")
+}
+!swizzle ObjectDraw17Rotations , ScreenLandscapeNumRollSteps , 2
+
+ObjectDraw17_335
+ObjectDraw17_330
+ObjectDraw17_325
+ObjectDraw17_320
+ObjectDraw17_315
+ObjectDraw17_310
+ObjectDraw17_305
+ObjectDraw17_300
+ObjectDraw17_295
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_259_0_0_0_colour , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+ObjectDraw17_290
+ObjectDraw17_285
+ObjectDraw17_280
+ObjectDraw17_275
+ObjectDraw17_270
+ObjectDraw17_265
+ObjectDraw17_260
+ObjectDraw17_255
+ObjectDraw17_250
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_231___Copy_0_0_0_colour , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+ObjectDraw17_245
+ObjectDraw17_240
+ObjectDraw17_235
+ObjectDraw17_230
+ObjectDraw17_225
+ObjectDraw17_220
+ObjectDraw17_215
+ObjectDraw17_210
+ObjectDraw17_205
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_259_0_0_0_colour , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw17_200
+ObjectDraw17_195
+ObjectDraw17_190
+ObjectDraw17_185
+ObjectDraw17_180
+ObjectDraw17_175
+ObjectDraw17_170
+ObjectDraw17_165
+ObjectDraw17_160
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_231_0_0_0_colour , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeight , 0 , 1
+	jmp ObjectDrawReturn
+ObjectDraw17_155
+ObjectDraw17_150
+ObjectDraw17_145
+ObjectDraw17_140
+ObjectDraw17_135
+ObjectDraw17_130
+ObjectDraw17_125
+ObjectDraw17_120
+ObjectDraw17_115
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_259_0_0_0_colour , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeight , 1 , 1
+	jmp ObjectDrawReturn
+ObjectDraw17_110
+ObjectDraw17_105
+ObjectDraw17_100
+ObjectDraw17_95
+ObjectDraw17_90
+ObjectDraw17_85
+ObjectDraw17_80
+ObjectDraw17_75
+ObjectDraw17_70
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_231___Copy_0_0_0_colour , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_231___Copy_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+ObjectDraw17_65
+ObjectDraw17_60
+ObjectDraw17_55
+ObjectDraw17_50
+ObjectDraw17_45
+ObjectDraw17_40
+ObjectDraw17_35
+ObjectDraw17_30
+ObjectDraw17_25
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_259_0_0_0_colour , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_259_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_259_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_259_0_0_0_tileHeight , 1 , 0
+	jmp ObjectDrawReturn
+
+ObjectDraw17_20
+ObjectDraw17_15
+ObjectDraw17_10
+ObjectDraw17_5
+ObjectDraw17_0
+ObjectDraw17_355
+ObjectDraw17_350
+ObjectDraw17_345
+ObjectDraw17_340
+	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_231_0_0_0_colour , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+

@@ -25,10 +25,11 @@ set SPRITES_COMMON_1=--batchimagequantize 16 --batchimages Demo14\PlayerAirplane
 rem Green enemy, smoke, and missle used in the title screen
 set SPRITES_COMMON_2=--batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlaneGreen\Roll2\*.png Demo14\t-241.png Demo14\t-90.png
 rem Landscape water and bushes and clouds
-rem Landscape objects: 1 , 2 , 3 , 4 , 5 , 6 , 11
-set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png"
-rem Harrier and enemies
-set SPRITES_COMMON_4=--batchimages Demo14\t-715.png Demo14\EnemyPlaneHarrier\*.png Demo14\EnemyPlaneWhite\*.png
+rem Landscape objects: 1 , 2 , 3 , 4 , 5 , 6 , 11 , 16 , 17
+rem Plus: Bullets, reticle, bullet hit ground
+set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png" Demo14\BulletsExplosions\t-208.png Demo14\BulletsExplosions\t-793.png "Demo14\BulletsExplosions\t-231 - Copy.png" "Demo14\BulletsExplosions\t-231.png" "Demo14\BulletsExplosions\t-232 - Copy.png" "Demo14\BulletsExplosions\t-232.png" "Demo14\BulletsExplosions\t-258.png" "Demo14\BulletsExplosions\t-259.png"
+rem Enemies
+set SPRITES_COMMON_4=--batchimages Demo14\EnemyPlaneHarrier\*.png Demo14\EnemyPlaneWhite\*.png
 rem Game palette specific sprites
 rem Landscape objects: 7
 set SPRITES_GAME_PALETTE_0=--batchimages Demo14\t-1145.png
@@ -36,6 +37,8 @@ rem Landscape objects: 8 , 9 , 10
 set SPRITES_GAME_PALETTE_1=--batchimages Demo14\t-3081.png Demo14\t-3112.png
 rem Landscape objects: 12 , 13 , 14 , 15
 set SPRITES_GAME_PALETTE_2=--batchimages Demo14\Canyon\t-1728.png Demo14\Canyon\t-1692.png Demo14\Canyon\t-1745.png Demo14\Canyon\t-1862.png
+rem Landscape objects: Carrier
+set SPRITES_GAME_PALETTE_3=--batchimages Demo14\t-715.png
 
 rem For the title screen palettes we load the needed game assets first and then the specific extra sprites for the title screen itself
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreen.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal %SPRITES_COMMON_2% --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --batchimages Demo14\Intro\*.png --writepass
@@ -47,9 +50,11 @@ java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-
 
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4Game2.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal %SPRITES_COMMON_2% --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal %SPRITES_COMMON_3% %SPRITES_COMMON_4% %SPRITES_GAME_PALETTE_2% --writepass
 
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4Game3.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal %SPRITES_COMMON_2% --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal %SPRITES_COMMON_3% %SPRITES_COMMON_4% %SPRITES_GAME_PALETTE_3% --writepass
+
 
 rem All the palettes have been calculated, now convert the sprites. Game assets first then load the title screen palettes and sprites.
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game0.pal --fitpalettes --nostacking --outputscaled4 ..\tmp\ScaledSprites4 --outputsprites ..\tmp\Demo14ScaledSprites4Sheet.txt %SPRITES_COMMON_1% %SPRITES_COMMON_2% %SPRITES_COMMON_3% %SPRITES_COMMON_4% %SPRITES_GAME_PALETTE_0% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --batchimages Demo14\Intro\*.png --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game1.pal %SPRITES_GAME_PALETTE_1% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game2.pal %SPRITES_GAME_PALETTE_2% --writepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game0.pal --fitpalettes --nostacking --outputscaled4 ..\tmp\ScaledSprites4 --outputsprites ..\tmp\Demo14ScaledSprites4Sheet.txt %SPRITES_COMMON_1% %SPRITES_COMMON_2% %SPRITES_COMMON_3% %SPRITES_COMMON_4% %SPRITES_GAME_PALETTE_0% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --batchimages Demo14\Intro\*.png --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game1.pal %SPRITES_GAME_PALETTE_1% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game2.pal %SPRITES_GAME_PALETTE_2% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game3.pal %SPRITES_GAME_PALETTE_3% --writepass
 
 rem Now convert the other assets
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "Demo14\chars title.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
@@ -89,6 +94,8 @@ python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin3
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0x04
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin4
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0x05
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin5
 
 rem Then non-exact audio hardware using the EBBS
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x04 0x0000 file tmp/target/exportedSoundEffectsAfterBurnerSamples.bin
@@ -99,6 +106,8 @@ python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9e0c bytes 0
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4Game1.pal
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9e0c bytes 0x02
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4Game2.pal
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9e0c bytes 0x03
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4Game3.pal
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9e0c bytes 0x0f
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4TitleScreen.pal
 

@@ -162,6 +162,7 @@
     <None Include="..\..\ACME\docs\COPYING">
       <Filter>Resource Files\ACME</Filter>
     </None>
+    <None Include="ConvertBuildAll.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -615,6 +616,18 @@
       <Filter>Source Files\asm\AfterBurner</Filter>
     </Library>
     <Library Include="asm\AfterBurner\GameCanyon.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\ExternalMemory.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\LandscapeAnimate.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\LandscapeObjectDraw.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\LandscapeMapCalc.a">
       <Filter>Source Files\asm\AfterBurner</Filter>
     </Library>
   </ItemGroup>

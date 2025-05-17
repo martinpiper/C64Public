@@ -1335,6 +1335,7 @@ Feature: Smoke test
     Given video display refresh window every 32 instructions
     Given video display does not save debug BMP images
     Given video display add joystick to port 1
+    And video display add space as joystick port 2
     Given video display saves debug BMP images to leaf filename "tmp/frames/TC-17-"
     Given property "bdd6502.bus24.trace" is set to string "true"
     Given I have a simple overclocked 6502 system
@@ -1384,9 +1385,10 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
       # Layer 0-1
-      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
+#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
+#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
 #      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 13.7MHz
-#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
+      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
       And the layer has 16 colours
       And the layer has overscan
       And the layer uses exact address matching
@@ -1411,6 +1413,8 @@ Feature: Smoke test
     Given write data from file "tmp\ScaledSprites4.bin3" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x04' to 24bit bus at '0x8807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin4" to 24bit bus at '0x0000' and addressEx '0x05'
+	Given write data byte '0x05' to 24bit bus at '0x8807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin5" to 24bit bus at '0x0000' and addressEx '0x05'
 
 	#  Music
     # rem Then non-exact audio hardware using the EBBS
@@ -1429,6 +1433,8 @@ Feature: Smoke test
     Given write data from file "tmp\Demo14ScaledSprites4Game1.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x02' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4Game2.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x03' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game3.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x0f' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
 
@@ -1488,5 +1494,5 @@ Feature: Smoke test
 #    Given video display processes 16 pixels per instruction
 #    Given video display processes 8 pixels per instruction
     Given limit video display to 60 fps
-    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
+#    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     When I execute the procedure at start until return

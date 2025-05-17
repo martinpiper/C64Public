@@ -9,7 +9,7 @@ PlayerControl_disableRoll !by 0
 PlayerControl
 	jsr PlayerEngineSoundControl
 
-	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	+LTestForPortBitsLoop_A CIA1KeyboardRowsJoystickB , JoystickBits_Fire , .notFire
 	lda .isFireBefore
 	bne .wasFire
 	jsr EntityFindFreeSlot
@@ -43,6 +43,8 @@ PlayerControl
 .wasFire
 	lda #1
 	sta .isFireBefore
+
+
 	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
 	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
 	dec landscapeFrameSpeed
@@ -77,6 +79,64 @@ PlayerControl
 	sta .isFireBefore
 
 .overFire
+
+
+
+	; Bullets
+	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire2
+	lda EntityState_Bullets_ActiveNum
+	cmp #5
+	bcs .overFire2
+	jsr EntityFindFreeSlot
+	bcs .noFreeSlot22
+
+	lda playerXPositionOffset
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	sta EntityXPos,x
+	lda #0
+	sec
+	sbc playerYPositionOffset
+	+M_ASR
+	+M_ASR
+	sec
+	sbc #4
+	sta EntityYPos,x
+	lda #defaultNeutralScaleIs+1-kPlayerBulletsForwardSpeed
+	sta EntityZPos,x
+	lda #0
+	sta EntityScaleTweak,x
+	lda #<Bullets_landscapeRotationsFrame_to_animation
+	sta EntityTypeLo,x
+	lda #>Bullets_landscapeRotationsFrame_to_animation
+	sta EntityTypeHi,x
+
+	lda #<EntityState_Bullets
+	sta EntityStateLo,x
+	lda #>EntityState_Bullets
+	sta EntityStateHi,x
+
+	lda #0
+	sec
+	sbc playerYPositionOffsetSpeed
+	sta EntityStateValue1,x
+
+	lda playerXPositionOffset
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	sta EntityStateValue2,x
+
+	inc EntityState_Bullets_ActiveNum
+.noFreeSlot22
+.wasFire2
+.overFire2
+.notFire2
+
+
+
+
 !ifndef Debug_SimpleLandscapeRotation {
 	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
 
@@ -460,6 +520,31 @@ RenderSpritePlayer
 	sta .smj2+2
 .smj2	jmp RenderSpritePlayerR0Y0
 
+
+RenderSpritePlayerReticle
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	lda #((328/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth/2))/2
+	clc
+	adc playerXPositionOffset
+	adc playerXPositionOffset
+	sta zeroPage_Temp4
+
+	lda #(110/2)-10
+	clc
+	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffset
+	sta zeroPage_Temp5
+;	clc
+;	adc playerYPositionOffset
+
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth
+	rts
 
 
 !macro MRenderSpritePlayer .palette , .width , .height, .address {

@@ -354,10 +354,16 @@ RunGameLanding_CommonFrame
 	jsr RunGameLanding_UpdateAPU
 
 	; Can happen outside the VBlank
-	jsr EntitySort
+	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
+
 	jsr PlayerEngineSoundControl
 	jsr UpdateLandscapeFrame
 	jsr EntityUpdateObjects
+	jsr LandscapeAnimate
+
+	+MFrameCompensate_30fps_After  .frameCompensate1 , ~.frameCompensate1o
+
+	jsr EntitySort
 
 	jsr ResetInterfaceAndStartSendingScaledSprites
 

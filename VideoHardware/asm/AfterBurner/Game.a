@@ -1,3 +1,17 @@
+!macro MFrameCompensate_30fps_Before ~.labelBefore , .labelOver {
+.labelBefore
+	; Frame compensate, for 30 fps
+	lda Video_WaitVBlank_FramesPassed
+	cmp #2
+	bcc .labelOver
+}
+!macro MFrameCompensate_30fps_After .labelBefore , ~.labelOver {
+	dec Video_WaitVBlank_FramesPassed
+	dec Video_WaitVBlank_FramesPassed
+	jmp .labelBefore
+.labelOver
+}
+
 !zn
 InitGame
 	jsr Bus20To32Bit1_Init
@@ -14,7 +28,6 @@ InitGame
 }
 
 	+MByteValueToAddress_A -75 , Player_EngineVolumeChange
-	+MByteValueToAddress_A 250 , .smtc1+1
 
 	rts
 
@@ -27,27 +40,30 @@ mainLoop2
 	jsr VBlankUpdateHorizon
 
 	; Can happen outside the VBlank
+	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
+
 	jsr PlayerControl
 	jsr UpdateLandscapeFrame
 	jsr EntityUpdateObjects
+!ifndef Debug_NoSpawnEnemy {
+	jsr CheckSpawnEnemy
+}
+	jsr LandscapeAnimate
+
+	+MFrameCompensate_30fps_After  .frameCompensate1 , ~.frameCompensate1o
 
 	jsr EntitySort
 
 	jsr RenderSpritesGame
 
-	jsr CheckSpawnEnemy
-
-.smtc1	lda #250
 !ifndef Debug_SimpleLandscapeRotation {
-	bne .ot1
-	inc .smc1+1
-.smc1	lda #0
-	and #1
+	lda #kLandscapeMapRowsData_flags_doLanding
+	bit LandscapeFlags
 	bne .gameToLanding
-	beq .gameToCanyon
-.ot1
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
+	bne .gameToCanyon
 }
-	dec .smtc1+1
 
 	jmp mainLoop2
 
@@ -56,15 +72,12 @@ mainLoop2
 	jsr RunGameLanding
 
 	+MByteValueToAddress_A 3 , landscapeFrameSpeed
-	+MByteValueToAddress_A 250 , .smtc1+1
 
 	jmp mainLoop2
 
 .gameToCanyon
 	jsr InitGameCanyon
 	jsr RunGameCanyon
-
-	+MByteValueToAddress_A 250 , .smtc1+1
 
 	jmp mainLoop2
 
@@ -100,7 +113,6 @@ RenderSpritesGame
 	; Stride
 	+MBus24Bit_Send8BitValue 33
 }
-
 	jsr EntityRenderSpritesDirectMode
 
 	jsr LandscapeRender
@@ -202,6 +214,74 @@ CheckSpawnEnemy
 
 	rts
 
+EntityState_RemoveEntity
+	lda #0
+	sta EntityTypeHi,y
+	rts
+
+
+kPlayerBulletsForwardSpeed = 5
+EntityState_Bullets_ActiveNum !by 0
+
+EntityState_Bullets
+	lda EntityYPos,y
+	clc
+	adc EntityStateValue1,y
+	cmp #kEntityYPos_Ground
+	+IfRegLessThanVal EntityState_Bullets_HitGround
+	sta EntityYPos,y
+
+	lda EntityXPos,y
+	clc
+	adc EntityStateValue2,y
+	sta EntityXPos,y
+
+	lda EntityZPos,y
+	clc
+	adc landscapeFrameSpeed
+	bcs EntityState_Bullets_Remove
+	clc
+	adc #kPlayerBulletsForwardSpeed
+	cmp #127
+	bcs EntityState_Bullets_Remove
+	sta EntityZPos,y
+
+	rts
+
+EntityState_Bullets_HitGround
+	lda LandscapeMapRowOffset
+	and #$0f
+	clc
+	adc #7
+	sta .xmxposo+1
+	lda EntityXPos,y
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	and #$0f
+	clc
+.xmxposo	adc #8
+	and #$0f
+	sta .smxp+1
+
+	lda LandscapeMapRowOffset
+	and #$f0
+	sta .xmzp+1
+
+	lda EntityZPos,y
+	and #$f0
+	clc
+.xmzp	adc #0
+	clc
+.smxp	adc #0
+	tax
+	lda #16
+	sta LandscapeMap,x
+
+; Note: Fall through to here
+EntityState_Bullets_Remove
+	dec EntityState_Bullets_ActiveNum
+	jmp EntityState_RemoveEntity
 
 
 .emitSmokeCounter !by 0
@@ -213,7 +293,7 @@ EntityState_MissileForward
 	clc
 	adc #3
 	cmp #127
-	bcs EntityState_RemoveEntity
+	+lbcs EntityState_RemoveEntity
 	sta EntityZPos,y
 
 	tya
@@ -271,10 +351,7 @@ EntityState_MissileForward
 .noSmoke1
 
 	rts
-EntityState_RemoveEntity
-	lda #0
-	sta EntityTypeHi,y
-	rts
+
 
 
 !zn

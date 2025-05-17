@@ -451,20 +451,18 @@
 
 * Demo14: Extra ground sprites, the buildings, transmission towers
 	>> t-1145.png ObjectDraw7 Small buildings
-	>> t-3081.png ObjectDraw8 Autmn tree
+	>> t-3081.png ObjectDraw8 Autumn tree
 	* Definitely need an editor for rotated sprite frames
 	>> See: ObjectDraw6_355 +MObjectDrawWithScaleFlips + jmp ObjectDrawReturn and Render_EnemyPlaneWhite175 +MRender_EntityObject
 		> Create MObjectDrawWithScaleFlips with paramter for ObjectDrawReturn
+	>> Done: Carrier could be separated to a new palette, it does use one palette so the save is worth it
 
 
 
 
-* Demo14: Landing triggered by lnandscape flag, not time
 
-
-
-
-* Demo14: Palette change can now be gradual
+* Demo14: Palette change for the ground can now be gradual
+	By lerping to the new ground colours at runtime
 
 
 
@@ -475,10 +473,36 @@
 
 
 
-* Demo14: Landscape data can be under the IO space, since none of the landscape calculation code needs IO.
-	Code as well since it does not access IO.
+* Demo14: Landscape
+	* List of enemy types to spawn in the section
+	* List of enemy types that are allowed to exit from the section
+		When wanting to exit, no new spawns unless they are in the exit list
+			>> When kLandscapeMapRowsData_size is added to LandscapeMapRowsDataAddress
+			> The and #$f0 needs to compare with an advancing $10 $20 $30 $40 etc if the exit condition check fails, otherwise the whole current landscape chunk will loop around and take too long?
+		Then remove at least one enemy type from the common palette to make room for the explosions palette(s)
+		Enemies that are local to a landscape should probably be first in the palette
+		>> .enemyTypes
+			Need mapping to a byte type for faster matching
+		>> EntityFindFreeSlot
 
 
 
 
-* Demo14: Tidy resource code
+* Rotate move ObjectDraw16 and ObjectDraw17 so they appear a bit above the other landscape objects. Like the canyon but include rotation/position offset for the specific frames.
+
+
+
+
+
+
+* Demo14: Shooting the landscape should cause explosions
+
+
+
+
+* Demo14: When diving the fire direction should impact the ground, to follow the reticle, at the moment it doesn't
+
+
+
+
+

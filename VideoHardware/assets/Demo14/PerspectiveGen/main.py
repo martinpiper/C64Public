@@ -343,8 +343,8 @@ writeEveryCount = 0
 
 axis = [1, 0, 0]
 angle = 0
-camera = [0, 1, -5]  # At 13.7 MHz
-# camera = [0, 2, -5]  # At 12.096 MHz
+# camera = [0, 1, -5]  # At 13.7 MHz
+camera = [0, 2, -5]  # At 12.096 MHz
 win = GraphWin(width=328, height=224, autoflush=False)
 win.setCoords(0, 224, 328, 0)
 Line(Point(164, 0), Point(164, 224)).draw(win)
@@ -372,14 +372,14 @@ while angle < 360 * 9:
     if angle >= 360 * 5:
         theta = math.radians(angle)
     if angle >= 360 * 8:
-        camera[1] += 0.01  # At 13.7 MHz
-        #        camera[1] += 0.02  # At 12.096 MHz
+#        camera[1] += 0.01  # At 13.7 MHz
+        camera[1] += 0.02  # At 12.096 MHz
         camera[2] -= 0.05
     if 10 <= angle < 360:
         camera[2] += 0.05
     if 400 <= angle < 500:
-        camera[1] -= 0.01  # At 13.7 MHz
-    #        camera[1] -= 0.02  # At 12.096 MHz
+#        camera[1] -= 0.01  # At 13.7 MHz
+        camera[1] -= 0.02  # At 12.096 MHz
 
     # For the explosion etc
     random.seed(1234)

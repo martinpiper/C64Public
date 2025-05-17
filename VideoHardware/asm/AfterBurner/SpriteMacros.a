@@ -101,7 +101,11 @@
 !macro MGenerateSprite4ScaleTable .value {
 !for .i , UsingMaxHardwareScaleTabValue {
 ;!set .actualSize = (float(.value * 32) / float(.i))
+!if .i <= $20 {
+!set .actualSize = int( ((.value << 5) + (.i >> 1)) / (.i) ) ; Rounding up for half a pixel...
+} else {
 !set .actualSize = ( (float(.value * 32) + (0.5 * 32.0)) / float(.i) ) ; Rounding up for half a pixel...
+}
 ; If the size is too big or too small then ensure it gets written as 0 to flag this case
 !if <.actualSize <= 1 {
 !set .actualSize = 0
@@ -200,4 +204,62 @@
 	eor #kBus24Bit_Sprites2_MSBX
 	sta zeroPage_Temp3
 .noMSBXTweak2
+}
+
+
+
+
+
+!macro MRenderSpriteWithStrideNoScalePositionsX2 .palette , .xpos, .ypos , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	lda #.palette
+	sta zeroPage_Temp3
+
+	lda .xpos
+	asl
+	sta .xpos
+	bcc .noMSBX
+	lda #.palette | kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBX
+
+	lda .ypos
+	asl
+	sta .ypos
+	bcc .noMSBY
+	lda zeroPage_Temp3
+	ora #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBY
+
+	; Palette
+	lda zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda .ypos
+	+MBus24Bit_Send8BitValueFromA
+	lda #.tileHeight
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda .xpos
+	+MBus24Bit_Send8BitValueFromA
+	lda #.tileWidth
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .tileStride-1
 }

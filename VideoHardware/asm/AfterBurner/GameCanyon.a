@@ -2,7 +2,6 @@
 InitGameCanyon
 	jsr Bus20To32Bit1_Init
 
-	+MByteValueToAddress_A 250, .endSequenceTimeout
 	+MByteValueToAddress_A 1 , PlayerControl_disableRoll
 	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
 	+MByteValueToAddress_A 0 , landscapeScrollXFrame
@@ -26,53 +25,6 @@ mainLoop5b
 	jsr LandscapeRenderHeight
 	lda #0
 	sta .smIsNotOK+1
-
-!if 0 {
-	; Force runway area details into the landscape
-	; Landscape map data position tweak
-	lda LandscapeMapRowOffset
-	sec
-;	sbc #16*7
-	sbc #16*8
-	clc
-	adc #5
-	tax
-	; Blank entries for the runway area
-	lda #0
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
-
-	; Add a runway start building and a couple of bushes
-	lda runwayMaxScreenRow
-	bne .gotObjectMax
-	dex	; Note 256 byte wraparound
-	dex	; Note 256 byte wraparound
-	dex	; Note 256 byte wraparound
-	; Special case building
-	lda #9
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	lda #3
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	lda #2
-	sta LandscapeMap,x
-	jmp .gotObjectMax2
-.gotObjectMax
-	cmp #250
-	bcs .gotObjectMax2
-	lda runwayMaxScreenRowUpdated
-	bne .gotObjectMax2
-	inc runwayMaxScreenRow
-	inc runwayMaxScreenRow
-	inc runwayMaxScreenRow
-.gotObjectMax2
-}
 
 	jmp .overLandscapeDraw
 .needRotationDraw
@@ -142,15 +94,16 @@ mainLoop5c
 	jmp .mv1
 .mv1
 
-	; Delay timing
-	inc .smo1+1
-.smo1 lda #0
-	and #1
+	; Do not exit the canyon if debugging it
+!ifdef Debug_RunGameCanyon {
+	jmp mainLoop5c
+}
+
+	; Loop while the canyon flags are active
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
 	+lbne mainLoop5c
 
-	dec .endSequenceTimeout
-	+lbne mainLoop5c
-;	jmp mainLoop5c
 
 
 	; Now gain height again
@@ -200,9 +153,14 @@ RunGameCanyon_CommonFrame
 	jsr VBlankUpdateHorizon
 
 	; Can happen outside the VBlank
+	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
+
 	jsr PlayerControl
 	jsr UpdateLandscapeFrame
 	jsr EntityUpdateObjects
+	jsr LandscapeAnimate
+
+	+MFrameCompensate_30fps_After  .frameCompensate1 , ~.frameCompensate1o
 
 	jsr EntitySort
 

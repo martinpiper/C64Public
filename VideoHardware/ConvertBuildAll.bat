@@ -8,6 +8,7 @@ call assets\convert9.bat
 call assets\convert10.bat
 call assets\convert11.bat
 call assets\convert13.bat
+call assets\convert14.bat
 
 call BuildIt.bat
 call BuildIt3.bat
@@ -25,3 +26,4 @@ call BuildIt10.bat
 call BuildIt11.bat
 call BuildIt12.bat
 call BuildIt13.bat
+call BuildIt143.bat

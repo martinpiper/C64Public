@@ -1,13 +1,15 @@
 !zn
-ksms1CarrierScale_SmallestValue = 12	; At 13.7 MHz
-;ksms1CarrierScale_SmallestValue = 15	; At 12.096 MHZ
+;ksms1CarrierScale_SmallestValue = 12	; At 13.7 MHz
+ksms1CarrierScale_SmallestValue = 15	; At 12.096 MHZ
 
 InitGameIntro
 	jsr Bus20To32Bit1_Init
 
 	; Init state
+	+MWordValueToAddress_A LandscapeMapRowsData , LandscapeMapRowsDataAddress
+	+MByteValueToAddress_A 0 , LandscapeFlags
 	+MByteValueToAddress_A 0 , GroundColours
-	+MByteValueToAddress_A 0 , GamePaletteBank
+	+MByteValueToAddress_A 3 , GamePaletteBank
 	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
 	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
 	+MByteValueToAddress_A 0 , playerXPositionOffset
@@ -31,6 +33,8 @@ InitGameIntro
 	rts
 
 RunGameIntro
+	+MByteValueToAddress_A 0 , Video_WaitVBlank_FramesPassed
+
 mainLoop4
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
@@ -41,7 +45,13 @@ mainLoop4
 
 	; Can happen outside the VBlank
 	jsr EntitySort
+
+	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
+
 	jsr CarrierUpdateLogic
+	jsr LandscapeAnimate
+
+	+MFrameCompensate_30fps_After  .frameCompensate1 , ~.frameCompensate1o
 
 	jsr ResetInterfaceAndStartSendingScaledSprites
 	jsr EntityRenderSpritesDirectMode

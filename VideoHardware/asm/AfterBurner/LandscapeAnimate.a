@@ -1,0 +1,25 @@
+!zn
+LandscapeMapRowOffsetAnimation !by 0
+
+LandscapeAnimate
+	ldx LandscapeMapRowOffsetAnimation
+!for .i , 16 {
+!zn {
+	ldy LandscapeMap,x
+	lda LandscapeMapAnimation,y
+	sta LandscapeMap,x
+	inx
+}
+}
+	stx LandscapeMapRowOffsetAnimation
+	rts
+
+; Replacement table
+LandscapeMapAnimation
+!by 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7
+!by 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15
+; Note: Bullet effects
+!by 17 , 16
+!for .i , 255 {
+!by <(.i + 17)
+}

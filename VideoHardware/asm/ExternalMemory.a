@@ -1,0 +1,233 @@
+; External memory expansion common code
+!zn
+ExternalMemory_C64DisplayStartupMessage
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+SetDefaultScreenLowerCase_A
+	lda #VIC2Colour_White
+	ldx #(messageMWEnd - messageMW)-1
+.cl1
+	sta COLOURRAM,x
+	dex
+	bpl .cl1
+	rts
+
+
+ExternalMemory_C64CheckMemory
+	lda #VIC2Colour_Black
+	ldx #(messageMWRAMOKEnd - messageMWRAMOK)-1
+.cl4
+	sta COLOURRAM + (messageMWRAMOK & 0x3ff),x
+	dex
+	bpl .cl4
+
+	jsr Bus20To32Bit1_Init
+	; Check for RAM contents
+	jsr Bus20To32Bit1_ShortReset
+
+	; Hard coded expected address for identifier
+	jsr Bus20To32Bit1_SetLatch0
+	+MBus24Bit_Send8BitValue <gameDataIdentifier
+	jsr Bus20To32Bit1_SetLatch1
+	+MBus24Bit_Send8BitValue >gameDataIdentifier
+	jsr Bus20To32Bit1_SetLatch2
+	+MBus24Bit_Send8BitValue ^gameDataIdentifier
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+	
+	ldx #0
+.l2b
+	+MBus24Bit_Get8BitValueToA
+	cmp GameExpectedIdentifier,x
+	beq .ok1b
+	jmp ExternalMemory_C64CheckMemory
+.ok1b
+	inx
+	cpx #GameExpectedIdentifierLen
+	bne .l2b
+
+	lda #VIC2Colour_White
+	ldx #(messageMWRAMOKEnd - messageMWRAMOK)-1
+.cl2
+	sta COLOURRAM + (messageMWRAMOK & $3ff),x
+	dex
+	bpl .cl2
+
+	; Verify checksum data
+	lda #checksumsCount
+	sta zeroPage_Temp2
+
+.chks1
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_SetLatch0
+.chksBlockAddr1 = * + 1
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch1
+.chksBlockAddr2 = * + 1
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch2
+.chksBlockAddr3 = * + 1
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+	; Assume two byte checksums
+	lda #0
+	sta zeroPage_Temp0
+	sta zeroPage_Temp1
+	; Assume up to 256 bytes checksum length
+	ldy #<checksumsNumBytes
+.chks2
+	+MBus24Bit_Get8BitValueToA
+	+MAddAToAddr16 zeroPage_Temp0 , zeroPage_Temp1
+	dey
+	bne .chks2
+
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_SetLatch0
+.chksAddr1 = * + 1
+	+MBus24Bit_Send8BitValue <checksumsStart
+	jsr Bus20To32Bit1_SetLatch1
+.chksAddr2 = * + 1
+	+MBus24Bit_Send8BitValue <(checksumsStart>>8)
+	jsr Bus20To32Bit1_SetLatch2
+.chksAddr3 = * + 1
+	+MBus24Bit_Send8BitValue <(checksumsStart>>16)
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+
+	; Assume two byte checksum
+	+MBus24Bit_Get8BitValueToA
+	cmp zeroPage_Temp0
+	+lbne .reportBlockError
+	+MBus24Bit_Get8BitValueToA
+	cmp zeroPage_Temp1
+	+lbne .reportBlockError
+
+	; Next checksum
+	lda .chksAddr1
+	clc
+	adc #<checksumsSize
+	sta .chksAddr1
+	lda .chksAddr2
+	adc #0
+	sta .chksAddr2
+	lda .chksAddr3
+	adc #0
+	sta .chksAddr3
+
+	; Next block
+	lda .chksBlockAddr1
+	clc
+	adc #<checksumsBlockSize
+	sta .chksBlockAddr1
+	lda .chksBlockAddr2
+	adc #<(checksumsBlockSize>>8)
+	sta .chksBlockAddr2
+	lda .chksBlockAddr3
+	adc #<(checksumsBlockSize>>16)
+	sta .chksBlockAddr3
+
+	dec zeroPage_Temp2
+	+lbne .chks1
+
+	rts
+
+.reportBlockError
+	lda #VIC2Colour_White
+	ldx #(messageMWRAMErrorEnd - messageMWRAMError)-1
+.cl3
+	sta COLOURRAM + (messageMWRAMError & 0x3ff),x
+	dex
+	bpl .cl3
+	ldx #<messageMWRAMErrorBlock+4
+	lda .chksBlockAddr1
+	jsr DisplayHexFromAAtX
+	ldx #<messageMWRAMErrorBlock+2
+	lda .chksBlockAddr2
+	jsr DisplayHexFromAAtX
+	ldx #<messageMWRAMErrorBlock+0
+	lda .chksBlockAddr3
+	jsr DisplayHexFromAAtX
+	inc VIC2BorderColour
+	; Try again...
+	jmp ExternalMemory_C64CheckMemory
+
+
+ExternalMemory_C64SendResourceData
+	; Send DMA chunks from file resources
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_SetLatch0
+.smDataMarker1 = *+1
+	+MBus24Bit_Send8BitValue <EndDataMarker
+	jsr Bus20To32Bit1_SetLatch1
+.smDataMarker2 = *+1
+	+MBus24Bit_Send8BitValue <(EndDataMarker>>8)
+	jsr Bus20To32Bit1_SetLatch2
+.smDataMarker3 = *+1
+	+MBus24Bit_Send8BitValue <(EndDataMarker>>16)
+
+.sendDMA1
+	jsr Bus20To32Bit1_WriteMode
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_RAM | kBus20To32Bit1_latch7_InternalPA2
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+	; EBBS, to the 24 bit interface
+	ldx #<debugDMA
+	+MBus24Bit_Get8BitValueToA
+	+lbeq .sendDMA2
+	jsr DisplayHexFromAAtX
+
+	; Addr, to the 24 bit interface
+	+MBus24Bit_Get8BitValueToA
+	jsr DisplayHexFromAAtX
+	+MBus24Bit_Get8BitValueToA
+	jsr DisplayHexFromAAtX
+
+	jsr Bus20To32Bit1_WriteMode
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Get length
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp0
+	jsr DisplayHexFromAAtX
+	+MBus24Bit_Get8BitValueToA
+	sta zeroPage_Temp1
+	jsr DisplayHexFromAAtX
+	jsr Bus20To32Bit1_WriteMode
+	jsr Bus20To32Bit1_SetLatch11
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	jsr Bus20To32Bit1_SetLatch12
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+
+;	+WaitForFire_A
+
+	; Then DMA the data chunk
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_RAM | kBus20To32Bit1_latch7_InternalPA2 | kBus20To32Bit1_latch7_FastDMAStart
+
+	; Check for DMA complete
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch13
+
+.dmal1
+	inc VIC2BorderColour
+	+MBus24Bit_Get8BitValueToA
+	and #kBus20To32Bit1_latch13_DMAInProgress
+	bne .dmal1
+	
+	jmp .sendDMA1
+
+
+.sendDMA2
+	lda #VIC2Colour_Green
+	ldx #0
+.cl5
+	sta COLOURRAM,x
+	dex
+	bne .cl5
+
+	rts

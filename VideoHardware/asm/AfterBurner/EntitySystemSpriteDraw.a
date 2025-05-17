@@ -55,6 +55,11 @@ MissileForward_landscapeRotationsFrame_to_animation
 	!word Render_MissileForward
 }
 
+Bullets_landscapeRotationsFrame_to_animation
+!for .i , ScreenLandscapeNumRollSteps {
+	!word Render_Bullets
+}
+
 !macro MRender_EntityObject .tileWidthScaleTab , .tileHeightScaleTab , .palette , .tileWidth , .tileHeight , .address , .flipX , .flipY {
 !word .tileWidthScaleTab - 1
 !word .tileHeightScaleTab - 1
@@ -91,6 +96,9 @@ Render_WhiteSmoke
 
 Render_MissileForward
 +MRender_EntityObject kVarsEmitSpriteFrame_t_90_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_90_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_90_0_0_0_colour , kVarsEmitSpriteFrame_t_90_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_90_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_90_0_0_0_tileAddress , 1 , 0
+
+Render_Bullets
++MRender_EntityObject kVarsEmitSpriteFrame_t_208_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_208_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_208_0_0_0_colour , kVarsEmitSpriteFrame_t_208_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_208_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_208_0_0_0_tileAddress , 1 , 0
 
 ; 9
 Render_EnemyPlaneGreen0

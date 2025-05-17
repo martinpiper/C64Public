@@ -12,6 +12,8 @@
 ;EntityYPos	!by -4 ; Level with the player, just about
 ;EntityYPos	!by -25 ; Roughly on the ground
 
+kEntityYPos_Ground = -25
+
 ;EntityZPos	!by 8*8	; The far point of the landscape
 ;EntityZPos	!by defaultNeutralScaleIs
 
@@ -47,6 +49,8 @@ EntityStateHi
 
 
 EntityStateValue1
+	!fill SortHardMaxEntries , 0
+EntityStateValue2
 	!fill SortHardMaxEntries , 0
 
 EntityInit
@@ -170,6 +174,7 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_SetLatch4_A
 	jsr RenderSpritePlayer
+	jsr RenderSpritePlayerReticle
 	jmp .skipEnemyDraw
 
 .isEntityObject

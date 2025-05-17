@@ -1052,6 +1052,15 @@ RasterLengthNTSCC64		= 520
 	beq .w1
 }
 
+!macro MACROWaitUntilAtLeastRaster_A .raster {
+	; Wait for the bottom raster, commonly used before turning on or off the screen and IRQs
+	lda #.raster
+.w1
+	cmp VIC2Raster
+	bcs .w1
+}
+
+
 ; Can only be used for small chunks <= 256 bytes. Inclusive!
 !macro SetMemory_AX .addrstart , .end , .data {
 	ldx #<((.end-.addrstart)+1)
