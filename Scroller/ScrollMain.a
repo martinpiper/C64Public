@@ -220,7 +220,7 @@ InitialiseGameWithoutWait
 	sta frameScrollMoveColours
 	sta frameTargetVelX
 	sta frameTargetVelY
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxMoveThisFrame
 }
 	sta ScrollerScreenCharMovedX
@@ -1033,7 +1033,11 @@ SkipLevelFrameLogic
 	dec Scroller_CountMusicUpdateInIRQNum
 }
 
-!ifdef Scroller_NoMusic {} else {
+!ifdef Scroller_NoMusic {
+!ifdef Scroller_PlaySoundEffectsDuringGame {
+	jsr SFXPlay
+}
+} else {
 !ifdef Scroller_PlaySoundEffectsDuringGame {
 	jsr SFXPlay
 } else {
@@ -1236,8 +1240,8 @@ SkipLevelFrameLogic
 	sta VIC2BorderColour
 }
 
-!ifdef Paralax_Enable {
-!ifdef Paralax_Enable_More {
+!ifdef Parallax_Enable {
+!ifdef Parallax_Enable_More {
 	jsr ParalaxUpdate
 }
 }
@@ -1277,7 +1281,7 @@ SkipLevelFrameLogic
 	jsr AfterScrollers
 }
 
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	jsr ParalaxUpdate
 }
 

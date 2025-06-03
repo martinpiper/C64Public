@@ -17,6 +17,18 @@ ResetInterfaceAndStartSendingScaledSprites
 	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
 	rts
 
+
+; Shows sprite timeout. This is a small sprite, rendered last in the top left of the screen, that will not be displayed if the sprite hardware runs out of frame draw time.
+; The left and top edges should exactly touch the borders.
+RenderTimeout
+	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 0 , 0 , $a0 , $a0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+	; These are very small and depending on the precise X pos placement should progressively be completely clipped
+;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -4 , 4 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -8 , 8 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -12 , 12 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+	rts
+
+
 TerminateScaledSpritesAndSignalReady
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_SetLatch4_A

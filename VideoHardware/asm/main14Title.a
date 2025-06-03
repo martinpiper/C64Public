@@ -1,0 +1,133 @@
+!source "main14Options.a"
+
+!to "bin/maintitle.prg", cbm
+!sal
+!sl "tmp/maintitle.map"
+!svl "tmp/maintitle.lbl"
+!pdb "tmp/maintitle.pdb"
+!cpu 6510
+!ct pet
+
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Bus20To32Bit1_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!source "AfterBurner/LandscapeDefs.a"
+!source "AfterBurner/SpriteMacros.a"
+!source "AfterBurner/SampleMacros.a"
+
+
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/APU.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!source "AfterBurner/CommonBootDefinesPre.a"
+!source "tmp\CommonBootDefines.a"
+!source "BombJack/stdlib/Audio.a"
+!source "BombJack/stdlib/Video.a"
+!source "BerzerkRedux/Rand.a"
+
+!source "tmp\Demo14ScaledSprites4Sheet.txtVars.a"
+!source "tmp\target\exportedSoundEffectsAfterBurnerDefines.a"
+
+Mode7Regs
+
+Mode7Regs_scale_dX
+	+MLittleEndian24Bit $100
+Mode7Regs_scale_dXY
+	+MLittleEndian24Bit 0
+Mode7Regs_scale_dY
+	+MLittleEndian24Bit $100
+Mode7Regs_scale_dYX
+	+MLittleEndian24Bit 0
+
+Mode7Regs_xpos
+	+MLittleEndian24Bit -10240
+Mode7Regs_ypos
+	+MLittleEndian24Bit -10240
+
+	!by 0
+	!by 0
+
+Mode7Regs_backgroundColour !by 0
+Mode7Regs_flags !by $1f
+Mode7RegsSize = * - Mode7Regs
+
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	jsr APU_ResetDisableClear
+
+	jsr Audio_Init
+
+	; Disable the C64 screen for speed
+	lda #0
+	sta VIC2ScreenControlV
+
+	jsr OneTimeInit
+
+	jsr Video_SetAddressMode7
+!for .i , Mode7RegsSize {
+	lda Mode7Regs + .i-1
+	sta CIA2PortBRS232
+}
+
+
+	; Debug, skip title and intro
+!ifndef Debug_NoTitleScreen {
+	jsr InitTitleScreen
+	jsr RunTitleScreen
+}
+	inc VIC2BorderColour
+
+	jsr Bus20To32Bit1_Init
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue 0
+
+	jmp CommonBootCode_JumpTable_LoadRun_Game
+
+
+!source "AfterBurner/Init.a"
+!source "AfterBurner/EntitySystem.a"
+!source "AfterBurner/EntitySystemSpriteDraw.a"
+!source "AfterBurner/ScaledSpriteCommon.a"
+!source "AfterBurner/TitleScreen.a"
+
+!source "AfterBurner/Maths.a"
+
+; Stub these out
+landscapeRotationsFrame !by (ScreenLandscapeNumRollSteps/2)-1
+landscapeFrameSpeed !by 1
+playerYPositionOffsetForSprites !by 0
+landscapeRotationsFrameToHorizonSpeed !fill ScreenLandscapeNumRollSteps , 0
+RenderSpritePlayer
+RenderSpritePlayerReticle
+SetupAPU
+rts
+
++MCheckNotInIOKernal
+
+; -$100 because of kExternalMemoryFiles_OnlyCheckHighAddress
++MCheckNotInMemoryRange CommonBootCode_JumpTable_Start-$100 , KERNALNMIServiceRoutineLo

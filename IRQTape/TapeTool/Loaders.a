@@ -50,12 +50,16 @@ TapeHeaderFilenameStart = $0341	; The tape header address for the filename text
 TapeHeaderFilenameLen = 4	; Up to 15 chars is fine
 !pet "lotd"
 } else {
+!ifdef TapeFilenameSet {
+	+MTapeFilenameSet
+} else {
 ; Enabling colours in the filename works but TapeHeaderFilenameStart needs to be adjusted by
 ; two chars to skip the controls chars
 TapeHeaderFilenameStart = $0343	; The tape header address for the filename text plus 2 chars
 TapeHeaderFilenameLen = 5	; Up to 13 chars is fine because of the two extra chars
 !by CHR_Clear , CHR_White
 !pet "turbo"
+}
 }
 
 !pet "                    "

@@ -91,7 +91,7 @@ mainLoop
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
-	jsr APU_ResetDisable
+	jsr APU_ResetDisableClear
 	jsr Audio_Init
 
 ;	+WaitForFire_A

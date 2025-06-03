@@ -309,7 +309,12 @@ LandscapeMapXTweak
 
 
 LandscapeFlags !by 0
+LandscapeMapRowsFreezeUpdates !by 0
+!ifdef Debug_RunGameCanyon {
+LandscapeMapRowsDataAddress !word LandscapeMapRowsData_JustCanyon
+} else {
 LandscapeMapRowsDataAddress !word LandscapeMapRowsData
+}
 landscapeFrameSpeed !by 1
 landscapeFrame !by 0
 

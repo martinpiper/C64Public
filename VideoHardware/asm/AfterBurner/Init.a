@@ -18,8 +18,13 @@ OneTimeInit
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles , kBus24Bit_VideoLayer_Priority_Mode7
 
+	; And setup the sprites layer to use the palette banks starting from 0x10
+	jsr Video_SetAddressVideoPaletteLayersRegister
+	+MBus24Bit_Send8BitValue %10
+
 	jsr Video_SetAddressVideoOverscanExtentRegisters
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+;	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeNoBorders
 
 	; Note: Not using kVideo_EnableDisplay_Use_BGColour so that the mode7 or character layer can have access to more palette entries, if it is the last layer in the list
 	lda #kVideo_EnableDisplay_Enable; | kVideo_EnableDisplay_Use_BGColour
@@ -31,7 +36,7 @@ OneTimeInit
 	; Flag
 	+MBus24Bit_Send8BitValue 2
 	; Border adjustments
-	+MBus24Bit_SendLE16BitValue -14
+	+MBus24Bit_SendLE16BitValue -15
 	+MBus24Bit_SendLE16BitValue -16
 	; Extents
 	+MBus24Bit_Send8BitValue $a3
@@ -43,6 +48,9 @@ OneTimeInit
 
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_SendLE16BitValue 84
+
+	jsr APU_ResetDisable
+	jsr APU_Disable
 	jsr APU_Enable
 
 	rts

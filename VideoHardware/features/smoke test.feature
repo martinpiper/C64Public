@@ -1327,6 +1327,7 @@ Feature: Smoke test
     Given set the video display to RGB colour 5 6 5
     Given set the video display with 32 palette banks
     And the display uses exact address matching
+    Given the display has palette layer expansion
     And enable video display bus debug output
 #    Given a new audio expansion with registers at '0x8000' and addressEx '0x40'
     Given a new audio expansion
@@ -1381,23 +1382,23 @@ Feature: Smoke test
     And the layer has overscan
     And the layer uses exact address matching
     # Layer 0
-    Given add a 2-to-1 merge layer with registers at '0xa200'
+    # Note: If comparing simulated output with emulated output, some layers need a merge layer
+#    Given add a 2-to-1 merge layer with registers at '0xa200'
+#    And the layer has 16 colours
+#    And the layer has overscan
+    # Layer 0-1
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 13.7MHz
+    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
     And the layer has 16 colours
     And the layer has overscan
-      # Layer 0-1
-#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
-#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
-#      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 13.7MHz
-      Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
-      And the layer has 16 colours
-      And the layer has overscan
-      And the layer uses exact address matching
-      # Layer 0-0
-      Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
-      And the layer has 16 colours
-      And the layer has overscan
-      And the layer uses exact address matching
-
+    And the layer uses exact address matching
+#    # Layer 0-0
+#    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
+#    And the layer has 16 colours
+#    And the layer has overscan
+#    And the layer uses exact address matching
     Given show video window
 #    Given randomly initialise all memory using seed 4321
 
@@ -1415,6 +1416,8 @@ Feature: Smoke test
     Given write data from file "tmp\ScaledSprites4.bin4" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x05' to 24bit bus at '0x8807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin5" to 24bit bus at '0x0000' and addressEx '0x05'
+	Given write data byte '0x06' to 24bit bus at '0x8807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin6" to 24bit bus at '0x0000' and addressEx '0x05'
 
 	#  Music
     # rem Then non-exact audio hardware using the EBBS
@@ -1428,15 +1431,31 @@ Feature: Smoke test
 
     # Palettes
     Given write data byte '0x00' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x01' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game1.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x02' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game2.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x03' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game3.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x04' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x0f' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+
+    # Sprite palettes: Video_SetAddressVideoPaletteLayersRegister
+    Given write data byte '0x10' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x11' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game1.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x12' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game2.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x13' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game3.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x14' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game4.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x1f' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreenSprites.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
 
 
     # Chars

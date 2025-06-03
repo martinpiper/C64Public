@@ -445,7 +445,21 @@
 
 
 
-* Demo14: Refueling aircraft sequence
+
+* Demo14:
+	Stage 10 in the debug menu has stone pillars with rotation frames?
+	It also seems to have nice rocks?
+	* Also the rocks seem to have height, could be extra objects with rotated/scaled offsets using the same graphics
+	The emulator crashes during this stage?
+
+
+
+
+* Demo14: Stage 13
+	Seems to have a car during the landing
+	Motorbike?
+
+
 
 
 
@@ -473,21 +487,6 @@
 
 
 
-* Demo14: Landscape
-	* List of enemy types to spawn in the section
-	* List of enemy types that are allowed to exit from the section
-		When wanting to exit, no new spawns unless they are in the exit list
-			>> When kLandscapeMapRowsData_size is added to LandscapeMapRowsDataAddress
-			> The and #$f0 needs to compare with an advancing $10 $20 $30 $40 etc if the exit condition check fails, otherwise the whole current landscape chunk will loop around and take too long?
-		Then remove at least one enemy type from the common palette to make room for the explosions palette(s)
-		Enemies that are local to a landscape should probably be first in the palette
-		>> .enemyTypes
-			Need mapping to a byte type for faster matching
-		>> EntityFindFreeSlot
-
-
-
-
 * Rotate move ObjectDraw16 and ObjectDraw17 so they appear a bit above the other landscape objects. Like the canyon but include rotation/position offset for the specific frames.
 
 
@@ -496,13 +495,79 @@
 
 
 * Demo14: Shooting the landscape should cause explosions
+	Bullets done, certains buildings could do with larger explosions. There are animation frames for this available in assets\Demo14\BulletsExplosions
+		>> .largeExplosion ObjectDraw19 ObjectDraw20 ObjectDraw21
+	The canyon large vertical explosions, for the radio towers, (Canyon\t-1850 etc) currently use an extra palette, this would need some enemies removed from the common palettes
+		>> ObjectDraw22 - ObjectDraw26
+			>> .noCanyonCheckRadioTower
+	The player and other landscape explosions also cause extra palettes, these will need some common palette savings, as above.
 
 
 
 
-* Demo14: When diving the fire direction should impact the ground, to follow the reticle, at the moment it doesn't
+* Demo14: Turn off the tiles layer when not in runway mode
 
 
 
 
 
+* HardwareTest_VideoPattern0 needs mode7 and APU options
+	Mode7 : Just a partially rotated and scaled screen
+	APU : Very simple colour palette split, perhaps two or three areas
+		This will make it easier to see if the APU is working on bootup.
+
+
+
+
+* Demo14: Canyon wall collide
+	* Explode the player
+		Yes: "Demo14\BulletsExplosions\t-731.png" "Demo14\BulletsExplosions\t-300.png" 
+		No: "Demo14\BulletsExplosions\t-509.png"  "Demo14\BulletsExplosions\t-514.png" "Demo14\Bull "Demo14\BulletsExplosions\t-528.png"etsExplosions\t-523.png" "Demo14\BulletsExplosions\t-365.png"
+			Palette 1 and 4 are problems
+		* Maybe reduce colours in the mode7 sky?
+		* Maybe upgrade the video board to have a palette or value per layer?
+			This would allow 256 colours, per layer, without raster based effects
+			* Last two bits of the palete bank as xor value using 74ls86
+			Two bits per layer, 8 bits in a new register, probably after the palette bank register
+			>> Two options, source layer pass through these bits via the layer priority selector, more logic updates...
+			>> Or other option use the final layer priority after the priority selector and use the bits from the register, much less logic...
+				> Given we know the layer priority select, do we get much benefit from adding more logic to pass through these bits?
+			* This would allow the sprites4 layer to use the upper 16 palettes, and the chars/tiles/mode7 to use the lower 16 palettes, basically by toggling the upper bit for sprites4
+				>> A test conversion with game palette 1 (16 entries), by removing the --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal and --loadpaletteraw ..\tmp\Demo14TitleChars.pal  and --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal results in 14 palettes. This would be enough to include extra explosions.
+			* This is more complex than first thought
+				* The background register, if active, would assume top two bits as always the palette bank, or have its own two-xor bits register (or values elsewhere)
+				* The PALBANK register will need to be selected without modification when writing, but can use the selected value when reading
+		* Done: @TC-14 would need updating to support Sprites4 and Sprites V9.5, it supports Sprites2 at the moment
+			>> Perfect: c:\work\BombJack\output\compareimagesForTestCase.bat 42 TC-14
+		* @TC-14  Needs some background register checks, changing colours
+			>> Given the display has palette layer expansion
+			>> Video: PALLAYERA0/1 PALLAYERB0/1 PALLAYERC0/1 PALLAYERD0/1 PALLAYERZ0/1 (for background)
+			>> c:\work\BombJack\output\compareimagesForTestCase.bat 67 TC-14
+				Looks good
+			>> kBus24Bit_VideoLayer_ExpandedPaletteLayer kBus24Bit_VideoLayer_PaletteLayers
+			>> Video_SetAddressVideoPaletteLayersRegister
+			>> Updated VBlankUpdatePaletteColours
+			>> Checked game emulation with simulation, seems OK, including the engine colour changes
+		* Done: Need to remove the extra chars/mode7 palette loads from the sprites conversions and save separate palettes
+			Before:
+				01/06/2025  08:17 pm                48 Demo14ScaledSprites4Clouds.pal
+				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game0.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game1.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game2.pal
+				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game3.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game4.pal
+				01/06/2025  08:17 pm               288 Demo14ScaledSprites4TitleScreen.pal
+				01/06/2025  08:17 pm                20 Demo14TitleChars.pal
+			After:
+				03/06/2025  11:10 am                48 Demo14ScaledSprites4Clouds.pal
+				03/06/2025  11:10 am               416 Demo14ScaledSprites4Game0.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game1.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game2.pal
+				03/06/2025  11:11 am               416 Demo14ScaledSprites4Game3.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game4.pal
+				03/06/2025  11:10 am                96 Demo14ScaledSprites4TitleScreen.pal
+				03/06/2025  11:10 am               480 Demo14ScaledSprites4TitleScreenSprites.pal
+	* Reset the canyon walls to make them wide while exploding the player, to avoid the player escaping the canyon
+		+MByteValueToAddress_A 0 , CanyonOffset
+		+MByteValueToAddress_A 10 , CanyonWidth
+	* Player next life sequence, scale in player from large to normal and flash the player

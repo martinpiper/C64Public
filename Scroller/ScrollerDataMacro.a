@@ -3,6 +3,7 @@
 
 !macro SEUCKFileData .size, .offset {
 !set .offset = $1a + 2 - $900 + .offset
+;!bin "C:\temp\tseuck.prg",.size,.offset
 !bin "../SEUCK/GAME1__I.P00",.size,.offset
 ;!bin "../SEUCK/Debug1/BLLTSQNC.P00",.size,.offset
 ; For GAME2 it's a good idea to enable Multiplex_MaintainPriority and Multiplex_ReverseOrder
@@ -23,7 +24,7 @@
 ; From DirectionalDebug2.vsf this doesn't have the normal P00 header so subtract $1a
 ;!bin "../SEUCK/directiondeb2 .i",.size,.offset-$1a
 
-; A debug file to demonstrate paralax scrolling with two levels. Use with Paralax_Enable enabled
+; A debug file to demonstrate parallax scrolling with two levels. Use with Parallax_Enable enabled
 ;!bin "../SEUCK/PARLXTST.P00",.size,.offset
 ; A debug file to aid in debugging border sprite timing issues. Push the screen and different numbers of sprites appear under the border.
 ;!bin "../SEUCK/BRDRSPRT.P00",.size,.offset
@@ -100,9 +101,13 @@
 
 
 ; This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 !macro SEUCKFileDataParalaxBlock .size, .offset {
 !set .offset = $1a + 2 - $900 + .offset
+!ifdef SimpleParallax_Enable {
+!bin "C:\temp\tseuck.prg",.size,.offset
+} else {
 !bin "../SEUCK/PRLXBLCK.P00",.size,.offset
+}
 }
 }

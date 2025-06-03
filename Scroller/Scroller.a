@@ -59,7 +59,7 @@ ScrollerInitVariables
 	sta frameScrollOldY
 	sta scrollerRealMovementXPixels
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 	sta paralaxScrollYPixels
 }
@@ -191,7 +191,7 @@ ScrollerCalculate
 	lda #0
 	sta scrollerRealMovementXPixels
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 	sta paralaxScrollYPixels
 }
@@ -211,12 +211,12 @@ ScrollerCalculate
 	sta frameScrollY
 	lda frameScrollPreCalcXVel
 	sta scrollerRealMovementXPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 }
 	lda frameScrollPreCalcYVel
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollYPixels
 }
 
@@ -239,7 +239,7 @@ framePauseMoveColours !by 0
 	lda #0
 	sta scrollerRealMovementXPixels
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 	sta paralaxScrollYPixels
 }
@@ -278,7 +278,7 @@ framePauseMoveColours !by 0
 	ldy #0
 	lda frameTargetVelX
 	sta scrollerRealMovementXPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 }
 	sta frameScrollPreCalcXVel
@@ -303,7 +303,7 @@ framePauseMoveColours !by 0
 	lda frameTargetVelY
 	sta scrollerRealMovementYPixels
 	sta frameScrollPreCalcYVel
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollYPixels
 }
 	lda frameScrollY
@@ -349,7 +349,7 @@ framePauseMoveColours !by 0
 	sec
 	sbc frameScrollOldX
 	sta scrollerRealMovementXPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 }
 	lda #8
@@ -370,7 +370,7 @@ framePauseMoveColours !by 0
 	sec
 	sbc frameScrollOldX
 	sta scrollerRealMovementXPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollXPixels
 }
 	ldx frameScrollPreCalcX
@@ -387,7 +387,7 @@ framePauseMoveColours !by 0
 	sec
 	sbc frameScrollOldY
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollYPixels
 }
 	lda #8
@@ -408,7 +408,7 @@ framePauseMoveColours !by 0
 	sec
 	sbc frameScrollOldY
 	sta scrollerRealMovementYPixels
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	sta paralaxScrollYPixels
 }
 	ldx frameScrollPreCalcY

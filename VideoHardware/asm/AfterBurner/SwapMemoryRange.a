@@ -1,0 +1,29 @@
+!zn
+; TODO: This actually just copies, it should swap
+SwapMemoryRange
+	lda ZPProcessorPort
+	pha
+	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
+
+.ms1
+SwapMemoryRange_block1 = *+1
+	lda Game_CodeStart
+SwapMemoryRange_block2 = *+1
+	sta CodeOverlayStart
+	+MIncAddr16 SwapMemoryRange_block1 , SwapMemoryRange_block1 + 1
+	+MIncAddr16 SwapMemoryRange_block2 , SwapMemoryRange_block2 + 1
+
+	lda SwapMemoryRange_block1
+SwapMemoryRange_block1EndLo = *+1
+	cmp #<Game_CodeEnd
+	bne .ms1
+
+	lda SwapMemoryRange_block1+1
+SwapMemoryRange_block1EndHi = *+1
+	cmp #>Game_CodeEnd
+	bne .ms1
+
+	pla
+	sta ZPProcessorPort
+
+	rts

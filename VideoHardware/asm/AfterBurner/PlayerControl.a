@@ -372,6 +372,26 @@ PlayerPositionToForHorizonAndLandscape
 	sta playerYPositionOffsetForHorizon
 	rts
 
+; This does not alter the rendered player sprite position...
+PlayerPositionToForHorizonAndLandscape2
+	lda playerYPositionOffset2
+	+M_ASR
+;	+M_ASR
+	sta playerYPositionOffsetForSprites
+	clc
+	adc #ScreenLandscapeOriginYPos
+	sta playerYPositionOffsetForLandscape
+
+	; Normalise for horizon
+	lda playerYPositionOffset2
+	clc
+	adc #50
+	lsr
+	lsr
+	sta playerYPositionOffsetForHorizon
+	rts
+
+
 playerYPositionOffsetSpeedReduce
 	; If there is no vertical input then slowly reduce the offset back to the middle
 	lda playerYPositionOffsetSpeed
@@ -390,6 +410,17 @@ playerYPositionOffsetSpeedReduce
 	rts
 
 
+playerYPositionOffsetReduce
+	lda playerYPositionOffset
+	beq .noMoreAdjustment
+	bmi .makeMore3
+	dec playerYPositionOffset
+	jmp .noMoreAdjustment
+.makeMore3
+	inc playerYPositionOffset
+.noMoreAdjustment
+	rts
+
 
 playerXPositionOffset
 	!by 0
@@ -398,6 +429,9 @@ playerYPositionOffsetSpeed
 	!by 0
 
 playerYPositionOffset
+	!by 0
+
+playerYPositionOffset2
 	!by 0
 
 playerYPositionOffsetForHorizon
@@ -543,7 +577,7 @@ RenderSpritePlayerReticle
 ;	clc
 ;	adc playerYPositionOffset
 
-	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , -1
 	rts
 
 

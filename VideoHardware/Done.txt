@@ -1486,6 +1486,10 @@
 
 
 
+* Demo14: When diving the fire direction should impact the ground, to follow the reticle, at the moment it doesn't
+
+
+
 
 * Animate: ObjectDraw16 with ObjectDraw17 and then removes the frame?
 	Or maybe just alternate?
@@ -1525,3 +1529,124 @@
 	* The title screen rotating ball grid could also use this
 	>> !macro MFrameCompensate_30fps_Before ~.labelBefore , .labelOver {
 		!macro MFrameCompensate_30fps_After .labelBefore , ~.labelOver {
+
+
+
+
+* Demo14: The end of the runway during the takeoff could be delayed a bit, the end building object
+	Also clear a few rows beyond the last building object, to remvoe any tall trees. Add some small bushes or blank space.
+
+
+
+
+* Memory is getting tight for a single load, but there is still space under the IO area
+	Perhaps move the title screen (and maybe the carrier game intro) to under the IO and copy them into CodeOverlayStart
+	>> Or utilise the external RAM expansion and have the biit plus title screen as one load, and then the game as another load.
+	>> Created main14Title.a and main14Game.a and these are loaded from the external memory
+
+
+
+* Optimise CommonFileCopyAndRunCode etc
+	>> Assume start address, skip first two bytes, remove length calculation
+	>> Optimise the end of file check
+	>> Only use the processor port when copying to under $dxxx
+	>> Only check high address value on copy option
+		>> kExternalMemoryFiles_OnlyCheckHighAddress
+
+
+
+* Demo14: Extract out "; Better APU setup, clear" and tidy the entry points of the title and game code considering it has already run the boot code
+	>> Using APU_ResetDisableClear
+
+
+
+* jmp $fd00 >> "; TODO: Magic number"
+	Make this a common define
+	>> Extract the common bus24/bus32 routine addresses and remove them from the other game files
+		> Probably assemble the blob first, extract the labels (sed), create an include label file, include the binary blob in the boot
+		> This avoids assembling the entire boot twice
+		>> !source "tmp\CommonBootDefines.a" replaces Bus24Bit.a and Bus20To32Bit1.a
+		>> !source "AfterBurner/CommonBootDefinesPre.a"
+
+
+
+* Demo14: Move common build options to a separate file
+	!source "main14Options.a"
+
+
+
+* Demo14: Refueling aircraft sequence
+	Stage 3/9 in the debug menu
+	Stage 9 is better since it is refueling during the daytime, not nighttime palette
+	assets\Demo14\Refuel\
+	>> Don't seem to be able to extract the top portion of the refueling aircraft (engines and tail), probably due to them being clipped off the top of the screen.
+		* Probably just use the extracted graphics of the bottom, hose, and wings right at the top of the screen
+		>> Added: C:\Work\mame\src\mame\sega\sega16sp.cpp "// Add in calcHeight" : savedIndex ^= ((uint64_t)calcHeight) << 32;
+			> This causes more sprites to be written, but does include the whole airplane graphics now
+			> Updated --removeDuplicates to remove the smaller image (any sub-image)
+	>> Debug_RunGameRefueling asm\AfterBurner\GameRefueling.a
+	>> Suspend landscape map calculation while refueling sequence is active
+		LandscapeMapRowsFreezeUpdates
+
+
+
+* Demo14: Refueling aircraft sequence
+	* Move the player aicraft up and over to the hose and back to the middle
+	* When the tanker is large, stop drawing the side wings
+
+
+
+* Demo14: Memory usage with varying options
+	UsingMaxHardwareScaleTabValue = 255
+	$190-$1ff:$70
+	$c5e4-$cfff:$a1c
+	$d236-$dfff:$dca
+	$fbf9-$ffff:$407
+
+	UsingMaxHardwareScaleTabValue = 220
+	$190-$1ff:$70
+	$b87e-$cfff:$1782
+	$d236-$dfff:$dca
+	$fb90-$ffff:$470
+
+	UsingMaxHardwareScaleTabValue = 230
+	$190-$1ff:$70
+	$bc52-$cfff:$13ae
+	$d236-$dfff:$dca
+	$fbae-$ffff:$452
+
+
+
+
+* Demo14: The canyon rock walls landscape objects should really be created by an algorithm that creates a deviating path
+	* When the player dies the path opens up wide, observed in the arcade version
+	* The path gets narrower and wider for difficulty, also observed in the arcade version
+	* This removes the landscape objects from the random placement algorithm
+	* Randomly created radio towers and objects outside of the canyon rock walls can then be removed
+	** Also remove ground based objects just before and after the canyon pieces (to remove rendering issues with lower objects)
+	>> ; Calculate the canyon walls
+	>> Added ObjectDraw18
+
+
+
+
+
+* Demo14: Landscape
+	* List of enemy types to spawn in the section
+	* List of enemy types that are allowed to exit from the section
+		When wanting to exit, no new spawns unless they are in the exit list
+			>> When kLandscapeMapRowsData_size is added to LandscapeMapRowsDataAddress
+			> The and #$f0 needs to compare with an advancing $10 $20 $30 $40 etc if the exit condition check fails, otherwise the whole current landscape chunk will loop around and take too long?
+		Then remove at least one enemy type from the common palette to make room for the explosions palette(s)
+		Enemies that are local to a landscape should probably be first in the palette, this will allow the same enemies to be used in multiple landscapes, as long as their position in the palettes are the same
+		>> Enemies could use dynamic palettes based on what enemies are active, since they are quicker and easier to update compared to the optimised landscape draw.
+			But that would need careful palette management in the conversion pipeline. For example by reserving several palette slots in the same range.
+		>> .enemyTypes
+			Need mapping to a byte type for faster matching
+		>> EntityFindFreeSlot
+		>> EntityTypeIndex default = -1
+		>> SpawnList_enemyTypesIndex is a list of 8 types that can be spawned, probability distribution, like the landscape map definition.
+		>> LandscapeMapRowsData_EntityObjects
+		>> ; Check active entity types for exit criteria
+			>> LandscapeMapRowsData_EntityObjectsExit
+

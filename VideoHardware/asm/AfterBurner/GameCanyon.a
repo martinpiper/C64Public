@@ -2,9 +2,14 @@
 InitGameCanyon
 	jsr Bus20To32Bit1_Init
 
+!ifdef Debug_RunGameCanyon {
+	+MByteValueToAddress_A 2 , GamePaletteBank
+}
+
 	+MByteValueToAddress_A 1 , PlayerControl_disableRoll
 	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
 	+MByteValueToAddress_A 0 , landscapeScrollXFrame
+	+MByteValueToAddress_A 0 , RunGameCanyon_CommonFrame_enableXMovement
 	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
 
 	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
@@ -61,52 +66,40 @@ mainLoop5b
 
 	; Now the game portion of the canyon
 ;	+MByteValueToAddress_A 0 , landscapeHeightsFrame
+	+MByteValueToAddress_A 1 , RunGameCanyon_CommonFrame_enableXMovement
+
+	+MByteValueToAddress_A 0 , CanyonOffset
+	+MByteValueToAddress_A 10 , CanyonWidth
+	; The starting offset for the canyon
+	lda LandscapeMapRowOffset
+	and #$0f
+	sta CanyonOffsetStart
+
 
 mainLoop5c
 	jsr RunGameCanyon_CommonFrame
+
+	jsr CalculateCanyon
 
 	jsr LandscapeRenderScrollX
 
 	jsr RenderTimeout
 	jsr TerminateScaledSpritesAndSignalReady
 
-	lda playerXPositionOffset
-	cmp #10
-	+IfRegGreaterThanOrEqualToVal .mvLeft
-	cmp #-10
-	+IfRegLessThanOrEqualToVal .mvRight
-
-	jmp .mv1
-
-.mvLeft
-	dec landscapeScrollXFrame
-	bpl .mv1
-	+MByteValueToAddress_A landscapeScrollXMax , landscapeScrollXFrame
-	inc LandscapeMapRowOffset
-	jmp .mv1
-.mvRight
-	inc landscapeScrollXFrame
-	lda landscapeScrollXFrame
-	cmp #landscapeScrollXMax+1
-	bne .mv1
-	+MByteValueToAddress_A 0 , landscapeScrollXFrame
-	dec LandscapeMapRowOffset
-	jmp .mv1
-.mv1
-
-	; Do not exit the canyon if debugging it
-!ifdef Debug_RunGameCanyon {
-	jmp mainLoop5c
-}
-
 	; Loop while the canyon flags are active
 	lda #kLandscapeMapRowsData_flags_doCanyon
 	bit LandscapeFlags
 	+lbne mainLoop5c
 
+	; Do not exit the canyon if debugging it
+!ifdef Debug_RunGameCanyon {
+	+MWordValueToAddress_A LandscapeMapRowsData_JustCanyon , LandscapeMapRowsDataAddress
+	jmp mainLoop5c
+}
 
 
 	; Now gain height again
+	+MByteValueToAddress_A 0 , RunGameCanyon_CommonFrame_enableXMovement
 	+MByteValueToAddress_A 2 , landscapeFrameSpeed
 	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
@@ -143,6 +136,7 @@ mainLoop6b
 
 .endSequenceTimeout !by 0
 
+RunGameCanyon_CommonFrame_enableXMovement !by 0
 
 RunGameCanyon_CommonFrame
 	jsr Video_WaitVBlank
@@ -160,6 +154,32 @@ RunGameCanyon_CommonFrame
 	jsr EntityUpdateObjects
 	jsr LandscapeAnimate
 
+	lda RunGameCanyon_CommonFrame_enableXMovement
+	beq .mv1
+	lda playerXPositionOffset
+	cmp #10
+	+IfRegGreaterThanOrEqualToVal .mvLeft
+	cmp #-10
+	+IfRegLessThanOrEqualToVal .mvRight
+
+	jmp .mv1
+
+.mvLeft
+	dec landscapeScrollXFrame
+	bpl .mv1
+	+MByteValueToAddress_A landscapeScrollXMax , landscapeScrollXFrame
+	inc LandscapeMapRowOffset
+	jmp .mv1
+.mvRight
+	inc landscapeScrollXFrame
+	lda landscapeScrollXFrame
+	cmp #landscapeScrollXMax+1
+	bne .mv1
+	+MByteValueToAddress_A 0 , landscapeScrollXFrame
+	dec LandscapeMapRowOffset
+	jmp .mv1
+.mv1
+
 	+MFrameCompensate_30fps_After  .frameCompensate1 , ~.frameCompensate1o
 
 	jsr EntitySort
@@ -168,3 +188,158 @@ RunGameCanyon_CommonFrame
 
 	jsr EntityRenderSpritesDirectMode
 	rts
+
+
+
+!zn
+CanyonOffsetStart	!by 0
+CanyonOffset		!by 4
+CanyonWidth			!by 3
+CanyonPreviousLandscapeMapRowOffset !by 0
+CanyonState			!by 0
+CalculateCanyon
+	; Calculate the canyon walls
+	lda LandscapeMapRowOffset
+	and #$f0
+	cmp CanyonPreviousLandscapeMapRowOffset
+	bne .changed1
+	rts
+.changed1
+	sta CanyonPreviousLandscapeMapRowOffset
+	clc
+	adc CanyonOffsetStart
+	sec
+	sbc #16*8
+	tax
+
+	ldy CanyonOffset
+	beq .o3
+	lda #0
+.l1
+	sta LandscapeMap,x
+	inx ; Note: 256 byte wraparound
+	dey
+	bne .l1
+.o3
+	; Draw the left wall and also remove adjacent landscape map entries
+	lda #13
+	sta LandscapeMap,x
+	txa
+	pha
+	sec
+	sbc #16 ; Note: 256 byte wraparound
+	tax
+	lda LandscapeMap,x
+	cmp #13
+	beq .o1
+	lda #0
+	sta LandscapeMap,x
+.o1
+	pla
+	tax
+	inx ; Note: 256 byte wraparound
+	lda #0
+	sta LandscapeMap,x
+	inx ; Note: 256 byte wraparound
+
+	; Middle portion skip
+	txa
+	clc
+	adc CanyonWidth
+	tax
+
+	; Draw the right wall and also remove adjacent landscape map entries
+	lda #0
+	sta LandscapeMap,x
+	inx ; Note: 256 byte wraparound
+	lda #13
+	sta LandscapeMap,x
+	txa
+	pha
+	sec
+	sbc #16 ; Note: 256 byte wraparound
+	tax
+	lda LandscapeMap,x
+	cmp #13
+	beq .o2
+	lda #0
+	sta LandscapeMap,x
+.o2
+	pla
+	tax
+	inx ; Note: 256 byte wraparound
+
+	; And clear any remaining edge
+	lda #16-3
+	sec
+	sbc CanyonOffset
+	sbc CanyonWidth
+	tay
+	beq .o4
+.l2
+	lda #0
+	sta LandscapeMap,x
+	inx ; Note: 256 byte wraparound
+	dey
+	bne .l2
+.o4
+
+	; Make the canyon smaller until it reaches the target
+	lda CanyonWidth
+	cmp #4
+	bcc .notSmaller1
+	dec CanyonWidth
+.eo1 lda #0
+	bne .notSmaller1
+	inc CanyonOffset
+.notSmaller1
+	lda .eo1+1
+	eor #1
+	sta .eo1+1
+
+	; Modify the canyon state
+	inc CanyonState
+	lda CanyonState
+	lsr
+	lsr
+	and #$f
+	tax
+
+	lda .canyonStateTab,x
+	and #%1
+	beq .not1
+	lda CanyonOffset
+	beq .not1
+	dec CanyonOffset
+.not1
+	lda .canyonStateTab,x
+	and #%10
+	beq .not2
+	lda CanyonOffset
+	cmp #8
+	bcs .not2
+	inc CanyonOffset
+.not2
+	lda .canyonStateTab,x
+	and #%100
+	beq .not3
+	lda CanyonWidth
+	cmp #2
+	beq .not3
+	dec CanyonWidth
+.not3
+	lda .canyonStateTab,x
+	and #%1000
+	beq .not4
+	lda CanyonWidth
+	cmp #6
+	beq .not4
+	inc CanyonWidth
+.not4
+	rts
+
+.canyonStateTab
+	!by 0 , 0 , 0 , %10
+	!by %10 , %1 , %10 , %100
+	!by %100 , %1 , %10 , %10
+	!by %1 , %1000 , %1000 , 0

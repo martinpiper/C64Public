@@ -1,7 +1,8 @@
 !zn
 ObjectDrawLo
 	!word ObjectDraw1 , ObjectDraw2 , ObjectDraw3 , ObjectDraw4 , ObjectDraw5 , ObjectDraw6 , ObjectDraw7 , ObjectDraw8 , ObjectDraw9 , ObjectDraw10 , ObjectDraw11
-	!word ObjectDraw12 , ObjectDraw13 , ObjectDraw14 , ObjectDraw15 , ObjectDraw16 , ObjectDraw17
+	!word ObjectDraw12 , ObjectDraw13 , ObjectDraw14 , ObjectDraw15 , ObjectDraw16 , ObjectDraw17 , ObjectDraw18 , ObjectDraw19 , ObjectDraw20 , ObjectDraw21
+	!word ObjectDraw22 , ObjectDraw23 , ObjectDraw24 , ObjectDraw25 , ObjectDraw26
 !swizzle ObjectDrawLo , (* - ObjectDrawLo) / 2 , 2
 ObjectDrawHi = (* + ObjectDrawLo) / 2	; Middle :)
 
@@ -298,6 +299,7 @@ ObjectDraw11_30
 	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_42_0_0_0_colour , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_42_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_42_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_42_0_0_0_tileHeight , 1 , 0
 	jmp ObjectDrawReturn
 
+; Radio tower
 ObjectDraw12
 	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , 2 , 0
 	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1692_0_0_0_colour , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1692_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidth
@@ -532,5 +534,53 @@ ObjectDraw17_350
 ObjectDraw17_345
 ObjectDraw17_340
 	+MObjectDrawWithScaleFlips kVarsEmitSpriteFrame_t_231_0_0_0_colour , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_231_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_231_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_231_0_0_0_tileHeight , 0 , 0
+	jmp ObjectDrawReturn
+
+
+
+; Special smaller version of ObjectDraw1
+ObjectDraw18
+	+MAdjustObjectScaleBySmaller 32 , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileHeightScaleTab , 0 , 1
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1039_0_0_0_colour , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1039_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1039_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+
+; Ground explosion frames
+ObjectDraw19
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_et_317_0_0_0_colour , kVarsEmitSpriteFrame_et_317_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_317_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_317_0_0_0_tileAddress , kVarsEmitSpriteFrame_et_317_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw20
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_et_318_0_0_0_colour , kVarsEmitSpriteFrame_et_318_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_318_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_318_0_0_0_tileAddress , kVarsEmitSpriteFrame_et_318_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw21
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_et_319_0_0_0_colour , kVarsEmitSpriteFrame_et_319_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_319_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_319_0_0_0_tileAddress , kVarsEmitSpriteFrame_et_319_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+; Radio tower explosions
+ObjectDraw22
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1850_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1850_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1850_0_0_0_colour , kVarsEmitSpriteFrame_t_1850_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1850_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1850_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1850_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw23
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1852_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1852_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1852_0_0_0_colour , kVarsEmitSpriteFrame_t_1852_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1852_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1852_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1852_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw24
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1853_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1853_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1853_0_0_0_colour , kVarsEmitSpriteFrame_t_1853_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1853_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1853_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1853_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw25
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1855_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1855_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1855_0_0_0_colour , kVarsEmitSpriteFrame_t_1855_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1855_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1855_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1855_0_0_0_tileWidth
+	jmp ObjectDrawReturn
+
+ObjectDraw26
+	+MAdjustObjectScaleBy 8 , kVarsEmitSpriteFrame_t_1858_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1858_0_0_0_tileHeightScaleTab , 2 , 0
+	+MObjectDrawWithScale kVarsEmitSpriteFrame_t_1858_0_0_0_colour , kVarsEmitSpriteFrame_t_1858_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1858_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1858_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1858_0_0_0_tileWidth
 	jmp ObjectDrawReturn
 

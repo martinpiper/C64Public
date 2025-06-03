@@ -1,0 +1,36 @@
+!source "main14Options.a"
+
+!to "bin/maincommon.prg", cbm
+!sal
+!sl "tmp/maincommon.map"
+!svl "tmp/maincommon.lbl"
+!pdb "tmp/maincommon.pdb"
+!cpu 6510
+!ct pet
+
+
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+!source "stdlib/LongBranches.a"
+
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Bus20To32Bit1_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!source "tmp\Demo14AddFile_Title.a"
+!source "tmp\Demo14AddFile_Game.a"
+
+!source "AfterBurner/CommonBootDefinesPre.a"
+
+*=CommonBootCode_JumpTable_End
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Bus20To32Bit1.a"
+
+; This is only referenced by Bus24Bit_CopySmallData when using Bus24Bit_WriteMakeSafe
+; Which is not used in Demo14, so it is trapped to a brk
+Video_WaitVBlank
+	brk
+
+EndCommonBootCode

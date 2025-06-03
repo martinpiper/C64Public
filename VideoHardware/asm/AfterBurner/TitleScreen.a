@@ -11,6 +11,8 @@ InitTitleScreen
 
 	jsr Video_SetAddressVideoPaletteBankRegister
 	+MBus24Bit_Send8BitValue $0f
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_124
 
 	rts
 

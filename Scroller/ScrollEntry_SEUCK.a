@@ -198,30 +198,47 @@ Scroller_IsHorizontal = 1
 ;Scroller_NoMusic = 1
 
 
-; Enable this to add paralax scrolling update code to the SEUCK Redux engine
-;Paralax_Enable = 1
-; Two layer paralax scrolling of up to two 5x5 character blocks with optional proper masking or logical OR combination.
-; Each column of paralax chars are sequential. i.e. The blocks numbers must increment as they go down the block.
+; Enable this to add parallax scrolling update code to the SEUCK Redux engine
+;Parallax_Enable = 1
+; Two layer parallax scrolling of up to two 5x5 character blocks with optional proper masking or logical OR combination.
+; Each column of parallax chars are sequential. i.e. The blocks numbers must increment as they go down the block.
 ; Enable PARLXTST.P00 (saved from ParalaxTest.vsf) in the ScrollerData.a file
 ; PARLXTST.P00 is the main game data file.
-; The Paralax_Level1CharData, Paralax_Level1CharDataMask and Paralax_Level2CharData use a separate file in the +SEUCKFileDataParalaxBlock macro.
+; The Parallax_Level1CharData, Parallax_Level1CharDataMask and Parallax_Level2CharData use a separate file in the +SEUCKFileDataParalaxBlock macro.
 ;   This uses only the characters from the block data in PRLXBLCK.P00 saved from ParalaxTestBlocksOnly.vsf
-;	This means the two level paralax char data doesn't need to be in the main SEUCK file (the rendered characters that show the paralax effect still need to be reserved of course).
-;   All characters from Paralax_CharStart to Paralax_CharStart+(Paralax_Width*Paralax_Height)-1 will be used for rendering the effect. Don't try to put your characters there because they will get overwritten.
-!ifdef Paralax_Enable {
+;	This means the two level parallax char data doesn't need to be in the main SEUCK file (the rendered characters that show the parallax effect still need to be reserved of course).
+;   All characters from Parallax_CharStart to Parallax_CharStart+(Parallax_Width*Parallax_Height)-1 will be used for rendering the effect. Don't try to put your characters there because they will get overwritten.
+!ifdef Parallax_Enable {
+; Define this to enable simple parallax scrolling, no parallax levels, just rotating in place the defined block of characters
+;SimpleParallax_Enable = 1
+!ifdef SimpleParallax_Enable {
+; The start character in the main SEUCK file for the displayed parallax scrolling in the game
+Parallax_CharStart = 1
+; The parallax area in characters.
+Parallax_Width = 3
+Parallax_Height = 1
+; The start offsets for the two parallax levels
+; Foreground level character offset
+Parallax_CharLevel1 = 1
+} else {
 ; Enable this to use a proper bitwise mask when updating the two different paralax levels.
-Paralax_MaskEnable = 1
+Parallax_MaskEnable = 1
 ; The start character in the main SEUCK file for the displayed paralax scrolling in the game
-Paralax_CharStart = 0
+Parallax_CharStart = 0
 ; The paralax area in characters.
-Paralax_Width = 5
-Paralax_Height = 5
+Parallax_Width = 5
+Parallax_Height = 5
 ; The start offsets for the two paralax levels
-; Foreground level
-Paralax_CharLevel1 = 32
-; Background level
-Paralax_CharLevel2 = 64
+
+; Foreground level character offset
+Parallax_CharLevel1 = 32
+; Background level character offset
+Parallax_CharLevel2 = 64
 }
+
+}
+
+
 
 ; Define this to make the player fire an extra bullet that moves right
 ;ExamplePlayerBulletTwoWay = 1

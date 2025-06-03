@@ -1,0 +1,56 @@
+; Enable this to send resource data from external RAM to the hardware
+;SendResourceData = 1
+
+;Debug_JustRunGame = 1
+;Debug_NoTitleScreen = 1
+;Debug_RunGameLanding = 1
+;Debug_RunGameRefueling = 1
+;Debug_RunGameCanyon = 1
+;Debug_GameStartZeroSpeed = 1
+;Debug_SimpleLandscapeRotation = 1
+;Debug_NoSpawnEnemy=1
+
+
+kHardwareTest_UsingSprites4 = 1
+
+kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+kBus24Bit_VideoLayer_ExpandedPaletteLayers = 1
+kBus24Bit_VideoLayer_VBlankUseNMI = 1
+kBus24Bit_SpritesMaxNum = 32
+
+zeroPage_Temp0	= $2
+zeroPage_Temp1	= $3
+zeroPage_Temp2	= $4
+zeroPage_Temp3	= $5
+zeroPage_Temp4	= $6
+zeroPage_Temp5	= $7
+zeroPage_Temp6	= $8
+zeroPage_Temp7	= $9
+zeroPage_Temp8	= $a
+zeroPage_Temp9	= $b
+zeroPage_Temp9	= $b
+zeroPage_Temp10	= $c
+zeroPage_Temp11	= $d
+zeroPage_Temp12	= $e
+zeroPage_Temp13	= $f
+zeroPage_Temp14	= $10
+zeroPage_Temp15	= $11
+zeroPage_Temp16	= $12
+zeroPage_Temp17	= $13
+zeroPage_Temp18	= $14
+zeroPage_Temp19	= $15
+SortTemp0 = zeroPage_Temp0
+SortTemp1 = SortTemp0 + 1
+
+SortHardMaxEntries = 16	; The hard maximum for entries for the sort
+
+
+!source "tmp/Demo14LargeTablesIncludeFrames.a"
+; Smaller values vastly improve memory usage
+; Particularly affects objects with EntityScaleTweak
+;!set UsingMaxHardwareScaleTabValue = maxHardwareScaleTabValue
+!set UsingMaxHardwareScaleTabValue = 240	; Override, more sprite frames into the distance, but more memory
+!if UsingMaxHardwareScaleTabValue < maxHardwareScaleTabValue {
+!error "Should not be less than maxHardwareScaleTabValue otherwise the landscape won't work properly"
+}

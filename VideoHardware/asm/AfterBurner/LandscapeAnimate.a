@@ -20,6 +20,13 @@ LandscapeMapAnimation
 !by 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15
 ; Note: Bullet effects
 !by 17 , 16
-!for .i , 255 {
-!by <(.i + 17)
+; 
+!by 18
+; Explode ground
+!by 20 , 21 , 19
+; Radio tower explosion
+!by 23 , 24 , 25 , 26 , 22
+; Fill any remaining
+!for .i , 256 - (*-LandscapeMapAnimation) {
+!by <(*-LandscapeMapAnimation)
 }

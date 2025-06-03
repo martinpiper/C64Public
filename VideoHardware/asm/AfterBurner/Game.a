@@ -63,6 +63,9 @@ mainLoop2
 	lda #kLandscapeMapRowsData_flags_doCanyon
 	bit LandscapeFlags
 	bne .gameToCanyon
+	lda #kLandscapeMapRowsData_flags_doRefueling
+	bit LandscapeFlags
+	bne .gameToRefueling
 }
 
 	jmp mainLoop2
@@ -71,15 +74,22 @@ mainLoop2
 	jsr InitGameLanding
 	jsr RunGameLanding
 
+.restoreSpeed
 	+MByteValueToAddress_A 3 , landscapeFrameSpeed
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 
 	jmp mainLoop2
 
 .gameToCanyon
 	jsr InitGameCanyon
 	jsr RunGameCanyon
-
 	jmp mainLoop2
+
+.gameToRefueling
+	jsr InitGameRefueling
+	jsr RunGameRefueling
+	jmp .restoreSpeed
 
 
 RenderSpritesGame
@@ -125,21 +135,20 @@ RenderSpritesGame
 
 	rts
 
-; Shows sprite timeout. This is a small sprite, rendered last in the top left of the screen, that will not be displayed if the sprite hardware runs out of frame draw time.
-RenderTimeout
-	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 0 , 0 , $a0 , $a0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
-	rts
 
-.enemyTypes
+SpawnList_enemyTypesIndex
+	!fill 8 , 0
+
+.enemyTypesAddress
 	!word EnemyPlaneGreen_landscapeRotationsFrame_to_animation
 	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
 	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
-!swizzle .enemyTypes , 8 , 2
+	!word 0
+	!word 0
+	!word 0
+	!word 0
+	!word 0
+!swizzle .enemyTypesAddress , (*-.enemyTypesAddress)/2 , 2
 
 .spawnEverySoOften !by 1
 CheckSpawnEnemy
@@ -191,9 +200,13 @@ CheckSpawnEnemy
 	jsr Rand
 	and #7
 	tay
-	lda .enemyTypes,y
+	lda SpawnList_enemyTypesIndex,y
+	+lbmi .noSpawnThisTime
+	sta EntityTypeIndex,x
+	tay
+	lda .enemyTypesAddress,y
 	sta EntityTypeLo,x
-	lda .enemyTypes+8,y
+	lda .enemyTypesAddress+8,y
 	sta EntityTypeHi,x
 
 
@@ -210,14 +223,10 @@ CheckSpawnEnemy
 	; The enemy
 	+MPlaySample 1 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
 .noSoundSpawn1
-
+.noSpawnThisTime
 
 	rts
 
-EntityState_RemoveEntity
-	lda #0
-	sta EntityTypeHi,y
-	rts
 
 
 kPlayerBulletsForwardSpeed = 5
@@ -230,6 +239,16 @@ EntityState_Bullets
 	cmp #kEntityYPos_Ground
 	+IfRegLessThanVal EntityState_Bullets_HitGround
 	sta EntityYPos,y
+
+	; Skip the check if there aren't going to be any radio towers, it takes a long time
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
+	beq .noCanyonCheckRadioTower
+	jsr GetLandscapePositionForEntityPosition
+	lda LandscapeMap,x
+	cmp #12
+	+lbeq .isRadioTower
+.noCanyonCheckRadioTower
 
 	lda EntityXPos,y
 	clc
@@ -248,7 +267,7 @@ EntityState_Bullets
 
 	rts
 
-EntityState_Bullets_HitGround
+GetLandscapePositionForEntityPosition
 	lda LandscapeMapRowOffset
 	and #$0f
 	clc
@@ -275,7 +294,25 @@ EntityState_Bullets_HitGround
 	clc
 .smxp	adc #0
 	tax
+	rts
+
+EntityState_Bullets_HitGround
+	jsr GetLandscapePositionForEntityPosition
+	lda LandscapeMap,x
+;	jmp .isRadioTower	; Debug
+	cmp #12
+	beq .isRadioTower
+	jsr Rand
+	and #3
+	beq .largeExplosion
 	lda #16
+	jmp .storeIt
+.largeExplosion
+	lda #19
+	jmp .storeIt
+.isRadioTower
+	lda #22
+.storeIt
 	sta LandscapeMap,x
 
 ; Note: Fall through to here
@@ -289,7 +326,7 @@ EntityState_MissileForward
 	lda EntityZPos,y
 	clc
 	adc landscapeFrameSpeed
-	bcs EntityState_RemoveEntity
+	+lbcs EntityState_RemoveEntity
 	clc
 	adc #3
 	cmp #127
@@ -429,6 +466,12 @@ VBlankUpdatePaletteColours
 	sta GroundColours
 
 	; Update the engine colours
+	; Sprites use the higher palettes
+	jsr Video_SetAddressVideoPaletteBankRegister
+	lda GamePaletteBank
+	ora #$10
+	+MBus24Bit_Send8BitValueFromA
+
 	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (kVarsEmitSpriteFrame_t_10_0_0_0_colour * kBus24Bit_VideoLayer_BytesPerPalette) + kBus24Bit_VideoLayer_BytesPerColour
 	inc .engineColourIndex
 	lda .engineColourIndex
@@ -438,7 +481,11 @@ VBlankUpdatePaletteColours
 	sta .smuc1+1
 	lda .engineColourTabHi,x
 	sta .smuc1+2
-.smuc1	jmp $1234
+.smuc1	jsr $1234
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+	rts
 
 .engineColourTabLo
 .engineColourTabHi = .engineColourTabLo + 16

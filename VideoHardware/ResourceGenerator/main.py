@@ -5,7 +5,29 @@ if __name__ == '__main__':
         print("<file to append to> <ebbs> <address if ebbs != 0> file <input file if ebbs != 0>")
         print("<file to append to> <ebbs> <address if ebbs != 0> bytes <byte>...")
         print("<file to append to> checksum <block size> <number of bytes> <bytes per checksum> <output label file>")
+        print("<file to append to> addfile <filename> <output label file> <label postfix>")
         exit(-1)
+
+    if sys.argv[2] == "addfile":
+        fileOut = open(sys.argv[1], "r+b")
+        fileIn = open(sys.argv[3], "rb")
+        inBytes = fileIn.read()
+        labelFile = open(sys.argv[4], "w")
+        labelPostfix = sys.argv[5]
+
+        fileOut.seek(0, 2)
+
+        fileLen = fileOut.tell()
+
+        labelFile.write("resourceFileOffset_"+labelPostfix+" = $" + hex(fileLen & 0xffffff)[2:] + "\n")
+        labelFile.write("resourceFileSize_"+labelPostfix+" = $" + hex(len(inBytes) & 0xffffff)[2:] + "\n")
+
+        fileOut.write(inBytes)
+
+        fileOut.flush()
+        fileOut.close()
+
+        exit(0)
 
     if sys.argv[2] == "checksum":
         fileOut = open(sys.argv[1], "r+b")

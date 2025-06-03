@@ -83,8 +83,41 @@
 	lda zeroPage_Temp5
 	+MBus24Bit_Send8BitValueFromA
 	lda .widthScaleTab-1,x
-;	clc	; TODO: Why is this different on the hardware compared to the simulation and emulation?!
-;	adc #1
+	+MBus24Bit_Send8BitValueFromA
+
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+
+	; Inv scales
+	+MBus24Bit_Send8BitValueFromX
+	+MBus24Bit_Send8BitValueFromX
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+.skipDraw
+}
+
+!macro MObjectDrawWithScaleSizeCheckWithFlipX .colour , .widthScaleTab , .heightScaleTab , .address , .width {
+!set .colour = .colour | kBus24Bit_Video_FlipH
+!set .address = .address + .width - 1
+	lda .widthScaleTab-1,x
+	beq .skipDraw
+	lda .heightScaleTab-1,x
+	beq .skipDraw
+	; Palette
+	lda #.colour
+	ora zeroPage_Temp3
+	+MBus24Bit_Send8BitValueFromA
+
+	; Y pos and extent
+	lda zeroPage_Temp4
+	+MBus24Bit_Send8BitValueFromA
+	lda .heightScaleTab-1,x
+	+MBus24Bit_Send8BitValueFromA
+
+	; X pos and extent
+	lda zeroPage_Temp5
+	+MBus24Bit_Send8BitValueFromA
+	lda .widthScaleTab-1,x
 	+MBus24Bit_Send8BitValueFromA
 
 	; Address
@@ -165,7 +198,7 @@
 !macro MAdjustObjectScaleBy .scale , .widthTab , .heightTab , .widthShifts , .heightShifts {
 	; Make the object larger
 	txa
-	clc
+	sec
 	sbc #.scale
 	+lbcc ObjectDrawReturn
 	+lbeq ObjectDrawReturn
@@ -207,10 +240,51 @@
 }
 
 
+!macro MAdjustObjectScaleBySmaller .scale , .widthTab , .heightTab , .widthShifts , .heightShifts {
+	; Make the object smaller
+	txa
+	clc
+	adc #.scale
+	+lbcs ObjectDrawReturn
+	tax
+	lda .heightTab-1,x
+	+lbeq ObjectDrawReturn
+!if .heightShifts > 0 {
+!for .i , .heightShifts {
+	lsr
+}
+}
+	sta .smYTweak2+1
+	lda zeroPage_Temp4
+	sec
+.smYTweak2	sbc #0
+	sta zeroPage_Temp4
+	bcs .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBYTweak2
+	lda .widthTab-1,x
+	+lbeq ObjectDrawReturn
+!if .widthShifts > 0 {
+!for .i , .widthShifts {
+	lsr
+}
+}
+	sta .smXTweak2+1
+	lda zeroPage_Temp5
+	sec
+.smXTweak2	sbc #0
+	sta zeroPage_Temp5
+	bcs .noMSBXTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBXTweak2
+}
 
 
-
-!macro MRenderSpriteWithStrideNoScalePositionsX2 .palette , .xpos, .ypos , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
+!macro MRenderSpriteWithStrideNoScalePositionsX2 .palette , .xpos, .ypos , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride , .xposTweak {
 !if .flipX != 0 {
 !set .palette = .palette | kBus24Bit_Video_FlipH
 !set .address = .address + .tileWidth - 1
@@ -230,6 +304,28 @@
 	sta zeroPage_Temp3
 .noMSBX
 
+!if .xposTweak > 0 {
+	lda .xpos
+	clc
+	adc #.xposTweak
+	sta .xpos
+	bcc .noMSBX2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBX2
+}
+!if .xposTweak < 0 {
+	lda .xpos
+	sec
+	sbc #-.xposTweak
+	sta .xpos
+	bcs .noMSBX2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBX2
+}
 	lda .ypos
 	asl
 	sta .ypos

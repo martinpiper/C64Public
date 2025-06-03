@@ -1,0 +1,156 @@
+!zn
+
+; Option: kExternalMemoryFiles_OnlyCheckHighAddress = 1
+
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Real
+!pseudopc $02 {
+!ifdef kExternalMemoryFiles_OnlyCheckHighAddress {
+
+ExternalMemoryFiles_CommonFileCopyAndRunCode
+	ldx #ProcessorPortAllRAMWithIO
+	ldy #ProcessorPortAllRAM
+	stx ZPProcessorPort
+ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+	+MBus24Bit_Get8BitValueToA
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Store	sta $200
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	and #>SPACEMASK
+	cmp #>IOSPACE
+	beq .isIO
+.checkEnd1
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	bcs ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Run	jmp $200
+
+.isIO
+	+MZPAddr16ToZPAddr16_A ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi + 1
+	sta+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2 + 1
+ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	stx ZPProcessorPort
+	+MBus24Bit_Get8BitValueToA
+	sty ZPProcessorPort
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2	sta $200
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	and #>SPACEMASK
+	cmp #>IOSPACE
+	bne .isNotIO
+.checkEnd2
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	bcs ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	jmp ExternalMemoryFiles_CommonFileCopyAndRunCode_Run
+.isNotIO
+	stx ZPProcessorPort
+	+MZPAddr16ToZPAddr16_A ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1
+	jmp .checkEnd1
+
+} else {
+
+ExternalMemoryFiles_CommonFileCopyAndRunCode
+	ldx #ProcessorPortAllRAMWithIO
+	ldy #ProcessorPortAllRAM
+	stx ZPProcessorPort
+ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+	+MBus24Bit_Get8BitValueToA
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Store	sta $200
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1
+	bne .checkEnd1
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	and #>SPACEMASK
+	cmp #>IOSPACE
+	beq .isIO
+.checkEnd1
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndLo	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Run	jmp $200
+
+.isIO
+	+MZPAddr16ToZPAddr16_A ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
+	+MZPAddr16LoHiToZPAddr16LoHi_A ExternalMemoryFiles_CommonFileCopyAndRunCode_EndLo + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_EndLo2 + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2 + 1
+ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	stx ZPProcessorPort
+	+MBus24Bit_Get8BitValueToA
+	sty ZPProcessorPort
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2	sta $200
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
+	bne .checkEnd2
+	inc+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	and #>SPACEMASK
+	cmp #>IOSPACE
+	bne .isNotIO
+.checkEnd2
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndLo2	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2	lda #0
+	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	bne ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	jmp ExternalMemoryFiles_CommonFileCopyAndRunCode_Run
+.isNotIO
+	stx ZPProcessorPort
+	+MZPAddr16ToZPAddr16_A ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1
+	jmp .checkEnd1
+
+} ; << !ifdef kExternalMemoryFiles_OnlyCheckHighAddress
+
+}
+ExternalMemoryFiles_CommonFileCopyAndRunCode_Size = *-ExternalMemoryFiles_CommonFileCopyAndRunCode_Real
+
+ExternalMemoryFiles_CommonCopyZeropageCode
+	ldx #ExternalMemoryFiles_CommonFileCopyAndRunCode_Size
+.ccl1
+	lda ExternalMemoryFiles_CommonFileCopyAndRunCode_Real-1,x
+	sta ExternalMemoryFiles_CommonFileCopyAndRunCode-1,x
+	dex
+	bne .ccl1
+	rts
+
+!macro MExternalMemoryFiles_CopyRunFileFromExternalMemory .fileOffset , .startAddress , .fileLength , .runAddress {
+
+!if (.startAddress & SPACEMASK) = IOSPACE {
+!error ".startAddress is assumed in ExternalMemoryFiles_CommonFileCopyAndRunCode to not start in IOSPACE, the end of file logic will need to be changed"
+}
+
+	jsr Bus20To32Bit1_Init
+
+	; Hard coded expected address for identifier
+	jsr Bus20To32Bit1_SetLatch0
+	+MBus24Bit_Send8BitValue <.fileOffset
+	jsr Bus20To32Bit1_SetLatch1
+	+MBus24Bit_Send8BitValue >.fileOffset
+	jsr Bus20To32Bit1_SetLatch2
+	+MBus24Bit_Send8BitValue ^.fileOffset
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+
+	; Skip start address
+	+MBus24Bit_Get8BitValueToA
+	+MBus24Bit_Get8BitValueToA
+
+	jsr ExternalMemoryFiles_CommonCopyZeropageCode
+
+	+MWordValueToAddress_A .startAddress , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store+1
+	+MWordValueToAddress_A .runAddress , ExternalMemoryFiles_CommonFileCopyAndRunCode_Run+1
+!ifdef kExternalMemoryFiles_OnlyCheckHighAddress {
+	lda #(>(.startAddress + .fileLength - 2))+1
+	sta ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi+1
+} else {
+	+MWordValueToAddressLoHi_A .startAddress + .fileLength - 2 , ExternalMemoryFiles_CommonFileCopyAndRunCode_EndLo+1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi+1
+}
+
+	jmp ExternalMemoryFiles_CommonFileCopyAndRunCode
+}

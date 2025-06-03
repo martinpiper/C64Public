@@ -99,27 +99,29 @@ MapDataEnd
 ; last offset is therefore a memory address for the particular part of SEUCK memory.
 
 
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 !align 255,0
 ;This includes duplicate columns of paralax chars, it makes the speed code much faster since it doesn't have to do a wraparound check
-Paralax_Level1CharData
-!for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
+Parallax_Level1CharData
+!for .xpos,Parallax_Width {
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel1+((.xpos-1)*Parallax_Height))*8)
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel1+((.xpos-1)*Parallax_Height))*8)
 }
+!ifndef SimpleParallax_Enable {
 ; This mask data is processed by ScrollerDemoInitOneTimeData to create a logical mask
-!ifdef Paralax_MaskEnable {
-Paralax_Level1CharDataMask
-!for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel1+((.xpos-1)*Paralax_Height))*8)
+!ifdef Parallax_MaskEnable {
+Parallax_Level1CharDataMask
+!for .xpos,Parallax_Width {
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel1+((.xpos-1)*Parallax_Height))*8)
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel1+((.xpos-1)*Parallax_Height))*8)
 }
 }
 
-Paralax_Level2CharData
-!for .xpos,Paralax_Width {
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
-+SEUCKFileDataParalaxBlock Paralax_Height*8, $f800 + ((Paralax_CharLevel2+((.xpos-1)*Paralax_Height))*8)
+Parallax_Level2CharData
+!for .xpos,Parallax_Width {
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel2+((.xpos-1)*Parallax_Height))*8)
++SEUCKFileDataParalaxBlock Parallax_Height*8, $f800 + ((Parallax_CharLevel2+((.xpos-1)*Parallax_Height))*8)
+}
 }
 }
 

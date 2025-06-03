@@ -1,0 +1,140 @@
+!source "main14Options.a"
+
+!to "bin/maingame.prg", cbm
+!sal
+!sl "tmp/maingame.map"
+!svl "tmp/maingame.lbl"
+!pdb "tmp/maingame.pdb"
+!cpu 6510
+!ct pet
+
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+!source "stdlib/PETSCII.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Bus20To32Bit1_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+!source "AfterBurner/LandscapeDefs.a"
+!source "AfterBurner/SpriteMacros.a"
+!source "AfterBurner/SampleMacros.a"
+
+
+
+!zn
+*=$200
+start
+	sei
+	jmp mainLoop
+
+!source "tmp/FingerPrint.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/APU.a"
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+!source "AfterBurner/CommonBootDefinesPre.a"
+!source "tmp\CommonBootDefines.a"
+!source "BombJack/stdlib/Audio.a"
+!source "BombJack/stdlib/Video.a"
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "BerzerkRedux/Rand.a"
+
+!source "tmp\Demo14ScaledSprites4Sheet.txtVars.a"
+!source "tmp\target\exportedSoundEffectsAfterBurnerDefines.a"
+
+
+!zn
+mainLoop
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	jsr APU_ResetDisableClear
+
+	jsr Audio_Init
+
+	; Disable the whole display and DMA
+	; In simulation this stops destination RAM corruption
+	jsr Bus20To32Bit1_Init
+
+	; Disable the C64 screen for speed
+	lda #0
+	sta VIC2ScreenControlV
+
+	jsr OneTimeInit
+
+;	+WaitForFire_A
+
+.fullGameLoop
+	; Debug, skip title and intro
+!ifndef Debug_JustRunGame {
+	inc VIC2BorderColour
+
+	jsr InitGameIntro
+	jsr RunGameIntro
+
+	inc VIC2BorderColour
+}
+
+!ifdef Debug_RunGameRefueling {
+	jsr InitGame
+	jsr InitGameRefueling
+	jsr RunGameRefueling
+}
+
+!ifdef Debug_RunGameLanding {
+	jsr InitGame
+	jsr InitGameLanding
+	jsr RunGameLanding
+}
+
+!ifdef Debug_RunGameCanyon {
+	jsr InitGame
+	jsr InitGameCanyon
+	jsr RunGameCanyon
+}
+
+	jsr InitGame
+	jsr RunGame
+
+	jsr Bus20To32Bit1_Init
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue 0
+
+	jmp CommonBootCode_JumpTable_LoadRun_TitleScreen
+
+AudioActiveFlags !by 0
+
+!source "AfterBurner/Init.a"
+!source "AfterBurner/EntitySystem.a"
+!source "AfterBurner/EntitySystemSpriteDraw.a"
+!source "AfterBurner/ScaledSpriteCommon.a"
+!source "AfterBurner/Landscape.a"
+!source "AfterBurner/LandscapeObjectDraw.a"
+!source "AfterBurner/PlayerControl.a"
+!source "AfterBurner/Game.a"
+!source "AfterBurner/LandscapeAnimate.a"
+!source "AfterBurner/APU.a"
+
+!source "AfterBurner/GameCanyon.a"
+
++MCheckNotInIOKernal
+
+*=CHARROM
+!source "AfterBurner/LandscapeMapCalc.a"
+
+*=KERNALROM
+!source "AfterBurner/Maths.a"
+!source "AfterBurner/GameIntro.a"
+!source "AfterBurner/GameLanding.a"
+!source "AfterBurner/GameRefueling.a"
+
+; -$100 because of kExternalMemoryFiles_OnlyCheckHighAddress
++MCheckNotInMemoryRange CommonBootCode_JumpTable_Start-$100 , KERNALNMIServiceRoutineLo

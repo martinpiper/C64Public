@@ -15,7 +15,7 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>FingerPrint.a
 ..\acme.exe -v4 --msvc --lib ../ --lib ../Scroller/ ScrollEntry.a %CHOICE% ScrollEntryAfter.a
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
-rem ..\bin\LZMPi.exe -c64b ScrollerOrig.prg Scroller.prg 1024 >t.txt
+rem ..\bin\LZMPi.exe -c64mu ScrollerOrig.prg Scroller.prg 1024 >t.txt
 ..\bin\LZMPi.exe -c64mr ScrollerOrig.prg Scroller.prg 1024 >t.txt
 if not exist Scroller.prg goto error
 
@@ -171,7 +171,7 @@ rem Build the final code again to get the offsets
 if not exist Scroller.prg goto error
 copy /y Scroller.prg ScrollerOrig.prg
 rem If the game refuses to start properly, or crashes during decompression, then it might be because the -c64b decompressor does not like going all the way up to $ffff
-rem ..\bin\LZMPi.exe -c64b ScrollerOrig.prg Scroller.prg 1024 >tf.txt
+rem ..\bin\LZMPi.exe -c64mu ScrollerOrig.prg Scroller.prg 1024 >tf.txt
 ..\bin\LZMPi.exe -c64mr ScrollerOrig.prg Scroller.prg 1024 >tf.txt
 
 ..\bin\MakeCart.exe -i _f_index1.a %CART_BOOT_TYPE% -n -a $8000 -b 0 -r ..\Citadel2\Citadel2Cart_8K.prg -c 0 2 $ffff -w %CART_BOOT_TYPE_HI% -r Scroller.prg -a $8000 -b 1 -c 0 $0001 $ffff -w -a $8000 -b 2 -c 0 $2001 $ffff -w -a $8000 -b 3 -c 0 $4001 $ffff -w -a $8000 -b 4 -c 0 $6001 $ffff -w -a $8000 -b 5 -c 0 $8001 $ffff -w -a $8000 -b 6 -c 0 $a001 $ffff -w -a $8000 -b 7 -f $2000 %SCROLLER_SPEED_CODE_FILES_NUM% %SCROLLER_SPEED_CODE_FILES% %EXTRA_WILD_CARD_FILES% -o Scroller.crt >>tf.txt

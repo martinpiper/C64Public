@@ -221,6 +221,8 @@ SPRITEFRAME = SCREENRAM + SPRITEFRAMESCROFF
 BASICROM  = $A000
 CHARROM   = $D000	; See: ProcessorPortCharROMBASICKERNAL
 VIC       = $D000
+IOSPACE   = $D000
+SPACEMASK = $F000
 SID       = $D400
 COLORRAM  = $D800
 COLOURRAM = $D800
@@ -1474,6 +1476,13 @@ RasterLengthNTSCC64		= 520
 	sta .destLo
 	lda .srcHi
 	sta .destHi
+}
+
+!macro MZPAddr16LoHiToZPAddr16LoHi_A .srcLo , .srcHi , .destLo , .destHi {
+	lda+1 .srcLo
+	sta+1 .destLo
+	lda+1 .srcHi
+	sta+1 .destHi
 }
 
 !macro MWordValueTo_AX .value {

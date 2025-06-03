@@ -92,7 +92,7 @@ mainLoop
 
 	jsr Bus24Bit_Init
 
-	jsr APU_ResetDisable
+	jsr APU_ResetDisableClear
 	jsr Video_DisableDisplay
 ;	jsr DisplayData
 	jsr Video_InitDisplaySpritesScrollsBackground

@@ -254,22 +254,22 @@ ScrollerDemoInitOneTimeData
 	inx
 	bne .fc1
 
-!ifdef Paralax_MaskEnable {
-	ldx #(Paralax_Height*Paralax_Width)*8
+!ifdef Parallax_MaskEnable {
+	ldx #(Parallax_Height*Parallax_Width)*8
 .ml1
-	ldy Paralax_Level1CharDataMask-1,x
+	ldy Parallax_Level1CharDataMask-1,x
 	lda ParalaxMaskTab,y
-	sta Paralax_Level1CharDataMask-1,x
+	sta Parallax_Level1CharDataMask-1,x
 
-	ldy Paralax_Level1CharDataMask-1 + (Paralax_Height*Paralax_Width)*8,x
+	ldy Parallax_Level1CharDataMask-1 + (Parallax_Height*Parallax_Width)*8,x
 	lda ParalaxMaskTab,y
-	sta Paralax_Level1CharDataMask-1 + (Paralax_Height*Paralax_Width)*8,x
+	sta Parallax_Level1CharDataMask-1 + (Parallax_Height*Parallax_Width)*8,x
 
 	dex
 	bne .ml1
 }
 	; Force one update at the beginning
-!ifdef Paralax_Enable {
+!ifdef Parallax_Enable {
 	lda #0
 	jsr ParalaxUpdateForce
 }
@@ -283,7 +283,7 @@ ScrollerDemoInitOneTimeData
 
 	rts
 
-!ifdef Paralax_MaskEnable {
+!ifdef Parallax_MaskEnable {
 ParalaxMaskTab
 !for tline	, 256 {
 !zn {

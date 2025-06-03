@@ -48,7 +48,7 @@ start
 	jsr HardwareTest_VideoPattern0
 ;	+WaitForFire_A
 	jsr Bus24Bit_Init
-	jsr APU_ResetDisable
+	jsr APU_ResetDisableClear
 	jsr Video_DisableDisplay
 	jsr Video_SpritesDisable
 

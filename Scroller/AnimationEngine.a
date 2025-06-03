@@ -499,8 +499,10 @@ AnimationUpdateEnemyFire
 	lda AnimationYPos,x
 	sta .smy+1
 !ifdef EnemyAimTest {
+!ifndef EnemyAimTest_AllRandom {
 	lda AnimationType,x
 	sta .smAnimType+1
+}
 }
 ;	lda AnimationDirectionLastValidIn,x
 	lda AnimationDirectionIn,x	; It looks like the enemy is not meant to remember the fire direction during animation hold frames when there is no movement
@@ -538,7 +540,35 @@ AnimationUpdateEnemyFire
 	cmp #23	; The correct enemy object ID
 	bne .notdoAimedFire
 	jmp .doAimedFire
-.notdoAimedFire
+;.notdoAimedFire
+
+; For Star Skimmer
+!if 0 {
+	cmp #21+01		;Enemy object ID to use AIM
+	+lbeq .doAimedFire
+	cmp #21+02
+	+lbeq .doAimedFire
+	cmp #21+05
+	+lbeq .doAimedFire
+	cmp #21+08
+	+lbeq .doAimedFire
+	cmp #21+09
+	+lbeq .doAimedFire
+	cmp #21+10
+	+lbeq .doAimedFire
+	cmp #21+13
+	+lbeq .doAimedFire
+	cmp #21+18
+	+lbeq .doAimedFire
+	cmp #21+20
+	+lbeq .doAimedFire
+	cmp #21+33
+	+lbeq .doAimedFire
+	cmp #21+34
+	+lbeq .doAimedFire
+	cmp #21+35
+	+lbeq .doAimedFire
+}
 
 ; Enable when using "EXPARMY1.P00"
 !if 0 {

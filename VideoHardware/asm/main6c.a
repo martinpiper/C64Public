@@ -80,7 +80,7 @@ DoInit
 	lda #ProcessorPortDefault
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
-	jsr APU_ResetDisable
+	jsr APU_ResetDisableClear
 	rts
 
 !macro MBankDataToVideoFunction .bank , .address , .size , .function {

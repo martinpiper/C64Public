@@ -41,6 +41,8 @@ EntityTypeLo
 	!fill SortHardMaxEntries , 0
 EntityTypeHi
 	!fill SortHardMaxEntries , 0
+EntityTypeIndex
+	!fill SortHardMaxEntries , -1
 
 EntityStateLo
 	!fill SortHardMaxEntries , 0
@@ -55,10 +57,12 @@ EntityStateValue2
 
 EntityInit
 	ldx #SortHardMaxEntries
-	lda #0
 .ecl1
+	lda #0
 	sta EntityTypeHi-1,x
 	sta EntityStateHi-1,x
+	lda #-1
+	sta EntityTypeIndex-1,x
 	dex
 	bne .ecl1
 	rts
@@ -93,6 +97,8 @@ EntityFindFreeSlot
 .isFree1
 	lda #0
 	sta EntityStateHi,x
+	lda #-1
+	sta EntityTypeIndex,x
 	clc
 	rts
 
@@ -187,7 +193,9 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	+lbeq .skipEnemyDraw
 	clc
 	adc EntityScaleTweak,x
-	+lbcs .skipEnemyDraw
+	+lbcs .skipEnemyDraw	; Overflow
+	cmp #UsingMaxHardwareScaleTabValue
+	+lbcs .skipEnemyDraw	; Overflow2
 	sta zeroPage_Temp5
 
 	; Quick 3D position rotation test
@@ -398,4 +406,11 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_SetLatch4_A
 
+	rts
+
+
+
+EntityState_RemoveEntity
+	lda #0
+	sta EntityTypeHi,y
 	rts

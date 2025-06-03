@@ -9,17 +9,7 @@ UpdateLandscapeFrameInternal
 	and #7
 	sta landscapeFrame
 
-	; Update the palette bank for the current map row type
-	ldy #kLandscapeMapRowsData_offset_Palette
 	+MAddr16ToAddr16_A LandscapeMapRowsDataAddress , zeroPage_Temp18
-	lda (zeroPage_Temp18),y
-	sta GamePaletteBank
-	ldy #kLandscapeMapRowsData_offset_Ground
-	lda (zeroPage_Temp18),y
-	sta GroundColours
-	ldy #kLandscapeMapRowsData_offset_Flags
-	lda (zeroPage_Temp18),y
-	sta LandscapeFlags
 
 	; Calculate new map data into the row we are just about to move over
 	jsr Rand
@@ -37,7 +27,7 @@ UpdateLandscapeFrameInternal
 .sme1	eor #%10110101
 	and #7
 	clc
-	adc #kLandscapeMapRowsData_offset_ObjectTypes
+	adc #kLandscapeMapRowsData_offset_LandscapeObjectTypes
 	tay
 	lda (zeroPage_Temp18),y
 	sta LandscapeMap,x
@@ -53,17 +43,79 @@ UpdateLandscapeFrameInternal
 	adc landscapeRotationsFrameToOffset,y
 	sta LandscapeMapRowOffset
 	and #$f0
-	bne .noAdvanceLandscapeMapRowsDataAddress
+	+lbne .noAdvanceLandscapeMapRowsDataAddress
+
+	lda LandscapeMapRowsFreezeUpdates
+	+lbne .noAdvanceLandscapeMapRowsDataAddress
+
+	; Check active entity types for exit criteria
+	; First copy the data, so it can prepare for a failure where the landscape loops until successful exit criteria
+	ldy #kLandscapeMapRowsData_offset_EntityObjectExitTypes
+	ldx #7
+.chk1
+	lda (zeroPage_Temp18),y
+	sta SpawnList_enemyTypesIndex,x
+	iny
+	dex
+	bpl .chk1
+
+	; Check for exit criteria
+	ldx #SortHardMaxEntries-1
+.chk2
+	lda EntityTypeHi,x
+	beq .noActiveEntity
+	lda EntityTypeIndex,x
+	bmi .noActiveEntity
+	sta .compareIndex+1
+	ldy #7
+.chk3
+	lda SpawnList_enemyTypesIndex,y
+	bmi .skip1
+.compareIndex	cmp #0
+	beq .noActiveEntity
+.skip1
+	dey
+	bpl .chk3
+	; The active entity type does not match the spawn (exit) list, so fail this exit criteria check and skip the map advance
+	jmp .noAdvanceLandscapeMapRowsDataAddress
+.noActiveEntity
+	dex
+	bpl .chk2
+
 
 	; Advance through the map data row types with each whole landscape pass
 	+MAddU8ToAddr16 kLandscapeMapRowsData_size , LandscapeMapRowsDataAddress , LandscapeMapRowsDataAddress + 1
+
 	lda LandscapeMapRowsDataAddress
 	cmp #<LandscapeMapRowsDataEnd
-	bne .noAdvanceLandscapeMapRowsDataAddress
+	bne .over1
 	lda LandscapeMapRowsDataAddress+1
 	cmp #>LandscapeMapRowsDataEnd
-	bne .noAdvanceLandscapeMapRowsDataAddress
+	bne .over1
 	+MWordValueToAddress_A LandscapeMapRowsData , LandscapeMapRowsDataAddress
+.over1
+
+	; Update the palette bank for the current map row type
+	ldy #kLandscapeMapRowsData_offset_Palette
+	+MAddr16ToAddr16_A LandscapeMapRowsDataAddress , zeroPage_Temp18
+	lda (zeroPage_Temp18),y
+	sta GamePaletteBank
+	; And other map row type information
+	ldy #kLandscapeMapRowsData_offset_Ground
+	lda (zeroPage_Temp18),y
+	sta GroundColours
+	ldy #kLandscapeMapRowsData_offset_Flags
+	lda (zeroPage_Temp18),y
+	sta LandscapeFlags
+	; Enemy spawn types update
+	ldy #kLandscapeMapRowsData_offset_EntityObjectTypes
+	ldx #7
+.cet1
+	lda (zeroPage_Temp18),y
+	sta SpawnList_enemyTypesIndex,x
+	iny
+	dex
+	bpl .cet1
 
 .noAdvanceLandscapeMapRowsDataAddress
 
@@ -78,91 +130,200 @@ UpdateLandscapeFrameInternal
 ; 1 byte -> LandscapeFlags
 ; 8 bytes of object types that can be randomly selected for every entire cycle through the whole range of the landscape with LandscapeMapRowOffset
 
-kLandscapeMapRowsData_offset_Palette		= 0
-kLandscapeMapRowsData_offset_Ground			= 1
-kLandscapeMapRowsData_offset_Flags			= 2
-kLandscapeMapRowsData_offset_ObjectTypes	= 3
-kLandscapeMapRowsData_size					= 11
+kLandscapeMapRowsData_offset_Palette				= 0
+kLandscapeMapRowsData_offset_Ground					= 1
+kLandscapeMapRowsData_offset_Flags					= 2
+kLandscapeMapRowsData_offset_EntityObjectTypes		= 3
+kLandscapeMapRowsData_offset_EntityObjectExitTypes	= 11
+kLandscapeMapRowsData_offset_LandscapeObjectTypes	= 19
+kLandscapeMapRowsData_size							= 27
 
 kLandscapeMapRowsData_flags_doLanding	= %00000001
 kLandscapeMapRowsData_flags_doCanyon	= %00000010
+kLandscapeMapRowsData_flags_doRefueling = %00000100
+
+!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_Palette
 
 !macro LandscapeMapRowsData_PalettesFlags .palette , .ground , .flags {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_Palette
 	!by .palette , .ground , .flags
+	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_EntityObjectTypes
 }
 
-!macro LandscapeMapRowsData_Objects .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7 {
+!macro LandscapeMapRowsData_EntityObjects .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7 {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_EntityObjectTypes
 	!by .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7
+	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_EntityObjectExitTypes
+}
+
+!macro LandscapeMapRowsData_EntityObjectsExit .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7 {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_EntityObjectExitTypes
+	!by .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7
+	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_LandscapeObjectTypes
+}
+
+!macro LandscapeMapRowsData_LandscapeObjects .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7 {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_LandscapeObjectTypes
+	!by .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7
+	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_Palette
 }
 
 LandscapeMapRowsData
 ; Carrier palette
 +LandscapeMapRowsData_PalettesFlags 3	,0	, 0
-+LandscapeMapRowsData_Objects 6,6,6,6,6,6,6,6
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,6,6,6
 +LandscapeMapRowsData_PalettesFlags 3	,0	, 0
-+LandscapeMapRowsData_Objects 6,6,6,6,6,6,6,6
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,6,6,6
 +LandscapeMapRowsData_PalettesFlags 3	,4	, 0
-+LandscapeMapRowsData_Objects 11,11,11,11,11,11,11,11
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 11,11,11,11,11,11,11,11
 +LandscapeMapRowsData_PalettesFlags 3	,4	, 0
-+LandscapeMapRowsData_Objects 11,11,11,11,11,11,11,11
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 11,11,11,11,11,11,11,11
+
 
 +LandscapeMapRowsData_PalettesFlags 0	,0	, 0
-+LandscapeMapRowsData_Objects 6,6,6,1,6,6,6,6
++LandscapeMapRowsData_EntityObjects 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_LandscapeObjects 6,6,6,1,6,6,6,6
 +LandscapeMapRowsData_PalettesFlags 0	,0	, 0
-+LandscapeMapRowsData_Objects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
+
 
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_Objects 6,1,2,3,4,5,0,1
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 6,1,2,3,4,5,0,1
+
++LandscapeMapRowsData_PalettesFlags 4	,3	, kLandscapeMapRowsData_flags_doRefueling
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,1,0,0,0,0,0
+
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
-+LandscapeMapRowsData_Objects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
-+LandscapeMapRowsData_Objects 1,1,1,1,1,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,1,1,1,0,0,0
+
 
 +LandscapeMapRowsData_PalettesFlags 1	,3	, kLandscapeMapRowsData_flags_doLanding
-+LandscapeMapRowsData_Objects 1,1,1,1,1,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,1,1,1,0,0,0
 +LandscapeMapRowsData_PalettesFlags 1	,2	, 0
-+LandscapeMapRowsData_Objects 0,1,2,8,8,8,0,8
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,1,2,8,8,8,0,8
++LandscapeMapRowsData_PalettesFlags 1	,2	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,1,2,8,8,8,0,8
 +LandscapeMapRowsData_PalettesFlags 1	,3	, 0
-+LandscapeMapRowsData_Objects 1,1,0,1,1,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,1,2,8,0,0,0,8
 +LandscapeMapRowsData_PalettesFlags 1	,3	, 0
-+LandscapeMapRowsData_Objects 1,1,0,1,1,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,0,1,1,0,0,0
++LandscapeMapRowsData_PalettesFlags 1	,3	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,0,1,1,0,0,0
++LandscapeMapRowsData_PalettesFlags 1	,3	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,0,1,1,0,0,0
 
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
-+LandscapeMapRowsData_Objects 2,2,7,2,1,7,7,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 2,2,7,2,1,7,7,0
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
-+LandscapeMapRowsData_Objects 2,7,2,2,7,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 2,7,2,2,7,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
-+LandscapeMapRowsData_Objects 3,3,3,3,0,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 3,3,3,3,0,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_Objects 3,3,3,3,4,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 3,3,3,3,4,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
-+LandscapeMapRowsData_Objects 4,4,7,4,0,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,4,7,4,0,0,0,0
 
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
-+LandscapeMapRowsData_Objects 1,1,0,1,1,0,2,2
++LandscapeMapRowsData_EntityObjects 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,0,1,1,0,2,2
+LandscapeMapRowsData_JustCanyon
 +LandscapeMapRowsData_PalettesFlags 2	,1	, kLandscapeMapRowsData_flags_doCanyon
-+LandscapeMapRowsData_Objects 12,0,0,0,14,0,15,0
++LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 12,18,0,0,14,0,15,0
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
-+LandscapeMapRowsData_Objects 0,13,0,14,0,15,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,14,0,15,0,0
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
-+LandscapeMapRowsData_Objects 0,13,0,0,0,14,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,12,0,14,0,0
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
-+LandscapeMapRowsData_Objects 0,13,0,12,0,14,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,12,0,14,0,0
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
-+LandscapeMapRowsData_Objects 0,0,0,14,0,15,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,14,0,15,0,0
 +LandscapeMapRowsData_PalettesFlags 2	,3	, 0
-+LandscapeMapRowsData_Objects 1,1,2,1,1,0,0,0
++LandscapeMapRowsData_EntityObjects 1,1,1,1,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,2,1,1,0,0,0
++LandscapeMapRowsData_PalettesFlags 2	,3	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,1,2,1,1,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
-+LandscapeMapRowsData_Objects 4,1,2,1,1,3,2,0
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,1,2,1,1,3,2,0
 
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
-+LandscapeMapRowsData_Objects 4,4,4,7,0,0,0,0
++LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,4,4,7,0,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_Objects 4,4,4,5,5,7,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,4,4,5,5,7,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_Objects 5,5,5,5,0,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 5,5,5,5,0,0,0,0
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_Objects 6,1,2,3,4,5,0,1
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,1,2,3,4,5,0,1
 +LandscapeMapRowsData_PalettesFlags 0	,0	, 0
-+LandscapeMapRowsData_Objects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
 LandscapeMapRowsDataEnd

@@ -5,7 +5,7 @@ DisplayData
 
 
 SetupAPU
-	jsr APU_ResetDisable
+	jsr APU_ResetDisableClear
 
 	jsr APU_SetAddressAPUInstructions
 	+MWordValueTo_AX APUCode_Start

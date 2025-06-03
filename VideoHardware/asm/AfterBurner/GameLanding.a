@@ -14,6 +14,7 @@ InitGameLanding
 	+MByteValueToAddress_A 0 , runwayMaxScreenRowUpdated
 	+MByteValueToAddress_A 0 , runwayMinScreenRow
 	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
+	+MByteValueToAddress_A 0 , RunGameLanding_CommonFrame_PlayerDrawSpecialCase
 
 	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
@@ -46,22 +47,7 @@ mainLoop5
 
 	; Force runway area details into the landscape
 	; Landscape map data position tweak
-	lda LandscapeMapRowOffset
-	sec
-;	sbc #16*7
-	sbc #16*8
-	clc
-	adc #5
-	tax
-	; Blank entries for the runway area
-	lda #0
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
-	inx	; Note 256 byte wraparound
-	sta LandscapeMap,x
+	jsr GameLanding_ClearRunway
 
 	; Add a runway start building and a couple of bushes
 	lda runwayMaxScreenRow
@@ -177,6 +163,23 @@ mainLoop5
 	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 
+mainLoop6
+	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
+
+	jsr RunGameLanding_CommonFrame
+
+	jsr LandscapeRenderHeight
+
+	lda landscapeHeightsFrame
+	cmp #landscapeHeightsMax/2
+	bcs .noEndRunwayYet2
+	jsr GameLanding_ClearRunway
+.noEndRunwayYet2
+
+	lda landscapeHeightsFrame
+	cmp #landscapeHeightsMax/2
+	bne .noEndRunwayYet
+	jsr GameLanding_ClearRunway
 	; Last building for the end of the runway
 	lda LandscapeMapRowOffset
 	sec
@@ -194,14 +197,7 @@ mainLoop5
 	dex	; Note 256 byte wraparound
 	lda #3
 	sta LandscapeMap,x
-
-
-mainLoop6
-	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
-
-	jsr RunGameLanding_CommonFrame
-
-	jsr LandscapeRenderHeight
+.noEndRunwayYet
 
 	lda runwayMinScreenRow
 	beq .gotObjectMin2
@@ -309,6 +305,27 @@ mainLoop6
 
 	jmp mainLoop6
 
+
+
+GameLanding_ClearRunway
+	lda LandscapeMapRowOffset
+	sec
+;	sbc #16*7
+	sbc #16*8
+	clc
+	adc #5
+	tax
+	; Blank entries for the runway area
+	lda #0
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	inx	; Note 256 byte wraparound
+	sta LandscapeMap,x
+	rts
+
 .everySoOften !by 0
 .everySoOften2 !by 0
 .everySoOften3 !by 0
@@ -343,6 +360,7 @@ mainLoop6
 !by 5,5,5,5,5,5,5,5
 !by 6,6,6,6,6,6,6,6
 .gradualSpeedTabNum = *-.gradualSpeedTab
+RunGameLanding_CommonFrame_PlayerDrawSpecialCase !by 0
 
 RunGameLanding_CommonFrame
 	jsr Video_WaitVBlank
@@ -371,6 +389,10 @@ RunGameLanding_CommonFrame
 
 	lda EntityEnableRenderPlayerSpecialCase
 	+lbne .noSpecialCase1
+
+	lda RunGameLanding_CommonFrame_PlayerDrawSpecialCase
+	+lbne .noSpecialCase1
+
 	ldx .playerSpecialCaseScale
 
 	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6

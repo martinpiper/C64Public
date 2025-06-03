@@ -480,7 +480,12 @@ UnusedSpace = $0334
 !ifdef Scroller_LOTD {
 .text !scr "... now loading legion of the damned ... starring: anthony burns (design, gfx, storyline) ... martin piper (seuck redux code and enhancements) ... richard bayliss (front end, background fade effect and music) "
 } else {
-.text !scr "this is a demonstration scrolling message for this loading routine. it can be really long or really short.             going to loop soon...   5.. 4.. 3.. 2.. 1..                "
+.text
+!ifdef TapeScrollingMessageSet {
+	+MTapeScrollingMessageSet
+} else {
+!scr "this is a demonstration scrolling message for this loading routine. it can be really long or really short.             going to loop soon...   5.. 4.. 3.. 2.. 1..                "
+}
 }
 .textEnd
 

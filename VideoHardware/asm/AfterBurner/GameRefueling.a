@@ -1,0 +1,501 @@
+!zn
+InitGameRefueling
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A $0c, .endSequenceScale
+;	+MByteValueToAddress_A $0f, .endSequenceScale
+;	+MByteValueToAddress_A $1a, .endSequenceScale	; Far wing tips are just visible
+;	+MByteValueToAddress_A $19, .endSequenceScale	; Far wing tips are just about not visible
+	+MByteValueToAddress_A $e0, .endSequenceYPosAdjust
+;	+MByteValueToAddress_A 0, .endSequenceYPosAdjust
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 1 , LandscapeMapRowsFreezeUpdates
+	+MByteValueToAddress_A 0 , GameRefueling_RenderTanker_HoseFrame
+	+MByteValueToAddress_A 0 , LandscapeFlags	; Clear the flags so this does not instantly retrigger :)
+	+MByteValueToAddress_A 0 , GameRefueling_RenderPlayer_xposAdd
+	+MByteValueToAddress_A 0 , GameRefueling_RenderPlayer_yposSub
+
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+
+	rts
+
+RunGameRefueling
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	lda playerYPositionOffset
+	bne .somePitchStill
+	; Use other horizon pitch
+	jsr PlayerPositionToForHorizonAndLandscape2
+.somePitchStill
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	jsr TryToLevelAnyRoll
+
+	lda #0
+	sta .doEntryFlag+1
+	jsr TryToLevelAnyRoll
+	bcc .isOK1
+	inc .doEntryFlag+1
+.isOK1
+	; Gradual slowdown
+	lda landscapeFrameSpeed
+	cmp #1
+	+IfRegLessThanOrEqualToVal .noMoreSlowTab1
+	dec landscapeFrameSpeed
+	inc .doEntryFlag+1
+.noMoreSlowTab1
+
+	jsr ReducePlayerXPositionForNoInput
+	jsr playerYPositionOffsetSpeedReduce
+	jsr playerYPositionOffsetReduce
+
+	; Check for start sequence criteria
+	lda playerXPositionOffset
+	beq .isOK2
+	inc .doEntryFlag+1
+.isOK2
+	lda playerYPositionOffset
+	beq .isOK3
+	inc .doEntryFlag+1
+.isOK3
+	lda playerYPositionOffsetSpeed
+	beq .isOK4
+	inc .doEntryFlag+1
+.isOK4
+
+!if 1 {
+	lda .doEntryFlag+1
+	bne .skipExtraPitch
+	; Horizon pitch
+	lda playerYPositionOffset2
+	cmp #-50
+	+IfRegLessThanOrEqualToVal .noMorePitch2
+	dec playerYPositionOffset2
+	inc .doEntryFlag+1
+.noMorePitch2
+.skipExtraPitch
+}
+
+.doEntryFlag lda #0
+	; Test for start of the refueling sequence entry point
+	+lbne RunGameRefueling
+
+
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 1 , RunGameLanding_CommonFrame_PlayerDrawSpecialCase
+
+
+RunGameRefueling2
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	jsr GameRefueling_RenderPlayer
+
+	jsr GameRefueling_RenderTanker
+
+	jsr PlayerPositionToForHorizonAndLandscape2
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda #0
+	sta .doEntryFlag2+1
+
+	; Scale aircraft
+	lda .endSequenceScale
+	cmp #$20
+	beq .noMoreScale
+	inc .endSequenceScale
+	inc .doEntryFlag2+1
+.noMoreScale
+	lda .endSequenceYPosAdjust
+	beq .noMoreYPosAdjust
+	inc .doEntryFlag2+1
+	sec
+	sbc #20
+	bcs .okYPos
+	lda #0
+.okYPos
+	sta .endSequenceYPosAdjust
+.noMoreYPosAdjust
+
+.doEntryFlag2 lda #0
+	+lbne RunGameRefueling2
+
+
+RunGameRefueling3
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	jsr GameRefueling_RenderPlayer
+
+	jsr GameRefueling_RenderTanker
+
+	jsr PlayerPositionToForHorizonAndLandscape2
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda #0
+	sta .doEntryFlag3+1
+
+	lda GameRefueling_RenderTanker_HoseFrame
+	cmp #32
+	beq .targetHose
+	inc GameRefueling_RenderTanker_HoseFrame
+	inc .doEntryFlag3+1
+
+.targetHose
+
+.doEntryFlag3 lda #0
+	+lbne RunGameRefueling3
+
+
+RunGameRefueling3b
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	jsr GameRefueling_RenderPlayer
+
+	jsr GameRefueling_RenderTanker
+
+	jsr PlayerPositionToForHorizonAndLandscape2
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda #0
+	sta .doEntryFlag3b+1
+
+	lda GameRefueling_RenderPlayer_xposAdd
+	cmp #20
+	beq .isOK5
+	inc GameRefueling_RenderPlayer_xposAdd
+	inc .doEntryFlag3b+1
+.isOK5
+	lda GameRefueling_RenderPlayer_yposSub
+	cmp #5
+	beq .isOK6
+	inc GameRefueling_RenderPlayer_yposSub
+	inc .doEntryFlag3b+1
+.isOK6
+
+.doEntryFlag3b lda #0
+	+lbne RunGameRefueling3b
+
+
+RunGameRefueling3c
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	jsr GameRefueling_RenderPlayer
+
+	jsr GameRefueling_RenderTanker
+
+	jsr PlayerPositionToForHorizonAndLandscape2
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda #0
+	sta .doEntryFlag3c+1
+
+	lda GameRefueling_RenderPlayer_xposAdd
+	beq .isOK5c
+	dec GameRefueling_RenderPlayer_xposAdd
+	inc .doEntryFlag3c+1
+.isOK5c
+	lda GameRefueling_RenderPlayer_yposSub
+	beq .isOK6c
+	dec GameRefueling_RenderPlayer_yposSub
+	inc .doEntryFlag3c+1
+.isOK6c
+
+.doEntryFlag3c lda #0
+	+lbne RunGameRefueling3c
+
+
+
+RunGameRefueling4
+	jsr RunGameLanding_CommonFrame
+	+MByteValueToAddress_A 4 , GamePaletteBank
+
+	jsr GameRefueling_RenderPlayer
+
+	jsr GameRefueling_RenderTanker
+
+	jsr PlayerPositionToForHorizonAndLandscape2
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	lda #0
+	sta .doEntryFlag4+1
+
+	lda GameRefueling_RenderTanker_HoseFrame
+	beq .targetHose2
+	dec GameRefueling_RenderTanker_HoseFrame
+	inc .doEntryFlag4+1
+.targetHose2
+
+	lda playerYPositionOffset2
+	beq .okHorizon1
+	inc playerYPositionOffset2
+	inc .doEntryFlag4+1
+.okHorizon1
+
+	lda .endSequenceScale
+	cmp #$0c
+	beq .noMoreScale2
+	dec .endSequenceScale
+	inc .doEntryFlag4+1
+.noMoreScale2
+
+	lda .endSequenceYPosAdjust
+	cmp #$e8
+	bcs .noMoreYPosAdjust2
+	inc .doEntryFlag2+1
+	clc
+	adc #10
+	sta .endSequenceYPosAdjust
+.noMoreYPosAdjust2
+
+.doEntryFlag4 lda #0
+	+lbne RunGameRefueling4
+
+
+	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 0 , RunGameLanding_CommonFrame_PlayerDrawSpecialCase
+	+MByteValueToAddress_A 0 , LandscapeMapRowsFreezeUpdates
+
+	rts
+
+GameRefueling_RenderPlayer_xposAdd !by 0
+GameRefueling_RenderPlayer_yposSub !by 0
+
+GameRefueling_RenderPlayer
+	; Render the player meeting the hose
+	ldx #$20
+	+MWordValueToAddressLoHi_A (328/2) - (kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth/2) , zeroPage_Temp5 , zeroPage_Temp6
+	lda GameRefueling_RenderPlayer_xposAdd
+	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A 112  - (kVarsEmitSpriteFrame_t_380_0_0_0_tileHeight/2), zeroPage_Temp4 , zeroPage_Temp7
+	lda GameRefueling_RenderPlayer_yposSub
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda #0
+	sta zeroPage_Temp3
+	jsr MSBCalcWith6n7
+
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_380_0_0_0_colour , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_380_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_380_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth
+	rts
+
+
+GameRefueling_RenderTanker_HoseFrame !by 0
+GameRefueling_RenderTanker
+.endSequenceScale=*+1
+	ldx #$20
+
+	; Refueling hose
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+;	lda kVarsEmitSpriteFrame_t_208_0_0_0_tileHeightScaleTab-1,x
+;	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+ 	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_702_0_0_0_tileHeightScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw0
+
+	; Which hose to draw
+	lda GameRefueling_RenderTanker_HoseFrame
+	lsr 
+	lsr
+	cmp #0
+	+lbeq .noDraw0
+	cmp #1
+	+lbne .odraw1
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_464_0_0_0_colour , kVarsEmitSpriteFrame_rt_464_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_464_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_464_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_464_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw1
+	cmp #2
+	+lbne .odraw2
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_474_0_0_0_colour , kVarsEmitSpriteFrame_rt_474_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_474_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_474_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_474_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw2
+	cmp #3
+	+lbne .odraw3
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_484_0_0_0_colour , kVarsEmitSpriteFrame_rt_484_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_484_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_484_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_484_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw3
+	cmp #4
+	+lbne .odraw4
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_494_0_0_0_colour , kVarsEmitSpriteFrame_rt_494_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_494_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_494_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_494_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw4
+	cmp #5
+	+lbne .odraw5
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_500_0_0_0_colour , kVarsEmitSpriteFrame_rt_500_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_500_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_500_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_500_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw5
+	cmp #6
+	+lbne .odraw6
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_506_0_0_0_colour , kVarsEmitSpriteFrame_rt_506_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_506_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_506_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_506_0_0_0_tileWidth
+	jmp .noDraw0
+
+.odraw6
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_511_0_0_0_colour , kVarsEmitSpriteFrame_rt_511_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_511_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_511_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_511_0_0_0_tileWidth
+	jmp .noDraw0
+
+.noDraw0
+
+
+	; Left fuselage
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+.endSequenceYPosAdjust = *+1
+	lda #$e0
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw1
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_509left_0_0_0_colour , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidth
+.noDraw1
+
+
+	; Left wing1
+	cpx #$11
+	+lbcc .noDraw3
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw3
+	+MObjectDrawWithScaleSizeCheckWithFlipX kVarsEmitSpriteFrame_rt_508left_0_0_0_colour , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidth
+.noDraw3
+
+	; Left wing2
+	cpx #$1a
+	+lbcc .noDraw4
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw4
+	+MObjectDrawWithScaleSizeCheckWithFlipX kVarsEmitSpriteFrame_rt_508right_0_0_0_colour , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileWidth
+.noDraw4
+
+	; Right fuselage
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw2
+	+MObjectDrawWithScaleSizeCheckWithFlipX kVarsEmitSpriteFrame_rt_509left_0_0_0_colour , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidth
+.noDraw2
+
+	; Right wing1
+	cpx #$11
+	+lbcc .noDraw5
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_t_722_0_0_0_tileHeightScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw5
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_508left_0_0_0_colour , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidth
+.noDraw5
+
+	; Right wing2
+	cpx #$1a
+	+lbcc .noDraw6
+	; X calc
+	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_t_722_0_0_0_tileHeightScaleTab-1,x
+	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
+
+	; Y Calc
+	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
+	lda .endSequenceYPosAdjust
+	+MSubAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+	lda kVarsEmitSpriteFrame_t_694_0_0_0_tileWidthScaleTab-1,x
+	+MAddAFrom16ToAddr16 zeroPage_Temp4 , zeroPage_Temp7 , zeroPage_Temp4 , zeroPage_Temp7
+
+	jsr MSBCalcWith6n7
+	bcs .noDraw6
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_rt_508right_0_0_0_colour , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileAddress , kVarsEmitSpriteFrame_rt_508right_0_0_0_tileWidth
+.noDraw6
+	rts
