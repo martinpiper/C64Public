@@ -41,6 +41,13 @@
     <None Include="Data.a" />
     <None Include="IRQSparse.a" />
     <None Include="IRQSparse2.a" />
+    <None Include="_config.a" />
+    <None Include="..\..\IRQTape\TapeTool\Loaders.a">
+      <Filter>Tape code</Filter>
+    </None>
+    <None Include="..\..\IRQTape\ScrollerMusicLoader.a">
+      <Filter>Tape code</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\TODO.txt" />
@@ -50,6 +57,9 @@
   <ItemGroup>
     <Filter Include="stdlib">
       <UniqueIdentifier>{b1eaa868-6cf8-46ca-b59b-e5b17f35559d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tape code">
+      <UniqueIdentifier>{8f8ce25a-5557-4bb3-a9a0-e9fc0e8bd06b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

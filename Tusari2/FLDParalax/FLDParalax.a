@@ -39,6 +39,8 @@ tempWork5 = $0a
 tempWork6 = $0b
 tempWork7 = $0c
 tempWork8 = $0d
+tempWork9 = $0e
+tempWork10 = $0f
 
 !macro MPlaySFX .index {
 	lda #.index
@@ -204,6 +206,15 @@ GameStart
 	sta .spawnTypeTab+6
 	lda #2
 	sta .spawnTypeTab+7
+!if 0 {
+	; Debug: Other enemies should be slowly introduced
+	lda #3
+	sta .spawnTypeTab+6
+	lda #4
+	sta .spawnTypeTab+5
+	lda #5
+	sta .spawnTypeTab+4
+}
 
 .l1
 	; Debug: Mainline timing
@@ -368,25 +379,45 @@ RemoveEnemies
 	lda #3
 	sta .spawnTypeTab,x
 .lo2
+	jsr GetRandomNumberFull
+	and #7
+	tax
+	lda GameLevel
+	and #4
+	beq .lo3
+	lda #4
+	sta .spawnTypeTab,x
+.lo3
+	jsr GetRandomNumberFull
+	and #7
+	tax
+	lda GameLevel
+	and #7
+	beq .lo4
+	lda #5
+	sta .spawnTypeTab,x
+.lo4
+
 	; Less often add a crystal back
 	jsr GetRandomNumberFull
 	and #7
 	tax
 	lda GameLevel
 	and #3
-	bne .lo3
+	bne .lo5
 	lda #1
 	sta .spawnTypeTab,x
-.lo3
+.lo5
+
 	; Ensure there is always one crystal and one "not crystal" in the spawn table
 	lda #1
 	sta .spawnTypeTab
 	lda .spawnTypeTab+7
 	cmp #1
-	bne .lo4
+	bne .lo6
 	lda #2
 	sta .spawnTypeTab+7
-.lo4
+.lo6
 
 	; Setup the next targets
 	jsr GetRandomNumberFull
@@ -442,6 +473,7 @@ RemoveEnemies
 	jsr UpdateScrollPositionsNeg
 	jsr TitleUpdatesBeforeTopOfScreen
 	jsr Music_Update
+	jsr PlayerBullet_Update
 	jsr ProcessScrollEvents
 
 	lda .smDD2+1
@@ -803,14 +835,6 @@ TitleUpdatesBeforeTopOfScreen
 GameLogicUpdate
 	ldx #3
 .csl1
-	lda .spriteSpeed,x
-	bne .gotVel
-	jsr GetRandomNumber
-	and #3
-	clc
-	adc #2
-	sta .spriteSpeed,x
-.gotVel
 	lda .spriteType,x
 	bne .gotType
 
@@ -843,38 +867,58 @@ GameLogicUpdate
 	tay
 	lda .spawnTypeTab,y
 	sta .spriteType,x
-	cmp #1
-	beq .gotCrystal
-	cmp #2
-	beq .gotGhost
-	; Bat
-	lda #156
-	sta Sprites_Frame,x
-	lda #VIC2Colour_LightBlue
-	sta Sprites_Colour,x
-	jmp .continueEnemy
-.gotGhost
-	; Ghost
-	lda #104
-	sta Sprites_Frame,x
-	lda #VIC2Colour_LightGreen
-	sta Sprites_Colour,x
-.continueEnemy
-	lda #1
-	sta Sprites_Multicolour,x
+	tay
+
+	jsr GetRandomNumber
+	and SpriteType_SpeedAndValue,y
+	clc
+	adc SpriteType_SpeedAddValue,y
+	sta .spriteSpeed,x
+
+	lda SpriteType_toFramesLo,y
+	sta .spriteFrames_Lo,x
+	sta .spriteFramesOriginal_Lo,x
+	lda SpriteType_toFramesHi,y
+	sta .spriteFrames_Hi,x
+	sta .spriteFramesOriginal_Hi,x
 	jmp .gotType
-;.spawnTypeTab !by 1,1,2,1,2,1,1,1
 .spawnTypeTab !by 1,1,1,1,1,1,1,2
-.gotCrystal
-	; Crystal
-	lda #0
-	sta Sprites_Multicolour,x
-	lda #$fe
-	sta Sprites_Frame,x
-	lda #VIC2Colour_White
-	sta Sprites_Colour,x
-	jmp .gotType
 .gotType
+	; Process the animation frames
+	lda .spriteFrames_Lo,x
+	sta tempWork9
+	lda .spriteFrames_Hi,x
+	sta tempWork10
+	ldy #0
+	lda (tempWork9),y
+	bne .someFrame
+
+	lda .spriteFramesOriginal_Lo,x
+	sta .spriteFrames_Lo,x
+	sta tempWork9
+	lda .spriteFramesOriginal_Hi,x
+	sta .spriteFrames_Hi,x
+	sta tempWork10
+	lda (tempWork9),y
+
+.someFrame
+	sta Sprites_Frame,x
+	ldy #1
+	lda (tempWork9),y
+	sta Sprites_Colour,x
+	ldy #2
+	lda (tempWork9),y
+	sta Sprites_Multicolour,x
+	lda tempWork9
+	clc
+	adc #3
+	sta .spriteFrames_Lo,x
+	bcc .noHi1
+	inc .spriteFrames_Hi,x
+.noHi1
+
+
+
 	lda .spriteType,x
 	cmp #1	; Crystal
 	beq .crystalMovement
@@ -1018,6 +1062,10 @@ PlayerCollisionDetection
 	beq .isGhostHit
 	cmp #3
 	beq .isBatHit
+	cmp #4
+	beq .isGhostHit
+	cmp #5
+	beq .isBatHit
 	; Crystal
 	lda NeedToCollectCrystals
 	beq .allDone2
@@ -1107,6 +1155,10 @@ BulletCollisionDetection
 	cmp #2
 	beq .isGhost
 	cmp #3
+	beq .isBat
+	cmp #4
+	beq .isGhost
+	cmp #5
 	beq .isBat
 .isBat
 	jsr Sprite_Free
@@ -1291,6 +1343,16 @@ ProcessScrollEvents
 .spriteYWobble
 	!fill Sprites__size , 0
 Sprites_Multicolour
+	!fill Sprites__size , 0
+
+.spriteFrames_Lo
+	!fill Sprites__size , 0
+.spriteFrames_Hi
+	!fill Sprites__size , 0
+
+.spriteFramesOriginal_Lo
+	!fill Sprites__size , 0
+.spriteFramesOriginal_Hi
 	!fill Sprites__size , 0
 
 .spriteYWobbleTable
@@ -1743,6 +1805,87 @@ UpdateScrollPositionsNeg
 
 !zn
 * = C64Cartridge_Lo_8K
+SpriteType_toFramesLo
+	!word 0
+	!word SpriteType_FramesCrystal
+	!word SpriteType_FramesGhost
+	!word SpriteType_FramesBat
+	!word SpriteType_FramesGhost2
+	!word SpriteType_FramesBat2
+SpriteType_toFramesHi = (*+SpriteType_toFramesLo)/2
+!swizzle SpriteType_toFramesLo , (SpriteType_toFramesHi - SpriteType_toFramesLo) , 2
+
+SpriteType_SpeedAndValue
+	!by 0
+	!by 3
+	!by 1
+	!by 1
+	!by 3
+	!by 3
+SpriteType_SpeedAddValue
+	!by 0
+	!by 2
+	!by 1
+	!by 1
+	!by 2
+	!by 2
+
+!macro MSpriteFrame_Multicolour .frame , .colour {
+!for .i , kSpriteFrame_Speed {
+	!by .frame , .colour , 1
+}
+}
+!macro MSpriteFrame_Hires .frame , .colour {
+!for .i , kSpriteFrame_Speed {
+	!by .frame , .colour , 0
+}
+}
+!macro MSpriteFrame_Loop {
+	!by 0
+}
+SpriteType_FramesCrystal
+!set kSpriteFrame_Speed = 1
+	+MSpriteFrame_Hires $fe , VIC2Colour_White
+	+MSpriteFrame_Loop
+SpriteType_FramesGhost
+!set kSpriteFrame_Speed = 5
+	+MSpriteFrame_Multicolour 104 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Multicolour 105 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Multicolour 106 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Multicolour 107 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Multicolour 106 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Multicolour 105 ,VIC2Colour_LightGreen
+	+MSpriteFrame_Loop
+SpriteType_FramesBat
+!set kSpriteFrame_Speed = 6
+	+MSpriteFrame_Multicolour 155 , VIC2Colour_LightBlue
+	+MSpriteFrame_Multicolour 156 , VIC2Colour_Blue
+	+MSpriteFrame_Multicolour 157 , VIC2Colour_LightBlue
+	+MSpriteFrame_Multicolour 158 , VIC2Colour_Blue
+	+MSpriteFrame_Multicolour 159 , VIC2Colour_LightBlue
+	+MSpriteFrame_Multicolour 160 , VIC2Colour_Blue
+	+MSpriteFrame_Loop
+
+SpriteType_FramesGhost2
+!set kSpriteFrame_Speed = 4
+	+MSpriteFrame_Multicolour 104 ,VIC2Colour_LightRed
+	+MSpriteFrame_Multicolour 105 ,VIC2Colour_Red
+	+MSpriteFrame_Multicolour 106 ,VIC2Colour_LightRed
+	+MSpriteFrame_Multicolour 107 ,VIC2Colour_Red
+	+MSpriteFrame_Multicolour 106 ,VIC2Colour_LightRed
+	+MSpriteFrame_Multicolour 105 ,VIC2Colour_Red
+	+MSpriteFrame_Loop
+SpriteType_FramesBat2
+!set kSpriteFrame_Speed = 5
+	+MSpriteFrame_Multicolour 155 , VIC2Colour_Cyan
+	+MSpriteFrame_Multicolour 156 , VIC2Colour_Cyan
+	+MSpriteFrame_Multicolour 157 , VIC2Colour_Cyan
+	+MSpriteFrame_Multicolour 158 , VIC2Colour_Cyan
+	+MSpriteFrame_Multicolour 159 , VIC2Colour_Cyan
+	+MSpriteFrame_Multicolour 160 , VIC2Colour_Cyan
+	+MSpriteFrame_Loop
+
+
 PlayerBullets_YPos		!fill kPlayerBullets_Max , -1
 PlayerBullets_VelocityX	!fill kPlayerBullets_Max , 0
 PlayerBullet_LastGoodVelocityX !by 2
@@ -2148,21 +2291,23 @@ UpdateHiresCharsNeg
 TitleScreenText1Offset !by 0
 TitleScreenText1SprOffset !by 0
 TitleScreenText1
-!tx "  press fire  to start  "
+!scr "  press fire  to start  "
 !by -1
-!tx "   code  martin piper   "
+!scr " exclusive for  zzap 64 "
 !by -1
-!tx "    music  necropolo    "
+!scr "   code  martin piper   "
 !by -1
-!tx "  small font  etchelon  "
+!scr "    music  necropolo    "
 !by -1
-!tx "  large font subchrist  "
+!scr "  small font  etchelon  "
 !by -1
-!tx "    shoot the ghosts    "
+!scr "  large font subchrist  "
 !by -1
-!tx "  collect the crystals  "
+!scr "    shoot the ghosts    "
 !by -1
-!tx "space  trigger smartbomb"
+!scr "  collect the crystals  "
+!by -1
+!scr "space  trigger smartbomb"
 !by -1
 !by 0
 !if *-TitleScreenText1 > 256 {
@@ -2179,11 +2324,17 @@ TitleScreenText1XPosToSpriteColumnHi = TitleScreenText1XPosToSpriteColumnLo+24
 !swizzle TitleScreenText1XPosToSpriteColumnLo , 3*8 , 2
 
 TitleScreenTextToAddressLo
-TitleScreenTextToAddressHi = TitleScreenTextToAddressLo + $40
-!for .i , $40 {
+!for .i , 27 {
 	!word TitleScreenCharset + ((.i-1) * 16)
 }
-!swizzle TitleScreenTextToAddressLo , $40 , 2
+!for .i , 21 {
+	!word 0
+}
+!for .i , 10 {
+	!word TitleScreenCharset + ((.i + 26) * 16)
+}
+TitleScreenTextToAddressHi = (TitleScreenTextToAddressLo + *) / 2
+!swizzle TitleScreenTextToAddressLo , TitleScreenTextToAddressHi - TitleScreenTextToAddressLo , 2
 
 TitleTextColourTab
 	!by VIC2Colour_Black , VIC2Colour_DarkGrey , VIC2Colour_Grey , VIC2Colour_LightGrey
@@ -2216,11 +2367,7 @@ TitleUpdatesAfter_smct1	lda #0
 	cmp #' '
 	bne .notSpace
 	lda #0
-	jmp .continuePrint
 .notSpace
-	sec
-	sbc #'a'-1
-.continuePrint
 	tay
 	lda TitleScreenTextToAddressLo,y
 	sta tempWork5
@@ -2315,6 +2462,7 @@ GetRandomNumberFull
 .smrn1	eor #0
 	rts
 GetRandomNumber
+	sty .tmpY+1
 	ldy Random_randomTabIndex
 	lda .randomTab,y
 	iny
@@ -2323,6 +2471,7 @@ GetRandomNumber
 	ldy #0
 .or1
 	sty Random_randomTabIndex
+.tmpY	ldy #0
 	rts
 Random_randomTabIndex !by 0
 .randomTab
@@ -2349,7 +2498,7 @@ kTusariLogoY = 65
 	+SetSpriteXYColFrameMulticolour 20 , kTusariLogoX + (4 * 24) , kTusariLogoY ,  VIC2Colour_LightRed , 'r'-1 , 1
 	+SetSpriteXYColFrameMulticolour 21 , kTusariLogoX + (5 * 24) , kTusariLogoY ,  VIC2Colour_LightRed , 'i'-1 , 1
 	+SetSpriteXYColFrameMulticolour 22 , kTusariLogoX + (6 * 24) + 14 , kTusariLogoY ,  VIC2Colour_LightRed , 'z'+2 , 1
-	+SetSpriteXYColFrameMulticolour 23 , 30 , kTusariLogoY + 4 ,  VIC2Colour_Red , 102 , 1
+	+SetSpriteXYColFrameMulticolour 23 , 280 , kTusariLogoY + 4 ,  VIC2Colour_Red , 102 , 1
 
 kTextArea1X = 75
 kTextArea1Y = 100

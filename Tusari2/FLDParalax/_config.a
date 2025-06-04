@@ -1,0 +1,33 @@
+;Scroller_LOTD = 1
+;OpenBorders = 1
+MainLoad_EnableScreen = 1
+;BitmapDisplay = 1
+
+SmallLoader = 1
+;MartyLoad = 1
+;NovaishLoad = 1
+
+; The number of cycles for half of one pulse
+TapeTurboSpeed = $80
+
+; Enables block checksums in the second loader
+EnableBlockChecksum = 1
+
+; Enables block compression code in the second loader
+;EnableBlockCompression = 1
+
+StartOnFilenameNumber = 0
+
+
+TapeFilenameSet = 1
+!macro MTapeFilenameSet {
+TapeHeaderFilenameStart = $0343	; The tape header address for the filename text plus 2 chars
+TapeHeaderFilenameLen = 8
+!by CHR_Clear , CHR_White
+!pet "tusari 2"
+}
+
+TapeScrollingMessageSet = 1
+!macro MTapeScrollingMessageSet {
+!scr "now loading tusari 2 - the river        shoot the enemies, collect the crystals. joystick in port 2. press fire for smartbomb.        code by martin piper        music by necropolo         "
+}

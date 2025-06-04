@@ -6,10 +6,24 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>FingerPrint.a
 
 ..\..\acme.exe -v4 --msvc --lib ../ --lib ../../ --lib ../../stdlib/ FLDParalax.a
 if not exist FLDParalax.prg goto error
-..\..\bin\LZMPi.exe -t $ff00 -c64mrb FLDParalax.prg FLDParalax.prg $400 >t.txt
-rem ..\..\bin\LZMPi.exe -c64mbu FLDParalax.prg FLDParalax.prg $400 >t.txt
+rem ..\..\bin\LZMPi.exe -t $ff00 -c64mrb FLDParalax.prg FLDParalax.prg $400 >t.txt
+..\..\bin\LZMPi.exe -c64mbu FLDParalax.prg FLDParalax.prg $400 >t.txt
 if not exist FLDParalax.prg goto error
+
+echo Making the tape...
+mkdir tmp
+cd tmp
+
+del /q Loaders.bin
+..\..\..\acme.exe --lib  ../ --lib ../../ --lib ../../../  --lib ../../../IRQTape/ -v4 --msvc ..\_config.a  ..\..\..\IRQTape\TapeTool\Loaders.a
+..\..\..\bin\TapeTool.exe wn "..\test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otft "Loaders.bin" .RealCodeStart .RealCodeEnd otl$c0 otfb "..\FLDParalax.prg" 0 otl$c0 c
+rem Without tiny header
+rem ..\..\..\bin\TapeTool.exe wn "..\test.tap" m "Loaders.map" ocb1 Loaders.bin otl$c0 otf "Loaders.bin" 255 .RealCodeStart .RealCodeEnd .MainSecondLoaderStart otl$c0 otfb "..\FLDParalax.prg" 0 otl$c0 c
+
+cd ..
+
 goto end
+
 :error
 echo FLDParalax.prg not created!
 exit /B -1
