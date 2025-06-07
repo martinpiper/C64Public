@@ -494,17 +494,6 @@
 
 
 
-* Demo14: Shooting the landscape should cause explosions
-	Bullets done, certains buildings could do with larger explosions. There are animation frames for this available in assets\Demo14\BulletsExplosions
-		>> .largeExplosion ObjectDraw19 ObjectDraw20 ObjectDraw21
-	The canyon large vertical explosions, for the radio towers, (Canyon\t-1850 etc) currently use an extra palette, this would need some enemies removed from the common palettes
-		>> ObjectDraw22 - ObjectDraw26
-			>> .noCanyonCheckRadioTower
-	The player and other landscape explosions also cause extra palettes, these will need some common palette savings, as above.
-
-
-
-
 * Demo14: Turn off the tiles layer when not in runway mode
 
 
@@ -567,7 +556,110 @@
 				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game4.pal
 				03/06/2025  11:10 am                96 Demo14ScaledSprites4TitleScreen.pal
 				03/06/2025  11:10 am               480 Demo14ScaledSprites4TitleScreenSprites.pal
-	* Reset the canyon walls to make them wide while exploding the player, to avoid the player escaping the canyon
+	>> Added all the other explosions, now UsingMaxHardwareScaleTabValue = 220
+	* Done: Reset the canyon walls to make them wide while exploding the player, to avoid the player escaping the canyon
 		+MByteValueToAddress_A 0 , CanyonOffset
 		+MByteValueToAddress_A 10 , CanyonWidth
 	* Player next life sequence, scale in player from large to normal and flash the player
+		Use Player_Invulnerable?
+	* Done: Need animating explosion entities, for the player death sequence
+		A bit like the smoke trails, but their rotation frames can render different frames
+		> Non-scaled version instead, special case for the player
+			RenderSpritePlayerExplode0/1/2/3 and RenderSpritePlayerOtherExplosions
+
+
+* Demo14: Canyon: When colliding with the canyon walls, use a comparison with LandscapeMapRowOffset/CanyonOffsetStart and .mvLeft/.mvRight to move the player back to the "middle"
+	Do this for the last portion of GamePlayerExplode_ExplodeFrame. Create a kGamePlayerExplode_ExplodeFramesMax = 100 for tweaking of "cmp #100"
+
+
+
+* Demo14: EntitySystem.a : jsr Bus20To32Bit1_SetLatch8 ??!! Why is this being used instead of the macros, with state??
+
+
+
+* Demo14: Frame flickering might be due to entity far clip cull causing hardware draw state to be wrong.
+
+
+
+
+* Demo14: Move EntitySort and EntitySortInit to under the IO space ~$2e0 bytes
+	Maybe even EntityUpdateObjects
+	And any associated code that is run by: EntityStateHi
+	All such code must not touch any IO, of course.
+
+
+
+* Image conversion: Option to round up sprite width and/or height to X with transparent pixels
+	This would reduce the number of width/height lookup tables, but increase draw time a little bit
+	>> Test code: "int newWidth = (img.getWidth()+1)/2;"
+	>> Before:
+		$190-$1ff:$70
+		$cf1a-$cfff:$e6
+		$d4b9-$dfff:$b47
+		$fb81-$ffff:$47f
+	>> After:
+		$190-$1ff:$70
+		$c939-$cfff:$6c7
+		$d4b9-$dfff:$b47
+		$fb81-$ffff:$47f
+	>> Currently disabled code option
+
+
+
+
+* Demo14: Animated hand for title screen game demo
+	In the arcade, it's a tilemap, scrolled around a bit
+	https://wiki.mamedev.org/index.php/Using_the_GFX/TileMap_viewer_(F4)
+	C:\Downloads\MAME\mame.exe -debug -console aburner2
+	* Any other keys? Save image without zoom etc?
+		Look for this in the code: "Zoom =
+			C:\Work\mame\src\frontend\mame\ui\viewgfx.cpp
+				IPT_UI_ZOOM_OUT
+	* C:\Downloads\MAME\mame.exe -window aburner2
+		Press return twice to get to the tilemap view
+		Use [ and ] to switch the tilemaps
+		Use F5 to pause and unpause to get the correct animation frames
+	* During the game pressing F12 saves whole frame images into C:\Downloads\MAME\snap\aburner2
+		* Maybe use IPT_UI_SNAPSHOT in viewgfx.cpp to save raw images?
+			gfx_viewer::handle_tilemap >> handle_general_keys
+			Perhaps just save the entire frame buffer to a large binary file, when it changes?, a bit like the sprites?
+			Then use the imagemagick command to split the file?
+		* Might want to consider two chars layers with a combiner?
+	* C:\Downloads\MAME\mame.exe -debug -console aburner2
+		C:\Work\mame\src\mame\sega\segaxbd.cpp
+		segaxbd_state::main_map
+		segaxbd_state::sub_map
+			map(0x0c0000, 0x0cffff).rw("segaic16vid", FUNC(segaic16_video_device::tileram_r), FUNC(segaic16_video_device::tileram_w)).share("tileram");
+			map(0x0d0000, 0x0d0fff).mirror(0x00f000).rw("segaic16vid", FUNC(segaic16_video_device::textram_r), FUNC(segaic16_video_device::textram_w)).share("textram");
+		>> Seem to be 0-1fff tiles in total, in the gfx viewer
+		>> This sets data into the two tile maps (second and first)
+			fill c0430,101,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f
+			fill d0130,101,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f
+			Might be useful for setting text to display?
+		>> Writes to d0000 go to segaic16_video_device::textram_w
+		>> Using: fill c0830,101,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,30,31,32,33,34,35,36,37,38,39
+			Will show in the debug tilemap2 view when paused in the debugger, but only when the zoom level changed or view is generally refreshed
+			When the hand/glove/stick animation is active it shows the screen has a minimal bounding box update in the tilemap screen
+			Also it shows the text scrolling around with the hand/glove/etc
+		>> fill c0000 to cffff in steps of 1000 seems to fill the tilemap screens 2-17
+			Each screen is 64x32 tiles/chars, with two bytes per tile
+				>> This fills the top line of the first (2) tilemap: fill c0000,80,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,30,31,32,33,34,35,36,37,38,39
+		>> Note how fills to d0000 are mirrored in 1000 byte chunks, because the address range in segaxbd.cpp is only d0000-d0fff, so this is only one tilemap screen
+			Also the d0000 tilemap (1) writes seems to only have tiles 0-1ff (not 1fff) and the bits >= 200 seem to pick colour palettes for the mostly text tiles that are in the range 0-1ff
+
+
+
+
+
+* Demo14: Score display
+
+
+
+* Demo14: Radar
+
+
+
+* Demo14: Proper enemy formations
+	Update CheckSpawnEnemy so that it will trigger consistent enemy formations from LandscapeMapRowsData
+	Probably needs a storage area that contains information of what to spawn and when.
+	Process one entry per frame?

@@ -1603,6 +1603,21 @@ RasterLengthNTSCC64		= 520
 	dec .word
 }
 
+!macro MPushAddr8_A .addr {
+	lda .addr
+	pha
+}
+!macro MPopAddr8_A .addr {
+	pla
+	sta .addr
+}
+
+!macro MAddU8ToAddr8 .value , .lo {
+	lda .lo
+	clc
+	adc #.value
+	sta .lo
+}
 
 !macro MAddAToAddr16 .lo , .hi {
 	clc

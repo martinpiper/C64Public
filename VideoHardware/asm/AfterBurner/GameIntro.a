@@ -13,6 +13,8 @@ InitGameIntro
 	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
 	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
 	+MByteValueToAddress_A 0 , playerXPositionOffset
+	+MByteValueToAddress_A (ScreenLandscapeNumRollSteps/2)-1 , landscapeRotationsFrame
+
 	jsr EntityInit
 	lda #0
 	sta smOffsetY1Carrier+1
@@ -22,13 +24,17 @@ InitGameIntro
 	sta landscapeFrameSpeed
 
 	; Engine
+!ifndef BuildTitleScreen {
 	+MPlaySampleLoop 0 , 32 , kSampleInfo11_start , kSampleInfo11_length , kSampleInfo11_loopStart , kSampleInfo11_looplength , kSampleInfo11_frequency / 2
+}
 	lda #32
 	sta Player_EngineVolume
 	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineFrequency
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 	; Get ready
+!ifndef BuildTitleScreen {
 	+MPlaySample 1 , 255 , kSampleInfo8_start , kSampleInfo8_length , kSampleInfo8_frequency
+}
 
 	rts
 

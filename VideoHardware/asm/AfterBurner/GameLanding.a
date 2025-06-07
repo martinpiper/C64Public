@@ -372,6 +372,8 @@ RunGameLanding_CommonFrame
 	jsr RunGameLanding_UpdateAPU
 
 	; Can happen outside the VBlank
+	jsr ProcessSamplePlayTriggers
+
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
 
 	jsr PlayerEngineSoundControl

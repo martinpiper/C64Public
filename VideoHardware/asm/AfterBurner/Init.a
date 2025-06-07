@@ -1,8 +1,4 @@
 OneTimeInit
-	jsr EntitySortInit
-
-	jsr SetupAPU
-
 	jsr Video_InitDisplaySpritesScrollsBackground
 	jsr Video_SetAddressMergeLayer
 	lda #kBus24Bit_MergeLayer_Register_Control_Default
@@ -49,8 +45,6 @@ OneTimeInit
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_SendLE16BitValue 84
 
-	jsr APU_ResetDisable
-	jsr APU_Disable
 	jsr APU_Enable
 
 	rts

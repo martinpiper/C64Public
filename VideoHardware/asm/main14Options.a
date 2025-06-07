@@ -40,6 +40,10 @@ zeroPage_Temp16	= $12
 zeroPage_Temp17	= $13
 zeroPage_Temp18	= $14
 zeroPage_Temp19	= $15
+zeroPage_Temp20	= $16
+zeroPage_Temp21	= $17
+zeroPage_Temp22	= $18
+zeroPage_Temp23	= $19
 SortTemp0 = zeroPage_Temp0
 SortTemp1 = SortTemp0 + 1
 
@@ -50,7 +54,7 @@ SortHardMaxEntries = 16	; The hard maximum for entries for the sort
 ; Smaller values vastly improve memory usage
 ; Particularly affects objects with EntityScaleTweak
 ;!set UsingMaxHardwareScaleTabValue = maxHardwareScaleTabValue
-!set UsingMaxHardwareScaleTabValue = 240	; Override, more sprite frames into the distance, but more memory
+!set UsingMaxHardwareScaleTabValue = 215	; Override, more sprite frames into the distance, but more memory
 !if UsingMaxHardwareScaleTabValue < maxHardwareScaleTabValue {
 !error "Should not be less than maxHardwareScaleTabValue otherwise the landscape won't work properly"
 }

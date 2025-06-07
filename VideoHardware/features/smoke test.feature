@@ -1418,6 +1418,8 @@ Feature: Smoke test
     Given write data from file "tmp\ScaledSprites4.bin5" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x06' to 24bit bus at '0x8807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin6" to 24bit bus at '0x0000' and addressEx '0x05'
+	Given write data byte '0x07' to 24bit bus at '0x8807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin7" to 24bit bus at '0x0000' and addressEx '0x05'
 
 	#  Music
     # rem Then non-exact audio hardware using the EBBS

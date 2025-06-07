@@ -1,20 +1,39 @@
 !zn
 InitTitleScreen
-	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
-	jsr EntityInit
 	jsr Bus20To32Bit1_Init
+	+MWordValueToAddress_A -650 , TitleFramesTimeout	; Negative value, counts up...
+;	+MWordValueToAddress_A -50 , TitleFramesTimeout	; Negative value, counts up...
+
+	jsr EntityInit
 	jsr Audio_Init
 	jsr TitleSetStartAnimation
 
 	lda #2
 	sta landscapeFrameSpeed
+	+MByteValueToAddress_A 0 , LandscapeFlags
+	+MByteValueToAddress_A 0 , GroundColours
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 0 , playerXPositionOffset
+	+MByteValueToAddress_A (ScreenLandscapeNumRollSteps/2)-1 , landscapeRotationsFrame
+	+MByteValueToAddress_A 0 , playerYPositionOffsetSpeed
+	+MByteValueToAddress_A 0 , playerYPositionOffset
+	+MByteValueToAddress_A 0 , playerYPositionOffset2
+	+MByteValueToAddress_A 0 , playerYPositionOffsetForHorizon
+	+MByteValueToAddress_A ScreenLandscapeOriginYPos , playerYPositionOffsetForLandscape
+	+MByteValueToAddress_A 0 , playerYPositionOffsetForSprites
+	jsr VBlankUpdateHorizon
 
 	jsr Video_SetAddressVideoPaletteBankRegister
 	+MBus24Bit_Send8BitValue $0f
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_124
 
+	+MByteValueToAddress_A 0 , Video_WaitVBlank_FramesPassed
+
 	rts
+
+TitleFramesTimeout !word 0
 
 RunTitleScreen
 mainLoop3
@@ -25,6 +44,18 @@ mainLoop3
 	jsr EntityUpdateObjects
 	jsr EntitySort
 	jsr RenderSpritesTitle
+
+	; 16 bit timeout value for switching to the demo mode
+	inc TitleFramesTimeout
+	bne .notTimeYet
+	inc TitleFramesTimeout+1
+	bne .notTimeYet
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_4
+	jsr InitGame
+	jsr RunGame
+	jsr InitTitleScreen
+.notTimeYet
 
 	+WaitForFireLoop_A mainLoop3
 	rts
@@ -134,6 +165,7 @@ RenderSpritesTitle
 	bne .titleDrawSprites0
 
 	jsr TitleSetStartAnimation
+
 	jmp .retryFrame
 
 .titleDrawSprites0

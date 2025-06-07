@@ -350,6 +350,7 @@
     <None Include="assets\convert11.bat" />
     <None Include="assets\convert13.bat" />
     <None Include="assets\convert14.bat" />
+    <None Include="assets\convert14PaletteLayers.bat" />
     <None Include="assets\convert2.bat" />
     <None Include="assets\convert3.bat" />
     <None Include="assets\convert4.bat" />
@@ -444,6 +445,7 @@
     <Library Include="..\VectorPlotBitmap\TransformVars.a" />
     <Library Include="..\VectorPlotBitmap\VectorHardware.a" />
     <Library Include="asm\AfterBurner\APU.a" />
+    <Library Include="asm\AfterBurner\APUHardware.a" />
     <Library Include="asm\AfterBurner\CommonBootDefinesPre.a" />
     <Library Include="asm\AfterBurner\EntitySystem.a" />
     <Library Include="asm\AfterBurner\EntitySystemSpriteDraw.a" />
@@ -451,12 +453,15 @@
     <Library Include="asm\AfterBurner\GameCanyon.a" />
     <Library Include="asm\AfterBurner\GameIntro.a" />
     <Library Include="asm\AfterBurner\GameLanding.a" />
+    <Library Include="asm\AfterBurner\GamePlayerExplode.a" />
     <Library Include="asm\AfterBurner\GameRefueling.a" />
     <Library Include="asm\AfterBurner\Init.a" />
     <Library Include="asm\AfterBurner\Landscape.a" />
     <Library Include="asm\AfterBurner\LandscapeAnimate.a" />
     <Library Include="asm\AfterBurner\LandscapeDefs.a" />
     <Library Include="asm\AfterBurner\LandscapeMapCalc.a" />
+    <Library Include="asm\AfterBurner\LandscapeMapDataDemo.a" />
+    <Library Include="asm\AfterBurner\LandscapeMapDataGame.a" />
     <Library Include="asm\AfterBurner\LandscapeObjectDraw.a" />
     <Library Include="asm\AfterBurner\Maths.a" />
     <Library Include="asm\AfterBurner\PlayerControl.a" />

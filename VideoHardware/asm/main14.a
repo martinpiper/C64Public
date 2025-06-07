@@ -135,11 +135,7 @@ mainLoop
 	lda #0
 	sta VIC2ScreenControlV
 
-!ifndef Debug_NoTitleScreen {
 	jmp LoadRunTitleScreen
-} else {
-	jmp LoadRunGame
-}
 
 
 !zn
@@ -171,6 +167,7 @@ DisplayHexFromAAtX
 	jmp LoadRunTitleScreen
 	jmp LoadRunGame
 
+*=CommonBootCode_JumpTable_End
 !bin "bin/maincommon.prg",,2
 !source "tmp\CommonBootDefines.a"
 *=EndCommonBootCode

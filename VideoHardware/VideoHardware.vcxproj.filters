@@ -163,6 +163,9 @@
       <Filter>Resource Files\ACME</Filter>
     </None>
     <None Include="ConvertBuildAll.bat" />
+    <None Include="assets\convert14PaletteLayers.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -638,6 +641,18 @@
     </Library>
     <Library Include="asm\main14Options.a">
       <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\GamePlayerExplode.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\APUHardware.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\LandscapeMapDataDemo.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\LandscapeMapDataGame.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>

@@ -184,8 +184,8 @@ LandscapeRender
 .smj1	jmp $1234
 ObjectDrawReturn
 
-	+MBus20To32Bit1_UsingState_ReadMode_A
-	+MBus20To32Bit1_UsingState_SetLatch5_A
+	+MBus20To32Bit1_ReadMode_A
+	+MBus20To32Bit1_SetLatch5_A
 
 .processNextSprite
 	dec zeroPage_Temp2
@@ -310,10 +310,14 @@ LandscapeMapXTweak
 
 LandscapeFlags !by 0
 LandscapeMapRowsFreezeUpdates !by 0
+!ifdef BuildTitleScreen {
+LandscapeMapRowsDataAddress !word LandscapeMapRowsData
+} else {
 !ifdef Debug_RunGameCanyon {
 LandscapeMapRowsDataAddress !word LandscapeMapRowsData_JustCanyon
 } else {
 LandscapeMapRowsDataAddress !word LandscapeMapRowsData
+}
 }
 landscapeFrameSpeed !by 1
 landscapeFrame !by 0

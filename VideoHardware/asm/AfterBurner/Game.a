@@ -11,11 +11,17 @@
 	jmp .labelBefore
 .labelOver
 }
+!ifdef BuildTitleScreen {
+GameDemoExitTime !by 0
+}
 
 !zn
 InitGame
 	jsr Bus20To32Bit1_Init
 
+!ifdef BuildTitleScreen {
+	+MByteValueToAddress_A 250 , GameDemoExitTime
+}
 	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
 	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
 	+MByteValueToAddress_A 0 , PlayerControl_disableRoll
@@ -29,6 +35,11 @@ InitGame
 
 	+MByteValueToAddress_A -75 , Player_EngineVolumeChange
 
+!ifdef BuildTitleScreen {
+	; This causes the game demo sequence to "appear" to start midway through a game
+	+MByteValueToAddress_A 50 , Video_WaitVBlank_FramesPassed
+}
+
 	rts
 
 RunGame
@@ -40,6 +51,8 @@ mainLoop2
 	jsr VBlankUpdateHorizon
 
 	; Can happen outside the VBlank
+	jsr ProcessSamplePlayTriggers
+
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
 
 	jsr PlayerControl
@@ -66,6 +79,20 @@ mainLoop2
 	lda #kLandscapeMapRowsData_flags_doRefueling
 	bit LandscapeFlags
 	bne .gameToRefueling
+}
+
+!ifdef BuildTitleScreen {
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	+lbeq TitleScreen_RunGame
+}
+
+!ifdef BuildTitleScreen {
+	dec GameDemoExitTime
+	bne .notTimeYet
+	; Back to the title screen
+	rts
+.notTimeYet
 }
 
 	jmp mainLoop2
@@ -217,11 +244,15 @@ CheckSpawnEnemy
 	and #4
 	+lbeq .noSoundSpawn2
 	; Be careful
+!ifndef BuildTitleScreen {
 	+MPlaySample 1 , 255 , kSampleInfo6_start , kSampleInfo6_length , kSampleInfo6_frequency
+}
 	jmp .noSoundSpawn1
 .noSoundSpawn2
 	; The enemy
+!ifndef BuildTitleScreen {
 	+MPlaySample 1 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
+}
 .noSoundSpawn1
 .noSpawnThisTime
 
@@ -248,6 +279,10 @@ EntityState_Bullets
 	lda LandscapeMap,x
 	cmp #12
 	+lbeq .isRadioTower
+	dex ; Wraparound
+	lda LandscapeMap,x
+	cmp #12
+	beq .isRadioTower
 .noCanyonCheckRadioTower
 
 	lda EntityXPos,y
@@ -258,11 +293,11 @@ EntityState_Bullets
 	lda EntityZPos,y
 	clc
 	adc landscapeFrameSpeed
-	bcs EntityState_Bullets_Remove
+	+lbcs EntityState_Bullets_Remove
 	clc
 	adc #kPlayerBulletsForwardSpeed
 	cmp #127
-	bcs EntityState_Bullets_Remove
+	+lbcs EntityState_Bullets_Remove
 	sta EntityZPos,y
 
 	rts
@@ -305,12 +340,15 @@ EntityState_Bullets_HitGround
 	jsr Rand
 	and #3
 	beq .largeExplosion
+	jsr SamplePlay_Explosion3
 	lda #16
 	jmp .storeIt
 .largeExplosion
+	jsr SamplePlay_Explosion2
 	lda #19
 	jmp .storeIt
 .isRadioTower
+	jsr SamplePlay_Explosion1
 	lda #22
 .storeIt
 	sta LandscapeMap,x
@@ -530,3 +568,42 @@ VBlankUpdatePaletteColours
 	+MGenerateEnglineColour 30
 	rts
 
+TriggerSamplePlay_Explosion1 !by 0
+TriggerSamplePlay_Explosion2 !by 0
+TriggerSamplePlay_Explosion3 !by 0
+
+SamplePlay_Explosion1
+!ifndef BuildTitleScreen {
+	+MPlaySample 1 , 255 , kSampleInfo0_start , kSampleInfo0_length , kSampleInfo0_frequency
+}
+	rts
+SamplePlay_Explosion2
+!ifndef BuildTitleScreen {
+	+MPlaySample 2 , 255 , kSampleInfo1_start , kSampleInfo1_length , kSampleInfo1_frequency
+}
+	rts
+SamplePlay_Explosion3
+!ifndef BuildTitleScreen {
+	+MPlaySample 3 , 255 , kSampleInfo2_start , kSampleInfo2_length , kSampleInfo2_frequency
+}
+	rts
+
+ProcessSamplePlayTriggers
+	lda TriggerSamplePlay_Explosion1
+	beq .os1
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion1
+	jsr SamplePlay_Explosion1
+.os1
+
+	lda TriggerSamplePlay_Explosion2
+	beq .os2
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion2
+	jsr SamplePlay_Explosion2
+.os2
+
+	lda TriggerSamplePlay_Explosion3
+	beq .os3
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion3
+	jsr SamplePlay_Explosion3
+.os3
+	rts

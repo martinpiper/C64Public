@@ -27,7 +27,7 @@ set SPRITES_COMMON_2=--batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlan
 rem Landscape water and bushes and clouds
 rem Landscape objects: 1 (also 18) , 2 , 3 , 4 , 5 , 6 , 11 , 16 , 17 , 19 , 20 , 21
 rem Plus: Bullets, reticle, bullet hit ground
-set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png" Demo14\BulletsExplosions\t-208.png Demo14\BulletsExplosions\t-793.png "Demo14\BulletsExplosions\t-231 - Copy.png" "Demo14\BulletsExplosions\t-231.png" "Demo14\BulletsExplosions\t-232 - Copy.png" "Demo14\BulletsExplosions\t-232.png" "Demo14\BulletsExplosions\t-258.png" "Demo14\BulletsExplosions\t-259.png" "Demo14\BulletsExplosions\et-317.png" "Demo14\BulletsExplosions\et-318.png" "Demo14\BulletsExplosions\et-319.png" "Demo14\BulletsExplosions\t-731.png" "Demo14\BulletsExplosions\t-300.png"
+set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png" Demo14\BulletsExplosions\t-208.png Demo14\BulletsExplosions\t-793.png "Demo14\BulletsExplosions\t-231 - Copy.png" "Demo14\BulletsExplosions\t-231.png" "Demo14\BulletsExplosions\t-232 - Copy.png" "Demo14\BulletsExplosions\t-232.png" "Demo14\BulletsExplosions\t-258.png" "Demo14\BulletsExplosions\t-259.png" "Demo14\BulletsExplosions\et-317.png" "Demo14\BulletsExplosions\et-318.png" "Demo14\BulletsExplosions\et-319.png" "Demo14\BulletsExplosions\et-731.png" "Demo14\BulletsExplosions\et-300.png" "Demo14\BulletsExplosions\et-509.png" "Demo14\BulletsExplosions\et-514.png" "Demo14\BulletsExplosions\et-523.png" "Demo14\BulletsExplosions\et-501.png" "Demo14\BulletsExplosions\et-528.png" "Demo14\BulletsExplosions\et-301.png" "Demo14\BulletsExplosions\et-517.png" "Demo14\BulletsExplosions\et-365.png" "Demo14\BulletsExplosions\et-383.png" "Demo14\BulletsExplosions\et-408.png"
 rem Enemies
 set SPRITES_ENEMY_1=--batchimages Demo14\EnemyPlaneWhite\*.png
 set SPRITES_ENEMY_2=--batchimages Demo14\EnemyPlaneHarrier\*.png
@@ -47,7 +47,7 @@ set SPRITES_GAME_PALETTE_4=--batchimages Demo14\Refuel\rt-464.png Demo14\Refuel\
 rem For the title screen palettes we load the needed game assets first and then the specific extra sprites for the title screen itself
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreen.pal --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --writepass
 
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreenSprites.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_2% %SPRITES_COMMON_3% %SPRITES_ENEMY_1% %SPRITES_ENEMY_2% --batchimages Demo14\Intro\*.png --writepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreenSprites.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_2% --batchimages Demo14\Intro\*.png --writepass
 
 rem For the game palettes we don't load the title screen sprites, this saves palette space for other game objects
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4Game0.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_2% %SPRITES_COMMON_3% %SPRITES_ENEMY_1% %SPRITES_ENEMY_2% %SPRITES_GAME_PALETTE_0% --writepass
@@ -107,6 +107,8 @@ python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin5
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0x06
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin6
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x01 0x8807 bytes 0x07
+python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x05 0x0000 file tmp\ScaledSprites4.bin7
 
 rem Then non-exact audio hardware using the EBBS
 python ResourceGenerator\main.py tmp/Demo14FileResources.bin 0x04 0x0000 file tmp/target/exportedSoundEffectsAfterBurnerSamples.bin

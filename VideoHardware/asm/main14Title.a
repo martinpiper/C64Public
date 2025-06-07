@@ -9,6 +9,8 @@
 !ct pet
 
 
+BuildTitleScreen = 1
+
 !source "stdlib/stdlib.a"
 !source "stdlib/Comparisons.a"
 !source "stdlib/PETSCII.a"
@@ -82,11 +84,9 @@ mainLoop
 
 	jsr Audio_Init
 
-	; Disable the C64 screen for speed
-	lda #0
-	sta VIC2ScreenControlV
-
+	jsr SetupAPU
 	jsr OneTimeInit
+	jsr EntitySortInit
 
 	jsr Video_SetAddressMode7
 !for .i , Mode7RegsSize {
@@ -100,6 +100,8 @@ mainLoop
 	jsr InitTitleScreen
 	jsr RunTitleScreen
 }
+
+TitleScreen_RunGame
 	inc VIC2BorderColour
 
 	jsr Bus20To32Bit1_Init
@@ -108,8 +110,11 @@ mainLoop
 
 	jmp CommonBootCode_JumpTable_LoadRun_Game
 
+AudioActiveFlags !by 0
 
 !source "AfterBurner/Init.a"
+!source "AfterBurner/APUHardware.a"
+!source "AfterBurner/APU.a"
 !source "AfterBurner/EntitySystem.a"
 !source "AfterBurner/EntitySystemSpriteDraw.a"
 !source "AfterBurner/ScaledSpriteCommon.a"
@@ -117,17 +122,33 @@ mainLoop
 
 !source "AfterBurner/Maths.a"
 
+!source "AfterBurner/Landscape.a"
+!source "AfterBurner/LandscapeObjectDraw.a"
+!source "AfterBurner/PlayerControl.a"
+
 ; Stub these out
-landscapeRotationsFrame !by (ScreenLandscapeNumRollSteps/2)-1
-landscapeFrameSpeed !by 1
-playerYPositionOffsetForSprites !by 0
-landscapeRotationsFrameToHorizonSpeed !fill ScreenLandscapeNumRollSteps , 0
-RenderSpritePlayer
-RenderSpritePlayerReticle
-SetupAPU
-rts
+runwayMaxScreenRow !by 0
+runwayMaxScreenRowUpdated !by 0
+runwayMinScreenRow !by 0
+runwayMinScreenRowUpdated !by 0
+InitGameLanding
+RunGameLanding
+InitGameCanyon
+RunGameCanyon
+InitGameRefueling
+RunGameRefueling
+	rts
 
 +MCheckNotInIOKernal
+
+
+*=KERNALROM
+!source "AfterBurner/Game.a"
+!source "AfterBurner/GamePlayerExplode.a"
+!source "AfterBurner/LandscapeAnimate.a"
+!source "AfterBurner/LandscapeMapCalc.a"
+!source "AfterBurner/LandscapeMapDataDemo.a"
+
 
 ; -$100 because of kExternalMemoryFiles_OnlyCheckHighAddress
 +MCheckNotInMemoryRange CommonBootCode_JumpTable_Start-$100 , KERNALNMIServiceRoutineLo

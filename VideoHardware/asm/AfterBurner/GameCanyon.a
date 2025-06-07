@@ -68,18 +68,23 @@ mainLoop5b
 ;	+MByteValueToAddress_A 0 , landscapeHeightsFrame
 	+MByteValueToAddress_A 1 , RunGameCanyon_CommonFrame_enableXMovement
 
-	+MByteValueToAddress_A 0 , CanyonOffset
-	+MByteValueToAddress_A 10 , CanyonWidth
+	jsr RunGameCanyon_InitCanyonPositions
 	; The starting offset for the canyon
 	lda LandscapeMapRowOffset
 	and #$0f
 	sta CanyonOffsetStart
 
+	+MByteValueToAddress_A 75 , .framesForEndTimeoutBeforeTakeOff+1
 
 mainLoop5c
+
 	jsr RunGameCanyon_CommonFrame
 
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
+	beq .noCanyonCalc
 	jsr CalculateCanyon
+.noCanyonCalc
 
 	jsr LandscapeRenderScrollX
 
@@ -97,10 +102,13 @@ mainLoop5c
 	jmp mainLoop5c
 }
 
+	dec .framesForEndTimeoutBeforeTakeOff+1
+.framesForEndTimeoutBeforeTakeOff	lda #0
+	bne mainLoop5c
 
 	; Now gain height again
 	+MByteValueToAddress_A 0 , RunGameCanyon_CommonFrame_enableXMovement
-	+MByteValueToAddress_A 2 , landscapeFrameSpeed
+	+MByteValueToAddress_A 2 , landscapeFrameSpeed	; To climb out of the canyon
 	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 
@@ -147,7 +155,11 @@ RunGameCanyon_CommonFrame
 	jsr VBlankUpdateHorizon
 
 	; Can happen outside the VBlank
+	jsr ProcessSamplePlayTriggers
+
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
+
+	jsr RunGameCanyon_LandscapeCollision
 
 	jsr PlayerControl
 	jsr UpdateLandscapeFrame
@@ -343,3 +355,49 @@ CalculateCanyon
 	!by %10 , %1 , %10 , %100
 	!by %100 , %1 , %10 , %10
 	!by %1 , %1000 , %1000 , 0
+
+RunGameCanyon_LandscapeCollision
+	lda Player_Invulnerable
+	bne .notCollided
+	; Check canyon collisions with player
+	lda landscapeFrameSpeed
+	cmp #3
+	bcs .alwaysCheckWeAreFast
+	; Check for the nearest few frames when travelling at slow speed
+	; This detects hits when the canyon walls are nice and large, close to the player view
+	lda landscapeFrame
+	cmp #4
+	bcc .notCollided
+.alwaysCheckWeAreFast
+	lda LandscapeMapRowOffset
+	clc
+	adc #7
+;	sec
+;	sbc #16
+;	clc
+;	adc #16
+	tax
+	lda LandscapeMap,x
+	cmp #12
+	beq .collidedExplode
+	cmp #13
+	beq .collidedExplodeStop
+	jmp .notCollided
+.collidedExplodeStop
+	; Stop right now
+	lda #0
+	sta landscapeFrameSpeed
+.collidedExplode
+	jsr InitGamePlayerExplode
+;	lda #22
+;	sta LandscapeMap,x
+	jsr RunGameCanyon_InitCanyonPositions
+.notCollided
+	rts
+
+
+RunGameCanyon_InitCanyonPositions
+	+MByteValueToAddress_A 0 , CanyonOffset
+	+MByteValueToAddress_A 10 , CanyonWidth
+	+MByteValueToAddress_A 0 , CanyonState
+	rts

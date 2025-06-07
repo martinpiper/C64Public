@@ -1650,3 +1650,50 @@
 		>> ; Check active entity types for exit criteria
 			>> LandscapeMapRowsData_EntityObjectsExit
 
+
+
+
+* Demo14: TotalAPU_Size = $61c which is quite a large chunk of memory
+	Consider moving game SetupAPU into Title
+	>> The only value that game needs is APULineScrolls and APUData_Start?
+	>> Then game could remove APU.a and move SetupAPU from game into title?
+	>> And remove jsr OneTimeInit?
+	>> Before:
+		$cf1a-$cfff:$e6
+		$d4b9-$dfff:$b47
+		$fb81-$ffff:$47f
+	>> After:
+		$0-$1ff:$200
+		$c84a-$cfff:$7b6
+		$d4b9-$dfff:$b47
+		$fb81-$ffff:$47f
+
+
+
+* Demo14: Titles can use very cut down game includes, and a small map that only uses shared common sprites
+	>> !ifdef BuildTitleScreen {
+	>> LandscapeMapDataDemo.a
+
+
+
+* Demo14: Shooting the landscape should cause explosions
+	Bullets done, certains buildings could do with larger explosions. There are animation frames for this available in assets\Demo14\BulletsExplosions
+		>> .largeExplosion ObjectDraw19 ObjectDraw20 ObjectDraw21
+	The canyon large vertical explosions, for the radio towers, (Canyon\t-1850 etc) currently use an extra palette, this would need some enemies removed from the common palettes
+		>> ObjectDraw22 - ObjectDraw26
+			>> .noCanyonCheckRadioTower
+	The player and other landscape explosions also cause extra palettes, these will need some common palette savings, as above.
+
+
+
+* Demo14: Title screen self playing game demo
+
+
+
+
+* Demo14: Added extra samples
+
+
+
+* Demo14: When exiting the canyon, the speed increase should only happen after the last canyon edge. In other words, wait for the whole level to cycle around
+	>> .framesForEndTimeoutBeforeTakeOff

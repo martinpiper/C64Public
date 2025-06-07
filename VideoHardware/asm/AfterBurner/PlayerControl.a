@@ -2,14 +2,97 @@ Player_EngineVolume !by 0
 Player_EngineVolumeChange !by 0
 Player_EngineFrequency !word 0
 Player_EngineTargetFrequency !word 0
+Player_Invulnerable !by 0
 
 PlayerControl_disableRoll !by 0
 
+
+!ifdef BuildTitleScreen {
+GameUsesPortA !by $ff
+GameUsesPortB !by $ff
+} else {
+GameUsesPortA = CIA1KeyboardColumnJoystickA
+GameUsesPortB = CIA1KeyboardRowsJoystickB
+}
+
 .isFireBefore !by 0
 PlayerControl
+
+!ifdef BuildTitleScreen {
+.sme	lda #0
+	and #%111
+	+lbne .osme
+
+	jsr Rand
+	and #7
+	bne .o1
+	lda GameUsesPortA
+	eor #JoystickBits_Left
+	ora #JoystickBits_Right
+	sta GameUsesPortA
+.o1
+	jsr Rand
+	and #7
+	bne .o2
+	lda GameUsesPortA
+	eor #JoystickBits_Right
+	ora #JoystickBits_Left
+	sta GameUsesPortA
+.o2
+
+	jsr Rand
+	and #7
+	bne .o3
+	lda GameUsesPortA
+	eor #JoystickBits_Up
+	ora #JoystickBits_Down
+	sta GameUsesPortA
+.o3
+	jsr Rand
+	and #7
+	bne .o4
+	lda GameUsesPortA
+	eor #JoystickBits_Down
+	ora #JoystickBits_Up
+	sta GameUsesPortA
+.o4
+
+.osme
+	dec .sme+1
+
+	jsr Rand
+	and #7
+	bne .o5
+	lda GameUsesPortA
+	eor #JoystickBits_Fire
+	sta GameUsesPortA
+.o5
+
+	jsr Rand
+	and #7
+	bne .o6
+	lda GameUsesPortB
+	eor #JoystickBits_Fire
+	sta GameUsesPortB
+.o6
+
+}
+
+
+	lda Player_Invulnerable
+	beq .notInvulnerable
+	dec Player_Invulnerable
+.notInvulnerable
+
 	jsr PlayerEngineSoundControl
 
-	+LTestForPortBitsLoop_A CIA1KeyboardRowsJoystickB , JoystickBits_Fire , .notFire
+	lda GamePlayerExplode_ExplodeFrame
+	beq .notExplodingPlayer
+	jmp RunGamePlayerExplode
+.notExplodingPlayer
+
+	; Missile launch
+	+LTestForPortBitsLoop_A GameUsesPortB , JoystickBits_Fire , .notFire
 	lda .isFireBefore
 	bne .wasFire
 	jsr EntityFindFreeSlot
@@ -45,7 +128,7 @@ PlayerControl
 	sta .isFireBefore
 
 
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Down , .notDown
 	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
 	dec landscapeFrameSpeed
 	bne .notDown2b
@@ -59,7 +142,7 @@ PlayerControl
 	sta Player_EngineTargetFrequency+1
 .notDown
 
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Up , .notUp
 	+MByteValueToAddress_A 45 , Player_EngineVolumeChange
 	inc landscapeFrameSpeed
 	ldx landscapeFrameSpeed
@@ -82,13 +165,17 @@ PlayerControl
 
 
 
-	; Bullets
-	+LTestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire2
+	; Fire bullets
+	+LTestForPortBitsLoop_A GameUsesPortA , JoystickBits_Fire , .notFire2
 	lda EntityState_Bullets_ActiveNum
 	cmp #5
-	bcs .overFire2
+	+lbcs .overFire2
 	jsr EntityFindFreeSlot
-	bcs .noFreeSlot22
+	+lbcs .noFreeSlot22
+
+!ifndef BuildTitleScreen {
+	+MPlaySample 2 , 255 , kSampleInfo3_start , kSampleInfo3_length , kSampleInfo3_frequency
+}
 
 	lda playerXPositionOffset
 	+M_ASR
@@ -138,7 +225,7 @@ PlayerControl
 
 
 !ifndef Debug_SimpleLandscapeRotation {
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Left , .notLeft
 
 	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
 	lda landscapeRotationsFrameRoll
@@ -161,7 +248,7 @@ PlayerControl
 	sta playerXPositionOffset
 	jmp .gotXInput
 .notLeft
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Right , .notRight
 
 	; If rapidly switching between left and right, according to the player X offset if it is near the other end of the range of motion
 	lda landscapeRotationsFrameRoll
@@ -188,7 +275,7 @@ PlayerControl
 .gotXInput
 }
 
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown2
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Down , .notDown2
 	lda playerYPositionOffset
 	cmp #-50
 	beq .doReduceAndSkip
@@ -205,7 +292,7 @@ PlayerControl
 	jsr playerYPositionOffsetSpeedReduce
 	jmp .overUpDown
 .notDown2
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp2
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Up , .notUp2
 	lda playerYPositionOffset
 	cmp #50
 	beq .doReduceAndSkip
@@ -267,10 +354,10 @@ PlayerControl
 	jsr PlayerPositionToForHorizonAndLandscape
 
 !ifdef Debug_SimpleLandscapeRotation {
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notInputLeft
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Left , .notInputLeft
 	dec landscapeRotationsFrame
 .notInputLeft
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notInputRight
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Right , .notInputRight
 	inc landscapeRotationsFrame
 .notInputRight
 	lda landscapeRotationsFrame
@@ -291,7 +378,7 @@ PlayerControl
 	lda landscapeRotationsFrameRoll
 	bne .rollAlreadyStarted3
 
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notInputLeft
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Left , .notInputLeft
 	lda landscapeRotationsFrame
 	cmp #(8 * ScreenLandscapeNumRollSteps) / 24
 	bcc .gotRollInput
@@ -301,7 +388,7 @@ PlayerControl
 	jmp .gotRollInput
 .notInputLeft
 
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notInputRight
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Right , .notInputRight
 	lda landscapeRotationsFrame
 	cmp #((16 * ScreenLandscapeNumRollSteps) / 24) - 1
 	bcs .gotRollInput
@@ -547,6 +634,29 @@ RenderSpritePlayer
 	sta .smt1+2
 	sta .smt2+2
 
+	lda GamePlayerExplode_ExplodeFrame
+	cmp #30
+	+lbcs RenderSpritePlayerExplode3
+	cmp #15
+	+lbcs RenderSpritePlayerExplode2
+	cmp #7
+	+lbcs RenderSpritePlayerExplode1
+	cmp #3
+	+lbcs RenderSpritePlayerExplode0
+	cmp #2
+	bne .skipExplosionsSound
+	inc TriggerSamplePlay_Explosion1
+.skipExplosionsSound
+
+	lda Player_Invulnerable
+	beq .smt1
+	lsr
+	lsr
+	lsr
+	and #1
+	beq .smt1
+	rts
+
 .smt1	lda RenderSpritePlayerR0YTab,y
 	sta .smj2+1
 	iny
@@ -636,6 +746,68 @@ RenderSpritePlayerReticle
 	rts
 }
 
+!macro MRenderSpritePlayerWithSave .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	lda playerYPositionOffset
+	clc
+	adc #112
+	sec
+	sbc #.height/2
+	sta zeroPage_Temp20
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+;	lda #$aa - (.width/2)
+	lda #(328/2) - (.width/2)	; This is more in the middle of the screen
+	clc
+	adc playerXPositionOffset
+	sta zeroPage_Temp21
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+}
+
+!macro MRenderSpritePlayerFromSave .palette , .width , .height, .address {
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	lda zeroPage_Temp20
+	sec
+	sbc #(.height/2)
+	bcs .ok1
+	lda #0	; Yes this is a hack
+.ok1
+	clc
+	adc zeroPage_Temp22
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .height
+	; X pos and size
+	lda zeroPage_Temp21
+	sec
+	sbc #(.width/2)
+	bcs .ok2
+	lda #0	; Yes this is a hack
+.ok2
+	clc
+	adc zeroPage_Temp23
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue .width
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+	; Stride
+	+MBus24Bit_Send8BitValue .width-1
+}
+
 RenderSpritePlayerRL3Y0
 	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_317_0_0_0_colour , kVarsEmitSpriteFrame_t_317_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_317_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_317_0_0_0_tileAddress
 RenderSpritePlayerRL3YU1
@@ -716,6 +888,124 @@ RenderSpritePlayerR0YD1
 RenderSpritePlayerR0YD2
 	+MRenderSpritePlayer kVarsEmitSpriteFrame_t_494_0_0_0_colour , kVarsEmitSpriteFrame_t_494_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_494_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_494_0_0_0_tileAddress
 
+
+RenderSpritePlayerExplodeFlames0
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_731_0_0_0_colour , kVarsEmitSpriteFrame_et_731_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_731_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_731_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeFlames1
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_300_0_0_0_colour , kVarsEmitSpriteFrame_et_300_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_300_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_300_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeFlames2
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_509_0_0_0_colour , kVarsEmitSpriteFrame_et_509_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_509_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_509_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeFlames3
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_514_0_0_0_colour , kVarsEmitSpriteFrame_et_514_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_514_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_514_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeFlames4
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_523_0_0_0_colour , kVarsEmitSpriteFrame_et_523_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_523_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_523_0_0_0_tileAddress
+	rts
+
+RenderSpritePlayerExplodeBall0
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_501_0_0_0_colour , kVarsEmitSpriteFrame_et_501_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_501_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_501_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeBall1
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_528_0_0_0_colour , kVarsEmitSpriteFrame_et_528_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_528_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_528_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeBall2
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_301_0_0_0_colour , kVarsEmitSpriteFrame_et_301_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_301_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_301_0_0_0_tileAddress
+	rts
+RenderSpritePlayerExplodeBall3
+	+MRenderSpritePlayerFromSave kVarsEmitSpriteFrame_et_517_0_0_0_colour , kVarsEmitSpriteFrame_et_517_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_517_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_517_0_0_0_tileAddress
+	rts
+
+RenderSpritePlayerExplodeFlames
+	cmp #0
+	bne .oo1
+	inc TriggerSamplePlay_Explosion2
+.oo1
+	cmp #5
+	+lbcc RenderSpritePlayerExplodeFlames0
+	cmp #10
+	+lbcc RenderSpritePlayerExplodeFlames1
+	cmp #15
+	+lbcc RenderSpritePlayerExplodeFlames2
+	cmp #20
+	+lbcc RenderSpritePlayerExplodeFlames3
+	cmp #25
+	+lbcc RenderSpritePlayerExplodeFlames4
+	rts
+RenderSpritePlayerExplodeBall
+	cmp #0
+	bne .oo2
+	inc TriggerSamplePlay_Explosion3
+.oo2
+	cmp #5
+	+lbcc RenderSpritePlayerExplodeBall0
+	cmp #10
+	+lbcc RenderSpritePlayerExplodeBall1
+	cmp #15
+	+lbcc RenderSpritePlayerExplodeBall2
+	cmp #20
+	+lbcc RenderSpritePlayerExplodeBall3
+	rts
+
+RenderSpritePlayerOtherExplosions
+	+MByteValueToAddress_A 0 , zeroPage_Temp22
+	+MByteValueToAddress_A 0 , zeroPage_Temp23
+	lda GamePlayerExplode_ExplodeFrame
+	sec
+	sbc #10
+	jsr RenderSpritePlayerExplodeBall
+
+	+MByteValueToAddress_A 10 , zeroPage_Temp22
+	+MByteValueToAddress_A 30 , zeroPage_Temp23
+	lda GamePlayerExplode_ExplodeFrame
+	sec
+	sbc #20
+	jsr RenderSpritePlayerExplodeFlames
+
+	+MByteValueToAddress_A 30 , zeroPage_Temp22
+	+MByteValueToAddress_A 45 , zeroPage_Temp23
+	lda GamePlayerExplode_ExplodeFrame
+	sec
+	sbc #40
+	jsr RenderSpritePlayerExplodeBall
+
+	+MByteValueToAddress_A 50 , zeroPage_Temp22
+	+MByteValueToAddress_A 40 , zeroPage_Temp23
+	lda GamePlayerExplode_ExplodeFrame
+	sec
+	sbc #60
+	jsr RenderSpritePlayerExplodeFlames
+
+	+MByteValueToAddress_A 0 , zeroPage_Temp22
+	+MByteValueToAddress_A 40 , zeroPage_Temp23
+	lda GamePlayerExplode_ExplodeFrame
+	sec
+	sbc #70
+	jsr RenderSpritePlayerExplodeBall
+
+	rts
+
+
+RenderSpritePlayerExplode0
+	+MRenderSpritePlayerWithSave kVarsEmitSpriteFrame_et_365_0_0_0_colour , kVarsEmitSpriteFrame_et_365_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_365_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_365_0_0_0_tileAddress
+	jsr RenderSpritePlayerOtherExplosions
+	rts
+
+RenderSpritePlayerExplode1
+	+MRenderSpritePlayerWithSave kVarsEmitSpriteFrame_et_383_0_0_0_colour , kVarsEmitSpriteFrame_et_383_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_383_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_383_0_0_0_tileAddress
+	jsr RenderSpritePlayerOtherExplosions
+	rts
+
+RenderSpritePlayerExplode2
+	+MRenderSpritePlayerWithSave kVarsEmitSpriteFrame_et_408_0_0_0_colour , kVarsEmitSpriteFrame_et_408_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_408_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_408_0_0_0_tileAddress
+	jsr RenderSpritePlayerOtherExplosions
+	rts
+
+RenderSpritePlayerExplode3
+	jsr RenderSpritePlayerOtherExplosions
+	rts
 
 PlayerEngineFrequenciesLo
 PlayerEngineFrequenciesHi = * + 8

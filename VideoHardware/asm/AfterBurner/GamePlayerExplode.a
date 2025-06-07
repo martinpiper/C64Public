@@ -1,0 +1,53 @@
+!zn
+InitGamePlayerExplode
+	lda GamePlayerExplode_ExplodeFrame
+	beq .doExplodeNow
+	rts
+.doExplodeNow
+
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 1 , LandscapeMapRowsFreezeUpdates
+	+MByteValueToAddress_A 1 , GamePlayerExplode_ExplodeFrame
+	+MByteValueToAddress_A 125 , Player_Invulnerable
+
+	rts
+
+GamePlayerExplode_ExplodeFrame !by 0
+
+RunGamePlayerExplode
+	+MByteValueToAddress_A 125 , Player_Invulnerable
+
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 4 , Player_EngineTargetFrequency
+	; Gradual slowdown
+	lda landscapeFrameSpeed
+	cmp #1
+	+IfRegLessThanOrEqualToVal .noMoreSlowTab1
+	dec landscapeFrameSpeed
+.noMoreSlowTab1
+
+	; Horizon pitch
+	lda playerYPositionOffset
+	cmp #-50
+	+IfRegLessThanOrEqualToVal .noMorePitch2
+	dec playerYPositionOffset
+.noMorePitch2
+
+	jsr PlayerPositionToForHorizonAndLandscape
+	jsr ReducePlayerXPositionForNoInput
+
+	inc GamePlayerExplode_ExplodeFrame
+	lda GamePlayerExplode_ExplodeFrame
+	cmp #100
+	bcs .exitExplodingPlayerState
+	rts
+.exitExplodingPlayerState
+
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+	+MByteValueToAddress_A 1 , landscapeFrameSpeed
+
+	+MByteValueToAddress_A 0 , GamePlayerExplode_ExplodeFrame
+	+MByteValueToAddress_A 0 , LandscapeMapRowsFreezeUpdates
+
+	rts

@@ -18,6 +18,9 @@ if not exist bin\maincommon.prg goto error
 del bin\maintitle.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Title.a
 if not exist bin\maintitle.prg goto error
+..\ExternalTools\Gnu\bin\sed.exe -n -e "/^APULineScrolls/p" tmp\maintitle.map >tmp\CommonAPUDefines.a
+..\ExternalTools\Gnu\bin\sed.exe -n -e "/^APUData_Start/p" tmp\maintitle.map >>tmp\CommonAPUDefines.a
+..\ExternalTools\Gnu\bin\sed.exe -n -e "/^kAPUNumRunwayRows/p" tmp\maintitle.map >>tmp\CommonAPUDefines.a
 
 del bin\maingame.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Game.a

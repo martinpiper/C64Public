@@ -180,6 +180,8 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_SetLatch4_A
 	jsr RenderSpritePlayer
+	lda GamePlayerExplode_ExplodeFrame
+	+lbne .skipEnemyDraw
 	jsr RenderSpritePlayerReticle
 	jmp .skipEnemyDraw
 
@@ -201,33 +203,33 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	; Quick 3D position rotation test
 	; Combined transform
 	; Setup $100 - 1 in the add register. -1 because a read advances the address by 1
-	jsr Bus20To32Bit1_SetLatch8
+	+MBus20To32Bit1_SetLatch8_A
 	+MBus24Bit_Send8BitValue $ff
-	jsr Bus20To32Bit1_SetLatch9
+	+MBus20To32Bit1_UsingState_SetLatch9_A
 	+MBus24Bit_Send8BitValue 0
-	jsr Bus20To32Bit1_SetLatch10
+	+MBus20To32Bit1_UsingState_SetLatch10_A
 	+MBus24Bit_Send8BitValue 0
 
 	; Set the rotation address
 	ldy landscapeRotationsFrame
-	+MBus20To32Bit1_SetLatch1_A
+	+MBus20To32Bit1_UsingState_SetLatch1_A
 	lda rotationVectorTableAddrs,y
 	+MBus24Bit_Send8BitValueFromA
-	+MBus20To32Bit1_SetLatch2_A
+	+MBus20To32Bit1_UsingState_SetLatch2_A
 	lda rotationVectorTableAddrs + ScreenLandscapeNumRollSteps,y
 	+MBus24Bit_Send8BitValueFromA
 
-	+MBus20To32Bit1_SetLatch0_A
+	+MBus20To32Bit1_UsingState_SetLatch0_A
 	lda EntityXPos,x
 !if 1 {
 	+MBus24Bit_Send8BitValueFromA
 	+MBus20To32Bit1_ReadMode_A
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp8
 	; Add
-	+MBus20To32Bit1_SetLatch3_A
+	+MBus20To32Bit1_UsingState_SetLatch3_A
 	+MBus24Bit_Get8BitValueToA
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp9
 } else {
 	sta zeroPage_Temp8
@@ -239,10 +241,10 @@ EntityEnableRenderPlayerSpecialCase = *+1
 
 	; Set the rotation address
 	ldy landscapeRotationsFrame
-	+MBus20To32Bit1_SetLatch1_A
+	+MBus20To32Bit1_UsingState_SetLatch1_A
 	lda rotationVectorTableAddrsNext,y
 	+MBus24Bit_Send8BitValueFromA
-	+MBus20To32Bit1_SetLatch2_A
+	+MBus20To32Bit1_UsingState_SetLatch2_A
 	lda rotationVectorTableAddrsNext + ScreenLandscapeNumRollSteps,y
 	+MBus24Bit_Send8BitValueFromA
 
@@ -251,12 +253,12 @@ EntityEnableRenderPlayerSpecialCase = *+1
 !if 1 {
 	+MBus24Bit_Send8BitValueFromA
 	+MBus20To32Bit1_ReadMode_A
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp12
 	; Add
-	+MBus20To32Bit1_SetLatch3_A
+	+MBus20To32Bit1_UsingState_SetLatch3_A
 	+MBus24Bit_Get8BitValueToA
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToAddress zeroPage_Temp13
 } else {
 	sta zeroPage_Temp12
@@ -281,16 +283,16 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	; Set the lookup address
 	; X
 	+MBus20To32Bit1_WriteMode_A
-	+MBus20To32Bit1_SetLatch0_A
+	+MBus20To32Bit1_UsingState_SetLatch0_A
 	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp8
-	+MBus20To32Bit1_SetLatch1_A
+	+MBus20To32Bit1_UsingState_SetLatch1_A
 	lda EntityZPos,x
 	+MBus24Bit_Send8BitValueFromA
-	+MBus20To32Bit1_SetLatch2_A
+	+MBus20To32Bit1_UsingState_SetLatch2_A
 	+MBus24Bit_Send8BitValue 0
 	; Get the perspective result
 	+MBus20To32Bit1_ReadMode_A
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToA
 	cmp #128
 	+lbeq .skipEnemyDraw
@@ -298,11 +300,11 @@ EntityEnableRenderPlayerSpecialCase = *+1
 
 	; Y
 	+MBus20To32Bit1_WriteMode_A
-	+MBus20To32Bit1_SetLatch0_A
+	+MBus20To32Bit1_UsingState_SetLatch0_A
 	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp9
 	; Get the perspective result
 	+MBus20To32Bit1_ReadMode_A
-	+MBus20To32Bit1_SetLatch5_A
+	+MBus20To32Bit1_UsingState_SetLatch5_A
 	+MBus24Bit_Get8BitValueToA
 	cmp #128
 	+lbeq .skipEnemyDraw
@@ -311,7 +313,7 @@ EntityEnableRenderPlayerSpecialCase = *+1
 
 	; Back to direct write
 	+MBus20To32Bit1_WriteMode_A
-	+MBus20To32Bit1_SetLatch4_A
+	+MBus20To32Bit1_UsingState_SetLatch4_A
 
 	lda landscapeRotationsFrame
 	clc
