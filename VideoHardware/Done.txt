@@ -1350,7 +1350,7 @@
 		Notice how the ground stripes immediately appear at 3:37 but the runway (road) comes in from the distance
 		The near part of the runway as some ground sprites covering the start
 	The top sky+cloud+ground layer can still be mode7 while below the level horizon the runway (road) can be a tile/chars layer that has priority behind the sprites but infront of the mode7 background
-	The runway (road) lines and the width and start/end position can all be controlled by the APU a lot like the chequerboard ground in Demo9
+	The runway (road) lines and the width and start/end position can all be controlled by the APU a lot like the chequerboard ground in Demo9
 	This can all be table driven updates (from python) to choose exactly the desired APU coordinates to pick from the chars/tile screen
 	While landing the camera points down more and the horizon is very near (but not quite) the top of the screen
 	Since there is no rotation, the entire sequence could be a table and the landscape draw can use a special case
@@ -1670,6 +1670,11 @@
 
 
 
+* Demo14: EntitySystem.a : jsr Bus20To32Bit1_SetLatch8 ??!! Why is this being used instead of the macros, with state??
+
+
+
+
 * Demo14: Titles can use very cut down game includes, and a small map that only uses shared common sprites
 	>> !ifdef BuildTitleScreen {
 	>> LandscapeMapDataDemo.a
@@ -1697,3 +1702,91 @@
 
 * Demo14: When exiting the canyon, the speed increase should only happen after the last canyon edge. In other words, wait for the whole level to cycle around
 	>> .framesForEndTimeoutBeforeTakeOff
+
+
+
+* Demo14: Proper enemy formations
+	Update CheckSpawnEnemy so that it will trigger consistent enemy formations from LandscapeMapRowsData
+	Probably needs a storage area that contains information of what to spawn and when.
+	Process one entry per frame?
+	>> Created CheckSpawnEnemyFormation and SpawnEnemy_* which can be filled in by the landscape map calculation
+	>> Created LandscapeMapRowsData_Formation_WhenTypePos
+	; TODO: Magic numbers
+
+
+
+* Demo14: Count spawned enemies, stop too many from being spawned
+	Currently it is possible for enemies to fill the entity list and to stop bullets being spawned
+	Perhaps have a "EntityFindFreeSlot" that will not search the whole list and one that will search the whole list for bullets, smoke etc
+		>> EntityFindFreeSlotEnemy
+
+
+
+
+* Demo14: EntityState_Bullets with enemies
+	Explosion frames, reuse existing large explosions.
+	>> For "; Accumulate landscape rotation for the entity"
+		Have a flag that enables rotation or not. If there isn't rotation then there is no need to have a large array of identical pointers.
+			> Entities that would benefit are:
+				WhiteSmoke_landscapeRotationsFrame_to_animation => Render_WhiteSmoke
+				MissileForward_landscapeRotationsFrame_to_animation => Render_MissileForward
+				Bullets_landscapeRotationsFrame_to_animation => Render_Bullets
+		Before:
+			$0-$1ff:$200
+			$cb68-$cfff:$498
+			$d5d3-$dfff:$a2d
+			$fb89-$ffff:$477
+		> EntityTypeIsRotating = 0 not rotating, any other value is rotating
+		After:
+			$0-$1ff:$200
+			$c9f0-$cfff:$610
+			$d5d3-$dfff:$a2d
+			$fba7-$ffff:$459
+		>> EntityTypeHi != 0 and EntityTypeIndex != -1 when the entity is an enemy
+	>> After Render_ExplodeFlames0-4 and Render_ExplodeBall0-3
+		$cc1e-$cfff:$3e2
+	>> Can use EntityStateValue1 to count and switch the rendering to the other frames
+		When the enemy is hit, remember to set EntityScaleTweak and EntityTypeIndex=-1 EntityTypeIsRotating=0 and set EntityStateHi to a suitable explosion handler
+		>> EntityState_ExplodeFlames and EntityState_ExplodeBall
+		>> $ccbe-$cfff:$342
+	> Done: ; TODO: Proper position check
+		>> ; Position check with enemy
+
+
+
+* Not needed after OptimiseSprite4ScaleTables\main.py: Demo14: Labels with DivideTab seem to be wasting some memory?
+	And clampToTwoTab
+
+
+
+* Demo14: Missile lock on mechanic
+	* When enemies render, the screen position needs to be saved to the entity
+	* When the player reticle screen position is close to an enemy then the entity ID is added to a list of a certain number of lockons
+	* If the entity ID dies, is not longer an enemy, it is removed from the lock on list
+	* The lock list is rendered with player reticles, but perhaps bigger
+	* When a missile is fired, it removes the first available entity ID from that lock list, the missle flies towards the enemy entity 3D position, if the enemy is an active entity ID
+		>> EntityState_MissileForward
+	>> EntityLastScreenXPos and EntityLastScreenYPos
+	> 328/2 should be ScreenLandscapeOriginXPos
+	>> jsr Game_RenderLockReticles
+	* Done: Need a way to suppress output of unused scale tables, unless they are used by other sprites.
+		For example: kVarsEmitSpriteFrame_t_328_0_0_0_tileWidthScaleTab kVarsEmitSpriteFrame_t_328_0_0_0_tileHeightScaleTab
+		Also most of the player frames do not need scale tables, since the player is mostly drawn without scaling
+		* Probably a process of the entire tables file
+			Search for each label in source files
+			Remove entries for labels, including their +MGenerateSprite4ScaleTable, if they are all not used
+			If at least one label is used then don't remove?
+			* Have one include for title and one for game, the lists of used assets is different
+			> Perhaps comment out
+			>> Before: $ce6e-$cfff:$192
+			>> Using: OptimiseSprite4ScaleTables\main.py tmp\Demo14ScaledSprites4Sheet.txtTables.a tmp\Demo14ScaledSprites4SheetOptimised.txtTables.a asm\AfterBurner\*.a
+			>> removedMacros  20
+			>> After: $bda2-$cfff:$125e
+	* Done: Game_RenderLockReticles only renders entity IDs in the locked list
+	* Done: Add entity IDs to the lock list, if the player reticle has moved over the same area on the screen
+		>> PlayerReticle_lastXPos , PlayerReticle_lastYPos
+	* Done: Remove entity IDs from the lock list if they are not enemies
+
+
+
+* Demo14: TODO: Need "lock" sample

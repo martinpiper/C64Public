@@ -8,7 +8,7 @@ call assets\convert9.bat
 call assets\convert10.bat
 call assets\convert11.bat
 call assets\convert13.bat
-call assets\convert14.bat
+call assets\convert14PaletteLayers.bat
 
 call BuildIt.bat
 call BuildIt3.bat

@@ -1,4 +1,4 @@
-!source "tmp/Demo14ScaledSprites4Sheet.txtTables.a"
+!source "tmp/Demo14ScaledSprites4SheetOptimised.txtTables.a"
 
 
 EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
@@ -45,20 +45,6 @@ acme.source("	!word Render_EnemyPlaneGreen" + str(9 + 6) + "\n")
 }
 
 
-WhiteSmoke_landscapeRotationsFrame_to_animation
-!for .i , ScreenLandscapeNumRollSteps {
-	!word Render_WhiteSmoke
-}
-
-MissileForward_landscapeRotationsFrame_to_animation
-!for .i , ScreenLandscapeNumRollSteps {
-	!word Render_MissileForward
-}
-
-Bullets_landscapeRotationsFrame_to_animation
-!for .i , ScreenLandscapeNumRollSteps {
-	!word Render_Bullets
-}
 
 !macro MRender_EntityObject .tileWidthScaleTab , .tileHeightScaleTab , .palette , .tileWidth , .tileHeight , .address , .flipX , .flipY {
 !word .tileWidthScaleTab - 1
@@ -389,3 +375,36 @@ Render_EnemyPlaneHarrier190
 Render_EnemyPlaneHarrier185
 Render_EnemyPlaneHarrier180
 +MRender_EntityObject kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_2835_0_0_0_colour , kVarsEmitSpriteFrame_t_2835_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_2835_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_2835_0_0_0_tileAddress , 0 , 1
+
+
+
+
+Render_ExplodeFlames0
++MRender_EntityObject kVarsEmitSpriteFrame_et_731_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_731_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_731_0_0_0_colour , kVarsEmitSpriteFrame_et_731_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_731_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_731_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeFlames1
++MRender_EntityObject kVarsEmitSpriteFrame_et_300_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_300_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_300_0_0_0_colour , kVarsEmitSpriteFrame_et_300_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_300_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_300_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeFlames2
++MRender_EntityObject kVarsEmitSpriteFrame_et_509_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_509_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_509_0_0_0_colour , kVarsEmitSpriteFrame_et_509_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_509_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_509_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeFlames3
++MRender_EntityObject kVarsEmitSpriteFrame_et_514_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_514_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_514_0_0_0_colour , kVarsEmitSpriteFrame_et_514_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_514_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_514_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeFlames4
++MRender_EntityObject kVarsEmitSpriteFrame_et_523_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_523_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_523_0_0_0_colour , kVarsEmitSpriteFrame_et_523_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_523_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_523_0_0_0_tileAddress , 1 , 0
+
+
+
+Render_ExplodeBall0
++MRender_EntityObject kVarsEmitSpriteFrame_et_501_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_501_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_501_0_0_0_colour , kVarsEmitSpriteFrame_et_501_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_501_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_501_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeBall1
++MRender_EntityObject kVarsEmitSpriteFrame_et_528_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_528_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_528_0_0_0_colour , kVarsEmitSpriteFrame_et_528_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_528_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_528_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeBall2
++MRender_EntityObject kVarsEmitSpriteFrame_et_301_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_301_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_301_0_0_0_colour , kVarsEmitSpriteFrame_et_301_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_301_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_301_0_0_0_tileAddress , 1 , 0
+
+Render_ExplodeBall3
++MRender_EntityObject kVarsEmitSpriteFrame_et_517_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_et_517_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_et_517_0_0_0_colour , kVarsEmitSpriteFrame_et_517_0_0_0_tileWidth , kVarsEmitSpriteFrame_et_517_0_0_0_tileHeight , kVarsEmitSpriteFrame_et_517_0_0_0_tileAddress , 1 , 0
+

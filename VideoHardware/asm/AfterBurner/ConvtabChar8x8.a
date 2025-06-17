@@ -1,0 +1,15 @@
+!to "..\tmp\ConvtabChar8x8.ct", plain
+;!source "..\tmp\Demo14TitleChars_map.bin.debug.txt"
+!initmem 0
+!disablesegmentcheck
+*=0
+;!for .i , 256 {!by .i-1}
+!for .i , 256 {!by 0}
+*=' '
+!bin "..\tmp\Demo14TitleChars_map.bin",1,0
+*='A'
+!bin "..\tmp\Demo14TitleChars_map.bin",26,1
+*='a'
+!bin "..\tmp\Demo14TitleChars_map.bin",26,1
+*='0'
+!bin "..\tmp\Demo14TitleChars_map.bin",10,32

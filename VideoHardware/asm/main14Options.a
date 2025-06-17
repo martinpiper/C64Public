@@ -19,6 +19,8 @@ kBus24Bit_VideoLayer_ExpandedPaletteLayers = 1
 kBus24Bit_VideoLayer_VBlankUseNMI = 1
 kBus24Bit_SpritesMaxNum = 32
 
+SortHardMaxEntries = 16	; The hard maximum for entries for the sort
+
 zeroPage_Temp0	= $2
 zeroPage_Temp1	= $3
 zeroPage_Temp2	= $4
@@ -47,7 +49,6 @@ zeroPage_Temp23	= $19
 SortTemp0 = zeroPage_Temp0
 SortTemp1 = SortTemp0 + 1
 
-SortHardMaxEntries = 16	; The hard maximum for entries for the sort
 
 
 !source "tmp/Demo14LargeTablesIncludeFrames.a"

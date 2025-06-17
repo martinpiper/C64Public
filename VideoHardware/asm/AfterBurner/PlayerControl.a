@@ -112,10 +112,28 @@ PlayerControl
 	sta EntityZPos,x
 	lda #0
 	sta EntityScaleTweak,x
-	lda #<MissileForward_landscapeRotationsFrame_to_animation
+	lda #<Render_MissileForward
 	sta EntityTypeLo,x
-	lda #>MissileForward_landscapeRotationsFrame_to_animation
+	lda #>Render_MissileForward
 	sta EntityTypeHi,x
+	lda #0
+	sta EntityTypeIsRotating,x
+	lda #-1
+	sta EntityStateValue1,x
+
+	; Find an enemy in the lock list
+	ldy #kGameLockReticles_EntityIDs_max-1
+.cel1
+	lda GameLockReticles_EntityIDs,y
+	bmi .cel2
+	sta EntityStateValue1,x
+	lda #-1
+	sta GameLockReticles_EntityIDs,y
+	jmp .cel3
+.cel2
+	dey
+	bpl .cel1
+.cel3
 
 	lda #<EntityState_MissileForward
 	sta EntityStateLo,x
@@ -167,6 +185,7 @@ PlayerControl
 
 	; Fire bullets
 	+LTestForPortBitsLoop_A GameUsesPortA , JoystickBits_Fire , .notFire2
+.bph
 	lda EntityState_Bullets_ActiveNum
 	cmp #5
 	+lbcs .overFire2
@@ -194,10 +213,12 @@ PlayerControl
 	sta EntityZPos,x
 	lda #0
 	sta EntityScaleTweak,x
-	lda #<Bullets_landscapeRotationsFrame_to_animation
+	lda #<Render_Bullets
 	sta EntityTypeLo,x
-	lda #>Bullets_landscapeRotationsFrame_to_animation
+	lda #>Render_Bullets
 	sta EntityTypeHi,x
+	lda #0
+	sta EntityTypeIsRotating,x
 
 	lda #<EntityState_Bullets
 	sta EntityStateLo,x
@@ -234,6 +255,7 @@ PlayerControl
 	; Check for roll trigger
 	cmp #28
 	+IfRegLessThanOrEqualToVal .rollAlreadyStarted1
+	jsr PlaySampleWow
 	lda #-ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
 	sta landscapeRotationsFrameRoll
 .rollAlreadyStarted1
@@ -257,6 +279,7 @@ PlayerControl
 	; Check for roll trigger
 	cmp #-28
 	+IfRegGreaterThanOrEqualToVal .rollAlreadyStarted2
+	jsr PlaySampleWow
 	lda #ScreenLandscapeNumRollSteps/ScreenLandscapeNumRollAnimationSpeed
 	sta landscapeRotationsFrameRoll
 .rollAlreadyStarted2
@@ -665,29 +688,39 @@ RenderSpritePlayer
 .smj2	jmp RenderSpritePlayerR0Y0
 
 
+PlayerReticle_lastXPos !by 0
+PlayerReticle_lastYPos !by 0
+
 RenderSpritePlayerReticle
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_SetLatch4_A
 
-	lda #((328/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth/2))/2
+	; Precalc and store
+	lda playerXPositionOffset
 	clc
 	adc playerXPositionOffset
-	adc playerXPositionOffset
+	sta PlayerReticle_lastXPos
+
+	lda playerYPositionOffsetSpeed
+	clc
+;	adc playerYPositionOffsetSpeed
+;	adc playerYPositionOffsetSpeed
+;	adc playerYPositionOffsetSpeed
+;	adc playerYPositionOffsetSpeed
+	adc playerYPositionOffset
+	sta PlayerReticle_lastYPos
+
+	lda #((ScreenLandscapeOriginXPos) - (kVarsEmitSpriteFrame_t_328_0_0_0_tileWidth/2))/2
+	clc
+	adc PlayerReticle_lastXPos
 	sta zeroPage_Temp4
 
 	lda #(110/2)-10
 	clc
-	adc playerYPositionOffsetSpeed
-	adc playerYPositionOffsetSpeed
-	adc playerYPositionOffsetSpeed
-	adc playerYPositionOffsetSpeed
-	adc playerYPositionOffsetSpeed
-	adc playerYPositionOffset
+	adc PlayerReticle_lastYPos
 	sta zeroPage_Temp5
-;	clc
-;	adc playerYPositionOffset
 
-	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , -1
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_328_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_328_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_328_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_328_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_328_0_0_0_tileWidth , -1
 	rts
 
 
@@ -704,7 +737,7 @@ RenderSpritePlayerReticle
 	+MBus24Bit_Send8BitValue .height
 	; X pos and size
 ;	lda #$aa - (.width/2)
-	lda #(328/2) - (.width/2)	; This is more in the middle of the screen
+	lda #(ScreenLandscapeOriginXPos) - (.width/2)	; This is more in the middle of the screen
 	clc
 	adc playerXPositionOffset
 	+MBus24Bit_Send8BitValueFromA
@@ -760,7 +793,7 @@ RenderSpritePlayerReticle
 	+MBus24Bit_Send8BitValue .height
 	; X pos and size
 ;	lda #$aa - (.width/2)
-	lda #(328/2) - (.width/2)	; This is more in the middle of the screen
+	lda #(ScreenLandscapeOriginXPos) - (.width/2)	; This is more in the middle of the screen
 	clc
 	adc playerXPositionOffset
 	sta zeroPage_Temp21
@@ -1114,4 +1147,14 @@ ReducePlayerXPositionForNoInput
 .isPos1
 	dec playerXPositionOffset
 .gotXInput
+	rts
+
+PlaySampleWow
+!ifndef BuildTitleScreen {
+	jsr Rand
+	and #3
+	+lbne .skipWow
+	+MPlaySample 2 , 255 , kSampleInfo10_start , kSampleInfo10_length , kSampleInfo10_frequency
+.skipWow
+}
 	rts

@@ -573,10 +573,6 @@
 
 
 
-* Demo14: EntitySystem.a : jsr Bus20To32Bit1_SetLatch8 ??!! Why is this being used instead of the macros, with state??
-
-
-
 * Demo14: Frame flickering might be due to entity far clip cull causing hardware draw state to be wrong.
 
 
@@ -631,6 +627,7 @@
 		segaxbd_state::sub_map
 			map(0x0c0000, 0x0cffff).rw("segaic16vid", FUNC(segaic16_video_device::tileram_r), FUNC(segaic16_video_device::tileram_w)).share("tileram");
 			map(0x0d0000, 0x0d0fff).mirror(0x00f000).rw("segaic16vid", FUNC(segaic16_video_device::textram_r), FUNC(segaic16_video_device::textram_w)).share("textram");
+		>> Look for mame code changes starting with "// MPi: Debug: When wanting to save out the graphics with transparency"
 		>> Seem to be 0-1fff tiles in total, in the gfx viewer
 		>> This sets data into the two tile maps (second and first)
 			fill c0430,101,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f
@@ -646,12 +643,69 @@
 				>> This fills the top line of the first (2) tilemap: fill c0000,80,w.41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,30,31,32,33,34,35,36,37,38,39
 		>> Note how fills to d0000 are mirrored in 1000 byte chunks, because the address range in segaxbd.cpp is only d0000-d0fff, so this is only one tilemap screen
 			Also the d0000 tilemap (1) writes seems to only have tiles 0-1ff (not 1fff) and the bits >= 200 seem to pick colour palettes for the mostly text tiles that are in the range 0-1ff
-
-
+		>> For debug graphics purposes:
+			fill d0000,56,w.40,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,30,31,32,33,34,35,36,37,38,39
+		>> Text colours:
+			Blue: 0,181,247
+			Pink: 247,181,247
+			Red: 247,0,0
+			Yellow: 247,247,148
+			>> Going to need a few charset palettes with the charset colour is in the second non-transparent colour (first is black, transparent is purple) so that the duplicate character detection works
+			>> Going to need a "--createpalette r1 g1 b1 r2 g2 b2 r3 g3 b3 ..." that first uses the current forcergb and adds to it
+			>> --preservedata to append tiles...
+			>> Added: ImageToBitplane --concath for stitching the screen together
+			>> Added: --paletteaddrgbs
+			>> Need sometimes to nuke the screen/colour data and allow the current tiles to be used
+			>> The differently coloured text in "C:\work\c64\VideoHardware\assets\Demo14\chars title.png" (with the exception of some of the chars that are special case) should be converted into the palettes...
+			>> Put "C:\work\c64\VideoHardware\assets\Demo14\chars charset.png" first, to get most of the chars ready for use in game
+			>> Include "C:\work\c64\VideoHardware\assets\Demo14\chars game.png"
+			>> Concat to ..\tmp\demo14chars2.png and convert, update title and game to show the screens
+				* Need to include charset palettes...
+					Before:
+						2,072,384 Demo14FinalData.bin
+						96 Demo14ScaledSprites4TitleScreen.pal
+						num palettes=3
+						palette size=16
+						palette size=16
+						palette size=11
+						num tiles=106
+					After:
+						2,072,896 Demo14FinalData.bin
+						160 Demo14ScaledSprites4TitleScreen.pal
+						num palettes=5
+						palette size=16
+						palette size=16
+						palette size=8
+						palette size=7
+						palette size=3
+						num tiles=106
+			>> Hmm problem, note the "num tiles" is the same, whenthe tiles should be finding reused tiles using the palettes...
+				>> This demonstrates the tile matching works with the forced colour palettes first...
+					> cls && java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --paletteaddrgbs 0 0 0   0 181 247 --paletteaddrgbs 0 0 0   247 181 247 --paletteaddrgbs 0 0 0   247 0 0  --paletteaddrgbs 0 0 0   247 247 148   --image "..\tmp\demo14chars2.png" --tilewh 8 8 --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
+					> num tiles=99
+				>> Perhaps the colours are being matched by a previous palette forcing the generated tile to actually be not exact?
+					> TileConvert()
+					> Specifically 32,480 "credits" text does not match
+					>> Fixed in image convertor, problem loading raw palette with repeated black entries.
+					>> num tiles=99
+		>> Top left radar: 264x40
+		>> Note: ; Debug: Text display test
+		>> Done: This takes a long time, it is huge! !source "tmp\Demo14TitleChars_map.bin.debug.txt"
+			Use sed to pull out specific entries during asset conversion and save an optimised file for source include
+			>> !source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
+		>> Done: Very wrong tile: kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x256_y0_tile = 15
+			kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x256_y0_colour = 1
+			kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x256_y0_reused = 1
+			kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x256_y0_flipx = 0
+			kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x256_y0_flipy = 0
+			>> Actually it is correct, the 0 reuses the O. Convtab changed to import the binary data from the converted screen.
 
 
 
 * Demo14: Score display
+	Image convertor, could do with saving out debug labels that represent what tiles/colours (non-transparent ones) are where at certain coordinates.
+	This would make it easier to include extra data
+
 
 
 
@@ -659,7 +713,24 @@
 
 
 
-* Demo14: Proper enemy formations
-	Update CheckSpawnEnemy so that it will trigger consistent enemy formations from LandscapeMapRowsData
-	Probably needs a storage area that contains information of what to spawn and when.
-	Process one entry per frame?
+* Demo14: After player explosion, new life the player should scale in from large to the expected player screen position, no player input during this
+
+
+
+* Demo14: Enemies in the far distance (just after spawning) should probably stay there for a second or two, perhaps move them at the player landscape speed, to give time to react
+	Then they can swoop in
+	>> Using UsingMaxHardwareScaleTabValue-1 instead, is slightly better
+
+
+
+
+* Demo14: Player clipped wing death, small explosion, smoke trail, hit ground, fireballs... No player input during this time.
+
+
+
+
+* Demo14: All the data combined is near the 2MB limit, but there is still lots of free memory for the Sprites4 layer and other graphics, like the animated hand in the intro and the end game sequence and the other intro screens.
+	> There is potential to split the data into two 2MB chunks by having the boot upload all graphics data first, then run the actual title/game parts from a new 2MB chunk to be oploaded after the graphics data push
+		The graphics data upload can wait for the second chunk of data with a different gameDataIdentifier chunk
+		The test scenario can use the syntax for running until CPU PC = then swap the 2MB of dat chunk, then let the execution continue
+		The C64 code can just test for the second gameDataIdentifier chunk in memory after the upload

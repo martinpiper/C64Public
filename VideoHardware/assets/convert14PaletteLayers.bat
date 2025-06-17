@@ -8,11 +8,16 @@ pushd Demo14\PerspectiveGen
 python main.py
 popd
 
+
+echo Create combined chars screens data
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\chars title.png" "demo14\chars game.png" ..\tmp\demo14chars1.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "Demo14\chars charset.png" "..\tmp\demo14chars1.png" ..\tmp\demo14chars2.png
+
 echo Calculate palettes for these first
 rem Want to ensure the landscape and sky colours are in a specific order, while remapping the clouds to the colours...
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 256 --forcergb 32 166 71 --forcergb 29 148 63 --forcergb 26 135 58 --forcergb 23 117 50 --forcergb 20 102 44   --forcergb 255 255 255 --forcergb 214 255 255 --forcergb 197 255 255 --forcergb 181 247 255 --forcergb 164 230 255 --forcergb 148 214 255 --forcergb 132 197 255 --forcergb 115 181 255 --forcergb 99 164 255 --forcergb 82 148 255 --forcergb 66 132 255 --forcergb 49 115 255 --forcergb 33 99 255 --forcergb 16 82 255   --nostacking --image "Demo14\clouds.png" --imagequantize 24 --tilewh 16 16 --outputpalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --convertwritepass
 
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --nostacking --image "Demo14\chars title.png" --tilewh 8 8 --nowritepass --image "Demo14/runway.png" --tilewh 16 16 --imagequantize 16 --outputpalettes ..\tmp\Demo14TitleChars.pal --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --paletteaddrgbs 0 0 0   0 181 247 --paletteaddrgbs 0 0 0   247 181 247 --paletteaddrgbs 0 0 0   247 0 0  --paletteaddrgbs 0 0 0   247 247 148  --nostacking --image "..\tmp\demo14chars2.png" --tilewh 8 8 --nowritepass --image "Demo14/runway.png" --tilewh 16 16 --imagequantize 16 --outputpalettes ..\tmp\Demo14TitleChars.pal --convertwritepass
 
 echo Calculate palettes and clouds
 rem The --loadpalette ordering here ensures that the palettes calculated above are appropriately included
@@ -27,7 +32,7 @@ set SPRITES_COMMON_2=--batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlan
 rem Landscape water and bushes and clouds
 rem Landscape objects: 1 (also 18) , 2 , 3 , 4 , 5 , 6 , 11 , 16 , 17 , 19 , 20 , 21
 rem Plus: Bullets, reticle, bullet hit ground
-set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png" Demo14\BulletsExplosions\t-208.png Demo14\BulletsExplosions\t-793.png "Demo14\BulletsExplosions\t-231 - Copy.png" "Demo14\BulletsExplosions\t-231.png" "Demo14\BulletsExplosions\t-232 - Copy.png" "Demo14\BulletsExplosions\t-232.png" "Demo14\BulletsExplosions\t-258.png" "Demo14\BulletsExplosions\t-259.png" "Demo14\BulletsExplosions\et-317.png" "Demo14\BulletsExplosions\et-318.png" "Demo14\BulletsExplosions\et-319.png" "Demo14\BulletsExplosions\et-731.png" "Demo14\BulletsExplosions\et-300.png" "Demo14\BulletsExplosions\et-509.png" "Demo14\BulletsExplosions\et-514.png" "Demo14\BulletsExplosions\et-523.png" "Demo14\BulletsExplosions\et-501.png" "Demo14\BulletsExplosions\et-528.png" "Demo14\BulletsExplosions\et-301.png" "Demo14\BulletsExplosions\et-517.png" "Demo14\BulletsExplosions\et-365.png" "Demo14\BulletsExplosions\et-383.png" "Demo14\BulletsExplosions\et-408.png"
+set SPRITES_COMMON_3=--batchimages "Demo14\t-787.png" Demo14\t-1565.png Demo14\t-1565rot.png Demo14\t-1607.png Demo14\t-1611.png Demo14\t-786.png "Demo14\t-576.png" "Demo14\t-934.png" "Demo14\t-1039.png" "Demo14\t-14.png" "Demo14\t-14rot.png" "Demo14\t-42.png" Demo14\BulletsExplosions\t-208.png Demo14\BulletsExplosions\t-793.png Demo14\BulletsExplosions\t-328.png "Demo14\BulletsExplosions\t-231 - Copy.png" "Demo14\BulletsExplosions\t-231.png" "Demo14\BulletsExplosions\t-232 - Copy.png" "Demo14\BulletsExplosions\t-232.png" "Demo14\BulletsExplosions\t-258.png" "Demo14\BulletsExplosions\t-259.png" "Demo14\BulletsExplosions\et-317.png" "Demo14\BulletsExplosions\et-318.png" "Demo14\BulletsExplosions\et-319.png" "Demo14\BulletsExplosions\et-731.png" "Demo14\BulletsExplosions\et-300.png" "Demo14\BulletsExplosions\et-509.png" "Demo14\BulletsExplosions\et-514.png" "Demo14\BulletsExplosions\et-523.png" "Demo14\BulletsExplosions\et-501.png" "Demo14\BulletsExplosions\et-528.png" "Demo14\BulletsExplosions\et-301.png" "Demo14\BulletsExplosions\et-517.png" "Demo14\BulletsExplosions\et-365.png" "Demo14\BulletsExplosions\et-383.png" "Demo14\BulletsExplosions\et-408.png"
 rem Enemies
 set SPRITES_ENEMY_1=--batchimages Demo14\EnemyPlaneWhite\*.png
 set SPRITES_ENEMY_2=--batchimages Demo14\EnemyPlaneHarrier\*.png
@@ -66,7 +71,10 @@ rem All the palettes have been calculated, now convert the sprites. Game assets 
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game0.pal --fitpalettes --nostacking --outputscaled4 ..\tmp\ScaledSprites4 --outputsprites ..\tmp\Demo14ScaledSprites4Sheet.txt %SPRITES_COMMON_1% %SPRITES_COMMON_2% %SPRITES_COMMON_3% %SPRITES_ENEMY_1% %SPRITES_ENEMY_2% %SPRITES_GAME_PALETTE_0% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreenSprites.pal --batchimages Demo14\Intro\*.png --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game1.pal %SPRITES_GAME_PALETTE_1% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game2.pal %SPRITES_GAME_PALETTE_2% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game3.pal %SPRITES_GAME_PALETTE_3% --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4Game4.pal %SPRITES_GAME_PALETTE_4% --writepass
 
 rem Now convert the other assets
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "Demo14\chars title.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14chars2.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
+
+..\..\acme.exe -v9 ..\asm\AfterBurner\ConvtabChar8x8.a
+..\..\ExternalTools\Gnu\bin\sed.exe -n -e "/^kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_.*_colour/p" ..\tmp\Demo14TitleChars_map.bin.debug.txt >..\tmp\Demo14TitleChars_map.bin.debug.optimised.txt
 
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 256 --loadpalette ..\tmp\Demo14ScaledSprites4TitleScreen.pal --nostacking --image "Demo14\clouds.png" --tilewh 16 16 --fitpalettes --outputtilebytes ../tmp/Demo14CloudsTiles.bin --outputscrcol ../tmp/Demo14Clouds.bin --convertwritepass
 
@@ -84,7 +92,7 @@ rem start java.exe -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-S
 
 echo Convert sound effects
 rem java.exe -Dmusic.channel.remap.4=0 -Dmusic.channel.remap.5=1 -Dmusic.channel.remap.6=2 -Dmusic.channel.remap.7=3 -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\AfterBurner sound effects reduced.xm" "target/exportedSoundEffectsAfterBurner" 65535 168864
-java.exe -Dmusic.channel.remap.4=0 -Dmusic.channel.remap.5=1 -Dmusic.channel.remap.6=2 -Dmusic.channel.remap.7=3 -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\AfterBurner sound effects reduced2.xm" "target/exportedSoundEffectsAfterBurner" 65535 74753
+java.exe -Dmusic.channel.remap.4=0 -Dmusic.channel.remap.5=1 -Dmusic.channel.remap.6=2 -Dmusic.channel.remap.7=3 -Dmusic.volume=1 -jar ..\..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --exportmod "..\assets\AfterBurner sound effects reduced2.xm" "target/exportedSoundEffectsAfterBurner" 65535 79361
 
 cd ..
 

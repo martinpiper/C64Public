@@ -41,6 +41,8 @@ EntityTypeLo
 	!fill SortHardMaxEntries , 0
 EntityTypeHi
 	!fill SortHardMaxEntries , 0
+EntityTypeIsRotating
+	!fill SortHardMaxEntries , 0
 EntityTypeIndex
 	!fill SortHardMaxEntries , -1
 
@@ -55,11 +57,19 @@ EntityStateValue1
 EntityStateValue2
 	!fill SortHardMaxEntries , 0
 
+
+EntityLastScreenXPos
+	!fill SortHardMaxEntries , 0
+EntityLastScreenYPos
+	!fill SortHardMaxEntries , 0
+
+
 EntityInit
 	ldx #SortHardMaxEntries
 .ecl1
 	lda #0
 	sta EntityTypeHi-1,x
+	sta EntityTypeIsRotating-1,x
 	sta EntityStateHi-1,x
 	lda #-1
 	sta EntityTypeIndex-1,x
@@ -86,6 +96,27 @@ EntitySortInit
 ;	C = 1 no free slot
 EntityFindFreeSlot
 	ldx #SortHardMaxEntries-1
+.fff1
+	lda EntityTypeHi,x
+	beq .isFree1
+	dex
+	bne .fff1	; Note: Not bpl, since the zero index entry is always the player special case
+	sec
+	rts
+
+.isFree1
+	lda #0
+	sta EntityStateHi,x
+	lda #-1
+	sta EntityTypeIndex,x
+	clc
+	rts
+
+!zn
+; Return: X = Index , C = 0 on success
+;	C = 1 no free slot
+EntityFindFreeSlotEnemy
+	ldx #SortHardMaxEntries-1-6
 .fff1
 	lda EntityTypeHi,x
 	beq .isFree1
@@ -297,6 +328,7 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	cmp #128
 	+lbeq .skipEnemyDraw
 	sta zeroPage_Temp8
+	sta EntityLastScreenXPos,x
 
 	; Y
 	+MBus20To32Bit1_WriteMode_A
@@ -309,12 +341,17 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	cmp #128
 	+lbeq .skipEnemyDraw
 	sta zeroPage_Temp9
+	sta EntityLastScreenYPos,x
 
 
 	; Back to direct write
 	+MBus20To32Bit1_WriteMode_A
 	+MBus20To32Bit1_UsingState_SetLatch4_A
 
+	lda EntityTypeIsRotating,x
+	beq .notRotating
+	; Accumulate landscape rotation for the entity
+.accumlateRotations
 	lda landscapeRotationsFrame
 	clc
 	adc EntityRotationTweak,x
@@ -323,6 +360,9 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	bcc .isOKRotation1
 	sbc #ScreenLandscapeNumRollSteps
 	jmp .testAgain1
+.notRotating
+	+MZPAddr16ToZPAddr16_A zeroPage_Temp16 , zeroPage_Temp0
+	jmp .theRenderBlock
 .isOKRotation1
 	asl
 	tay
@@ -331,6 +371,7 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	iny
 	lda (zeroPage_Temp16),y
 	sta zeroPage_Temp1
+.theRenderBlock
 	ldy #0
 	lda (zeroPage_Temp0),y
 	sta .smEnemyWidth+1
@@ -370,7 +411,7 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	; To screen coordinates
 	lda zeroPage_Temp8
 	clc
-	adc #(328/2/2)
+	adc #ScreenLandscapeOriginXPos/2
 	sec
 	sbc zeroPage_Temp1
 	asl

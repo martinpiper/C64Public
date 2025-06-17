@@ -1394,6 +1394,7 @@ Feature: Smoke test
     And the layer has 16 colours
     And the layer has overscan
     And the layer uses exact address matching
+#    And the layer displays a debug window
 #    # Layer 0-0
 #    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
 #    And the layer has 16 colours

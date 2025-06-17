@@ -36,6 +36,8 @@ InitGameIntro
 	+MPlaySample 1 , 255 , kSampleInfo8_start , kSampleInfo8_length , kSampleInfo8_frequency
 }
 
+	jsr GameShowScreen
+
 	rts
 
 RunGameIntro
@@ -80,7 +82,7 @@ RenderSpritesCarrier
 	clc
 	adc #32-ksms1CarrierScale_SmallestValue
 	tax
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	+MWordValueToAddressLoHi_A 172 , zeroPage_Temp4 , zeroPage_Temp7
 	lda smOffsetY1Carrier+1
 	lsr
@@ -117,7 +119,7 @@ RenderSpritesCarrier
 .renderOtherPlayerOver
 sms1CarrierScale	ldx #$20
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	; Simple 16 bit calculation to center the sprites
 	; Accumulate in steps
 !for .i , 2 {
@@ -180,7 +182,7 @@ smOffsetY1Carrier	lda #0
 	sta zeroPage_Temp7
 
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	; Simple 16 bit calculation to center the sprites
 	; Accumulate in steps
 !for .i , 2 {
@@ -235,10 +237,12 @@ smOffsetY1Carrier	lda #0
 	sta EntityZPos,x
 	lda #10
 	sta EntityScaleTweak,x
-	lda #<WhiteSmoke_landscapeRotationsFrame_to_animation
+	lda #<Render_WhiteSmoke
 	sta EntityTypeLo,x
-	lda #>WhiteSmoke_landscapeRotationsFrame_to_animation
+	lda #>Render_WhiteSmoke
 	sta EntityTypeHi,x
+	lda #0
+	sta EntityTypeIsRotating,x
 .noFreeSlot1
 }
 

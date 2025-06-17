@@ -292,7 +292,7 @@ GameRefueling_RenderPlayer_yposSub !by 0
 GameRefueling_RenderPlayer
 	; Render the player meeting the hose
 	ldx #$20
-	+MWordValueToAddressLoHi_A (328/2) - (kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth/2) , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A (ScreenLandscapeOriginXPos) - (kVarsEmitSpriteFrame_t_380_0_0_0_tileWidth/2) , zeroPage_Temp5 , zeroPage_Temp6
 	lda GameRefueling_RenderPlayer_xposAdd
 	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 	+MWordValueToAddressLoHi_A 112  - (kVarsEmitSpriteFrame_t_380_0_0_0_tileHeight/2), zeroPage_Temp4 , zeroPage_Temp7
@@ -313,7 +313,7 @@ GameRefueling_RenderTanker
 
 	; Refueling hose
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 ;	lda kVarsEmitSpriteFrame_t_208_0_0_0_tileHeightScaleTab-1,x
 ;	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 
@@ -377,7 +377,7 @@ GameRefueling_RenderTanker
 
 	; Left fuselage
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
 	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 
@@ -397,7 +397,7 @@ GameRefueling_RenderTanker
 	cpx #$11
 	+lbcc .noDraw3
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
 	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_t_1692_0_0_0_tileWidthScaleTab-1,x
@@ -419,7 +419,7 @@ GameRefueling_RenderTanker
 	cpx #$1a
 	+lbcc .noDraw4
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
 	+MSubAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_508left_0_0_0_tileWidthScaleTab-1,x
@@ -441,7 +441,7 @@ GameRefueling_RenderTanker
 
 	; Right fuselage
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 
 	; Y Calc
 	+MWordValueToAddressLoHi_A 0 , zeroPage_Temp4 , zeroPage_Temp7
@@ -457,7 +457,7 @@ GameRefueling_RenderTanker
 	cpx #$11
 	+lbcc .noDraw5
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
 	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_t_722_0_0_0_tileHeightScaleTab-1,x
@@ -479,7 +479,7 @@ GameRefueling_RenderTanker
 	cpx #$1a
 	+lbcc .noDraw6
 	; X calc
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_rt_509left_0_0_0_tileWidthScaleTab-1,x
 	+MAddAFrom16ToAddr16 zeroPage_Temp5 , zeroPage_Temp6 , zeroPage_Temp5 , zeroPage_Temp6
 	lda kVarsEmitSpriteFrame_t_722_0_0_0_tileHeightScaleTab-1,x

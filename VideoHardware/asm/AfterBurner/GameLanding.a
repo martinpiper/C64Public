@@ -397,7 +397,7 @@ RunGameLanding_CommonFrame
 
 	ldx .playerSpecialCaseScale
 
-	+MWordValueToAddressLoHi_A 328/2 , zeroPage_Temp5 , zeroPage_Temp6
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
 	+MWordValueToAddressLoHi_A 178 , zeroPage_Temp4 , zeroPage_Temp7
 	lda #0
 	sta zeroPage_Temp3

@@ -93,8 +93,45 @@ UpdateLandscapeFrameInternal
 	cmp #>LandscapeMapRowsDataEnd
 	bne .over1
 	+MWordValueToAddress_A LandscapeMapRowsData , LandscapeMapRowsDataAddress
-.over1
+	jmp .startProcessingAtPaletteOffset
 
+.over1
+	; Processs any formation data, variable length block, slightly complicated :)
+	+MAddr16ToAddr16_A LandscapeMapRowsDataAddress , zeroPage_Temp18
+	ldx #0
+	stx SpawnEnemy_CurrentIndex
+.checkFormationLoop
+	; Process LandscapeMapRowsData_Formation_WhenTypePos data
+	ldy #0
+	lda (zeroPage_Temp18),y
+	bmi .endFormationList
+	sta SpawnEnemy_Type,x
+
+	iny
+	lda (zeroPage_Temp18),y
+	sta SpawnEnemy_When,x
+
+	iny
+	lda (zeroPage_Temp18),y
+	sta SpawnEnemy_X,x
+
+	iny
+	lda (zeroPage_Temp18),y
+	sta SpawnEnemy_Y,x
+
+	iny
+	lda (zeroPage_Temp18),y
+	sta SpawnEnemy_Z,x
+
+	inx
+	+MAddU8ToAddr16 kLandscapeMapRowsData_offset_Formation_Size , zeroPage_Temp18 , zeroPage_Temp18 + 1	; TODO: Magic numbers
+	jmp .checkFormationLoop
+
+.endFormationList
+	+MIncAddr16 zeroPage_Temp18 , zeroPage_Temp19
+	+MAddr16ToAddr16_A zeroPage_Temp18 , LandscapeMapRowsDataAddress
+
+.startProcessingAtPaletteOffset
 	; Update the palette bank for the current map row type
 	ldy #kLandscapeMapRowsData_offset_Palette
 	+MAddr16ToAddr16_A LandscapeMapRowsDataAddress , zeroPage_Temp18
@@ -137,6 +174,9 @@ kLandscapeMapRowsData_offset_EntityObjectTypes		= 3
 kLandscapeMapRowsData_offset_EntityObjectExitTypes	= 11
 kLandscapeMapRowsData_offset_LandscapeObjectTypes	= 19
 kLandscapeMapRowsData_size							= 27
+; Extra variable length data
+kLandscapeMapRowsData_offset_Formation				= 28
+kLandscapeMapRowsData_offset_Formation_Size			= 5
 
 kLandscapeMapRowsData_flags_doLanding	= %00000001
 kLandscapeMapRowsData_flags_doCanyon	= %00000010
@@ -165,5 +205,16 @@ kLandscapeMapRowsData_flags_doRefueling = %00000100
 !macro LandscapeMapRowsData_LandscapeObjects .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7 {
 	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_LandscapeObjectTypes
 	!by .o0 , .o1 , .o2 , .o3 , .o4 , .o5 , .o6 , .o7
+	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_Formation
+}
+
+!macro LandscapeMapRowsData_FormationEnd {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_Formation
+	!by -1
 	!set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_Palette
+}
+
+!macro LandscapeMapRowsData_Formation_WhenTypePos .when , .type , .x , .y , .z {
+	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_Formation
+	!by .type , .when , .x , .y , .z
 }

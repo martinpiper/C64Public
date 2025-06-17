@@ -8,6 +8,9 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>tmp\FingerPrint.a
 if not exist tmp mkdir tmp
 if not exist bin mkdir bin
 
+del tmp\Demo14ScaledSprites4SheetOptimised.txtTables.a
+python ..\VideoHardware\OptimiseSprite4ScaleTables\main.py tmp\Demo14ScaledSprites4Sheet.txtTables.a tmp\Demo14ScaledSprites4SheetOptimised.txtTables.a asm\AfterBurner\*.a
+
 del bin\maincommon.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Common.a
 if not exist bin\maincommon.prg goto error
@@ -44,6 +47,7 @@ rem ..\bin\LZMPi.exe -c64 bin\main.prg bin\main.cmp.prg $200 >tmp\t.txt
 ..\bin\LZMPi.exe -c64mr bin\main.prg bin\main.cmp.prg $200 >tmp\t.txt
 if not exist bin\main.cmp.prg goto error
 
+echo *** Target = 2,097,152
 dir tmp\Demo14FinalData.bin
 
 rem --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED

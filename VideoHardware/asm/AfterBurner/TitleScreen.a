@@ -8,8 +8,8 @@ InitTitleScreen
 	jsr Audio_Init
 	jsr TitleSetStartAnimation
 
-	lda #2
-	sta landscapeFrameSpeed
+	+MByteValueToAddress_A 2 , landscapeFrameSpeed
+	+MByteValueToAddress_A $40 , .logoScale
 	+MByteValueToAddress_A 0 , LandscapeFlags
 	+MByteValueToAddress_A 0 , GroundColours
 	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
@@ -29,13 +29,82 @@ InitTitleScreen
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_124
 
-	+MByteValueToAddress_A 0 , Video_WaitVBlank_FramesPassed
+	; Show the title screen
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 256
+
+	!source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
+	; Before accessign the screen RAM
+	jsr Video_WaitVBlank
+!if 0 {
+	; Debug: Text display test
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (2 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	+MBus24Bit_SendLE32BitValue 0x04030201
+	+MBus24Bit_SendLE32BitValue 0x08070605
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (3 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	+MBus24Bit_SendLE32BitValue 0x04030201
+	+MBus24Bit_SendLE32BitValue 0x08070605
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (4 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	+MBus24Bit_SendLE32BitValue 0x04030201
+	+MBus24Bit_SendLE32BitValue 0x08070605
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (5 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	+MBus24Bit_SendLE32BitValue 0x04030201
+	+MBus24Bit_SendLE32BitValue 0x08070605
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (2 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y0_colour
+	ldy #8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (3 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y8_colour
+	ldy #8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (4 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour
+	ldy #8
+	jsr Bus24Bit_WriteAForY
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (5 * kBus24Bit_CharScreenWidth) + 6 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	ldy #8
+	jsr Bus24Bit_WriteAForY
+}
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (22 * kBus24Bit_CharScreenWidth) + 8 + (kBus24Bit_CharScreenWidth * 32)
+	+MWordValueTo_AX TextTitleScreen_credits1
+	ldy #TextTitleScreen_credits1_size
+	jsr Bus24Bit_FastCopySmallData
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (22 * kBus24Bit_CharScreenWidth) + 8 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y0_colour
+	ldy #TextTitleScreen_credits1_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + (23 * kBus24Bit_CharScreenWidth) + 11 + (kBus24Bit_CharScreenWidth * 32)
+	+MWordValueTo_AX TextTitleScreen_credits2
+	ldy #TextTitleScreen_credits2_size
+	jsr Bus24Bit_FastCopySmallData
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + (23 * kBus24Bit_CharScreenWidth) + 11 + (kBus24Bit_CharScreenWidth * 32)
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	ldy #TextTitleScreen_credits2_size
+	jsr Bus24Bit_WriteAForY
 
 	rts
+
+!convtab "tmp\ConvtabChar8x8.ct" {
+TextTitleScreen_credits1
+!tx "megawang 2000 turbo edition"
+TextTitleScreen_credits1_size = *-TextTitleScreen_credits1
+
+TextTitleScreen_credits2
+!tx "coded by martin piper"
+TextTitleScreen_credits2_size = *-TextTitleScreen_credits2
+}
+
 
 TitleFramesTimeout !word 0
 
 RunTitleScreen
+	+MByteValueToAddress_A 0 , Video_WaitVBlank_FramesPassed
+
 mainLoop3
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
@@ -309,7 +378,7 @@ TitleDraw2R2
 TitleRunLogic
 	; Can happen outside the VBlank
 .smc1	lda #0
-	bne .noFreeSlot1
+	+lbne .noFreeSlot1
 
 	lda #2
 	sta .smc1+1
@@ -341,6 +410,7 @@ TitleRunLogic
 	sta EntityTypeLo,x
 	lda #>EnemyPlaneGreen_landscapeRotationsFrame_to_animation
 	sta EntityTypeHi,x
+	sta EntityTypeIsRotating,x
 	lda #<EntityState_EnemyPlaneGreenForward
 	sta EntityStateLo,x
 	lda #>EntityState_EnemyPlaneGreenForward
@@ -368,15 +438,16 @@ TitleRunLogic
 	sta EntityZPos,x
 	lda #0
 	sta EntityScaleTweak,x
-	lda #<WhiteSmoke_landscapeRotationsFrame_to_animation
+	lda #<Render_WhiteSmoke
 	sta EntityTypeLo,x
-	lda #>WhiteSmoke_landscapeRotationsFrame_to_animation
+	lda #>Render_WhiteSmoke
 	sta EntityTypeHi,x
+	lda #0
+	sta EntityTypeIsRotating,x
 
 .noFreeSlot1
 	dec .smc1+1
 	rts
-
 
 EntityState_EnemyPlaneGreenForward
 	lda EntityZPos,y
