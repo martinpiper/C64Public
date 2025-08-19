@@ -1,5 +1,9 @@
+!ifdef MACHINE_TED {
+	inc $ff19
+} else {
 	lda #ProcessorPortAllRAMWithIO
 	sta ZPProcessorPort
 	inc VIC2BorderColour
 	lda #ProcessorPortAllRAM
 	sta ZPProcessorPort
+}

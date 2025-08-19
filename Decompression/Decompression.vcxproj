@@ -7,8 +7,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <SccProjectName>Decompression</SccProjectName>
-    <SccLocalPath>.</SccLocalPath>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
     <Keyword>MakeFileProj</Keyword>
     <ProjectGuid>{4B7FD9CC-EBE8-453E-AE21-8E2977F87300}</ProjectGuid>
   </PropertyGroup>
@@ -54,11 +56,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\stdlib\LongBranches.a" />
+    <None Include="..\stdlib\TEDBASICEntry1001.a" />
     <None Include="AnimationBitmapDefines.a" />
     <None Include="BorderEffectCommon.a" />
     <None Include="BuildData.bat" />
     <None Include="BuildDataFragment.bat" />
     <None Include="CommonDataCopy.a" />
+    <None Include="CommonExitCode.a" />
     <None Include="DecompressionU.a" />
     <None Include="DecompressionUReferenceLongOffset.a" />
     <None Include="DecompressionUVars.a" />
@@ -70,6 +74,8 @@
     <None Include="DefineDoBorderEffect.a" />
     <None Include="DefineDoCheckMemory.a" />
     <None Include="DefineDoExtraWorkMemoryHigh.a" />
+    <None Include="DefineDoProcessorPort.a" />
+    <None Include="EnableFireCheck.a" />
     <None Include="FeatureEditor.bat" />
     <None Include="features\CheckFiles.feature" />
     <None Include="features\CheckMemory.feature" />
@@ -86,6 +92,7 @@
     <None Include="TestDecompression4U.a" />
     <None Include="TestDecompression5V.a" />
     <None Include="TestDecompressionRNZip.a" />
+    <None Include="TestDecompressionTED4U.a" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />

@@ -1,11 +1,18 @@
 ;Decompression test code. Demonstrates how to create self extracting code.
-;..\acme.exe -v4 --msvc TestDecompression4U.a
+;..\acme.exe -v4 --msvc TestDecompressionTED4U.a
+;..\acme.exe -v4 --msvc DefineDoBorderEffect.a TestDecompressionTED4U.a
+;..\bin\LZMPi.exe -cu "..\BlankProject\ted border.prg" tedborder.cmp4 2 && ..\acme.exe -v4 --msvc DefineDoBorderEffect.a TestDecompressionTED4U.a
+;https://plus4world.powweb.com/software/5G
+;..\bin\LZMPi.exe -cu "C:\Users\marti\Downloads\5g.prg" tedborder.cmp4 2 && ..\acme.exe -v4 --msvc DefineDoBorderEffect.a TestDecompressionTED4U.a
+
 
 ; This decompression code will typically kill data in locations:
 ; $f8 to $1ff
 
 ;To compress
 ;..\bin\LZMPi.exe -cu Scroller.bin Scroller.cmp4
+
+MACHINE_TED=1
 
 !source "../stdlib/stdlib.a"
 !to "TestDecompression.prg", cbm
@@ -16,12 +23,14 @@
 !cpu 6510
 !ct pet
 
-!source "../stdlib/BASICEntry80d.a"
+!source "../stdlib/TEDBASICEntry1001.a"
 !source "../stdlib/LongBranches.a"
 
 !ifndef EndOfMemory {
-EndOfMemory = $10000
+;EndOfMemory = $4000
+EndOfMemory = $fd00
 }
+
 
 ; The contents of this macro can be used to cause the border colour to change while decompressing.
 !macro RNXPCompressionIncBorder_A {
@@ -36,10 +45,8 @@ EndOfMemory = $10000
 	ldx #$ff
 	txs
 
-	; Due to being started with a BASIC SYS:
-	; Assume the DDR is correct
-	lda #ProcessorPortAllRAM
-	sta ZPProcessorPort
+	; Bank in RAM
+	inc $ff3f
 
 	; Copy the decompression code to lower memory. The size of the code varies depending on the
 	; features activated in the code.
@@ -117,10 +124,10 @@ CompressedDataEnd
 } else {
 
 !if 1 {
-CompressedDataStore		= $0801
-CompressedDataExecute	= 2304
+CompressedDataStore		= $1001
+CompressedDataExecute	= $100d
 CompressedDataStart
-!bin "Scroller.cmp4",,2	; Skip the original file size
+!bin "tedborder.cmp4",,2	; Skip the original file size
 CompressedDataEnd
 }
 

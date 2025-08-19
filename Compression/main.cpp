@@ -37,6 +37,13 @@ using namespace RNReplicaNet::RNXPCompression;
 //-hex C:\Work\BombJack\output\DebugAudioOutput.txt c:\temp\t.bin 3 4
 //-hex C:\Work\BombJack\output\DebugAudioOutput.txt c:\temp\t.bin 0 4
 
+// For TED machines:
+//-pt -ctembu "C:\Work\C64\BlankProject\ted border.prg" c:\temp\tedc.prg $100d
+//All in one tests:
+//..\bin\LZMPi.exe -pt -ctembu "C:\Work\C64\BlankProject\ted border.prg" c:\temp\tedc.prg $100d && C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\xplus4.exe -remotemonitor c:\temp\tedc.prg
+//..\bin\LZMPi.exe -pt -ctembu "C:\Users\marti\Downloads\5g.prg" c:\temp\tedc.prg $100d && C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\xplus4.exe -remotemonitor c:\temp\tedc.prg
+//..\bin\LZMPi.exe -t $4000 -pt -ctembu "C:\Work\C64\BlankProject\ted border.prg" c:\temp\tedc.prg $100d && C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\xplus4.exe -remotemonitor c:\temp\tedc.prg
+
 //-ce C:\work\C64\MusicEditorHelp\MusicEditorHelp.prg c:\temp\t.rnzip2
 //c:\ReplicaNet\ReplicaNetPublic\RNZip\RNZip.exe -c C:\work\C64\MusicEditorHelp\MusicEditorHelp.prg c:\temp\t.rnzip
 //Input length = 24372 output length = 14107
@@ -78,7 +85,7 @@ using namespace RNReplicaNet::RNXPCompression;
 // Created by ..\Decompression\BuildData.bat
 #include "../Decompression/PrgData.cpp"
 
-const u32 sStartOfBASIC = 0x801;
+u32 sStartOfBASIC = 0x801;
 
 int main(int argc,char **argv)
 {
@@ -126,6 +133,8 @@ int main(int argc,char **argv)
 			" -no Do not output the original file size. Must be before other options.\n"
 			" -yo Output the original load address (first two bytes of the file). Must be before other options.\n"
 			" -pp <value> Adds code to set the processor port (memory location $01) to value before starting the code. Must be before other options.\n"
+			" -pt For TED machines this restores the ROMs before starting the program.\n"
+			" -ctemu[b] Is available for TED machines. i.e. Compress TED max compression method U [with border].\n"
 		);
 		exit(-1);
 	}
@@ -236,6 +245,15 @@ int main(int argc,char **argv)
 			handledPreParam = true;
 			printf("Adding processor port value $%x\n" , processorPortValue);
 		}
+
+		if (argv[1][0] == '-' && argv[1][1] == 'p' && argv[1][2] == 't')
+		{
+			processorPortValue = 1;
+			argc-=1;
+			argv+=1;
+			handledPreParam = true;
+			printf("Adding TED restore ROM option\n");
+		}
 	} while (handledPreParam);
 
 	if (argv[1][1] == 'c')
@@ -260,8 +278,26 @@ int main(int argc,char **argv)
 		useRNZipMode = true;
 	}
 
+	bool isC64Mode = false;
+	bool isTEDMode = false;
 	if ((argv[1][1] == 'c') && (argv[1][2] == '6') && (argv[1][3] == '4'))
 	{
+		isC64Mode = true;
+	}
+	if ((argv[1][1] == 'c') && (argv[1][2] == 't') && (argv[1][3] == 'e'))
+	{
+		isTEDMode = true;
+		sStartOfBASIC = 0x1001;
+		if (machineMemoryTop > 0xfd00)
+		{
+			machineMemoryTop = 0xfd00;
+			printf("TED Mode implicit top of memory set\n");
+		}
+	}
+
+	if (isC64Mode || isTEDMode)
+	{
+		printf("Top of memory = $%x\n" , machineMemoryTop);
 		if (argc >= 5)
 		{
 			std::string subOption(argv[1]+4);
@@ -854,8 +890,17 @@ int main(int argc,char **argv)
 
 		if (outputC64Header)
 		{
-			fputc(1,fp);
-			fputc(8,fp);
+			if (isC64Mode)
+			{
+				fputc(1,fp);
+				fputc(8,fp);
+			}
+			if (isTEDMode)
+			{
+				fputc(1,fp);
+				fputc(0x10,fp);
+			}
+
 			u8 *theC64Code;
 			u32 endOfMemory;
 			size_t sizeToWrite;
@@ -959,6 +1004,22 @@ int main(int argc,char **argv)
 #endif
 #if sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code != sC64DecompBorderEffectMaxRNZipU_LauncherAddress_loadC64Code
 #error sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code
+#endif
+
+#if sTEDDecompNoEffectMaxRNZipU_LauncherAddress_startC64Code != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_startC64Code
+#error sTEDDecompNoEffectMaxRNZipU_LauncherAddress_startC64Code
+#endif
+#if sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#error sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#endif
+#if sTEDDecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256 != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#error sTEDDecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256 != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#error sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sTEDDecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_loadC64Code
+#error sTEDDecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code
 #endif
 
 // Check the low and high variants of this are the same
@@ -1091,6 +1152,22 @@ int main(int argc,char **argv)
 #error sC64DecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_loadC64Code
 #endif
 
+#if sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_startC64Code != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_startC64Code
+#error sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_startC64Code
+#endif
+#if sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endMinusOutSize != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_endMinusOutSize
+#error sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endMinusOutSize
+#endif
+#if sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_compressedDataEndMinus256 != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256
+#error sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_compressedDataEndMinus256
+#endif
+#if sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endOfMemoryMinus256 != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256
+#error sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_endOfMemoryMinus256
+#endif
+#if sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_loadC64Code != sTEDDecompBorderEffectMaxRNZipU_LauncherAddress_loadC64Code
+#error sTEDDecompNoEffectMaxRNZipUProcessorPort_LauncherAddress_loadC64Code
+#endif
+
 // Check the low and high variants of this are the same
 #if sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code != sC64DecompNoEffectMaxRNZipVHProcessorPort_LauncherAddress_startC64Code
 #error sC64DecompNoEffectMaxRNZipVProcessorPort_LauncherAddress_startC64Code
@@ -1183,14 +1260,22 @@ int main(int argc,char **argv)
 				printf("!!RLE and non-max mode not supported!!\n");
 				exit(-1);
 			}
-			else if (useCompressionU && maxMode)
+			else if (isC64Mode && useCompressionU && maxMode)
 			{
 				theC64Code = sC64DecompNoEffectMaxRNZipU_Data;
+				if (isTEDMode)
+				{
+					theC64Code = sTEDDecompNoEffectMaxRNZipU_Data;
+				}
 				endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipU_Data) + outSize;
 				sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipU_Data);
 				if (processorPortValue != -1)
 				{
 					theC64Code = sC64DecompNoEffectMaxRNZipUProcessorPort_Data;
+					if (isTEDMode)
+					{
+						theC64Code = sTEDDecompNoEffectMaxRNZipUProcessorPort_Data;
+					}
 					endOfMemory = sStartOfBASIC + sizeof(sC64DecompNoEffectMaxRNZipUProcessorPort_Data) + outSize;
 					sizeToWrite = sizeof(sC64DecompNoEffectMaxRNZipUProcessorPort_Data);
 				}
@@ -1227,6 +1312,50 @@ int main(int argc,char **argv)
 
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
 				theC64Code[sC64DecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
+			}
+			else if (isTEDMode && useCompressionU && maxMode)
+			{
+				theC64Code = sTEDDecompNoEffectMaxRNZipU_Data;
+				endOfMemory = sStartOfBASIC + sizeof(sTEDDecompNoEffectMaxRNZipU_Data) + outSize;
+				sizeToWrite = sizeof(sTEDDecompNoEffectMaxRNZipU_Data);
+				if (processorPortValue != -1)
+				{
+					theC64Code = sTEDDecompNoEffectMaxRNZipUProcessorPort_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sTEDDecompNoEffectMaxRNZipUProcessorPort_Data) + outSize;
+					sizeToWrite = sizeof(sTEDDecompNoEffectMaxRNZipUProcessorPort_Data);
+				}
+				if (flashBorder)
+				{
+					theC64Code = sTEDDecompBorderEffectMaxRNZipU_Data;
+					endOfMemory = sStartOfBASIC + sizeof(sTEDDecompBorderEffectMaxRNZipU_Data) + outSize;
+					sizeToWrite = sizeof(sTEDDecompBorderEffectMaxRNZipU_Data);
+					if (processorPortValue != -1)
+					{
+						theC64Code = sTEDDecompBorderEffectMaxRNZipUProcessorPort_Data;
+						endOfMemory = sStartOfBASIC + sizeof(sTEDDecompBorderEffectMaxRNZipUProcessorPort_Data) + outSize;
+						sizeToWrite = sizeof(sTEDDecompBorderEffectMaxRNZipUProcessorPort_Data);
+					}
+				}
+
+				if (processorPortValue != -1)
+				{
+					sTEDDecompNoEffectMaxRNZipU_LauncherAddress_startC64Code += 3; // inc $ff3e
+				}
+
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_startC64Code - sStartOfBASIC] = (u8) (startC64Code & 0xff);
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_startC64Code+1 - sStartOfBASIC] = (u8) ((startC64Code>>8) & 0xff);
+
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256 - sStartOfBASIC] = (u8) ((endOfMemory-0x100) & 0xff);
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_compressedDataEndMinus256+1 - sStartOfBASIC] = (u8) (((endOfMemory-0x100)>>8) & 0xff);
+
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize - sStartOfBASIC] = (u8) ((machineMemoryTop - outSize) & 0xff);
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endMinusOutSize+1 - sStartOfBASIC] = (u8) (((machineMemoryTop - outSize)>>8) & 0xff);
+
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256 - sStartOfBASIC] = (u8) (machineMemoryTopMinus256 & 0xff);
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_endOfMemoryMinus256+1 - sStartOfBASIC] = (u8) ((machineMemoryTopMinus256>>8) & 0xff);
+
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code - sStartOfBASIC] = (u8) (loadC64Code & 0xff);
+				theC64Code[sTEDDecompNoEffectMaxRNZipU_LauncherAddress_loadC64Code+1 - sStartOfBASIC] = (u8) ((loadC64Code>>8) & 0xff);
 			}
 			else if (useCompressionV && !maxMode && !flashBorder)
 			{

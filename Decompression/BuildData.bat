@@ -5,6 +5,8 @@
 ..\bin\LZMPi.exe -cu Scroller.bin Scroller.cmp4
 ..\bin\LZMPi.exe -cv Scroller.bin Scroller.cmp5
 
+..\bin\LZMPi.exe -cu "..\BlankProject\ted border.prg" tedborder.cmp4 2
+
 mkdir DebugFiles
 
 echo // Built automatically by BuildData.bat>PrgData.cpp
@@ -25,6 +27,9 @@ call BuildDataFragment.bat c64mbr sC64DecompBorderEffectMaxRLE DefineDoBorderEff
 
 call BuildDataFragment.bat c64mu sC64DecompNoEffectMaxRNZipU TestDecompression4U.a
 call BuildDataFragment.bat c64mbu sC64DecompBorderEffectMaxRNZipU DefineDoBorderEffect.a TestDecompression4U.a
+
+call BuildDataFragment.bat tedmu sTEDDecompNoEffectMaxRNZipU TestDecompressionTED4U.a
+call BuildDataFragment.bat tedmbu sTEDDecompBorderEffectMaxRNZipU DefineDoBorderEffect.a TestDecompressionTED4U.a
 
 call BuildDataFragment.bat c64v sC64DecompNoEffectRNZipV TestDecompression5V.a
 call BuildDataFragment.bat c64bv sC64DecompBorderEffectRNZipV DefineDoBorderEffect.a TestDecompression5V.a
@@ -51,6 +56,9 @@ call BuildDataFragment.bat c64mbrpp sC64DecompBorderEffectMaxRLEProcessorPort De
 
 call BuildDataFragment.bat c64mupp sC64DecompNoEffectMaxRNZipUProcessorPort DefineDoProcessorPort.a TestDecompression4U.a
 call BuildDataFragment.bat c64mbupp sC64DecompBorderEffectMaxRNZipUProcessorPort DefineDoProcessorPort.a DefineDoBorderEffect.a TestDecompression4U.a
+
+call BuildDataFragment.bat tedmupp sTEDDecompNoEffectMaxRNZipUProcessorPort DefineDoProcessorPort.a TestDecompressionTED4U.a
+call BuildDataFragment.bat tedmbupp sTEDDecompBorderEffectMaxRNZipUProcessorPort DefineDoProcessorPort.a DefineDoBorderEffect.a TestDecompressionTED4U.a
 
 call BuildDataFragment.bat c64vpp sC64DecompNoEffectRNZipVProcessorPort DefineDoProcessorPort.a TestDecompression5V.a
 call BuildDataFragment.bat c64bvpp sC64DecompBorderEffectRNZipVProcessorPort DefineDoProcessorPort.a DefineDoBorderEffect.a TestDecompression5V.a
