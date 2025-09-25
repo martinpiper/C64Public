@@ -1,0 +1,138 @@
+!zn
+.engineColourIndex !by 0
+GroundColours !by 0
+;GamePaletteBank !by 5
+VBlankUpdatePaletteColours
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+
+	lda GroundColours
+	+lbmi .noChange
+	cmp #0
+	bne .o1
+
+	; Blue water
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 128 , 128 , 255
+	+MBus24Bit_SendPaletteRGB 64 , 64 , 230
+	+MBus24Bit_SendPaletteRGB 48 , 48 , 220
+	+MBus24Bit_SendPaletteRGB 32 , 32 , 192
+	+MBus24Bit_SendPaletteRGB 0 , 0 , 168
+	jmp .noChange
+
+.o1
+	cmp #1
+	bne .o2
+
+	; Green
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 32 , 166 , 71
+	+MBus24Bit_SendPaletteRGB 29 , 148 , 63
+	+MBus24Bit_SendPaletteRGB 26 , 135 , 58
+	+MBus24Bit_SendPaletteRGB 23 , 117 , 50
+	+MBus24Bit_SendPaletteRGB 20 , 102 , 44
+	jmp .noChange
+
+.o2
+	cmp #2
+	bne .o3
+	; Desert2
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 255 , 173 , 32
+	+MBus24Bit_SendPaletteRGB 219 , 149 , 28
+	+MBus24Bit_SendPaletteRGB 176 , 120 , 22
+	+MBus24Bit_SendPaletteRGB 150 , 102 , 19
+	+MBus24Bit_SendPaletteRGB 115 , 78 , 14
+	jmp .noChange
+
+.o3
+	cmp #3
+	bne .o4
+	; Desert
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 255 , 225 , 24
+	+MBus24Bit_SendPaletteRGB 230 , 202 , 22
+	+MBus24Bit_SendPaletteRGB 207 , 182 , 19
+	+MBus24Bit_SendPaletteRGB 168 , 148 , 16
+	+MBus24Bit_SendPaletteRGB 128 , 112 , 12
+	jmp .noChange
+.o4
+	cmp #4
+	bne .o5
+	; Sky
+	jsr Video_SetAddressPalette
+	+MBus24Bit_SendPaletteRGB 250 , 250 , 250
+	+MBus24Bit_SendPaletteRGB 240 , 240 , 240
+	+MBus24Bit_SendPaletteRGB 230 , 230 , 230
+	+MBus24Bit_SendPaletteRGB 200 , 200 , 200
+	+MBus24Bit_SendPaletteRGB 170 , 170 , 170
+	jmp .noChange
+.o5
+.noChange
+	lda #-1
+	sta GroundColours
+
+	; Update the engine colours
+	; Sprites use the higher palettes
+	jsr Video_SetAddressVideoPaletteBankRegister
+	lda GamePaletteBank
+	ora #$10
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (kVarsEmitSpriteFrame_t_10_0_0_0_colour * kBus24Bit_VideoLayer_BytesPerPalette) + kBus24Bit_VideoLayer_BytesPerColour
+	inc .engineColourIndex
+	lda .engineColourIndex
+	and #15
+	tax
+	lda .engineColourTabLo,x
+	sta .smuc1+1
+	lda .engineColourTabHi,x
+	sta .smuc1+2
+.smuc1	jsr $1234
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+	rts
+
+.engineColourTabLo
+.engineColourTabHi = .engineColourTabLo + 16
+	!word .engineColour0 , .engineColour1 , .engineColour2 , .engineColour3 , .engineColour4 , .engineColour5 , .engineColour6 , .engineColour7
+	!word .engineColour7 , .engineColour6 , .engineColour5 , .engineColour4 , .engineColour3 , .engineColour2 , .engineColour1 , .engineColour0
+!swizzle .engineColourTabLo , 16 , 2
+
+!macro MGenerateEnglineColour .level {
+	+MBus24Bit_SendPaletteRGB .level,0,0
+	+MBus24Bit_SendPaletteRGB (.level * 2) / 3,0,0
+	+MBus24Bit_SendPaletteRGB .level / 3,0,0
+}
+.engineColour0
+	+MGenerateEnglineColour 255
+	rts
+
+.engineColour1
+	+MGenerateEnglineColour 220
+	rts
+
+.engineColour2
+	+MGenerateEnglineColour 200
+	rts
+
+.engineColour3
+	+MGenerateEnglineColour 180
+	rts
+
+.engineColour4
+	+MGenerateEnglineColour 160
+	rts
+
+.engineColour5
+	+MGenerateEnglineColour 120
+	rts
+
+.engineColour6
+	+MGenerateEnglineColour 80
+	rts
+
+.engineColour7
+	+MGenerateEnglineColour 30
+	rts

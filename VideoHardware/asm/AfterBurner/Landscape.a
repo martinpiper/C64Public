@@ -289,7 +289,26 @@ MultiplyByMul6
 LandscapeMapRowOffset !by 0
 LandscapeMap
 ; Debug fill
-;!fill 256 , 16
+!if 0 {
+!fill 16 , 28
+!fill 16 , 28
+!fill 16 , 27
+!by 2,2,2,2,29,30,31,32,33,34,35,2,2,2,2,2
+!fill 16 , 27
+!fill 16, 1
+!fill 16, 2
+!fill 16, 3
+!fill 16, 4
+!fill 16, 5
+!fill 16, 6
+!fill 16, 11
+!fill 16, 16
+!fill 16, 17
+!fill 16, 19
+!fill 16, 20
+!fill 16, 21
+!fill 128 , 27
+}
 !for .z , 16 {
 !if .z <= 2 {
 !by 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6

@@ -1,0 +1,81 @@
+!zn
+.framesExplodeFlamesLo
+	!word Render_ExplodeFlames0
+	!word Render_ExplodeFlames1
+	!word Render_ExplodeFlames2
+	!word Render_ExplodeFlames3
+	!word Render_ExplodeFlames4
+	!word 0	; Automatic remove of this entity after the explosion animation completes
+.framesExplodeFlamesHi = (* + .framesExplodeFlamesLo)/2
+!swizzle .framesExplodeFlamesLo , (* - .framesExplodeFlamesLo)/2 , 2
+EntityState_ExplodeFlames
+	lda EntityStateValue1,y
+	clc
+	adc #1
+	sta EntityStateValue1,y
+	lsr
+	lsr
+	tax
+	lda .framesExplodeFlamesLo,x
+	sta EntityTypeLo,y
+	lda .framesExplodeFlamesHi,x
+	sta EntityTypeHi,y
+	rts
+
+.framesExplodeBallLo
+	!word Render_ExplodeBall0
+	!word Render_ExplodeBall1
+	!word Render_ExplodeBall2
+	!word Render_ExplodeBall3
+	!word 0	; Automatic remove of this entity after the explosion animation completes
+.framesExplodeBallHi = (* + .framesExplodeBallLo)/2
+!swizzle .framesExplodeBallLo , (* - .framesExplodeBallLo)/2 , 2
+EntityState_ExplodeBall
+	lda EntityStateValue1,y
+	clc
+	adc #1
+	sta EntityStateValue1,y
+	lsr
+	lsr
+	tax
+	lda .framesExplodeBallLo,x
+	sta EntityTypeLo,y
+	lda .framesExplodeBallHi,x
+	sta EntityTypeHi,y
+	rts
+
+!zn
+EntityState_RemoveAfterForSmoke
+	lda EntityStateValue1,y
+	cmp #45
+	bne .o1
+	lda #<Render_WhiteSmoke3
+	sta EntityTypeLo,y
+	lda #>Render_WhiteSmoke3
+	sta EntityTypeHi,y
+	jmp EntityState_RemoveAfter
+.o1
+	cmp #40
+	bne .o2
+	lda #<Render_WhiteSmoke2
+	sta EntityTypeLo,y
+	lda #>Render_WhiteSmoke2
+	sta EntityTypeHi,y
+	jmp EntityState_RemoveAfter
+.o2
+	cmp #35
+	bne .o3
+	lda #<Render_WhiteSmoke
+	sta EntityTypeLo,y
+	lda #>Render_WhiteSmoke
+	sta EntityTypeHi,y
+	jmp EntityState_RemoveAfter
+.o3
+
+EntityState_RemoveAfter
+	lda EntityStateValue1,y
+	sec
+	sbc #1
+	sta EntityStateValue1,y
+	+lbeq EntityState_RemoveEntity
+	rts

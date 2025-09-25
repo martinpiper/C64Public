@@ -1,0 +1,8 @@
+bank ram
+s "c:\temp\tseuck.prg" 0 8e6 ffff
+
+		POKE 16964,1 runs the SEUCK editor by pushing the SPACE  in a running SEUCK game.
+		POKE 16964,0 makes the game in the editor stop returning back to the editor.
+		SYS 16595 starts the SEUCK game.
+		SYS 24576 runs the SEUCK editor.
+

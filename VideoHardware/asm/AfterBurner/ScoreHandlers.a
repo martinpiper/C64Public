@@ -1,0 +1,140 @@
+!zn
+GameScore_Value_changed	!by 0
+
+ScoreHandler_Init
+	; Init the score routine
+	+MWordValueTo_AX GameScore_Value
+	jsr ScoreSetAddress
+	ldy #kGameScore_Value_size
+	jsr ScoreInit
+	+MByteValueToAddress_A 1 , GameScore_Value_changed
+	rts
+
+VBlankUpdateScore
+	lda GameScore_Value_changed
+	bne .changedScore
+	rts
+.changedScore
+	+MByteValueToAddress_A 0 , GameScore_Value_changed
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + GameScore_Value_screenPos
+	ldx #0
+.isSpaces
+	ldy GameScore_Value,x
+	bne .isNumber
+	cpx #kGameScore_Value_size-1
+	beq .isNumber	; Always render the last digit
+	+MBus24Bit_Send8BitValueFromY
+	inx
+	cpx #kGameScore_Value_size
+	bne .isSpaces
+	rts
+.isNumber2
+	ldy GameScore_Value,x
+.isNumber
+	lda GameScore_ValueToChar,y
+	+MBus24Bit_Send8BitValueFromA
+	inx
+	cpx #kGameScore_Value_size
+	bne .isNumber2
+	rts
+
+
+!zn
+.testScore
+	!by kGameScore_Value_size-1
+	!by 3
+.testScoreSpeed
+	!by 1
+	!by 0
+	!by 0
+
+ScoreAdd_Speed
+	clc
+	adc #1
+	sta .testScoreSpeed
+	sec
+	sbc #3
+	bcs .o1
+	lda #0
+.o1
+	sta .testScoreSpeed+1
+	sec
+	sbc #2
+	bcs .o2
+	lda #0
+.o2
+	sta .testScoreSpeed+2
+
+	+MWordValueTo_AX .testScore
+	jsr ScoreAdd
+	inc GameScore_Value_changed
+	rts
+
+
+!zn
+.testScore
+	!by kGameScore_Value_size-1-2
+	!by 2
+	!by 5 , 1
+
+ScoreAdd_1500
+	stx .smx+1
+	sty .smy+1
+	+MWordValueTo_AX .testScore
+	jsr ScoreAdd
+	inc GameScore_Value_changed
+.smx ldx #0
+.smy ldy #0
+	rts
+
+
+!zn
+.testScore
+	!by kGameScore_Value_size-1-4
+	!by 1
+	!by 1
+
+ScoreAdd_10000
+	stx .smx+1
+	sty .smy+1
+	+MWordValueTo_AX .testScore
+	jsr ScoreAdd
+	inc GameScore_Value_changed
+.smx ldx #0
+.smy ldy #0
+	rts
+
+
+!zn
+.testScore
+	!by kGameScore_Value_size-1-4
+	!by 1
+	!by 1
+
+ScoreAdd_n0000
+	sta .testScore+2
+	stx .smx+1
+	sty .smy+1
+	+MWordValueTo_AX .testScore
+	jsr ScoreAdd
+	inc GameScore_Value_changed
+.smx ldx #0
+.smy ldy #0
+	rts
+
+!zn
+.testScore
+	!by kGameScore_Value_size-1-3
+	!by 1
+	!by 1
+
+ScoreAdd_n000
+	sta .testScore+2
+	stx .smx+1
+	sty .smy+1
+	+MWordValueTo_AX .testScore
+	jsr ScoreAdd
+	inc GameScore_Value_changed
+.smx ldx #0
+.smy ldy #0
+	rts

@@ -871,3 +871,19 @@ Player1Information or Player2Information is used depending on the active players
 01:14:03 Player push scroll fixes
 01:21:36 Player shoot direction fixes
 01:24:30 Demo game in SEUCK and new code
+
+
+
+
+* SEUCK: The top border screen on split is sometimes triggering late, when scroll Y = 6 and there are sprites over the split, and kernal is disabled.
+	The top left corner of the screen smoetimes shows bad text pixels. The screen on write is sometimes late, seen in C64DebugGUI.
+	Perhaps reduce the timer value slightly for this Y scroll value to the screen on VIC write is earlier.
+	Double check the NMI timer setup code is not late due t previous code changes.
+	> Code usually at $1100, specifically $1123
+	> The $d011 store should happen raster $36 in the right border rstx >= $1c8 or rstx <= $78 for the following line
+
+
+
+* SEUCK: Make enemy animations loop...
+	Reuse AnimationMovementOrigLo
+	>> Use: Scroller_LoopingEnemy = 1

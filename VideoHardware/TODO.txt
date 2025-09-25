@@ -451,7 +451,19 @@
 	It also seems to have nice rocks?
 	* Also the rocks seem to have height, could be extra objects with rotated/scaled offsets using the same graphics
 	The emulator crashes during this stage?
-
+	>> del "C:\temp\afterburnerarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburnerarcade\stage10a.png"
+	>> "C:\Users\marti\Videos\Captures\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-07-27 10-37-42.mp4"
+	>> To generate the hills use the strandard random distribution code, then with a "hills" flag render over the just calculated landscape row.
+		The hills can be a fixed pattern at a paricular X position in the row, which gets bigger and smaller depending on the row, this will give the hills detailed height map resolution.
+		And different landscape types using the same sprite, just dufferent offsets based on the type
+		Could reuse the render code, just use some maths (shifts)
+	>> ObjectDraw27 yellow column
+	>> ObjectDraw28 black column
+	>> kLandscapeMapRowsData_flags_doHills and LandscapeMapAddHill using objects 29 to 36
+	* Need to adjust the position MAdjustObjectYBy (and need X) based on "ldy landscapeRotationsFrame"
+	* Need to add object 1 as well as 29 to 36, since 1 is the base height
+	>> $cc48-$cfff:$03b8	Yes it is quite expensive for all the rotation position adjustments
+		 ; Note divide by 2: So now $caea-$cfff:$0516, slightly better
 
 
 
@@ -464,7 +476,6 @@
 
 
 * Demo14: Extra ground sprites, the buildings, transmission towers
-	>> t-1145.png ObjectDraw7 Small buildings
 	>> t-3081.png ObjectDraw8 Autumn tree
 	* Definitely need an editor for rotated sprite frames
 	>> See: ObjectDraw6_355 +MObjectDrawWithScaleFlips + jmp ObjectDrawReturn and Render_EnemyPlaneWhite175 +MRender_EntityObject
@@ -506,66 +517,6 @@
 		This will make it easier to see if the APU is working on bootup.
 
 
-
-
-* Demo14: Canyon wall collide
-	* Explode the player
-		Yes: "Demo14\BulletsExplosions\t-731.png" "Demo14\BulletsExplosions\t-300.png" 
-		No: "Demo14\BulletsExplosions\t-509.png"  "Demo14\BulletsExplosions\t-514.png" "Demo14\Bull "Demo14\BulletsExplosions\t-528.png"etsExplosions\t-523.png" "Demo14\BulletsExplosions\t-365.png"
-			Palette 1 and 4 are problems
-		* Maybe reduce colours in the mode7 sky?
-		* Maybe upgrade the video board to have a palette or value per layer?
-			This would allow 256 colours, per layer, without raster based effects
-			* Last two bits of the palete bank as xor value using 74ls86
-			Two bits per layer, 8 bits in a new register, probably after the palette bank register
-			>> Two options, source layer pass through these bits via the layer priority selector, more logic updates...
-			>> Or other option use the final layer priority after the priority selector and use the bits from the register, much less logic...
-				> Given we know the layer priority select, do we get much benefit from adding more logic to pass through these bits?
-			* This would allow the sprites4 layer to use the upper 16 palettes, and the chars/tiles/mode7 to use the lower 16 palettes, basically by toggling the upper bit for sprites4
-				>> A test conversion with game palette 1 (16 entries), by removing the --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal and --loadpaletteraw ..\tmp\Demo14TitleChars.pal  and --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal results in 14 palettes. This would be enough to include extra explosions.
-			* This is more complex than first thought
-				* The background register, if active, would assume top two bits as always the palette bank, or have its own two-xor bits register (or values elsewhere)
-				* The PALBANK register will need to be selected without modification when writing, but can use the selected value when reading
-		* Done: @TC-14 would need updating to support Sprites4 and Sprites V9.5, it supports Sprites2 at the moment
-			>> Perfect: c:\work\BombJack\output\compareimagesForTestCase.bat 42 TC-14
-		* @TC-14  Needs some background register checks, changing colours
-			>> Given the display has palette layer expansion
-			>> Video: PALLAYERA0/1 PALLAYERB0/1 PALLAYERC0/1 PALLAYERD0/1 PALLAYERZ0/1 (for background)
-			>> c:\work\BombJack\output\compareimagesForTestCase.bat 67 TC-14
-				Looks good
-			>> kBus24Bit_VideoLayer_ExpandedPaletteLayer kBus24Bit_VideoLayer_PaletteLayers
-			>> Video_SetAddressVideoPaletteLayersRegister
-			>> Updated VBlankUpdatePaletteColours
-			>> Checked game emulation with simulation, seems OK, including the engine colour changes
-		* Done: Need to remove the extra chars/mode7 palette loads from the sprites conversions and save separate palettes
-			Before:
-				01/06/2025  08:17 pm                48 Demo14ScaledSprites4Clouds.pal
-				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game0.pal
-				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game1.pal
-				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game2.pal
-				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game3.pal
-				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game4.pal
-				01/06/2025  08:17 pm               288 Demo14ScaledSprites4TitleScreen.pal
-				01/06/2025  08:17 pm                20 Demo14TitleChars.pal
-			After:
-				03/06/2025  11:10 am                48 Demo14ScaledSprites4Clouds.pal
-				03/06/2025  11:10 am               416 Demo14ScaledSprites4Game0.pal
-				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game1.pal
-				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game2.pal
-				03/06/2025  11:11 am               416 Demo14ScaledSprites4Game3.pal
-				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game4.pal
-				03/06/2025  11:10 am                96 Demo14ScaledSprites4TitleScreen.pal
-				03/06/2025  11:10 am               480 Demo14ScaledSprites4TitleScreenSprites.pal
-	>> Added all the other explosions, now UsingMaxHardwareScaleTabValue = 220
-	* Done: Reset the canyon walls to make them wide while exploding the player, to avoid the player escaping the canyon
-		+MByteValueToAddress_A 0 , CanyonOffset
-		+MByteValueToAddress_A 10 , CanyonWidth
-	* Player next life sequence, scale in player from large to normal and flash the player
-		Use Player_Invulnerable?
-	* Done: Need animating explosion entities, for the player death sequence
-		A bit like the smoke trails, but their rotation frames can render different frames
-		> Non-scaled version instead, special case for the player
-			RenderSpritePlayerExplode0/1/2/3 and RenderSpritePlayerOtherExplosions
 
 
 * Demo14: Canyon: When colliding with the canyon walls, use a comparison with LandscapeMapRowOffset/CanyonOffsetStart and .mvLeft/.mvRight to move the player back to the "middle"
@@ -612,6 +563,8 @@
 			C:\Work\mame\src\frontend\mame\ui\viewgfx.cpp
 				IPT_UI_ZOOM_OUT
 	* C:\Downloads\MAME\mame.exe -window aburner2
+		>> For RGB purple transparency use: c:\work\mame\mytest.exe -window -debug aburner2
+		Use F4 to open the debug graphics view
 		Press return twice to get to the tilemap view
 		Use [ and ] to switch the tilemaps
 		Use F5 to pause and unpause to get the correct animation frames
@@ -644,7 +597,11 @@
 		>> Note how fills to d0000 are mirrored in 1000 byte chunks, because the address range in segaxbd.cpp is only d0000-d0fff, so this is only one tilemap screen
 			Also the d0000 tilemap (1) writes seems to only have tiles 0-1ff (not 1fff) and the bits >= 200 seem to pick colour palettes for the mostly text tiles that are in the range 0-1ff
 		>> For debug graphics purposes:
+			>> 8x8 charset:
 			fill d0000,56,w.40,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,30,31,32,33,34,35,36,37,38,39
+			>> 8x16 charset:
+			fill d0100,56,w.160,162,164,166,168,16a,16c,16e,170,172,174,176,178,17a,17c,17e,182,184,186,188,18a,18c,18e,190,192,194,196,198,19a,19c,19e,1a0,1a2,1a4,1a6,1a8,1aa,1ac,1ae,1b0,1b2,1b4,1b6
+			fill d0180,56,w.161,163,165,167,169,16b,16d,16f,171,173,175,177,179,17b,17d,17f,183,185,187,189,18b,18d,18f,191,193,195,197,199,19b,19d,19f,1a1,1a3,1a5,1a7,1a9,1ab,1ad,1af,1b1,1b3,1b5,1b7
 		>> Text colours:
 			Blue: 0,181,247
 			Pink: 247,181,247
@@ -664,7 +621,7 @@
 					Before:
 						2,072,384 Demo14FinalData.bin
 						96 Demo14ScaledSprites4TitleScreen.pal
-						num palettes=3
+						num palettes=3\
 						palette size=16
 						palette size=16
 						palette size=11
@@ -679,7 +636,7 @@
 						palette size=7
 						palette size=3
 						num tiles=106
-			>> Hmm problem, note the "num tiles" is the same, whenthe tiles should be finding reused tiles using the palettes...
+			>> Hmm problem, note the "num tiles" is the same, when the tiles should be finding reused tiles using the palettes...
 				>> This demonstrates the tile matching works with the forced colour palettes first...
 					> cls && java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --paletteaddrgbs 0 0 0   0 181 247 --paletteaddrgbs 0 0 0   247 181 247 --paletteaddrgbs 0 0 0   247 0 0  --paletteaddrgbs 0 0 0   247 247 148   --image "..\tmp\demo14chars2.png" --tilewh 8 8 --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
 					> num tiles=99
@@ -702,27 +659,6 @@
 
 
 
-* Demo14: Score display
-	Image convertor, could do with saving out debug labels that represent what tiles/colours (non-transparent ones) are where at certain coordinates.
-	This would make it easier to include extra data
-
-
-
-
-* Demo14: Radar
-
-
-
-* Demo14: After player explosion, new life the player should scale in from large to the expected player screen position, no player input during this
-
-
-
-* Demo14: Enemies in the far distance (just after spawning) should probably stay there for a second or two, perhaps move them at the player landscape speed, to give time to react
-	Then they can swoop in
-	>> Using UsingMaxHardwareScaleTabValue-1 instead, is slightly better
-
-
-
 
 * Demo14: Player clipped wing death, small explosion, smoke trail, hit ground, fireballs... No player input during this time.
 
@@ -734,3 +670,108 @@
 		The graphics data upload can wait for the second chunk of data with a different gameDataIdentifier chunk
 		The test scenario can use the syntax for running until CPU PC = then swap the 2MB of dat chunk, then let the execution continue
 		The C64 code can just test for the second gameDataIdentifier chunk in memory after the upload
+	>> ExternalMemory_C64CheckMemory entry parameters
+	>> ExternalMemory_C64SendResourceData entry parameters
+	* Done: Need to add "checksum address" function and entry params
+		checksumsCount
+		checksumsStart
+		checksumsNumBytes
+		checksumsSize
+	* ResourceGenerator checksum mode will need a label postfix
+
+
+
+
+* Demo14: sbc #100 and lda #50 used in .isComingFromBehindCamera and related to lda GamePlayerExplode_ExplodeFrame need to have magic numbers removed
+
+
+
+
+* Demo14: Shoot enemy and ground objects score
+	Increment the hit counter
+
+
+
+
+* Demo14: Make sure every vblank increments the border colour to make it easy to see if the C64 has crashed
+	Perhaps include a border change while waiting for the vblank signal to make it obvious what is waiting for signal time and to show if the APU hardware has likely crashed
+
+
+
+
+* Demo14: Decrement guns ammo and missiles
+	>> Done: Observing: "C:\Users\marti\Videos\Captures\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-07-12 17-40-41.mp4"
+		> Game start: 00:20: Light pink 8x16 "stage 1" flashes 4 times, 1 is algined with the 8x8 "stage 1"
+			>> VBlankUpdateText Text_Stage_Flash_changed Text_Stage_Flash
+		>> jsr StageNumber_Increase
+
+
+
+
+* Demo14: Can I move the landscape render access for _tileWidthScaleTab and _tileHeightScaleTab to the external RAM?
+	Is it going to be as fast?
+	It would save a lot of memory
+	A large divide lookup... Like the perspective divide?
+	If the table was in the next higher 64KB chunk, the Z value can be setup once, and the width/height values read by a simple one byte setup?
+	It would also free up a X/Y index register...
+	The ScaleTab optimiser would then remove a lot, not all, the references. The entiy draw would still reference some.
+	Probably not because the landscape data is being streamed from external RAM
+		Unless the RAM interface is expanded to have two current address latches, where one set is active and the other is not...
+	*** However, the landscape draw code routines, along with their rotation to jump tables, could be in cartridge banks...
+		The reference for the rotation to jump table can include a cartridge bank number
+		$6a5f:0:ObjectDrawLo:1:1:0
+		$6aa5:0:ObjectDraw1:1:1:0
+		$8fe6:2989:genericObjectDrawAdjust_5:0:1:0
+		>> Which is currently $2541 bytes for draw and rotation to jump tables
+		>> kBus24Bit_VideoLayer_VBlankUseNMI would need to handle nernal being banked in (for example if rendering code is in cart ROM banks) as well as RAM being used...
+		>> All .sm* labels in LandscapeObjectDraw.a will need to be made indirect
+		>> All .sm* in macros will need to be removed
+
+
+
+
+* Demo14: Consider a huge 8MB C64 cartridge, which can initialise and send data to the external RAM for fast DMA to hardware access later on.
+	Or rather during startup it can upload most of the audio/graphics without need to use DMA, since it doesn't need to send to the external RAM
+	Only the data needed for the external RAM, the landscape data and any dynamic chars (mission complete DMA) need to be in the external RAM
+	Emulation would need to include this improved cartridge banking...
+
+
+
+
+* Demo14: Map data can probably remove " , kEntity_MaxZPos" from LandscapeMapRowsData_Formation_WhenTypePos
+	Or rather remove the byte, since it's not used...
+
+
+
+* Demo14: Title screen, animated screens...
+	>> Intro screens are displayed 
+		>> c64\VideoHardware\assets\Demo14\IntroScreens
+		>> These use two layers. In theory two chars layers would be useful. Or maybe the background clouds/mountains could be in the tiles (road/runway) layer?
+
+		
+
+
+* Demo14: Mission complete uses DMA to transfer the extra picture data to the chars layer
+	The layer is disabled, but if on real hardware the DMA has corruption then time the transfer in chunks during the vblank...
+		>> ExternalMemory_C64SendResourceData can be improved to include an optional chunked vlbank wait !ifdef ExternalMemory_VBlankChunks {}
+
+
+
+* Demo15: Outrun?
+	https://reassembler.blogspot.com/2010/12/road-layer-and-slave-cpu-code-converted.html
+	"The entire code for the slave 68k CPU has been ported. This CPU solely controls road generation and interfacing with the road hardware."
+	https://www.youtube.com/watch?v=wU1kXWuO6JM
+	https://eab.abime.net/showthread.php?t=116656
+	https://github.com/djyt/cannonball/wiki
+	https://github.com/djyt/cannonball/releases
+	
+	
+* Demo14: Score needs to be cleared in the screen on game start
+
+
+
+* Demo15: Given add a BitmapRGB background with registers at '0xa300' and addressEx '0x03'
+
+
+
+* Demo14: What is the frame judder? When does it happen?

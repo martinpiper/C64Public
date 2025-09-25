@@ -1,0 +1,15 @@
+!zn
+!source "stdlib/GnomeSort.a"
+
+GnomeSort_Sortlo !fill SortHardMaxEntries , 0
+GnomeSort_Sorthi !fill SortHardMaxEntries , 0
+SortValueTable = EntityZPos
+
+EntitySortInternal
+	+GnomeSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLength , ~GnomeSort_sortstart
+	rts
+
+EntitySortInitInternal
+	+GnomeSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLength , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstart
+	+GnomeSort_Init SortMaxEntries , SortIndexTable
+	rts

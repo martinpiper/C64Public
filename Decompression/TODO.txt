@@ -297,3 +297,15 @@
 
 * Also the last 4 bytes right at the top of memory could be stored in the decompression code since it is on the stack
 	Make this an option.
+
+
+
+* gcc -O3 -o /tmp/lzmpi /mnt/c/Work/C64/Compression/main.cpp /mnt/c/Work/C64/Common/ParamToNum.cpp /mnt/c/Work/C64/Compression/Compress.cpp /mnt/c/Work/C64/Compression/CompressE.cpp /mnt/c/Work/C64/Compression/CompressU.cpp /mnt/c/Work/C64/Compression/CompressRLE.cpp /mnt/c/Work/C64/Compression/CompressV.cpp /mnt/c/Work/C64/Compression/DecompressE.cpp /mnt/c/Work/C64/Compression/Decompress.cpp /mnt/c/Work/C64/Compression/DecompressU.cpp  -lstdc++ -lm
+
+
+
+* For -c64*/-cte* options, add the ability to load multiple files into the "memory space" and compress up to the maximum range of data loaded
+	Probably something like -c64mbu c:\temp\file1.prg|c:\temp\file2.prg $200
+	This can then be used to "link" separate prg files together.
+	Or create a util/add into lzmpi to create the putput file from multiple inputs, also a simple "linker"
+	This would be useful to combine the separate main14 title/game/complete parts with the comon part then compress for debugging purposes

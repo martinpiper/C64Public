@@ -21,15 +21,13 @@ ExternalMemoryFiles_CommonFileCopyAndRunCode_Store	sta $200
 	cmp #>IOSPACE
 	beq .isIO
 .checkEnd1
-ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi	lda #0
-	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
-	bcs ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 2
+ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi	cmp #0
+	bcc ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop
 ExternalMemoryFiles_CommonFileCopyAndRunCode_Run	jmp $200
 
 .isIO
 	+MZPAddr16ToZPAddr16_A ExternalMemoryFiles_CommonFileCopyAndRunCode_Store + 1 , ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 1
-	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi + 1
-	sta+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2 + 1
 ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
 	stx ZPProcessorPort
 	+MBus24Bit_Get8BitValueToA
@@ -43,9 +41,9 @@ ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2	sta $200
 	cmp #>IOSPACE
 	bne .isNotIO
 .checkEnd2
-ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2	lda #0
-	cmp+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
-	bcs ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
+	lda+1 ExternalMemoryFiles_CommonFileCopyAndRunCode_Store2 + 2
+	cmp ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi+1
+	bcc ExternalMemoryFiles_CommonFileCopyAndRunCodeLoop2
 	jmp ExternalMemoryFiles_CommonFileCopyAndRunCode_Run
 .isNotIO
 	stx ZPProcessorPort
@@ -107,6 +105,8 @@ ExternalMemoryFiles_CommonFileCopyAndRunCode_EndHi2	lda #0
 
 } ; << !ifdef kExternalMemoryFiles_OnlyCheckHighAddress
 
+ExternalMemoryFiles_CommonFileCopyAndRunCodeEnd
+
 }
 ExternalMemoryFiles_CommonFileCopyAndRunCode_Size = *-ExternalMemoryFiles_CommonFileCopyAndRunCode_Real
 
@@ -120,6 +120,7 @@ ExternalMemoryFiles_CommonCopyZeropageCode
 	rts
 
 !macro MExternalMemoryFiles_CopyRunFileFromExternalMemory .fileOffset , .startAddress , .fileLength , .runAddress {
+	+MByteValueToAddress_A $7f , CIA2InterruptControl	; Stops any installed vblank NMI
 
 !if (.startAddress & SPACEMASK) = IOSPACE {
 !error ".startAddress is assumed in ExternalMemoryFiles_CommonFileCopyAndRunCode to not start in IOSPACE, the end of file logic will need to be changed"

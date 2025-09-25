@@ -168,15 +168,9 @@ AnimationTriggerEnemies
 	ldy #2
 	lda (tempWork0),y
 	sta AnimationMovementAddrLo,x
-!ifdef Scroller_LinkedEnemyTest {
-	sta AnimationMovementOrigLo,x
-}
 	iny
 	lda (tempWork0),y
 	sta AnimationMovementAddrHi,x
-!ifdef Scroller_LinkedEnemyTest {
-	sta AnimationMovementOrigHi,x
-}
 
 	; Now relocate from the SEUCK memory address to our address
 	.offset = AttackWaves - $340c
@@ -187,6 +181,13 @@ AnimationTriggerEnemies
 	lda AnimationMovementAddrHi,x
 	adc #>.offset
 	sta AnimationMovementAddrHi,x
+
+!ifdef Scroller_WantAnimationMovementOrig {
+	lda AnimationMovementAddrLo,x
+	sta AnimationMovementOrigLo,x
+	lda AnimationMovementAddrHi,x
+	sta AnimationMovementOrigHi,x
+}
 
 	iny
 	lda (tempWork0),y
@@ -1416,6 +1417,28 @@ SafeRandomDirectionTab
 	bne .notdoRunningMan
 	jmp .doRunningMan
 .notdoRunningMan
+}
+!ifdef Scroller_LoopingEnemy {
+	; In theory you could test the animation type and only loop some enemies
+;	lda AnimationType ,x
+;	cmp #24	; Some enemy type...
+;	bne .doNotLoopMovement
+
+	lda AnimationMovementOrigLo,x
+	sta AnimationMovementAddrLo,x
+	lda AnimationMovementOrigHi,x
+	sta AnimationMovementAddrHi,x
+
+	; Empty movement, so it loops...
+	lda #0
+	sta AnimationMovementMove,x
+	; A short time until the loop starts, this can be changed, for example 50 (frames) will wait about a second...
+	lda #1
+	sta AnimationMovementFrameCount,x
+
+	jmp .processAnimationFrames
+
+.doNotLoopMovement
 }
 	; So input a blank movement.
 	; This causes directional fire to then fire upwards, which is what SEUCK does, so we do too.

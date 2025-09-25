@@ -15,9 +15,9 @@ GameUsesPortA = CIA1KeyboardColumnJoystickA
 GameUsesPortB = CIA1KeyboardRowsJoystickB
 }
 
+
 .isFireBefore !by 0
 PlayerControl
-
 !ifdef BuildTitleScreen {
 .sme	lda #0
 	and #%111
@@ -83,13 +83,16 @@ PlayerControl
 	beq .notInvulnerable
 	dec Player_Invulnerable
 .notInvulnerable
-
 	jsr PlayerEngineSoundControl
 
 	lda GamePlayerExplode_ExplodeFrame
 	beq .notExplodingPlayer
 	jmp RunGamePlayerExplode
 .notExplodingPlayer
+
+	; Base score addition on speed
+	lda landscapeFrameSpeed
+	jsr ScoreAdd_Speed
 
 	; Missile launch
 	+LTestForPortBitsLoop_A GameUsesPortB , JoystickBits_Fire , .notFire
@@ -147,32 +150,11 @@ PlayerControl
 
 
 	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Down , .notDown
-	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
-	dec landscapeFrameSpeed
-	bne .notDown2b
-	lda #1
-	sta landscapeFrameSpeed
-.notDown2b
-	ldx landscapeFrameSpeed
-	lda PlayerEngineFrequenciesLo,x
-	sta Player_EngineTargetFrequency
-	lda PlayerEngineFrequenciesHi,x
-	sta Player_EngineTargetFrequency+1
+	jsr PlayerSpeedDecrease
 .notDown
 
 	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Up , .notUp
-	+MByteValueToAddress_A 45 , Player_EngineVolumeChange
-	inc landscapeFrameSpeed
-	ldx landscapeFrameSpeed
-	cpx #7
-	bcc .notUp2b
-	ldx #7
-	stx landscapeFrameSpeed
-.notUp2b
-	lda PlayerEngineFrequenciesLo,x
-	sta Player_EngineTargetFrequency
-	lda PlayerEngineFrequenciesHi,x
-	sta Player_EngineTargetFrequency+1
+	jsr PlayerSpeedIncrease
 .notUp
 	jmp .overFire
 .notFire
@@ -185,7 +167,6 @@ PlayerControl
 
 	; Fire bullets
 	+LTestForPortBitsLoop_A GameUsesPortA , JoystickBits_Fire , .notFire2
-.bph
 	lda EntityState_Bullets_ActiveNum
 	cmp #5
 	+lbcs .overFire2
@@ -480,6 +461,17 @@ PlayerPositionToForHorizonAndLandscape
 	lsr
 	lsr
 	sta playerYPositionOffsetForHorizon
+
+	; Calculates player position in terms on entity position
+	lda #0
+	sec
+	sbc playerYPositionOffset
+	+M_ASR
+	+M_ASR
+	sec
+	sbc #4	; To adjust to the player's neutral position on screen, due to the "camera"
+	sta playerYPositionOffset_AsEntityYPos
+
 	rts
 
 ; This does not alter the rendered player sprite position...
@@ -541,6 +533,9 @@ playerYPositionOffsetSpeed
 playerYPositionOffset
 	!by 0
 
+playerYPositionOffset_AsEntityYPos
+	!by 0
+
 playerYPositionOffset2
 	!by 0
 
@@ -550,6 +545,117 @@ playerYPositionOffsetForLandscape
 	!by ScreenLandscapeOriginYPos
 playerYPositionOffsetForSprites
 	!by 0
+
+
+!ifdef BuildTitleScreen {
+.handPosX !by 0
+.handPosY !by 0
+
+RenderHand
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	; Calculate a hand position
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Left , .notHOLeft
+	lda .handPosX
+	cmp #-8
+	beq .gotLeftOrRight
+	dec .handPosX
+	jmp .gotLeftOrRight
+.notHOLeft
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Right , .notHORight
+	lda .handPosX
+	cmp #8
+	beq .gotLeftOrRight
+	inc .handPosX
+	jmp .gotLeftOrRight
+.notHORight
+
+	; Not left or right, so decrease
+	lda .handPosX
+	beq .gotLeftOrRight
+	bmi .isNeg
+	dec .handPosX
+	jmp .gotLeftOrRight
+.isNeg
+	inc .handPosX
+
+.gotLeftOrRight
+
+
+
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Down , .notHOUp
+	lda .handPosY
+	cmp #-8
+	beq .gotUpOrDown
+	dec .handPosY
+	jmp .gotUpOrDown
+.notHOUp
+	+TestForPortBitsLoop_A GameUsesPortA , JoystickBits_Up , .notHODown
+	lda .handPosY
+	cmp #8
+	beq .gotUpOrDown
+	inc .handPosY
+	jmp .gotUpOrDown
+.notHODown
+
+	; Not Up or Down, so decrease
+	lda .handPosY
+	beq .gotUpOrDown
+	bmi .isNeg2
+	dec .handPosY
+	jmp .gotUpOrDown
+.isNeg2
+	inc .handPosY
+
+.gotUpOrDown
+
+
+
+
+
+	lda .handPosX
+	clc
+	adc #110
+	sta zeroPage_Temp4
+;	+MByteValueToAddress_A 120 , zeroPage_Temp4
+	lda .handPosY
+	clc
+	adc #62
+	sta zeroPage_Temp5
+;	+MByteValueToAddress_A 60 , zeroPage_Temp5
+
+	+LTestForPortBitsLoop_A GameUsesPortA , JoystickBits_Fire , .notHandFire
+	lda .handPosX
+	cmp #-3
+	+IfRegGreaterThanOrEqualToVal .notHandFireLeft
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandLeftFire_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandLeftFire_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandLeftFire_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandLeftFire_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandLeftFire_0_0_0_tileWidth , 0
+	rts
+.notHandFireLeft
+	cmp #3
+	+IfRegLessThanOrEqualToVal .notHandFireRight
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandRightFire_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandRightFire_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandRightFire_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandRightFire_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandRightFire_0_0_0_tileWidth , 0
+	rts
+.notHandFireRight
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandMiddleFire_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandMiddleFire_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandMiddleFire_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandMiddleFire_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandMiddleFire_0_0_0_tileWidth , 0
+	rts
+.notHandFire
+	lda .handPosX
+	cmp #-3
+	+IfRegGreaterThanOrEqualToVal .notHandLeft
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandLeft_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandLeft_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandLeft_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandLeft_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandLeft_0_0_0_tileWidth , 0
+	rts
+.notHandLeft
+	cmp #3
+	+IfRegLessThanOrEqualToVal .notHandRight
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandRight_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandRight_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandRight_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandRight_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandRight_0_0_0_tileWidth , 0
+	rts
+.notHandRight
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_HandMiddle_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_HandMiddle_0_0_0_tileAddress , kVarsEmitSpriteFrame_HandMiddle_0_0_0_tileWidth , kVarsEmitSpriteFrame_HandMiddle_0_0_0_tileHeight , kVarsEmitSpriteFrame_HandMiddle_0_0_0_tileWidth , 0
+	rts
+}
+
+
 
 playerYPositionOffsetSpeedDivideTab
 !for .ii , 256 {
@@ -1158,3 +1264,52 @@ PlaySampleWow
 .skipWow
 }
 	rts
+
+
+!zn
+.checkAfter !by 0
+PlayerSpeedNormaliseCheck
+	lda .checkAfter
+	beq .canCheck
+	dec .checkAfter
+	rts
+.canCheck
+	lda landscapeFrameSpeed
+	cmp #3
+	+IfURegLessThanVal PlayerSpeedIncrease
+	+IfURegGreaterThanVal PlayerSpeedDecrease
+	rts
+
+.doPlayerSpeedDecrease
+	jsr PlayerSpeedDecrease
+	rts
+
+PlayerSpeedHasChanged
+	ldx landscapeFrameSpeed
+	lda PlayerEngineFrequenciesLo,x
+	sta Player_EngineTargetFrequency
+	lda PlayerEngineFrequenciesHi,x
+	sta Player_EngineTargetFrequency+1
+PlayerSpeedHasChangedNotify
+	+MByteValueToAddress_A 100 , .checkAfter
+	rts
+
+PlayerSpeedDecrease
+	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
+	dec landscapeFrameSpeed
+	bne .notDown2b
+	lda #1
+	sta landscapeFrameSpeed
+.notDown2b
+	jmp PlayerSpeedHasChanged
+
+PlayerSpeedIncrease
+	+MByteValueToAddress_A 45 , Player_EngineVolumeChange
+	inc landscapeFrameSpeed
+	lda landscapeFrameSpeed
+	cmp #7
+	bcc .notUp2b
+	lda #7
+	sta landscapeFrameSpeed
+.notUp2b
+	jmp PlayerSpeedHasChanged

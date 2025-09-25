@@ -1,0 +1,96 @@
+!zn
+TriggerSamplePlay_Explosion1 !by 0
+TriggerSamplePlay_Explosion2 !by 0
+TriggerSamplePlay_Explosion3 !by 0
+TriggerSamplePlay_Ping !by 0
+
+SamplePlay_Deactivate1
+	+MDeactivateVoice 1
+	+MBus24Bit_SetAddress_A $01 , $8000 + (1 * 11)
+	rts
+SamplePlay_Deactivate2
+	+MDeactivateVoice 2
+	+MBus24Bit_SetAddress_A $01 , $8000 + (2 * 11)
+	rts
+SamplePlay_Deactivate3
+	+MDeactivateVoice 3
+	+MBus24Bit_SetAddress_A $01 , $8000 + (3 * 11)
+	rts
+
+SamplePlay_Activate1
+	+MActivateVoice 1
+	+MWordValueToAddress_A SamplePlay_Deactivate2 , SamplePlay_Deactivate+1
+	+MWordValueToAddress_A SamplePlay_Activate2 , SamplePlay_Activate+1
+	rts
+
+SamplePlay_Activate2
+	+MActivateVoice 2
+	+MWordValueToAddress_A SamplePlay_Deactivate3 , SamplePlay_Deactivate+1
+	+MWordValueToAddress_A SamplePlay_Activate3 , SamplePlay_Activate+1
+	rts
+
+SamplePlay_Activate3
+	+MActivateVoice 3
+	+MWordValueToAddress_A SamplePlay_Deactivate1 , SamplePlay_Deactivate+1
+	+MWordValueToAddress_A SamplePlay_Activate1 , SamplePlay_Activate+1
+	rts
+
+; These automatically cycle around the available voices
+SamplePlay_Deactivate
+	jmp SamplePlay_Deactivate1
+
+SamplePlay_Activate
+	jmp SamplePlay_Activate1
+
+SamplePlay_Explosion1
+!ifndef BuildTitleScreen {
+	jsr SamplePlay_Deactivate
+	+MPlaySampleNoVoice 255 , kSampleInfo0_start , kSampleInfo0_length , kSampleInfo0_frequency
+	jsr SamplePlay_Activate
+}
+	rts
+
+SamplePlay_Explosion2
+!ifndef BuildTitleScreen {
+	jsr SamplePlay_Deactivate
+	+MPlaySampleNoVoice 255 , kSampleInfo1_start , kSampleInfo1_length , kSampleInfo1_frequency
+	jsr SamplePlay_Activate
+}
+	rts
+
+SamplePlay_Explosion3
+!ifndef BuildTitleScreen {
+	jsr SamplePlay_Deactivate
+	+MPlaySampleNoVoice 255 , kSampleInfo2_start , kSampleInfo2_length , kSampleInfo2_frequency
+	jsr SamplePlay_Activate
+}
+	rts
+
+ProcessSamplePlayTriggers
+	lda TriggerSamplePlay_Explosion1
+	beq .os1
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion1
+	jsr SamplePlay_Explosion1
+.os1
+
+	lda TriggerSamplePlay_Explosion2
+	beq .os2
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion2
+	jsr SamplePlay_Explosion2
+.os2
+
+	lda TriggerSamplePlay_Explosion3
+	beq .os3
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion3
+	jsr SamplePlay_Explosion3
+.os3
+
+	lda TriggerSamplePlay_Ping
+	+lbeq .os4
+	+MByteValueToAddress_A 0 , TriggerSamplePlay_Ping
+!ifndef BuildTitleScreen {
+	+MPlaySample 1 , 255 , kSampleInfo13_start , kSampleInfo13_length , kSampleInfo13_frequency
+}
+.os4
+
+	rts

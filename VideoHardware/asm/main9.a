@@ -9,6 +9,7 @@ kBus24Bit_VideoLayer_HasOverscan=1
 kBus24Bit_VideoLayer_ExpandedPalettes = 1
 ; Define this to display the static logo
 ;kJustForLogo = 1
+;kJustForLogoPurpleBackground = 1
 ;kJustForLogoMonchrome = 1
 
 ;kSkipToFrameThenWaitForFire = 752
@@ -382,6 +383,7 @@ mainLoop
 	; As background with no transparency
 	lda #kVideo_EnableDisplay_Enable
 }
+
 	jsr Video_EnableDisplay
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel2 , kBus24Bit_VideoLayer_Priority_Pixel3
@@ -438,6 +440,11 @@ mainLoop
 	+WaitForFire_A
 
 	jmp .l1
+}
+
+!ifdef kJustForLogoPurpleBackground {
+	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (255*kBus24Bit_VideoLayer_BytesPerColour)
+	+MBus24Bit_SendPaletteRGB 255 , 0 , 255
 }
 
 !ifndef MinimalMusicDemoTest {
@@ -765,7 +772,7 @@ sprites1PosXTarget
 !ifdef kJustForLogoMonchrome {
 	!by 158 , 182 , 206 , 230
 }
-	!by 178 , 198 , 218 , 238
+	!by 179 , 199 , 219 , 239
 sprites1PosYCount
 	!by 0 , 50 , 100 , 150
 sprites1PosX
@@ -2831,10 +2838,10 @@ HeightToRowsAddress
 
 DrawScoresSprites
 	jsr Video_SetAddressSprites
-	+SpriteOutput2x2Immediate 20 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
-	+SpriteOutput2x2Immediate 42 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
-	+SpriteOutput2x2Immediate 64 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
-	+SpriteOutput2x2Immediate 86 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
-	+SpriteOutput2x2Immediate 108 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
-	+SpriteOutput2x2Immediate 130 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 21 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 43 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 65 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 87 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 109 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
+	+SpriteOutput2x2Immediate 131 , 25 , EmitSpriteFrame32_0 , EmitSpriteFrame48_0 , EmitSpriteFrame32_16 , EmitSpriteFrame48_16
 	rts

@@ -1,5 +1,3 @@
-!source "stdlib/GnomeSort.a"
-
 ; Don't forget the rotation for the landscape is from the point of view of up in the air, not on the ground
 ; So it is possible to have negative Y coordinates, closer to the ground
 ; Positive Y coordinates are above the player
@@ -13,6 +11,10 @@
 ;EntityYPos	!by -25 ; Roughly on the ground
 
 kEntityYPos_Ground = -25
+; For spawning
+kEntity_MaxZPos = 127 + 11	; TODO: Why +11 is the limit?
+; For removal
+kEntity_MaxZPosRemove = kEntity_MaxZPos+1
 
 ;EntityZPos	!by 8*8	; The far point of the landscape
 ;EntityZPos	!by defaultNeutralScaleIs
@@ -56,6 +58,8 @@ EntityStateValue1
 	!fill SortHardMaxEntries , 0
 EntityStateValue2
 	!fill SortHardMaxEntries , 0
+EntityStateValue3
+	!fill SortHardMaxEntries , 0
 
 
 EntityLastScreenXPos
@@ -77,19 +81,19 @@ EntityInit
 	bne .ecl1
 	rts
 
-GnomeSort_Sortlo !fill SortHardMaxEntries , 0
-GnomeSort_Sorthi !fill SortHardMaxEntries , 0
-SortIndexTable !fill SortHardMaxEntries , 0
-SortValueTable = EntityZPos
+;SortIndexTable !fill SortHardMaxEntries , 0
 SortMaxEntries !by SortHardMaxEntries
 
 EntitySort
-	+GnomeSort_SortRTS -1 , SortHardMaxEntries , SortMaxEntries , SortIndexTable , SortValueTable , SortTemp0 , SortTemp1 , GnomeSort_Sortlo , GnomeSort_Sorthi , ~SortBlockByteLength , ~GnomeSort_sortstart
+	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
+	jsr EntitySortInternal
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
 	rts
 
 EntitySortInit
-	+GnomeSort_TableInit SortHardMaxEntries , SortTemp0 , SortTemp1 , SortBlockByteLength , GnomeSort_Sortlo , GnomeSort_Sorthi , GnomeSort_sortstart
-	+GnomeSort_Init SortMaxEntries , SortIndexTable
+	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
+	jsr EntitySortInitInternal
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
 	rts
 
 ; Return: X = Index , C = 0 on success
@@ -133,8 +137,13 @@ EntityFindFreeSlotEnemy
 	clc
 	rts
 
-
+!zn
 EntityUpdateObjects
+	; Maintain enemy missile counts, using the count from the previous frame
+	lda EnemyMissileCountNow
+	sta EnemyMissileCount
+	+MByteValueToAddress_A 0 , EnemyMissileCountNow
+
 	ldy #SortHardMaxEntries-1
 .ue1
 	; Skip empty entries
@@ -212,10 +221,13 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	+MBus20To32Bit1_SetLatch4_A
 	jsr RenderSpritePlayer
 	lda GamePlayerExplode_ExplodeFrame
-	+lbne .skipEnemyDraw
+	bne .skipEnemyDrawExploding
 	jsr RenderSpritePlayerReticle
 	jmp .skipEnemyDraw
-
+.skipEnemyDrawExploding
+	cmp #100
+	+lbcs .isComingFromBehindCamera
+	jmp .skipEnemyDraw
 .isEntityObject
 	sta zeroPage_Temp17
 	lda EntityTypeLo,x
@@ -391,14 +403,14 @@ EntityEnableRenderPlayerSpecialCase = *+1
 	sta .smEnemyJSR+2
 	; Convert transformed coordinates into the screen
 	; Calculate the position tweak due to sprite scale
-	ldx zeroPage_Temp5
-.smEnemyWidth	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab-1,x
+	ldy zeroPage_Temp5
+.smEnemyWidth	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileWidthScaleTab-1,y
 	+lbeq .skipEnemyDraw
 	sta zeroPage_Temp3
 	lsr
 	lsr
 	sta zeroPage_Temp1
-.smEnemyHeight	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab-1,x
+.smEnemyHeight	lda kVarsEmitSpriteFrame_t_678_0_0_0_tileHeightScaleTab-1,y
 	+lbeq .skipEnemyDraw
 	sta zeroPage_Temp4
 	lsr
@@ -451,6 +463,54 @@ EntityEnableRenderPlayerSpecialCase = *+1
 
 	rts
 
+
+.isComingFromBehindCamera
+!ifndef BuildTitleScreen {
+	; Render the player scaling in from behind the camera
+	sec
+	sbc #100
+	sta zeroPage_Temp2
+
+	lda GamePlayerLives
+	+lbmi .skipEnemyDraw
+
+	txa
+	pha
+
+
+	lda #50
+	sec
+	sbc zeroPage_Temp2
+	sta zeroPage_Temp3
+	lsr
+	sta zeroPage_Temp10
+
+	; And calculate a suitable scale
+	lda #$20
+	sec
+	sbc zeroPage_Temp10
+	tax
+
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos , zeroPage_Temp5 , zeroPage_Temp6
+	lda kVarsEmitSpriteFrame_t_494_0_0_0_tileWidthScaleTab-1,x
+	lsr
+	sta zeroPage_Temp9
+	+MSubU8AddrToAddr16 zeroPage_Temp9 , zeroPage_Temp5 , zeroPage_Temp6
+
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos , zeroPage_Temp4 , zeroPage_Temp7
+	+MSubU8AddrToAddr16 zeroPage_Temp3 , zeroPage_Temp4 , zeroPage_Temp7
+	+MSubU8AddrToAddr16 zeroPage_Temp3 , zeroPage_Temp4 , zeroPage_Temp7
+	+MSubU8AddrToAddr16 zeroPage_Temp3 , zeroPage_Temp4 , zeroPage_Temp7
+	+MSubU8AddrToAddr16 zeroPage_Temp3 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	bcs .skipDraw
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_494_0_0_0_colour , kVarsEmitSpriteFrame_t_494_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_494_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_494_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_494_0_0_0_tileWidth
+.skipDraw
+
+	pla
+	txa
+}
+	jmp .skipEnemyDraw
 
 
 EntityState_RemoveEntity

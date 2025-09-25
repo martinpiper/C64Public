@@ -1,8 +1,7 @@
 !zn
 InitTitleScreen
 	jsr Bus20To32Bit1_Init
-	+MWordValueToAddress_A -650 , TitleFramesTimeout	; Negative value, counts up...
-;	+MWordValueToAddress_A -50 , TitleFramesTimeout	; Negative value, counts up...
+	+MWordValueToAddress_A -TitleFramesTimeoutValue , TitleFramesTimeout	; Negative value, counts up...
 
 	jsr EntityInit
 	jsr Audio_Init
@@ -25,9 +24,7 @@ InitTitleScreen
 	jsr VBlankUpdateHorizon
 
 	jsr Video_SetAddressVideoPaletteBankRegister
-	+MBus24Bit_Send8BitValue $0f
-	jsr Video_SetAddressVideoLayersEnable
-	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_124
+	+MBus24Bit_Send8BitValue $07
 
 	; Show the title screen
 	jsr Video_SetAddressCharScrollRegisters
@@ -35,7 +32,7 @@ InitTitleScreen
 	+MBus24Bit_SendLE16BitValue 256
 
 	!source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
-	; Before accessign the screen RAM
+	; Before accessing the screen RAM
 	jsr Video_WaitVBlank
 !if 0 {
 	; Debug: Text display test
@@ -110,6 +107,7 @@ mainLoop3
 	jsr Video_StartRasterTimers
 
 	jsr TitleRunLogic
+	jsr Music_CheckTime
 	jsr EntityUpdateObjects
 	jsr EntitySort
 	jsr RenderSpritesTitle
@@ -123,6 +121,8 @@ mainLoop3
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_4
 	jsr InitGame
 	jsr RunGame
+	jsr InitScoreTable
+	jsr RunScoreTable
 	jsr InitTitleScreen
 .notTimeYet
 
@@ -214,6 +214,11 @@ RenderSpritesTitle
 	+MLogoDraw2 TitleDraw2R2 , 180 , 0
 
 	jsr EntityRenderSpritesDirectMode
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	jsr ResetInterfaceAndStartSendingScaledSprites2
+
 
 .retryFrame
 	+MBus20To32Bit1_WriteMode_A
@@ -327,8 +332,9 @@ RenderSpritesTitle
 	+MBus20To32Bit1_UsingState_WriteMode_A
 	+MBus20To32Bit1_UsingState_SetLatch4_A
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
+
 
 ;	+WaitForFire_A
 

@@ -9,13 +9,13 @@ static T strtoTT(char const* _String, char** _EndPtr, int _Radix);
 
 // Explicit specialisations
 template <>
-static int strtoTT<int>(char const* _String, char** _EndPtr, int _Radix)
+int strtoTT<int>(char const* _String, char** _EndPtr, int _Radix)
 {
 	return strtol(_String, _EndPtr, _Radix);
 }
 
 template <>
-static unsigned int strtoTT<unsigned int>(char const* _String, char** _EndPtr, int _Radix)
+unsigned int strtoTT<unsigned int>(char const* _String, char** _EndPtr, int _Radix)
 {
 	return strtoul(_String, _EndPtr, _Radix);
 }

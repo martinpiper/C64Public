@@ -37,6 +37,18 @@ UpdateLandscapeFrameInternal
 	dec zeroPage_Temp0
 	bne .umd1
 
+	lda #kLandscapeMapRowsData_flags_doHills
+	bit LandscapeFlags
+	beq .noHills
+	jsr LandscapeMapAddHill
+.noHills
+	lda #kLandscapeMapRowsData_flags_doRiver
+	bit LandscapeFlags
+	beq .noRiver
+	jsr LandscapeMapAddRiver
+.noRiver
+
+
 	lda LandscapeMapRowOffset
 	clc
 	ldy landscapeRotationsFrame
@@ -181,6 +193,10 @@ kLandscapeMapRowsData_offset_Formation_Size			= 5
 kLandscapeMapRowsData_flags_doLanding	= %00000001
 kLandscapeMapRowsData_flags_doCanyon	= %00000010
 kLandscapeMapRowsData_flags_doRefueling = %00000100
+kLandscapeMapRowsData_flags_doStage		= %00001000
+kLandscapeMapRowsData_flags_doHills		= %00010000
+kLandscapeMapRowsData_flags_doRiver		= %00100000
+
 
 !set LandscapeMapRowsData_MustDoType = kLandscapeMapRowsData_offset_Palette
 
@@ -218,3 +234,129 @@ kLandscapeMapRowsData_flags_doRefueling = %00000100
 	+MAssertEquals LandscapeMapRowsData_MustDoType , kLandscapeMapRowsData_offset_Formation
 	!by .type , .when , .x , .y , .z
 }
+
+
+!zn
+.hillHeightCount !by 7
+.adjustX !by 0
+.hillHeightSideTab !by 1,3,5,6,7,6,4,1
+.hillHeightToObjectTab !by 1,29,30,31,32,33,34,35
+LandscapeMapAddHill
+	lda LandscapeMapRowOffset
+	sec
+	sbc #16*7
+	clc
+	adc .adjustX
+	tax
+	lda #7
+	sta zeroPage_Temp0
+.l1
+	ldy zeroPage_Temp0
+	lda .hillHeightSideTab,y
+	sec
+	sbc .hillHeightCount
+	bcs .o1
+	lda #0
+.o1
+	tay
+	lda .hillHeightToObjectTab,y
+	sta LandscapeMap,x
+	inx
+	dec zeroPage_Temp0
+	bpl .l1
+
+	; Make the hills get bigger each row
+	lda .hillHeightCount
+	sec
+	sbc #1
+	and #7
+	sta .hillHeightCount
+	; And alternate the hill position left and right for each new hill
+	cmp #7
+	bne .noAdjustX
+	lda .adjustX
+	eor #8
+	sta .adjustX
+.noAdjustX
+
+	rts
+
+!zn
+.river1Pos !by 8
+.river1Width !by 1
+.riverSeed !by 0
+LandscapeMapAddRiver
+	inc .riverSeed
+	lda .riverSeed
+	jsr Seed
+
+	lda .river1Width
+	cmp #3
+	beq .notWider
+	jsr Rand
+	and #3
+	beq .notWider
+	inc .river1Width
+.notWider
+
+	lda .river1Width
+	cmp #1
+	beq .notNarrow
+	jsr Rand
+	and #3
+	beq .notNarrow
+	dec .river1Width
+.notNarrow
+
+	lda .river1Pos
+	beq .notLeft
+	jsr Rand
+	and #3
+	beq .notLeft
+	dec .river1Pos
+	bne .notLeft
+	lda #11
+	sta .river1Pos
+	lda #1
+	sta .river1Width
+.notLeft
+
+	lda .river1Pos
+	cmp #13
+	beq .notRight
+	jsr Rand
+	and #3
+	beq .notRight
+	inc .river1Pos
+	lda .river1Pos
+	cmp #13
+	bne .notRight
+	lda #2
+	sta .river1Pos
+	lda #1
+	sta .river1Width
+.notRight
+
+	lda .river1Width
+	sta zeroPage_Temp0
+	lda LandscapeMapRowOffset
+	sec
+	sbc #16*7
+	clc
+	adc .river1Pos
+	tax
+	lda #6
+	sta LandscapeMap,x
+	inx
+	dec zeroPage_Temp0
+	bne .wid1
+	rts
+.wid1
+	sta LandscapeMap,x
+	inx
+	dec zeroPage_Temp0
+	bne .wid2
+	rts
+.wid2
+	sta LandscapeMap,x
+	rts

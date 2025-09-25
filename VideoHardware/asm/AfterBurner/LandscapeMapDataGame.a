@@ -1,13 +1,20 @@
 LandscapeMapRowsData
+
 ; Carrier palette
 +LandscapeMapRowsData_PalettesFlags 3	,0	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,6,6,6
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 0 , -30 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 30 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 15 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 3	,0	, 0
++LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,6,6,6
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 5 , -10 , -10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , -10 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , -10 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , -10 , 10 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 3	,0	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
@@ -15,13 +22,13 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,6,6,6
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 3	,4	, 0
-+LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
-+LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_LandscapeObjects 11,11,11,11,11,11,11,11
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 1 , 1 , -20 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 2 , 1 , 30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 3 , 1 , 20 , 15 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 5 , 10 , -10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , 10 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , 10 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 8 , 5 , 10 , 10 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 3	,4	, 0
 +LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
@@ -30,7 +37,37 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_FormationEnd
 
 
+
+
 +LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,1,6,6,6,6
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , -20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 6,6,6,1,6,6,6,6
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,0	, kLandscapeMapRowsData_flags_doStage
 +LandscapeMapRowsData_EntityObjects 2,2,2,2,2,2,2,2
 +LandscapeMapRowsData_EntityObjectsExit 2,2,2,2,2,2,2,2
 +LandscapeMapRowsData_LandscapeObjects 6,6,6,1,6,6,6,6
@@ -39,12 +76,24 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , -20 , 5 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 20 , 5 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , -20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 20 , 5 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
 
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_LandscapeObjects 6,6,6,1,6,6,6,6
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
 
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
@@ -58,21 +107,152 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_LandscapeObjects 1,1,1,0,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 
+
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , -20 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 20 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 20 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , -20 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 20 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 20 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
+
+; Columns
+; Actual columns
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,4,18,1,4,27,28,27
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , -30 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , -20 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , -10 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 1,4,18,1,4,28,28,28
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit 2,2,2,2,2,2,2,2
++LandscapeMapRowsData_LandscapeObjects 1,3,18,1,4,27,28,28
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 20 , 12 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 10 , 14 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 0 , 16 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 1,4,18,1,4,28,28,28
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 1,4,18,1,4,28,28,28
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 0,1,2,3,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,3,18,1,4,27,27,27
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 30 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 4 , 3 , 20 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 4 , 3 , 10 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 3 , 3 , 0 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 3 , 3 , -10 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , -20 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doHills
++LandscapeMapRowsData_EntityObjects 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_EntityObjectsExit 1,1,1,1,1,1,1,1
++LandscapeMapRowsData_LandscapeObjects 1,4,18,1,4,28,28,28
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , -30 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , 30 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , -20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , 20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 10 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 10 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 0 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+; End transition
++LandscapeMapRowsData_PalettesFlags 5	,2	, kLandscapeMapRowsData_flags_doStage
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,1,0,0
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 4,4,4,3,3,3,2,1
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , -30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 7 , 2 , -20 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 9 , 1 , -10 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 4,4,4,3,3,3,2,1
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 4,4,4,3,3,3,2,1
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 3 , 1 , 20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 3 , 0 , 10 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 4,4,4,3,3,3,2,1
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
++LandscapeMapRowsData_FormationEnd
+
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 1,1,1,1,1,0,0,0
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , -30 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , 30 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , -20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , 20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
+
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_EntityObjects 4,4,4,3,3,3,2,1
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 1,2,3,4,5,0,1,2
 +LandscapeMapRowsData_FormationEnd
 
 
@@ -116,13 +296,13 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 2,2,7,2,1,7,7,0
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -30 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 30 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , 0 , 5 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 0 , 0 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , 0 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 0 , 0 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 0	,3	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
@@ -138,14 +318,19 @@ LandscapeMapRowsData
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 3,3,3,3,4,0,0,0
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -30 , 0 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , 15 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 30 , 0 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , -5 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , -10 , UsingMaxHardwareScaleTabValue-1
-+LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , -5 , UsingMaxHardwareScaleTabValue-1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -30 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 30 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -20 , -5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 0 , -10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , -5 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,2	, kLandscapeMapRowsData_flags_doStage
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,4,7,4,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 0	,2	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
@@ -162,27 +347,27 @@ LandscapeMapRowsData_JustCanyon
 +LandscapeMapRowsData_PalettesFlags 2	,1	, kLandscapeMapRowsData_flags_doCanyon
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
-+LandscapeMapRowsData_LandscapeObjects 12,18,0,0,14,0,15,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,0,14,0,15,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
-+LandscapeMapRowsData_LandscapeObjects 0,18,0,14,0,15,0,0
++LandscapeMapRowsData_LandscapeObjects 0,12,0,14,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
-+LandscapeMapRowsData_LandscapeObjects 0,18,0,12,0,14,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,0,0,14,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
-+LandscapeMapRowsData_LandscapeObjects 0,18,0,12,0,14,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,12,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 2	,2	, kLandscapeMapRowsData_flags_doCanyon
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
-+LandscapeMapRowsData_LandscapeObjects 0,18,0,14,0,15,0,0
++LandscapeMapRowsData_LandscapeObjects 0,18,0,14,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 2	,3	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
@@ -200,18 +385,34 @@ LandscapeMapRowsData_JustCanyon
 +LandscapeMapRowsData_LandscapeObjects 4,1,2,1,1,3,2,0
 +LandscapeMapRowsData_FormationEnd
 
-+LandscapeMapRowsData_PalettesFlags 0	,2	, 0
++LandscapeMapRowsData_PalettesFlags 0	,2	, 0	; No kLandscapeMapRowsData_flags_doStage stage increase here, because exiting the canyon causes a stage increase with StageNumber_Increase
 +LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 4,4,4,7,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
-+LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjects 0,0,0,0,0,1,1,2
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 4,4,4,5,5,7,0,0
 +LandscapeMapRowsData_FormationEnd
 +LandscapeMapRowsData_PalettesFlags 0	,1	, 0
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 4,4,4,5,5,7,0,0
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 3 , 30 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 4 , 3 , 20 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 3 , 3 , 10 , 20 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 2 , 3 , 0 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 1 , 3 , -10 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 1 , 3 , -20 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, 0
++LandscapeMapRowsData_EntityObjects 1,1,1,1,2,2,2,2
++LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_LandscapeObjects 5,5,5,5,0,0,0,0
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, 0
++LandscapeMapRowsData_EntityObjects 3,3,3,3,2,2,2,2
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 5,5,5,5,0,0,0,0
 +LandscapeMapRowsData_FormationEnd
@@ -219,9 +420,89 @@ LandscapeMapRowsData_JustCanyon
 +LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
 +LandscapeMapRowsData_LandscapeObjects 6,1,2,3,4,5,0,1
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 1 , -30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 30 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 5 , 2 , -20 , 5 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 20 , 5 , kEntity_MaxZPos
 +LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, 0
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
+
+
+
+; River section
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doStage | kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,2,4,4,0,1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , -30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , -20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 30 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,3,3,1,3
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , -30 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , -20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , 0 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , 20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,2,4,4,0,1
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,3,3,1,3
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,2,3,4,5,0,1
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 0 , -30 , 0 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 1 , -20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 2 , 0 , 15 , kEntity_MaxZPos
++LandscapeMapRowsData_Formation_WhenTypePos 0 , 3 , 20 , 10 , kEntity_MaxZPos
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,3,3,1,3
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 1,1,3,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
++LandscapeMapRowsData_PalettesFlags 0	,1	, kLandscapeMapRowsData_flags_doRiver
++LandscapeMapRowsData_EntityObjects 0,0,1,1,2,2,1,2
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 6,1,2,3,4,5,0,1
++LandscapeMapRowsData_FormationEnd
+
+
 +LandscapeMapRowsData_PalettesFlags 0	,0	, 0
-+LandscapeMapRowsData_EntityObjects 0,0,0,0,0,0,0,0
-+LandscapeMapRowsData_EntityObjectsExit 0,0,0,0,0,0,0,0
++LandscapeMapRowsData_EntityObjects 1,2,3,4,0,0,0,0
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
++LandscapeMapRowsData_FormationEnd
+
+
+; **** Always at the end, no last formation
++LandscapeMapRowsData_PalettesFlags 0	,0	, 0
++LandscapeMapRowsData_EntityObjects -1,-1,-1,-1,-1,-1,-1,-1
++LandscapeMapRowsData_EntityObjectsExit -1,-1,-1,-1,-1,-1,-1,-1
 +LandscapeMapRowsData_LandscapeObjects 6,6,6,6,6,1,2,3
 LandscapeMapRowsDataEnd

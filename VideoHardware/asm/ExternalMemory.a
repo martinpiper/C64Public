@@ -1,4 +1,5 @@
 ; External memory expansion common code
+!ifndef ExternalMemory_NoChecksums {
 !zn
 ExternalMemory_C64DisplayStartupMessage
 	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
@@ -11,8 +12,28 @@ ExternalMemory_C64DisplayStartupMessage
 	bpl .cl1
 	rts
 
+; Entry:
+; A = Number of checksums (e.g. checksumsCount)
+; X = Number of bytes per checksum (e.g. <checksumsNumBytes)
+ExternalMemory_C64CheckMemorySetChecksumParams
+	sta .smcc1+1
+	stx .smcl1+1
+	rts
 
+; Entry:
+; A/X/Y = Checksum start address (e.g. checksumsStart). Use +MLongValueTo_AXY
+ExternalMemory_C64CheckMemorySetChecksumAddress
+	sta .smcal+1
+	stx .smcah+1
+	sty .smcahh+1
+	rts
+
+; Entry: Game identifier (e.g. gameDataIdentifier) address AXY = lo/hi/hihi. Use +MLongValueTo_AXY
 ExternalMemory_C64CheckMemory
+	sta .sml+1
+	stx .smh+1
+	sty .smhh+1
+.ExternalMemory_C64CheckMemory_Internal
 	lda #VIC2Colour_Black
 	ldx #(messageMWRAMOKEnd - messageMWRAMOK)-1
 .cl4
@@ -24,13 +45,13 @@ ExternalMemory_C64CheckMemory
 	; Check for RAM contents
 	jsr Bus20To32Bit1_ShortReset
 
-	; Hard coded expected address for identifier
+	; Expected address for identifier
 	jsr Bus20To32Bit1_SetLatch0
-	+MBus24Bit_Send8BitValue <gameDataIdentifier
+.sml	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch1
-	+MBus24Bit_Send8BitValue >gameDataIdentifier
+.smh	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch2
-	+MBus24Bit_Send8BitValue ^gameDataIdentifier
+.smhh	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_ReadMode
 	jsr Bus20To32Bit1_SetLatch5
 	
@@ -39,7 +60,7 @@ ExternalMemory_C64CheckMemory
 	+MBus24Bit_Get8BitValueToA
 	cmp GameExpectedIdentifier,x
 	beq .ok1b
-	jmp ExternalMemory_C64CheckMemory
+	jmp .ExternalMemory_C64CheckMemory_Internal
 .ok1b
 	inx
 	cpx #GameExpectedIdentifierLen
@@ -52,9 +73,27 @@ ExternalMemory_C64CheckMemory
 	dex
 	bpl .cl2
 
+ExternalMemory_C64CheckMemory_JustChecksum
+	jsr Bus20To32Bit1_Init
+	jsr Bus20To32Bit1_ShortReset
+
 	; Verify checksum data
-	lda #checksumsCount
+	; Count
+.smcc1	lda #0
 	sta zeroPage_Temp2
+	; Init start of the data address, in case of restart due to checksum error and retry
+	lda #0
+	sta .chksBlockAddr1
+	sta .chksBlockAddr2
+	sta .chksBlockAddr3
+
+	; And init the checksum address, in case of restart due to checksum error and retry
+.smcal	lda #0
+	sta .chksAddr1
+.smcah	lda #0
+	sta .chksAddr2
+.smcahh	lda #0
+	sta .chksAddr3
 
 .chks1
 	jsr Bus20To32Bit1_ShortReset
@@ -74,7 +113,7 @@ ExternalMemory_C64CheckMemory
 	sta zeroPage_Temp0
 	sta zeroPage_Temp1
 	; Assume up to 256 bytes checksum length
-	ldy #<checksumsNumBytes
+.smcl1	ldy #0
 .chks2
 	+MBus24Bit_Get8BitValueToA
 	+MAddAToAddr16 zeroPage_Temp0 , zeroPage_Temp1
@@ -84,17 +123,20 @@ ExternalMemory_C64CheckMemory
 	jsr Bus20To32Bit1_ShortReset
 	jsr Bus20To32Bit1_SetLatch0
 .chksAddr1 = * + 1
-	+MBus24Bit_Send8BitValue <checksumsStart
+	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch1
 .chksAddr2 = * + 1
-	+MBus24Bit_Send8BitValue <(checksumsStart>>8)
+	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch2
 .chksAddr3 = * + 1
-	+MBus24Bit_Send8BitValue <(checksumsStart>>16)
+	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_ReadMode
 	jsr Bus20To32Bit1_SetLatch5
 
 	; Assume two byte checksum
+!ifdef checksumsSize {
+	+MAssertEquals checksumsSize , 2
+}
 	+MBus24Bit_Get8BitValueToA
 	cmp zeroPage_Temp0
 	+lbne .reportBlockError
@@ -149,21 +191,25 @@ ExternalMemory_C64CheckMemory
 	jsr DisplayHexFromAAtX
 	inc VIC2BorderColour
 	; Try again...
-	jmp ExternalMemory_C64CheckMemory
+	jmp .ExternalMemory_C64CheckMemory_Internal
+}
 
-
+; Entry: Data (e.g. EndDataMarker) address AXY = lo/hi/hihi. Use +MLongValueTo_AXY
 ExternalMemory_C64SendResourceData
+	sta .smDataMarker1
+	stx .smDataMarker2
+	sty .smDataMarker3
 	; Send DMA chunks from file resources
 	jsr Bus20To32Bit1_ShortReset
 	jsr Bus20To32Bit1_SetLatch0
 .smDataMarker1 = *+1
-	+MBus24Bit_Send8BitValue <EndDataMarker
+	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch1
 .smDataMarker2 = *+1
-	+MBus24Bit_Send8BitValue <(EndDataMarker>>8)
+	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_SetLatch2
 .smDataMarker3 = *+1
-	+MBus24Bit_Send8BitValue <(EndDataMarker>>16)
+	+MBus24Bit_Send8BitValue 0
 
 .sendDMA1
 	jsr Bus20To32Bit1_WriteMode
@@ -174,7 +220,9 @@ ExternalMemory_C64SendResourceData
 	jsr Bus20To32Bit1_ReadMode
 	jsr Bus20To32Bit1_SetLatch5
 	; EBBS, to the 24 bit interface
+!ifndef ExternalMemory_NoDebug {
 	ldx #<debugDMA
+}
 	+MBus24Bit_Get8BitValueToA
 	+lbeq .sendDMA2
 	jsr DisplayHexFromAAtX

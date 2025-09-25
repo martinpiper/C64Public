@@ -1,0 +1,191 @@
+!zn
+SpawnList_enemyTypesIndex
+	!fill 8 , 0
+
+EntityType_DrawAddressLo
+	!word EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
+	!word EnemyBomber_landscapeRotationsFrame_to_animation
+	!word EnemyBomber_landscapeRotationsFrame_to_animation
+	!word EnemyPlaneGreen_landscapeRotationsFrame_to_animation
+!swizzle EntityType_DrawAddressLo , (*-EntityType_DrawAddressLo)/2 , 2
+EntityType_DrawAddressHi = (*+EntityType_DrawAddressLo)/2
+
+EntityType_InitAddressLo
+	!word EntityInit_EnemyChooseWhichZed
+	!word EntityInit_EnemyChooseMaxZed
+	!word EntityInit_EnemyChooseMaxZed
+	!word EntityInit_EnemyChooseMaxZed
+	!word EntityInit_EnemyChooseOnlyRollMaxZed
+	!word EntityInit_EnemyFromBehind
+!swizzle EntityType_InitAddressLo , (*-EntityType_InitAddressLo)/2 , 2
+EntityType_InitAddressHi = (*+EntityType_InitAddressLo)/2
+
++MAssertEquals (EntityType_InitAddressHi - EntityType_InitAddressLo) , (EntityType_DrawAddressHi - EntityType_DrawAddressLo)
+
+kSpawnEnemy_max = 8
+SpawnEnemy_CurrentIndex		!by 0
+SpawnEnemy_Type				!fill kSpawnEnemy_max , -1
+;SpawnEnemy_Type				!by 3 , 3 , 3 , 3 , -1 , -1 , -1 , -1
+;SpawnEnemy_Type				!by 0 , -1 , -1 , -1 , -1 , -1 , -1 , -1
+SpawnEnemy_When				!fill kSpawnEnemy_max , 0
+;SpawnEnemy_When				!by 5 , 0 , 5 , 10 , 0 , 0 , 0 , 0
+SpawnEnemy_X				!fill kSpawnEnemy_max , 0
+;SpawnEnemy_X				!by -20 , -10 , 10 , 20 , 0 , 0 , 0 , 0
+SpawnEnemy_Y				!fill kSpawnEnemy_max , 0
+;SpawnEnemy_Y				!by 20 , 40 , 40 , 20 , 0 , 0 , 0 , 0
+SpawnEnemy_Z				!fill kSpawnEnemy_max , 0
+;SpawnEnemy_Z				!fill kSpawnEnemy_max , kEntity_MaxZPos
+
+; Exit: CS = No spawn formations pending
+CheckSpawnEnemyFormation
+	ldy SpawnEnemy_CurrentIndex
+	cpy #kSpawnEnemy_max
+	bcc .ok1
+	rts
+
+.ok1
+	lda SpawnEnemy_Type,y
+	bpl .ok2
+	lda #-1
+	sta SpawnEnemy_CurrentIndex
+	sec
+	rts
+
+.ok2
+	lda SpawnEnemy_When,y
+	beq .ok3
+	sec
+	sbc #1
+	sta SpawnEnemy_When,y
+	clc
+	rts
+
+.ok3
+	jsr EntityFindFreeSlotEnemy
+	bcc .gotFreeSlot2
+
+	clc
+	rts
+
+.gotFreeSlot2
+	lda SpawnEnemy_X,y
+	sta EntityXPos,x
+	lda SpawnEnemy_Y,y
+	sta EntityYPos,x
+	; TODO: Choose near or far, part of the init routine? Remove from the map structure?
+	lda SpawnEnemy_Z,y
+	sta EntityZPos,x
+
+	lda SpawnEnemy_Type,y
+	pha
+	lda #-1
+	sta SpawnEnemy_Type,y
+	pla
+	sta EntityTypeIndex,x
+	tay
+
+	jsr SpawnEnemyCommonInit
+
+	inc SpawnEnemy_CurrentIndex
+
+	clc
+	rts
+
+
+!zn
+; Entry:
+; X = Entity index
+; Y = Entity type
+SpawnEnemyCommonInit
+	lda #0
+	sta EntityScaleTweak,x
+	sta EntityRotationTweak,x
+	lda #128
+	sta EntityLastScreenXPos,x
+	sta EntityLastScreenYPos,x
+
+	lda EntityType_DrawAddressLo,y
+	sta EntityTypeLo,x
+	lda EntityType_DrawAddressHi,y
+	sta EntityTypeHi,x
+	sta EntityTypeIsRotating,x
+
+	lda EntityType_InitAddressLo,y
+	sta .smIJ2+1
+	lda EntityType_InitAddressHi,y
+	sta .smIJ2+2
+.smIJ2	jsr $1234
+
+	rts
+
+
+!zn
+.spawnEverySoOften !by 1
+CheckSpawnEnemy
+	inc .sms1+1
+	bne .o1
+	inc .sms2+1
+.o1
+	dec .spawnEverySoOften
+	beq .checkSpawn1
+	rts
+
+.checkSpawn1
+	lda #60
+	sta .spawnEverySoOften
+
+	jsr EntityFindFreeSlotEnemy
+	bcc .gotFreeSlot1
+	rts
+
+.gotFreeSlot1
+	; Random position
+.sms1	lda #0
+.sms2	ldy #0
+	jsr Seed
+
+	jsr Rand
+	and #127
+	sec
+	sbc #64
+	sta EntityXPos,x
+
+	jsr Rand
+	and #31
+	sec
+	sbc #16
+	sta EntityYPos,x
+
+	; Choose a type
+	jsr Rand
+	and #7
+	tay
+	lda SpawnList_enemyTypesIndex,y
+	+lbmi .noSpawnThisTime
+	sta EntityTypeIndex,x
+	tay
+
+	jsr SpawnEnemyCommonInit
+
+	jsr Rand
+	and #15
+	+lbne .noSoundSpawn1
+	jsr Rand
+	and #4
+	+lbeq .noSoundSpawn2
+	; Be careful
+!ifndef BuildTitleScreen {
+	+MPlaySample 1 , 255 , kSampleInfo6_start , kSampleInfo6_length , kSampleInfo6_frequency
+}
+	jmp .noSoundSpawn1
+.noSoundSpawn2
+	; The enemy
+!ifndef BuildTitleScreen {
+	+MPlaySample 1 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
+}
+.noSoundSpawn1
+.noSpawnThisTime
+
+	rts

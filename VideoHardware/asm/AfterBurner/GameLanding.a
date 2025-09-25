@@ -1,7 +1,10 @@
 !zn
 InitGameLanding
 	jsr Bus20To32Bit1_Init
+	jsr StageNumber_Increase
 
+	+MByteValueToAddress_A 250 , Text_ReloadWeapons_Flash
+	+MByteValueToAddress_A 1 , Player_Invulnerable
 	+MByteValueToAddress_A 50, .endSequenceTimeout
 	+MByteValueToAddress_A $20, .playerSpecialCaseScale
 	+MByteValueToAddress_A 1 , .everySoOften
@@ -34,6 +37,7 @@ mainLoop5
 	+MByteValueToAddress_A 0 , runwayMaxScreenRowUpdated
 
 	jsr RunGameLanding_CommonFrame
+	jsr RunGameLanding_CommonFrameEnd
 
 	; Render the landscape
 	lda #1
@@ -83,8 +87,8 @@ mainLoop5
 
 	jsr RunGameLanding_CalculateRunway
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	; Horizon pitch
 	lda playerYPositionOffset
@@ -167,6 +171,7 @@ mainLoop6
 	+MByteValueToAddress_A 0 , runwayMinScreenRowUpdated
 
 	jsr RunGameLanding_CommonFrame
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr LandscapeRenderHeight
 
@@ -228,8 +233,8 @@ mainLoop6
 	bne .cle1
 .noClearRunwayEnd
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	; And move the plane back again towards the camera
 	dec .everySoOften2
@@ -361,6 +366,7 @@ GameLanding_ClearRunway
 !by 6,6,6,6,6,6,6,6
 .gradualSpeedTabNum = *-.gradualSpeedTab
 RunGameLanding_CommonFrame_PlayerDrawSpecialCase !by 0
+RunGameLanding_CommonFrame_GameOver !by 0
 
 RunGameLanding_CommonFrame
 	jsr Video_WaitVBlank
@@ -369,13 +375,19 @@ RunGameLanding_CommonFrame
 	jsr Bus20To32Bit1_Init
 	jsr VBlankUpdatePaletteColours
 	jsr VBlankUpdateHorizon
+	jsr VBlankUpdateScore
+	jsr VBlankUpdateText
+
 	jsr RunGameLanding_UpdateAPU
 
 	; Can happen outside the VBlank
+	jsr UpdateText_Poll_PerFrame
 	jsr ProcessSamplePlayTriggers
 
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
 
+	jsr Music_CheckTime
+	jsr UpdateText_Poll
 	jsr PlayerEngineSoundControl
 	jsr UpdateLandscapeFrame
 	jsr EntityUpdateObjects
@@ -387,6 +399,13 @@ RunGameLanding_CommonFrame
 
 	jsr ResetInterfaceAndStartSendingScaledSprites
 
+	lda RunGameLanding_CommonFrame_GameOver
+	beq .os1
+	jsr GameOver_RenderAnimation
+.os1
+
+	jsr RadarDisplayRenderSpritesDirectMode
+	jsr SpeedDisplayRenderSpritesDirectMode
 	jsr EntityRenderSpritesDirectMode
 
 	lda EntityEnableRenderPlayerSpecialCase
@@ -435,6 +454,14 @@ RunGameLanding_CommonFrame
 .noSpecialCase1
 
 	jsr PlayerPositionToForHorizonAndLandscape
+
+	rts
+
+RunGameLanding_CommonFrameEnd
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	jsr ResetInterfaceAndStartSendingScaledSprites2
 	rts
 
 .playerSpecialCaseScale !by $20

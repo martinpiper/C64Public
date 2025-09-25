@@ -156,16 +156,13 @@
     <None Include="assets\convert14.bat">
       <Filter>Resource Files\assets</Filter>
     </None>
-    <None Include="BuildIt14.bat">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="..\..\ACME\docs\COPYING">
       <Filter>Resource Files\ACME</Filter>
     </None>
     <None Include="ConvertBuildAll.bat" />
-    <None Include="assets\convert14PaletteLayers.bat">
-      <Filter>Resource Files\assets</Filter>
-    </None>
+    <None Include="BuildIt14.bat" />
+    <None Include="PythonSetup.bat" />
+    <None Include="BuildIt15.bat" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -660,6 +657,93 @@
     <Library Include="asm\AfterBurner\ConvtabChar8x8.a">
       <Filter>Source Files\asm\AfterBurner</Filter>
     </Library>
+    <Library Include="..\Citadel2\asm\Score.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="..\stdlib\GnomeSort.a">
+      <Filter>Header Files\C64\stdlib</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\ScoreHandlers.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\SpawnList.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Bullets.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Missile.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Explosions.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\PaletteUpdate.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\SamplePlay.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Reticle.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Enemy.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\TextUpdates.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\ConvtabChar8x16Bot.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\ConvtabChar8x16Top.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\EntitySort.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\GameOver.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\SpeedDisplay.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\RadarDisplay.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\RadarDisplayTables.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\MissionCompleteDisplay.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Audio2.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Audio2_Macros.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\Music.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\main14MissionComplete.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\ScoreTable.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\ScoreTableData.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\PaletteFade.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1_CopyFrom.a">
+      <Filter>Header Files\BombJack\stdlib</Filter>
+    </Library>
+    <Library Include="asm\main15.a">
+      <Filter>Source Files\asm</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -735,6 +819,9 @@
     </Text>
     <Text Include="tmp\Demo14TitleChars_map.bin.debug.optimised.txt">
       <Filter>tmp</Filter>
+    </Text>
+    <Text Include="assets\Demo14\more allowed sizes.txt">
+      <Filter>Resource Files\assets</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

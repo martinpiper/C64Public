@@ -1,0 +1,136 @@
+!zn
+InitGameOver
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A 200 , .waitWhileMaxDisplay
+	+MByteValueToAddress_A $40, .endSequenceScale
+	+MByteValueToAddress_A 0 , landscapeRotationsFrameRoll
+	+MByteValueToAddress_A 1 , LandscapeMapRowsFreezeUpdates
+	+MByteValueToAddress_A 0 , EntityEnableRenderPlayerSpecialCase
+	+MByteValueToAddress_A 1 , RunGameLanding_CommonFrame_PlayerDrawSpecialCase
+	+MByteValueToAddress_A 1 , RunGameLanding_CommonFrame_GameOver
+
+	rts
+
+
+.waitWhileMaxDisplay !by 0
+
+RunGameOver
+	jsr RunGameLanding_CommonFrame
+	jsr RunGameLanding_CommonFrameEnd
+
+	jsr LandscapeRender
+
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
+
+	jsr TryToLevelAnyRoll
+
+	; Gradual slowdown
+	lda landscapeFrameSpeed
+	beq .noMoreSlowTab1
+	dec landscapeFrameSpeed
+.noMoreSlowTab1
+
+	lda .endSequenceScale
+	cmp #$20
+	beq .o1
+	dec .endSequenceScale
+.o1
+
+	dec .waitWhileMaxDisplay
+	+lbeq mainLoop_backToTitleScreen
+
+	lda .endSequenceScale
+	cmp #$20
+	bne .o2
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	+lbeq mainLoop_backToTitleScreen
+.o2
+
+	jmp RunGameOver
+
+
+GameOver_RenderAnimationFrame !by 0
+GameOver_RenderAnimation
+
+.endSequenceScale=*+1
+	ldx #$20
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos-120 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw0
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1331_0_0_0_colour , kVarsEmitSpriteFrame_t_1331_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1331_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1331_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1331_0_0_0_tileWidth
+.noDraw0
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos-90 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw1
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1332_0_0_0_colour , kVarsEmitSpriteFrame_t_1332_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1332_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1332_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1332_0_0_0_tileWidth
+.noDraw1
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos-60 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw2
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1333_0_0_0_colour , kVarsEmitSpriteFrame_t_1333_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1333_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1333_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1333_0_0_0_tileWidth
+.noDraw2
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos-30 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw3
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1334_0_0_0_colour , kVarsEmitSpriteFrame_t_1334_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1334_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1334_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1334_0_0_0_tileWidth
+.noDraw3
+
+
+
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos+10 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw4
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1335_0_0_0_colour , kVarsEmitSpriteFrame_t_1335_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1335_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1335_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1335_0_0_0_tileWidth
+.noDraw4
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos+40 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw5
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1336_0_0_0_colour , kVarsEmitSpriteFrame_t_1336_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1336_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1336_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1336_0_0_0_tileWidth
+.noDraw5
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos+70 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw6
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1334_0_0_0_colour , kVarsEmitSpriteFrame_t_1334_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1334_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1334_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1334_0_0_0_tileWidth
+.noDraw6
+
+	; X calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginXPos+100 , zeroPage_Temp5 , zeroPage_Temp6
+	; Y Calc
+	+MWordValueToAddressLoHi_A ScreenLandscapeOriginYPos-20 , zeroPage_Temp4 , zeroPage_Temp7
+	jsr MSBCalcWith6n7
+	+lbcs .noDraw7
+	+MObjectDrawWithScaleSizeCheck kVarsEmitSpriteFrame_t_1337_0_0_0_colour , kVarsEmitSpriteFrame_t_1337_0_0_0_tileWidthScaleTab , kVarsEmitSpriteFrame_t_1337_0_0_0_tileHeightScaleTab , kVarsEmitSpriteFrame_t_1337_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_1337_0_0_0_tileWidth
+.noDraw7
+
+	rts

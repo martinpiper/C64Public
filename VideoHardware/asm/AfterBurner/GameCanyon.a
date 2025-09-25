@@ -1,6 +1,7 @@
 !zn
 InitGameCanyon
 	jsr Bus20To32Bit1_Init
+	jsr StageNumber_Increase
 
 !ifdef Debug_RunGameCanyon {
 	+MByteValueToAddress_A 2 , GamePaletteBank
@@ -14,6 +15,8 @@ InitGameCanyon
 
 	+MByteValueToAddress_A -25 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+
+	jsr Music_Play6
 
 	rts
 
@@ -36,8 +39,8 @@ mainLoop5b
 	jsr LandscapeRender
 .overLandscapeDraw
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	; Slow down the player
 	lda landscapeFrameSpeed
@@ -69,10 +72,6 @@ mainLoop5b
 	+MByteValueToAddress_A 1 , RunGameCanyon_CommonFrame_enableXMovement
 
 	jsr RunGameCanyon_InitCanyonPositions
-	; The starting offset for the canyon
-	lda LandscapeMapRowOffset
-	and #$0f
-	sta CanyonOffsetStart
 
 	+MByteValueToAddress_A 75 , .framesForEndTimeoutBeforeTakeOff+1
 
@@ -88,8 +87,12 @@ mainLoop5c
 
 	jsr LandscapeRenderScrollX
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
+
+
+	lda GamePlayerLives
+	bmi .exitCanyonNow
 
 	; Loop while the canyon flags are active
 	lda #kLandscapeMapRowsData_flags_doCanyon
@@ -106,6 +109,12 @@ mainLoop5c
 .framesForEndTimeoutBeforeTakeOff	lda #0
 	bne mainLoop5c
 
+.exitCanyonNow
+
+	jsr Bus20To32Bit1_Init
+	jsr Music_GameChoiceNoChange
+	jsr StageNumber_Increase
+
 	; Now gain height again
 	+MByteValueToAddress_A 0 , RunGameCanyon_CommonFrame_enableXMovement
 	+MByteValueToAddress_A 2 , landscapeFrameSpeed	; To climb out of the canyon
@@ -117,8 +126,8 @@ mainLoop6b
 
 	jsr LandscapeRenderHeight
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
@@ -153,12 +162,21 @@ RunGameCanyon_CommonFrame
 	jsr Bus20To32Bit1_Init
 	jsr VBlankUpdatePaletteColours
 	jsr VBlankUpdateHorizon
+	jsr VBlankUpdateScore
+	jsr VBlankUpdateText
 
 	; Can happen outside the VBlank
+	jsr UpdateText_Poll_PerFrame
 	jsr ProcessSamplePlayTriggers
+
+	; So it is not affected by frame rate compensation
+	lda #0
+	sta CanyonLandscapeMoveThisFrame
 
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
 
+	jsr Music_CheckTime
+	jsr UpdateText_Poll
 	jsr RunGameCanyon_LandscapeCollision
 
 	jsr PlayerControl
@@ -181,6 +199,7 @@ RunGameCanyon_CommonFrame
 	bpl .mv1
 	+MByteValueToAddress_A landscapeScrollXMax , landscapeScrollXFrame
 	inc LandscapeMapRowOffset
+	inc CanyonLandscapeMoveThisFrame
 	jmp .mv1
 .mvRight
 	inc landscapeScrollXFrame
@@ -189,6 +208,7 @@ RunGameCanyon_CommonFrame
 	bne .mv1
 	+MByteValueToAddress_A 0 , landscapeScrollXFrame
 	dec LandscapeMapRowOffset
+	dec CanyonLandscapeMoveThisFrame
 	jmp .mv1
 .mv1
 
@@ -198,17 +218,30 @@ RunGameCanyon_CommonFrame
 
 	jsr ResetInterfaceAndStartSendingScaledSprites
 
+	jsr RadarDisplayRenderSpritesDirectMode
+	jsr SpeedDisplayRenderSpritesDirectMode
 	jsr EntityRenderSpritesDirectMode
+
+	jsr RenderTimeout
+	jsr TerminateScaledSpritesAndSignalReady
+
+	jsr ResetInterfaceAndStartSendingScaledSprites2
+
 	rts
 
 
 
 !zn
-CanyonOffsetStart	!by 0
+CanyonLandscapeMoveThisFrame	!by 0	; If the player moved, then don't update the canyon wall positions this frame, to avoid gaps in the walls
 CanyonOffset		!by 4
 CanyonWidth			!by 3
+CanyonPreviousOffset		!by 4
+CanyonLastWidthPlusOffset	!by 0
 CanyonPreviousLandscapeMapRowOffset !by 0
 CanyonState			!by 0
+CanyonDoubleWallLeft	!by 0
+CanyonDoubleWallRight	!by 0
+
 CalculateCanyon
 	; Calculate the canyon walls
 	lda LandscapeMapRowOffset
@@ -218,11 +251,33 @@ CalculateCanyon
 	rts
 .changed1
 	sta CanyonPreviousLandscapeMapRowOffset
-	clc
-	adc CanyonOffsetStart
+	lda LandscapeMapRowOffset
 	sec
 	sbc #16*8
 	tax
+
+	; Detect changes in the left wall position
+	lda LandscapeMapRowOffset
+	and #$0f
+	clc
+	adc CanyonOffset
+	cmp CanyonPreviousOffset
+	sta CanyonPreviousOffset
+	+IfURegLessThanOrEqualToVal .same2	; Only trigger the double wall if the left wall is moving to the right
+	inc CanyonDoubleWallLeft
+.same2
+	; Detect changes in the right wall position
+	lda LandscapeMapRowOffset
+	and #$0f
+	clc
+	adc CanyonOffset
+	clc
+	adc CanyonWidth
+	cmp CanyonLastWidthPlusOffset
+	sta CanyonLastWidthPlusOffset
+	+IfURegGreaterThanOrEqualToVal .same	; Only trigger the double wall if the right wall is moving to the left
+	inc CanyonDoubleWallRight
+.same
 
 	ldy CanyonOffset
 	beq .o3
@@ -233,9 +288,17 @@ CalculateCanyon
 	dey
 	bne .l1
 .o3
-	; Draw the left wall and also remove adjacent landscape map entries
+	; Draw the left wall and also remove landscape map entries before it, it they are not walls
 	lda #13
 	sta LandscapeMap,x
+	ldy CanyonDoubleWallLeft
+	beq .notD1
+	ldy #0
+	sty	CanyonDoubleWallLeft
+	dex
+	sta LandscapeMap,x
+	inx
+.notD1
 	txa
 	pha
 	sec
@@ -250,6 +313,7 @@ CalculateCanyon
 	pla
 	tax
 	inx ; Note: 256 byte wraparound
+	; And any adjacent objects
 	lda #0
 	sta LandscapeMap,x
 	inx ; Note: 256 byte wraparound
@@ -280,16 +344,26 @@ CalculateCanyon
 	pla
 	tax
 	inx ; Note: 256 byte wraparound
-
+	ldy CanyonDoubleWallRight
+	beq .notD2
+	ldy #0
+	sty	CanyonDoubleWallRight
+	lda #13
+	sta LandscapeMap,x
+	inx
+.notD2
 	; And clear any remaining edge
 	lda #16-3
 	sec
 	sbc CanyonOffset
 	sbc CanyonWidth
+	; Range paranoia check
+	cmp #$0f
+	bcs .o4
 	tay
 	beq .o4
-.l2
 	lda #0
+.l2
 	sta LandscapeMap,x
 	inx ; Note: 256 byte wraparound
 	dey
@@ -303,7 +377,13 @@ CalculateCanyon
 	dec CanyonWidth
 .eo1 lda #0
 	bne .notSmaller1
+	lda CanyonLandscapeMoveThisFrame
+	+IfRegGreaterThanValL .notSmaller1
+	lda CanyonOffset
+	cmp #9
+	bcs .notSmaller1
 	inc CanyonOffset
+	inc CanyonLandscapeMoveThisFrame	; Stop any move movement this frame
 .notSmaller1
 	lda .eo1+1
 	eor #1
@@ -317,35 +397,52 @@ CalculateCanyon
 	and #$f
 	tax
 
+	; EOR toggle
+.eo2 lda #0
+	eor #1
+	sta .eo2+1
+
 	lda .canyonStateTab,x
 	and #%1
 	beq .not1
 	lda CanyonOffset
 	beq .not1
+	lda CanyonLandscapeMoveThisFrame
+	+IfRegLessThanValL .not1
 	dec CanyonOffset
+	dec CanyonLandscapeMoveThisFrame	; Stop any move movement this frame
 .not1
 	lda .canyonStateTab,x
 	and #%10
 	beq .not2
 	lda CanyonOffset
-	cmp #8
+	cmp #9
 	bcs .not2
+	lda CanyonLandscapeMoveThisFrame
+	+IfRegGreaterThanValL .not2
+	lda .eo2+1
+	bne .not2
 	inc CanyonOffset
+	inc CanyonLandscapeMoveThisFrame	; Stop any move movement this frame
 .not2
 	lda .canyonStateTab,x
 	and #%100
 	beq .not3
 	lda CanyonWidth
 	cmp #2
-	beq .not3
+	+IfRegLessThanOrEqualToValL .not3
+	lda CanyonLandscapeMoveThisFrame
+	bne .not3
+	lda .eo2+1
+	beq .not3	; Opposite to any offset change
 	dec CanyonWidth
 .not3
 	lda .canyonStateTab,x
 	and #%1000
 	beq .not4
 	lda CanyonWidth
-	cmp #6
-	beq .not4
+	cmp #7
+	+IfRegGreaterThanOrEqualToValL .not4
 	inc CanyonWidth
 .not4
 	rts
@@ -387,6 +484,7 @@ RunGameCanyon_LandscapeCollision
 	; Stop right now
 	lda #0
 	sta landscapeFrameSpeed
+	jsr PlayerSpeedHasChangedNotify
 .collidedExplode
 	jsr InitGamePlayerExplode
 ;	lda #22

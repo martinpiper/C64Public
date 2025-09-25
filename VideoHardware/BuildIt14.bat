@@ -8,8 +8,24 @@ echo !scr "%TIME% %DATE% %COMPUTERNAME% %USERNAME%" >>tmp\FingerPrint.a
 if not exist tmp mkdir tmp
 if not exist bin mkdir bin
 
-del tmp\Demo14ScaledSprites4SheetOptimised.txtTables.a
-python ..\VideoHardware\OptimiseSprite4ScaleTables\main.py tmp\Demo14ScaledSprites4Sheet.txtTables.a tmp\Demo14ScaledSprites4SheetOptimised.txtTables.a asm\AfterBurner\*.a
+Rem This was the below line, up until the point where all the data went over the current 2MB of external RAM
+rem copy /b bin\Demo14LargeTables.bin + tmp\Demo14FileResources.bin tmp\Demo14FinalData.bin /y
+rem This data is sent to the hardware at boot, one time only
+copy /b tmp\Demo14FileResources.bin tmp\Demo14FileResources_ForHW1.bin /y
+python ResourceGenerator\main.py tmp/Demo14FileResources_ForHW1.bin checksum 0x10000 0x100 2 tmp/Demo14FileResources_ForHW1_Checksums.a ForHW1_
+rem Data for the game loop, this includes everything else that isn't sent to the hardware at boot
+copy /b bin\Demo14LargeTables.bin tmp\Demo14FinalData.bin /y
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesMissionComplete.bin tmp/Demo14AddFile_ResourcesMissionComplete.a ResourcesMissionComplete
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesMissionCompleteRestore.bin tmp/Demo14AddFile_ResourcesMissionCompleteRestore.a ResourcesMissionCompleteRestore
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/ScoreTableData.bin tmp/ScoreTableData.bin.a ScoreTableData_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4GameEntity0.pal tmp/Demo14ScaledSprites4GameEntity0.pal.a Demo14ScaledSprites4GameEntity0_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game0.pal tmp/Demo14ScaledSprites4Game0.pal.a Demo14ScaledSprites4Game0_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game1.pal tmp/Demo14ScaledSprites4Game1.pal.a Demo14ScaledSprites4Game1_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game2.pal tmp/Demo14ScaledSprites4Game2.pal.a Demo14ScaledSprites4Game2_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game3.pal tmp/Demo14ScaledSprites4Game3.pal.a Demo14ScaledSprites4Game3_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game4.pal tmp/Demo14ScaledSprites4Game4.pal.a Demo14ScaledSprites4Game4_bin
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game5.pal tmp/Demo14ScaledSprites4Game5.pal.a Demo14ScaledSprites4Game5_bin
+
 
 del bin\maincommon.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Common.a
@@ -21,18 +37,28 @@ if not exist bin\maincommon.prg goto error
 del bin\maintitle.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Title.a
 if not exist bin\maintitle.prg goto error
+..\bin\LZMPi.exe -c64mr bin\maintitle.prg bin\maintitle.cmp.prg $200 >tmp\t.txt
+if not exist bin\maintitle.cmp.prg goto error
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "/^APULineScrolls/p" tmp\maintitle.map >tmp\CommonAPUDefines.a
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "/^APUData_Start/p" tmp\maintitle.map >>tmp\CommonAPUDefines.a
 ..\ExternalTools\Gnu\bin\sed.exe -n -e "/^kAPUNumRunwayRows/p" tmp\maintitle.map >>tmp\CommonAPUDefines.a
 
+del bin\mainMissionComplete.prg
+..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14MissionComplete.a
+if not exist bin\mainMissionComplete.prg goto error
+..\bin\LZMPi.exe -c64mr bin\mainMissionComplete.prg bin\mainMissionComplete.cmp.prg $200 >tmp\t.txt
+if not exist bin\mainMissionComplete.cmp.prg goto error
+
 del bin\maingame.prg
 ..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Game.a
 if not exist bin\maingame.prg goto error
+..\bin\LZMPi.exe -c64mr bin\maingame.prg bin\maingame.cmp.prg $200 >tmp\t.txt
+if not exist bin\maingame.cmp.prg goto error
 
-copy /b bin\Demo14LargeTables.bin + tmp\Demo14FileResources.bin tmp\Demo14FinalData.bin /y
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile bin\maintitle.prg tmp/Demo14AddFile_Title.a Title
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile bin\maingame.prg tmp/Demo14AddFile_Game.a Game
-python ResourceGenerator\main.py tmp/Demo14FinalData.bin checksum 0x10000 0x100 2 tmp/Demo14FinalData_Checksums.a
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile bin\mainMissionComplete.prg tmp/Demo14AddFile_MissionComplete.a MissionComplete
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin checksum 0x10000 0x100 2 tmp/Demo14FinalData_Checksums.a ForGame_
 
 del bin\main.prg
 del bin\main.cmp.prg
@@ -48,6 +74,7 @@ rem ..\bin\LZMPi.exe -c64 bin\main.prg bin\main.cmp.prg $200 >tmp\t.txt
 if not exist bin\main.cmp.prg goto error
 
 echo *** Target = 2,097,152
+dir tmp\Demo14FileResources_ForHW*.bin
 dir tmp\Demo14FinalData.bin
 
 rem --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED

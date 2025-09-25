@@ -4,8 +4,30 @@ Video Hardware
 This project contains C64 code that interfaces with the user port 24 bit address and extension video hardware in this project: https://github.com/martinpiper/BombJack
 
 
+Demos
+=====
+
+There are several demos, earlier demos were created for earlier versions of the hardware:
+
+	* Demo1 : Top down RPG style demo with music
+	* Demo3 : Arkanoid (bat and ball) style demo. Also shows the title screen animation.
+	* Demo4 : Turrican demo, side scrolling platformer
+	* Demo5 : Very simple APU demo showing horizontal scroll splits
+	* Demo6 : Shadow of the beast, title and level 1 demo, with music
+	* Demo7 : Side scrolling shooter, with APU multiplexed sprites
+	* Demo9 : MegaWang intro and 3D flying demo
+	* Demo10 : Dual sprite layer Street Fighter demo
+	* Demo11 : Dual display, C64 running BASIC and MegaWang character screen
+	* Demo12 : 3D vector demo
+	* Demo13 : Using RGB565 colour mode with four palette banks, giving up to 1024 colours on screen at once
+	* Demo14 : After Burner demo using Sprites4 and Audio2
+
+
+
 To build and run
 ================
+
+Python libraries can be setup by running the commands in "PythonSetup.bat". Generally this only needs to be executed once.
 
 
 The assembler used is an updated version of ACME which can use Python as a built-in scripting language for assembly and data parsing or generation. Since this ACME is 32 bit (x86) code then it needs the 32 bit Python DLL to be included. To access most script functionality the Python SDK will need to be installed and accessible via the PATH environment. I installed Python 3.9.0 (final) 32 bit (x86), which is accessible via the environment variable %LOCALAPPDATA%\Programs\Python

@@ -1,0 +1,121 @@
+!zn
+kGameLockReticles_EntityIDs_max = 4	; Must be a power of two
+GameLockReticles_EntityIDs
+	!fill kGameLockReticles_EntityIDs_max , -1
+GameLockReticles_EntityIDs_index
+	!by 0
+
+!zn
+; Entry: X = Entity ID
+Game_TestLockReticleWithEntities
+	ldx #SortHardMaxEntries-1
+.ce1
+	lda EntityTypeHi,x
+	+lbeq .ce2
+	lda EntityTypeIndex,x
+	+lbmi .ce2
+
+	lda EntityLastScreenXPos,x
+	cmp #128
+	+lbeq .ce2
+	sec
+	sbc PlayerReticle_lastXPos
+	clc
+	adc #4
+	cmp #8
+	+lbcs .ce2
+
+	lda EntityLastScreenYPos,x
+	cmp #128
+	+lbeq .ce2
+	sec
+	sbc PlayerReticle_lastYPos
+	clc
+	adc #8
+	cmp #16
+	+lbcs .ce2
+
+	; Check it's not already in the lock list
+	txa
+	ldy #kGameLockReticles_EntityIDs_max-1
+.ce3
+	cmp GameLockReticles_EntityIDs,y
+	+lbeq .ce2
+	dey
+	+lbpl .ce3
+
+	; Add the entity ID to the list
+	ldy GameLockReticles_EntityIDs_index
+	sta GameLockReticles_EntityIDs,y
+	inc GameLockReticles_EntityIDs_index
+	lda GameLockReticles_EntityIDs_index
+	and #kGameLockReticles_EntityIDs_max-1
+	sta GameLockReticles_EntityIDs_index
+
+	; Play "lock" sample, which is part of "3 o'clock"
+	; or "Fire" less often
+	jsr Rand
+	and #15
+	cmp #3
+	+lbcs .playLock
+
+!ifndef BuildTitleScreen {
+	+MPlaySample 3 , 255 , kSampleInfo5_start , kSampleInfo5_length , kSampleInfo5_frequency
+}
+	; Early out on lock
+	rts
+
+.playLock
+	kSampleInfo12_startLockOffset = (kSampleInfo12_length*5)/10
+!ifndef BuildTitleScreen {
+	+MPlaySample 3 , 255 , kSampleInfo12_start + kSampleInfo12_startLockOffset , kSampleInfo12_length - kSampleInfo12_startLockOffset , kSampleInfo12_frequency
+}
+	; Early out on lock
+	rts
+
+.ce2
+	dex
+	+lbne .ce1
+	rts
+
+!zn
+Game_RenderLockReticles
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	ldy #kGameLockReticles_EntityIDs_max-1
+.ce1
+	ldx GameLockReticles_EntityIDs,y
+	bmi .ce2
+
+	lda EntityTypeHi,x
+	beq .ce2
+	lda EntityTypeIndex,x
+	bmi .ce2
+
+	lda EntityLastScreenXPos,x
+	cmp #128
+	beq .ce2
+	clc
+	adc #(ScreenLandscapeOriginXPos/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth/2/2)
+	sta zeroPage_Temp4
+
+	lda EntityLastScreenYPos,x
+	cmp #128
+	beq .ce2
+	clc
+	adc #(ScreenLandscapeOriginYPos/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight/2/2)
+	sec
+	sbc playerYPositionOffsetForSprites
+	sta zeroPage_Temp5
+
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , 0
+	jmp .ce3
+.ce2
+	; Remove any bad entries from the list
+	lda #-1
+	sta GameLockReticles_EntityIDs,y
+.ce3
+	dey
+	+lbpl .ce1
+	rts

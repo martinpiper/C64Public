@@ -20,6 +20,7 @@
 
 !source "tmp\Demo14AddFile_Title.a"
 !source "tmp\Demo14AddFile_Game.a"
+!source "tmp\Demo14AddFile_MissionComplete.a"
 
 !source "AfterBurner/LandscapeDefs.a"
 !source "AfterBurner/SpriteMacros.a"
@@ -29,7 +30,7 @@
 !zn
 *=$200
 start
-	sei
+	+MStopInitStack_X
 	jmp mainLoop
 
 !source "tmp/FingerPrint.a"
@@ -44,6 +45,9 @@ Initialise_NoMACROWaitForTheLastScan = 1
 messageMW
 !scr "MegaWang 2000 Turbo Edition             After Burner : Checking for external RAM..."
 messageMWEnd
+messageMWGameData
+!scr "Game data..."
+messageMWGameDataEnd
 messageMWRAMOK
 !scr "RAM OK "
 debugDMA
@@ -60,7 +64,11 @@ messageMWRAMErrorEnd
 !source "BombJack/stdlib/HardwareTest.a"
 !source "asm/ExternalMemory.a"
 
+!source "tmp\Demo14FileResources_ForHW1_Checksums.a"
 !source "tmp\Demo14FinalData_Checksums.a"
+checksumsSize = ForHW1_checksumsSize
+checksumsBlockSize = ForHW1_checksumsBlockSize
+
 
 GameExpectedIdentifier
 	; ASCII: MW2000-AfterBurner
@@ -86,14 +94,12 @@ mainLoop
 
 !if 0 {
 	; Test disabling some parts of the display
+	; Note this only attempts to disable the output of the layers, it does not affect layer combination tests. So if a layer is disconnected it will be detected as outputing $fff and this is not transparent.
 	jsr Video_DisableDisplay
 	jsr HardwareTest_VideoPattern0
 	+WaitForFire_A
 	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
 	+MBus24Bit_Send8BitValue %00
-	+WaitForFire_A
-	jsr Video_SetAddressVideoLayersEnable
-	+MBus24Bit_Send8BitValue %0000
 	+WaitForFire_A
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue %0001
@@ -102,11 +108,43 @@ mainLoop
 	+MBus24Bit_Send8BitValue %0010
 	+WaitForFire_A
 	jsr Video_SetAddressVideoLayersEnable
-	+MBus24Bit_Send8BitValue %0011
+	+MBus24Bit_Send8BitValue %0100
+	+WaitForFire_A
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue %1000
 	+WaitForFire_A
 }
 
-	jsr ExternalMemory_C64CheckMemory
+!if 0 {
+	; Test layer priority combination
+	jsr Video_DisableDisplay
+	jsr HardwareTest_VideoPattern0
+	+WaitForFire_A
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_Send8BitValue %00000000
+	+WaitForFire_A
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_Send8BitValue %01010101
+	+WaitForFire_A
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_Send8BitValue %10101010
+	+WaitForFire_A
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_Send8BitValue %11111111
+	+WaitForFire_A
+}
+
+CheckForHWData
+;+MBPH
+	; ForHW chunks: Demo14FileResources_ForHW1.bin
+	lda #ForHW1_checksumsCount
+	ldx #<ForHW1_checksumsNumBytes
+	jsr ExternalMemory_C64CheckMemorySetChecksumParams
+	+MLongValueTo_AXY ForHW1_checksumsStart
+	jsr ExternalMemory_C64CheckMemorySetChecksumAddress
+!ifdef SendResourceData {
+	jsr ExternalMemory_C64CheckMemory_JustChecksum ; All ForHW data there is no game ID
+}
 
 	; Disable the whole display and DMA
 	; In simulation this stops destination RAM corruption
@@ -122,6 +160,8 @@ mainLoop
 
 
 !ifdef SendResourceData {
+	+MLongValueTo_AXY EndDataMarker
+	+MLongValueTo_AXY 0	; ForHW data chunks all begin at the start of memory
 	jsr ExternalMemory_C64SendResourceData
 
 ;	+WaitForFire_A
@@ -129,11 +169,44 @@ mainLoop
 	; Complete all chunks
 	jsr Bus20To32Bit1_ShortReset
 
+	lda #kVideo_EnableDisplay_Enable
+	jsr Video_EnableDisplay
+
+	lda #VIC2Colour_White
+	ldx #(messageMWGameDataEnd - messageMWGameData)-1
+.cl1
+	sta COLOURRAM + (messageMWGameData & 0x3ff),x
+	dex
+	bpl .cl1
+
+CheckForGameData
 ;	+WaitForFire_A
+
+	lda #ForGame_checksumsCount
+	ldx #<ForGame_checksumsNumBytes
+	jsr ExternalMemory_C64CheckMemorySetChecksumParams
+	+MLongValueTo_AXY ForGame_checksumsStart
+	jsr ExternalMemory_C64CheckMemorySetChecksumAddress
+	+MLongValueTo_AXY gameDataIdentifier
+	jsr ExternalMemory_C64CheckMemory
 
 	; Disable the C64 screen for speed
 	lda #0
 	sta VIC2ScreenControlV
+
+	; Also clear zeropage and the stack before starting the game proper
+	; The title screen checks GameScore_Value for hiscore entry...
+	+M_RAMTAS_LOW_STACK
+
+!ifdef Debug_FakeHiscore {
+	+MByteValueToAddress_A 9 , GameScore_Value+1
+	+MByteValueToAddress_A 9 , GameScore_Value+2
+	+MByteValueToAddress_A 8 , GameScore_Value+3
+	+MByteValueToAddress_A 1 , GameScore_Value+4
+!for .i , GameTotalHits_size {
+	+MByteValueToAddress_A 9-.i , GameTotalHits + .i-1
+}
+}
 
 	jmp LoadRunTitleScreen
 
@@ -166,6 +239,7 @@ DisplayHexFromAAtX
 *=CommonBootCode_JumpTable_Start
 	jmp LoadRunTitleScreen
 	jmp LoadRunGame
+	jmp LoadRunMissionComplete
 
 *=CommonBootCode_JumpTable_End
 !bin "bin/maincommon.prg",,2
@@ -176,14 +250,13 @@ kExternalMemoryFiles_OnlyCheckHighAddress = 1
 !source "asm/ExternalMemoryFiles.a"
 
 LoadRunTitleScreen
-	+MByteValueToAddress_A $7f , CIA2InterruptControl
-
 	+MExternalMemoryFiles_CopyRunFileFromExternalMemory resourceFileOffset_Title , $200 , resourceFileSize_Title , $200
 
 
 LoadRunGame
-	+MByteValueToAddress_A $7f , CIA2InterruptControl
-
 	+MExternalMemoryFiles_CopyRunFileFromExternalMemory resourceFileOffset_Game , $200 , resourceFileSize_Game , $200
+
+LoadRunMissionComplete
+	+MExternalMemoryFiles_CopyRunFileFromExternalMemory resourceFileOffset_MissionComplete , $200 , resourceFileSize_MissionComplete , $200
 
 +MCheckNotInKERNALServiceVectors

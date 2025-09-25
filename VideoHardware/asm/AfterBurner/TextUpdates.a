@@ -1,0 +1,577 @@
+!zn
+
+Text_Lives_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (28 * kBus24Bit_CharScreenWidth) + 4
+Text_Hits_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (4 * kBus24Bit_CharScreenWidth) + 27
+
+; The two digits to display
+StageNumber
+	!by 0,0
+; The actual stage number
+StageNumberByte
+	!by 0
+
+StageNumberFlashSpeed = 15
+
+StageNumber_Increase
+!ifdef BuildGame {
+	lda RunGameLanding_CommonFrame_GameOver
+	beq .ok1
+	rts
+.ok1
+}
+
+	inc TextResetHits_Trigger
+
+	; Make the game harder...
+	lda StageNumber
+	cmp #1
+	beq .incMaxMissiles
+	cmp #6
+	beq .incMaxMissiles
+	jmp .oincMaxMissiles
+.incMaxMissiles
+	inc MaxEnemyMissiles
+.oincMaxMissiles
+
+	lda StageNumber
+	cmp #9
+	bne .oincEnemyMissilesRecycleSpeed
+	inc EnemyMissilesRecycleSpeed
+.oincEnemyMissilesRecycleSpeed
+
+	; Update the display
+	inc StageNumberByte
+	inc StageNumber
+	lda StageNumber
+	cmp #10
+	bne .o1
+	lda #0
+	sta StageNumber
+	inc StageNumber+1
+.o1
+	+MByteValueToAddress_A 2 + (StageNumberFlashSpeed*7) , Text_Stage_Flash
+	+MByteValueToAddress_A 1 , Text_Stage_Flash_changed
+
+	ldx StageNumber
+	lda Text_Stage_Flash_text_top_numbers,x
+	sta Text_Stage_Flash_text_top+8
+	lda Text_Stage_Flash_text_bot_numbers,x
+	sta Text_Stage_Flash_text_bot+8
+	ldx StageNumber+1
+	beq .o2
+	lda Text_Stage_Flash_text_top_numbers,x
+	sta Text_Stage_Flash_text_top+7
+	lda Text_Stage_Flash_text_bot_numbers,x
+	sta Text_Stage_Flash_text_bot+7
+.o2
+	rts
+
+!zn
+
+
+Text_Stage_Flash_changed	!by 0
+Text_Stage_Flash			!by 0
+Text_Stage_Flash_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (24 * kBus24Bit_CharScreenWidth) + 17
+Text_Stage_Flash_PosSmall = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (27 * kBus24Bit_CharScreenWidth) + 24
+!convtab "tmp\ConvtabChar8x16Top.ct" {
+Text_Stage_Flash_text_top
+!tx "stage    "
+Text_Stage_Flash_text_top_size = *-Text_Stage_Flash_text_top
+Text_Stage_Flash_text_top_numbers
+!tx "0123456789"
+}
+!convtab "tmp\ConvtabChar8x16Bot.ct" {
+Text_Stage_Flash_text_bot
+!tx "stage    "
+Text_Stage_Flash_text_bot_size = *-Text_Stage_Flash_text_bot
+Text_Stage_Flash_text_bot_numbers
+!tx "0123456789"
+}
+!convtab "tmp\ConvtabChar8x8.ct" {
+Text_Stage_Flash_text_numbers
+!tx "0123456789"
+}
+
+
+Text_Ready_Flash_changed	!by 0
+Text_Ready_Flash			!by 0
+Text_Ready_Flash_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (19 * kBus24Bit_CharScreenWidth) + 19
+!convtab "tmp\ConvtabChar8x16Top.ct" {
+Text_Ready_Flash_text_top
+!tx "Ready"
+Text_Ready_Flash_text_top_size = *-Text_Ready_Flash_text_top
+}
+!convtab "tmp\ConvtabChar8x16Bot.ct" {
+Text_Ready_Flash_text_bot
+!tx "Ready"
+Text_Ready_Flash_text_bot_size = *-Text_Ready_Flash_text_bot
+}
+
+
+Text_ReloadWeapons_Flash_changed	!by 0
+Text_ReloadWeapons_Flash			!by 0
+Text_ReloadWeapons_Flash_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (22 * kBus24Bit_CharScreenWidth) + 15
+!convtab "tmp\ConvtabChar8x16Top.ct" {
+Text_ReloadWeapons_Flash_text_top
+!tx "Reload Weapons"
+Text_ReloadWeapons_Flash_text_top_size = *-Text_ReloadWeapons_Flash_text_top
+}
+!convtab "tmp\ConvtabChar8x16Bot.ct" {
+Text_ReloadWeapons_Flash_text_bot
+!tx "Reload Weapons"
+Text_ReloadWeapons_Flash_text_bot_size = *-Text_ReloadWeapons_Flash_text_bot
+}
+
+
+Text_HitCountsPoints_Flash_changed	!by 0
+Text_HitCountsPoints_Flash			!by 0
+Text_HitCountsPoints_Flash_Pos = (32 * kBus24Bit_CharScreenWidth) + (kBus24Bit_CharScreenWidth/2) + (5 * kBus24Bit_CharScreenWidth) + 4
+!convtab "tmp\ConvtabChar8x16Top.ct" {
+Text_HitCountsPoints_Flash_text_top
+!tx "hits bonus 00000"
+Text_HitCountsPoints_Flash_text_top_size = *-Text_HitCountsPoints_Flash_text_top
+}
+!convtab "tmp\ConvtabChar8x16Bot.ct" {
+Text_HitCountsPoints_Flash_text_bot
+!tx "hits bonus 00000"
+Text_HitCountsPoints_Flash_text_bot_size = *-Text_HitCountsPoints_Flash_text_bot
+}
+
+
+!source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
+
+!zn
+UpdateText_Poll
+	lda Text_Stage_Flash
+	beq .o1
+	dec Text_Stage_Flash
+	lda Text_Stage_Flash
+	cmp #StageNumberFlashSpeed*3
+	bcc .os1
+	and #$07
+	bne .os1
+	inc TriggerSamplePlay_Ping
+.os1
+
+	lda Text_Stage_Flash
+	cmp #StageNumberFlashSpeed
+	beq .triggerChangedStage
+	cmp #StageNumberFlashSpeed*3
+	beq .triggerChangedStage
+	cmp #StageNumberFlashSpeed*5
+	beq .triggerChangedStage
+	cmp #StageNumberFlashSpeed*7
+	beq .triggerChangedStage
+
+	cmp #0
+	beq .triggerEraseStage
+	cmp #StageNumberFlashSpeed*2
+	beq .triggerEraseStage
+	cmp #StageNumberFlashSpeed*4
+	beq .triggerEraseStage
+	cmp #StageNumberFlashSpeed*6
+	beq .triggerEraseStage
+.o1
+
+	lda Text_Ready_Flash
+	beq .o2
+	dec Text_Ready_Flash
+	lda Text_Ready_Flash
+	and #7
+	cmp #7
+	beq .triggerChangedReady
+	cmp #3
+	beq .triggerEraseReady
+.o2
+
+	lda Text_ReloadWeapons_Flash
+	beq .o3
+	dec Text_ReloadWeapons_Flash
+	lda Text_ReloadWeapons_Flash
+	and #31
+	cmp #31
+	beq .triggerChangedReloadWeapons
+	cmp #15
+	beq .triggerEraseReloadWeapons
+.o3
+
+	rts
+
+UpdateText_Poll_PerFrame
+	jsr TextResetHits
+	rts
+
+.triggerChangedStage
+	inc Text_Stage_Flash_changed
+	jmp .o1
+.triggerEraseStage
+	dec Text_Stage_Flash_changed
+	jmp .o1
+
+.triggerChangedReady
+	inc Text_Ready_Flash_changed
+	jmp .o2
+.triggerEraseReady
+	dec Text_Ready_Flash_changed
+	jmp .o2
+
+.triggerChangedReloadWeapons
+	inc Text_ReloadWeapons_Flash_changed
+	jmp .o2
+.triggerEraseReloadWeapons
+	dec Text_ReloadWeapons_Flash_changed
+	jmp .o2
+
+!zn
+
+kUpdateCharAtMax = 2
+VBlankUpdateCharAtFlag
+	!fill kUpdateCharAtMax , 0
+VBlankUpdateCharAt
+	!fill kUpdateCharAtMax , 0
+VBlankUpdateCharAtLo
+	!fill kUpdateCharAtMax , 0
+VBlankUpdateCharAtHi
+	!fill kUpdateCharAtMax , 0
+
+
+VBlankUpdateText
+	lda Text_Stage_Flash_changed
+	+lbeq .o1
+	bpl .drawChangedStage
+
+	; Negative = Erase
+	+MByteValueToAddress_A 0 , Text_Stage_Flash_changed
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos
+	lda #0
+	ldy #Text_Stage_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #Text_Stage_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+	rts	; Try to reduce top of the screen corruption by avoiding too many updates at once
+	jmp .o1
+
+.drawChangedStage
+	+MByteValueToAddress_A 0 , Text_Stage_Flash_changed
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos
+	+MWordValueTo_AX Text_Stage_Flash_text_top
+	ldy #Text_Stage_Flash_text_top_size
+	jsr Bus24Bit_FastCopySmallData
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos + kBus24Bit_CharScreenWidth
+	+MWordValueTo_AX Text_Stage_Flash_text_bot
+	ldy #Text_Stage_Flash_text_bot_size
+	jsr Bus24Bit_FastCopySmallData
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_PosSmall
+	lda #0
+	ldx StageNumber+1
+	beq .noTens
+	lda Text_Stage_Flash_text_numbers,x
+.noTens
+	+MBus24Bit_Send8BitValueFromA
+	ldx StageNumber
+	lda Text_Stage_Flash_text_numbers,x
+	+MBus24Bit_Send8BitValueFromA
+
+	rts	; Try to reduce top of the screen corruption by avoiding too many updates at once
+
+.o1
+
+
+!macro MTextUpdatesDeltaProcess8x16 .flag , .position , .textTop , .textTopSize , .textBottom , .textBottomSize {
+	lda .flag
+	+lbeq .o2
+	bpl .drawChangedReady
+
+	; Negative = Erase
+	+MByteValueToAddress_A 0 , .flag
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + .position
+	lda #0
+	ldy #.textTopSize
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + .position + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #.textBottomSize
+	jsr Bus24Bit_WriteAForY
+
+	rts	; Try to reduce top of the screen corruption by avoiding too many updates at once
+	jmp .o2
+
+.drawChangedReady
+	+MByteValueToAddress_A 0 , .flag
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + .position
+	+MWordValueTo_AX .textTop
+	ldy #.textTopSize
+	jsr Bus24Bit_FastCopySmallData
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + .position + kBus24Bit_CharScreenWidth
+	+MWordValueTo_AX .textBottom
+	ldy #.textBottomSize
+	jsr Bus24Bit_FastCopySmallData
+
+	rts	; Try to reduce top of the screen corruption by avoiding too many updates at once
+
+.o2
+}
+
+	+MTextUpdatesDeltaProcess8x16 Text_Ready_Flash_changed , Text_Ready_Flash_Pos , Text_Ready_Flash_text_top , Text_Ready_Flash_text_top_size , Text_Ready_Flash_text_bot , Text_Ready_Flash_text_bot_size
+
+	+MTextUpdatesDeltaProcess8x16 Text_ReloadWeapons_Flash_changed , Text_ReloadWeapons_Flash_Pos , Text_ReloadWeapons_Flash_text_top , Text_ReloadWeapons_Flash_text_top_size , Text_ReloadWeapons_Flash_text_bot , Text_ReloadWeapons_Flash_text_bot_size
+
+	+MTextUpdatesDeltaProcess8x16 Text_HitCountsPoints_Flash_changed , Text_HitCountsPoints_Flash_Pos , Text_HitCountsPoints_Flash_text_top , Text_HitCountsPoints_Flash_text_top_size , Text_HitCountsPoints_Flash_text_bot , Text_HitCountsPoints_Flash_text_bot_size
+
+!for .ii , kUpdateCharAtMax {
+!set .i = .ii - 1
+	lda VBlankUpdateCharAtFlag + .i
+	beq +
+	lda #kBus24Bit_CharScreenMap_EBBS
+	ldx VBlankUpdateCharAtLo + .i
+	ldy VBlankUpdateCharAtHi + .i
+	jsr Bus24Bit_SetAddressBus
+	+MBus24Bit_Send8BitValueFromAddress VBlankUpdateCharAt + .i
+	lda #0
+	sta VBlankUpdateCharAtFlag + .i
+	rts	; Try to reduce top of the screen corruption by avoiding too many updates at once
++
+}
+
+	rts
+
+!ifdef IncludeVBlankUpdateTextColours {
+VBlankUpdateTextColours
+	; Clear any screen state as well
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos
+	lda #0
+	ldy #Text_Stage_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #Text_Stage_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Stage_Flash_Pos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y8_colour
+	ldy #Text_Stage_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Stage_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y8_colour
+	ldy #Text_Stage_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+
+
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Ready_Flash_Pos
+	lda #0
+	ldy #Text_Ready_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Ready_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #Text_Ready_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Ready_Flash_Pos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	ldy #Text_Ready_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Ready_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	ldy #Text_Ready_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+
+
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_ReloadWeapons_Flash_Pos
+	lda #0
+	ldy #Text_ReloadWeapons_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_ReloadWeapons_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #Text_ReloadWeapons_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_ReloadWeapons_Flash_Pos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y32_colour
+	ldy #Text_ReloadWeapons_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_ReloadWeapons_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y32_colour
+	ldy #Text_ReloadWeapons_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_HitCountsPoints_Flash_Pos
+	lda #0
+	ldy #Text_HitCountsPoints_Flash_text_top_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_HitCountsPoints_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #0
+	ldy #Text_HitCountsPoints_Flash_text_bot_size
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_HitCountsPoints_Flash_Pos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour
+	ldy #10
+	jsr Bus24Bit_WriteAForY
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y32_colour
+	ldy #Text_HitCountsPoints_Flash_text_top_size-10
+	jsr Bus24Bit_WriteAForY
+
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_HitCountsPoints_Flash_Pos + kBus24Bit_CharScreenWidth
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour
+	ldy #10
+	jsr Bus24Bit_WriteAForY
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y32_colour
+	ldy #Text_HitCountsPoints_Flash_text_bot_size-10
+	jsr Bus24Bit_WriteAForY
+
+
+	; Also remove the stage 8x8 display
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Stage_Flash_PosSmall
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Stage_Flash_PosSmall
+	+MBus24Bit_Send8BitValue kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	+MBus24Bit_Send8BitValue kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+
+	; Score colour init
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + GameScore_Value_screenPos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	ldy #kGameScore_Value_size
+	jsr Bus24Bit_WriteAForY
+
+	; Lives init
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Lives_Pos
+	lda #kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x544_y480_tile
+	ldy #2
+	jsr Bus24Bit_WriteAForY
+
+	; Hits colour init
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + Text_Hits_Pos
+	+MBus24Bit_Send8BitValue kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour
+	+MBus24Bit_Send8BitValueFromA
+	; Also remove any previous text display
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + Text_Hits_Pos
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_Send8BitValueFromA
+	ldy #2
+	jsr Bus24Bit_WriteAForY
+
+	rts
+}
+
+
+!zn
+.hitNumbers !by 0 , 0
+TextResetHits_Trigger !by 0
+.delayAfter !by 0
+TextResetHits
+	lda TextResetHits_Trigger
+	bne .somethingToUpdate1
+	rts
+.somethingToUpdate1
+	lda .hitNumbers
+	ora .hitNumbers+1
+	bne .somethingToUpdate2
+	+MByteValueToAddress_A 0 , TextResetHits_Trigger
+	+MByteValueToAddress_A -1 , Text_HitCountsPoints_Flash_changed
+	rts
+.somethingToUpdate2
+	inc .delayAfter
+	lda .delayAfter
+	and #1
+	beq .somethingToUpdate3
+	rts
+.somethingToUpdate3
+	lda .hitNumbers
+	beq .o2
+	jsr ScoreAdd_n000
+	inc Text_HitCountsPoints_Flash_changed
+	ldx .hitNumbers
+	lda Text_Stage_Flash_text_top_numbers,x
+	sta Text_HitCountsPoints_Flash_text_top+12
+	lda Text_Stage_Flash_text_bot_numbers,x
+	sta Text_HitCountsPoints_Flash_text_bot+12
+	dec .hitNumbers
+	bpl .o2
+	+MByteValueToAddress_A 9 , .hitNumbers
+.o2
+	lda .hitNumbers+1
+	beq .o3
+	jsr ScoreAdd_n0000
+	inc Text_HitCountsPoints_Flash_changed
+	ldx .hitNumbers+1
+	lda Text_Stage_Flash_text_top_numbers,x
+	sta Text_HitCountsPoints_Flash_text_top+11
+	lda Text_Stage_Flash_text_bot_numbers,x
+	sta Text_HitCountsPoints_Flash_text_bot+11
+	dec .hitNumbers+1
+	bpl .o3
+	+MByteValueToAddress_A 9 , .hitNumbers+1
+.o3
+
+	jsr TextDisplayHitNumber
+
+	rts
+
+
+TextAddHitNumber
+	stx .smx+1
+
+	inc GameTotalHits
+!for .i , GameTotalHits_size {
+	lda GameTotalHits + .i-1
+	cmp #10
+	bne +
+	lda #0
+	sta GameTotalHits + .i-1
+	inc GameTotalHits + .i
++
+}
+
+	inc .hitNumbers
+	lda .hitNumbers
+	cmp #10
+	bne .o1
+	lda #0
+	sta .hitNumbers
+	inc .hitNumbers+1
+
+TextDisplayHitNumber
+	+MByteValueToAddress_A 1 , VBlankUpdateCharAtFlag+1
+	lda #0
+	ldx .hitNumbers+1
+	beq .noTens
+	lda Text_Stage_Flash_text_numbers,x
+.noTens
+	sta VBlankUpdateCharAt+1
+	+MWordValueToAddressLoHi_A kBus24Bit_CharScreenMap + Text_Hits_Pos , VBlankUpdateCharAtLo+1 , VBlankUpdateCharAtHi+1
+
+.o1
+	+MByteValueToAddress_A 1 , VBlankUpdateCharAtFlag
+	ldx .hitNumbers
+	lda Text_Stage_Flash_text_numbers,x
+	sta VBlankUpdateCharAt
+	+MWordValueToAddressLoHi_A kBus24Bit_CharScreenMap + Text_Hits_Pos+1 , VBlankUpdateCharAtLo , VBlankUpdateCharAtHi
+
+.smx ldx #0
+	rts

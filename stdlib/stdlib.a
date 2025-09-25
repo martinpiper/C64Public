@@ -1,6 +1,7 @@
 ; Some constants
 C64Cartridge_Lo_8K	= $8000
 C64Cartridge_Hi_8K	= $e000
+C64LastPage	= $ff00
 VIC2_Bank0	= $0000
 VIC2_Bank1	= $4000
 VIC2_Bank2	= $8000
@@ -214,6 +215,7 @@ ZPExTapeIOBufferEnd				= $3fb
 ; Special memory sections
 
 BASICSTART= $0801			; Default is memory PEEK(43) = 1 and PEEK(44) = 8
+TEDBASICSTART= $1001		; Default is memory PEEK(43) = 1 and PEEK(44) = 16
 ; The offset from the start of screen data for the sprite definitions
 SPRITEFRAMESCROFF = $03f8
 SCREENRAM = $0400
@@ -1282,6 +1284,12 @@ RasterLengthNTSCC64		= 520
 	+lbne .notTo
 }
 
+!macro TestForPortNotBitsLoop_A .port , .value , .notTo {
+	lda .port
+	and #.value
+	beq .notTo
+}
+
 !macro SetDefaultScreenNoEnable_A {
 	lda #VIC2MemorySetupDefault
 	sta VIC2MemorySetup
@@ -1406,6 +1414,11 @@ RasterLengthNTSCC64		= 520
 	ror .addr
 }
 
+!macro M_ASR_S16 .lo , .hi {
+	+M_ASRAddr_A .hi
+	ror .lo
+}
+
 !macro M_ABS_A {
 	cmp #$80
 	bcc .isPos
@@ -1498,6 +1511,12 @@ RasterLengthNTSCC64		= 520
 !macro MWordValueTo_XY .value {
 	ldx #<.value
 	ldy #>.value
+}
+
+!macro MLongValueTo_AXY .value {
+	lda #<.value
+	ldx #>.value
+	ldy #^.value
 }
 
 !macro MSetSpriteXYColFrame_A .i , .x , .y , .col , .frame , .gameScreen {
@@ -1726,6 +1745,16 @@ RasterLengthNTSCC64		= 520
 	sta .destHi
 }
 
+!macro MAddS16AddrToAddrS16 .lo1 , .hi1 , .lo2 , .hi2 , .destLo , .destHi {
+	lda .lo1
+	clc
+	adc .lo2
+	sta .destLo
+	lda .hi1
+	adc .hi2
+	sta .destHi
+}
+
 !macro MSubS16AddrToAddrS16 .lo1 , .hi1 , .lo2 , .hi2 , .destLo , .destHi {
 	lda .lo1
 	sec
@@ -1806,6 +1835,34 @@ RasterLengthNTSCC64		= 520
 
 	lda .src+1
 	sbc .val+1
+	sta .dest+1
+}
+
+!macro MAddI16STo16S .src , .val , .dest {
+!if <.val = 0 {
+	clc
+} else {
+	lda .src
+	clc
+	adc #<.val
+	sta .dest
+}
+	lda .src+1
+	adc #>.val
+	sta .dest+1
+}
+
+!macro MSubI16STo16S .src , .val , .dest {
+!if <.val = 0 {
+	sec
+} else {
+	lda .src
+	sec
+	sbc #<.val
+	sta .dest
+}
+	lda .src+1
+	sbc #>.val
 	sta .dest+1
 }
 

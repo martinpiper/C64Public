@@ -1,0 +1,26 @@
+!zn
+Audio2_Disable
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Control
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_RightChannel + kAudio2Register_Control
+	+MBus24Bit_Send8BitValue 0
+	rts
+
+Audio2_Enable
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Control
+	+MBus24Bit_Send8BitValue kAudio2Register_Control_Enable
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_RightChannel + kAudio2Register_Control
+	+MBus24Bit_Send8BitValue kAudio2Register_Control_Enable
+	rts
+
+Audio2_SetVolume
+	pha
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Volume
+	pla
+	+MBus24Bit_Send8BitValueFromA
+	pha
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_RightChannel + kAudio2Register_Volume
+	pla
+	+MBus24Bit_Send8BitValueFromA
+	rts
+

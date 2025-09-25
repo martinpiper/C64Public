@@ -1,0 +1,323 @@
+!zn
+; Choose to roll left or right, or shoot a missle
+EntityInit_EnemyChooseWhichZed
+	jsr Rand
+	and #%1
+	beq EntityInit_EnemyChooseMaxZed
+
+	; If it's coming from behind due to a spawn then move it closer to the player, for visual effect
+	lda EntityXPos,x
+	+M_ASR
+	+M_ASR
+	sta EntityXPos,x
+	; Note: Fall through to below...
+
+!zn
+EntityInit_EnemyFromBehind
+	lda #1	; Very near to the camera
+	sta EntityZPos,x
+
+	lda #<EntityState_EnemyZoomForward
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyZoomForward
+	sta EntityStateHi,x
+	rts
+
+
+EntityInit_EnemyChooseMaxZed
+	lda #kEntity_MaxZPos
+	sta EntityZPos,x
+
+EntityInit_EnemyChoose
+	; Debug
+;	jmp EntityInit_EnemyRollRight
+	jsr Rand
+	and #%11
+	beq EntityInit_EnemyShootMissleAfter
+	cmp #1
+	beq EntityInit_EnemyRollLeft
+	cmp #2
+	beq EntityInit_EnemyRollRight
+	; Lastly
+	jmp EntityInit_EnemyShootMissleAfter
+
+
+!zn
+EntityInit_EnemyChooseOnlyRollMaxZed
+	lda #kEntity_MaxZPos
+	sta EntityZPos,x
+
+EntityInit_EnemyChooseOnlyRoll
+	; Debug
+;	jmp EntityInit_EnemyRollRight
+	jsr Rand
+	and #%1
+	beq EntityInit_EnemyRollLeft
+	jmp EntityInit_EnemyRollRight
+
+
+!zn
+; Fire a missile with some random delay
+EntityInit_EnemyShootMissleAfter
+	jsr Rand
+	and #%111111
+	adc #2
+	sta EntityStateValue1,x
+	lda #<EntityState_EnemyShootMissleAfter
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyShootMissleAfter
+	sta EntityStateHi,x
+	rts
+
+EntityInit_EnemyRollLeft
+	jsr Rand
+	and #%11111
+	adc #2
+	sta EntityStateValue1,x
+	jsr Rand
+	and #%1111
+	adc #2
+	sta EntityStateValue2,x
+	lda #<EntityState_EnemyRollLeft
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyRollLeft
+	sta EntityStateHi,x
+	rts
+
+EntityInit_EnemyRollRight
+	jsr Rand
+	and #%11111
+	adc #2
+	sta EntityStateValue1,x
+	jsr Rand
+	and #%1111
+	adc #2
+	sta EntityStateValue2,x
+	lda #<EntityState_EnemyRollRight
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyRollRight
+	sta EntityStateHi,x
+	rts
+
+!zn
+EnemyMissileCount !by 0
+EnemyMissileCountNow !by 0
+!ifdef BuildTitleScreen {
+MaxEnemyMissiles !by 5
+EnemyMissilesRecycleSpeed !by 2
+} else {
+MaxEnemyMissiles !by 0			; Increased during the stage update
+EnemyMissilesRecycleSpeed !by 1	; Increased during the stage update
+}
+
+EntityState_EnemyShootMissleAfter
+	jsr EntityState_EnemyRollCommonMovement
+
+	jsr EntityState_EnemyCommonMovementZ
+
+	lda EnemyMissileCount
+	cmp MaxEnemyMissiles
+	bcc .okToConsiderfire
+	rts
+.okToConsiderfire
+
+	lda EntityStateValue1,y
+	sec
+	sbc EnemyMissilesRecycleSpeed	; The more missiles, the faster they can shoot
+	sta EntityStateValue1,y
+	bcc .fireEnemyMissile
+	rts
+
+.fireEnemyMissile
+	jsr EntityFindFreeSlot
+	bcc .freeSlot
+	rts
+
+.freeSlot
+	inc EnemyMissileCount
+
+	lda EntityXPos,y
+	sta EntityXPos,x
+	lda EntityYPos,y
+	sta EntityYPos,x
+	lda EntityZPos,y
+	sta EntityZPos,x
+	lda #0
+	sta EntityScaleTweak,x
+	lda #<Render_MissileFacing
+	sta EntityTypeLo,x
+	lda #>Render_MissileFacing
+	sta EntityTypeHi,x
+	lda #0
+	sta EntityTypeIsRotating,x
+	lda #<EntityState_EnemyMissile
+	sta EntityStateLo,x
+	lda #>EntityState_EnemyMissile
+	sta EntityStateHi,x
+
+	; Player position setup
+	lda #0
+	sta EntityStateValue1,x
+	lda playerYPositionOffset_AsEntityYPos
+	sta EntityStateValue2,x
+
+	; And a forced dip and left/right movement time
+	jsr Rand
+	and #3
+	clc
+	adc #10
+	sta EntityStateValue3,x
+
+	jsr Rand
+	and #3
+	+lbne .noWarning
+!ifndef BuildTitleScreen {
+	+MPlaySample 2 , 255 , kSampleInfo9_start , kSampleInfo9_length , kSampleInfo9_frequency
+}
+.noWarning
+	; After shooting then choose a roll
+	tya
+	tax
+	jmp EntityInit_EnemyChooseOnlyRoll
+
+	rts
+
+
+!zn
+EntityState_EnemyCommonMovementZ
+	; If the enemy is in the distance, then set it to approach slower
+	lda EntityZPos,y
+	cmp #kEntity_MaxZPos-60
+	+IfURegLessThanVal .alreadyNearZ
+	clc
+	adc landscapeFrameSpeed
+	sec
+	sbc #1
+	sta EntityZPos,y
+.alreadyNearZ
+	rts
+
+!zn
+EntityState_EnemyRollCommonMovement
+	lda EntityRotationTweak,y
+	bmi .negMove
+	bne .posMove
+	rts
+.posMove
+	lda EntityXPos,y
+	sec
+	sbc #1
+	sta EntityXPos,y
+	rts
+.negMove
+	lda EntityXPos,y
+	clc
+	adc #1
+	sta EntityXPos,y
+	rts
+
+
+!zn
+EntityState_EnemyRollLeft
+	jsr EntityState_EnemyCommonMovementZ
+
+	lda EntityStateValue1,y
+	beq .startRoll
+	sec
+	sbc #1
+	sta EntityStateValue1,y
+	rts
+.startRoll
+	lda EntityStateValue2,y
+	bne .doRoll
+
+	; After a roll then switch to shooting
+	tya
+	tax
+	jmp EntityInit_EnemyShootMissleAfter
+
+.doRoll
+	sec
+	sbc #1
+	sta EntityStateValue2,y
+
+	lda EntityRotationTweak,y
+	sec
+	sbc #1
+	sta EntityRotationTweak,y
+
+	jsr EntityState_EnemyRollCommonMovement
+
+	rts
+
+!zn
+EntityState_EnemyRollRight
+	jsr EntityState_EnemyCommonMovementZ
+
+	lda EntityStateValue1,y
+	beq .startRoll
+	sec
+	sbc #1
+	sta EntityStateValue1,y
+	rts
+.startRoll
+	lda EntityStateValue2,y
+	bne .doRoll
+
+	; After a roll then switch to shooting
+	tya
+	tax
+	jmp EntityInit_EnemyShootMissleAfter
+
+.doRoll
+	sec
+	sbc #1
+	sta EntityStateValue2,y
+
+	lda EntityRotationTweak,y
+	clc
+	adc #1
+	sta EntityRotationTweak,y
+
+	jsr EntityState_EnemyRollCommonMovement
+
+	rts
+
+
+!zn
+EntityState_EnemyZoomForward
+	lda EntityZPos,y
+	cmp #90
+	+IfURegGreaterThanOrEqualToVal .alreadyFarZ
+	clc
+	adc landscapeFrameSpeed
+	clc
+	adc #1
+	sta EntityZPos,y
+
+
+	lda EntityXPos,y
+	bmi .otherRoll
+
+	lda EntityRotationTweak,y
+	cmp #-15
+	beq .justMove
+	sec
+	sbc #1
+	sta EntityRotationTweak,y
+.justMove
+	jmp EntityState_EnemyRollCommonMovement
+
+.otherRoll
+	lda EntityRotationTweak,y
+	cmp #15
+	beq .justMove
+	clc
+	adc #1
+	sta EntityRotationTweak,y
+	jmp EntityState_EnemyRollCommonMovement
+
+.alreadyFarZ
+	tya
+	tax
+	jmp EntityInit_EnemyShootMissleAfter

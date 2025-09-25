@@ -1,0 +1,91 @@
+!zn
+
+RadarDisplayRenderSpritesDirectMode
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	lda playerYPositionOffset
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	sta zeroPage_Temp0
+	+M_ASR
+	sta zeroPage_Temp1
+
+	ldx #SortHardMaxEntries-1
+.ce1
+	lda EntityTypeHi,x
+	+lbeq .ce2
+	lda EntityTypeIndex,x
+	+lbmi .ce2
+
+	lda EntityLastScreenXPos,x
+	cmp #128
+	+lbeq .ce2
+
+	+M_ASR
+	+M_ASR
+	+M_ASR
+
+	clc
+	adc #135
+	sta zeroPage_Temp4
+
+	lda EntityLastScreenYPos,x
+	cmp #128
+	+lbeq .ce2
+
+	+M_ASR
+	+M_ASR
+	+M_ASR
+
+	clc
+	adc #15
+	sec
+	sbc zeroPage_Temp1
+	sta zeroPage_Temp5
+
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_8_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_8_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_8_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_8_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_8_0_0_0_tileWidth , 0
+
+.ce2
+	dex
+	+lbne .ce1
+
+	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
+
+	ldx landscapeRotationsFrame
+	lda RadarDisplayRender_radarSpriteAddressHiHi,x
+	pha
+	lda RadarDisplayRender_radarSpriteAddressHi,x
+	pha
+	lda RadarDisplayRender_radarSpriteAddressLo,x
+	pha
+	lda RadarDisplayRender_radarSpritePalette,x
+	pha
+
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+
+	pla
+	+MBus24Bit_Send8BitValueFromA
+
+	lda #13
+	sec
+	sbc zeroPage_Temp0
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_radar45_0_0_0_tileHeight
+	+MBus24Bit_Send8BitValue 249
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_radar45_0_0_0_tileWidth
+
+	pla
+	+MBus24Bit_Send8BitValueFromA
+	pla
+	+MBus24Bit_Send8BitValueFromA
+	pla
+	+MBus24Bit_Send8BitValueFromA
+
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValue $20
+
+	+MBus24Bit_Send8BitValue kVarsEmitSpriteFrame_radar45_0_0_0_tileWidth-1
+
+	rts

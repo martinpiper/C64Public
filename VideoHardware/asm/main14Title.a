@@ -10,6 +10,7 @@
 
 
 BuildTitleScreen = 1
+IncludeVBlankUpdateTextColours=1
 
 !source "stdlib/stdlib.a"
 !source "stdlib/Comparisons.a"
@@ -22,23 +23,23 @@ BuildTitleScreen = 1
 !source "AfterBurner/LandscapeDefs.a"
 !source "AfterBurner/SpriteMacros.a"
 !source "AfterBurner/SampleMacros.a"
-
+!source "AfterBurner/Audio2_Macros.a"
 
 
 !zn
 *=$200
 start
-	sei
+	+MStopInitStack_X
 	jmp mainLoop
 
 !source "tmp/FingerPrint.a"
 !source "stdlib/LongBranches.a"
 !source "BombJack/stdlib/APU.a"
 
-Initialise_NoPreserveStack = 1
-Initialise_NoIRQServiceRoutine = 1
-Initialise_NoMACROWaitForTheLastScan = 1
-!source "stdlib/Initialise.a"
+;Initialise_NoPreserveStack = 1
+;Initialise_NoIRQServiceRoutine = 1
+;Initialise_NoMACROWaitForTheLastScan = 1
+;!source "stdlib/Initialise.a"
 
 !source "AfterBurner/CommonBootDefinesPre.a"
 !source "tmp\CommonBootDefines.a"
@@ -75,14 +76,26 @@ Mode7RegsSize = * - Mode7Regs
 
 !zn
 mainLoop
-	lda #ProcessorPortAllRAMWithIO
-	jsr InitialiseMachine
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+;	lda #ProcessorPortAllRAMWithIO
+;	jsr InitialiseMachine
+
+
+
+!ifndef Debug_FakeHiscore {
+	jsr CheckAndRunHiScoreScoreTableEntry
+}
+
+	; Ensure this is set, after any hiscore entry is done
+	+MByteValueToAddress_A 5 , GamePaletteBank
+
 
 	jsr Bus24Bit_Init
 	jsr Bus20To32Bit1_Init
 	jsr APU_ResetDisableClear
 
 	jsr Audio_Init
+	jsr Audio2_Disable
 
 	jsr SetupAPU
 	jsr OneTimeInit
@@ -94,6 +107,11 @@ mainLoop
 	sta CIA2PortBRS232
 }
 
+	; If we are debug testing the hiscore entry then the video system needs to be initialised before trying to display it
+!ifdef Debug_FakeHiscore {
+	jsr CheckAndRunHiScoreScoreTableEntry
+}
+
 
 	; Debug, skip title and intro
 !ifndef Debug_NoTitleScreen {
@@ -102,6 +120,12 @@ mainLoop
 }
 
 TitleScreen_RunGame
+
+	; Before accessing the screen RAM
+	jsr Bus20To32Bit1_Init
+	jsr Video_WaitVBlank
+	jsr VBlankUpdateTextColours
+
 	inc VIC2BorderColour
 
 	jsr Bus20To32Bit1_Init
@@ -117,14 +141,14 @@ AudioActiveFlags !by 0
 !source "AfterBurner/APU.a"
 !source "AfterBurner/EntitySystem.a"
 !source "AfterBurner/EntitySystemSpriteDraw.a"
-!source "AfterBurner/ScaledSpriteCommon.a"
 !source "AfterBurner/TitleScreen.a"
-
-!source "AfterBurner/Maths.a"
 
 !source "AfterBurner/Landscape.a"
 !source "AfterBurner/LandscapeObjectDraw.a"
 !source "AfterBurner/PlayerControl.a"
+!source "AfterBurner/TextUpdates.a"
+!source "AfterBurner/ScoreTable.a"
+
 
 ; Stub these out
 runwayMaxScreenRow !by 0
@@ -137,18 +161,44 @@ InitGameCanyon
 RunGameCanyon
 InitGameRefueling
 RunGameRefueling
+InitGameOver
+RunGameOver
+InitGameComplete
+SpeedDisplayRenderSpritesDirectMode
+MissionCompleteDisplayRenderSpritesDirectMode
 	rts
 
 +MCheckNotInIOKernal
 
-
-*=KERNALROM
-!source "AfterBurner/Game.a"
-!source "AfterBurner/GamePlayerExplode.a"
-!source "AfterBurner/LandscapeAnimate.a"
+*=CHARROM
 !source "AfterBurner/LandscapeMapCalc.a"
 !source "AfterBurner/LandscapeMapDataDemo.a"
+!source "AfterBurner/EntitySort.a"
+!source "AfterBurner/RadarDisplayTables.a"
 
 
-; -$100 because of kExternalMemoryFiles_OnlyCheckHighAddress
-+MCheckNotInMemoryRange CommonBootCode_JumpTable_Start-$100 , KERNALNMIServiceRoutineLo
+*=KERNALROM
+!source "AfterBurner/ScaledSpriteCommon.a"
+!source "AfterBurner/Maths.a"
+!source "AfterBurner/Game.a"
+!source "AfterBurner/SpawnList.a"
+!source "AfterBurner/Bullets.a"
+!source "AfterBurner/Missile.a"
+!source "AfterBurner/Explosions.a"
+!source "AfterBurner/PaletteUpdate.a"
+!source "AfterBurner/Reticle.a"
+!source "AfterBurner/ScoreHandlers.a"
+!source "AfterBurner/GamePlayerExplode.a"
+!source "AfterBurner/Enemy.a"
+!source "AfterBurner/LandscapeAnimate.a"
+!source "AfterBurner/RadarDisplay.a"
+!source "Citadel2\asm\Score.a"
+!source "AfterBurner/Audio2.a"
+!source "AfterBurner/Music.a"
+!source "AfterBurner/SamplePlay.a"
+
+
+!source "BombJack/stdlib/Bus20To32Bit1_CopyFrom.a"
+
+
++MCheckNotInMemoryRange CommonBootCode_JumpTable_Start , KERNALNMIServiceRoutineLo

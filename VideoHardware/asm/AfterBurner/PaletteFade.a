@@ -1,0 +1,252 @@
+!zn
+
+bytesToUpdateForPalettesPerFrame = kBus24Bit_VideoLayer_BytesPerPalette*2
+numUpdateChunksInABank = kBus24Bit_VideoLayer_BytesPerPaletteBank / bytesToUpdateForPalettesPerFrame
+
+
+RunPaletteFade
+
+	+MByteValueToAddress_A 0 , .paletteOffset
+	+MByteValueToAddress_A 1 , .paletteShift
+
+	; Read the data from external RAM into .tempPaletteLayer*
+	+MLongValueTo_AXY resourceFileOffset_Demo14ScaledSprites4GameEntity0_bin
+	jsr Bus20To32Bit1_CopyFrom_SetExternalAddress
+	+MWordValueTo_AX .tempPaletteLayer0
+	jsr Bus20To32Bit1_CopyFrom_SetAddress
+	+MWordValueTo_AX kBus24Bit_VideoLayer_BytesPerPaletteBank
+	jsr Bus20To32Bit1_CopyFrom
+
+	lda GamePaletteBank
+	and #%111	; Just for safety
+	tax
+	lda .landscapePaletteAddresses,x
+	sta zeroPage_Temp10
+	lda .landscapePaletteAddresses + .landscapePaletteAddressesNum,x
+	sta zeroPage_Temp11
+	lda .landscapePaletteAddresses + (.landscapePaletteAddressesNum *2),x
+	sta zeroPage_Temp12
+	lda zeroPage_Temp10
+	ldx zeroPage_Temp11
+	ldy zeroPage_Temp12
+	jsr Bus20To32Bit1_CopyFrom_SetExternalAddress
+	+MWordValueTo_AX .tempPaletteLayer1
+	jsr Bus20To32Bit1_CopyFrom_SetAddress
+	+MWordValueTo_AX kBus24Bit_VideoLayer_BytesPerPaletteBank
+	jsr Bus20To32Bit1_CopyFrom
+
+
+	jsr Bus20To32Bit1_Init
+
+.wl1
+
+	ldx .paletteOffset
+	lda .tempPaletteLayerAddressOffsets,x
+	sta zeroPage_Temp10
+	lda .tempPaletteLayerAddressOffsets + (numUpdateChunksInABank*2),x
+	sta zeroPage_Temp11
+
+	; Fade the colours in the current palette
+	ldy #0
+.cp1
+	; Extract the components
+	; Red
+	lda (zeroPage_Temp10),y
+	and #%11111
+	sta zeroPage_Temp12
+	; Green
+	lda (zeroPage_Temp10),y
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta zeroPage_Temp13	; 3 bits
+	iny
+	lda (zeroPage_Temp10),y
+	and #%111
+	asl
+	asl
+	asl
+	ora zeroPage_Temp13
+	sta zeroPage_Temp13
+
+	; Blue
+	lda (zeroPage_Temp10),y
+	lsr
+	lsr
+	lsr
+	sta zeroPage_Temp14
+	iny
+
+	; Shift them...
+	ldx .paletteShift
+.ps1
+	lsr zeroPage_Temp12
+	lsr zeroPage_Temp13
+	lsr zeroPage_Temp14
+	dex
+	bne .ps1
+
+	; Recombine them...
+	; Note: Y usage, it already points to the next colour, so use -2
+	lda zeroPage_Temp12
+	sta .calculatedPalette-2,y
+	lda zeroPage_Temp14
+	asl
+	asl
+	asl
+	sta .calculatedPalette-2+1,y
+	lda zeroPage_Temp13
+	asl
+	asl
+	asl
+	asl
+	asl
+	ora .calculatedPalette-2,y
+	sta .calculatedPalette-2,y
+	lda zeroPage_Temp13
+	lsr
+	lsr
+	lsr
+	ora .calculatedPalette-2+1,y
+	sta .calculatedPalette-2+1,y
+
+	cpy #bytesToUpdateForPalettesPerFrame
+	bne .cp1
+
+	; Now transfer the higely complicated palette fade data :)
+
+	jsr Video_WaitVBlank
+;	jsr Video_StartRasterTimers
+
+	; Sprites use the higher palettes
+	jsr Video_SetAddressVideoPaletteBankRegister
+	lda .paletteOffset
+	and #%1
+	beq .isGameSprites
+	; Landscape sprites
+	lda GamePaletteBank
+	ora #$08
+	+MBus24Bit_Send8BitValueFromA
+	jmp .setPalBank
+.isGameSprites
+	lda GamePaletteBank
+	ora #$10
+	+MBus24Bit_Send8BitValueFromA
+.setPalBank
+
+	jsr Bus24Bit_Reset
+	lda #kBus24Bit_VideoLayer_EBBS
+	sta CIA2PortBRS232
+	lda .paletteOffset
+	lsr
+	tax
+	lda .paletteAddressOffsets,x
+	sta CIA2PortBRS232
+	lda .paletteAddressOffsets + numUpdateChunksInABank,x
+	sta CIA2PortBRS232
+	+MBus24Bit_FastSpeedCopy .calculatedPalette , bytesToUpdateForPalettesPerFrame
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+
+	; Proceed to the next palette
+	lda .paletteOffset
+	clc
+	adc #1
+	and #(numUpdateChunksInABank*2)-1
+	sta .paletteOffset
+	bne .notOtherPaletteYet
+	inc .paletteShift
+	lda .paletteShift
+	cmp #2	; Note: Yes this means there is (currently) only one palette fade level used, but this code is general purpose
+	bne .notOtherPaletteYet
+
+	rts
+
+.notOtherPaletteYet
+
+	jmp .wl1
+
+PaletteFade_Restore
+	jsr Video_WaitVBlank
+
+	; Sprites use the higher palettes
+	jsr Video_SetAddressVideoPaletteBankRegister
+	lda GamePaletteBank
+	ora #$10
+	+MBus24Bit_Send8BitValueFromA
+
+	; TODO: Should probably use DMA and disable the APU...
+	jsr Video_SetAddressPalette
+	+MWordValueTo_AX .tempPaletteLayer0
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+
+
+	; Sprites use the higher palettes
+	jsr Video_SetAddressVideoPaletteBankRegister
+	lda GamePaletteBank
+	ora #$08
+	+MBus24Bit_Send8BitValueFromA
+
+	; TODO: Should probably use DMA and disable the APU...
+	jsr Video_SetAddressPalette
+	+MWordValueTo_AX .tempPaletteLayer1
+	ldy #0
+	jsr Bus24Bit_FastCopySmallData
+	jsr Bus24Bit_FastCopySmallDataAgain
+
+
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
+
+	rts
+
+
+.paletteShift !by 1
+
+.paletteOffset !by 0
+.paletteAddressOffsets
+!for .ii , numUpdateChunksInABank {
+	!word kBus24Bit_VideoLayer_Palette + ((.ii-1)*bytesToUpdateForPalettesPerFrame)
+}
+!swizzle .paletteAddressOffsets , numUpdateChunksInABank , 2
+
+
+!source "tmp\Demo14ScaledSprites4GameEntity0.pal.a"
+!source "tmp\Demo14ScaledSprites4Game0.pal.a"
+!source "tmp\Demo14ScaledSprites4Game1.pal.a"
+!source "tmp\Demo14ScaledSprites4Game2.pal.a"
+!source "tmp\Demo14ScaledSprites4Game3.pal.a"
+!source "tmp\Demo14ScaledSprites4Game4.pal.a"
+!source "tmp\Demo14ScaledSprites4Game5.pal.a"
+
+.landscapePaletteAddresses
+!24 resourceFileOffset_Demo14ScaledSprites4Game0_bin
+!24 resourceFileOffset_Demo14ScaledSprites4Game1_bin
+!24 resourceFileOffset_Demo14ScaledSprites4Game2_bin
+!24 resourceFileOffset_Demo14ScaledSprites4Game3_bin
+!24 resourceFileOffset_Demo14ScaledSprites4Game4_bin
+!24 resourceFileOffset_Demo14ScaledSprites4Game5_bin
+.landscapePaletteAddressesNum = (*-.landscapePaletteAddresses)/3
+!swizzle .landscapePaletteAddresses , .landscapePaletteAddressesNum , 3
+
+.tempPaletteLayer0
+!fill kBus24Bit_VideoLayer_BytesPerPaletteBank , 0
+
+.tempPaletteLayer1
+!fill kBus24Bit_VideoLayer_BytesPerPaletteBank , 0
+
+.tempPaletteLayerAddressOffsets
+!for .ii , numUpdateChunksInABank {
+	!word .tempPaletteLayer0 + ((.ii-1)*bytesToUpdateForPalettesPerFrame)
+	!word .tempPaletteLayer1 + ((.ii-1)*bytesToUpdateForPalettesPerFrame)
+}
+!swizzle .tempPaletteLayerAddressOffsets , numUpdateChunksInABank*2 , 2
+
+
+.calculatedPalette
+!fill bytesToUpdateForPalettesPerFrame , 0

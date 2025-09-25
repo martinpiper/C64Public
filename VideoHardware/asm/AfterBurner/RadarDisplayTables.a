@@ -1,0 +1,29 @@
+!zn
+
+RadarDisplayRender_radarSpritePalette
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	acme.source("	!by kVarsEmitSpriteFrame_radar" + str(180 - (acmeParameters[1] * (i+1))) + "_0_0_0_colour\n")
+for i in range(acmeParameters[0]):
+	acme.source("	!by kVarsEmitSpriteFrame_radar" + str(360 - (acmeParameters[1] * (i+1))) + "_0_0_0_colour\n")
+}
+
+
+RadarDisplayRender_radarSpriteAddressLo
+!scriptpythoninline ScreenLandscapeNumRollSteps/2 , ScreenLandscapeNumStepsDelta {
+for i in range(acmeParameters[0]):
+	name = "kVarsEmitSpriteFrame_radar" + str(180 - (acmeParameters[1] * (i+1)))
+	acme.source("!set .address = " + name + "_0_0_0_tileAddress\n")
+	acme.source("!if " + name + "_0_0_0_colour & kBus24Bit_Video_FlipH {\n!set .address = .address + " + name + "_0_0_0_tileWidth-1\n}\n")
+	acme.source("!if " + name + "_0_0_0_colour & kBus24Bit_Video_FlipV {\n!set .address = .address + ((" + name + "_0_0_0_tileHeight-1)*" + name +"_0_0_0_tileWidth)\n}\n")
+	acme.source("	!24 .address\n")
+for i in range(acmeParameters[0]):
+	name = "kVarsEmitSpriteFrame_radar" + str(360 - (acmeParameters[1] * (i+1)))
+	acme.source("!set .address = " + name + "_0_0_0_tileAddress\n")
+	acme.source("!if " + name + "_0_0_0_colour & kBus24Bit_Video_FlipH {\n!set .address = .address + " + name + "_0_0_0_tileWidth-1\n}\n")
+	acme.source("!if " + name + "_0_0_0_colour & kBus24Bit_Video_FlipV {\n!set .address = .address + ((" + name + "_0_0_0_tileHeight-1)*" + name +"_0_0_0_tileWidth)\n}\n")
+	acme.source("	!24 .address\n")
+}
+!swizzle RadarDisplayRender_radarSpriteAddressLo , ScreenLandscapeNumRollSteps , 3
+RadarDisplayRender_radarSpriteAddressHi = RadarDisplayRender_radarSpriteAddressLo + ScreenLandscapeNumRollSteps
+RadarDisplayRender_radarSpriteAddressHiHi = RadarDisplayRender_radarSpriteAddressHi + ScreenLandscapeNumRollSteps

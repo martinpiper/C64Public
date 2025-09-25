@@ -1,0 +1,8 @@
+; This starts at $0801 so that doing a LOAD"*",8 will still work with the default $0801 BASIC start address.
+*= TEDBASICSTART
+!byte $0b,$10,$01,$00,$9e		; Line 1 SYS4109
+!convtab pet
+!tx "4109"						; Address for sys start in text
+!byte $00,$00,$00				; This is really the end of our BASIC program
+
+BASICEntry = $100d

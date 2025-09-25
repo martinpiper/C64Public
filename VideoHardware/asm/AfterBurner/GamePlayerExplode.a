@@ -1,7 +1,10 @@
 !zn
 InitGamePlayerExplode
+!ifndef Debug_Invulnerable {
 	lda GamePlayerExplode_ExplodeFrame
 	beq .doExplodeNow
+}
+
 	rts
 .doExplodeNow
 
@@ -9,6 +12,22 @@ InitGamePlayerExplode
 	+MByteValueToAddress_A 1 , LandscapeMapRowsFreezeUpdates
 	+MByteValueToAddress_A 1 , GamePlayerExplode_ExplodeFrame
 	+MByteValueToAddress_A 125 , Player_Invulnerable
+
+	dec GamePlayerLives
+	bpl .someLives
+	; Exit the canyon if it's running
+	+MByteValueToAddress_A 0 , LandscapeFlags
+.someLives
+
+	; Remove the lives indicator in the screen status
+	lda GamePlayerLives
+	bmi .o1
+	+MByteValueToAddress_A 1 , VBlankUpdateCharAtFlag
+	+MByteValueToAddress_A 0 , VBlankUpdateCharAt
+	+MWordValueToAddressLoHi_A kBus24Bit_CharScreenMap + Text_Lives_Pos , VBlankUpdateCharAtLo , VBlankUpdateCharAtHi
+	lda GamePlayerLives
+	+MAddAToAddr16 VBlankUpdateCharAtLo , VBlankUpdateCharAtHi
+.o1
 
 	rts
 
@@ -24,8 +43,17 @@ RunGamePlayerExplode
 	cmp #1
 	+IfRegLessThanOrEqualToVal .noMoreSlowTab1
 	dec landscapeFrameSpeed
+	jsr PlayerSpeedHasChangedNotify
 .noMoreSlowTab1
 
+	lda GamePlayerExplode_ExplodeFrame
+	cmp #100
+	bcc .doPitchUp
+	lda playerYPositionOffset
+	bpl .noMorePitch2
+	inc playerYPositionOffset
+	jmp .noMorePitch2
+.doPitchUp
 	; Horizon pitch
 	lda playerYPositionOffset
 	cmp #-50
@@ -33,21 +61,47 @@ RunGamePlayerExplode
 	dec playerYPositionOffset
 .noMorePitch2
 
+	jsr TryToLevelAnyRoll
 	jsr PlayerPositionToForHorizonAndLandscape
 	jsr ReducePlayerXPositionForNoInput
 
 	inc GamePlayerExplode_ExplodeFrame
 	lda GamePlayerExplode_ExplodeFrame
-	cmp #100
+	cmp #150
 	bcs .exitExplodingPlayerState
-	rts
-.exitExplodingPlayerState
-
+	cmp #100
+	bcc .stillExploding
+	cmp #101
+	bne .stillExploding
+	lda GamePlayerLives
+	bmi .stillExploding
+	+MByteValueToAddress_A 140 , Text_Ready_Flash
 	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
 	+MByteValueToAddress_A 1 , landscapeFrameSpeed
+.stillExploding
+
+	rts
+.exitExplodingPlayerState
+	lda GamePlayerLives
+	bmi .exitWithoutSpawn
+
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency / 2 , Player_EngineTargetFrequency
+	+MByteValueToAddress_A 2 , landscapeFrameSpeed
+
+	; Do not go quickly if it is the canyon section
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
+	beq .notCanyon
+	+MByteValueToAddress_A 1 , landscapeFrameSpeed
+.notCanyon
 
 	+MByteValueToAddress_A 0 , GamePlayerExplode_ExplodeFrame
 	+MByteValueToAddress_A 0 , LandscapeMapRowsFreezeUpdates
 
 	rts
+
+.exitWithoutSpawn
+	jsr InitGameOver
+	jmp RunGameOver

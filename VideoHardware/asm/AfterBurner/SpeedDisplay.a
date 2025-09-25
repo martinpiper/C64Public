@@ -1,0 +1,30 @@
+!zn
+
+.targetSpeedWidth !by kVarsEmitSpriteFrame_speed_0_0_0_tileWidth
+.landscapeSpeedToTargetWidthTab
+!for .i , 8 {
+	!by (kVarsEmitSpriteFrame_speed_0_0_0_tileWidth * (.i-1)) / 7
+}
+
+
+SpeedDisplayRenderSpritesDirectMode
+	ldx landscapeFrameSpeed
+	lda .landscapeSpeedToTargetWidthTab,x
+	sec
+	sbc .targetSpeedWidth
+	cmp #4
+	+IfURegLessThanVal .noShift
+	+M_ASR
+	+M_ASR
+.noShift
+	clc
+	adc .targetSpeedWidth
+	sta .targetSpeedWidth
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+	ldx .targetSpeedWidth
+	cpx #2	; Because values smaller than this are actually really wide sprites :)
+	bcc .ignoreUpdate
+	+MRenderFixedSpriteVariableWidthInX kVarsEmitSpriteFrame_speed_0_0_0_colour , 64 , 201 , 0 , 0 , kVarsEmitSpriteFrame_speed_0_0_0_tileAddress , kVarsEmitSpriteFrame_speed_0_0_0_tileWidth , kVarsEmitSpriteFrame_speed_0_0_0_tileHeight
+.ignoreUpdate
+	rts

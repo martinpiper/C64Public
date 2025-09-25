@@ -1,16 +1,6 @@
-!macro MFrameCompensate_30fps_Before ~.labelBefore , .labelOver {
-.labelBefore
-	; Frame compensate, for 30 fps
-	lda Video_WaitVBlank_FramesPassed
-	cmp #2
-	bcc .labelOver
-}
-!macro MFrameCompensate_30fps_After .labelBefore , ~.labelOver {
-	dec Video_WaitVBlank_FramesPassed
-	dec Video_WaitVBlank_FramesPassed
-	jmp .labelBefore
-.labelOver
-}
+!zn
+GamePlayerLives !by 2
+
 !ifdef BuildTitleScreen {
 GameDemoExitTime !by 0
 }
@@ -20,7 +10,7 @@ InitGame
 	jsr Bus20To32Bit1_Init
 
 !ifdef BuildTitleScreen {
-	+MByteValueToAddress_A 250 , GameDemoExitTime
+	+MByteValueToAddress_A GameDemoExitTimeValue , GameDemoExitTime
 }
 	+MByteValueToAddress_A landscapeHeightsMax , landscapeHeightsFrame
 	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
@@ -31,6 +21,7 @@ InitGame
 	+MByteValueToAddress_A 0 , landscapeFrameSpeed
 } else {
 	+MByteValueToAddress_A 3 , landscapeFrameSpeed
+	jsr PlayerSpeedHasChangedNotify
 }
 
 	+MByteValueToAddress_A -75 , Player_EngineVolumeChange
@@ -38,10 +29,21 @@ InitGame
 !ifdef BuildTitleScreen {
 	; This causes the game demo sequence to "appear" to start midway through a game
 	+MByteValueToAddress_A 50 , Video_WaitVBlank_FramesPassed
+} else {
+	jsr StageNumber_Increase
+}
+
+	jsr ScoreHandler_Init
+	lda #0
+!for .i , GameTotalHits_size {
+	sta GameTotalHits+.i-1
 }
 	jsr GameShowScreen
 
 	rts
+
+GameScore_ValueToChar	!bin "..\tmp\Demo14TitleChars_map.bin",10,32
+GameScore_Value_screenPos = (36 * kBus24Bit_CharScreenWidth) + 76
 
 GameShowScreen
 	; Do not show the game screen if the title screen demo is being shown
@@ -50,7 +52,9 @@ GameShowScreen
 	+MBus24Bit_SendLE16BitValue 512
 	+MBus24Bit_SendLE16BitValue 256
 }
+
 	rts
+
 
 RunGame
 mainLoop2
@@ -59,13 +63,28 @@ mainLoop2
 	; Must happen in the VBlank
 	jsr VBlankUpdatePaletteColours
 	jsr VBlankUpdateHorizon
+	jsr VBlankUpdateScore
+	jsr VBlankUpdateText
+
+!ifdef BuildTitleScreen {
+	; This specific place ensures the horizon update matches what sprites have been submitted before the screen pause...
+	dec GameDemoExitTime
+	bne .notTimeYet
+	; Back to the title screen
+	rts
+.notTimeYet
+}
 
 	; Can happen outside the VBlank
+	jsr UpdateText_Poll_PerFrame
 	jsr ProcessSamplePlayTriggers
 
 	+MFrameCompensate_30fps_Before ~.frameCompensate1 , .frameCompensate1o
 
+	jsr Music_CheckTime
+	jsr UpdateText_Poll
 	jsr PlayerControl
+	jsr PlayerSpeedNormaliseCheck
 	jsr UpdateLandscapeFrame
 	jsr EntityUpdateObjects
 !ifndef Debug_NoSpawnEnemy {
@@ -93,6 +112,26 @@ mainLoop2
 	lda #kLandscapeMapRowsData_flags_doRefueling
 	bit LandscapeFlags
 	bne .gameToRefueling
+	; Checks for an edge in this flag
+	lda #kLandscapeMapRowsData_flags_doStage
+	bit LandscapeFlags
+	beq .noStageIncrease
+	lda #kLandscapeMapRowsData_flags_doStage
+	bit .previousLandscapeFlags
+	bne .noStageIncrease
+	jsr StageNumber_Increase
+.noStageIncrease
+	lda LandscapeFlags
+	sta .previousLandscapeFlags
+
+!ifndef BuildTitleScreen {
+	lda GamePaletteBank
+	bne .notOKBank
+	lda StageNumberByte
+	cmp #GameCompleteStageNumber
+	bcs .gameToComplete
+.notOKBank
+}
 }
 
 !ifdef BuildTitleScreen {
@@ -101,15 +140,8 @@ mainLoop2
 	+lbeq TitleScreen_RunGame
 }
 
-!ifdef BuildTitleScreen {
-	dec GameDemoExitTime
-	bne .notTimeYet
-	; Back to the title screen
-	rts
-.notTimeYet
-}
-
 	jmp mainLoop2
+.previousLandscapeFlags !by 0
 
 .gameToLanding
 	jsr InitGameLanding
@@ -117,6 +149,7 @@ mainLoop2
 
 .restoreSpeed
 	+MByteValueToAddress_A 3 , landscapeFrameSpeed
+	jsr PlayerSpeedHasChangedNotify
 	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
 	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 
@@ -132,19 +165,16 @@ mainLoop2
 	jsr RunGameRefueling
 	jmp .restoreSpeed
 
+!ifndef BuildTitleScreen {
+.gameToComplete
+	jsr InitGameComplete
+	jsr RunGameComplete
+	jmp mainLoop_backToTitleScreen
+}
+
 
 RenderSpritesGame
-	; Flag not ready
-	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
-	+MBus24Bit_Send8BitValue 2
-
-	; Reset and set the 24 bit address in 32 bit mode
-	jsr Bus20To32Bit1_ShortReset
-	+MBus20To32Bit1_SetLatch7_A
-	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
-	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
-	+MBus20To32Bit1_SetLatch4_A
-	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+	jsr StartSprites4Render
 
 !if 0 {
 	; A deliberate large corrupted sprite to show sprite extents
@@ -165,824 +195,21 @@ RenderSpritesGame
 	+MBus24Bit_Send8BitValue 33
 }
 	jsr Game_RenderLockReticles
+	jsr RadarDisplayRenderSpritesDirectMode
+	jsr SpeedDisplayRenderSpritesDirectMode
+!ifdef BuildTitleScreen {
+	jsr RenderHand
+}
 	jsr EntityRenderSpritesDirectMode
-
-	jsr LandscapeRender
-
 	jsr RenderTimeout
-
 	jsr TerminateScaledSpritesList
-
 	jsr Exit32BitModeAndSignalReady
 
-	rts
-
-
-SpawnList_enemyTypesIndex
-	!fill 8 , 0
-
-.enemyTypesAddress
-	!word EnemyPlaneGreen_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneWhite_landscapeRotationsFrame_to_animation
-	!word EnemyPlaneHarrier_landscapeRotationsFrame_to_animation
-	!word 0
-	!word 0
-	!word 0
-	!word 0
-	!word 0
-!swizzle .enemyTypesAddress , (*-.enemyTypesAddress)/2 , 2
-
-kSpawnEnemy_max = 8
-SpawnEnemy_CurrentIndex		!by 0
-SpawnEnemy_Type				!fill kSpawnEnemy_max , -1
-;SpawnEnemy_Type				!by 0 , 0 , 0 , 0 , -1 , -1 , -1 , -1
-SpawnEnemy_When				!fill kSpawnEnemy_max , 0
-;SpawnEnemy_When				!by 5 , 0 , 5 , 10 , 0 , 0 , 0 , 0
-SpawnEnemy_X				!fill kSpawnEnemy_max , 0
-;SpawnEnemy_X				!by -20 , -10 , 10 , 20 , 0 , 0 , 0 , 0
-SpawnEnemy_Y				!fill kSpawnEnemy_max , 0
-;SpawnEnemy_Y				!by 20 , 40 , 40 , 20 , 0 , 0 , 0 , 0
-SpawnEnemy_Z				!fill kSpawnEnemy_max , 0
-;SpawnEnemy_Z				!fill kSpawnEnemy_max , 127
-
-; Exit: CS = No spawn formations pending
-CheckSpawnEnemyFormation
-	ldy SpawnEnemy_CurrentIndex
-	cpy #kSpawnEnemy_max
-	bcc .ok1
-	rts
-
-.ok1
-	lda SpawnEnemy_Type,y
-	bpl .ok2
-	lda #-1
-	sta SpawnEnemy_CurrentIndex
-	sec
-	rts
-
-.ok2
-	lda SpawnEnemy_When,y
-	beq .ok3
-	sec
-	sbc #1
-	sta SpawnEnemy_When,y
-	clc
-	rts
-
-.ok3
-	jsr EntityFindFreeSlotEnemy
-	bcc .gotFreeSlot2
-
-	clc
-	rts
-
-.gotFreeSlot2
-	lda SpawnEnemy_X,y
-	sta EntityXPos,x
-	lda SpawnEnemy_Y,y
-	sta EntityYPos,x
-	lda SpawnEnemy_Z,y
-	sta EntityZPos,x
-	lda #0
-	sta EntityScaleTweak,x
-	sta EntityRotationTweak,x
-	lda #128
-	sta EntityLastScreenXPos,x
-	sta EntityLastScreenYPos,x
-
-	lda SpawnEnemy_Type,y
-	pha
-	lda #-1
-	sta SpawnEnemy_Type,y
-	pla
-	sta EntityTypeIndex,x
-	tay
-	lda .enemyTypesAddress,y
-	sta EntityTypeLo,x
-	lda .enemyTypesAddress+8,y
-	sta EntityTypeHi,x
-	sta EntityTypeIsRotating,x
-
-	inc SpawnEnemy_CurrentIndex
-
-	clc
-	rts
-
-.spawnEverySoOften !by 1
-CheckSpawnEnemy
-	inc .sms1+1
-	bne .o1
-	inc .sms2+1
-.o1
-	dec .spawnEverySoOften
-	beq .checkSpawn1
-	rts
-
-.checkSpawn1
-	lda #20
-	sta .spawnEverySoOften
-
-	jsr EntityFindFreeSlotEnemy
-	bcc .gotFreeSlot1
-	rts
-
-.gotFreeSlot1
-.sms1	lda #0
-.sms2	ldy #0
-	jsr Seed
-
-
-	jsr Rand
-	and #127
-	sec
-	sbc #64
-	sta EntityXPos,x
-
-	jsr Rand
-	and #31
-	sec
-	sbc #16
-	sta EntityYPos,x
-
-	lda #UsingMaxHardwareScaleTabValue-1
-	sta EntityZPos,x
-
-	lda #0
-	sta EntityScaleTweak,x
-	jsr Rand
-	and #15
-	sec
-	sbc #8
-	sta EntityRotationTweak,x
-
-	jsr Rand
-	and #7
-	tay
-	lda SpawnList_enemyTypesIndex,y
-	+lbmi .noSpawnThisTime
-	sta EntityTypeIndex,x
-	tay
-	lda .enemyTypesAddress,y
-	sta EntityTypeLo,x
-	lda .enemyTypesAddress+8,y
-	sta EntityTypeHi,x
-	sta EntityTypeIsRotating,x
-	lda #128
-	sta EntityLastScreenXPos,x
-	sta EntityLastScreenYPos,x
-
-
-	jsr Rand
-	and #15
-	+lbne .noSoundSpawn1
-	jsr Rand
-	and #4
-	+lbeq .noSoundSpawn2
-	; Be careful
-!ifndef BuildTitleScreen {
-	+MPlaySample 1 , 255 , kSampleInfo6_start , kSampleInfo6_length , kSampleInfo6_frequency
-}
-	jmp .noSoundSpawn1
-.noSoundSpawn2
-	; The enemy
-!ifndef BuildTitleScreen {
-	+MPlaySample 1 , 255 , kSampleInfo7_start , kSampleInfo7_length , kSampleInfo7_frequency
-}
-.noSoundSpawn1
-.noSpawnThisTime
+	jsr StartSprites4Render2
+	jsr LandscapeRender
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesList
+	jsr Exit32BitModeAndSignalReady2
 
 	rts
 
-
-
-kPlayerBulletsForwardSpeed = 5
-EntityState_Bullets_ActiveNum !by 0
-
-EntityState_Bullets
-	lda EntityYPos,y
-	clc
-	adc EntityStateValue1,y
-	cmp #kEntityYPos_Ground
-	+IfRegLessThanValL EntityState_Bullets_HitGround
-	sta EntityYPos,y
-
-	; Skip the check if there aren't going to be any radio towers, it takes a long time
-	lda #kLandscapeMapRowsData_flags_doCanyon
-	bit LandscapeFlags
-	beq .noCanyonCheckRadioTower
-	jsr GetLandscapePositionForEntityPosition
-	lda LandscapeMap,x
-	cmp #12
-	+lbeq .isRadioTower
-	dex ; Wraparound
-	lda LandscapeMap,x
-	cmp #12
-	+lbeq .isRadioTower
-.noCanyonCheckRadioTower
-
-	lda EntityXPos,y
-	clc
-	adc EntityStateValue2,y
-	sta EntityXPos,y
-
-	lda EntityZPos,y
-	clc
-	adc landscapeFrameSpeed
-	+lbcs EntityState_Bullets_Remove
-	clc
-	adc #kPlayerBulletsForwardSpeed
-	cmp #127
-	+lbcs EntityState_Bullets_Remove
-	sta EntityZPos,y
-
-.commonBulletMissileEnemyHitCheck
-	; Now check for enemy entities and collision
-	ldx #SortHardMaxEntries-1
-.ce1
-	lda EntityTypeHi,x
-	beq .ce2
-	lda EntityTypeIndex,x
-	bmi .ce2
-	; Position check with enemy
-	lda EntityZPos,y
-	sec
-	sbc EntityZPos,x
-	clc
-	adc #8
-	cmp #16
-	bcs .ce2
-	lda EntityXPos,y
-	sec
-	sbc EntityXPos,x
-	clc
-	adc #8
-	cmp #16
-	bcs .ce2
-	lda EntityYPos,y
-	sec
-	sbc EntityYPos,x
-	clc
-	adc #8
-	cmp #16
-	bcs .ce2
-
-	; Choose how to explode
-	jsr Rand
-	and #1
-	beq .doExplodeFlames
-
-	jsr SamplePlay_Explosion1
-	lda #<Render_ExplodeBall0
-	sta EntityTypeLo,x 
-	lda #>Render_ExplodeBall0
-	sta EntityTypeHi,x 
-	lda #<EntityState_ExplodeBall
-	sta EntityStateLo,x
-	lda #>EntityState_ExplodeBall
-	sta EntityStateHi,x
-	jmp .commonExplodeEntity
-
-.doExplodeFlames
-	jsr SamplePlay_Explosion2
-	lda #<Render_ExplodeFlames0
-	sta EntityTypeLo,x 
-	lda #>Render_ExplodeFlames0
-	sta EntityTypeHi,x 
-	lda #<EntityState_ExplodeFlames
-	sta EntityStateLo,x
-	lda #>EntityState_ExplodeFlames
-	sta EntityStateHi,x
-
-.commonExplodeEntity
-	lda #0
-	sta EntityTypeIsRotating,x
-	sta EntityStateValue1,x
-	lda #-1
-	sta EntityTypeIndex,x
-	jmp EntityState_Bullets_Remove
-
-.ce2
-	dex
-	bne .ce1	; Note: Not the player!
-
-	rts
-
-GetLandscapePositionForEntityPosition
-	lda LandscapeMapRowOffset
-	and #$0f
-	clc
-	adc #7
-	sta .xmxposo+1
-	lda EntityXPos,y
-	+M_ASR
-	+M_ASR
-	+M_ASR
-	and #$0f
-	clc
-.xmxposo	adc #8
-	and #$0f
-	sta .smxp+1
-
-	lda LandscapeMapRowOffset
-	and #$f0
-	sta .xmzp+1
-
-	lda EntityZPos,y
-	and #$f0
-	clc
-.xmzp	adc #0
-	clc
-.smxp	adc #0
-	tax
-	rts
-
-EntityState_Bullets_HitGround
-	jsr GetLandscapePositionForEntityPosition
-	lda LandscapeMap,x
-;	jmp .isRadioTower	; Debug
-	cmp #12
-	beq .isRadioTower
-	jsr Rand
-	and #3
-	beq .largeExplosion
-	jsr SamplePlay_Explosion3
-	lda #16
-	jmp .storeIt
-.largeExplosion
-	jsr SamplePlay_Explosion2
-	lda #19
-	jmp .storeIt
-.isRadioTower
-	jsr SamplePlay_Explosion1
-	lda #22
-.storeIt
-	sta LandscapeMap,x
-
-; Note: Fall through to here
-EntityState_Bullets_Remove
-	dec EntityState_Bullets_ActiveNum
-	bpl .isOk1
-	; Just a paranoia guard, especially since the missiles can get here too
-	lda #0
-	sta EntityState_Bullets_ActiveNum
-.isOk1
-	jmp EntityState_RemoveEntity
-
-
-.emitSmokeCounter !by 0
-EntityState_MissileForward
-	lda EntityZPos,y
-	clc
-	adc landscapeFrameSpeed
-	+lbcs EntityState_RemoveEntity
-	clc
-	adc #3
-	cmp #127
-	+lbcs EntityState_RemoveEntity
-	sta EntityZPos,y
-
-	; If it is locked, then skip the random movement
-	ldx EntityStateValue1,y
-	bpl .skipRandomMovement
-
-	tya
-	and #1
-	beq .noUp1
-.doDown1
-	lda EntityYPos,y
-	clc
-	adc #1
-	sta EntityYPos,y
-	jmp .overUp
-.noUp1
-	lda EntityYPos,y
-	sec
-	sbc #1
-	sta EntityYPos,y
-.overUp
-
-	tya
-	and #2
-	beq .noLeft1
-.doRight1
-	lda EntityXPos,y
-	clc
-	adc #1
-	sta EntityXPos,y
-	jmp .overLeft
-.noLeft1
-	lda EntityXPos,y
-	sec
-	sbc #1
-	sta EntityXPos,y
-.overLeft
-
-.skipRandomMovement
-
-.doSmoke
-	dec .emitSmokeCounter
-	bpl .noSmoke1
-	lda #2
-	sta .emitSmokeCounter
-
-	jsr EntityFindFreeSlot
-	bcs .noSmoke1
-	lda EntityXPos,y
-	sta EntityXPos,x
-	lda EntityYPos,y
-	sta EntityYPos,x
-	lda EntityZPos,y
-	sec
-	sbc #1
-	sta EntityZPos,x
-	lda #60
-	sta EntityScaleTweak,x
-	lda #50
-	sta EntityStateValue1,x
-	lda #<Render_WhiteSmoke
-	sta EntityTypeLo,x
-	lda #>Render_WhiteSmoke
-	sta EntityTypeHi,x
-
-	lda #<EntityState_RemoveAfter
-	sta EntityStateLo,x
-	lda #>EntityState_RemoveAfter
-	sta EntityStateHi,x
-	
-	lda #0
-	sta EntityTypeIsRotating,x
-
-.noSmoke1
-
-	ldx EntityStateValue1,y
-	bmi .notLocked
-
-	lda EntityXPos,x
-	sec
-	sbc EntityXPos,y
-	+M_ASR
-	+M_ASR
-	+M_ASR
-	clc
-	adc EntityXPos,y
-	sta EntityXPos,y
-
-	lda EntityYPos,x
-	sec
-	sbc EntityYPos,y
-	+M_ASR
-	+M_ASR
-	+M_ASR
-	clc
-	adc EntityYPos,y
-	sta EntityYPos,y
-
-
-	jmp .commonBulletMissileEnemyHitCheck
-.notLocked
-
-	rts
-
-
-.framesExplodeFlamesLo
-	!word Render_ExplodeFlames0
-	!word Render_ExplodeFlames1
-	!word Render_ExplodeFlames2
-	!word Render_ExplodeFlames3
-	!word Render_ExplodeFlames4
-	!word 0	; Automatic remove of this entity after the explosion animation completes
-.framesExplodeFlamesHi = (* + .framesExplodeFlamesLo)/2
-!swizzle .framesExplodeFlamesLo , (* - .framesExplodeFlamesLo)/2 , 2
-EntityState_ExplodeFlames
-	lda EntityStateValue1,y
-	clc
-	adc #1
-	sta EntityStateValue1,y
-	lsr
-	lsr
-	tax
-	lda .framesExplodeFlamesLo,x
-	sta EntityTypeLo,y
-	lda .framesExplodeFlamesHi,x
-	sta EntityTypeHi,y
-	rts
-
-.framesExplodeBallLo
-	!word Render_ExplodeBall0
-	!word Render_ExplodeBall1
-	!word Render_ExplodeBall2
-	!word Render_ExplodeBall3
-	!word 0	; Automatic remove of this entity after the explosion animation completes
-.framesExplodeBallHi = (* + .framesExplodeBallLo)/2
-!swizzle .framesExplodeBallLo , (* - .framesExplodeBallLo)/2 , 2
-EntityState_ExplodeBall
-	lda EntityStateValue1,y
-	clc
-	adc #1
-	sta EntityStateValue1,y
-	lsr
-	lsr
-	tax
-	lda .framesExplodeBallLo,x
-	sta EntityTypeLo,y
-	lda .framesExplodeBallHi,x
-	sta EntityTypeHi,y
-	rts
-
-!zn
-EntityState_RemoveAfter
-	lda EntityStateValue1,y
-	sec
-	sbc #1
-	sta EntityStateValue1,y
-	+lbeq EntityState_RemoveEntity
-	rts
-
-
-!zn
-.engineColourIndex !by 0
-GroundColours !by 0
-GamePaletteBank !by 0
-VBlankUpdatePaletteColours
-	jsr Video_SetAddressVideoPaletteBankRegister
-	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
-
-	lda GroundColours
-	+lbmi .noChange
-	cmp #0
-	bne .o1
-
-	; Blue water
-	jsr Video_SetAddressPalette
-	+MBus24Bit_SendPaletteRGB 128 , 128 , 255
-	+MBus24Bit_SendPaletteRGB 64 , 64 , 230
-	+MBus24Bit_SendPaletteRGB 48 , 48 , 220
-	+MBus24Bit_SendPaletteRGB 32 , 32 , 192
-	+MBus24Bit_SendPaletteRGB 0 , 0 , 168
-	jmp .noChange
-
-.o1
-	cmp #1
-	bne .o2
-
-	; Green
-	jsr Video_SetAddressPalette
-	+MBus24Bit_SendPaletteRGB 32 , 166 , 71
-	+MBus24Bit_SendPaletteRGB 29 , 148 , 63
-	+MBus24Bit_SendPaletteRGB 26 , 135 , 58
-	+MBus24Bit_SendPaletteRGB 23 , 117 , 50
-	+MBus24Bit_SendPaletteRGB 20 , 102 , 44
-	jmp .noChange
-
-.o2
-	cmp #2
-	bne .o3
-	; Desert2
-	jsr Video_SetAddressPalette
-	+MBus24Bit_SendPaletteRGB 255 , 173 , 32
-	+MBus24Bit_SendPaletteRGB 219 , 149 , 28
-	+MBus24Bit_SendPaletteRGB 176 , 120 , 22
-	+MBus24Bit_SendPaletteRGB 150 , 102 , 19
-	+MBus24Bit_SendPaletteRGB 115 , 78 , 14
-	jmp .noChange
-
-.o3
-	cmp #3
-	bne .o4
-	; Desert
-	jsr Video_SetAddressPalette
-	+MBus24Bit_SendPaletteRGB 255 , 225 , 24
-	+MBus24Bit_SendPaletteRGB 230 , 202 , 22
-	+MBus24Bit_SendPaletteRGB 207 , 182 , 19
-	+MBus24Bit_SendPaletteRGB 168 , 148 , 16
-	+MBus24Bit_SendPaletteRGB 128 , 112 , 12
-	jmp .noChange
-.o4
-	cmp #4
-	bne .o5
-	; Sky
-	jsr Video_SetAddressPalette
-	+MBus24Bit_SendPaletteRGB 250 , 250 , 250
-	+MBus24Bit_SendPaletteRGB 240 , 240 , 240
-	+MBus24Bit_SendPaletteRGB 230 , 230 , 230
-	+MBus24Bit_SendPaletteRGB 200 , 200 , 200
-	+MBus24Bit_SendPaletteRGB 170 , 170 , 170
-	jmp .noChange
-.o5
-.noChange
-	lda #-1
-	sta GroundColours
-
-	; Update the engine colours
-	; Sprites use the higher palettes
-	jsr Video_SetAddressVideoPaletteBankRegister
-	lda GamePaletteBank
-	ora #$10
-	+MBus24Bit_Send8BitValueFromA
-
-	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (kVarsEmitSpriteFrame_t_10_0_0_0_colour * kBus24Bit_VideoLayer_BytesPerPalette) + kBus24Bit_VideoLayer_BytesPerColour
-	inc .engineColourIndex
-	lda .engineColourIndex
-	and #15
-	tax
-	lda .engineColourTabLo,x
-	sta .smuc1+1
-	lda .engineColourTabHi,x
-	sta .smuc1+2
-.smuc1	jsr $1234
-
-	jsr Video_SetAddressVideoPaletteBankRegister
-	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
-	rts
-
-.engineColourTabLo
-.engineColourTabHi = .engineColourTabLo + 16
-	!word .engineColour0 , .engineColour1 , .engineColour2 , .engineColour3 , .engineColour4 , .engineColour5 , .engineColour6 , .engineColour7
-	!word .engineColour7 , .engineColour6 , .engineColour5 , .engineColour4 , .engineColour3 , .engineColour2 , .engineColour1 , .engineColour0
-!swizzle .engineColourTabLo , 16 , 2
-
-!macro MGenerateEnglineColour .level {
-	+MBus24Bit_SendPaletteRGB .level,0,0
-	+MBus24Bit_SendPaletteRGB (.level * 2) / 3,0,0
-	+MBus24Bit_SendPaletteRGB .level / 3,0,0
-}
-.engineColour0
-	+MGenerateEnglineColour 255
-	rts
-
-.engineColour1
-	+MGenerateEnglineColour 220
-	rts
-
-.engineColour2
-	+MGenerateEnglineColour 200
-	rts
-
-.engineColour3
-	+MGenerateEnglineColour 180
-	rts
-
-.engineColour4
-	+MGenerateEnglineColour 160
-	rts
-
-.engineColour5
-	+MGenerateEnglineColour 120
-	rts
-
-.engineColour6
-	+MGenerateEnglineColour 80
-	rts
-
-.engineColour7
-	+MGenerateEnglineColour 30
-	rts
-
-TriggerSamplePlay_Explosion1 !by 0
-TriggerSamplePlay_Explosion2 !by 0
-TriggerSamplePlay_Explosion3 !by 0
-
-SamplePlay_Explosion1
-!ifndef BuildTitleScreen {
-	+MPlaySample 1 , 255 , kSampleInfo0_start , kSampleInfo0_length , kSampleInfo0_frequency
-}
-	rts
-SamplePlay_Explosion2
-!ifndef BuildTitleScreen {
-	+MPlaySample 2 , 255 , kSampleInfo1_start , kSampleInfo1_length , kSampleInfo1_frequency
-}
-	rts
-SamplePlay_Explosion3
-!ifndef BuildTitleScreen {
-	+MPlaySample 3 , 255 , kSampleInfo2_start , kSampleInfo2_length , kSampleInfo2_frequency
-}
-	rts
-
-ProcessSamplePlayTriggers
-	lda TriggerSamplePlay_Explosion1
-	beq .os1
-	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion1
-	jsr SamplePlay_Explosion1
-.os1
-
-	lda TriggerSamplePlay_Explosion2
-	beq .os2
-	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion2
-	jsr SamplePlay_Explosion2
-.os2
-
-	lda TriggerSamplePlay_Explosion3
-	beq .os3
-	+MByteValueToAddress_A 0 , TriggerSamplePlay_Explosion3
-	jsr SamplePlay_Explosion3
-.os3
-	rts
-
-
-!zn
-kGameLockReticles_EntityIDs_max = 4	; Must be a power of two
-GameLockReticles_EntityIDs
-	!fill kGameLockReticles_EntityIDs_max , -1
-GameLockReticles_EntityIDs_index
-	!by 0
-
-!zn
-; Entry: X = Entity ID
-Game_TestLockReticleWithEntities
-	ldx #SortHardMaxEntries-1
-.ce1
-	lda EntityTypeHi,x
-	+lbeq .ce2
-	lda EntityTypeIndex,x
-	+lbmi .ce2
-
-	lda EntityLastScreenXPos,x
-	cmp #128
-	+lbeq .ce2
-	sec
-	sbc PlayerReticle_lastXPos
-	clc
-	adc #4
-	cmp #8
-	+lbcs .ce2
-
-	lda EntityLastScreenYPos,x
-	cmp #128
-	+lbeq .ce2
-	sec
-	sbc PlayerReticle_lastYPos
-	clc
-	adc #8
-	cmp #16
-	+lbcs .ce2
-
-	; Check it's not already in the lock list
-	txa
-	ldy #kGameLockReticles_EntityIDs_max-1
-.ce3
-	cmp GameLockReticles_EntityIDs,y
-	+lbeq .ce2
-	dey
-	+lbpl .ce3
-
-	; Add the entity ID to the list
-	ldy GameLockReticles_EntityIDs_index
-	sta GameLockReticles_EntityIDs,y
-	inc GameLockReticles_EntityIDs_index
-	lda GameLockReticles_EntityIDs_index
-	and #kGameLockReticles_EntityIDs_max-1
-	sta GameLockReticles_EntityIDs_index
-	; Play "lock" sample, which is part of "3 o'clock"
-	kSampleInfo12_startLockOffset = (kSampleInfo12_length*6)/10
-!ifndef BuildTitleScreen {
-	+MPlaySample 3 , 255 , kSampleInfo12_start + kSampleInfo12_startLockOffset , kSampleInfo12_length - kSampleInfo12_startLockOffset , kSampleInfo12_frequency
-}
-	; Early out on lock
-	rts
-
-.ce2
-	dex
-	+lbne .ce1
-	rts
-
-!zn
-Game_RenderLockReticles
-	+MBus20To32Bit1_WriteMode_A
-	+MBus20To32Bit1_SetLatch4_A
-
-	ldy #kGameLockReticles_EntityIDs_max-1
-.ce1
-	ldx GameLockReticles_EntityIDs,y
-	bmi .ce2
-
-	lda EntityTypeHi,x
-	beq .ce2
-	lda EntityTypeIndex,x
-	bmi .ce2
-
-	lda EntityLastScreenXPos,x
-	cmp #128
-	beq .ce2
-	clc
-	adc #(ScreenLandscapeOriginXPos/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth/2/2)
-	sta zeroPage_Temp4
-
-	lda EntityLastScreenYPos,x
-	cmp #128
-	beq .ce2
-	clc
-	adc #(ScreenLandscapeOriginYPos/2) - (kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight/2/2)
-	sec
-	sbc playerYPositionOffsetForSprites
-	sta zeroPage_Temp5
-
-	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_t_793_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_t_793_0_0_0_tileAddress , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , kVarsEmitSpriteFrame_t_793_0_0_0_tileHeight , kVarsEmitSpriteFrame_t_793_0_0_0_tileWidth , 0
-	jmp .ce3
-.ce2
-	; Remove any bad entries from the list
-	lda #-1
-	sta GameLockReticles_EntityIDs,y
-.ce3
-	dey
-	+lbpl .ce1
-	rts

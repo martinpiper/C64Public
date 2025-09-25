@@ -1324,7 +1324,7 @@
 			>> Appended
 		>> python ResourceGenerator\main.py tmp/Demo14FinalData.bin checksum 0x10000 0x100 2 tmp/Demo14FinalData_Checksums.a
 		> Add checks in the memory check stage
-		>> This sent and verified checksums OK. Alsothe DMA chunk sending now works.
+		>> This sent and verified checksums OK. Also the DMA chunk sending now works.
 			cd /d C:\Work\C64\VideoHardware
 			C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\main.cmp.prg
 			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FinalData.bin
@@ -1790,3 +1790,563 @@
 
 
 * Demo14: TODO: Need "lock" sample
+
+
+
+* Demo14: After player explosion, new life the player should scale in from large to the expected player screen position, no player input during this
+	.isComingFromBehindCamera
+
+
+
+
+* Demo14: SortIndexTable moved to zeropage, for speed
+
+
+
+
+* Demo14: Score display
+	Image convertor, could do with saving out debug labels that represent what tiles/colours (non-transparent ones) are where at certain coordinates.
+	This would make it easier to include extra data
+	>> ; Init the score routine
+	>> VBlankUpdateScore
+	>> .testScore / .testScoreSpeed
+
+
+
+* Demo14: ProcessSamplePlayTriggers rotate the channel used around 1-3 (0 is used for the engine)
+
+
+
+* Demo14: Canyon wall collide
+	* Explode the player
+		Yes: "Demo14\BulletsExplosions\t-731.png" "Demo14\BulletsExplosions\t-300.png" 
+		No: "Demo14\BulletsExplosions\t-509.png"  "Demo14\BulletsExplosions\t-514.png" "Demo14\Bull "Demo14\BulletsExplosions\t-528.png"etsExplosions\t-523.png" "Demo14\BulletsExplosions\t-365.png"
+			Palette 1 and 4 are problems
+		* Maybe reduce colours in the mode7 sky?
+		* Maybe upgrade the video board to have a palette or value per layer?
+			This would allow 256 colours, per layer, without raster based effects
+			* Last two bits of the palete bank as xor value using 74ls86
+			Two bits per layer, 8 bits in a new register, probably after the palette bank register
+			>> Two options, source layer pass through these bits via the layer priority selector, more logic updates...
+			>> Or other option use the final layer priority after the priority selector and use the bits from the register, much less logic...
+				> Given we know the layer priority select, do we get much benefit from adding more logic to pass through these bits?
+			* This would allow the sprites4 layer to use the upper 16 palettes, and the chars/tiles/mode7 to use the lower 16 palettes, basically by toggling the upper bit for sprites4
+				>> A test conversion with game palette 1 (16 entries), by removing the --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal and --loadpaletteraw ..\tmp\Demo14TitleChars.pal  and --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal results in 14 palettes. This would be enough to include extra explosions.
+			* This is more complex than first thought
+				* The background register, if active, would assume top two bits as always the palette bank, or have its own two-xor bits register (or values elsewhere)
+				* The PALBANK register will need to be selected without modification when writing, but can use the selected value when reading
+		* Done: @TC-14 would need updating to support Sprites4 and Sprites V9.5, it supports Sprites2 at the moment
+			>> Perfect: c:\work\BombJack\output\compareimagesForTestCase.bat 42 TC-14
+		* @TC-14  Needs some background register checks, changing colours
+			>> Given the display has palette layer expansion
+			>> Video: PALLAYERA0/1 PALLAYERB0/1 PALLAYERC0/1 PALLAYERD0/1 PALLAYERZ0/1 (for background)
+			>> c:\work\BombJack\output\compareimagesForTestCase.bat 67 TC-14
+				Looks good
+			>> kBus24Bit_VideoLayer_ExpandedPaletteLayer kBus24Bit_VideoLayer_PaletteLayers
+			>> Video_SetAddressVideoPaletteLayersRegister
+			>> Updated VBlankUpdatePaletteColours
+			>> Checked game emulation with simulation, seems OK, including the engine colour changes
+		* Done: Need to remove the extra chars/mode7 palette loads from the sprites conversions and save separate palettes
+			Before:
+				01/06/2025  08:17 pm                48 Demo14ScaledSprites4Clouds.pal
+				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game0.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game1.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game2.pal
+				01/06/2025  08:17 pm               480 Demo14ScaledSprites4Game3.pal
+				01/06/2025  08:17 pm               512 Demo14ScaledSprites4Game4.pal
+				01/06/2025  08:17 pm               288 Demo14ScaledSprites4TitleScreen.pal
+				01/06/2025  08:17 pm                20 Demo14TitleChars.pal
+			After:
+				03/06/2025  11:10 am                48 Demo14ScaledSprites4Clouds.pal
+				03/06/2025  11:10 am               416 Demo14ScaledSprites4Game0.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game1.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game2.pal
+				03/06/2025  11:11 am               416 Demo14ScaledSprites4Game3.pal
+				03/06/2025  11:11 am               448 Demo14ScaledSprites4Game4.pal
+				03/06/2025  11:10 am                96 Demo14ScaledSprites4TitleScreen.pal
+				03/06/2025  11:10 am               480 Demo14ScaledSprites4TitleScreenSprites.pal
+	>> Added all the other explosions, now UsingMaxHardwareScaleTabValue = 220
+	* Done: Reset the canyon walls to make them wide while exploding the player, to avoid the player escaping the canyon
+		+MByteValueToAddress_A 0 , CanyonOffset
+		+MByteValueToAddress_A 10 , CanyonWidth
+	* Done: Player next life sequence, scale in player from large to normal and flash the player
+		Use Player_Invulnerable?
+	* Done: Need animating explosion entities, for the player death sequence
+		A bit like the smoke trails, but their rotation frames can render different frames
+		> Non-scaled version instead, special case for the player
+			RenderSpritePlayerExplode0/1/2/3 and RenderSpritePlayerOtherExplosions
+
+
+
+* Demo14: Enemy shoots missles
+	The enemy missiles remember where the player was when launched
+	If the missle hits the player (i.e. the player has not moved out of the way) then: jsr InitGamePlayerExplode
+	* Done: ; TODO: Player collision
+
+
+
+* Demo14: Canyon, perhaps flag an output of two walls, if the offset or the offset+width change?
+	>> CanyonDoubleWallRight CanyonDoubleWallLeft
+
+
+
+* Demo14: Wall difference check only > or < depending on side
+
+
+
+
+* Demo14: Enemies in the far distance (just after spawning) should probably stay there for a second or two, perhaps move them at the player landscape speed, to give time to react
+	Then they can swoop in
+	>> Using kEntity_MaxZPos instead, is slightly better
+	> ; If the enemy is in the distance, then set it to approach slower
+
+
+
+* Demo14: Enemy missiles can quickly dip down and left/right when fired (depending on X coord), then lock onto the player
+
+
+
+
+* Demo14: Use two scaled sprite layers, each using their own palette layer
+	Entities and landacape can be separated
+	Some explosions might need to be made common by having them first in the sprite list, if the explosions are used in the landscape, for example if the player explodes into the ground
+	Group mode7 and tiles into one combiner, since they share a palette layer. Chars have to be on a separate layer for sprite priority.
+	Then the mode7 and chars would need scrolling one pixel to the left, verify with before/after screenshots of the landing sequence
+	>> Currently the title screen is on palette 0x0f, this would need to be palette 0x07 to allow the second sprite layer to use 0x08 as well as the other sprite layer using 0x10
+	>> Don't forget the other sprites4 layer bank select needs to be set when sending sprite data
+	>> In theory both layers can have their own sprite data...
+	* Palette tests with game palette 0: Normally 15 palettes
+		Mostly just landscape, plus some common sprites: 10 palettes
+			java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4Game0.pal --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_3% %SPRITES_GAME_LANDSCAPE_PALETTE_0% --writepass
+		Just player and enemies and common sprites: 6 palettes
+			java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4Game0.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_2% %SPRITES_ENEMY_1% %SPRITES_ENEMY_2% --writepass
+		>> So splitting the sprite layers does generate quite a lot of possibilities, even if the player+enemies palettes are potentially merged into one constant palette and the landscape palettes are still variable
+		>> It would allow, for example, different coloured smoke trails, more enemies that are shared across landscape types etc
+	>> Code now uses both sprite layers, palettes in the conversion bat need optimising though. Also move the palette layer bat to the normal bat.
+	>> Palette bank separation work, for sprites4 layers 1 and 2...
+		> Before:
+			 48 Demo14ScaledSprites4Clouds.pal
+			480 Demo14ScaledSprites4Game0.pal
+			512 Demo14ScaledSprites4Game1.pal
+			512 Demo14ScaledSprites4Game2.pal
+			480 Demo14ScaledSprites4Game3.pal
+			512 Demo14ScaledSprites4Game4.pal
+			160 Demo14ScaledSprites4TitleScreen.pal
+			224 Demo14ScaledSprites4TitleScreenSprites.pal
+	>> Moved common landscape graphics from SPRITES_COMMON_3 to SPRITES_GAME_LANDSCAPE_COMMON
+	>> Created new Demo14ScaledSprites4GameEntity0.pal
+		> After is a lot better!:
+			 48 Demo14ScaledSprites4Clouds.pal
+			256 Demo14ScaledSprites4Game0.pal
+			288 Demo14ScaledSprites4Game1.pal
+			352 Demo14ScaledSprites4Game2.pal
+			256 Demo14ScaledSprites4Game3.pal
+			288 Demo14ScaledSprites4Game4.pal
+			256 Demo14ScaledSprites4GameEntity0.pal
+			160 Demo14ScaledSprites4TitleScreen.pal
+			224 Demo14ScaledSprites4TitleScreenSprites.pal
+
+
+
+* Demo14: When invulnerable and the player sprite is flashing off, it stays off when landing/taking off, probably during refueling as well. It shouldn't.
+	Also the player cannot be hit by missiles during refueling and landing :)
+
+
+
+* Demo14: Try different colour smoke...
+		t-279.png uses one extra palette, so no...
+		Same with the other colour smokes.
+	Demo14\t-241.png Demo14\t-104.png Demo14\t-113.png Demo14\t-279.png
+	>> Render_WhiteSmoke2/3/4 and EntityState_RemoveAfterForSmoke
+
+
+
+
+* Demo14: >> t-1145.png ObjectDraw7 Small buildings
+
+
+
+* "C:\work\mame\mytest.exe" -wavwrite c:\temp\aburner.wav -window aburner2
+
+
+
+* Demo14: Video test pattern needs to init the palette bank layers
+
+
+
+* Demo14: Done: Now the palette usage is low again, use the real enemy missile sprite
+		>> t-177.png
+	Also add different coloured smoke
+		Darker colour at the missile to lighter colour. Perhaps use the timeout value to change the colours.
+
+
+
+
+* Demo14: Testing new sprites4 board with old video board
+	c64vh
+	C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\Demo14V10.0main.cmp.prg
+	python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py bin\Demo14V10.0Demo14FinalData.bin
+
+
+* Demo14: memory saving.
+	* Add option to remove self modifying code from the sort, this will reduce the self modifying tables and related code and allow thr sort to be under the IO easily.
+	* Move sort code to under the IO space.
+		>> Before:
+			$cf1e-$cfff:$e2
+			$d6bf-$dfff:$941
+			$fa70-$ffff:$590
+		>> After:
+			$cc9a-$cfff:$366
+			$d95b-$dfff:$6a5
+			$fa70-$ffff:$590
+
+
+
+* Demo14: GameIntro memory saving by reducing tables used?
+	Also check the title screen tables are not included in the game build
+	Before:
+		$cdd2-$cfff:$22e
+		$d95b-$dfff:$6a5
+		$fa7a-$ffff:$586
+	After:
+		$c643-$cfff:$9bd
+		$d95b-$dfff:$6a5
+		$fa7a-$ffff:$586
+
+
+
+
+* Demo14: Game over sprites can replace the player palette
+	Since the player is not visible. This might mean uploading a new palette and restoring from a backup.
+		Or using a new range of palette banks just for the game over part
+	Fade the palettes to be darker?
+		Can fade a smaller range of colours per frame...
+	>> Moved sprites to assets GameOver directory and added to SPRITES_COMMON_3, one more palette used in the entity palette
+	>> A bit like .gameToRefueling
+	* Demo14: Game Over needs to handle the canyon render
+
+
+
+
+* Demo14: Lives
+	A couple of support routines to flag drawing a character, or two, at certain addresses
+	>> VBlankUpdateCharAtFlag etc
+
+
+
+* Demo14: Final carrier landing
+	Game complete sequence
+	>> InitGameComplete
+	>> GameCompleteStageNumber
+
+
+
+* Demo14: Player speed/throttle can use a sprite in the entity layer and just change the width, without scale
+	Will need the precise graphic from the game when at full throttle
+	>> SpeedDisplayRenderSpritesDirectMode
+
+
+
+
+* Demo14: Radar
+	>> RadarDisplayRenderSpritesDirectMode and calculateRadar in python code
+
+
+
+* Demo14: Game complete, level out first, then do not alter the carrier Y offset from a large positive value...
+
+
+
+* Demo14: Mission complete sprite
+	>> MissionCompleteDisplayRenderSpritesDirectMode
+
+
+
+
+* Demo14: Revisit the potential to round up sprites4 width and height during conversion to reduce the number of sprite width/height scale tables needed
+	Gauge render performance versus memory saving.
+	While C64 main RAM is very tight, sprite RAM is actually only currently half full.
+	>> But just blindly rounding up sprite sizes if they don't have any neighbouring values is wasteful of drawing performance
+	* A better way is to run the conversion passes, generate the optimised table list based on the code, and then generate an allowed list of sizes based on what is finally used
+		If there are no adjacent sizes, then don't consider them.
+		Then there would have to be a second conversion and build pass which uses those allowed sizes
+		The best place for that allowed list generation is in OptimiseSprite4ScaleTables, which can prioritise references in the code
+	>> ImageToBitplane: allowedSizes and altered setupInputImage()
+	>> --allowedSizesClear --allowedSizesFileAdd "C:\Work\C64\VideoHardware\tmp\Demo14ScaledSprites4SheetOptimised.txtTables.allowed.txt"
+	* Will need to add sizes for the UI elements, that rely on fixed sizes without scale table references...
+		>> --allowedSizesClear --allowedSizesFileAdd "Demo14\more allowed sizes.txt" --allowedSizesFileAdd ..\tmp\Demo14ScaledSprites4SheetOptimised.txtTables.allowed.txt
+	>> Before:
+		$cd83-$cfff:$027d
+		$da7b-$dfff:$0585
+		$fbe7-$ffff:$0419
+		62,545 ScaledSprites4.bin7
+	>> After:
+		$b37a-$cfff:$1c86
+		$da7b-$dfff:$0585
+		$fbe7-$ffff:$0419
+		3,168 ScaledSprites4.bin8
+	>> There are mostly minor expected differences in the output
+
+
+
+* Demo14: Stage 4 bomber aircraft
+	del "C:\temp\afterburnerarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburnerarcade\bomber.png"
+	>> $b9f7-$cfff:$1609
+
+
+
+
+* Demo14: As RadarDisplayRender_radarSprite* start to enter the range $dd00 (CIA2) the radar start to display bad frames.
+	This is worrying because the ZPProcessorPort setting should not be allowing writes to the RAM underneath the IO...
+	Is this because the copy to RAM is not working, or is this because the code is corrupting this data during the game?
+	>> C1AF  AE 80 62 LDX $6280 >(2B 00 0A 05)<          56: 	ldx landscapeRotationsFrame
+		DBF0 :  C0 80 C0 80 80 00 00 80   00 C0 40 40 C0 C0 C0 C0
+		>> DC00 :  1F 10 C0 C0 C0 C0 C0 C0   C0 80 00 00 40 40 40 40
+		DC10 :  00 40 00 00 00 40 00 40   40 C0 C0 40 00 5F 79 65	
+	>> The two bytes at $dc00 $dc01 are wrong, when did they get corrupted?
+	>> I suspect machine.getBus().write(0xdc00, joystickBits); and the other more general cases "machine.getBus().write(0xdc"
+		> It was this, needed to add processor port handling and explicit writes to the IO
+
+
+
+* Demo14: River, like the hills special case flag, the river can have a similar update but adds water tiles...
+	Vary the width a bit and wiggle it, perhaps have two paths that wiggle
+	>> LandscapeMapAddRiver
+
+
+
+* Demo14: Enemies that are facing forward should really come from behind the player, zoom forward for a bit ignoring player speed, roll left/right, then fall back to the regular handler
+	EntityInit_EnemyFromBehind
+
+
+
+
+* Demo14: Smaller sprite timeout graphics
+
+
+
+
+* Demo14: Music_Play2 Music_Play3 Music_Play6 Music_GameChoice
+
+
+
+
+* Demo14: Track the current music time, initiate a fade out just before the end, then start a new piece of music when the stage changes using Music_GameChoice
+	>> Music_CheckTime
+
+
+
+* Demo14: Stage 4 bomber aircraft
+	Optional roll left or right, or fly straight, needed for formation
+	> Maybe the upper bits of th enemy type can index (shifted down) into a tick function to assign to the entity?
+	> I think just expand the types because some enemy types don't make sense with roll left/right, some will need animation (helicopters)
+
+
+
+* Demo14: Reduce size of MExternalMemoryFiles_CopyRunFileFromExternalMemory
+	* And remove the need for "-$100 because of kExternalMemoryFiles_OnlyCheckHighAddress"
+		$cd41-$cfff:$02bf
+		$dfdc-$dfff:$0024
+		$fcab-$ffff:$0355
+
+
+
+* Demo14: Exponential score related to speed
+	0 <= landscapeFrameSpeed <= 7
+	ScoreAdd_Units rename ScoreAdd_Speed
+
+
+
+* Demo14: Start of game, first stages, should be quite easy, very few enemy missiles. Not that rapidly firing, etc.
+	Each stage gets a bit harder, more enemy missles, faster firing etc.
+	More spawned enemies etc
+	Need to count active enemy missiles
+		>> EntityState_EnemyShootMissleAfter
+			>> Render_MissileFacing
+		EnemyMissileCount !by 0
+		MaxEnemyMissiles !by 0
+		>> EnemyMissilesRecycleSpeed
+	Note: SpawnList_enemyTypesIndex used by CheckSpawnEnemy indexing into EntityType_DrawAddress
+	Note: jsr EntityInit_EnemyShootMissleAfter is currently being used as a common entity init function
+		>> EntityType_InitAddressLo/EntityType_InitAddressHi
+	* There is quite a lot of duplicate common code for .gotFreeSlot1 and .gotFreeSlot2, the init function can set much of this with a common utility function...
+		>> SpawnEnemyCommonInit
+	>> EntityInit_EnemyChoose and EntityInit_EnemyChooseOnlyRoll
+	* Choose near or far, part of the init routine
+
+
+
+* Demo14: Normalise speed to 3 when not in canyon
+	>> PlayerSpeedDecrease PlayerSpeedIncrease
+	>> PlayerSpeedNormaliseCheck
+
+
+
+* Demo14: memory saving.
+	* Entity update code, move to under the IO
+		> This will need all entity updates to avoid IO access, for example sample playing
+	>> Entity sort instead
+
+
+
+
+* Demo14: Stage should not advance if it is "game over", or if the player is exploding.
+	RunGameLanding_CommonFrame_GameOver check
+
+
+
+* Demo14: Sometimes choose the "Fire!" sample
+
+
+
+* Demo14: Mission complete uses char screen scrolls to show pictures, perhaps these could smooth scroll? With acceleration?
+	>> Debug_RunMissionCompletePictures
+		.targetXPosNext* .targetYPosNext* .targetTimeNext
+
+
+
+* Demo14: Hand lag...
+	Perhaps maintain a hand X/Y position from the hoystick input direction
+	This could be a X/Y accumulated and clamped pos/neg range so that the hand displays left/middle/right between -4 to 4 ro something similar
+	This would probably be better than following the plane...
+
+
+
+
+* Demo14: Music assets into build release bat, then release a new SDK
+
+
+
+
+* Demo14: Hiscore display and entry
+	* Note how the "insert coin!" message flashes over the hiscore table as it scrolls up behind
+		>> The "Best fighters" and the "score name hit rank" headers scroll up without horizontal movement
+		>> Each row of the table has alternate horizontal movement
+			This could be APU updated
+		>> The radar/score/ammo/credit display is removed for this part
+		>> If the flashing "insert coin!" was a sprite this would mean the hiscore table can just be in the chars layer
+			There is an spare chars screen (top right) that could be used for these hiscore table assets
+			>> Don't make the "insert coin" message a sprite since the game sprite priority cannot be behind and infront of the score table
+				Instead just don't flash the insert coin message until after the score table finishes scrolling.
+		>> What is the maximum score? With cheats enabled? Auto kill all enemy? Maximum speed?
+		>> The score table would be easier with two chars layers, but it is possible with one layer and APU splits.
+	>> To aid the left/right scroll of the score table entries, the screen data for the entries has been shifted to the left. To give extra empty space to the left and right.
+	>> Also had to move the score table entries down one row, to aid in the software raster split. This avoids having to use complicated APU updates.
+	>> C64\VideoHardware\asm\AfterBurner\ScoreTable.a	InitScoreTable RunScoreTable
+
+
+
+* Demo14: Hiscore entry
+	* Done: Move score and total hits into lower stack, which should be safe from any game data
+		>> GameScore_Value and GameTotalHits
+		>> Also removed the jsr InitialiseMachine from title and game, it's really not needed since main14.a does this
+		>> Also stopped the engine sound when landing for mission complete
+	* Need to restore the correct characters and screens after mission complete
+	* Title screen start will need to check if hiscore entry is needed
+		>> mainLoop_backToTitleScreen no longer disables layers, because any hiscore entry will need the game displayed in the background
+		>> CheckAndRunHiScoreScoreTableEntry
+		* Find the score position
+			* Need default score table data in a suitable format, probably in the external RAM
+				>> AfterBurner\ScoreTableData.a
+				>> resourceFileOffset_ScoreTableData_bin resourceFileSize_ScoreTableData_bin
+				>> kGameScore_Value_size GameName_size GameTotalHits_size
+	; Done: Try to find a suitable position
+	; Done: Shift entries down...
+	; Done: Write new score and hit with '=' for the name...
+
+	; In init...
+	; Done: Render the current score table data into the screen
+		>> Colour first, with highlight test
+	* Done: Fade music
+	* Done: Highlight the character to place
+	* Not done: Flash to yellow in score table
+	* Done: Place
+	* Done: After last place, go to end
+	* Done: or erase
+	* Done: or end
+	; At end...
+	; Done: Write back score data to the external RAM
+
+
+
+* Demo14: Animated hand and the mission complete screen could both use characters.
+	There are two options, use one char layer and don't display the score/status etc. Or add the other chars layer with the spare combiner.
+		The arcade has 17 tile map layers! :)
+	>> Done: c64\VideoHardware\assets\Demo14\MissionComplete
+		>> c:\work\mame\mytest.exe -window -debug aburner2
+			Select last stage
+		>> Note in the arcade when displaying the ending pictures the score/status/hud is actually not displayed
+			This means it is not necessary to add a second chars layer for that
+			>> c64\VideoHardware\assets\Demo14\MissionComplete
+		>> Since these palettes are very empty, the screens can just be added 192 Demo14ScaledSprites4TitleScreen.pal 256 Demo14ScaledSprites4TitleScreenSprites.pal
+			>> Specifically Demo14ScaledSprites4TitleScreen.pal and intermediate Demo14TitleChars.pal
+		>> C:\Work\C64\VideoHardware\asm\main14MissionComplete.a
+		>> Debug_RunMissionCompletePictures
+	>> Done: Hand is displayed on a separate screen with the other chars screen active
+		>> c64\VideoHardware\assets\Demo14\Hand
+		>> Since the Demo14ScaledSprites4GameEntity0.pal is 448 bytes, and we are probably not going to add any more enemy sprites due to main RAM limits, the hand can be added to the entities, like the game over sprites
+		>> RenderHand TitleFramesTimeout
+
+
+
+* Demo14: Stages
+	* Done: Add some more game map data
+	* Done: Add a "start stage" flag, which triggers the stage increment
+		>> kLandscapeMapRowsData_flags_doStage
+	* Done: Stage text
+		Adding 8x16 charset pushes the Demo14FinalData.bin file over 2MB, so Demo14FileResources.bin is not included for now
+		TODO: Need to split the Demo14FileResources.bin resource sending in main14.a
+	* Done: Ready text
+		>> Observing: 01:09, After death and during the invulnerable player scale in, there is a rapidly flashing yellow "ready", the Y is one char to the left of the stage units number
+	* Done: Stage bonus text, recording... Figure out mame monitor command to inject suitable text?
+		>> Find "8x16 charset" in TODO/Done.txt
+		"HIT COUNTS  2" Decreases the "hit" number display on a stage. The "1" aligns with the right hand score number
+		"POINTS  20000" "C:\Users\marti\Pictures\Screenshots\Screenshot 2025-08-03 164534.png"
+		* Done: Would need hit counter...
+		>> MTextUpdatesDeltaProcess8x16
+			>> Text_Hits_Pos TextAddHitNumber
+			>> TextResetHits
+	* Done: The refueling weapons indicator only happens during the landing or refueling state
+		Observing: 01:39 light green text "reload weapons" flashing a bit rapidly just above the 8x16 "stage" text, starts two chars to the left.
+			Will need extra light green colour
+	* Refueling sound effect?
+	* Done: Stage sound effect
+		TriggerSamplePlay_Ping
+		Note the ping sound in the arcade doesn't use samples, so mame with -wavwrite was needed so capture the sound.
+		This was then imported into MilkyTracker, the wav imported, the sound effect highlighted and the crop function used
+		The sample was then significantly downsampled to make it a similar byte size compared to the shorter sounds effects, so prefer more quality for the voices.
+	* Done: 8x8 stage indicator
+	* The game screen init can be in the title screen
+	* IncludeVBlankUpdateTextColours moves the game screen init to the title screen code
+
+
+
+* Demo14: Get Demo14 running on real hardware again:
+	>> Will need to split the boot data into at least two chunks...
+		> CheckForHWData CheckForGameData
+			c64vh
+			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FileResources_ForHW1.bin
+			C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\main.cmp.prg
+			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FinalData.bin
+	>> The mission complete data DMA for resourceFileOffset_ResourcesMissionComplete works on real hardware, with the APU_ResetDisableClear and "; Only show the clouds, not the tiles"
+	>> The hiscore table scroll with raster splits also works, MScoreTableEntryUpdate
+
+
+
+* Demo14: Hiscore entry and display, perhaps fade or darken the palettes for the currently chosen palette bank for the two sprites layers and the sky?
+	> This leaves the title screen tiles alone.
+	> This would mean having all the palettes in the expansion RAM
+	> Plus some quite complicated code to extract, darken, and merge back palettes...
+	>> GamePaletteBank is now a preserved variable
+	>> RunPaletteFade PaletteFade_Restore
+
+
+
+* Demo14: Hiscore entry and display, perhaps fade or darken the palettes for the currently chosen palette bank for the two sprites layers and the sky?
+	>> Sky and landscape palette, precise RGB values, will need to use whatever the current game data is...
+	>> RunPaletteFade
+
+
+
+* Demo14: Mission Complete needs to restore the correct characters...
+	>> resourceFileOffset_ResourcesMissionCompleteRestore

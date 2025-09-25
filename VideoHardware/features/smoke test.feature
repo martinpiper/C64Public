@@ -819,7 +819,7 @@ Feature: Smoke test
     And audio refresh is independent
     Given video display add joystick to port 1
     Given video display add CIA1 timers with raster offset 0 , 0
-#    Given video display saves debug BMP images to leaf filename "tmp/frames/Demo9-"
+    Given video display saves debug BMP images to leaf filename "tmp/frames/Demo9-"
     Given property "bdd6502.bus24.trace" is set to string "true"
     Given I enable trace
     Given I disable trace
@@ -1332,11 +1332,20 @@ Feature: Smoke test
 #    Given a new audio expansion with registers at '0x8000' and addressEx '0x40'
     Given a new audio expansion
     And audio mix 85
+    # Note: The current built hardware is exact for the registers from the video layer (0x01 EBBS) but not exact for the sample memory (0x04)
+    And the audio expansion uses exact address matching
+
+	Given a new audio2 1 expansion with registers at '0x8000' and addressEx '0x06'
+    And the audio2 1 expansion uses exact address matching
+    Given a new audio2 2 expansion with registers at '0x8100' and addressEx '0x07'
+    And the audio2 2 expansion uses exact address matching
+
     Given video display processes 8 pixels per instruction
     Given video display refresh window every 32 instructions
     Given video display does not save debug BMP images
     Given video display add joystick to port 1
     And video display add space as joystick port 2
+    Given video display add CIA1 timers with raster offset 0 , 0
     Given video display saves debug BMP images to leaf filename "tmp/frames/TC-17-"
     Given property "bdd6502.bus24.trace" is set to string "true"
     Given I have a simple overclocked 6502 system
@@ -1353,7 +1362,8 @@ Feature: Smoke test
     Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
     And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
     And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
-    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
+#    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
+    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
     And trim "0" bytes from the start of temporary memory
     And add temporary memory to the 32 bit interface memory address '0x0'
 	# Debug: Simulate a memory checksum failure
@@ -1362,20 +1372,32 @@ Feature: Smoke test
 	# Comment out the above after debugging checksum failure
     And enable user port bus debug output
     And enable APU mode
+    # Stop Audio2 from conflicting...
+    And the APU uses exact address matching
     And APU clock divider 1
     And APU memory clock divider 2
 
 
-    # Layer 3
+    # Note: If comparing simulated output with emulated output, some layers need a merge layer
+    Given add a 2-to-1 merge layer with registers at '0xa200'
+    And the layer has 16 colours
+    And the layer has overscan
+    # Layer 3-1
     Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
     And the layer has 16 colours
     And the layer has overscan
     And the layer uses exact address matching
-    # Layer 2
+    # Layer 3-0
     Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
     And the layer has 16 colours
     And the layer has overscan
     And the layer uses exact address matching
+	# Layer 2
+    Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+#    And the layer displays a debug window
     # Layer 1
     Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
     And the layer has 16 colours
@@ -1403,28 +1425,61 @@ Feature: Smoke test
     Given show video window
 #    Given randomly initialise all memory using seed 4321
 
-    # Sprites4
     # Exact address first
+	#  Music
+    # Audio2 1 data
+    Given load binary file "assets\Demo14\Audio\aburner_left.vcd" into temporary memory
+    Given write data from temporary memory to address24 '0' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
+    Given load binary file "assets\Demo14\Audio\aburner_left3.vcd" into temporary memory
+    Given write data from temporary memory to address24 '896987' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
+    Given load binary file "assets\Demo14\Audio\aburner_left6.vcd" into temporary memory
+    Given write data from temporary memory to address24 '896987+1343276' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
+
+    # Audio2 2 data
+    Given load binary file "assets\Demo14\Audio\aburner_right.vcd" into temporary memory
+    Given write data from temporary memory to address24 '0' and addressEx '0x07' using bank switch register at '0x8130' and addressEx '0x01'
+    Given load binary file "assets\Demo14\Audio\aburner_right3.vcd" into temporary memory
+    Given write data from temporary memory to address24 '873536' and addressEx '0x07' using bank switch register at '0x8130' and addressEx '0x01'
+    Given load binary file "assets\Demo14\Audio\aburner_right6.vcd" into temporary memory
+    Given write data from temporary memory to address24 '873536+1326593' and addressEx '0x07' using bank switch register at '0x8130' and addressEx '0x01'
+
+
+    # Sprites4
 	Given write data byte '0x00' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x00' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x01' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x01' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin1" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x02' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x02' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin2" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x03' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x03' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin3" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x04' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x04' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin4" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x05' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x05' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin5" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x06' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x06' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin6" to 24bit bus at '0x0000' and addressEx '0x05'
 	Given write data byte '0x07' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x07' to 24bit bus at '0xb807' and addressEx '0x01'
     Given write data from file "tmp\ScaledSprites4.bin7" to 24bit bus at '0x0000' and addressEx '0x05'
+	Given write data byte '0x08' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x08' to 24bit bus at '0xb807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin8" to 24bit bus at '0x0000' and addressEx '0x05'
+	Given write data byte '0x09' to 24bit bus at '0x8807' and addressEx '0x01'
+	Given write data byte '0x09' to 24bit bus at '0xb807' and addressEx '0x01'
+    Given write data from file "tmp\ScaledSprites4.bin9" to 24bit bus at '0x0000' and addressEx '0x05'
 
-	#  Music
+
     # rem Then non-exact audio hardware using the EBBS
-	Given write data from file "tmp/target/exportedSoundEffectsAfterBurnerSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
+    Given write data from file "tmp/target/exportedSoundEffectsAfterBurnerSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
+
 
     # Init combiners, for hardware simulation compatibility
     Given write data byte '0x60' to 24bit bus at '0xa200' and addressEx '0x01'
@@ -1433,6 +1488,7 @@ Feature: Smoke test
     Given write data byte '0x00' to 24bit bus at '0xa203' and addressEx '0x01'
 
     # Palettes
+	# For chars, tiles, mode7
     Given write data byte '0x00' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x01' to 24bit bus at '0x9e0c' and addressEx '0x01'
@@ -1443,21 +1499,44 @@ Feature: Smoke test
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x04' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
-    Given write data byte '0x0f' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data byte '0x05' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x06' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x07' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
 
     # Sprite palettes: Video_SetAddressVideoPaletteLayersRegister
     Given write data byte '0x10' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x11' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game1.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x12' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game2.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x13' to 24bit bus at '0x9e0c' and addressEx '0x01'
-    Given write data from file "tmp\Demo14ScaledSprites4Game3.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x14' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x15' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x16' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4GameEntity0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x17' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreenSprites.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+
+    Given write data byte '0x08' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game0.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x09' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game1.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x0a' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game2.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x0b' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game3.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x0c' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4Game4.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
-    Given write data byte '0x1f' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data byte '0x0d' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4Game5.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+    Given write data byte '0x0f' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreenSprites.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
 
 
@@ -1498,6 +1577,124 @@ Feature: Smoke test
     Given write data byte '0x00' to 24bit bus at '0xa014' and addressEx '0x01'
     Given write data byte '0x1f' to 24bit bus at '0xa015' and addressEx '0x01'
 
+    When enable remote debugging
+#    And wait for debugger connection
+#    And wait for debugger command
+
+    And I enable trace with indent
+
+    # This allows the last frame to be observed and window zoomed/resized
+#    When rendering the video until window closed
+
+    # This allows code to be executed until the window is closed, with the option of saving debug BMP files
+    Given I disable trace
+    Given property "bdd6502.bus24.trace" is set to string "false"
+    Given video display does not save debug BMP images
+    Given video display processes 24 pixels per instruction
+#    Given video display processes 16 pixels per instruction
+#    Given video display processes 8 pixels per instruction
+    Given limit video display to 60 fps
+#    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
+    # ForHW chunks
+#    When I execute the procedure at start until return
+    When I execute the procedure at start for no more than 1000000 instructions until PC = CheckForGameData
+    # Game memory chunk
+    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
+    And trim "0" bytes from the start of temporary memory
+    And add temporary memory to the 32 bit interface memory address '0x0'
+    Then I continue executing the procedure until return
+
+
+
+
+
+  @Demo15
+  Scenario: Test BitmapRGB
+    Given clear all external devices
+#    Given a new C64 video display
+#    And show C64 video window
+#    And force C64 displayed bank to 3
+    Given a new video display with overscan and 16 colours
+    Given set the video display to RGB colour 5 6 5
+    Given set the video display with 32 palette banks
+    And the display uses exact address matching
+    Given the display has palette layer expansion
+    Given the display has RGB background functionality
+    And enable video display bus debug output
+#    Given a new audio expansion with registers at '0x8000' and addressEx '0x40'
+#    Given a new audio expansion
+#    And audio mix 85
+    # Note: The current built hardware is exact for the registers from the video layer (0x01 EBBS) but not exact for the sample memory (0x04)
+ #   And the audio expansion uses exact address matching
+
+    Given video display processes 8 pixels per instruction
+    Given video display refresh window every 32 instructions
+    Given video display does not save debug BMP images
+    Given video display add joystick to port 1
+#    And video display add space as joystick port 2
+    Given video display add CIA1 timers with raster offset 0 , 0
+    Given video display saves debug BMP images to leaf filename "tmp/frames/TC-18-"
+    Given property "bdd6502.bus24.trace" is set to string "true"
+    Given I have a simple overclocked 6502 system
+    And I load prg "bin/main.prg"
+    And I load labels "tmp/main.map"
+    Given I am using C64 processor port options
+    Given a ROM from file "C:\VICE\C64\kernal" at $e000
+    Given a ROM from file "C:\VICE\C64\basic" at $a000
+    Given a CHARGEN ROM from file "C:\VICE\C64\chargen"
+    Given add C64 hardware
+    And That does fail on BRK
+    And I enable uninitialised memory read protection with immediate fail
+#    Given a user port to 24 bit bus is installed
+    Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
+    And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
+    And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
+#    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
+#    And trim "0" bytes from the start of temporary memory
+#    And add temporary memory to the 32 bit interface memory address '0x0'
+    And enable user port bus debug output
+    And enable APU mode
+    And the APU uses exact address matching
+    And APU clock divider 1
+    And APU memory clock divider 2
+
+    Given add a BitmapRGB background with registers at '0xa300' and addressEx '0x03'
+    # Note: If comparing simulated output with emulated output, some layers need a merge layer
+#    Given add a 2-to-1 merge layer with registers at '0xa200'
+#    And the layer has 16 colours
+#    And the layer has overscan
+    # Layer 3-1
+    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+    # Layer 3-0
+#    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+#    And the layer has 16 colours
+#    And the layer has overscan
+#    And the layer uses exact address matching
+	# Layer 2
+    Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+#    And the layer displays a debug window
+    # Layer 1
+    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+    # Layer 0
+    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+#    And the layer displays a debug window
+
+    Given show video window
+#    Given randomly initialise all memory using seed 4321
 
     When enable remote debugging
 #    And wait for debugger connection
@@ -1517,4 +1714,6 @@ Feature: Smoke test
 #    Given video display processes 8 pixels per instruction
     Given limit video display to 60 fps
 #    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
+    And audio refresh window every 0 instructions
+    And audio refresh is independent
     When I execute the procedure at start until return

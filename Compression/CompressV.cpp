@@ -10,6 +10,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
+#include <math.h>
 #include "CompressV.h"
 #include "DecompressV.h"
 

@@ -158,6 +158,39 @@
 }
 
 
+!macro MRenderFixedSpriteVariableWidthInX .palette , .xpos, .ypos , .flipX , .flipY , .address , .tileWidth , .tileHeight {
+!if >.xpos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBX
+}
+!if >.ypos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBY
+}
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	; Shows sprite timeout
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	+MBus24Bit_Send8BitValue <.ypos
+	+MBus24Bit_Send8BitValue .tileHeight
+	; X pos and size
+	+MBus24Bit_Send8BitValue <.xpos
+	+MBus24Bit_Send8BitValueFromX
+	; Address
+	+MBus24Bit_SendLE24BitValue .address
+	; Inv scales
+	+MBus24Bit_Send8BitValue $20
+	+MBus24Bit_Send8BitValueFromA	; Note the usage of the previous value in A...
+	; Stride
+	+MBus24Bit_Send8BitValue .tileWidth-1
+}
+
 !macro MRenderFixedSpriteWithStride .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
 !if >.xpos != 0 {
 !set .palette = .palette | kBus24Bit_Sprites2_MSBX
@@ -283,6 +316,95 @@
 .noMSBXTweak2
 }
 
+
+!macro MAdjustObjectYByNeg .heightTab , .heightShifts {
+!if .heightShifts >= 0 {
+	lda .heightTab-1,x
+;	+lbeq ObjectDrawReturn
+!if .heightShifts > 0 {
+!for .i , .heightShifts {
+	lsr
+}
+}
+	sta .smYTweak2+1
+	lda zeroPage_Temp4
+	sec
+.smYTweak2	sbc #0
+	sta zeroPage_Temp4
+	bcs .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBYTweak2
+}
+}
+
+!macro MAdjustObjectYByPos .heightTab , .heightShifts {
+!if .heightShifts >= 0 {
+	lda .heightTab-1,x
+;	+lbeq ObjectDrawReturn
+!if .heightShifts > 0 {
+!for .i , .heightShifts {
+	lsr
+}
+}
+	sta .smYTweak2+1
+	lda zeroPage_Temp4
+	clc
+.smYTweak2	adc #0
+	sta zeroPage_Temp4
+	bcc .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBY
+	sta zeroPage_Temp3
+.noMSBYTweak2
+}
+}
+
+
+!macro MAdjustObjectXByNeg .widthTab , .widthShifts {
+!if .widthShifts >= 0 {
+	lda .widthTab-1,x
+;	+lbeq ObjectDrawReturn
+!if .widthShifts > 0 {
+!for .i , .widthShifts {
+	lsr
+}
+}
+	sta .smXTweak2+1
+	lda zeroPage_Temp5
+	sec
+.smXTweak2	sbc #0
+	sta zeroPage_Temp5
+	bcs .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBYTweak2
+}
+}
+
+!macro MAdjustObjectXByPos .widthTab , .widthShifts {
+!if .widthShifts >= 0 {
+	lda .widthTab-1,x
+;	+lbeq ObjectDrawReturn
+!if .widthShifts > 0 {
+!for .i , .widthShifts {
+	lsr
+}
+}
+	sta .smXTweak2+1
+	lda zeroPage_Temp5
+	clc
+.smXTweak2	adc #0
+	sta zeroPage_Temp5
+	bcc .noMSBYTweak2
+	lda zeroPage_Temp3
+	eor #kBus24Bit_Sprites2_MSBX
+	sta zeroPage_Temp3
+.noMSBYTweak2
+}
+}
 
 !macro MRenderSpriteWithStrideNoScalePositionsX2 .palette , .xpos, .ypos , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride , .xposTweak {
 !if .flipX != 0 {

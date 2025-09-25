@@ -1,6 +1,12 @@
 # pip install pyquaternion
 # pip install graphics.py
 import random
+# pip install pypng
+import png
+# pip install Pillow
+#from PIL import Image, ImageDraw
+import PIL.Image
+import PIL.ImageDraw
 
 from pyquaternion import Quaternion
 import math
@@ -12,6 +18,8 @@ renderFlagTitle = False
 
 renderFlagLandscape = False
 #renderFlagLandscape = True
+
+calculateRadar = False
 
 
 def insideScreen(p):
@@ -64,9 +72,71 @@ binaryDataFile.write("MW2000-AfterBurner".encode())
 # Check size over 64K by adding lots of extra blank data at the start
 # binaryDataFile.write(bytearray(32768))
 
-
+radarWidth = 46
+radarHeight = 46
+shiftHalf = False
 def commonCalculateLandscape():
-    global win, currentLandscapeLookup, x, realZ, realX, hardwareScale, maxHardwareScale , frameXMod
+    global win, currentLandscapeLookup, x, realZ, realX, hardwareScale, maxHardwareScale, frameXMod, calculateRadar
+    if calculateRadar:
+        img = PIL.Image.new('RGB', (radarWidth, radarHeight), (255, 0, 255))
+        draw = PIL.ImageDraw.Draw(img)
+        coordx1 = math.cos(math.radians(rotationZ)) * -(radarWidth/2)
+        coordy1 = math.sin(math.radians(rotationZ)) * -(radarWidth/2)
+        coordx2 = math.cos(math.radians(rotationZ)) * (radarWidth/2)
+        coordy2 = math.sin(math.radians(rotationZ)) * (radarWidth/2)
+        if shiftHalf:
+            coordx1 += 0.5
+            coordy1 += 0.5
+            coordx2 += 0.5
+            coordy2 += 0.5
+        draw.line((coordx1 + (radarWidth/2), coordy1 + (radarHeight/2), coordx2 + (radarWidth/2), coordy2 + (radarHeight/2)), fill=(255,255,255))
+        # Let's draw some horizon ground markers too
+        realX = -(radarWidth/4)
+        realY = (radarWidth/7)
+        coordx1 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy1 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        realX = (radarWidth/4)
+        realY = (radarWidth/7)
+        coordx2 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy2 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        if shiftHalf:
+            coordx1 += 0.5
+            coordy1 += 0.5
+            coordx2 += 0.5
+            coordy2 += 0.5
+        draw.line((coordx1 + (radarWidth/2), coordy1 + (radarHeight/2), coordx2 + (radarWidth/2), coordy2 + (radarHeight/2)), fill=(255,255,255))
+
+        realX = -(radarWidth/4)
+        realY = (radarWidth/5)
+        coordx1 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy1 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        realX = (radarWidth/4)
+        realY = (radarWidth/5)
+        coordx2 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy2 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        if shiftHalf:
+            coordx1 += 0.5
+            coordy1 += 0.5
+            coordx2 += 0.5
+            coordy2 += 0.5
+        draw.line((coordx1 + (radarWidth/2), coordy1 + (radarHeight/2), coordx2 + (radarWidth/2), coordy2 + (radarHeight/2)), fill=(255,255,255))
+
+        realX = -(radarWidth/4)
+        realY = (radarWidth/4)
+        coordx1 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy1 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        realX = (radarWidth/4)
+        realY = (radarWidth/4)
+        coordx2 = (math.cos(math.radians(rotationZ)) * realX) - (math.sin(math.radians(rotationZ)) * realY)
+        coordy2 = (math.sin(math.radians(rotationZ)) * realX) + (math.cos(math.radians(rotationZ)) * realY)
+        if shiftHalf:
+            coordx1 += 0.5
+            coordy1 += 0.5
+            coordx2 += 0.5
+            coordy2 += 0.5
+        draw.line((coordx1 + (radarWidth/2), coordy1 + (radarHeight/2), coordx2 + (radarWidth/2), coordy2 + (radarHeight/2)), fill=(255,255,255))
+
+    #math.cos(math.radians(rotationZ))
     if renderFlagLandscape:
         win = GraphWin(width=512, height=512)
         win.setCoords(0, 256, 256, 0)
@@ -151,6 +221,9 @@ def commonCalculateLandscape():
         #        win.getMouse()
         win.close()
 
+    if calculateRadar:
+        img.save("../Radar/radar"+str(int(rotationZ))+".png" , 'png')
+
     return currentLandscapeLookup
 
 
@@ -209,18 +282,27 @@ def commonCalculateRunway():
     return currentLandscapeLookup
 
 
-
 marginXLeft = 16
-marginXRight = 48
+marginXRight = 32   # Because the canyon has large objects we expand the right hand edge a bit
 marginYTop = 48
 marginYBottom = 48
 rotationZ = 0
 frameXMod = 0
 
+
 # Debug
 landscapeHeight = 64
 landscapeHeight = 128
 #currentLandscapeLookup = commonCalculateRunway()
+
+
+# Debug rotated landscape frames
+#calculateRadar = True
+#frameXMod = 0
+#marginYBottom = 32
+#rotationZ = 45.0
+#currentLandscapeLookup = commonCalculateLandscape()
+
 
 
 # Canyon sequence
@@ -236,6 +318,8 @@ while frameXMod < 8:
     binaryDataFile.write(currentLandscapeLookup)
     frameXMod = frameXMod + 1
 
+
+marginXRight = 48
 
 
 # Takeoff (and landing) frames
@@ -269,6 +353,7 @@ frameXMod = 0
 marginYBottom = 32
 
 # Rotation
+calculateRadar = True
 while rotationZ < 360.0:
     currentLandscapeLookup = commonCalculateLandscape()
 
@@ -294,6 +379,7 @@ while rotationZ >= 180:
 
 print("")
 
+calculateRadar = False
 landscapeHeight = 0
 while landscapeHeight < 8:
     print("landscapeScrollX" + "{:03d}".format(int(landscapeHeight)) + "Frames , ", end='')

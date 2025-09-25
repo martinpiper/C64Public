@@ -1,0 +1,179 @@
+!zn
+
+kPlayerBulletsForwardSpeed = 5
+EntityState_Bullets_ActiveNum !by 0
+
+EntityState_Bullets
+	lda EntityYPos,y
+	clc
+	adc EntityStateValue1,y
+	cmp #kEntityYPos_Ground
+	+IfRegLessThanValL EntityState_Bullets_HitGround
+	sta EntityYPos,y
+
+	; Skip the check if there aren't going to be any radio towers, it takes a long time
+	lda #kLandscapeMapRowsData_flags_doCanyon
+	bit LandscapeFlags
+	beq .noCanyonCheckRadioTower
+	jsr GetLandscapePositionForEntityPosition
+	lda LandscapeMap,x
+	cmp #12
+	+lbeq .isRadioTower
+	dex ; Wraparound
+	lda LandscapeMap,x
+	cmp #12
+	+lbeq .isRadioTower
+.noCanyonCheckRadioTower
+
+	lda EntityXPos,y
+	clc
+	adc EntityStateValue2,y
+	sta EntityXPos,y
+
+	lda EntityZPos,y
+	clc
+	adc landscapeFrameSpeed
+	+lbcs EntityState_Bullets_Remove
+	clc
+	adc #kPlayerBulletsForwardSpeed
+	cmp #kEntity_MaxZPosRemove
+	+lbcs EntityState_Bullets_Remove
+	sta EntityZPos,y
+
+Entity_commonBulletMissileEnemyHitCheck
+	; Now check for enemy entities and collision
+	ldx #SortHardMaxEntries-1
+.ce1
+	lda EntityTypeHi,x
+	beq .ce2
+	lda EntityTypeIndex,x
+	bmi .ce2
+	; Position check with enemy
+	lda EntityZPos,y
+	sec
+	sbc EntityZPos,x
+	clc
+	adc #8
+	cmp #16
+	bcs .ce2
+	lda EntityXPos,y
+	sec
+	sbc EntityXPos,x
+	clc
+	adc #8
+	cmp #16
+	bcs .ce2
+	lda EntityYPos,y
+	sec
+	sbc EntityYPos,x
+	clc
+	adc #8
+	cmp #16
+	bcs .ce2
+
+	; Score
+	jsr ScoreAdd_1500
+	jsr TextAddHitNumber
+
+	; Choose how to explode
+	jsr Rand
+	and #1
+	beq .doExplodeFlames
+
+	jsr SamplePlay_Explosion1
+	lda #<Render_ExplodeBall0
+	sta EntityTypeLo,x 
+	lda #>Render_ExplodeBall0
+	sta EntityTypeHi,x 
+	lda #<EntityState_ExplodeBall
+	sta EntityStateLo,x
+	lda #>EntityState_ExplodeBall
+	sta EntityStateHi,x
+	jmp .commonExplodeEntity
+
+.doExplodeFlames
+	jsr SamplePlay_Explosion2
+	lda #<Render_ExplodeFlames0
+	sta EntityTypeLo,x 
+	lda #>Render_ExplodeFlames0
+	sta EntityTypeHi,x 
+	lda #<EntityState_ExplodeFlames
+	sta EntityStateLo,x
+	lda #>EntityState_ExplodeFlames
+	sta EntityStateHi,x
+
+.commonExplodeEntity
+	lda #0
+	sta EntityTypeIsRotating,x
+	sta EntityStateValue1,x
+	lda #-1
+	sta EntityTypeIndex,x
+	jmp EntityState_Bullets_Remove
+
+.ce2
+	dex
+	+lbne .ce1	; Note: Not the player!
+
+	rts
+
+GetLandscapePositionForEntityPosition
+	lda LandscapeMapRowOffset
+	and #$0f
+	clc
+	adc #7
+	sta .xmxposo+1
+	lda EntityXPos,y
+	+M_ASR
+	+M_ASR
+	+M_ASR
+	and #$0f
+	clc
+.xmxposo	adc #8
+	and #$0f
+	sta .smxp+1
+
+	lda LandscapeMapRowOffset
+	and #$f0
+	sta .xmzp+1
+
+	lda EntityZPos,y
+	and #$f0
+	clc
+.xmzp	adc #0
+	clc
+.smxp	adc #0
+	tax
+	rts
+
+EntityState_Bullets_HitGround
+	jsr GetLandscapePositionForEntityPosition
+	lda LandscapeMap,x
+;	jmp .isRadioTower	; Debug
+	cmp #12
+	beq .isRadioTower
+	jsr Rand
+	and #3
+	beq .largeExplosion
+	jsr SamplePlay_Explosion3
+	lda #16
+	jmp .storeIt
+.largeExplosion
+	jsr SamplePlay_Explosion2
+	lda #19
+	jmp .storeIt
+.isRadioTower
+	jsr ScoreAdd_10000
+	jsr SamplePlay_Explosion1
+	lda #22
+.storeIt
+	sta LandscapeMap,x
+
+; Note: Fall through to here
+EntityState_Bullets_Remove
+	dec EntityState_Bullets_ActiveNum
+	bpl .isOk1
+	; Just a paranoia guard, especially since the missiles can get here too
+	lda #0
+	sta EntityState_Bullets_ActiveNum
+.isOk1
+	jmp EntityState_RemoveEntity

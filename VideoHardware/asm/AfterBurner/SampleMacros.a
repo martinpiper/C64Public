@@ -41,6 +41,15 @@
 	+MActivateVoice .sampleVoice
 }
 
+!macro MPlaySampleNoVoice .sampleVolume , .sampleStart , .sampleEnd , .sampleFrequency {
+	+MBus24Bit_Send8BitValue .sampleVolume
+	+MBus24Bit_SendLE16BitValue .sampleStart
+	+MBus24Bit_SendLE16BitValue .sampleEnd
+	+MBus24Bit_SendLE16BitValue .sampleFrequency
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+}
+
 !macro MSampleSetVolumeFrequency .sampleVoice , .sampleVolume , .sampleFrequency {
 	+MBus24Bit_SetAddress_A $01 , $8000 + (.sampleVoice * 11)
 	+MBus24Bit_Send8BitValue .sampleVolume

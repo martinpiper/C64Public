@@ -1,0 +1,21 @@
+kAudio2_EBBS = $01
+kAudio2_LeftChannel = $8030
+kAudio2_RightChannel = $8130
+
+kAudio2Register_Bank		= 0
+kAudio2Register_Control		= 1
+kAudio2Register_Control_Enable = $01
+kAudio2Register_Volume		= 2
+kAudio2Register_Address24	= 3
+kAudio2Register_Length24	= 6
+kAudio2Register_Rate16		= 9
+kAudio2Register_Rate16_Normal = 1<<12
+
+!macro MAudio2_SetSample .channel , .address , .length , .rate {
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , .channel + kAudio2Register_Address24
+	+MBus24Bit_SendLE24BitValue .address
++MAssertEquals kAudio2Register_Address24+3 , kAudio2Register_Length24
+	+MBus24Bit_SendLE24BitValue .length
++MAssertEquals kAudio2Register_Length24+3 , kAudio2Register_Rate16
+	+MBus24Bit_SendLE16BitValue .rate
+}

@@ -45,11 +45,11 @@ if __name__ == '__main__':
 
         fileLen = fileOut.tell()
 
-        labelFile.write("checksumsStart = $" + hex(fileLen & 0xffffff)[2:] + "\n")
-        labelFile.write("checksumsCount = $" + hex(int((fileLen / blockSize) + 1) & 0xffff)[2:] + "\n")
-        labelFile.write("checksumsBlockSize = $" + hex(blockSize & 0xffffff)[2:] + "\n")
-        labelFile.write("checksumsNumBytes = $" + hex(numBytes & 0xffffff)[2:] + "\n")
-        labelFile.write("checksumsSize = $" + hex(checksumSize & 0xffffff)[2:] + "\n")
+        labelFile.write(sys.argv[7] + "checksumsStart = $" + hex(fileLen & 0xffffff)[2:] + "\n")
+        labelFile.write(sys.argv[7] + "checksumsCount = $" + hex(int((fileLen / blockSize) + 1) & 0xffff)[2:] + "\n")
+        labelFile.write(sys.argv[7] + "checksumsBlockSize = $" + hex(blockSize & 0xffffff)[2:] + "\n")
+        labelFile.write(sys.argv[7] + "checksumsNumBytes = $" + hex(numBytes & 0xffffff)[2:] + "\n")
+        labelFile.write(sys.argv[7] + "checksumsSize = $" + hex(checksumSize & 0xffffff)[2:] + "\n")
         labelFile.flush()
         labelFile.close()
 

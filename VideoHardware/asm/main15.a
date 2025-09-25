@@ -1,0 +1,190 @@
+;main test code
+kBus24Bit_VideoLayer_HasOverscan=1
+kBus24Bit_VideoLayer_ExpandedPalettes = 1
+kBus24Bit_SpritesMaxNum = 32
+
+!source "stdlib/stdlib.a"
+!source "stdlib/LongBranches.a"
+!source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Video_Macros.a"
+!source "BombJack/stdlib/APU_Macros.a"
+
+
+!to "bin/main.prg", cbm
+!sal
+!sl "tmp/main.map"
+!svl "tmp/main.lbl"
+!pdb "tmp/main.pdb"
+!cpu 6510
+!ct pet
+
+; Save space for zeroPageCode_realStart
+zeroPage_Temp0	= $10
+zeroPage_Temp1	= $11
+
+; Define this to include graphics data
+IncludeGraphicsData = 1
+
+!zn
+*=$200
+	jmp start
+	
+!source "tmp/FingerPrint.a"
+
+Initialise_NoMACROWaitForTheLastScan = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+!source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Video.a"
+!source "BombJack/stdlib/HardwareTest.a"
+!source "BombJack/stdlib/APU.a"
+
+!zn
+start
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	jsr Bus24Bit_Init
+	jsr APU_ResetDisableClear
+
+!ifdef IncludeGraphicsData {
+	jsr HardwareTest_VideoPattern0
+;	+WaitForFire_A
+}
+
+	jsr Bus24Bit_Init
+	jsr Video_DisableDisplay
+	jsr Video_InitDisplaySpritesScrollsBackground
+
+	jsr Video_SetAddressVideoPriorityRegister
+;	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Mode7 , kBus24Bit_VideoLayer_Priority_Sprites , kBus24Bit_VideoLayer_Priority_Tiles
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars
+
+
+	; Do various video data init here
+!ifdef IncludeGraphicsData {
+	jsr InitGraphicsMemory
+}
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	lda #kBus24Bit_VideoLayer_OverscanExtent_Wide
+	sta CIA2PortBRS232
+
+	lda #kVideo_EnableDisplay_Enable
+	jsr Video_EnableDisplay
+
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
+
+;	+WaitForFire_A
+	jsr Video_SetAddressVideoControlRegisters
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable
+;	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable
+;	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | $01
+
+	jsr Video_SetAddressVideoBackgroundColour
+	+MBus24Bit_Send8BitValue 1
+
+;	+WaitForFire_A
+
+.incfl1
+	+MBus24Bit_SetAddress_A 0x01 , 0xa301
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollY
+
+!if 1 {
+	; Setup bitmap RGB data
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SetAddress_A $03 , $0000
+	jsr Bus24Bit_Reset
+.sma=*+1
+	+MBus24Bit_Send8BitValue 3
+	+MBus24Bit_SendLE16BitValue $0000
+	ldx #10
+.cl1
+	ldy #0
+.cl2
+	+MBus24Bit_Send8BitValue %00011111
+;	+MBus24Bit_Send8BitValue %00000001
+	+MBus24Bit_Send8BitValue %00000000
+	dey
+	bne .cl2
+	dex
+	bne .cl1
+}
+
+;	+WaitForFire_A
+	jsr Video_SetAddressVideoControlRegisters
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | $01
+
+;	inc .sma
+;	jmp .incfl1
+;	jmp *
+
+mainLoop
+	inc VIC2BorderColour
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	; Scroll bitmap RGB
+	+MBus24Bit_SetAddress_A 0x01 , 0xa301
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollY
+
+;	+MSubU8FromAddr16 3 , .scrollX , .scrollX + 1
+	+MSubU8FromAddr16 1 , .scrollY , .scrollY + 1
+
+	jmp mainLoop
+
+.scrollX !word 0
+.scrollY !word -32
+
+
+!ifdef IncludeGraphicsData {
+RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
+!source "asm/DecompressRLECommon.a"
+
+!zn
+InitGraphicsMemory
+	lda #1
+	+MWordValueTo_XY $9c00
+	jsr Bus24Bit_SetAddressBus
+
+	+MWordValueTo_AX .palette
+	ldy #0
+	jsr Bus24Bit_CopySmallData
+	jsr Bus24Bit_CopySmallDataAgain
+	inc VIC2BorderColour
+
+	; Maps
+	+MRLEScreenDataToDefaultCharScreen .charsMap , .charsMap2
+
+	; Chars
+	+MRLEPlanesDataToDefaultCharScreen .plane0 , .plane1 , .plane2 , .plane3
+
+	rts
+; All
+.palette
+	!bin "tmp/PaletteData.bin"; to 24bit bus at '0x9c00' and addressEx '0x01'
+	!fill $200,0
+
+.plane0
+	!bin "tmp/status_plane0.cmp"; to 24bit bus at '0x2000' and addressEx '0x20'
+.plane1
+	!bin "tmp/status_plane1.cmp"; to 24bit bus at '0x4000' and addressEx '0x20'
+.plane2
+	!bin "tmp/status_plane2.cmp"; to 24bit bus at '0x8000' and addressEx '0x20'
+.plane3
+	!bin "tmp/status_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x20'
+
+.charsMap
+	!bin "tmp/status_map.cmp"; to 24bit bus at '0x4000' and addressEx '0x80'
+.charsMap2
+	!bin "tmp/status_map.cmp2"; to 24bit bus at '0x8000' and addressEx '0x80'
+
+}
+
+
+EndMainMemory
++MCheckNotInIOKernal

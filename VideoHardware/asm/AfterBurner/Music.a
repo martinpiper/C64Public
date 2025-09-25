@@ -1,0 +1,94 @@
+!zn
+kGameMusic2L_address = 0
+kGameMusic2L_length = 896987
+kGameMusic3L_address = kGameMusic2L_address + kGameMusic2L_length
+kGameMusic3L_length = 1343276
+kGameMusic6L_address = kGameMusic3L_address + kGameMusic3L_length
+kGameMusic6L_length = 417759
+
+kGameMusic2R_address = 0
+kGameMusic2R_length = 873536
+kGameMusic3R_address = kGameMusic2R_address + kGameMusic2R_length
+kGameMusic3R_length = 1326593
+kGameMusic6R_address = kGameMusic3R_address + kGameMusic3R_length
+kGameMusic6R_length = 426845
+
+Music_SecondsRemaining !by 0
+Music_CountSeconds !by 30	; 30 fps...
+Music_FadeVolume !by 255
+
+; Checkls for the current music ending and starts a new piece after fading it out
+Music_CheckTime
+	lda Music_SecondsRemaining
+	cmp #5
+	bcs .noFadevolume
+	lda Music_FadeVolume
+	sec
+	sbc #3
+	bcs .notZero
+	lda #0
+.notZero
+	sta Music_FadeVolume
+	jsr Audio2_SetVolume
+.noFadevolume
+	dec Music_CountSeconds
+	beq .secondTick
+	rts
+.secondTick
+!ifdef BuildTitleScreen {
+	+MByteValueToAddress_A 60 , Music_CountSeconds	; The title screen hiscore entry runs at 60fps
+} else {
+	+MByteValueToAddress_A 30 , Music_CountSeconds
+}
+	dec Music_SecondsRemaining
+!ifndef BuildTitleScreen {
+	beq Music_GameChoice
+}
+	rts
+
+
+!ifndef BuildTitleScreen {
+Music_GameChoice
+	inc .smgc1+1
+Music_GameChoiceNoChange
+.smgc1	lda #0
+	and #%1
+	+lbeq Music_Play3
+	jmp Music_Play2
+}
+
+
+Music_Play2
+	jsr Audio2_Disable
+	+MAudio2_SetSample kAudio2_LeftChannel , kGameMusic2L_address , kGameMusic2L_length , kAudio2Register_Rate16_Normal/2
+	+MAudio2_SetSample kAudio2_RightChannel , kGameMusic2R_address , kGameMusic2R_length , kAudio2Register_Rate16_Normal/2
+	lda #255
+	jsr Audio2_SetVolume
+	jsr Audio2_Enable
+	+MByteValueToAddress_A 114 , Music_SecondsRemaining
+	+MByteValueToAddress_A 255 , Music_FadeVolume
+	rts
+
+Music_Play3
+	jsr Audio2_Disable
+	+MAudio2_SetSample kAudio2_LeftChannel , kGameMusic3L_address , kGameMusic3L_length , kAudio2Register_Rate16_Normal/2
+	+MAudio2_SetSample kAudio2_RightChannel , kGameMusic3R_address , kGameMusic3R_length , kAudio2Register_Rate16_Normal/2
+	lda #255
+	jsr Audio2_SetVolume
+	jsr Audio2_Enable
+	+MByteValueToAddress_A 158 , Music_SecondsRemaining
+	+MByteValueToAddress_A 255 , Music_FadeVolume
+	rts
+
+
+
+Music_Play6
+	jsr Audio2_Disable
+	+MAudio2_SetSample kAudio2_LeftChannel , kGameMusic6L_address , kGameMusic6L_length , kAudio2Register_Rate16_Normal/2
+	+MAudio2_SetSample kAudio2_RightChannel , kGameMusic6R_address , kGameMusic6R_length , kAudio2Register_Rate16_Normal/2
+	lda #255
+	jsr Audio2_SetVolume
+	jsr Audio2_Enable
+	+MByteValueToAddress_A 49 , Music_SecondsRemaining
+	+MByteValueToAddress_A 255 , Music_FadeVolume
+	rts

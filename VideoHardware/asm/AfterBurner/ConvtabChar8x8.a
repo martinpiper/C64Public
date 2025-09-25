@@ -1,5 +1,4 @@
 !to "..\tmp\ConvtabChar8x8.ct", plain
-;!source "..\tmp\Demo14TitleChars_map.bin.debug.txt"
 !initmem 0
 !disablesegmentcheck
 *=0
@@ -13,3 +12,7 @@
 !bin "..\tmp\Demo14TitleChars_map.bin",26,1
 *='0'
 !bin "..\tmp\Demo14TitleChars_map.bin",10,32
+*='.'
+!bin "..\tmp\Demo14TitleChars_map.bin",1,42
+*='='
+!bin "..\tmp\Demo14TitleChars_map.bin",1,(6*128) + 103

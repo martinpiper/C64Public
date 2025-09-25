@@ -1,17 +1,30 @@
 ; Enable this to send resource data from external RAM to the hardware
-;SendResourceData = 1
+SendResourceData = 1
 
-;Debug_JustRunGame = 1
 ;Debug_NoTitleScreen = 1
+;Debug_NoGameIntro = 1
 ;Debug_RunGameLanding = 1
 ;Debug_RunGameRefueling = 1
 ;Debug_RunGameCanyon = 1
+;Debug_RunMissionCompletePictures = 1
 ;Debug_GameStartZeroSpeed = 1
 ;Debug_SimpleLandscapeRotation = 1
 ;Debug_NoSpawnEnemy=1
+;Debug_Invulnerable = 1
+;Debug_FakeHiscore = 1
 
+TitleFramesTimeoutValue = 650
+;TitleFramesTimeoutValue = 50	; Debug, much shorter
+
+GameDemoExitTimeValue = 250
+;GameDemoExitTimeValue = 30		; Debug, much shorter
+
+GameCompleteStageNumber = 26	; Just after the last river section, gives ten minutes of play at reasonable speed
+;GameCompleteStageNumber = 2
 
 kHardwareTest_UsingSprites4 = 1
+kBus24Bit_Sprites4_Controls2		= $b800
+kBus24Bit_Sprites4_Registers2		= $b808
 
 kBus24Bit_VideoLayer_HasOverscan=1
 kBus24Bit_VideoLayer_ExpandedPalettes = 1
@@ -20,6 +33,7 @@ kBus24Bit_VideoLayer_VBlankUseNMI = 1
 kBus24Bit_SpritesMaxNum = 32
 
 SortHardMaxEntries = 16	; The hard maximum for entries for the sort
+Score_ZeroCharacter = 0	; Make sure this stays at 0
 
 zeroPage_Temp0	= $2
 zeroPage_Temp1	= $3
@@ -30,7 +44,6 @@ zeroPage_Temp5	= $7
 zeroPage_Temp6	= $8
 zeroPage_Temp7	= $9
 zeroPage_Temp8	= $a
-zeroPage_Temp9	= $b
 zeroPage_Temp9	= $b
 zeroPage_Temp10	= $c
 zeroPage_Temp11	= $d
@@ -46,8 +59,24 @@ zeroPage_Temp20	= $16
 zeroPage_Temp21	= $17
 zeroPage_Temp22	= $18
 zeroPage_Temp23	= $19
+Score_ZeroPage	= $1a	; and $1b
+SortIndexTable	= $1c
+
 SortTemp0 = zeroPage_Temp0
 SortTemp1 = SortTemp0 + 1
+
+; These are variables that are preserved at the start of the stack
+GamePaletteBank = $100
+; These are placed at the start of the stack for data passing between game and title screen for any hiscore checks
+GameScore_Value	= $101
+
+kGameScore_Value_size = 8
+GameTotalHits_size = 4
+GameTotalHits = GameScore_Value + kGameScore_Value_size
+GameName_size = 3
+TotalScoreTableEntry_size = kGameScore_Value_size + GameName_size + GameTotalHits_size
+NumScoreTableEntries = 7
+
 
 
 

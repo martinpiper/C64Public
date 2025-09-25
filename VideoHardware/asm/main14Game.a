@@ -8,6 +8,7 @@
 !cpu 6510
 !ct pet
 
+BuildGame = 1
 
 !source "stdlib/stdlib.a"
 !source "stdlib/Comparisons.a"
@@ -20,23 +21,24 @@
 !source "AfterBurner/LandscapeDefs.a"
 !source "AfterBurner/SpriteMacros.a"
 !source "AfterBurner/SampleMacros.a"
+!source "AfterBurner/Audio2_Macros.a"
 
 
 
 !zn
 *=$200
 start
-	sei
+	+MStopInitStack_X
 	jmp mainLoop
 
 !source "tmp/FingerPrint.a"
 !source "stdlib/LongBranches.a"
 !source "BombJack/stdlib/APU.a"
 
-Initialise_NoPreserveStack = 1
-Initialise_NoIRQServiceRoutine = 1
-Initialise_NoMACROWaitForTheLastScan = 1
-!source "stdlib/Initialise.a"
+;Initialise_NoPreserveStack = 1
+;Initialise_NoIRQServiceRoutine = 1
+;Initialise_NoMACROWaitForTheLastScan = 1
+;!source "stdlib/Initialise.a"
 
 !source "AfterBurner/CommonBootDefinesPre.a"
 !source "tmp\CommonBootDefines.a"
@@ -51,8 +53,12 @@ RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
 
 !zn
 mainLoop
-	lda #ProcessorPortAllRAMWithIO
-	jsr InitialiseMachine
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+;	lda #ProcessorPortAllRAMWithIO
+;	jsr InitialiseMachine
+
+	; Ensure this is set
+	+MByteValueToAddress_A 5 , GamePaletteBank
 
 	jsr Bus24Bit_Init
 	jsr Bus20To32Bit1_Init
@@ -66,7 +72,7 @@ mainLoop
 
 .fullGameLoop
 	; Debug, skip title and intro
-!ifndef Debug_JustRunGame {
+!ifndef Debug_NoGameIntro {
 	inc VIC2BorderColour
 
 	jsr InitGameIntro
@@ -93,41 +99,69 @@ mainLoop
 	jsr RunGameCanyon
 }
 
+!ifdef Debug_RunMissionCompletePictures {
+	jsr InitGame
+	jsr mainLoop_toMissionComplete
+}
+
 	jsr InitGame
 	jsr RunGame
 
-	jsr Bus20To32Bit1_Init
-	jsr Video_SetAddressVideoLayersEnable
-	+MBus24Bit_Send8BitValue 0
+mainLoop_backToTitleScreen
+;	jsr Bus20To32Bit1_Init
+;	jsr Video_SetAddressVideoLayersEnable
+;	+MBus24Bit_Send8BitValue 0
 
 	jmp CommonBootCode_JumpTable_LoadRun_TitleScreen
+
+mainLoop_toMissionComplete
+	jsr Bus20To32Bit1_Init
+
+	jmp CommonBootCode_JumpTable_LoadRun_MissionComplete
 
 AudioActiveFlags !by 0
 
 !source "AfterBurner/APU.a"
 !source "AfterBurner/EntitySystem.a"
 !source "AfterBurner/EntitySystemSpriteDraw.a"
-!source "AfterBurner/ScaledSpriteCommon.a"
 !source "AfterBurner/Landscape.a"
 !source "AfterBurner/LandscapeObjectDraw.a"
 !source "AfterBurner/PlayerControl.a"
 !source "AfterBurner/Game.a"
-!source "AfterBurner/LandscapeAnimate.a"
-
-!source "AfterBurner/GameCanyon.a"
+!source "AfterBurner/SpawnList.a"
+!source "AfterBurner/Bullets.a"
+!source "AfterBurner/Missile.a"
+!source "AfterBurner/Explosions.a"
+!source "AfterBurner/PaletteUpdate.a"
+!source "AfterBurner/SamplePlay.a"
+!source "AfterBurner/Reticle.a"
+!source "AfterBurner/ScoreHandlers.a"
 !source "AfterBurner/GamePlayerExplode.a"
+!source "AfterBurner/GameIntro.a"
+!source "AfterBurner/GameOver.a"
+!source "AfterBurner/TextUpdates.a"
+!source "AfterBurner/RadarDisplay.a"
+!source "AfterBurner/Enemy.a"
+!source "AfterBurner/Music.a"
 
 +MCheckNotInIOKernal
 
 *=CHARROM
 !source "AfterBurner/LandscapeMapCalc.a"
 !source "AfterBurner/LandscapeMapDataGame.a"
+!source "AfterBurner/EntitySort.a"
+!source "AfterBurner/RadarDisplayTables.a"
 
 *=KERNALROM
+!source "AfterBurner/LandscapeAnimate.a"
 !source "AfterBurner/Maths.a"
-!source "AfterBurner/GameIntro.a"
-!source "AfterBurner/GameLanding.a"
 !source "AfterBurner/GameRefueling.a"
+!source "AfterBurner/GameLanding.a"
+!source "AfterBurner/ScaledSpriteCommon.a"
+!source "AfterBurner/GameCanyon.a"
+!source "Citadel2\asm\Score.a"
+!source "AfterBurner/SpeedDisplay.a"
+!source "AfterBurner/Audio2.a"
+!source "AfterBurner/MissionCompleteDisplay.a"
 
-; -$100 because of kExternalMemoryFiles_OnlyCheckHighAddress
-+MCheckNotInMemoryRange CommonBootCode_JumpTable_Start-$100 , KERNALNMIServiceRoutineLo
++MCheckNotInMemoryRange CommonBootCode_JumpTable_Start , KERNALNMIServiceRoutineLo

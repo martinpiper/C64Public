@@ -1,7 +1,10 @@
 !zn
 InitGameRefueling
 	jsr Bus20To32Bit1_Init
+	jsr StageNumber_Increase
 
+	+MByteValueToAddress_A 250 , Text_ReloadWeapons_Flash
+	+MByteValueToAddress_A 1 , Player_Invulnerable
 	+MByteValueToAddress_A $0c, .endSequenceScale
 ;	+MByteValueToAddress_A $0f, .endSequenceScale
 ;	+MByteValueToAddress_A $1a, .endSequenceScale	; Far wing tips are just visible
@@ -22,6 +25,7 @@ InitGameRefueling
 
 RunGameRefueling
 	jsr RunGameLanding_CommonFrame
+	jsr RunGameLanding_CommonFrameEnd
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	lda playerYPositionOffset
@@ -32,8 +36,8 @@ RunGameRefueling
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	jsr TryToLevelAnyRoll
 
@@ -96,6 +100,7 @@ RunGameRefueling2
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	jsr GameRefueling_RenderPlayer
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr GameRefueling_RenderTanker
 
@@ -103,8 +108,8 @@ RunGameRefueling2
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
 	sta .doEntryFlag2+1
@@ -136,6 +141,7 @@ RunGameRefueling3
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	jsr GameRefueling_RenderPlayer
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr GameRefueling_RenderTanker
 
@@ -143,8 +149,8 @@ RunGameRefueling3
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
 	sta .doEntryFlag3+1
@@ -166,6 +172,7 @@ RunGameRefueling3b
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	jsr GameRefueling_RenderPlayer
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr GameRefueling_RenderTanker
 
@@ -173,8 +180,8 @@ RunGameRefueling3b
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
 	sta .doEntryFlag3b+1
@@ -201,6 +208,7 @@ RunGameRefueling3c
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	jsr GameRefueling_RenderPlayer
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr GameRefueling_RenderTanker
 
@@ -208,8 +216,8 @@ RunGameRefueling3c
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
 	sta .doEntryFlag3c+1
@@ -235,6 +243,7 @@ RunGameRefueling4
 	+MByteValueToAddress_A 4 , GamePaletteBank
 
 	jsr GameRefueling_RenderPlayer
+	jsr RunGameLanding_CommonFrameEnd
 
 	jsr GameRefueling_RenderTanker
 
@@ -242,8 +251,8 @@ RunGameRefueling4
 
 	jsr LandscapeRender
 
-	jsr RenderTimeout
-	jsr TerminateScaledSpritesAndSignalReady
+	jsr RenderTimeout2
+	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
 	sta .doEntryFlag4+1
@@ -279,6 +288,10 @@ RunGameRefueling4
 .doEntryFlag4 lda #0
 	+lbne RunGameRefueling4
 
+	+MByteValueToAddress_A 2 , landscapeFrameSpeed
+	jsr PlayerSpeedHasChangedNotify
+	+MByteValueToAddress_A 50 , Player_EngineVolumeChange
+	+MWordValueToAddress_A kSampleInfo11_frequency , Player_EngineTargetFrequency
 
 	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
 	+MByteValueToAddress_A 0 , RunGameLanding_CommonFrame_PlayerDrawSpecialCase

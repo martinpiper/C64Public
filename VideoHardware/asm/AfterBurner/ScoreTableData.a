@@ -1,0 +1,42 @@
+!zn
+!to "..\tmp\ScoreTableData.bin", plain
+!initmem 0
+!disablesegmentcheck
+!convtab "tmp\ConvtabChar8x8.ct"
+
+!source "main14Options.a"
+!source "stdlib/stdlib.a"
+
+!macro MAddScoreEntry .score , .name1, .name2 , .name3 , .hits {
+.start
+	!by (.score / 10000000) % 10
+	!by (.score / 1000000) % 10
+	!by (.score / 100000) % 10
+	!by (.score / 10000) % 10
+	!by (.score / 1000) % 10
+	!by (.score / 100) % 10
+	!by (.score / 10) % 10
+	!by (.score / 1) % 10
++MAssertEquals *-.start , kGameScore_Value_size
+.start2
+	!by .name1
+	!by .name2
+	!by .name3
++MAssertEquals *-.start2 , GameName_size
+.start3
+	!by (.hits / 1000) % 10
+	!by (.hits / 100) % 10
+	!by (.hits / 10) % 10
+	!by (.hits / 1) % 10
++MAssertEquals *-.start3 , GameTotalHits_size
+}
+*=0
+	+MAddScoreEntry 19000000	, 'a' , 'b' , 'c' , 300
+	+MAddScoreEntry 13000000	, 'd' , 'e' , 'f' , 250
+	+MAddScoreEntry 10000000	, 'g' , 'h' , 'i' , 200
+	+MAddScoreEntry 6000000		, 'j' , 'k' , 'l' , 150
+	+MAddScoreEntry 3000000		, 'm' , 'n' , 'o' , 100
+	+MAddScoreEntry 20000		, 'p' , 'q' , 'r' , 50
+	+MAddScoreEntry 10000		, 's' , 't' , 'u' , 25
+
++MAssertEquals * , NumScoreTableEntries * TotalScoreTableEntry_size

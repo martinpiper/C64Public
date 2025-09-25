@@ -21,6 +21,10 @@
       <Configuration>Release14</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release15|Win32">
+      <Configuration>Release15</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release3Anim|Win32">
       <Configuration>Release3Anim</Configuration>
       <Platform>Win32</Platform>
@@ -150,6 +154,11 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release15|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -215,6 +224,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release14|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release15|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'" Label="PropertySheets">
@@ -314,6 +326,12 @@
     <NMakeReBuildCommandLine>BuildIt14.bat</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release15|Win32'">
+    <NMakeBuildCommandLine>BuildIt15.bat</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BuildIt15.bat</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BuildIt15.bat</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release9|Win32'">
     <NMakeBuildCommandLine>BuildIt9.bat</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>BuildIt9.bat</NMakeCleanCommandLine>
@@ -350,7 +368,6 @@
     <None Include="assets\convert11.bat" />
     <None Include="assets\convert13.bat" />
     <None Include="assets\convert14.bat" />
-    <None Include="assets\convert14PaletteLayers.bat" />
     <None Include="assets\convert2.bat" />
     <None Include="assets\convert3.bat" />
     <None Include="assets\convert4.bat" />
@@ -366,6 +383,7 @@
     <None Include="BuildIt12.bat" />
     <None Include="BuildIt13.bat" />
     <None Include="BuildIt14.bat" />
+    <None Include="BuildIt15.bat" />
     <None Include="BuildIt3.bat" />
     <None Include="BuildIt3Anim.bat" />
     <None Include="BuildIt3MultiplexAPU.bat" />
@@ -383,6 +401,7 @@
     <None Include="features\AnimationEngine.feature" />
     <None Include="features\smoke test.feature" />
     <None Include="MakeRelease.bat" />
+    <None Include="PythonSetup.bat" />
     <None Include="README.md" />
     <None Include="SDK README.md" />
     <None Include="tmp\main.map" />
@@ -392,6 +411,7 @@
     <Library Include="..\..\BombJack\stdlib\APU_Macros.a" />
     <Library Include="..\..\BombJack\stdlib\Audio.a" />
     <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1.a" />
+    <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1_CopyFrom.a" />
     <Library Include="..\..\BombJack\stdlib\Bus20To32Bit1_Macros.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24Bit.a" />
     <Library Include="..\..\BombJack\stdlib\Bus24BitSimple.a" />
@@ -401,6 +421,7 @@
     <Library Include="..\..\BombJack\stdlib\Video.a" />
     <Library Include="..\..\BombJack\stdlib\Video_Macros.a" />
     <Library Include="..\BerzerkRedux\Rand.a" />
+    <Library Include="..\Citadel2\asm\Score.a" />
     <Library Include="..\Decompression\DecompressRLE.a" />
     <Library Include="..\Decompression\DecompressRLEVars.a" />
     <Library Include="..\MakeCart\asm\BankSelect8K.a" />
@@ -413,6 +434,7 @@
     <Library Include="..\stdlib\BASICEntry810.a" />
     <Library Include="..\stdlib\BASICEntry900.a" />
     <Library Include="..\stdlib\Comparisons.a" />
+    <Library Include="..\stdlib\GnomeSort.a" />
     <Library Include="..\stdlib\Initialise.a" />
     <Library Include="..\stdlib\LongBranches.a" />
     <Library Include="..\stdlib\MemoryCopy.a" />
@@ -446,14 +468,23 @@
     <Library Include="..\VectorPlotBitmap\VectorHardware.a" />
     <Library Include="asm\AfterBurner\APU.a" />
     <Library Include="asm\AfterBurner\APUHardware.a" />
+    <Library Include="asm\AfterBurner\Audio2.a" />
+    <Library Include="asm\AfterBurner\Audio2_Macros.a" />
+    <Library Include="asm\AfterBurner\Bullets.a" />
     <Library Include="asm\AfterBurner\CommonBootDefinesPre.a" />
+    <Library Include="asm\AfterBurner\ConvtabChar8x16Bot.a" />
+    <Library Include="asm\AfterBurner\ConvtabChar8x16Top.a" />
     <Library Include="asm\AfterBurner\ConvtabChar8x8.a" />
+    <Library Include="asm\AfterBurner\Enemy.a" />
+    <Library Include="asm\AfterBurner\EntitySort.a" />
     <Library Include="asm\AfterBurner\EntitySystem.a" />
     <Library Include="asm\AfterBurner\EntitySystemSpriteDraw.a" />
+    <Library Include="asm\AfterBurner\Explosions.a" />
     <Library Include="asm\AfterBurner\Game.a" />
     <Library Include="asm\AfterBurner\GameCanyon.a" />
     <Library Include="asm\AfterBurner\GameIntro.a" />
     <Library Include="asm\AfterBurner\GameLanding.a" />
+    <Library Include="asm\AfterBurner\GameOver.a" />
     <Library Include="asm\AfterBurner\GamePlayerExplode.a" />
     <Library Include="asm\AfterBurner\GameRefueling.a" />
     <Library Include="asm\AfterBurner\Init.a" />
@@ -465,11 +496,26 @@
     <Library Include="asm\AfterBurner\LandscapeMapDataGame.a" />
     <Library Include="asm\AfterBurner\LandscapeObjectDraw.a" />
     <Library Include="asm\AfterBurner\Maths.a" />
+    <Library Include="asm\AfterBurner\Missile.a" />
+    <Library Include="asm\AfterBurner\MissionCompleteDisplay.a" />
+    <Library Include="asm\AfterBurner\Music.a" />
+    <Library Include="asm\AfterBurner\PaletteFade.a" />
+    <Library Include="asm\AfterBurner\PaletteUpdate.a" />
     <Library Include="asm\AfterBurner\PlayerControl.a" />
+    <Library Include="asm\AfterBurner\RadarDisplay.a" />
+    <Library Include="asm\AfterBurner\RadarDisplayTables.a" />
+    <Library Include="asm\AfterBurner\Reticle.a" />
     <Library Include="asm\AfterBurner\SampleMacros.a" />
+    <Library Include="asm\AfterBurner\SamplePlay.a" />
     <Library Include="asm\AfterBurner\ScaledSpriteCommon.a" />
+    <Library Include="asm\AfterBurner\ScoreHandlers.a" />
+    <Library Include="asm\AfterBurner\ScoreTable.a" />
+    <Library Include="asm\AfterBurner\ScoreTableData.a" />
+    <Library Include="asm\AfterBurner\SpawnList.a" />
+    <Library Include="asm\AfterBurner\SpeedDisplay.a" />
     <Library Include="asm\AfterBurner\SpriteMacros.a" />
     <Library Include="asm\AfterBurner\SwapMemoryRange.a" />
+    <Library Include="asm\AfterBurner\TextUpdates.a" />
     <Library Include="asm\AfterBurner\TitleScreen.a" />
     <Library Include="asm\AnimationData.a" />
     <Library Include="asm\AnimationEngine.a" />
@@ -496,8 +542,10 @@
     <Library Include="asm\main14.a" />
     <Library Include="asm\main14Common.a" />
     <Library Include="asm\main14Game.a" />
+    <Library Include="asm\main14MissionComplete.a" />
     <Library Include="asm\main14Options.a" />
     <Library Include="asm\main14Title.a" />
+    <Library Include="asm\main15.a" />
     <Library Include="asm\main3.a" />
     <Library Include="asm\main3Anim.a" />
     <Library Include="asm\main3MultiplexAPU.a" />
@@ -568,6 +616,7 @@
     <Text Include="..\..\ACME\docs\Upgrade.txt" />
     <Text Include="..\..\BombJack\Done.txt" />
     <Text Include="..\..\BombJack\TODO.txt" />
+    <Text Include="assets\Demo14\more allowed sizes.txt" />
     <Text Include="Done.txt" />
     <Text Include="tmp\batball.log" />
     <Text Include="tmp\BatBallspriteSheet.txt" />

@@ -566,7 +566,7 @@ EnemyAnimationBit_Up	= %1000
 ; These only become valid for objects 22-57 (Enemy 1-36)
 +reserve ~AnimationMovementAddrLo , Multiplex_items
 +reserve ~AnimationMovementAddrHi , Multiplex_items
-!ifdef Scroller_LinkedEnemyTest {
+!ifdef Scroller_WantAnimationMovementOrig {
 +reserve ~AnimationMovementOrigLo , Multiplex_items
 +reserve ~AnimationMovementOrigHi , Multiplex_items
 }

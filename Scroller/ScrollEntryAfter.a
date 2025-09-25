@@ -1,5 +1,11 @@
 ; --- Main build options end ---
 
+!ifdef Scroller_LinkedEnemyTest {
+!set Scroller_WantAnimationMovementOrig = 1
+}
+!ifdef Scroller_LoopingEnemy {
+!set Scroller_WantAnimationMovementOrig = 1
+}
 
 ; Set these two values to the x position for the player's score panels
 ScorePlayer1XPos = 44

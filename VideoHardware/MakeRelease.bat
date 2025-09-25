@@ -12,7 +12,9 @@ mkdir ..\..\Builds\VideoHardwareSDK\BombJack\stdlib
 
 mkdir ..\..\Builds\VideoHardwareSDK\C64
 mkdir ..\..\Builds\VideoHardwareSDK\C64\stdlib
+mkdir ..\..\Builds\VideoHardwareSDK\C64\ExternalTools\Gnu
 mkdir ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux
+mkdir ..\..\Builds\VideoHardwareSDK\C64\Citadel2\asm\
 mkdir ..\..\Builds\VideoHardwareSDK\C64\VideoHardware
 mkdir ..\..\Builds\VideoHardwareSDK\C64\Decompression
 mkdir ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap
@@ -39,7 +41,9 @@ xcopy ..\..\C64\acme.exe ..\..\Builds\VideoHardwareSDK\C64\
 xcopy ..\..\C64\python39.dll ..\..\Builds\VideoHardwareSDK\C64\
 xcopy ..\..\C64\bin\* ..\..\Builds\VideoHardwareSDK\C64\bin\ /s
 xcopy ..\..\C64\stdlib\* ..\..\Builds\VideoHardwareSDK\C64\stdlib\ /s
+xcopy ..\..\C64\ExternalTools\Gnu\* ..\..\Builds\VideoHardwareSDK\C64\ExternalTools\Gnu\ /s
 xcopy ..\..\C64\BerzerkRedux\Rand.a ..\..\Builds\VideoHardwareSDK\C64\BerzerkRedux\ /s
+xcopy ..\..\C64\Citadel2\asm\Score.a ..\..\Builds\VideoHardwareSDK\C64\Citadel2\asm\ /s
 xcopy ..\..\C64\Decompression\Decomp*.a ..\..\Builds\VideoHardwareSDK\C64\Decompression\
 xcopy ..\..\C64\VectorPlotBitmap\*.a ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap\
 xcopy ..\..\C64\VectorPlotBitmap\*.bin ..\..\Builds\VideoHardwareSDK\C64\VectorPlotBitmap\
@@ -47,20 +51,33 @@ xcopy ..\..\C64\MakeCart\asm\*.a ..\..\Builds\VideoHardwareSDK\C64\MakeCart\asm\
 
 xcopy ..\..\C64\VideoHardware\README.md ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 copy "..\..\C64\VideoHardware\SDK README.md" ..\..\Builds\VideoHardwareSDK\README.md
+xcopy ..\..\C64\VideoHardware\PythonSetup.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\BuildIt*.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\FeatureEditor.bat ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\
 xcopy ..\..\C64\VideoHardware\asm\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\asm\ /s
 xcopy ..\..\C64\VideoHardware\assets\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\ /s
-del /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\convert2.bat
-rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.venv
-rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.idea
-rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\out
 xcopy ..\..\C64\VideoHardware\macros\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\macros\ /s
 xcopy ..\..\C64\VideoHardware\features\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\features\ /s
 xcopy ..\..\C64\VideoHardware\testdata\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\testdata\ /s
 
+xcopy ..\..\C64\VideoHardware\DeltaEncode\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\DeltaEncode\ /s
+xcopy ..\..\C64\VideoHardware\ResourceGenerator\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\ResourceGenerator\ /s
+xcopy ..\..\C64\VideoHardware\OptimiseSprite4ScaleTables\* ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\OptimiseSprite4ScaleTables\ /s
+
 
 xcopy ..\..\ImageToBitplane\README.md ..\..\Builds\VideoHardwareSDK\ImageToBitplane\
 xcopy ..\..\ImageToBitplane\target\*jar-with-dependencies.jar ..\..\Builds\VideoHardwareSDK\ImageToBitplane\target\
+
+del /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\convert2.bat
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\stdlib\venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\stdlib\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\DeltaEncode\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\ResourceGenerator\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\OptimiseSprite4ScaleTables\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\GenerateRunway\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\GenerateRunway\.idea
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.venv
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\.idea
+rmdir /s /q ..\..\Builds\VideoHardwareSDK\C64\VideoHardware\assets\Demo14\PerspectiveGen\out
 
 explorer ..\..\Builds\VideoHardwareSDK\

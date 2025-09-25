@@ -1,0 +1,257 @@
+;BlankProjectComp test code
+
+!source "stdlib/stdlib.a"
+!to "BlankProjectComp.prg", cbm
+!sl "BlankProjectComp.map"
+!sal
+!svl "BlankProjectComp.lbl"
+!pdb "BlankProjectComp.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+!macro Crunch .pos {
+	+MACROWaitForRaster .pos
+;	+MACRODelay_X 1
+	and #7
+;	ora #%111000
+	ora #%11000
+	sta VIC2ScreenControlV
+}
+
+*=$400
+	jmp $800
+	
+!source "FingerPrint.a"
+
+*=$800
+	sei
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+	lda #VIC2ScreenControlVDefault
+	sta VIC2ScreenControlV
+
+	ldx #0
+.cl1
+	txa
+	sta COLOURRAM,x
+	sta COLOURRAM+$100,x
+	sta COLOURRAM+$200,x
+	sta COLOURRAM+$300,x
+	dex
+	bne .cl1
+
+	; Open top/bottom borders
+	; Horizontal sprite stretching
+	+ClearScreenAt_AX SCREENRAM , ' '
+	sei
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2BorderColour
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+	+MByteValueToAddress_A 0 , VIC2_Bank0_GhostByte
+	+MVIC2SpriteIndex_A SpriteFrame0
+	sta SCREENRAM + SPRITEFRAMESCROFF + 0
+	sta SCREENRAM + SPRITEFRAMESCROFF + 1
+	sta SCREENRAM + SPRITEFRAMESCROFF + 2
+	sta SCREENRAM + SPRITEFRAMESCROFF + 3
+	sta SCREENRAM + SPRITEFRAMESCROFF + 4
+	sta SCREENRAM + SPRITEFRAMESCROFF + 5
+	+MVIC2SpriteIndex_A SpriteFrame1
+	sta SCREENRAM + SPRITEFRAMESCROFF + 6
+	sta SCREENRAM + SPRITEFRAMESCROFF + 7
+
+	+MByteValueToAddress_A $20 , VIC2Sprite0X
+	+MByteValueToAddress_A $20 , VIC2Sprite1X
+	+MByteValueToAddress_A $20 , VIC2Sprite2X
+	+MByteValueToAddress_A $20 , VIC2Sprite3X
+	+MByteValueToAddress_A $20 , VIC2Sprite4X
+	+MByteValueToAddress_A $20 , VIC2Sprite5X
+	+MByteValueToAddress_A $20 , VIC2Sprite6X
+	+MByteValueToAddress_A 204 , VIC2Sprite7X
+	+MByteValueToAddress_A %00000000 , VIC2SpriteXMSB
+	+MByteValueToAddress_A VIC2SpriteYBorderTop - VIC2SpriteSizeY - 12 , VIC2Sprite0Y
+	; Just enable all the sprites on this line for now
+	sta VIC2Sprite0Y
+	sta VIC2Sprite1Y
+	sta VIC2Sprite2Y
+	sta VIC2Sprite3Y
+	sta VIC2Sprite4Y
+	sta VIC2Sprite5Y
+	sta VIC2Sprite6Y
+	sta VIC2Sprite7Y
+
+	+MByteValueToAddress_A VIC2Colour_White , VIC2Sprite0Colour
+	+MByteValueToAddress_A VIC2Colour_Cyan , VIC2Sprite1Colour
+	+MByteValueToAddress_A VIC2Colour_Green , VIC2Sprite2Colour
+	+MByteValueToAddress_A VIC2Colour_Purple , VIC2Sprite3Colour
+	+MByteValueToAddress_A VIC2Colour_Red , VIC2Sprite4Colour
+	+MByteValueToAddress_A VIC2Colour_Orange , VIC2Sprite5Colour
+	+MByteValueToAddress_A VIC2Colour_Grey , VIC2Sprite6Colour
+	+MByteValueToAddress_A VIC2Colour_LightRed , VIC2Sprite7Colour
+
+	+MByteValueToAddress_A %11000000 , VIC2SpriteMulticolour
+	+MByteValueToAddress_A VIC2Colour_LightGreen , VIC2ExtraSpriteColour1
+	+MByteValueToAddress_A VIC2Colour_Black , VIC2ExtraSpriteColour2
+	+MVIC2SpriteEnableAll_A
+.l1
+	; Here turn off 25 row mode
+	lda #kVIC2ScreenControlVBits_ScreenOn | %011
+	+MACROWaitForRaster_X $f8
+	sta VIC2ScreenControlV
+
+.smt1	lda #$ff
+	bne .doCount
+
+	inc .smxp+1
+
+	jmp .overCount
+.doCount
+	dec .smt1 + 1
+.overCount
+
+.smxp lda #0
+	sta VIC2Sprite7X
+
+	; Here turn on 25 row mode
+	lda #kVIC2ScreenControlVBits_ScreenOn | kVIC2ScreenControlVBits_25Rows | %011
+	+MACROWaitForRaster_X $fc
+	sta VIC2ScreenControlV
+
+	; Skip the hi raster positions
+.rh1
+	lda VIC2ScreenControlV
+	bpl .rh1
+.rh2
+	lda VIC2ScreenControlV
+	bmi .rh2
+	
+	; Now use a raster IRQ to get cycle accurate timing
+	+MWordValueToAddress_A StableIRQ , KERNALIRQServiceRoutineLo
+	+MByteValueToAddress_A %1 , VIC2InteruptControl
+	+MACROWaitForRaster_X VIC2SpriteYBorderTop - VIC2SpriteSizeY - 12 - 4
+	inc VIC2Raster
+	+MACROAckRasterIRQ_A
+	tsx
+	cli
+	; Fill remaining code with
+!for .i , 100 {
+	nop
+}
+	; Should never reach this jam, but if it does then we will hit the debugger
+	jam
+
+!align 255,0
+StableIRQ
+	txs
+
+	; Delay for a while
+	ldx #8
+.wl1
+	dex
+	bne .wl1
+	bit $ea
+
+	; Final cycle wobble check.
+	lda VIC2Raster
+	cmp VIC2Raster
+	beq .start
+.start
+
+	; The raster is now stable
+
+	; Now play around with the sprite effects
+	lda #0
+	sta VIC2_Bank0_GhostByte
+	+MByteValueToAddress_A VIC2Colour_Yellow , VIC2ScreenColour
+
+	; Just some obvious SCREENRAM instructions to use while debugging, these all will start on the same raster line cycle
+	; Next line
+	inc SCREENRAM
+	+DelayFor CyclesPerRasterPALC64 - 6
+
+	; Next line
+	inc SCREENRAM+1
+	+DelayFor CyclesPerRasterPALC64 - 6
+
+	; Next line
+	inc SCREENRAM+2
+	; Extra cycles for sprite memory access
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19
+
+	; Next lines
+	; Expand and contract the sprite double width depending on which lines are being drawn
+!for .i , 21 {
+	+DelayFor 2
+	inc VIC2ScreenColour
+!if .i & 8 {
+	lda #%10000000
+	ldx #0
+} else {
+	lda #0
+	ldx #%10000000
+}
+	sta VIC2SpriteDoubleWidth
+	inc VIC2Sprite7X
+	+DelayFor 2
+	stx VIC2SpriteDoubleWidth
+
+	+DelayFor CyclesPerRasterPALC64 - 6 - 19 - 2 - 2 - 2 - 4 - 4 - 8
+}
+
+
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+
+	lda #0
+	+MACROWaitForRaster_X VIC2SpriteYBorderTop - 12 + 4
+	sta VIC2_Bank0_GhostByte
+
+	jmp .l1
+
+*=$200
+SpriteFrame0
++SpriteLine %....################....
++SpriteLine %...##################...
++SpriteLine %..####################..
++SpriteLine %.######################.
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %########################
++SpriteLine %.######################.
++SpriteLine %..####################..
++SpriteLine %...##################...
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
++SpriteLine %....################....
+*=$240
+SpriteFrame1
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %#.#..#.##.#.#.#..#.##.#.
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %..#.#.#.#.....#.#.#.#...
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
++SpriteLine %###.#.#.#.#####.#.#.#.##
+
+!source "stdlib/Initialise.a"
+

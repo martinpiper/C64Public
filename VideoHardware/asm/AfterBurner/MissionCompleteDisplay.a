@@ -1,0 +1,40 @@
+!zn
+
+.xpos !by $90
+.ypos !by $90
+
+MissionCompleteDisplayRenderSpritesDirectMode
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	lda #40
+	sec
+	sbc .xpos
+!for .i , 3 {
+	cmp #2
+	bcc +
+	+M_ASR
++
+}
+	clc
+	adc .xpos
+	sta .xpos
+	sta zeroPage_Temp4
+
+	lda #64
+	sec
+	sbc .ypos
+!for .i , 3 {
+	cmp #2
+	bcc +
+	+M_ASR
++
+}
+	clc
+	adc .ypos
+	sta .ypos
+	sta zeroPage_Temp5
+
+	+MRenderSpriteWithStrideNoScalePositionsX2 kVarsEmitSpriteFrame_missioncomplete_0_0_0_colour , zeroPage_Temp4 , zeroPage_Temp5 , 0 , 0 , kVarsEmitSpriteFrame_missioncomplete_0_0_0_tileAddress , kVarsEmitSpriteFrame_missioncomplete_0_0_0_tileWidth , kVarsEmitSpriteFrame_missioncomplete_0_0_0_tileHeight , kVarsEmitSpriteFrame_missioncomplete_0_0_0_tileWidth , 0
+
+	rts

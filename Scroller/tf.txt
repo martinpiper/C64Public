@@ -7,18 +7,15 @@ Read load address (from first two bytes) as $0400
 End address = $fe00
 Opening 'Scroller.prg' for writing...
 Working...
-Input length = $fa00 (64000) output length = $759e (30110)
-Setting EasyFlash mode
+Input length = $fa00 (64000) output length = $7581 (30081)
+Setting GMod2 mode
 New address $8000
 New bank $0
 File '..\Citadel2\Citadel2Cart_8K.prg' read $297
  Copy from $2 len $295 to $0
  Write bank
-New address $a000
-New bank $0
- Copy from $2 len $2 to $1ffc
- Write bank
-File 'Scroller.prg' read $759e
+New address $8000
+File 'Scroller.prg' read $7581
 New address $8000
 New bank $1
  Copy from $1 len $2000 to $0
@@ -33,7 +30,7 @@ New bank $3
  Write bank
 New address $8000
 New bank $4
- Copy from $6001 len $159d to $0
+ Copy from $6001 len $1580 to $0
  Write bank
 New address $8000
 New bank $5
@@ -211,4 +208,4 @@ New bank $31
 New bank $32
  Write multi-bank 50 $8000
 Finished adding chunks wasteage=0 wasteage2=4532 totalbyteSize=151018 compressionSavedBytes=0
-File 'Scroller.crt' wrote $68380
+File 'Scroller.crt' wrote $66370

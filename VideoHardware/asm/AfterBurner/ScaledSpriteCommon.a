@@ -17,15 +17,65 @@ ResetInterfaceAndStartSendingScaledSprites
 	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
 	rts
 
+ResetInterfaceAndStartSendingScaledSprites2
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag not ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls2
+	+MBus24Bit_Send8BitValue 2
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers2
+	rts
+
+StartSprites4Render
+	; Flag not ready
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 2
+
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+	rts
+
+StartSprites4Render2
+	; Flag not ready
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls2
+	+MBus24Bit_Send8BitValue 2
+
+	; Reset and set the 24 bit address in 32 bit mode
+	jsr Bus20To32Bit1_ShortReset
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers2
+	rts
 
 ; Shows sprite timeout. This is a small sprite, rendered last in the top left of the screen, that will not be displayed if the sprite hardware runs out of frame draw time.
 ; The left and top edges should exactly touch the borders.
 RenderTimeout
-	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 0 , 0 , $a0 , $a0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 0 , 0 , $f8 , $f8 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
 	; These are very small and depending on the precise X pos placement should progressively be completely clipped
 ;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -4 , 4 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
 ;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -8 , 8 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
 ;	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , -12 , 12 , $f8 , $f0 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
+	rts
+
+RenderTimeout2
+	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 8 , 0 , $f8 , $f8 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
 	rts
 
 
@@ -47,6 +97,24 @@ TerminateScaledSpritesAndSignalReady
 
 	rts
 
+TerminateScaledSpritesAndSignalReady2
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch4_A
+
+	jsr TerminateScaledSpritesList
+
+	; Reset the 24 bit interface
+	+MBus20To32Bit1_WriteMode_A
+	+MBus20To32Bit1_SetLatch7_A
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	; Flag ready
+	+MBus20To32Bit1_SetLatch4_A
+	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls2
+	+MBus24Bit_Send8BitValue 3
+
+	rts
+
 
 TerminateScaledSpritesList
 	; Terminate the sprite list
@@ -62,6 +130,16 @@ Exit32BitModeAndSignalReady
 
 	; Flag ready
 	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 3
+
+	rts
+
+Exit32BitModeAndSignalReady2
+	; Exit out of 32 bit mode and back to passthrough mode
+	jsr Bus20To32Bit1_ShortReset
+
+	; Flag ready
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls2
 	+MBus24Bit_Send8BitValue 3
 
 	rts
