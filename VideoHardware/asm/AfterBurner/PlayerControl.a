@@ -86,9 +86,7 @@ PlayerControl
 	jsr PlayerEngineSoundControl
 
 	lda GamePlayerExplode_ExplodeFrame
-	beq .notExplodingPlayer
-	jmp RunGamePlayerExplode
-.notExplodingPlayer
+	+lbne RunGamePlayerExplode
 
 	; Base score addition on speed
 	lda landscapeFrameSpeed
@@ -763,6 +761,12 @@ RenderSpritePlayer
 	sta .smt1+2
 	sta .smt2+2
 
+	lda GamePlayerExplode_Winged
+	cmp #120
+	bcs .doExplosionRender	; Player is hitting the landscape...
+	lda GamePlayerExplode_Winged
+	bne .justRender
+.doExplosionRender
 	lda GamePlayerExplode_ExplodeFrame
 	cmp #30
 	+lbcs RenderSpritePlayerExplode3
@@ -784,7 +788,10 @@ RenderSpritePlayer
 	lsr
 	and #1
 	beq .smt1
+.skipRender
 	rts
+
+.justRender
 
 .smt1	lda RenderSpritePlayerR0YTab,y
 	sta .smj2+1

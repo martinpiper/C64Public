@@ -75,6 +75,7 @@ Entity_commonBulletMissileEnemyHitCheck
 	jsr ScoreAdd_1500
 	jsr TextAddHitNumber
 
+SometimesMakeExplosionEntity
 	; Choose how to explode
 	jsr Rand
 	and #1

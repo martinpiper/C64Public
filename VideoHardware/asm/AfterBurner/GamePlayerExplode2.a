@@ -1,0 +1,39 @@
+!zn
+GamePlayerExplode_stillExplodingWinged
+	and #1
+	bne .oSmoke1
+	lda #6
+	sta EntityXPos
+	lda GamePlayerExplode_Winged
+	lsr
+	lsr
+	clc
+	adc #defaultNeutralScaleIs
+	sta EntityZPos	; Move smoke start into the distance...
+
+	lda GamePlayerExplode_Winged
+	lsr
+	lsr
+	eor #$ff
+	clc
+	adc playerYPositionOffset_AsEntityYPos
+	sta EntityYPos
+	ldy #0 ; The player entity
+	jsr CommonMissle_doSmokeForPlayerWinged
+	bcs .oSmoke1	; No free entity for smoke
+	lda GamePlayerExplode_Winged
+	cmp #120
+	bcs .hitGround2
+	and #15
+	cmp #1	; Adjust for explosion frame at start hit
+	bne .oSmoke1
+.hitGround
+	jsr SometimesMakeExplosionEntity
+.oSmoke1
+	rts
+.hitGround2
+	inc GamePlayerExplode_ExplodeFrame	; Animate the explosion
+	jmp .hitGround
+
+GamePlayerExplode_ExplodeFrame !by 0
+GamePlayerExplode_Winged !by 0

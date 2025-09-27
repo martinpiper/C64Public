@@ -85,6 +85,7 @@ CommonMissle_doSmoke
 	lda #4
 	sta .emitSmokeCounter
 
+CommonMissle_doSmokeForPlayerWinged
 	jsr EntityFindFreeSlot
 	bcs .noSmoke1
 	lda EntityXPos,y
@@ -111,6 +112,7 @@ CommonMissle_doSmoke
 	
 	lda #0
 	sta EntityTypeIsRotating,x
+	clc
 
 .noSmoke1
 	rts
@@ -204,12 +206,6 @@ EntityState_EnemyMissile
 	cmp #8
 	bcs .notHitPlayer
 
-	lda EntityXPos,y
-	clc
-	adc #2
-	cmp #4
-	bcs .notHitPlayer
-
 	lda playerYPositionOffset_AsEntityYPos
 	sec
 	sbc EntityYPos,y
@@ -218,7 +214,17 @@ EntityState_EnemyMissile
 	cmp #2
 	bcs .notHitPlayer
 
+	lda EntityXPos,y
+	clc
+	adc #2
+	cmp #4
+	bcs .notHitPlayer
+
 !ifndef BuildTitleScreen {
+	cmp #1
+	beq .notWinged
+	inc GamePlayerExplode_Winged
+.notWinged
 	jsr InitGamePlayerExplode
 }
 	jmp EntityState_RemoveEntity
