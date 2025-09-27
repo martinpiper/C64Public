@@ -24,8 +24,8 @@ GamePlayerExplode_stillExplodingWinged
 	lda GamePlayerExplode_Winged
 	cmp #120
 	bcs .hitGround2
-	and #15
-	cmp #1	; Adjust for explosion frame at start hit
+	and #15	; Produces a nice trailing of explosions in the smoke.
+	cmp #2	; Adjust for explosion frame at start hit.
 	bne .oSmoke1
 .hitGround
 	jsr SometimesMakeExplosionEntity

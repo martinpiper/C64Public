@@ -2350,3 +2350,20 @@
 
 * Demo14: Mission Complete needs to restore the correct characters...
 	>> resourceFileOffset_ResourcesMissionCompleteRestore
+
+
+
+* Demo14: Player clipped wing death, small explosion, smoke trail, hit ground, fireballs... No player input during this time.
+	> Perhaps reuse the code in C64\VideoHardware\asm\AfterBurner\GamePlayerExplode.a
+	> Don't increment GamePlayerExplode_ExplodeFrame (avoid large explosions and animating player explosion frames)
+	> inc TriggerSamplePlay_Explosion1 at start
+	> Spawn smoke often and sometimes explosion entities
+	> Tile landscape camera down
+	> Then push explosion landscape objects into the distance from the position
+	> With TriggerSamplePlay_Explosion1/2/3
+	> Maybe bank player left/right/up/down
+	>> GamePlayerExplode_Winged
+	>> CommonMissle_doSmokeForPlayerWinged
+	>> Maybe GamePlayerExplode_Winged can be used to display different roll animations...
+	>> Produces a nice trailing of explosions in the smoke.
+	>> Adjust for explosion frame at start hit.

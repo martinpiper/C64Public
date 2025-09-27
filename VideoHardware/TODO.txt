@@ -660,11 +660,6 @@
 
 
 
-* Demo14: Player clipped wing death, small explosion, smoke trail, hit ground, fireballs... No player input during this time.
-
-
-
-
 * Demo14: All the data combined is near the 2MB limit, but there is still lots of free memory for the Sprites4 layer and other graphics, like the animated hand in the intro and the end game sequence and the other intro screens.
 	> There is potential to split the data into two 2MB chunks by having the boot upload all graphics data first, then run the actual title/game parts from a new 2MB chunk to be oploaded after the graphics data push
 		The graphics data upload can wait for the second chunk of data with a different gameDataIdentifier chunk
