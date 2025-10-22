@@ -41,9 +41,9 @@ Scroller_DiscardMinSpriteYPos = VIC2SpriteYBorderTop - VIC2SpriteSizeY
 Multiplex_VarBase	= scrollerDemo_endVars
 Multiplex_spritepointer	= $cbf8
 ; Enable this to maintain sprite priority ordering based on Y position.
-;Multiplex_MaintainPriority	= 1
+Multiplex_MaintainPriority	= 1
 ; Enable this to reverse sprite ordering
-Multiplex_ReverseOrder = 1
+;Multiplex_ReverseOrder = 1
 
 ; Enable this to allow multiplex sorting during the multiplexor IRQs.
 ;Multiplex_SplitSort = 1
@@ -292,3 +292,11 @@ Scroller_SkipEmptySpriteExplodingEnemies = 1
 
 ; Enable this to make the enemy animation loop instead of ending.
 ;Scroller_LoopingEnemy = 1
+
+
+; Enables the player 1 shadow example
+; The player input is also used for the specified shadow animation type, so directional movement can be used to change the shadow.
+; Shadows tend to look better when they have consistent depth ordering, so consider using with Multiplex_MaintainPriority
+Scroller_Player1ShadowObject = 22
+Scroller_Player1ShadowOffsetXPos = 10
+Scroller_Player1ShadowOffsetYPos = 5

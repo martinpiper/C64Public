@@ -393,6 +393,12 @@ InitPlayer1
 !ifdef Scroller_LinkedPlayers {
 InitPlayer2
 }
+!ifdef Scroller_Player1ShadowObject {
+	ldy #Scroller_Player1ShadowObject
+	jsr AnimationFindFreeSlot
+	; No error check needed since animations have just been initialised
+	stx Player1Information+PlayerGameOffset_AnimationShadowIndex
+}
 	ldy #AnimationType_Player1
 	jsr AnimationFindFreeSlot
 	; No error check needed since animations have just been initialised

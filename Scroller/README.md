@@ -38,6 +38,7 @@ Then reference the saved p00 data file on your PC by putting the path to the fil
 * To start SEUCK in Vice and allow SEUCK to save "*.p00" files that can be easily imported:
 cd /d C:\Work\C64\SEUCK
 cd /d C:\Work\C64\SEUCK\Debug1
+cd /d C:\Work\C64\SEUCK\Debug2
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCK.prg"
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskBlank.prg"
 "C:\Downloads\WinVICE-3.1-x86-r34062\WinVICE-3.1-x86-r34062\x64sc.exe" -remotemonitor -fs8savep00 +truedrive -virtualdev "C:\Work\C64\SEUCK\SEUCKDiskGame1.prg"

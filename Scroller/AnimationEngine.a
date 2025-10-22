@@ -54,6 +54,10 @@ AnimationKillEverythingExceptPlayers
 	ldx #Multiplex_items-1
 .l1
 	lda AnimationType,x
+!ifdef Scroller_Player1ShadowObject {
+	cmp #Scroller_Player1ShadowObject
+	beq .dontZap
+}
 	cmp #AnimationType_Enemy1Bullet
 	bcc .dontZap
 	lda #$ff
@@ -457,7 +461,11 @@ AnimationUpdateEnemyFire
 !ifdef Scroller_LOTD {
 	cmp #AnimationType_Spell1
 	bcs .sl3
-}	
+}
+!ifdef Scroller_Player1ShadowObject {
+	cmp #Scroller_Player1ShadowObject
+	beq .sl3
+}
 	cmp #AnimationType_Enemy1
 	bcc .sl3
 
@@ -1079,6 +1087,9 @@ AnimationUpdateEnemyFire
 .processPlayer1BulletMovementS jmp .processPlayer1BulletMovement
 .processPlayer2BulletMovementS jmp .processPlayer2BulletMovement
 .noFrameChangeS jmp .noFrameChange
+!ifdef Scroller_Player1ShadowObject {
+.processShadow1ObjectS jmp .processShadow1Object
+}
 AnimationUpdateFrameMovement
 	; Reset the count since we are processing all objects anyway
 	lda #0
@@ -1097,6 +1108,11 @@ AnimationUpdateFrameMovement
 	rts
 
 .processTypeCont1
+!ifdef Scroller_Player1ShadowObject {
+	cmp #Scroller_Player1ShadowObject
+	beq .processShadow1ObjectS
+}
+
 !ifdef Scroller_LOTD {
 	cmp #AnimationType_Spell1
 	bcs .processSpellMovementS
@@ -1226,6 +1242,10 @@ AnimationUpdateFrameMovement
 	bne .notExplosion
 
 	lda AnimationType,x
+!ifdef Scroller_Player1ShadowObject {
+	cmp #Scroller_Player1ShadowObject
+	beq .notExplosion
+}
 	cmp #AnimationType_Player1Death
 	beq .respawnPlayer
 	cmp #AnimationType_Player2Death
@@ -1719,6 +1739,36 @@ SafeRandomDirectionTab
 	lda #$ff
 	sta AnimationType,x
 	jmp .processAnimationFrames
+
+}
+
+!ifdef Scroller_Player1ShadowObject {
+.processShadow1Object
+	tya
+	pha
+
+	ldy Player1Information+PlayerGameOffset_AnimationIndex
+
+	lda AnimationXPosLo,y
+	clc
+	adc #Scroller_Player1ShadowOffsetXPos
+	sta AnimationXPosLo,x
+	lda AnimationXPosHi,y
+	adc #0
+	sta AnimationXPosHi,x
+	lda AnimationYPos,y
+	clc
+	adc #Scroller_Player1ShadowOffsetYPos
+	sta AnimationYPos,x
+
+	lda AnimationDirectionIn,y
+	sta AnimationDirectionIn,x
+	lda AnimationDirectionLastValidIn,y
+	sta AnimationDirectionLastValidIn,x
+
+	pla
+	tay
+	jmp .processAnimationFrames
 }
 
 !ifdef Multiplex_SplitSort {
@@ -2010,6 +2060,12 @@ smSpellEffectRunningPlayerType	lda #$ff
 .c1
 	lda AnimationType,x
 	bmi .lecc2
+!ifdef Scroller_Player1ShadowObject {
+	; Ignore any collisions with the shadow...
+	cmp #Scroller_Player1ShadowObject
+	beq .lecc2
+}
+
 	stx .sprPair
 	tax
 	lda .isEnemyOrBulletType,x

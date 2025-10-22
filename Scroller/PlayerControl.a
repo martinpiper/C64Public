@@ -13,18 +13,19 @@ PlayerGameOffset_JoyStickPort	= 9
 PlayerGameOffset_LastSafePosXLo	= 10
 PlayerGameOffset_LastSafePosXHi	= 11
 PlayerGameOffset_LastSafePosY	= 12
+!set PlayerGameOffset__size			= 13	; Note the size can change... I really need structure (or enum) syntax...
 !ifdef Scroller_LOTD {
-PlayerGameOffset_Spells			= 13
+PlayerGameOffset_Spells			= PlayerGameOffset__size
+!set PlayerGameOffset__size = PlayerGameOffset__size + 1
+}
+!ifdef Scroller_Player1ShadowObject {
+PlayerGameOffset_AnimationShadowIndex			= PlayerGameOffset__size
+!set PlayerGameOffset__size = PlayerGameOffset__size + 1
 }
 
 ; Each player data bytes
-!ifdef Scroller_LOTD {
-Player1Information !fill 14
-Player2Information !fill 14
-} else {
-Player1Information !fill 13
-Player2Information !fill 13
-}
+Player1Information !fill PlayerGameOffset__size
+Player2Information !fill PlayerGameOffset__size
 
 PlayerInvulnerableTime = 200
 
