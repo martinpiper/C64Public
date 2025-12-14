@@ -26,10 +26,7 @@ InitTitleScreen
 	jsr Video_SetAddressVideoPaletteBankRegister
 	+MBus24Bit_Send8BitValue $07
 
-	; Show the title screen
-	jsr Video_SetAddressCharScrollRegisters
-	+MBus24Bit_SendLE16BitValue 0
-	+MBus24Bit_SendLE16BitValue 256
+	jsr ShowTitleScreen
 
 	!source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
 	; Before accessing the screen RAM
@@ -84,8 +81,16 @@ InitTitleScreen
 	ldy #TextTitleScreen_credits2_size
 	jsr Bus24Bit_WriteAForY
 
+	lda #kVideo_EnableDisplay_Enable; | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+
 	rts
 
+ShowTitleScreen
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 256
+	rts
 !convtab "tmp\ConvtabChar8x8.ct" {
 TextTitleScreen_credits1
 !tx "megawang 2000 turbo edition"
@@ -112,6 +117,11 @@ mainLoop3
 	jsr EntitySort
 	jsr RenderSpritesTitle
 
+!ifdef Debug_RunIntroScreenSequence {
+	+MByteValueToAddress_A Debug_RunIntroScreenSequence , RunGameIntroCycle
+	jmp .introScreen
+}
+
 	; 16 bit timeout value for switching to the demo mode
 	inc TitleFramesTimeout
 	bne .notTimeYet
@@ -120,10 +130,43 @@ mainLoop3
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_4
 	jsr InitGame
+	; Fake progression each iteration
+	lda RunGameIntroCycle
+.bph
+	jsr Seed
+	lda RunGameIntroCycle
+	and #%1111
+	asl
+	asl
+	asl
+	ora #1 ; Avoid 0
+	sta zeroPage_Temp23
+.ull1
+	jsr UpdateLandscapeFrame
+	jsr UpdateLandscapeFrame
+	jsr UpdateLandscapeFrame
+	jsr UpdateLandscapeFrame
+	dec zeroPage_Temp23
+	bne .ull1
 	jsr RunGame
 	jsr InitScoreTable
 	jsr RunScoreTable
-	jsr InitTitleScreen
+	; Show intro screens...
+	inc RunGameIntroCycle
+.introScreen
+	; Before accessing the screen RAM
+	jsr Bus20To32Bit1_Init
+	jsr Video_WaitVBlank
+	jsr VBlankUpdateTextColours
+
+	jsr ShowTitleScreen
+	jsr Bus20To32Bit1_Init
+	jmp CommonBootCode_JumpTable_LoadRun_MissionComplete
+	; NOTE: Does not return to the loop here
+;	jmp *
+;	jsr InitTitleScreen
+;	jsr DisplayRunIntroScreen1
+;	jsr InitTitleScreen
 .notTimeYet
 
 	+WaitForFireLoop_A mainLoop3

@@ -15,7 +15,11 @@ BitmapLogo			= $a000
 TapeLoadErrorLine = 16
 TapeCounterOffset = (15*40)+18
 
-!pseudopc $f000 {
+!ifndef MainSecondLoaderPseudoPC {
+MainSecondLoaderPseudoPC = $f000
+}
+
+!pseudopc MainSecondLoaderPseudoPC {
 .yposSplit = 238
 MainSecondLoaderStart
 	; IRQs are already off here, but we duplicate the SEI just to make it obvious what we are doing.
@@ -46,6 +50,7 @@ MainSecondLoaderStart
 	dex
 	bne .cl1
 
+!ifndef MainLoad_DontInitScreenAtStart {
 	; Clear any bitmap data
 	lda #0
 .cl2
@@ -56,8 +61,10 @@ MainSecondLoaderStart
 	ldy .cl2+2
 	cpy #$c0
 	bne .cl2
+}
 
 
+!ifndef MainLoad_DontInitScreenAtStart {
 	; Initialise the scroller text and tape counter white colour
 	ldy #39
 	lda #VIC2Colour_White
@@ -82,14 +89,20 @@ MainSecondLoaderStart
 	dey
 	bne .l2b
 }
+}
 
 	jsr TapeLoaderInitialiseIRQ
 	; Start loading data now, from the filename "0"
+!ifdef MainLoad_StartLoadingFilename {
+	lda #MainLoad_StartLoadingFilename
+} else {
 	lda #0
+}
 	jsr TapeLoaderLoadNewFile
 	cli
 
 
+!ifndef MainLoad_DontInitScreenAtStart {
 	; Set a solid or clear sprite as default
 	ldy #63
 !ifdef Scroller_LOTD {
@@ -138,12 +151,16 @@ MainSecondLoaderStart
 }
 	lda .spriteColours
 	sta VIC2Sprite0Colour
+
 	; And switch on the sprite
 !ifdef MainLoad_EnableScreen {
 	lda #1
 	sta VIC2SpriteEnable
 }
+
 	jsr DisplayTextScreen
+} ;< ifndef MainLoad_DontInitScreenAtStart
+
 .MainLoop
 	; Some debugging that allows us to see spare mainline cycles between the IRQs by changing the screen colour
 !if 0 {
@@ -151,6 +168,8 @@ MainSecondLoaderStart
 	dec VIC2ScreenColour
 	jmp .MainLoop
 }
+
+!ifndef MainLoad_DisableSplit {
 	lda .disableScrollingMessage
 	bne .noScrollSplit1
 .s00
@@ -168,6 +187,7 @@ MainSecondLoaderStart
 	lda .xpos
 	sta VIC2ScreenControlH
 .noScrollSplit1
+}
 
 !ifdef OpenBorders {
 .notYet1
@@ -191,6 +211,7 @@ MainSecondLoaderStart
 	sta VIC2ScreenControlV
 }
 
+!ifndef MainLoad_DisableMusic {
 	; There is some spare time here so use it for playing the music
 	; If the music isn't yet loaded then don't play it :)
 	lda .musicInited
@@ -198,8 +219,10 @@ MainSecondLoaderStart
 	; Play
 	jsr $c003
 .s1
+}
 
 
+!ifndef MainLoad_DisableSplit {
 	; Now wait for the raster to move off the bottom of the screen
 	; After the open border code or the music will be fine.
 .s0
@@ -219,6 +242,7 @@ MainSecondLoaderStart
 }
 	sta VIC2ScreenControlH
 .noScrollSplit2
+}
 
 	; Now it is safe to execute routines that can take some time
 !ifdef EnableBlockCompression {
@@ -249,8 +273,10 @@ MainSecondLoaderStart
 	; Check the filename
 	cpx #0
 	beq .SkipFileLoaded
+!ifndef MainLoad_DisableMusic {
 	cpx #1
 	beq .InitMusic
+}
 !ifdef BitmapDisplay {
 	cpx #2
 	beq .displayBitmap
@@ -329,12 +355,14 @@ UnusedSpace = $0334
 }
 
 	; Some small functions to flag updates close to where they are branched from
+!ifndef MainLoad_DisableMusic {
 .InitMusic
 	lda #0
 	jsr $c000
 	lda #1
 	sta .musicInited
 ;	jmp .SkipFileLoaded
+}
 
 .SkipFileLoaded
 
@@ -362,12 +390,16 @@ UnusedSpace = $0334
 	bne .rrwnd
 	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressStop , .textLoadErrorPressStopEnd , SCREENRAM + (TapeLoadErrorLine*40), VIC2Colour_LightRed
+!ifndef MainLoad_DisableSplit {
 	jsr .clearScrollingMessageLine
+}
 	jmp .overText
 .rrwnd
 	jsr DisplayTextScreen
 	+DisplayColourTextMiddle_AX .textLoadErrorPressRewind , .textLoadErrorPressRewindEnd , SCREENRAM + (TapeLoadErrorLine*40) , VIC2Colour_LightRed
+!ifndef MainLoad_DisableSplit {
 	jsr .clearScrollingMessageLine
+}
 .overText
 
 	; Test for stop being pressed
@@ -386,6 +418,7 @@ UnusedSpace = $0334
 	jmp .endLoadErrorCode
 
 .disableScrollingMessage !by 0
+!ifndef MainLoad_DisableSplit {
 .clearScrollingMessageLine
 	ldx #40
 	lda #' '
@@ -394,6 +427,7 @@ UnusedSpace = $0334
 	dex
 	bne .cll2
 	rts
+}
 
 .notStop
 	; Play or rewind or FFWD is pressed, was the stop key pressed?
@@ -415,6 +449,7 @@ UnusedSpace = $0334
 
 .endLoadErrorCode
 
+!ifndef MainLoad_DisableCounter {
 	; Display the blocks left to load
 	lda TapeLoaderExpectedLoadingBlocks
 	beq .noTapeCount
@@ -443,7 +478,9 @@ UnusedSpace = $0334
 	sta SCREENRAM+TapeCounterOffset+1
 	sta SCREENRAM+TapeCounterOffset+2
 .tapeCountEnd
+}
 
+!ifndef MainLoad_DisableSplit {
 	lda .disableScrollingMessage
 	bne .noScrollSplit3
 	; Update the scroll
@@ -471,10 +508,12 @@ UnusedSpace = $0334
 	ldy #0
 .s2
 	sty .nextChar
+}
 	jmp .MainLoop
 
 .stopPressed !by 0
 .musicInited !by 0
+!ifndef MainLoad_DisableSplit {
 .xpos !by 7
 .nextChar !by 0
 !ifdef Scroller_LOTD {
@@ -499,6 +538,7 @@ UnusedSpace = $0334
 .text2End
 
 }
+}
 
 .textLoadErrorPressStop
 !scr "load error. press stop"
@@ -519,10 +559,12 @@ UnusedSpace = $0334
 	!by VIC2Colour_Orange,VIC2Colour_Purple,VIC2Colour_DarkGrey,VIC2Colour_Red
 	!by VIC2Colour_Brown,VIC2Colour_Blue,VIC2Colour_Black,VIC2Colour_Black
 
+!ifndef MainLoad_DisableCounter {
 ; Lookup tables to convert the remaining blocks left to load value into hundreds, tens and units.
 TableMod10 !for .t,256 {!by (.t-1) % 10}
 TableDiv10 !for .t,256 {!by (.t-1) / 10}
 TableDiv100 !for .t,256 {!by (.t-1) / 100}
+}
 
 ; Use this macro to define what happens during the bit processing from the tape loader
 !macro MTapeLoader_bitProcess_A {
@@ -562,6 +604,21 @@ DisplayTextScreen
 	lda #VIC2ScreenControlVDefault
 	sta VIC2ScreenControlV
 }
+!ifdef MainLoad_DontInitScreenAtStart {
+	; Initialise the scroller text and tape counter white colour
+	ldy #39
+	lda #VIC2Colour_White
+.l2
+	sta COLOURRAM+(24*40),y
+	dey
+	bpl .l2
+!ifdef EnableBlockCompression {
+	sta COLOURRAM+TapeCounterOffset-2
+}
+	sta COLOURRAM+TapeCounterOffset
+	sta COLOURRAM+TapeCounterOffset+1
+	sta COLOURRAM+TapeCounterOffset+2
+}
 	rts
 
 !ifdef BitmapDisplay {
@@ -577,12 +634,15 @@ DisplayBitmapScreen
 	rts
 }
 
+!ifndef BlocksLoadedTable {
 ; Must be the last bit of memory since this table is not allocated. Why bother to load a table
 ; full of zeros? :)
 BlocksLoadedTable = *
+}
 !if BlocksLoadedTable > $fe00 {
 !error "This table must not start later than $fe00."
 }
+
 
 MainSecondLoaderEnd
 }

@@ -1,3 +1,6 @@
+;python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py c:\temp\t.bmp $8a
+;python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py c:\temp\rawimage.bin
+;python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py c:\temp\aburner1_mono.bin
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
 kBus24Bit_VideoLayer_ExpandedPalettes = 1
@@ -6,9 +9,10 @@ kBus24Bit_SpritesMaxNum = 32
 !source "stdlib/stdlib.a"
 !source "stdlib/LongBranches.a"
 !source "BombJack/stdlib/Bus24Bit_Macros.a"
+!source "BombJack/stdlib/Bus20To32Bit1_Macros.a"
 !source "BombJack/stdlib/Video_Macros.a"
 !source "BombJack/stdlib/APU_Macros.a"
-
+!source "asm/AfterBurner/Audio2_Macros.a"
 
 !to "bin/main.prg", cbm
 !sal
@@ -27,14 +31,18 @@ IncludeGraphicsData = 1
 
 !zn
 *=$200
+	+MStopInitStack_X
 	jmp start
 	
 !source "tmp/FingerPrint.a"
 
+* = SCREENRAM
+Initialise_NoPreserveStack = 1
 Initialise_NoMACROWaitForTheLastScan = 1
 Initialise_NoIRQServiceRoutine = 1
 !source "stdlib/Initialise.a"
 !source "BombJack/stdlib/Bus24Bit.a"
+!source "BombJack/stdlib/Bus20To32Bit1.a"
 !source "BombJack/stdlib/Video.a"
 !source "BombJack/stdlib/HardwareTest.a"
 !source "BombJack/stdlib/APU.a"
@@ -45,6 +53,9 @@ start
 	lda #ProcessorPortAllRAMWithIO
 	jsr InitialiseMachine
 	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	jsr APU_ResetDisableClear
+	jsr Video_DisableDisplay
 	jsr APU_ResetDisableClear
 
 !ifdef IncludeGraphicsData {
@@ -52,8 +63,165 @@ start
 ;	+WaitForFire_A
 }
 
+;	+WaitForFire_A
+
 	jsr Bus24Bit_Init
 	jsr Video_DisableDisplay
+	jsr APU_ResetDisableClear
+
+!if 0 {
+	lda #kVideo_EnableDisplay_Enable
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
+	jsr Video_SetAddressVideoControlRegisters
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable | $01
+}
+
+!if 0 {
+.otherClear3
+	; DMA Copy
+	jsr Bus24Bit_Init
+	; BackgroundRGB bank address
+;	+MBus24Bit_SetAddress_A $01 , $a300
+	; Audio2 bank address
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Bank
+.smb3	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_Init
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	jsr Bus20To32Bit1_SetLatch2
+	+MBus24Bit_Send8BitValueFromAddress .smb3+1
+	jsr Bus20To32Bit1_SetLatch4
+	; BackgroundRGB EBBS
+;	+MBus24Bit_SetAddressNoReset_A $03 , 0
+	; Audio2 EBBS
+	+MBus24Bit_SetAddressNoReset_A $06 , 0
+
+.bph
+	; DMA Two 32768 byte chunks, not 65535 bytes skipping a byte...
+	jsr DMAHalfBank
+	jsr DMAHalfBank
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus24Bit_Init
+
+	inc .smb3+1
+	lda .smb3+1
+	cmp #$20
+	+lbne .otherClear3
+}
+
+	; Test Audio2 samples
+!if 1 {
+.smpl1
+	jsr Bus24Bit_Init
+	jsr Audio2_Disable
+	; TODO: Add MAudio2_SetSampleHz
+;	+MAudio2_SetSampleHz kAudio2_LeftChannel , 0 , 1455132 , 12500
+	+MAudio2_SetSampleHz kAudio2_LeftChannel , 0 , 1437314 , 12500
+	lda #255
+	jsr Audio2_SetVolume
+	jsr Audio2_Enable
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 8000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 10000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 14000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 16000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 25000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 36000
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 44100
+	+WaitForFire_A
+	+MAudio2_SetSampleJustHz kAudio2_LeftChannel , 12500
+	+WaitForFire_A
+	jmp .smpl1
+}
+
+
+!if 0 {
+.otherClear
+	; CPU Clear
+	jsr Bus24Bit_Init
+	+MBus24Bit_SetAddress_A $01 , $a300
+.smb1	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SetAddress_A $03 , 0
+
+	lda #%11110000
+	ldy #0
+;	ldy #$80
+	ldx #0
+.cccl1
+	+MBus24Bit_Send8BitValueFromA
+;	+MBus24Bit_Send8BitValueFromX
+;	+MBus24Bit_Send8BitValueFromY
+;	+MBus24Bit_Send8BitValueFromY
+;	+MBus24Bit_SendLE16BitValue $1234
+;	+MBus24Bit_SendLE16BitValue $ffff
+;	+MBus24Bit_SendLE16BitValue $3434
+	dex
+	bne .cccl1
+	tya
+	eor #$20
+	dey
+	bne .cccl1
+
+	inc .smb1+1
+	lda .smb1+1
+;	cmp #$20
+	cmp #2
+	bne .otherClear
+}
+
+!if 0 {
+	; CPU Copy
+.otherClear2
+	jsr Bus24Bit_Init
+	+MBus24Bit_SetAddress_A $01 , $a300
+.smb2	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_Init
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
+	jsr Bus20To32Bit1_SetLatch2
+	+MBus24Bit_Send8BitValueFromAddress .smb2+1
+	jsr Bus20To32Bit1_SetLatch4
+	+MBus24Bit_SetAddressNoReset_A $03 , 0
+
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_RAM | kBus20To32Bit1_latch7_InternalPA2
+	
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch5
+	ldy #0
+	ldy #$80
+	ldx #0
+.ccl1
+	+MBus24Bit_Get8BitValueToA
+;	sta $0100
+	+MBus24Bit_Get8BitValueToA
+;	sta $0100
+	dex
+	bne .ccl1
+	dey
+	bne .ccl1
+
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus24Bit_Init
+
+	inc .smb2+1
+	lda .smb2+1
+	cmp #$02
+	bne .otherClear2
+}
+
 	jsr Video_InitDisplaySpritesScrollsBackground
 
 	jsr Video_SetAddressVideoPriorityRegister
@@ -73,6 +241,9 @@ start
 	lda #kVideo_EnableDisplay_Enable
 	jsr Video_EnableDisplay
 
+	+MBus24Bit_SetAddress_A $01 , $a800
+	+MBus24Bit_Send8BitValue 0
+
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
 
@@ -85,6 +256,10 @@ start
 	jsr Video_SetAddressVideoBackgroundColour
 	+MBus24Bit_Send8BitValue 1
 
+	; For faster data sending in simulation... No waits for the raster are output...
+	jsr Bus24Bit_Init
+;	jsr Video_DisableDisplay
+
 ;	+WaitForFire_A
 
 .incfl1
@@ -92,35 +267,81 @@ start
 	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
 	+MBus24Bit_SendLE16BitValueFromAddress .scrollY
 
-!if 1 {
+!if 0 {
 	; Setup bitmap RGB data
 	+MBus24Bit_SetAddress_A $01 , $a300
 	+MBus24Bit_Send8BitValue 0
 	+MBus24Bit_SetAddress_A $03 , $0000
-	jsr Bus24Bit_Reset
-.sma=*+1
-	+MBus24Bit_Send8BitValue 3
-	+MBus24Bit_SendLE16BitValue $0000
-	ldx #10
-.cl1
-	ldy #0
-.cl2
-	+MBus24Bit_Send8BitValue %00011111
-;	+MBus24Bit_Send8BitValue %00000001
-	+MBus24Bit_Send8BitValue %00000000
-	dey
-	bne .cl2
-	dex
-	bne .cl1
+	lda #%00011111
+	ldx #42
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 4
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%10001111
+	ldx #24
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 8
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%11111111
+	ldx #28
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 12
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%01111011
+	ldx #36
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 16
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%11111000
+	ldx #64
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 20
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%11110000
+	ldx #48
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 24
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%00011000
+	ldx #63
+	jsr SendRGBData
+
+	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_Send8BitValue 28
+	+MBus24Bit_SetAddress_A $03 , $0000
+	lda #%01010100
+	ldx #31
+	jsr SendRGBData
 }
+
 
 ;	+WaitForFire_A
 	jsr Video_SetAddressVideoControlRegisters
 	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | $01
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars
 
-;	inc .sma
-;	jmp .incfl1
-;	jmp *
+
+!if 0 {
+	jsr Video_SetAddressMergeLayer
+;	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_XOR
+;	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_AND
+;	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_OR
+	+MBus24Bit_Send8BitValue kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_Dither
+;	+MBus24Bit_Send8BitValue $00
+}
 
 mainLoop
 	inc VIC2BorderColour
@@ -131,15 +352,47 @@ mainLoop
 	+MBus24Bit_SetAddress_A 0x01 , 0xa301
 	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
 	+MBus24Bit_SendLE16BitValueFromAddress .scrollY
+	+MBus24Bit_SetAddress_A $01 , $a801
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX3
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollY3
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , kBus24Bit_CharScreen_ScrollX16
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX2
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollY2
 
-;	+MSubU8FromAddr16 3 , .scrollX , .scrollX + 1
+	+MSubU8FromAddr16 3 , .scrollX , .scrollX + 1
 	+MSubU8FromAddr16 1 , .scrollY , .scrollY + 1
+
+	+MSubU8FromAddr16 4 , .scrollX2 , .scrollX2 + 1
+	+MSubU8FromAddr16 2 , .scrollY2 , .scrollY2 + 1
+
+	+MSubU8FromAddr16 5 , .scrollX3 , .scrollX3 + 1
+	+MSubU8FromAddr16 3 , .scrollY3 , .scrollY3 + 1
+
+;	+WaitForFire_A
 
 	jmp mainLoop
 
 .scrollX !word 0
 .scrollY !word -32
+.scrollX2 !word 0
+.scrollY2 !word -32
+.scrollX3 !word 0
+.scrollY3 !word -32
 
+SendRGBData
+.cl1
+	ldy #0
+.cl2
+;	+MBus24Bit_Send8BitValue %00011111
+;	+MBus24Bit_Send8BitValue %00000001
+;	+MBus24Bit_Send8BitValue %00000000
+	+MBus24Bit_Send8BitValueFromA
+	+MBus24Bit_Send8BitValueFromX
+	dey
+	bne .cl2
+	dex
+	bne .cl1
+	rts
 
 !ifdef IncludeGraphicsData {
 RNXPCompressionDecompress_WriteBytesmAddr = zeroPage_Temp0
@@ -158,32 +411,76 @@ InitGraphicsMemory
 	inc VIC2BorderColour
 
 	; Maps
-	+MRLEScreenDataToDefaultCharScreen .charsMap , .charsMap2
+	+MDecompressRLEToEBBSAddr .charsMap1 , $90 , kBus24Bit_CharScreenMap
+	+MDecompressRLEToEBBSAddr .charsMap12 , $90 , kBus24Bit_CharColourMap
+	+MRLEScreenDataToDefaultCharScreen .charsMap2 , .charsMap22
 
 	; Chars
-	+MRLEPlanesDataToDefaultCharScreen .plane0 , .plane1 , .plane2 , .plane3
+	+MDecompressRLEToEBBSAddr .plane10 , $30 , kBus24Bit_CharScreenPlanes_0
+	+MDecompressRLEToEBBSAddr .plane11 , $30 , kBus24Bit_CharScreenPlanes_1
+	+MDecompressRLEToEBBSAddr .plane12 , $30 , kBus24Bit_CharScreenPlanes_2
+	+MDecompressRLEToEBBSAddr .plane13 , $30 , kBus24Bit_CharScreenPlanes_3
+	+MRLEPlanesDataToDefaultCharScreen .plane20 , .plane21 , .plane22 , .plane23
 
 	rts
 ; All
 .palette
-	!bin "tmp/PaletteData.bin"; to 24bit bus at '0x9c00' and addressEx '0x01'
+	!bin "tmp/Demo15PaletteData.bin"
 	!fill $200,0
 
-.plane0
-	!bin "tmp/status_plane0.cmp"; to 24bit bus at '0x2000' and addressEx '0x20'
-.plane1
-	!bin "tmp/status_plane1.cmp"; to 24bit bus at '0x4000' and addressEx '0x20'
-.plane2
-	!bin "tmp/status_plane2.cmp"; to 24bit bus at '0x8000' and addressEx '0x20'
-.plane3
-	!bin "tmp/status_plane3.cmp"; to 24bit bus at '0x0000' and addressEx '0x20'
+.plane10
+	!bin "tmp/Demo15Chars1_plane0.cmp"
+.plane11
+	!bin "tmp/Demo15Chars1_plane1.cmp"
+.plane12
+	!bin "tmp/Demo15Chars1_plane2.cmp"
+.plane13
+	!bin "tmp/Demo15Chars1_plane3.cmp"
 
-.charsMap
-	!bin "tmp/status_map.cmp"; to 24bit bus at '0x4000' and addressEx '0x80'
+.charsMap1
+	!bin "tmp/Demo15Chars1_map.cmp"
+.charsMap12
+	!bin "tmp/Demo15Chars1_map.cmp2"
+
+.plane20
+	!bin "tmp/Demo15Chars2_plane0.cmp"
+.plane21
+	!bin "tmp/Demo15Chars2_plane1.cmp"
+.plane22
+	!bin "tmp/Demo15Chars2_plane2.cmp"
+.plane23
+	!bin "tmp/Demo15Chars2_plane3.cmp"
+
 .charsMap2
-	!bin "tmp/status_map.cmp2"; to 24bit bus at '0x8000' and addressEx '0x80'
+	!bin "tmp/Demo15Chars2_map.cmp"
+.charsMap22
+	!bin "tmp/Demo15Chars2_map.cmp2"
 
 }
+
+!zn
+DMAHalfBank
+	jsr Bus20To32Bit1_WriteMode
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_RAM | kBus20To32Bit1_latch7_InternalPA2
+	jsr Bus20To32Bit1_WriteMode
+	jsr Bus20To32Bit1_SetLatch11
+	+MBus24Bit_Send8BitValue $ff
+	jsr Bus20To32Bit1_SetLatch12
+	+MBus24Bit_Send8BitValue $7f
+	jsr Bus20To32Bit1_SetLatch7
+	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_RAM | kBus20To32Bit1_latch7_InternalPA2 | kBus20To32Bit1_latch7_FastDMAStart
+	; Check for DMA complete
+	jsr Bus20To32Bit1_ReadMode
+	jsr Bus20To32Bit1_SetLatch13
+.dmal1
+	inc VIC2BorderColour
+	+MBus24Bit_Get8BitValueToA
+	and #kBus20To32Bit1_latch13_DMAInProgress
+	bne .dmal1
+	rts
+
+!source "asm/AfterBurner/Audio2.a"
 
 
 EndMainMemory

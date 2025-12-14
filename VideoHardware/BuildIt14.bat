@@ -17,6 +17,12 @@ rem Data for the game loop, this includes everything else that isn't sent to the
 copy /b bin\Demo14LargeTables.bin tmp\Demo14FinalData.bin /y
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesMissionComplete.bin tmp/Demo14AddFile_ResourcesMissionComplete.a ResourcesMissionComplete
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesMissionCompleteRestore.bin tmp/Demo14AddFile_ResourcesMissionCompleteRestore.a ResourcesMissionCompleteRestore
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesPicture1_3B.bin tmp/Demo14AddFile_ResourcesPicture1_3B.a ResourcesPicture1_3B
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesPicture2B.bin tmp/Demo14AddFile_ResourcesPicture2B.a ResourcesPicture2B
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesPicture4B.bin tmp/Demo14AddFile_ResourcesPicture4B.a ResourcesPicture4B
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesScreen1.bin tmp/Demo14AddFile_ResourcesScreen1.a ResourcesScreen1
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesScreen2_3.bin tmp/Demo14AddFile_ResourcesScreen2_3.a ResourcesScreen2_3
+python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14FileResourcesRunwayRestore.bin tmp/Demo14AddFile_ResourcesRunwayRestore.a ResourcesRunwayRestore
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/ScoreTableData.bin tmp/ScoreTableData.bin.a ScoreTableData_bin
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4GameEntity0.pal tmp/Demo14ScaledSprites4GameEntity0.pal.a Demo14ScaledSprites4GameEntity0_bin
 python ResourceGenerator\main.py tmp/Demo14FinalData.bin addfile tmp/Demo14ScaledSprites4Game0.pal tmp/Demo14ScaledSprites4Game0.pal.a Demo14ScaledSprites4Game0_bin
@@ -82,6 +88,10 @@ rem -Xmx256M -Xms256M
 rem -DZbdd6502.trace=true
 rem "C:\Users\Martin Piper\.jdks\corretto-1.8.0_252\bin\java.exe"
 java.exe -Xincgc -Xmx256M -Xms256M -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags @Demo14 --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue macros --glue TestGlue features
+
+echo *** Target = 2,097,152
+dir tmp\Demo14FileResources_ForHW*.bin
+dir tmp\Demo14FinalData.bin
 
 goto end
 :error

@@ -155,3 +155,11 @@ Removed SpanCalc_scanPoly related tests
 
 * Add 3D calculation to create spans
 	Poly_linesLeft and Poly_linesRight
+
+
+
+* SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account for segments and the number of screen banks
+	>> During BitmapPlot_drawSpans it would be easier to notice empty lines (no segments) and count how many times they are consecutively empty for the number of screen buffers needed
+	Then force an empty draw up until the screen buffer limit is hit...
+		kSpanPlot_maxLen
+	>> Segments_linesBeenEmptyFor Segments_linesBeenEmptyFor_Max

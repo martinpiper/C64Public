@@ -214,14 +214,18 @@ EntityState_EnemyMissile
 	cmp #2
 	bcs .notHitPlayer
 
+	; Horizontal collision detection is around the world origin that the objects move around
 	lda EntityXPos,y
 	clc
-	adc #2
-	cmp #4
+	adc #3
+	cmp #6
 	bcs .notHitPlayer
 
 !ifndef BuildTitleScreen {
-	cmp #1
+	; Widen the airplane to make it more likely to get the full explosion, not the winged animation
+	cmp #2
+	beq .notWinged
+	cmp #3
 	beq .notWinged
 	inc GamePlayerExplode_Winged
 .notWinged

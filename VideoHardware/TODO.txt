@@ -738,10 +738,8 @@
 
 
 
-* Demo14: Title screen, animated screens...
-	>> Intro screens are displayed 
-		>> c64\VideoHardware\assets\Demo14\IntroScreens
-		>> These use two layers. In theory two chars layers would be useful. Or maybe the background clouds/mountains could be in the tiles (road/runway) layer?
+* Demo14: Also note the score table scroll in also shows the insert coin message over the top
+	>> An extra combined character screen would help here.
 
 		
 
@@ -759,6 +757,36 @@
 	https://eab.abime.net/showthread.php?t=116656
 	https://github.com/djyt/cannonball/wiki
 	https://github.com/djyt/cannonball/releases
+	https://github.com/djyt/layout
+	https://github.com/djyt/layout/releases
+		C:\Users\marti\Downloads\LayOut-win32\LayOut.exe
+		C:/Users/marti/Downloads/cannonball-v034-w64/cannonball.exe
+		C:/Users/marti/Downloads/cannonball-v034-w64/roms
+	>> C:\Users\marti\Downloads\layout-master\layout-master
+		Note:
+			Levels::displayStartLine
+			setRoadPos
+				RenderS16::setRoadPos
+			oroad->pos_fine which seems to be is steps of 10, indicating higher precision...
+				Roughly 1947 setRoadPos values, multiply by 10, with 17 sections...
+					Total positions=330990? 3 bytes, 18/19 bits...
+					But each section is no more than 2 bytes, 16 bits...
+	>> MAME could output the road scanlines? It already compiles and runs.
+		Perhaps there is a way to read the memory for the actual level position?
+		And the left/right perspective? To remove the left/right perspective?
+		And to maybe force the current rendered position?
+	>> c:\work\mame\mytest.exe -window -debug outrun
+	>> Shadows on the road could be possible by using the second scaled srpite layer, with the combiner, to xor the output pixel...
+	> Layers
+		Sprites4: Cars, roadside objects
+		Merge 2-to-1: Road+shadows
+			Sprites4: Roadside shadows
+			XOR
+			Merge 2-to-1: Road scans, both lanes...
+				Chars/Tiles
+				Chars/Tiles
+
+
 	
 	
 * Demo14: Score needs to be cleared in the screen on game start
@@ -770,3 +798,38 @@
 
 
 * Demo14: What is the frame judder? When does it happen?
+
+
+
+* Demo14: Score table colours need to be reset after name entry
+	Score table name entry complete could use a "name entered" animation to do this...
+	>> RunScoreTableForEntry
+
+
+
+
+* Demo15: RGB demo
+	Add scenario audio...
+	Add scenario merge layer with four char layers...
+		Parallax scroll the char layers in a circle...
+
+
+
+* Demo14: Demo14\IntroScreens\Screen2B.png is meant to animate, it would be possible to fill the screens with the frames...
+
+
+* Demo14: Audio2 raw file options:
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner.wav -ac 1 -ar 12500 -f u8 c:\temp\aburner1_mono.bin
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner3.wav -ac 1 -ar 12500 -f u8 c:\temp\aburner3_mono.bin
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner6.wav -ac 1 -ar 12500 -f u8 c:\temp\aburner6_mono.bin
+
+	Removes silence
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner.wav -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" -ac 1 -ar 12500 -f u8 c:\temp\aburner1_mono.bin
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner3.wav -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" -ac 1 -ar 12500 -f u8 c:\temp\aburner3_mono.bin
+	"C:\Users\Marti\Downloads\ffmpeg-20200422-2e38c63-win64-static\ffmpeg-20200422-2e38c63-win64-static\bin\ffmpeg.exe" -y -i c:\temp\aburner6.wav -af "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" -ac 1 -ar 12500 -f u8 c:\temp\aburner6_mono.bin
+
+
+
+* Demo14: Shift the horizontal intro screen two planes to the left edge a bit...
+	Debug_RunIntroScreenSequence = 7
+

@@ -22,9 +22,6 @@ TODO
 
 
 
-* SpanCalc_expireCleared/SpanCalc_dirtyClear logic needs to take into account for segments and the number of screen banks
-
-
 
 * For the number of screen buffers, if the scan is changed reset a counter.
 	Or increment if unchanged.
@@ -74,3 +71,32 @@ TODO
 	https://www.bbcelite.com/deep_dives/shift-and-subtract_division.html
 	https://www.bbcelite.com/deep_dives/multiplication_and_division_using_logarithms.html
 	
+
+
+* Instead of calling code with repeated:
+	ldy #xx * 8
+	sta (xx),y
+	Instead consider unrolled sections of absolute,y addressing mode.
+	This would need more code to cover more sections of the bitmap, but would avoid incrementing Y and the indirect lookup.
+	One pixel row would be around 40 * 3 = 120 bytes, but of course would only be able to plot up to 256/8=32 bytes due to the index, so the line would need to be split into two for a screen width over 256 pixels
+	In total this would need 40*3*200 bytes for unrolled span plotting code, doubled for the lines over the 256 index 32 byte boundary, not including the return and tables
+	> Instead of taking 2+6 cycles per byte that updates Y, it would take 5 cycles and not update Y.
+		But it needs a little more pre-draw calculation
+	>> Can be used to unit test this: Scenario: Simple line plot draw test
+	> ZPBitmap_CurrentYPos and ZPBitmap_SegmentsPos for the X pos
+	>> .doScanDraw needs updating
+		Since it will be keeping track of the start X pos (in pixels) from the start of the line and calculating which routine to call for the optimised draw based on the line and span pos and length.
+		The start/end line alignment code is separate to the optimised untolled span byte draw...
+	>> Specifically SpanDrawGenerate.a and GenericSpan.a could pick the optimised routine for the byte draw while having the line start and end routines in RAM...?
+		The cart bank choice when then be later, not early...
+	>> Move .scanLengths .scanColours to zeropage
+	>> Since the unrolled code is basically sta sta sta sta followed by rts, it should be possible to do:
+		sta bitmap + $20,y
+		sta bitmap + $1c,y
+		sta bitmap + $18,y
+		sta bitmap + $14,y
+		sta bitmap + $10,y
+		...
+		rts
+		And the length jump table jumps into this reversed store list, reducing overall code size...
+		>> For "!if .fourPixelChunks > 0 {" The eventual "inc ZPBitmap_CurrentPos+1" and "ldy #<.nextOffset" will need handling to account for any gaps...

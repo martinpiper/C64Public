@@ -18,12 +18,45 @@ rem Avoids a black screen, needs transparency in the corner
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\MissionComplete\Screen3.png" "Demo14\MissionComplete\Screen3.png" ..\tmp\demo14chars4.png
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14chars3.png" "..\tmp\demo14chars4.png" ..\tmp\demo14chars3.png
 
+rem Intro screen processing
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Picture1B.png" "Demo14\IntroScreens\Picture3B.png" ..\tmp\demo14Picture1_3B.png
+rem Makes sure all the screens are filled vertically, avoiding residual data
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Picture1_3B.png" "..\tmp\demo14Picture1_3B.png" ..\tmp\demo14Picture1_3B.png
+rem Tiles cannot have so many tiles
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Picture2B.png" "Demo14\IntroScreens\Picture2B.png" ..\tmp\demo14Picture2B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Picture2B.png" "..\tmp\demo14Picture2B.png" ..\tmp\demo14Picture2B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Picture2B.png" "..\tmp\demo14Picture2B.png" ..\tmp\demo14Picture2B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Picture4B.png" "Demo14\IntroScreens\Picture4B.png" ..\tmp\demo14Picture4B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Picture4B.png" "..\tmp\demo14Picture4B.png" ..\tmp\demo14Picture4B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Picture4B.png" "..\tmp\demo14Picture4B.png" ..\tmp\demo14Picture4B.png
+
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen1A.png" "Demo14\IntroScreens\Screen1A.png" ..\tmp\demo14Screen1A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen1A.png" "..\tmp\demo14Screen1A.png" ..\tmp\demo14Screen1A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen1A.png" "..\tmp\demo14Screen1A.png" ..\tmp\demo14Screen1A.png
+
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen1B.png" "Demo14\IntroScreens\Screen1B.png" ..\tmp\demo14Screen1B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen1B.png" "..\tmp\demo14Screen1B.png" ..\tmp\demo14Screen1B.png
+
+rem Two are vertically stacked, since they are only scrolling horizontally
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen2A.png" "Demo14\IntroScreens\Screen2A.png" ..\tmp\demo14Screen2A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen3A.png" "Demo14\IntroScreens\Screen3A.png" ..\tmp\demo14Screen3A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen2A.png" "..\tmp\demo14Screen3A.png" ..\tmp\demo14Screen2_3A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen2A.png" "..\tmp\demo14Screen3A.png" ..\tmp\demo14Screen2_3A.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen2_3A.png" "..\tmp\demo14Screen2_3A.png" ..\tmp\demo14Screen2_3A.png
+
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen2B.png" "Demo14\IntroScreens\Screen2B.png" ..\tmp\demo14Screen2B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concath "Demo14\IntroScreens\Screen3B.png" "Demo14\IntroScreens\Screen3B.png" ..\tmp\demo14Screen3B.png
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --concat "..\tmp\demo14Screen2B.png" "..\tmp\demo14Screen3B.png" ..\tmp\demo14Screen2_3B.png
+
 
 echo Calculate palettes for these first
 rem Want to ensure the landscape and sky colours are in a specific order, while remapping the clouds to the colours...
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 256 --forcergb 32 166 71 --forcergb 29 148 63 --forcergb 26 135 58 --forcergb 23 117 50 --forcergb 20 102 44   --forcergb 255 255 255 --forcergb 214 255 255 --forcergb 197 255 255 --forcergb 181 247 255 --forcergb 164 230 255 --forcergb 148 214 255 --forcergb 132 197 255 --forcergb 115 181 255 --forcergb 99 164 255 --forcergb 82 148 255 --forcergb 66 132 255 --forcergb 49 115 255 --forcergb 33 99 255 --forcergb 16 82 255   --nostacking --image "Demo14\clouds.png" --imagequantize 24 --tilewh 16 16 --outputpalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --convertwritepass
 
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --paletteaddrgbs 0 0 0   0 181 247 --paletteaddrgbs 0 0 0   247 181 247 --paletteaddrgbs 0 0 0   247 0 0  --paletteaddrgbs 0 0 0   247 247 148  --paletteaddrgbs 0 0 0   0 247 197  --nostacking --image "..\tmp\demo14chars2.png" --tilewh 8 8 --nowritepass --batchimages Demo14\MissionComplete\*.png --nowritepass --image "Demo14/runway.png" --tilewh 16 16 --imagequantize 16 --outputpalettes ..\tmp\Demo14TitleChars.pal --convertwritepass
+
+rem Use both tile sizes to catch any potential palettes that don't fit 8x8 to 16x16
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --nostacking --tilewh 8 8 --batchimages Demo14\IntroScreens\*.png --nowritepass --tilewh 16 16 --batchimages Demo14\IntroScreens\*.png --nowritepass --outputpalettes ..\tmp\Demo14TitleIntroScreens.pal --convertwritepass
 
 echo Calculate palettes and clouds
 rem The --loadpalette ordering here ensures that the palettes calculated above are appropriately included
@@ -61,7 +94,10 @@ set SPRITES_GAME_LANDSCAPE_PALETTE_5=--batchimages Demo14\Columns\*.png
 
 
 rem For the title screen palettes we load the needed game assets first and then the specific extra sprites for the title screen itself
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreen.pal --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --writepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreen.pal --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal --loadpaletteraw ..\tmp\Demo14TitleIntroScreens.pal --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --writepass
+
+rem This is the same ordering as above, but only for converting the main title screen chars, score panel etc
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --onlyloadwholepalettes ..\tmp\Demo14ScaledSprites4Clouds.pal --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreenForTitles.pal --resetforcergb %FORCERGB_COMMON_2% --loadpaletteraw ..\tmp\Demo14TitleChars.pal --loadpalettebestfit ..\tmp\Demo14ScaledSprites4Clouds.pal --writepass
 
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 %FORCERGB_COMMON_1% --nostacking --outputpalettes ..\tmp\Demo14ScaledSprites4TitleScreenSprites.pal %SPRITES_COMMON_1% --resetforcergb %FORCERGB_COMMON_2% %SPRITES_COMMON_2% --batchimages Demo14\Intro\*.png --writepass
 
@@ -118,8 +154,8 @@ popd
 
 
 rem Now convert the other assets
-rem Normal screens
-java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14chars2.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
+rem Normal screens, note the special case smaller palette to avoid picking up wrong colours from extra graphics
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreenForTitles.pal --image "..\tmp\demo14chars2.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars_plane --outputscrcol ../tmp/Demo14TitleChars_map.bin --numbitplanes 4 --convertwritepass
 
 ..\..\acme.exe -v9 ..\asm\AfterBurner\ConvtabChar8x8.a
 ..\..\acme.exe -v9 ..\asm\AfterBurner\ConvtabChar8x16Top.a
@@ -135,9 +171,21 @@ rem Score table data
 rem Mission complete chars
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14chars3.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14TitleChars2_plane --outputscrcol ../tmp/Demo14TitleChars2_map.bin --numbitplanes 4 --convertwritepass
 
+rem Intro screens
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Picture1_3B.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensPicture1_3B_plane --outputscrcol ../tmp/Demo14IntroScreensPicture1_3B_map.bin --numbitplanes 4 --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Picture2B.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensPicture2B_plane --outputscrcol ../tmp/Demo14IntroScreensPicture2B_map.bin --numbitplanes 4 --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Picture4B.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensPicture4B_plane --outputscrcol ../tmp/Demo14IntroScreensPicture4B_map.bin --numbitplanes 4 --convertwritepass
 
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Screen1A.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensScreen1A_plane --outputscrcol ../tmp/Demo14IntroScreensScreen1A_map.bin --numbitplanes 4 --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Screen1B.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensScreen1B_plane --outputscrcol ../tmp/Demo14IntroScreensScreen1B_map.bin --numbitplanes 4 --convertwritepass
+
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Screen2_3A.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensScreen2_3A_plane --outputscrcol ../tmp/Demo14IntroScreensScreen2_3A_map.bin --numbitplanes 4 --convertwritepass
+java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --preferLaterPalettes --splitmaps --chars --rgbshift 5 6 5 --newpalettes --palettesize 16 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "..\tmp\demo14Screen2_3B.png" --tilewh 8 8 --fitpalettes --outputplanes ../tmp/Demo14IntroScreensScreen2_3B_plane --outputscrcol ../tmp/Demo14IntroScreensScreen2_3B_map.bin --numbitplanes 4 --convertwritepass
+
+rem Mode7 clouds and landscape
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 256 --loadpalette ..\tmp\Demo14ScaledSprites4TitleScreen.pal --nostacking --image "Demo14\clouds.png" --tilewh 16 16 --fitpalettes --outputtilebytes ../tmp/Demo14CloudsTiles.bin --outputscrcol ../tmp/Demo14Clouds.bin --convertwritepass
 
+rem Runway/road
 java -jar ..\..\..\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --loadpaletteraw ..\tmp\Demo14ScaledSprites4TitleScreen.pal --image "Demo14\runway.png" --tilewh 16 16 --fitpalettes --outputplanes ../tmp/Demo14Runway_plane --outputscrcol ../tmp/Demo14Runway_map.bin --numbitplanes 4 --convertwritepass
 
 echo Convert music
@@ -286,6 +334,74 @@ python ResourceGenerator\main.py tmp/Demo14FileResourcesMissionCompleteRestore.b
 python ResourceGenerator\main.py tmp/Demo14FileResourcesMissionCompleteRestore.bin 0x20 0x0000 file tmp/Demo14TitleChars_plane3.bin
 rem End marker
 python ResourceGenerator\main.py tmp/Demo14FileResourcesMissionCompleteRestore.bin 0x00
+
+rem Runway restore resources, with palette 0
+del /q tmp\Demo14FileResourcesRunwayRestore.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x01 0x9e0c bytes 0x00
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4TitleScreen.pal
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x80 0x2000 file tmp/Demo14Runway_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x40 0x2000 file tmp/Demo14Runway_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x40 0x4000 file tmp/Demo14Runway_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x40 0x8000 file tmp/Demo14Runway_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x40 0x0000 file tmp/Demo14Runway_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesRunwayRestore.bin 0x00
+rem Intro screens
+del /q tmp\Demo14FileResourcesPicture1_3B.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x01 0x9e0c bytes 0x00
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4TitleScreen.pal
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x90 0x4000 file tmp/Demo14IntroScreensPicture1_3B_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x90 0x8000 file tmp/Demo14IntroScreensPicture1_3B_map.bin2
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x30 0x2000 file tmp/Demo14IntroScreensPicture1_3B_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x30 0x4000 file tmp/Demo14IntroScreensPicture1_3B_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x30 0x8000 file tmp/Demo14IntroScreensPicture1_3B_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x30 0x0000 file tmp/Demo14IntroScreensPicture1_3B_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture1_3B.bin 0x00
+del /q tmp\Demo14FileResourcesPicture2B.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x80 0x2000 file tmp/Demo14IntroScreensPicture2B_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x40 0x2000 file tmp/Demo14IntroScreensPicture2B_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x40 0x4000 file tmp/Demo14IntroScreensPicture2B_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x40 0x8000 file tmp/Demo14IntroScreensPicture2B_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x40 0x0000 file tmp/Demo14IntroScreensPicture2B_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture2B.bin 0x00
+del /q tmp\Demo14FileResourcesPicture4B.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x80 0x2000 file tmp/Demo14IntroScreensPicture4B_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x40 0x2000 file tmp/Demo14IntroScreensPicture4B_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x40 0x4000 file tmp/Demo14IntroScreensPicture4B_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x40 0x8000 file tmp/Demo14IntroScreensPicture4B_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x40 0x0000 file tmp/Demo14IntroScreensPicture4B_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesPicture4B.bin 0x00
+del /q tmp\Demo14FileResourcesScreen1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x01 0x9e0c bytes 0x18
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4TitleScreen.pal
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x01 0x9e0c bytes 0x00
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x90 0x4000 file tmp/Demo14IntroScreensScreen1B_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x90 0x8000 file tmp/Demo14IntroScreensScreen1B_map.bin2
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x30 0x2000 file tmp/Demo14IntroScreensScreen1B_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x30 0x4000 file tmp/Demo14IntroScreensScreen1B_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x30 0x8000 file tmp/Demo14IntroScreensScreen1B_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x30 0x0000 file tmp/Demo14IntroScreensScreen1B_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x80 0x2000 file tmp/Demo14IntroScreensScreen1A_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x40 0x2000 file tmp/Demo14IntroScreensScreen1A_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x40 0x4000 file tmp/Demo14IntroScreensScreen1A_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x40 0x8000 file tmp/Demo14IntroScreensScreen1A_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x40 0x0000 file tmp/Demo14IntroScreensScreen1A_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen1.bin 0x00
+del /q tmp\Demo14FileResourcesScreen2_3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x01 0x9e0c bytes 0x18
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x01 0x9c00 file tmp\Demo14ScaledSprites4TitleScreen.pal
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x01 0x9e0c bytes 0x00
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x90 0x4000 file tmp/Demo14IntroScreensScreen2_3B_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x90 0x8000 file tmp/Demo14IntroScreensScreen2_3B_map.bin2
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x30 0x2000 file tmp/Demo14IntroScreensScreen2_3B_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x30 0x4000 file tmp/Demo14IntroScreensScreen2_3B_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x30 0x8000 file tmp/Demo14IntroScreensScreen2_3B_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x30 0x0000 file tmp/Demo14IntroScreensScreen2_3B_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x80 0x2000 file tmp/Demo14IntroScreensScreen2_3A_map.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x40 0x2000 file tmp/Demo14IntroScreensScreen2_3A_plane0.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x40 0x4000 file tmp/Demo14IntroScreensScreen2_3A_plane1.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x40 0x8000 file tmp/Demo14IntroScreensScreen2_3A_plane2.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x40 0x0000 file tmp/Demo14IntroScreensScreen2_3A_plane3.bin
+python ResourceGenerator\main.py tmp/Demo14FileResourcesScreen2_3.bin 0x00
 
 
 popd

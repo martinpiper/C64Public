@@ -444,6 +444,7 @@ VIC2ScreenControlH				= $d016
 !ifndef STDLIB_OnlyAddresses {
 VIC2ScreenCharsWidth			= 40
 VIC2ScreenCharsHeight			= 25
+VIC2ScreenNumChars = VIC2ScreenCharsWidth * VIC2ScreenCharsHeight
 }
 
 ; Each bit sets the double height enable for each sprite.
@@ -1115,6 +1116,19 @@ RasterLengthNTSCC64		= 520
 	sta .scr-1,x
 	dex
 	bne .dm1
+}
+
+!macro MCopyMemorySlowOnceFromToLength_A .from , .to , .length {
+.i1	lda .from
+.i2	sta .to
+	+MIncAddr16 .i1+1 , .i1+2
+	+MIncAddr16 .i2+1 , .i2+2
+	lda .i1+1
+	cmp #<(.from + .length)
+	bne .i1
+	lda .i1+2
+	cmp #>(.from + .length)
+	bne .i1
 }
 
 !macro DisplayColourTextMiddle_AX .addrstart , .end , .scr , .col {
@@ -1983,13 +1997,15 @@ RasterLengthNTSCC64		= 520
 
 
 !macro MGuardAgainstUpperCart .addr {
-
-!if .addr-1 >= C64Cartridge_Hi_8K {
-!error "Cannot be in the upper cart ROM bank memory area"
-}
-
 !if .addr >= C64Cartridge_Hi_8K {
 !error "Cannot be in the upper cart ROM bank memory area"
 }
+}
 
+!macro MGuardAgainstIOSpaceUpwards .addr {
+!ifdef .addr {
+!if .addr >= IOSPACE {
+!error "Cannot be in the IOSPACE (or above) memory area"
+}
+}
 }

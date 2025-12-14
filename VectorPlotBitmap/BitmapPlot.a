@@ -1,3 +1,13 @@
+!macro SetupScanDrawData_X {
+	lda Bitmap0YTabLo,x
+	sta ZPBitmap_CurrentPos
+	lda Bitmap0YTabHi,x
+	sta ZPBitmap_CurrentPos+1
+	; This chooses one or the other potentially dithered colour palettes to use for each line
+	lda Bitmap_lineToPaletteLo,x
+	sta ZPBitmap_PaletteLo
+}
+
 !zn
 ; Entry:
 ; This needs ZPBitmap_CurrentPos (lo/hi) to be set for the bitmap memory to use
@@ -15,24 +25,45 @@ BitmapPlot_drawSpans
 	lda Segments_linesHi,x
 	bne .gotSpans
 
+	; Check for cleared lines and don't clear them anymore...
+	lda Segments_linesBeenEmptyFor,x
+!if Segments_linesBeenEmptyFor_Max = 1 {
+	beq .drawClearThisTime
+} else {
+	cmp #Segments_linesBeenEmptyFor_Max
+	bcc .drawClearThisTime
+}
 	jmp .el1
+.drawClearThisTime
+	inc Segments_linesBeenEmptyFor,x
+
+	+SetupScanDrawData_X
+	; Force an empty line of colour 0 (erase)
+	lda #kSpanPlot_maxLen
+	sta .scanLengths
+	lda #0
+	sta .scanLengths + 1
+	lda #kSpanCalc_backgroundColour
+	sta .scanColours
+
+	jmp .doScanDraw
+;	jmp .el1
 
 .gotSpans
 	sta ZPSegments_currentSegmentHi
 	lda Segments_linesLo,x
 	sta ZPSegments_currentSegmentLo
 
-	lda Bitmap0YTabLo,x
-	sta ZPBitmap_CurrentPos
-	lda Bitmap0YTabHi,x
-	sta ZPBitmap_CurrentPos+1
-	lda Bitmap_lineToPaletteLo,x
-	sta ZPBitmap_PaletteLo
+	lda #0
+	sta Segments_linesBeenEmptyFor,x
 
+	+SetupScanDrawData_X
+
+	; This converts potentially sparse segments on a line into an optimised left to right, length and colour, ensuring all pixels are drawn on the line.
 	lda #0
 	sta ZPBitmap_SegmentsPos
 
-	!for .i , kSpanCalc_maxSegments {
+	!for .i , kSpanCalc_maxSegmentsDuringLine {
 		+ScanCalc_GetSegment .i - 1 , .doScanDraw , .scanLengths , .scanColours
 	}
 
@@ -51,6 +82,7 @@ BitmapPlot_drawSpans
 .doScanDraw
 	ldx #0
 .l3
+; These are different pixel alignment routines, based on input alignment and pixel span length, the relevant output alignment routine then chosen
 Bitmap_SpanRet0
 	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p0 , SpanTab_lo_p0 , SpanTab_hi_p0
 Bitmap_SpanRet1
@@ -61,10 +93,10 @@ Bitmap_SpanRet3
 	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p3 , SpanTab_lo_p3 , SpanTab_hi_p3
 
 .scanLengths
-	!fill kSpanCalc_maxSegments + 1 , 0
+	!fill kSpanCalc_maxSegmentsDuringLine + 1 , 0
 
 .scanColours
-	!fill kSpanCalc_maxSegments + 1 , 0
+	!fill kSpanCalc_maxSegmentsDuringLine + 1 , 0
 
 
 
@@ -99,23 +131,22 @@ Bitmap_lineToPaletteLo
 Bitmap_paletteStart
 Bitmap_palette0
 	+MakeBitcolour 0
-	+MakeBitcolour2 1 , 0
-	+MakeBitcolour2 2 , 0
-	+MakeBitcolour 1
-	+MakeBitcolour2 2 , 1
-	+MakeBitcolour 2
-	+MakeBitcolour2 3 , 2
-	+MakeBitcolour 3
-
-
-Bitmap_palette1
-	+MakeBitcolour 0
 	+MakeBitcolour2 0 , 1
 	+MakeBitcolour2 0 , 2
 	+MakeBitcolour 1
 	+MakeBitcolour2 1 , 2
 	+MakeBitcolour 2
 	+MakeBitcolour2 2 , 3
+	+MakeBitcolour 3
+
+Bitmap_palette1
+	+MakeBitcolour 0
+	+MakeBitcolour2 1 , 0
+	+MakeBitcolour2 2 , 0
+	+MakeBitcolour 1
+	+MakeBitcolour2 2 , 1
+	+MakeBitcolour 2
+	+MakeBitcolour2 3 , 2
 	+MakeBitcolour 3
 
 Bitmap_paletteEnd

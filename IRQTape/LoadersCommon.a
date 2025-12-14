@@ -1,0 +1,27 @@
+; Default values that can be overridden by "_config.a"
+!ifdef TapeTurboSpeed { } else {
+TapeTurboSpeed = $80
+}
+
+; Defining TapePilotCode1 implies that all the other codes are also defined by "_config.a"
+!ifdef TapePilotCode1 { } else {
+TapePilotCode1			= %11111111
+TapePilotCode2			= %11000011
+TapeSyncCode			= %10101010
+TapeHeaderByteEx		= %11110000
+TapeHeaderByteEx2		= %10010110
+TapeHeaderByteEx2RLE	= %10110111
+TapeHeaderByteEx3		= %01101001
+}
+
+; Automatic configuration options set by the code depending on the above user defined options.
+; Switches on the tiny turbo data header if needed
+!ifdef MartyLoad {
+TinyHeader = 1
+}
+!ifdef NovaishLoad {
+TinyHeader = 1
+}
+!ifdef SmallLoader {
+TinyHeader = 1
+}

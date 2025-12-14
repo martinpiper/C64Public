@@ -19,7 +19,7 @@ bytesChanged = 0
 # The idea here being that smaller delta values, particularly 0, are more common and use fewer bits compared to the less
 # common larger delta values. Since delta values can be positive and negative the sign is stored and the absolute value
 # of the delta is encoded.
-def encodeDelta(inValue):
+def encodeDelta(previousValue, inValue):
     value = inValue
     if value == 0:
         outputBits.append(1)
@@ -73,14 +73,14 @@ if __name__ == '__main__':
             while i < len(inBytes):
                 newValue = (int(inBytes[i])) & 0xff
                 delta = newValue - previousValue
-                numOutputBits = encodeDelta(delta)
+                numOutputBits = encodeDelta(previousValue, delta)
                 # Reduce the size of the delta to fit the bits requirement
                 while numOutputBits > maxDeltaBits:
                     if delta > 0:
                         delta -= 1
                     else:
                         delta += 1
-                    numOutputBits = encodeDelta(delta)
+                    numOutputBits = encodeDelta(previousValue, delta)
                 # Compute what the resultant sample value is using the maybe compressed delta...
                 previousValue += delta
                 # And update the source data so that the final compression does not use out of range deltas
@@ -103,7 +103,7 @@ if __name__ == '__main__':
             signedData.append(newValue - 0x80)
             delta = newValue - previousValue
 #            print(delta)
-            encodeDelta(delta)
+            encodeDelta(previousValue, delta)
             previousValue = newValue
             i += 1
 

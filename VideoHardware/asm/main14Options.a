@@ -7,6 +7,7 @@ SendResourceData = 1
 ;Debug_RunGameRefueling = 1
 ;Debug_RunGameCanyon = 1
 ;Debug_RunMissionCompletePictures = 1
+;Debug_RunIntroScreenSequence = 7	; 1 is the first value
 ;Debug_GameStartZeroSpeed = 1
 ;Debug_SimpleLandscapeRotation = 1
 ;Debug_NoSpawnEnemy=1
@@ -60,15 +61,20 @@ zeroPage_Temp21	= $17
 zeroPage_Temp22	= $18
 zeroPage_Temp23	= $19
 Score_ZeroPage	= $1a	; and $1b
-SortIndexTable	= $1c
+EnemyMissileCount		= $1c
+EnemyMissileCountNow	= $1d
+SortIndexTable	= $1e	; Should really be last, since it is large
 
 SortTemp0 = zeroPage_Temp0
 SortTemp1 = SortTemp0 + 1
 
+; Initialised by M_RAMTAS_LOW_STACK
 ; These are variables that are preserved at the start of the stack
-GamePaletteBank = $100
+GamePaletteBank			= $100
+RunGameIntroCycle		= $101
+RunGameMissionComplete	= $102
 ; These are placed at the start of the stack for data passing between game and title screen for any hiscore checks
-GameScore_Value	= $101
+GameScore_Value			= $103
 
 kGameScore_Value_size = 8
 GameTotalHits_size = 4

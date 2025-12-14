@@ -1,0 +1,457 @@
+!zn
+DisplayRunIntroScreens
+	lda RunGameIntroCycle
+	and #%111
+;	cmp #0
+	+lbeq DisplayRunIntroScreen2
+	cmp #1
+	+lbeq DisplayRunIntroScreen1
+	cmp #2
+	+lbeq DisplayRunIntroScreen2
+	cmp #3
+	+lbeq DisplayRunIntroScreen3
+	cmp #4
+	+lbeq DisplayRunIntroScreen1
+	cmp #5
+	+lbeq DisplayRunIntroScreen4
+	cmp #6
+	+lbeq DisplayRunIntroScreen2
+	cmp #7
+	+lbeq DisplayRunIntroScreen5
+	; Default
+	jmp DisplayRunIntroScreen1
+
+; Intro screens
+!source "tmp/Demo14AddFile_ResourcesPicture1_3B.a"
+!source "tmp/Demo14AddFile_ResourcesPicture2B.a"
+!source "tmp/Demo14AddFile_ResourcesPicture4B.a"
+!source "tmp/Demo14AddFile_ResourcesRunwayRestore.a"
+!source "tmp/Demo14AddFile_ResourcesScreen1.a"
+!source "tmp/Demo14AddFile_ResourcesScreen2_3.a"
+
+!source "tmp/Demo14IntroScreensPicture1_3B_map.bin.PaletteUsage.txt"
+!source "tmp/Demo14IntroScreensPicture2B_map.bin.PaletteUsage.txt"
+!source "tmp/Demo14IntroScreensPicture4B_map.bin.PaletteUsage.txt"
+
+.fullPalette
+!bin "tmp/Demo14ScaledSprites4TitleScreen.pal"
+
+IntroScreen1_3BPalette0 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette0IndexUsed)
+IntroScreen1_3BPalette1 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette1IndexUsed)
+IntroScreen1_3BPalette2 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette2IndexUsed)
+
+IntroScreen2BPalette0 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette0IndexUsed)
+IntroScreen2BPalette1 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette1IndexUsed)
+IntroScreen2BPalette2 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette2IndexUsed)
+
+IntroScreen4BPalette0 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette0IndexUsed)
+IntroScreen4BPalette1 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette1IndexUsed)
+IntroScreen4BPalette2 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette2IndexUsed)
+IntroScreen4BPalette3 = .fullPalette + (kBus24Bit_VideoLayer_BytesPerPalette * kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette3IndexUsed)
+
+GreyPaletteUpdate
+	ldy #0
+.cp1
+	jsr PaletteFade_ExtractComponents
+
+!macro MUpdateCompenent .component , .target , .isGreen {
+	lda .component
+	cmp .target
+	bcs .sub
+	clc
+	adc zeroPage_Temp18
+!if .isGreen {
+	bcs .clamp1
+	adc zeroPage_Temp18
+}
+	bcs .clamp1
+	cmp .target
+	bcc .ok
+.clamp1
+	lda .target
+	jmp .ok
+.sub
+	sbc zeroPage_Temp18
+!if .isGreen {
+	bcc .clamp1
+	sbc zeroPage_Temp18
+}
+	bcc .clamp1
+	cmp .target
+	bcs .ok
+	lda .target
+.ok
+	sta .component
+}
+
+	+MUpdateCompenent zeroPage_Temp12 , zeroPage_Temp15 , 0
+	+MUpdateCompenent zeroPage_Temp13 , zeroPage_Temp16 , 1
+	+MUpdateCompenent zeroPage_Temp14 , zeroPage_Temp17 , 0
+	jsr PaletteFade_CombineComponents
+
+	cpy #kBus24Bit_VideoLayer_BytesPerPalette
+	bne .cp1
+	rts
+
+!macro MUpdatePaletteChunkFrame .sourceAddress , .bank , .index {
+	; Fade palette 0 in bank 0 and 3
+	+MWordValueToAddress_A .sourceAddress , zeroPage_Temp10
+	jsr SafeGreyPaletteUpdate
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue .bank	; First bank palette
+	+MBus24Bit_SetAddress_A kBus24Bit_VideoLayer_EBBS , kBus24Bit_VideoLayer_Palette + (.index * kBus24Bit_VideoLayer_BytesPerPalette)
+	jsr CopyPaletteChunkFast
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 0
+}
+
+!zn
+SafeGreyPaletteUpdate
+	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
+	jsr GreyPaletteUpdate
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+	rts
+
+CopyPaletteChunkFast
+	+MBus24Bit_FastSpeedCopy PaletteFade_calculatedPalette , kBus24Bit_VideoLayer_BytesPerPalette
+	rts
+
+JustShowTitleScreenChars
+	jsr Bus20To32Bit1_Init
+
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
+	rts
+
+CommonRestoreScreenStateForTitlesOrGame
+	jsr Video_SetAddressMergeLayer
+	lda #kBus24Bit_MergeLayer_Register_Control_Default
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	; To stop the APU memory being displayed in the Vectors layer - In simulation
+	; To stop the intro screens on the second chars layer being displayed - For emulation and hardware
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_ForceOut_1
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	jsr Video_SetAddressVideoPaletteLayersRegister
+	+MBus24Bit_Send8BitValue %00010010
+
+	jsr JustShowTitleScreenChars
+
+	; For runway
+	jsr Video_SetAddressTileScrollRegisters
+	jsr Video_clearFourBytes
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue 84
+
+	jsr Video_WaitVBlank
+	; Restore the tiles and palette
+	+MLongValueTo_AXY resourceFileOffset_ResourcesRunwayRestore
+	jsr ExternalMemory_C64SendResourceData
+	; Complete all chunks
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_Init
+
+	; Intro sequence makes sure any score is reset so any game demo score does not cause the title sequence to enter the high score entry
+	ldy #kGameScore_Value_size
+	jsr ScoreHandler_Init
+
+	jsr APU_Enable
+	rts
+
+!zn
+DisplayRunIntroScreen_CommonSetup
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	jsr APU_ResetDisable
+
+	jsr Video_SetAddressVideoBackgroundColour
+	+MBus24Bit_Send8BitValue 17 ; Black from the first converted text characters...
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+	jsr JustShowTitleScreenChars
+	rts
+
+
+!zn
+DisplayRunIntroScreen_CommonSetup_Display
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_Init
+
+	; Only show the tiles and merge both chars layers
+	jsr Video_SetAddressMergeLayer
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_ForceOut_1
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	lda #kBus24Bit_MergeLayer_Register_Control_Default
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	jsr Video_SetAddressVideoPaletteBankRegister
+	+MBus24Bit_Send8BitValue 0
+	jsr Video_SetAddressVideoPaletteLayersRegister
+	+MBus24Bit_Send8BitValue %11000000	; Using the spare last palette bank
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_24
+
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue 50
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue 50
+
+	; Target RGB value to reach
+	+MByteValueToAddress_A (1<<2) , zeroPage_Temp15
+	+MByteValueToAddress_A (1<<3) , zeroPage_Temp16
+	+MByteValueToAddress_A (1<<2) , zeroPage_Temp17
+
+	; Distance to move from the target RGB value
+	+MByteValueToAddress_A 0 , zeroPage_Temp18
+	+MByteValueToAddress_A 0 , zeroPage_Temp19
+	rts
+
+!zn
+DisplayRunIntroScreen_CommonPictureLogic
+	; Some transition logic...
+	inc zeroPage_Temp19
+	lda zeroPage_Temp19
+	cmp #30 + %11111 + 30
+	+lbcc .ok2
+
+DisplayRunIntroScreen_backToTitles
+	jsr CommonRestoreScreenStateForTitlesOrGame
+
+	jmp CommonBootCode_JumpTable_LoadRun_TitleScreen
+
+.ok2
+
+	lda #0
+	sta zeroPage_Temp18
+	lda zeroPage_Temp19
+	sec
+	sbc #30
+	bcc .skip1
+	cmp #%11111
+	bcc .ok1
+	lda #%11111
+.ok1
+	sta zeroPage_Temp18
+.skip1
+	rts
+
+!zn
+DisplayRunIntroScreen_CommonPictureLogicFade
+	lda #%00011111
+	sec
+	sbc zeroPage_Temp18
+	sta zeroPage_Temp18
+	rts
+
+
+!zn
+DisplayRunIntroScreen_CommonRunGame
+	; To game...
+	jsr CommonRestoreScreenStateForTitlesOrGame
+
+	jsr Bus20To32Bit1_Init
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue 0
+
+	lda #kVideo_EnableDisplay_Enable; | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+
+	jmp CommonBootCode_JumpTable_LoadRun_Game
+
+
+!zn
+DisplayRunIntroScreen1
+
+	jsr DisplayRunIntroScreen_CommonSetup
+
+	+MLongValueTo_AXY resourceFileOffset_ResourcesPicture1_3B
+	jsr ExternalMemory_C64SendResourceData
+	+MLongValueTo_AXY resourceFileOffset_ResourcesPicture2B
+	jsr ExternalMemory_C64SendResourceData
+
+	jsr DisplayRunIntroScreen_CommonSetup_Display
+
+.sl1
+
+	jsr DisplayRunIntroScreen_CommonPictureLogic
+
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette0 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette0IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette1 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette1IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette2 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette2IndexUsed
+
+	jsr DisplayRunIntroScreen_CommonPictureLogicFade
+
+	+MUpdatePaletteChunkFrame IntroScreen2BPalette0 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette0IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen2BPalette1 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette1IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen2BPalette2 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture2B_map_bin_palette2IndexUsed
+
+	+WaitForFireLoop_A .lsl1
+	jmp DisplayRunIntroScreen_CommonRunGame
+.lsl1
+	jmp .sl1
+
+
+!zn
+DisplayRunIntroScreen2
+
+	jsr DisplayRunIntroScreen_CommonSetup
+
+	+MLongValueTo_AXY resourceFileOffset_ResourcesPicture1_3B
+	jsr ExternalMemory_C64SendResourceData
+	+MLongValueTo_AXY resourceFileOffset_ResourcesPicture4B
+	jsr ExternalMemory_C64SendResourceData
+
+	jsr DisplayRunIntroScreen_CommonSetup_Display
+	; The other char screen
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -48 + 512
+	+MBus24Bit_SendLE16BitValue 50
+
+.sl1
+
+	jsr DisplayRunIntroScreen_CommonPictureLogic
+
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette0 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette0IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette1 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette1IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen1_3BPalette2 , $00 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture1_3B_map_bin_palette2IndexUsed
+
+	jsr DisplayRunIntroScreen_CommonPictureLogicFade
+
+	+MUpdatePaletteChunkFrame IntroScreen4BPalette0 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette0IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen4BPalette1 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette1IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen4BPalette2 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette2IndexUsed
+	+MUpdatePaletteChunkFrame IntroScreen4BPalette3 , $18 , kTilePaletteDebug____tmp_Demo14IntroScreensPicture4B_map_bin_palette3IndexUsed
+
+	+WaitForFireLoop_A .lsl1
+	jmp DisplayRunIntroScreen_CommonRunGame
+.lsl1
+	jmp .sl1
+
+
+!zn
+DisplayRunIntroScreen3
+
+	jsr DisplayRunIntroScreen_CommonSetup
+
+	jsr Video_WaitVBlank
+	+MLongValueTo_AXY resourceFileOffset_ResourcesScreen1
+	jsr ExternalMemory_C64SendResourceData
+
+	jsr DisplayRunIntroScreen_CommonSetup_Display
+	; The other char screen
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 0
+
+	+MByteValueToAddress_A 250 , zeroPage_Temp18
+
+.sl1
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollY
+
+	+MAddU8ToAddr16 2 , .scrollX , .scrollX+1
+	+MSubU8FromAddr16 1 , .scrollY , .scrollY+1
+
+	dec zeroPage_Temp18
+	+lbeq DisplayRunIntroScreen_backToTitles
+
+	+WaitForFireLoop_A .lsl1
+	jmp DisplayRunIntroScreen_CommonRunGame
+.lsl1
+	jmp .sl1
+
+.scrollX !word 0
+.scrollY !word 0
+
+
+
+!zn
+DisplayRunIntroScreen4
+
+	jsr DisplayRunIntroScreen_CommonSetup
+
+	jsr Video_WaitVBlank
+	+MLongValueTo_AXY resourceFileOffset_ResourcesScreen2_3
+	jsr ExternalMemory_C64SendResourceData
+
+	jsr DisplayRunIntroScreen_CommonSetup_Display
+	; The other char screen
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue 0
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 48
+
+	+MByteValueToAddress_A 250 , zeroPage_Temp18
+
+.sl1
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
+
+	+MSubU8FromAddr16 1 , .scrollX , .scrollX+1
+
+	dec zeroPage_Temp18
+	+lbeq DisplayRunIntroScreen_backToTitles
+
+	+WaitForFireLoop_A .lsl1
+	jmp DisplayRunIntroScreen_CommonRunGame
+.lsl1
+	jmp .sl1
+
+.scrollX !word 256-48
+
+
+!zn
+DisplayRunIntroScreen5
+
+	jsr DisplayRunIntroScreen_CommonSetup
+
+	jsr Video_WaitVBlank
+	+MLongValueTo_AXY resourceFileOffset_ResourcesScreen2_3
+	jsr ExternalMemory_C64SendResourceData
+
+	jsr DisplayRunIntroScreen_CommonSetup_Display
+	; The other char screen
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -10
+	+MBus24Bit_SendLE16BitValue 256+48
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValue 0
+	+MBus24Bit_SendLE16BitValue 256 + 48
+
+	+MByteValueToAddress_A 250 , zeroPage_Temp18
+
+.sl1
+	jsr Video_WaitVBlank
+	jsr Video_SetAddressTileScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .scrollX
+
+	+MSubU8FromAddr16 1 , .scrollX , .scrollX+1
+
+	dec zeroPage_Temp18
+	+lbeq DisplayRunIntroScreen_backToTitles
+
+	+WaitForFireLoop_A .lsl1
+	jmp DisplayRunIntroScreen_CommonRunGame
+.lsl1
+	jmp .sl1
+
+.scrollX !word 256-48

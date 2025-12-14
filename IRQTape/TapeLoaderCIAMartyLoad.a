@@ -169,7 +169,11 @@ tapeHeader
 	jmp MainSecondLoaderStart
 
 .ScreenText
+!ifdef ScreenTextSet {
+	+MScreenTextSet
+} else {
 	!scr "  martyload now loading: name of game!  "
+}
 
 !source "TapeLoaderCIACommon.a"
 

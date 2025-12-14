@@ -14,6 +14,7 @@ xcopy ..\acme.exe ..\..\TrialBuild2\TapeToolBuild
 xcopy ..\python39.dll ..\..\TrialBuild2\TapeToolBuild
 xcopy TapeTool\ExampleBuild.bat ..\..\TrialBuild2\TapeToolBuild
 xcopy TapeTool\Loaders.a ..\..\TrialBuild2\TapeToolBuild
+xcopy TapeTool\LoadersCommon.a ..\..\TrialBuild2\TapeToolBuild
 xcopy R.MUSC000.PRG ..\..\TrialBuild2\TapeToolBuild
 xcopy TapeTool\ReadMe.txt ..\..\TrialBuild2\TapeToolBuild
 xcopy ScrollerMusicLoader.a ..\..\TrialBuild2\TapeToolBuild

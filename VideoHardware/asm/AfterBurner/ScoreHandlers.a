@@ -10,6 +10,7 @@ ScoreHandler_Init
 	+MByteValueToAddress_A 1 , GameScore_Value_changed
 	rts
 
+!ifndef ScoreHandler_Init_Only {
 VBlankUpdateScore
 	lda GameScore_Value_changed
 	bne .changedScore
@@ -138,3 +139,4 @@ ScoreAdd_n000
 .smx ldx #0
 .smy ldy #0
 	rts
+}

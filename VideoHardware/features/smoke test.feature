@@ -1335,10 +1335,10 @@ Feature: Smoke test
     # Note: The current built hardware is exact for the registers from the video layer (0x01 EBBS) but not exact for the sample memory (0x04)
     And the audio expansion uses exact address matching
 
-	Given a new audio2 1 expansion with registers at '0x8000' and addressEx '0x06'
-    And the audio2 1 expansion uses exact address matching
-    Given a new audio2 2 expansion with registers at '0x8100' and addressEx '0x07'
-    And the audio2 2 expansion uses exact address matching
+	Given a new audio3 1 expansion with registers at '0x8000' and addressEx '0x06'
+    And the audio3 1 expansion uses exact address matching
+    Given a new audio3 2 expansion with registers at '0x8100' and addressEx '0x07'
+    And the audio3 2 expansion uses exact address matching
 
     Given video display processes 8 pixels per instruction
     Given video display refresh window every 32 instructions
@@ -1362,17 +1362,9 @@ Feature: Smoke test
     Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
     And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
     And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
-#    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
-    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
-    And trim "0" bytes from the start of temporary memory
-    And add temporary memory to the 32 bit interface memory address '0x0'
-	# Debug: Simulate a memory checksum failure
-#    And trim "200000" bytes from the start of temporary memory
-#    And add temporary memory to the 32 bit interface memory address '0x20050'
-	# Comment out the above after debugging checksum failure
     And enable user port bus debug output
     And enable APU mode
-    # Stop Audio2 from conflicting...
+    # Stop Audio3 from conflicting...
     And the APU uses exact address matching
     And APU clock divider 1
     And APU memory clock divider 2
@@ -1382,16 +1374,16 @@ Feature: Smoke test
     Given add a 2-to-1 merge layer with registers at '0xa200'
     And the layer has 16 colours
     And the layer has overscan
-    # Layer 3-1
-    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-    # Layer 3-0
-    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
+		# Layer 3-1
+		Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
+		# Layer 3-0
+		Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+		And the layer has 16 colours
+		And the layer has overscan
+#		And the layer uses exact address matching
 	# Layer 2
     Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
     And the layer has 16 colours
@@ -1399,15 +1391,19 @@ Feature: Smoke test
     And the layer uses exact address matching
 #    And the layer displays a debug window
     # Layer 1
-    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    Given add a 2-to-1 merge layer with registers at '0xa202'
     And the layer has 16 colours
     And the layer has overscan
-    And the layer uses exact address matching
+		Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
+		Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
     # Layer 0
     # Note: If comparing simulated output with emulated output, some layers need a merge layer
-#    Given add a 2-to-1 merge layer with registers at '0xa200'
-#    And the layer has 16 colours
-#    And the layer has overscan
     # Layer 0-1
 #    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
 #    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
@@ -1425,9 +1421,18 @@ Feature: Smoke test
     Given show video window
 #    Given randomly initialise all memory using seed 4321
 
+#    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
+    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
+    And trim "0" bytes from the start of temporary memory
+    And add temporary memory to the 32 bit interface memory address '0x0'
+	# Debug: Simulate a memory checksum failure
+#    And trim "200000" bytes from the start of temporary memory
+#    And add temporary memory to the 32 bit interface memory address '0x20050'
+	# Comment out the above after debugging checksum failure
+
     # Exact address first
 	#  Music
-    # Audio2 1 data
+    # Audio3 1 data
     Given load binary file "assets\Demo14\Audio\aburner_left.vcd" into temporary memory
     Given write data from temporary memory to address24 '0' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
     Given load binary file "assets\Demo14\Audio\aburner_left3.vcd" into temporary memory
@@ -1435,7 +1440,7 @@ Feature: Smoke test
     Given load binary file "assets\Demo14\Audio\aburner_left6.vcd" into temporary memory
     Given write data from temporary memory to address24 '896987+1343276' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
 
-    # Audio2 2 data
+    # Audio3 2 data
     Given load binary file "assets\Demo14\Audio\aburner_right.vcd" into temporary memory
     Given write data from temporary memory to address24 '0' and addressEx '0x07' using bank switch register at '0x8130' and addressEx '0x01'
     Given load binary file "assets\Demo14\Audio\aburner_right3.vcd" into temporary memory
@@ -1481,10 +1486,10 @@ Feature: Smoke test
     Given write data from file "tmp/target/exportedSoundEffectsAfterBurnerSamples.bin" to 24bit bus at '0x0000' and addressEx '0x04'
 
 
-    # Init combiners, for hardware simulation compatibility
+    # Init combiners
     Given write data byte '0x60' to 24bit bus at '0xa200' and addressEx '0x01'
     Given write data byte '0x00' to 24bit bus at '0xa201' and addressEx '0x01'
-    Given write data byte '0x20' to 24bit bus at '0xa202' and addressEx '0x01'
+    Given write data byte '0x60' to 24bit bus at '0xa202' and addressEx '0x01'
     Given write data byte '0x00' to 24bit bus at '0xa203' and addressEx '0x01'
 
     # Palettes
@@ -1504,6 +1509,10 @@ Feature: Smoke test
     Given write data byte '0x06' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
     Given write data byte '0x07' to 24bit bus at '0x9e0c' and addressEx '0x01'
+    Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
+
+	# For intro screens, last palette bank
+    Given write data byte '0x18' to 24bit bus at '0x9e0c' and addressEx '0x01'
     Given write data from file "tmp\Demo14ScaledSprites4TitleScreen.pal" to 24bit bus at '0x9c00' and addressEx '0x01'
 
     # Sprite palettes: Video_SetAddressVideoPaletteLayersRegister
@@ -1547,6 +1556,13 @@ Feature: Smoke test
     Given write data from file "tmp/Demo14TitleChars_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x20'
     Given write data from file "tmp/Demo14TitleChars_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x20'
     Given write data from file "tmp/Demo14TitleChars_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x20'
+	# Chars 2
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_map.bin" to 24bit bus at '0x4000' and addressEx '0x90'
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_map.bin2" to 24bit bus at '0x8000' and addressEx '0x90'
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_plane0.bin" to 24bit bus at '0x2000' and addressEx '0x30'
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_plane1.bin" to 24bit bus at '0x4000' and addressEx '0x30'
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_plane2.bin" to 24bit bus at '0x8000' and addressEx '0x30'
+    Given write data from file "tmp/Demo14IntroScreensPicture1B_plane3.bin" to 24bit bus at '0x0000' and addressEx '0x30'
 
     # Tiles
     Given write data from file "tmp/Demo14Runway_map.bin" to 24bit bus at '0x2000' and addressEx '0x80'
@@ -1599,7 +1615,7 @@ Feature: Smoke test
     And audio refresh is independent
     # ForHW chunks
 #    When I execute the procedure at start until return
-    When I execute the procedure at start for no more than 1000000 instructions until PC = CheckForGameData
+    When I execute the procedure at start for no more than 10000000 instructions until PC = CheckForGameData
     # Game memory chunk
     Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
     And trim "0" bytes from the start of temporary memory
@@ -1629,6 +1645,14 @@ Feature: Smoke test
     # Note: The current built hardware is exact for the registers from the video layer (0x01 EBBS) but not exact for the sample memory (0x04)
  #   And the audio expansion uses exact address matching
 
+	# Audio2 options
+	Given a new audio2 1 expansion with registers at '0x8000' and addressEx '0x06'
+    And the audio2 1 expansion uses exact address matching
+	# Single board, stereo mix
+	Given a new audio2 2 expansion with registers at '0x8000' and addressEx '0x06'
+    And the audio2 2 expansion uses exact address matching
+
+
     Given video display processes 8 pixels per instruction
     Given video display refresh window every 32 instructions
     Given video display does not save debug BMP images
@@ -1651,9 +1675,13 @@ Feature: Smoke test
     Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
     And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
     And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
-#    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
-#    And trim "0" bytes from the start of temporary memory
-#    And add temporary memory to the 32 bit interface memory address '0x0'
+	# Background RGB data
+#    Given load binary file "c:\temp\t.bmp" into temporary memory
+#    And trim "0x8a" bytes from the start of temporary memory
+	# Audio2 data
+    Given load binary file "c:\temp\aburner1_mono.bin" into temporary memory
+#    Given load binary file "assets\Demo14\Audio\aburner_left.vcd" into temporary memory
+    And add temporary memory to the 32 bit interface memory address '0x0'
     And enable user port bus debug output
     And enable APU mode
     And the APU uses exact address matching
@@ -1661,20 +1689,11 @@ Feature: Smoke test
     And APU memory clock divider 2
 
     Given add a BitmapRGB background with registers at '0xa300' and addressEx '0x03'
-    # Note: If comparing simulated output with emulated output, some layers need a merge layer
-#    Given add a 2-to-1 merge layer with registers at '0xa200'
-#    And the layer has 16 colours
-#    And the layer has overscan
-    # Layer 3-1
+    # Layer 3
     Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
     And the layer has 16 colours
     And the layer has overscan
     And the layer uses exact address matching
-    # Layer 3-0
-#    Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-#    And the layer has 16 colours
-#    And the layer has overscan
-#    And the layer uses exact address matching
 	# Layer 2
     Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
     And the layer has 16 colours
@@ -1682,10 +1701,20 @@ Feature: Smoke test
     And the layer uses exact address matching
 #    And the layer displays a debug window
     # Layer 1
-    Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+    Given add a 2-to-1 merge layer with registers at '0xa200'
+    And the layer uses exact address matching
     And the layer has 16 colours
     And the layer has overscan
-    And the layer uses exact address matching
+      # Standard addresses
+      Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+      And the layer uses exact address matching
+      And the layer has 16 colours
+      And the layer has overscan
+      # Other addresses
+      Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
+      And the layer uses exact address matching
+      And the layer has 16 colours
+      And the layer has overscan
     # Layer 0
     Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
     And the layer has 16 colours
@@ -1695,6 +1724,15 @@ Feature: Smoke test
 
     Given show video window
 #    Given randomly initialise all memory using seed 4321
+
+
+    Given load binary file "c:\temp\rawimage.bin" into temporary memory
+    Given write data from temporary memory to address24 '0' and addressEx '0x03' using bank switch register at '0xa300' and addressEx '0x01'
+
+	Given load binary file "c:\temp\aburner1_mono.bin" into temporary memory
+#	Given load binary file "assets\Demo14\Audio\aburner_left.vcd" into temporary memory
+    Given write data from temporary memory to address24 '0' and addressEx '0x06' using bank switch register at '0x8030' and addressEx '0x01'
+
 
     When enable remote debugging
 #    And wait for debugger connection

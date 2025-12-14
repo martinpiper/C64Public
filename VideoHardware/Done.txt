@@ -1070,11 +1070,13 @@
 		C:\Work\mame\src\lib\util\palette.cpp
 			palette_t::entry_set_color
 				m_entry_color
+	cd /d c:\work\mame\
+	"C:\work\mame\mytest.exe" -window outrun
 	"C:\work\mame\mytest.exe" -window aburner2
 	Converts raw data:
-		del "C:\temp\thunderblade arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\thunderblade arcade\t.png"
+		del "C:\temp\thunderbladearcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\thunderbladearcade\t.png"
 		del "C:\temp\afterburnerarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburnerarcade\t.png"
-		del "C:\temp\outrun arcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\outrun arcade\t.png"
+		del "C:\temp\outrunarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\outrunarcade\t.png"
 	Works really well!
 	* To help extraction, make the palette change code optional. Also have the option of filtering out any flips and only saving unflipped data.
 
@@ -1104,6 +1106,9 @@
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\Work\C64\VideoHardware\assets\Demo14\*.png
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\work\c64\VideoHardware\assets\Demo14\PlayerAirplane\*.png
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\work\c64\VideoHardware\assets\Demo14\EnemyPlaneGreen\*.png
+	>> Outrun
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\temp\outrunarcade\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\temp\outrunarcade\*.png
 
 	>> For the new scaled sprites, since they are variable in size, will need image conversion changes to take entire batches of sprite files and convert them for best fit palettes
 		For example this needs batch processing: java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --image "C:\Work\C64\VideoHardware\assets\Demo14\t-6.png" --imagequantize 16 --outputpalettes c:\temp\t.pal --convertwritepass
@@ -2367,3 +2372,61 @@
 	>> Maybe GamePlayerExplode_Winged can be used to display different roll animations...
 	>> Produces a nice trailing of explosions in the smoke.
 	>> Adjust for explosion frame at start hit.
+
+
+
+* Demo14: Widen the airplane to make it more likely to get the full explosion, not the winged animation
+	> Free memory by moving variable to zeropage
+		Remove from main14game.a !source "tmp/FingerPrint.a"
+		EnemyMissileCount !by 0
+		EnemyMissileCountNow !by 0
+
+
+
+* Demo14: Title screen, animated screens...
+	>> Intro screens are displayed 
+		>> "C:\Users\marti\Videos\After Burner II [aburner2] - MAME 0.270 (LLP64) 2025-12-05 16-41-36.mp4"
+			>> Insert coin flashing over the top of all of these.
+			>> After the hiscore tab;e
+			00:28	Sea scrolls down left, airplane in front.
+			00:35	Mountains scroll to the right. Yoke over the top.
+			01:54	Two aircraft hatched, cross fade to pilot
+			01:56	Mountains scroll to the right. Yoke over the top.
+			03:10	Two horizontal fighters, smoke scroll to the right.
+			03:14	Mountains scroll to the right. Yoke over the top.
+			04:26	Launching airplane cross fade to three fighters
+			04:30	Mountains scroll to the right. Yoke over the top.
+		>> c64\VideoHardware\assets\Demo14\IntroScreens
+		>> These use two layers. In theory two chars layers would be useful. Or maybe the background clouds/mountains could be in the tiles (road/runway) layer?
+		>> There will be DMA needed
+		>> It seems that pairs of pictures have alternating dithering, which means one can be all grey and the other sing their normal palette
+			Then the cross fade makes the other grey and the other the real palette
+			>> C:\Work\C64\VideoHardware\tmp\Demo14TitleChars_map.bin.debug.optimised.txt
+				kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y0_colour = 1
+				kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y8_colour = 2
+				kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour = 3
+				kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour = 4
+				kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y32_colour = 5
+	>> WIP DisplayRunIntroScreen1
+	>> Done: While this works, there isn't much free memory.
+		Move the entire DisplayRunIntroScreen* functionality to a new file, like mission complete. main14MissionComplete.a
+		Unfortunately there isn't enough space after LoadRunMissionComplete to add another entry point, so... use LoadRunMissionComplete with a flag to say what to run...
+		Probably add a flag just before "GameScore_Value	= $101" in main14Options.a
+			>> Will need to zero the score so that "jsr CheckAndRunHiScoreScoreTableEntry" fails on re-entry
+			>> Add palette bank 0,0 update to the restore...
+			>> Add the restore code
+		>> In theory it would be possible to use the small screen data and have the DMA code transfer the fragments in the correct areas...
+			Perhaos even splitting the tilemap colour file from the tile file...
+			>> This would save memory
+	>> Done: Include the whole palette and setup IntroScreen1BPalette0 etc to point into that memory
+
+
+
+* Demo14: Intro screen with the mountains has wrong colours on the real hardware
+	Mountains are in the tiles...
+	>> Debug_RunIntroScreenSequence = 5
+	>>> Palette for bank $18 wasn't being sent in the DMA
+* Demo14: Intro screen with the diagonal scrolling clouds and single fighter, the clouds palette is wrong?
+	Clouds are in the tiles...
+	>> Debug_RunIntroScreenSequence = 3
+	>>> Palette for bank $18 wasn't being sent in the DMA

@@ -10,6 +10,7 @@ kAudio2Register_Address24	= 3
 kAudio2Register_Length24	= 6
 kAudio2Register_Rate16		= 9
 kAudio2Register_Rate16_Normal = 1<<12
+kAudio2Register_Rate16_NormalFull = 1<<15
 
 !macro MAudio2_SetSample .channel , .address , .length , .rate {
 	+MBus24Bit_SetAddress_A kAudio2_EBBS , .channel + kAudio2Register_Address24
@@ -18,4 +19,21 @@ kAudio2Register_Rate16_Normal = 1<<12
 	+MBus24Bit_SendLE24BitValue .length
 +MAssertEquals kAudio2Register_Length24+3 , kAudio2Register_Rate16
 	+MBus24Bit_SendLE16BitValue .rate
+}
+
+!ifndef kAudio2ClockRateHz {
+kAudio2ClockRateHz=5000000
+}
+
+!macro MAudio2_SetSampleHz .channel , .address , .length , .hz {
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , .channel + kAudio2Register_Address24
+	+MBus24Bit_SendLE24BitValue .address
++MAssertEquals kAudio2Register_Address24+3 , kAudio2Register_Length24
+	+MBus24Bit_SendLE24BitValue .length
++MAssertEquals kAudio2Register_Length24+3 , kAudio2Register_Rate16
+	+MBus24Bit_SendLE16BitValue (kAudio2Register_Rate16_NormalFull*.hz)/((kAudio2ClockRateHz/4)/8)
+}
+!macro MAudio2_SetSampleJustHz .channel , .hz {
+	+MBus24Bit_SetAddress_A kAudio2_EBBS , .channel + kAudio2Register_Rate16
+	+MBus24Bit_SendLE16BitValue (kAudio2Register_Rate16_NormalFull*.hz)/((kAudio2ClockRateHz/4)/8)
 }

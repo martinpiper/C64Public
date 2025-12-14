@@ -63,7 +63,7 @@ test.tap
 
 
 rem Debug, skip the rest
-goto end
+rem goto end
 
 echo run test_p.tap
 test_p.tap

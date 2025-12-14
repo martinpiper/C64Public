@@ -1,0 +1,138 @@
+!zn
+RunEndCredits
+	+MByteValueToAddress_A 0 , RunGameMissionComplete
+
+	; Only show the clouds, not the tiles
+	jsr Video_SetAddressMergeLayer
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_ForceOut_0
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+
+	; We need DMA, which means the APU will probably need to be in passthrough mode and disabled, due to the speed needed
+	jsr APU_ResetDisableClear
+;	jsr Video_DisableDisplay
+
+	jsr Audio_Init	; Note, not the Audio2, since it is playing music
+;	jsr HardwareTest_VideoPattern0
+
+	; Disable the chars
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_134
+
+	+MLongValueTo_AXY resourceFileOffset_ResourcesMissionComplete
+	jsr ExternalMemory_C64SendResourceData
+
+	; Complete all chunks
+	jsr Bus20To32Bit1_ShortReset
+
+	jsr Bus20To32Bit1_Init
+
+.wl1
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValueFromAddress .currentXPos
+	+MBus24Bit_SendLE16BitValueFromAddress .currentYPos
+
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_1234
+
+;	+WaitForFire_A
+
+	+MSubS16AddrToAddrS16 .targetXPos , .targetXPos+1 , .currentXPos , .currentXPos+1 , zeroPage_Temp0 , zeroPage_Temp1
+!macro MOneValueCheck .to {
+	lda zeroPage_Temp1
+	bne .o1
+	lda zeroPage_Temp0
+	cmp #1
+	beq .to
+.o1
+}
+!for .i ,4 {
+	+MOneValueCheck .o2
+	+M_ASR_S16 zeroPage_Temp0 , zeroPage_Temp1
+}
+.o2
+	+MAddS16AddrToAddrS16 .currentXPos , .currentXPos+1 , zeroPage_Temp0 , zeroPage_Temp1 , .currentXPos , .currentXPos+1
+	+MSubS16AddrToAddrS16 .targetYPos , .targetYPos+1 , .currentYPos , .currentYPos+1 , zeroPage_Temp0 , zeroPage_Temp1
+!for .i ,4 {
+	+MOneValueCheck .o3
+	+M_ASR_S16 zeroPage_Temp0 , zeroPage_Temp1
+}
+.o3
+	+MAddS16AddrToAddrS16 .currentYPos , .currentYPos+1 , zeroPage_Temp0 , zeroPage_Temp1 , .currentYPos , .currentYPos+1
+
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	+lbeq mainLoop_backToTitleScreen
+
+	dec .smeo1+1
+.smeo1 lda #4
+	bne .o4
+	lda #4
+	sta .smeo1+1
+
+	dec .smeo2+1
+.smeo2 lda #75
+	bne .o4
+
+	ldx .thePos
+	cpx #.targetTimeNextNum
+	+lbeq mainLoop_backToTitleScreen
+
+	lda .targetTimeNext,x
+	sta .smeo2+1
+	lda .targetXPosNextLo,x
+	sta .targetXPos
+	lda .targetXPosNextHi,x
+	sta .targetXPos+1
+	lda .targetYPosNextLo,x
+	sta .targetYPos
+	lda .targetYPosNextHi,x
+	sta .targetYPos+1
+
+	inc .thePos
+
+.o4
+	jmp .wl1
+
+
+mainLoop_backToTitleScreen
+	; Disable the chars, again
+	jsr Bus20To32Bit1_Init
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_134
+
+	; Restore the chars
+	+MLongValueTo_AXY resourceFileOffset_ResourcesMissionCompleteRestore
+	jsr ExternalMemory_C64SendResourceData
+	; Complete all chunks
+	jsr Bus20To32Bit1_ShortReset
+	jsr Bus20To32Bit1_Init
+
+	jmp CommonBootCode_JumpTable_LoadRun_TitleScreen
+
+
+.currentXPos !word -260
+.currentYPos !word -160
+.targetXPos !word -44
+.targetYPos !word -24
+
+.thePos !by 0
+
+.targetTimeNext !by 75,250
+.targetTimeNextNum = *-.targetTimeNext
+
+.targetXPosNextLo !word -44-512	, -44-512
+!swizzle .targetXPosNextLo , (*-.targetXPosNextLo)/2 , 2
+.targetXPosNextHi = (*+.targetXPosNextLo)/2
++MAssertEquals .targetTimeNextNum , (*-.targetXPosNextLo)/2
+
+
+.targetYPosNextLo !word -24		, -24-256
+!swizzle .targetYPosNextLo , (*-.targetYPosNextLo)/2 , 2
+.targetYPosNextHi = (*+.targetYPosNextLo)/2
++MAssertEquals .targetTimeNextNum , (*-.targetYPosNextLo)/2
+

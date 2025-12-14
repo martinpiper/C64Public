@@ -1,7 +1,7 @@
 ; ZPBitmap_VarBase must be defined with a *zero page* base address for the Segments internal variables.
 ; For example: ZPBitmap_VarBase	= $02
 
-; SpanTable_IsInCart must be defined before including this file is cartridge mode is to be used
+; SpanTable_IsInCart must be defined before including this file if cartridge mode is to be used
 ; Define SpanPlot_MaskEnds to cause the bitmap line plot mode to mask out any unaligned line ends
 
 ZPBitmap_CurrentPos			= ZPBitmap_VarBase + $00
@@ -26,8 +26,19 @@ kSpanPlot_maxLen	= 64
 kSpanPlot_maxHeight	= VIC2ScreenCharsHeight*8
 }
 
+; Overall average during the frame
 !ifndef kSpanCalc_maxSegments {
 kSpanCalc_maxSegments	= 8
+}
+
+; This can be higher than kSpanCalc_maxSegments, for peak usage
+!ifndef kSpanCalc_maxSegmentsDuringLine {
+kSpanCalc_maxSegmentsDuringLine	= 8
+}
+
+; The number of times a Segments_linesHi can be empty before it's not drawn again. The number of screen buffers, effectively.
+!ifndef Segments_linesBeenEmptyFor_Max {
+Segments_linesBeenEmptyFor_Max = 1
 }
 
 !ifdef SpanTable_IsInCart {

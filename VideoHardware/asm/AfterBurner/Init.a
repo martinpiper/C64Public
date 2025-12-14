@@ -5,8 +5,9 @@ OneTimeInit
 	sta CIA2PortBRS232
 	lda #0
 	sta CIA2PortBRS232
-	; To stop the APU memory being displayed in the Vectors layer
-	lda #kBus24Bit_MergeLayer_Register_Control_Visible_0 | kBus24Bit_MergeLayer_Register_Control_ForceOut_0
+	; To stop the APU memory being displayed in the Vectors layer - In simulation
+	; To stop the intro screens on the second chars layer being displayed - For emulation and hardware
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_ForceOut_1
 	sta CIA2PortBRS232
 	lda #0
 	sta CIA2PortBRS232
@@ -51,6 +52,7 @@ OneTimeInit
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_Default
 
+	; For runway
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_SendLE16BitValue 84
 

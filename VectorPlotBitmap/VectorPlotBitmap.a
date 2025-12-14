@@ -28,6 +28,9 @@ CartKillBank_ProcessorPort		= ProcessorPortAllRAMWithIO
 Bitmap0Memory = $2000
 ;Bitmap1Memory = $6000
 
+kSpanCalc_maxSegments = 8
+; This allows the current line to have slightly more peak complexity than the average complexity specified by kSpanCalc_maxSegments
+kSpanCalc_maxSegmentsDuringLine = 16
 ZPBitmap_VarBase			= $02
 !source "BitmapPlotVars.a"
 ZPSegments_VarBase	= ZPBitmap_endVars
@@ -59,6 +62,13 @@ CartKillBank
 	rts
 }
 
+!source "TransformMem.a"
+!source "TransformTables.a"
+!source "3DModels.a"
+
+!if * >= Bitmap0Memory {
+!error "Code cannot be in the Bitmap0Memory"
+}
 
 * = $4000
 	lda #CartSelectBank_ProcessorPort
@@ -93,14 +103,6 @@ CartKillBank
 	ldx #0
 	ldy #kSpanPlot_maxHeight
 	jsr Segments_initListHeaders
-
-	dec .expireCount
-	bne .noExpire
-	lda #2
-	sta .expireCount
-;	jsr SpanCalc_expireCleared
-.noExpire
-;	jsr SpanCalc_dirtyClear
 
 	; Test the render pipeline routines
 	inc .drawTestIndex
@@ -232,7 +234,6 @@ CartKillBank
 	jmp .l1
 
 .modelSwap !by 64
-.expireCount !by 2
 .drawTestIndex !by 0
 
 !source "BitmapPlot.a"
@@ -241,9 +242,6 @@ CartKillBank
 !source "Poly2D.a"
 !source "Poly2DMem.a"
 !source "Transform.a"
-!source "TransformMem.a"
-!source "TransformTables.a"
-!source "3DModels.a"
 
 !ifdef SpanTable_IsInCart {
 

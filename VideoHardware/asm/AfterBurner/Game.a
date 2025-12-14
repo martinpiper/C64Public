@@ -1,4 +1,5 @@
 !zn
+;GamePlayerLives !by 127
 GamePlayerLives !by 2
 
 !ifdef BuildTitleScreen {
@@ -28,7 +29,11 @@ InitGame
 
 !ifdef BuildTitleScreen {
 	; This causes the game demo sequence to "appear" to start midway through a game
-	+MByteValueToAddress_A 50 , Video_WaitVBlank_FramesPassed
+	lda RunGameIntroCycle
+	and #%11111
+	clc
+	adc #50
+	sta Video_WaitVBlank_FramesPassed
 } else {
 	jsr StageNumber_Increase
 }

@@ -85,10 +85,36 @@ mainLoop
 	jsr Bus20To32Bit1_Init
 	jsr APU_ResetDisableClear
 	jsr Video_DisableDisplay
+	jsr APU_ResetDisableClear
 
 	jsr Audio_Init
 !ifdef SendResourceData {
 	jsr HardwareTest_VideoPattern0
+
+	; And the extra chars layer...
+	+MBus24Bit_SetAddress_AXY $90 , kBus24Bit_CharScreenMap
+	jsr HardwareTest_VideoPattern0_SendCharsMap
+
+	+MBus24Bit_SetAddress_AXY $90 , kBus24Bit_CharColourMap
+	jsr HardwareTest_VideoPattern0_SendCharsColourMap
+
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_0
+	jsr HardwareTest_VideoPattern0_SendCharsPlane0
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_1
+	jsr HardwareTest_VideoPattern0_SendCharsPlane1
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_2
+	jsr HardwareTest_VideoPattern0_SendCharsPlane2
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_3
+	jsr HardwareTest_VideoPattern0_SendCharsPlane3
+
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue -12
 }
 
 

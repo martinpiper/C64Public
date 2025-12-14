@@ -1,12 +1,13 @@
 !zn
 
-bytesToUpdateForPalettesPerFrame = kBus24Bit_VideoLayer_BytesPerPalette*2
+kPaletteFadeNumberOfPalettesToUpdate = 2
+bytesToUpdateForPalettesPerFrame = kBus24Bit_VideoLayer_BytesPerPalette * kPaletteFadeNumberOfPalettesToUpdate
 numUpdateChunksInABank = kBus24Bit_VideoLayer_BytesPerPaletteBank / bytesToUpdateForPalettesPerFrame
 
 
 RunPaletteFade
 
-	+MByteValueToAddress_A 0 , .paletteOffset
+	+MByteValueToAddress_A 0 , PaletteFade_paletteOffset
 	+MByteValueToAddress_A 1 , .paletteShift
 
 	; Read the data from external RAM into .tempPaletteLayer*
@@ -40,7 +41,7 @@ RunPaletteFade
 
 .wl1
 
-	ldx .paletteOffset
+	ldx PaletteFade_paletteOffset
 	lda .tempPaletteLayerAddressOffsets,x
 	sta zeroPage_Temp10
 	lda .tempPaletteLayerAddressOffsets + (numUpdateChunksInABank*2),x
@@ -49,35 +50,7 @@ RunPaletteFade
 	; Fade the colours in the current palette
 	ldy #0
 .cp1
-	; Extract the components
-	; Red
-	lda (zeroPage_Temp10),y
-	and #%11111
-	sta zeroPage_Temp12
-	; Green
-	lda (zeroPage_Temp10),y
-	lsr
-	lsr
-	lsr
-	lsr
-	lsr
-	sta zeroPage_Temp13	; 3 bits
-	iny
-	lda (zeroPage_Temp10),y
-	and #%111
-	asl
-	asl
-	asl
-	ora zeroPage_Temp13
-	sta zeroPage_Temp13
-
-	; Blue
-	lda (zeroPage_Temp10),y
-	lsr
-	lsr
-	lsr
-	sta zeroPage_Temp14
-	iny
+	jsr PaletteFade_ExtractComponents
 
 	; Shift them...
 	ldx .paletteShift
@@ -88,29 +61,7 @@ RunPaletteFade
 	dex
 	bne .ps1
 
-	; Recombine them...
-	; Note: Y usage, it already points to the next colour, so use -2
-	lda zeroPage_Temp12
-	sta .calculatedPalette-2,y
-	lda zeroPage_Temp14
-	asl
-	asl
-	asl
-	sta .calculatedPalette-2+1,y
-	lda zeroPage_Temp13
-	asl
-	asl
-	asl
-	asl
-	asl
-	ora .calculatedPalette-2,y
-	sta .calculatedPalette-2,y
-	lda zeroPage_Temp13
-	lsr
-	lsr
-	lsr
-	ora .calculatedPalette-2+1,y
-	sta .calculatedPalette-2+1,y
+	jsr PaletteFade_CombineComponents
 
 	cpy #bytesToUpdateForPalettesPerFrame
 	bne .cp1
@@ -122,7 +73,7 @@ RunPaletteFade
 
 	; Sprites use the higher palettes
 	jsr Video_SetAddressVideoPaletteBankRegister
-	lda .paletteOffset
+	lda PaletteFade_paletteOffset
 	and #%1
 	beq .isGameSprites
 	; Landscape sprites
@@ -136,27 +87,18 @@ RunPaletteFade
 	+MBus24Bit_Send8BitValueFromA
 .setPalBank
 
-	jsr Bus24Bit_Reset
-	lda #kBus24Bit_VideoLayer_EBBS
-	sta CIA2PortBRS232
-	lda .paletteOffset
-	lsr
-	tax
-	lda .paletteAddressOffsets,x
-	sta CIA2PortBRS232
-	lda .paletteAddressOffsets + numUpdateChunksInABank,x
-	sta CIA2PortBRS232
-	+MBus24Bit_FastSpeedCopy .calculatedPalette , bytesToUpdateForPalettesPerFrame
+	jsr PaletteFade_SetupPaletteOffsetAddress
+	+MBus24Bit_FastSpeedCopy PaletteFade_calculatedPalette , bytesToUpdateForPalettesPerFrame
 
 	jsr Video_SetAddressVideoPaletteBankRegister
 	+MBus24Bit_Send8BitValueFromAddress GamePaletteBank
 
 	; Proceed to the next palette
-	lda .paletteOffset
+	lda PaletteFade_paletteOffset
 	clc
 	adc #1
 	and #(numUpdateChunksInABank*2)-1
-	sta .paletteOffset
+	sta PaletteFade_paletteOffset
 	bne .notOtherPaletteYet
 	inc .paletteShift
 	lda .paletteShift
@@ -208,7 +150,7 @@ PaletteFade_Restore
 
 .paletteShift !by 1
 
-.paletteOffset !by 0
+PaletteFade_paletteOffset !by 0
 .paletteAddressOffsets
 !for .ii , numUpdateChunksInABank {
 	!word kBus24Bit_VideoLayer_Palette + ((.ii-1)*bytesToUpdateForPalettesPerFrame)
@@ -248,5 +190,77 @@ PaletteFade_Restore
 !swizzle .tempPaletteLayerAddressOffsets , numUpdateChunksInABank*2 , 2
 
 
-.calculatedPalette
+PaletteFade_calculatedPalette
 !fill bytesToUpdateForPalettesPerFrame , 0
+
+PaletteFade_SetupPaletteOffsetAddress
+	jsr Bus24Bit_Reset
+	lda #kBus24Bit_VideoLayer_EBBS
+	sta CIA2PortBRS232
+	lda PaletteFade_paletteOffset
+	lsr
+	tax
+	lda .paletteAddressOffsets,x
+	sta CIA2PortBRS232
+	lda .paletteAddressOffsets + numUpdateChunksInABank,x
+	sta CIA2PortBRS232
+	rts
+
+!zn
+PaletteFade_ExtractComponents
+	; Red
+	lda (zeroPage_Temp10),y
+	and #%11111
+	sta zeroPage_Temp12
+	; Green
+	lda (zeroPage_Temp10),y
+	lsr
+	lsr
+	lsr
+	lsr
+	lsr
+	sta zeroPage_Temp13	; 3 bits
+	iny
+	lda (zeroPage_Temp10),y
+	and #%111
+	asl
+	asl
+	asl
+	ora zeroPage_Temp13
+	sta zeroPage_Temp13
+
+	; Blue
+	lda (zeroPage_Temp10),y
+	lsr
+	lsr
+	lsr
+	sta zeroPage_Temp14
+	iny
+	rts
+
+!zn
+PaletteFade_CombineComponents
+	; Recombine them...
+	; Note: Y usage, it already points to the next colour, so use -2
+	lda zeroPage_Temp12
+	sta PaletteFade_calculatedPalette-2,y
+	lda zeroPage_Temp14
+	asl
+	asl
+	asl
+	sta PaletteFade_calculatedPalette-2+1,y
+	lda zeroPage_Temp13
+	asl
+	asl
+	asl
+	asl
+	asl
+	ora PaletteFade_calculatedPalette-2,y
+	sta PaletteFade_calculatedPalette-2,y
+	lda zeroPage_Temp13
+	lsr
+	lsr
+	lsr
+	ora PaletteFade_calculatedPalette-2+1,y
+	sta PaletteFade_calculatedPalette-2+1,y
+	rts

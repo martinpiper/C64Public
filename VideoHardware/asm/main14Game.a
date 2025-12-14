@@ -31,7 +31,7 @@ start
 	+MStopInitStack_X
 	jmp mainLoop
 
-!source "tmp/FingerPrint.a"
+;!source "tmp/FingerPrint.a"
 !source "stdlib/LongBranches.a"
 !source "BombJack/stdlib/APU.a"
 
@@ -116,7 +116,7 @@ mainLoop_backToTitleScreen
 
 mainLoop_toMissionComplete
 	jsr Bus20To32Bit1_Init
-
+	+MByteValueToAddress_A 1 , RunGameMissionComplete
 	jmp CommonBootCode_JumpTable_LoadRun_MissionComplete
 
 AudioActiveFlags !by 0

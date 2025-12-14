@@ -163,6 +163,9 @@
     <None Include="BuildIt14.bat" />
     <None Include="PythonSetup.bat" />
     <None Include="BuildIt15.bat" />
+    <None Include="assets\convert15.bat">
+      <Filter>Resource Files\assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="asm\main.a">
@@ -747,6 +750,135 @@
     <Library Include="asm\AfterBurner\GamePlayerExplode2.a">
       <Filter>Source Files\asm\AfterBurner</Filter>
     </Library>
+    <Library Include="tmp\Demo14AddFile_MissionComplete.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\CommonAPUDefines.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\CommonBootDefines.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesMissionComplete.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesMissionCompleteRestore.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesRunwayRestore.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14FileResources_ForHW1_Checksums.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game0.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game1.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game2.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game3.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game4.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Game5.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4GameEntity0.pal.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\FingerPrint.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ScoreTableData.bin.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet4.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet4.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanScaledSpritesSheet4.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanSpritesSheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\TurricanSpritesSheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4Sheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4SheetOptimisedGame.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14ScaledSprites4SheetOptimisedTitle.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo6Sprites2Sheet.txt.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo6Sprites2Sheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo6Sprites2Sheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSprites2Sheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSprites2Sheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSpritesSheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\ShadowBeastSpritesSheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\spriteSheet.txtTables.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\spriteSheet.txtVars.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\EndCredits.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="asm\AfterBurner\IntroScreens.a">
+      <Filter>Source Files\asm\AfterBurner</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesPicture1_3B.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesPicture2B.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesPicture4B.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesScreen1.a">
+      <Filter>tmp</Filter>
+    </Library>
+    <Library Include="tmp\Demo14AddFile_ResourcesScreen2_3.a">
+      <Filter>tmp</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Done.txt" />
@@ -825,6 +957,18 @@
     </Text>
     <Text Include="assets\Demo14\more allowed sizes.txt">
       <Filter>Resource Files\assets</Filter>
+    </Text>
+    <Text Include="tmp\Demo14ScaledSprites4SheetOptimised.txtTables.allowed.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\Demo14IntroScreensPicture4B_map.bin.PaletteUsage.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\Demo14IntroScreensPicture2B_map.bin.PaletteUsage.txt">
+      <Filter>tmp</Filter>
+    </Text>
+    <Text Include="tmp\Demo14IntroScreensPicture1_3B_map.bin.PaletteUsage.txt">
+      <Filter>tmp</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

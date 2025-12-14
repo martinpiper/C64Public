@@ -1,5 +1,6 @@
 rem @echo off
 del VectorPlotBitmap.prg
+del t.txt
 rmdir /S /Q bin
 mkdir bin
 

@@ -52,6 +52,7 @@ RunScoreTable
 .wl1
 	jsr Video_WaitVBlank
 	jsr Video_StartRasterTimers
+	jsr VBlankUpdatePaletteColours
 
 	; Turn off the char screen, hide the other screens
 	jsr Video_SetAddressVideoLayersEnable
@@ -518,6 +519,8 @@ RunScoreTableForEntry
 	jmp .wl1
 
 .exit
+	; And clear the current selection
+	+MByteValueToAddress_A -1 , .entryIndex
 
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_4
@@ -653,6 +656,8 @@ ScoreTable_ReadScoreTable
 ; Return: CS = Score not in table
 ; CC = Score in table and .entryIndex is set and zeroPage_Temp0/zeroPage_Temp1 set for the entry
 .checkScoreInTable
+	+MByteValueToAddress_A -1 , .entryIndex
+
 	; Try to find a suitable position in the score table, from top down
 	ldx #0
 	+MWordValueToAddress_A .tempScoreData , zeroPage_Temp0
