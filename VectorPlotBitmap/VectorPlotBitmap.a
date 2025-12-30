@@ -16,6 +16,7 @@ SpanPlot_MaskEnds	= 1
 
 kSpanCalc_backgroundColour = 0
 kPoly2D_vertexBufferInZP = 1
+kTransform_wantViewTranslation = 1
 
 !ifdef SpanTable_IsInCart {
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
@@ -70,6 +71,14 @@ CartKillBank
 !error "Code cannot be in the Bitmap0Memory"
 }
 
+!macro MSetupTransforms .object {
+!for .i , 6 {
+	lda .object + .i-1
+	sta ZPTransform_rotX + .i-1
+}
+}
+
+
 * = $4000
 	lda #CartSelectBank_ProcessorPort
 	jsr InitialiseMachine
@@ -107,7 +116,7 @@ CartKillBank
 	; Test the render pipeline routines
 	inc .drawTestIndex
 
-!if 1 {
+!if 0 {
 	; Setup 2D coords
 	dec .sm1+1
 .sm1	lda #50
@@ -197,27 +206,122 @@ CartKillBank
 	jsr Segments_processLines
 }
 
+.smToggle	lda #0
+	+lbeq .od1
+
+	lda #2
+	jsr Transform_loadMesh
+	+MSetupTransforms .object4
 	jsr Transform_calcRotation
 	jsr Transform_transformProjectVerts
 	jsr Transform_renderFaces
 
+	lda #2
+	jsr Transform_loadMesh
+	+MSetupTransforms .object2
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+	lda #2
+	jsr Transform_loadMesh
+	+MSetupTransforms .object5
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+	lda #2
+	jsr Transform_loadMesh
+	+MSetupTransforms .object6
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+	lda #1
+	jsr Transform_loadMesh
+	+MSetupTransforms .object1
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+	lda #1
+	jsr Transform_loadMesh
+	+MSetupTransforms .object3
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+.od1
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	lda .smToggle+1
+	eor #1
+	sta .smToggle+1
+.notFire
+
+
+	lda #1
+	jsr Transform_loadMesh
+	+MSetupTransforms .object7
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	jsr Transform_renderFaces
+
+
+	inc .object1
+	inc .object1+1
+	inc .object1+1
+	inc .object1+2
+	inc .object1+2
+	inc .object1+2
+
+	inc .object2
+	inc .object2+2
+
+	inc .object3
+
+	inc .object4+1
+
+	inc .object5+2
+
+	inc .object6
+	inc .object6
+
+	dec .object7
+;	dec .object7+2
+
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notPosUp
+	dec .object7+4
+.notPosUp
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notPosDown
+	inc .object7+4
+.notPosDown
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notPosLeft
+	dec .object7+3
+.notPosLeft
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notPosRight
+	inc .object7+3
+.notPosRight
+
+!if 0 {
 	inc ZPTransform_rotX
 	inc ZPTransform_rotX
 	inc ZPTransform_rotX
 	inc ZPTransform_rotY
 	inc ZPTransform_rotY
 	inc ZPTransform_rotZ
-
+}
 
 	lda #0
 	jsr CartSelectBank_8K_NoSEI
 
 	; Draw bitmap
 	+MWordValueToAddress_A Bitmap0Memory , ZPBitmap_CurrentPos
+	+MACROWaitForTheLastScan_A
 	inc VIC2BorderColour
-
 	jsr BitmapPlot_drawSpans
+	dec VIC2BorderColour
 
+!if 0 {
 	dec .modelSwap
 	bpl .noSwap
 	lda #64
@@ -228,10 +332,34 @@ CartKillBank
 .smModel lda #0
 	jsr Transform_loadMesh
 .noSwap
+}
 
 ;	+WaitForFire_A
 
 	jmp .l1
+
+.object1
+	!by 0,0,0
+	!by 0,0,0
+.object2
+	!by 0,0,0
+	!by -40,-40,-70
+.object3
+	!by 0,0,0
+	!by 10,-10,-40
+.object4
+	!by 0,0,0
+	!by 40,40,-70
+.object5
+	!by 0,0,0
+	!by -40,40,-70
+.object6
+	!by 0,0,0
+	!by 40,-40,-70
+.object7
+	!by 0,0,0
+	!by 10,10,-40
+
 
 .modelSwap !by 64
 .drawTestIndex !by 0

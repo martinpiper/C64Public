@@ -1,6 +1,6 @@
 !zn
 Transform_meshTab
-	!word .mesh1 , .mesh3
+	!word .mesh1 , .mesh3 , .mesh2
 
 Transform_faces
 
@@ -37,7 +37,6 @@ Transform_faces
 	!byte  10, 29, 27, 28, 1
 .face4
 
-
 .meshes
 .mesh1
 	;cube
@@ -56,6 +55,25 @@ Transform_faces
 	;end pos of faces
 	!byte .face2-Transform_faces
 	.f1 = 37
+
+.mesh2
+	; smaller cube
+	;num vertices
+	!byte 8
+	;backface culling
+	!byte 1
+	;shaded
+	!byte 1
+	;pointers to vertices
+	!word .vertx2
+	!word .verty2
+	!word .vertz2
+	;start pos of faces
+	!byte .face1-Transform_faces
+	;end pos of faces
+	!byte .face2-Transform_faces
+	.f1 = 37
+.f2 = 10
 
 .mesh3
 	;elite spaceship
@@ -85,6 +103,13 @@ Transform_faces
 .vertz1
 	;Transform_transVertsZ
 	!byte -.f1, -.f1, -.f1, -.f1,  .f1,  .f1,  .f1,  .f1
+
+.vertx2
+	!byte -.f2,  .f2,  .f2, -.f2, -.f2,  .f2,  .f2, -.f2
+.verty2
+	!byte -.f2, -.f2,  .f2,  .f2, -.f2, -.f2,  .f2,  .f2
+.vertz2
+	!byte -.f2, -.f2, -.f2, -.f2,  .f2,  .f2,  .f2,  .f2
 
 .vertx3
 	;vertices_x

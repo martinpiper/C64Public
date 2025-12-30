@@ -1,3 +1,7 @@
+https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html#about
+curl --request PUT http://c64u/v1/machine:reboot
+curl --request POST --data-binary "@C:\work\c64\VectorPlotBitmap\VectorPlotBitmap.crt" http://c64u/v1/runners:run_crt    
+
 TODO
 
 * Some frames of the spinning cube/spaceship show weirdly inserted spans. Investigate, find the angles to get a repeatable test case
@@ -100,3 +104,5 @@ TODO
 		rts
 		And the length jump table jumps into this reversed store list, reducing overall code size...
 		>> For "!if .fourPixelChunks > 0 {" The eventual "inc ZPBitmap_CurrentPos+1" and "ldy #<.nextOffset" will need handling to account for any gaps...
+
+
