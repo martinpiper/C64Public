@@ -46,7 +46,31 @@ Transform_transformProjectVerts
 
 	rts
 
+; Entry: A = Translation
+Transform_translateVertsX
+	sta .smtv1+1
+	ldx .last_vert-1
+.tlx1
+	lda Transform_transVertsX,x
+	clc
+.smtv1	adc #0
+	sta Transform_transVertsX,x
+	dex
+	bpl .tlx1
+	rts
 
+; Entry: A = Translation
+Transform_translateVertsY
+	sta .smtv2+1
+	ldx .last_vert-1
+.tlx2
+	lda Transform_transVertsY,x
+	clc
+.smtv2	adc #0
+	sta Transform_transVertsY,x
+	dex
+	bpl .tlx2
+	rts
 
 
 !macro MTransform_renderFaces .backface , .light , ~.face_first , ~.face_last {

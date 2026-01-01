@@ -11,8 +11,11 @@ ZPBitmap_ColourMasked		= ZPBitmap_VarBase + $04
 ZPBitmap_SegmentsPos		= ZPBitmap_VarBase + $05
 ZPBitmap_PaletteLo			= ZPBitmap_VarBase + $06
 ZPBitmap_PaletteHi			= ZPBitmap_VarBase + $07
-
-ZPBitmap_endVars			= ZPBitmap_VarBase + $08
+!set ZPBitmap_endVars		= ZPBitmap_VarBase + $08
+!ifdef kSpanPlot_SupportLongerSegmentsAsChunks {
+ZPBitmap_IsLongerSpan		= ZPBitmap_endVars + $00
+!set ZPBitmap_endVars = ZPBitmap_endVars + 1
+}
 
 !ifndef kSpanPlot_maxLen {
 !ifdef SpanTable_IsInCart {
@@ -20,6 +23,10 @@ kSpanPlot_maxLen	= VIC2ScreenCharsWidth*4
 } else {
 kSpanPlot_maxLen	= 64
 }
+}
+
+!ifndef kSpanPlot_maxLinePlotLen {
+kSpanPlot_maxLinePlotLen = kSpanPlot_maxLen
 }
 
 !ifndef kSpanPlot_maxHeight {

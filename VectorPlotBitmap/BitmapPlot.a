@@ -39,7 +39,7 @@ BitmapPlot_drawSpans
 
 	+SetupScanDrawData_X
 	; Force an empty line of colour 0 (erase)
-	lda #kSpanPlot_maxLen
+	lda #kSpanPlot_maxLinePlotLen
 	sta .scanLengths
 	lda #0
 	sta .scanLengths + 1
@@ -81,8 +81,12 @@ BitmapPlot_drawSpans
 
 .doScanDraw
 	ldx #0
+!ifdef kSpanPlot_SupportLongerSegmentsAsChunks {
+	stx ZPBitmap_IsLongerSpan
+}
+
 .l3
-; These are different pixel alignment routines, based on input alignment and pixel span length, the relevant output alignment routine then chosen
+; These are different pixel alignment routines, based on input alignment and pixel span length, the relevant output alignment routine is then chosen
 Bitmap_SpanRet0
 	+GetSpan .el1 , .scanLengths , .scanColours , SpanBanks_p0 , SpanTab_lo_p0 , SpanTab_hi_p0
 Bitmap_SpanRet1

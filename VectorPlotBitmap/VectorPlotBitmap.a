@@ -10,9 +10,16 @@
 !ct pet
 !initmem 0
 
-SpanTable_IsInCart	= 1
+;SpanTable_IsInCart	= 1
 SpanPlot_MaskEnds	= 1
 ;EnableInterlace		= 1
+
+; Testing RAM based rendering with long line lengths
+kSpanPlot_SupportLongerSegmentsAsChunks = 1
+!ifndef SpanTable_IsInCart {
+kSpanPlot_maxLinePlotLen = VIC2ScreenCharsWidth*4
+kSpanPlot_maxLen = 64
+}
 
 kSpanCalc_backgroundColour = 0
 kPoly2D_vertexBufferInZP = 1
@@ -95,6 +102,9 @@ CartKillBank
 	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
 
 	+ClearScreenAt_AX SCREENRAM , VIC2Colour_Grey | (VIC2Colour_DarkGrey << 4)
+
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
 
 	lda #>Bitmap0Memory
 	ldy #%10000100
@@ -242,6 +252,10 @@ CartKillBank
 	+MSetupTransforms .object1
 	jsr Transform_calcRotation
 	jsr Transform_transformProjectVerts
+	lda #-5
+	jsr Transform_translateVertsX
+	lda #70
+	jsr Transform_translateVertsY
 	jsr Transform_renderFaces
 
 	lda #1
@@ -249,15 +263,24 @@ CartKillBank
 	+MSetupTransforms .object3
 	jsr Transform_calcRotation
 	jsr Transform_transformProjectVerts
+	lda #35
+	jsr Transform_translateVertsX
+	lda #70
+	jsr Transform_translateVertsY
 	jsr Transform_renderFaces
+
+	lda #1
+	jsr Transform_loadMesh
+	+MSetupTransforms .object8
+	jsr Transform_calcRotation
+	jsr Transform_transformProjectVerts
+	lda #35
+	jsr Transform_translateVertsX
+	lda #-60
+	jsr Transform_translateVertsY
+	jsr Transform_renderFaces
+
 .od1
-
-	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
-	lda .smToggle+1
-	eor #1
-	sta .smToggle+1
-.notFire
-
 
 	lda #1
 	jsr Transform_loadMesh
@@ -289,6 +312,16 @@ CartKillBank
 	dec .object7
 ;	dec .object7+2
 
+	dec .object8
+	dec .object8
+
+	; Input processing
+	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	lda .smToggle+1
+	eor #1
+	sta .smToggle+1
+.notFire
+
 	+TestForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notPosUp
 	dec .object7+4
 .notPosUp
@@ -315,11 +348,13 @@ CartKillBank
 	jsr CartSelectBank_8K_NoSEI
 
 	; Draw bitmap
+	lda #VIC2Colour_Blue
+	sta VIC2BorderColour
 	+MWordValueToAddress_A Bitmap0Memory , ZPBitmap_CurrentPos
 	+MACROWaitForTheLastScan_A
 	inc VIC2BorderColour
 	jsr BitmapPlot_drawSpans
-	dec VIC2BorderColour
+	inc VIC2BorderColour
 
 !if 0 {
 	dec .modelSwap
@@ -359,6 +394,9 @@ CartKillBank
 .object7
 	!by 0,0,0
 	!by 10,10,-40
+.object8
+	!by 0,0,0
+	!by 0,0,0
 
 
 .modelSwap !by 64

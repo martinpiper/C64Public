@@ -1,8 +1,44 @@
 !macro GetSpan .el1 , .scanLengths , .scanColours , .bankSelect , .spanTab_lo , .spanTab_hi {
+!ifdef kSpanPlot_SupportLongerSegmentsAsChunks {
+	lda ZPBitmap_IsLongerSpan
+	beq .notLonger
+	lda #0
+	sta ZPBitmap_IsLongerSpan
+	rts
+.notLonger
+}
+
 	ldy .scanLengths,x
 	bne .got
 	jmp .el1
 .got
+!ifdef kSpanPlot_SupportLongerSegmentsAsChunks {
+.tryAgain
+	cpy #kSpanPlot_maxLen
+	bcc .isOKLength
+
+	inc ZPBitmap_IsLongerSpan
+	tya
+	pha
+
+	; Note: This uses the actual longest
+	lda .spanTab_lo + kSpanPlot_maxLen-1
+	sta .smp0js+1
+	lda .spanTab_hi + kSpanPlot_maxLen-1
+	sta .smp0js+2
+	ldy .scanColours,x
+	lda (ZPBitmap_PaletteLo),y
+	ldy #0
+.smp0js	jsr $1234
+
+	pla
+	sec
+	sbc #kSpanPlot_maxLen-1
+	tay
+	+lbeq .el1
+	jmp .tryAgain
+.isOKLength
+}
 !ifdef SpanTable_IsInCart {
 	lda .bankSelect - 1,y
 	sta CART_SELECT_BANK
@@ -23,7 +59,7 @@
 	bne .gotSpan
 
 	; Handle filling until the end of the line
-	lda #kSpanPlot_maxLen
+	lda #kSpanPlot_maxLinePlotLen
 	sec
 	sbc ZPBitmap_SegmentsPos
 	sta .scanLengths + .index
