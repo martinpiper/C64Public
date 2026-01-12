@@ -72,6 +72,16 @@ mainLoop2
 	jsr VBlankUpdateText
 
 !ifdef BuildTitleScreen {
+!ifdef BuildForFasterCPU {
+	; Double the time for faster CPUs
+	; TODO: GameDemoExitTime should really be independent of frame rate...
+	lda .smo1
+	eor #1
+	sta .smo1
+.smo1 = *+1
+	lda #0
+	beq .notTimeYet
+}
 	; This specific place ensures the horizon update matches what sprites have been submitted before the screen pause...
 	dec GameDemoExitTime
 	bne .notTimeYet
@@ -206,15 +216,30 @@ RenderSpritesGame
 	jsr RenderHand
 }
 	jsr EntityRenderSpritesDirectMode
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesList
 	jsr Exit32BitModeAndSignalReady
 
 	jsr StartSprites4Render2
 	jsr LandscapeRender
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesList
 	jsr Exit32BitModeAndSignalReady2
 
 	rts
 
+!ifdef Debug_RenderPreviousFramesPassed {
+RenderPreviousFramesPassed
+	lda Video_WaitVBlank_PreviousFramesPassed
+	ldx #0
+	stx Video_WaitVBlank_PreviousFramesPassed
+	asl
+	asl
+	asl
+	+MRenderFixedSpriteWithStrideWithAddressOffsetInA kVarsEmitSpriteFrame_hexdigits8x7_0_0_0_colour , 16 , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_hexdigits8x7_0_0_0_tileAddress , 8 , kVarsEmitSpriteFrame_hexdigits8x7_0_0_0_tileHeight , kVarsEmitSpriteFrame_hexdigits8x7_0_0_0_tileWidth
+	rts
+}

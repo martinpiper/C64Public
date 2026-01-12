@@ -21,10 +21,10 @@
 	tya
 	pha
 
-	; Note: This uses the actual longest
-	lda .spanTab_lo + kSpanPlot_maxLen-1
+	; Process this chunk using this length, which is not the maximum, but does preserve alignment. This is a little faster.
+	lda .spanTab_lo + kSpanPlot_maxLen-1-4
 	sta .smp0js+1
-	lda .spanTab_hi + kSpanPlot_maxLen-1
+	lda .spanTab_hi + kSpanPlot_maxLen-1-4
 	sta .smp0js+2
 	ldy .scanColours,x
 	lda (ZPBitmap_PaletteLo),y
@@ -33,9 +33,10 @@
 
 	pla
 	sec
-	sbc #kSpanPlot_maxLen-1
+	sbc #kSpanPlot_maxLen-4
 	tay
 	+lbeq .el1
+	+lbcc .el1
 	jmp .tryAgain
 .isOKLength
 }

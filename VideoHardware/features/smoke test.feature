@@ -1606,9 +1606,12 @@ Feature: Smoke test
     Given I disable trace
     Given property "bdd6502.bus24.trace" is set to string "false"
     Given video display does not save debug BMP images
+    # C64 6510 speed
     Given video display processes 24 pixels per instruction
-#    Given video display processes 16 pixels per instruction
-#    Given video display processes 8 pixels per instruction
+    # C128 8502 speed, use with BuildForFasterCPU
+#    Given video display processes 12 pixels per instruction
+    # Something faster than a C128...
+    Given video display processes 8 pixels per instruction
     Given limit video display to 60 fps
 #    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     And audio refresh window every 0 instructions

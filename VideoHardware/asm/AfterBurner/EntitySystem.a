@@ -19,17 +19,17 @@ kEntity_MaxZPosRemove = kEntity_MaxZPos+1
 ;EntityZPos	!by 8*8	; The far point of the landscape
 ;EntityZPos	!by defaultNeutralScaleIs
 
-EntityXPos
-	!by 0	; Player
-	!fill SortHardMaxEntries-1 , 0
-
-EntityYPos
-	!by 0	; Player
-	!fill SortHardMaxEntries-1 , 0
-
-EntityZPos
-	!by defaultNeutralScaleIs	; Player
-	!fill SortHardMaxEntries-1 , 0
+;EntityXPos
+;	!by 0	; Player
+;	!fill SortHardMaxEntries-1 , 0
+;
+;EntityYPos
+;	!by 0	; Player
+;	!fill SortHardMaxEntries-1 , 0
+;
+;EntityZPos
+;	!by defaultNeutralScaleIs	; Player
+;	!fill SortHardMaxEntries-1 , 0
 
 EntityScaleTweak
 	!by 0
@@ -79,10 +79,22 @@ EntityInit
 	sta EntityTypeIndex-1,x
 	dex
 	bne .ecl1
+	; For the player...
+	+MByteValueToAddress_A defaultNeutralScaleIs , EntityZPos
+	; More default values
+	+MByteValueToAddress_A (ScreenLandscapeNumRollSteps/2)-1 , landscapeRotationsFrame
 	rts
 
 ;SortIndexTable !fill SortHardMaxEntries , 0
 SortMaxEntries !by SortHardMaxEntries
+
+SortIndexTableEnd = SortIndexTable+SortHardMaxEntries
+!if SortIndexTable >= ProcessorStack {
+	!error "SortIndexTable must be in zeropage"
+}
+!if SortIndexTableEnd-1 >= ProcessorStack {
+	!error "SortIndexTableEnd-1 must be in zeropage"
+}
 
 EntitySort
 	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
@@ -91,6 +103,8 @@ EntitySort
 	rts
 
 EntitySortInit
+	jsr EntityInit
+
 	+MByteValueToAddress_A ProcessorPortAllRAM , ZPProcessorPort
 	jsr EntitySortInitInternal
 	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort

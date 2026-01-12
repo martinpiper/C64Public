@@ -1,0 +1,16 @@
+!source "../MakeCart/asm/EasyFlash_Macros.a"
+
+!macro MCartBankCode {
+AnimationKillCartBank
+;	sei
+	+MACRO_CartKillBank
+;	cli
+	rts
+
+AnimationRestoreCartBank
+;	sei
+	jsr DeltaDecompression_GetBank
+	+MACRO_CartSelectBank_16K_NoSEI_A
+;	cli
+	rts
+}

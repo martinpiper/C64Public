@@ -36,7 +36,9 @@ RunGameRefueling
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	jsr TryToLevelAnyRoll
@@ -108,7 +110,9 @@ RunGameRefueling2
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
@@ -149,7 +153,9 @@ RunGameRefueling3
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
@@ -180,7 +186,9 @@ RunGameRefueling3b
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
@@ -216,7 +224,9 @@ RunGameRefueling3c
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0
@@ -251,7 +261,9 @@ RunGameRefueling4
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda #0

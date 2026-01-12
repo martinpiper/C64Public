@@ -125,6 +125,9 @@ JustShowTitleScreenChars
 	rts
 
 CommonRestoreScreenStateForTitlesOrGame
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+
 	jsr Video_SetAddressMergeLayer
 	lda #kBus24Bit_MergeLayer_Register_Control_Default
 	sta CIA2PortBRS232
@@ -156,7 +159,6 @@ CommonRestoreScreenStateForTitlesOrGame
 	jsr Bus20To32Bit1_Init
 
 	; Intro sequence makes sure any score is reset so any game demo score does not cause the title sequence to enter the high score entry
-	ldy #kGameScore_Value_size
 	jsr ScoreHandler_Init
 
 	jsr APU_Enable
@@ -423,15 +425,18 @@ DisplayRunIntroScreen5
 
 	jsr DisplayRunIntroScreen_CommonSetup
 
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide + $10
+
 	jsr Video_WaitVBlank
 	+MLongValueTo_AXY resourceFileOffset_ResourcesScreen2_3
 	jsr ExternalMemory_C64SendResourceData
 
 	jsr DisplayRunIntroScreen_CommonSetup_Display
-	; The other char screen
+	; The other char screen, the two jets
 	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
 	+MBus24Bit_Send8BitValue 0
-	+MBus24Bit_SendLE16BitValue -10
+	+MBus24Bit_SendLE16BitValue -10-4
 	+MBus24Bit_SendLE16BitValue 256+48
 	jsr Video_SetAddressTileScrollRegisters
 	+MBus24Bit_SendLE16BitValue 0

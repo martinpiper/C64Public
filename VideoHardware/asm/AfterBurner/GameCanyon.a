@@ -39,7 +39,9 @@ mainLoop5b
 	jsr LandscapeRender
 .overLandscapeDraw
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	; Slow down the player
@@ -87,7 +89,9 @@ mainLoop5c
 
 	jsr LandscapeRenderScrollX
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 
@@ -126,7 +130,9 @@ mainLoop6b
 
 	jsr LandscapeRenderHeight
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	+MByteValueToAddress_A 1 , EntityEnableRenderPlayerSpecialCase
@@ -222,7 +228,9 @@ RunGameCanyon_CommonFrame
 	jsr SpeedDisplayRenderSpritesDirectMode
 	jsr EntityRenderSpritesDirectMode
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesAndSignalReady
 
 	jsr ResetInterfaceAndStartSendingScaledSprites2

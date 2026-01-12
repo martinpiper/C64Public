@@ -15,6 +15,9 @@ ResetInterfaceAndStartSendingScaledSprites
 	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
 	+MBus20To32Bit1_SetLatch4_A
 	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+!ifdef Debug_RenderPreviousFramesPassed {
+	jsr RenderPreviousFramesPassed
+}
 	rts
 
 ResetInterfaceAndStartSendingScaledSprites2
@@ -48,6 +51,9 @@ StartSprites4Render
 	+MBus24Bit_Send8BitValue kBus20To32Bit1_latch7_ResetDone | kBus20To32Bit1_latch7_PassthroughDisable | kBus20To32Bit1_latch7_InternalPA2
 	+MBus20To32Bit1_SetLatch4_A
 	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+!ifdef Debug_RenderPreviousFramesPassed {
+	jsr RenderPreviousFramesPassed
+}
 	rts
 
 StartSprites4Render2
@@ -64,6 +70,7 @@ StartSprites4Render2
 	+MBus24Bit_SetAddressNoReset_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers2
 	rts
 
+!ifdef Debug_RenderTimeout {
 ; Shows sprite timeout. This is a small sprite, rendered last in the top left of the screen, that will not be displayed if the sprite hardware runs out of frame draw time.
 ; The left and top edges should exactly touch the borders.
 RenderTimeout
@@ -77,7 +84,7 @@ RenderTimeout
 RenderTimeout2
 	+MRenderFixedSprite kVarsEmitSpriteFrame_tc_798_0_0_0_colour , 8 , 0 , $f8 , $f8 , 0 , 0 , kVarsEmitSpriteFrame_tc_798_0_0_0_tileAddress , kVarsEmitSpriteFrame_tc_798_0_0_0_tileWidth , kVarsEmitSpriteFrame_tc_798_0_0_0_tileHeight
 	rts
-
+}
 
 TerminateScaledSpritesAndSignalReady
 	+MBus20To32Bit1_WriteMode_A

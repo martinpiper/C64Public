@@ -132,7 +132,6 @@ mainLoop3
 	jsr InitGame
 	; Fake progression each iteration
 	lda RunGameIntroCycle
-.bph
 	jsr Seed
 	lda RunGameIntroCycle
 	and #%1111
@@ -209,16 +208,6 @@ RenderSpritesTitle
 
 	jsr ResetInterfaceAndStartSendingScaledSprites
 
-!if 0 {
-	; TODO: This shows a built hardware difference compared to the simulation (and emulation). One right hand edge pixel is missing for these widths.
-	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 0 , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + 100 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 16 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
-
-	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 10 + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4), kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 8 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
-
-	+MRenderFixedSpriteWithStride kVarsEmitSpriteFrame_t_715_0_0_0_colour , 20 + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) , 0 , $20 , $20 , 0 , 0 , kVarsEmitSpriteFrame_t_715_0_0_0_tileAddress + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4) + (kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4), kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth / 4 , kVarsEmitSpriteFrame_t_715_0_0_0_tileHeight / 2 , kVarsEmitSpriteFrame_t_715_0_0_0_tileWidth
-}
-
-
 	; Draw logo
 	ldx .logoScale
 	cpx #$20
@@ -257,7 +246,9 @@ RenderSpritesTitle
 	+MLogoDraw2 TitleDraw2R2 , 180 , 0
 
 	jsr EntityRenderSpritesDirectMode
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesAndSignalReady
 
 	jsr ResetInterfaceAndStartSendingScaledSprites2
@@ -375,7 +366,9 @@ RenderSpritesTitle
 	+MBus20To32Bit1_UsingState_WriteMode_A
 	+MBus20To32Bit1_UsingState_SetLatch4_A
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 

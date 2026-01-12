@@ -29,6 +29,7 @@ BuildGame = 1
 *=$200
 start
 	+MStopInitStack_X
+	+M_RAMTAS_LOW
 	jmp mainLoop
 
 ;!source "tmp/FingerPrint.a"
@@ -67,6 +68,7 @@ mainLoop
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_1234
 
 	jsr EntitySortInit
+
 
 ;	+WaitForFire_A
 
@@ -119,8 +121,6 @@ mainLoop_toMissionComplete
 	+MByteValueToAddress_A 1 , RunGameMissionComplete
 	jmp CommonBootCode_JumpTable_LoadRun_MissionComplete
 
-AudioActiveFlags !by 0
-
 !source "AfterBurner/APU.a"
 !source "AfterBurner/EntitySystem.a"
 !source "AfterBurner/EntitySystemSpriteDraw.a"
@@ -152,7 +152,12 @@ AudioActiveFlags !by 0
 !source "AfterBurner/EntitySort.a"
 !source "AfterBurner/RadarDisplayTables.a"
 
+!ifdef BuildForFasterCPU {
+*=KERNALROM + $c0
+}
+!ifndef BuildForFasterCPU {
 *=KERNALROM
+}
 !source "AfterBurner/LandscapeAnimate.a"
 !source "AfterBurner/Maths.a"
 !source "AfterBurner/GameRefueling.a"

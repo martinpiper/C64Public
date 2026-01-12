@@ -21,7 +21,9 @@ RunGameOver
 
 	jsr LandscapeRender
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	jsr TryToLevelAnyRoll

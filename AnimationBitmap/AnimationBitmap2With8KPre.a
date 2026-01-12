@@ -1,0 +1,16 @@
+!source "../MakeCart/asm/GMod2_Macros.a"
+
+!macro MCartBankCode {
+AnimationKillCartBank
+;	sei
+	+MACRO_CartKillBank
+;	cli
+	rts
+
+AnimationRestoreCartBank
+;	sei
+	jsr DeltaDecompression_GetBank
+	+MACRO_CartSelectBank_8K_NoSEI_A
+;	cli
+	rts
+}

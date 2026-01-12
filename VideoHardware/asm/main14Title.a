@@ -30,6 +30,7 @@ IncludeVBlankUpdateTextColours=1
 *=$200
 start
 	+MStopInitStack_X
+	+M_RAMTAS_LOW
 	jmp mainLoop
 
 !source "tmp/FingerPrint.a"
@@ -101,6 +102,7 @@ mainLoop
 	jsr OneTimeInit
 	jsr EntitySortInit
 
+
 	jsr Video_SetAddressMode7
 !for .i , Mode7RegsSize {
 	lda Mode7Regs + .i-1
@@ -133,8 +135,6 @@ TitleScreen_RunGame
 	+MBus24Bit_Send8BitValue 0
 
 	jmp CommonBootCode_JumpTable_LoadRun_Game
-
-AudioActiveFlags !by 0
 
 !source "AfterBurner/Init.a"
 !source "AfterBurner/APUHardware.a"

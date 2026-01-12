@@ -28,6 +28,7 @@
 *=$200
 start
 	+MStopInitStack_X
+	+M_RAMTAS_LOW
 	jmp mainLoop
 
 !source "tmp/FingerPrint.a"

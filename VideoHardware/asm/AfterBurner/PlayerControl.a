@@ -166,7 +166,7 @@ PlayerControl
 	; Fire bullets
 	+LTestForPortBitsLoop_A GameUsesPortA , JoystickBits_Fire , .notFire2
 	lda EntityState_Bullets_ActiveNum
-	cmp #5
+	cmp #kMaxEntityState_Bullets_ActiveNum
 	+lbcs .overFire2
 	jsr EntityFindFreeSlot
 	+lbcs .noFreeSlot22
@@ -522,27 +522,27 @@ playerYPositionOffsetReduce
 	rts
 
 
-playerXPositionOffset
-	!by 0
-
-playerYPositionOffsetSpeed
-	!by 0
-
-playerYPositionOffset
-	!by 0
-
-playerYPositionOffset_AsEntityYPos
-	!by 0
-
-playerYPositionOffset2
-	!by 0
-
-playerYPositionOffsetForHorizon
-	!by 0
+;playerXPositionOffset
+;	!by 0
+;
+;playerYPositionOffsetSpeed
+;	!by 0
+;
+;playerYPositionOffset
+;	!by 0
+;
+;playerYPositionOffset_AsEntityYPos
+;	!by 0
+;
+;playerYPositionOffset2
+;	!by 0
+;
+;playerYPositionOffsetForHorizon
+;	!by 0
 playerYPositionOffsetForLandscape
 	!by ScreenLandscapeOriginYPos
-playerYPositionOffsetForSprites
-	!by 0
+;playerYPositionOffsetForSprites
+;	!by 0
 
 
 !ifdef BuildTitleScreen {

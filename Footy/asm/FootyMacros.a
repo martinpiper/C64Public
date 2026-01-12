@@ -1,4 +1,4 @@
-kPlayersPerSide = 5
+kPlayersPerSide = 8
 kTotalPlayers = kPlayersPerSide * 2
 kStatusPanelSpriteIndex = 1 + kTotalPlayers
 
@@ -14,7 +14,8 @@ Multiplex_IRQExitDefined = 1
 Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom-10
 
 !ifdef EnableSamples {
-SampleRateHz = 3500
+;SampleRateHz = 3500
+SampleRateHz = 6000
 ; Playing samples means taking longer than the normal IRQ update.
 Multiplex_rasterHeight = 10
 Multiplex_TopRasterHeight = 20
@@ -24,7 +25,7 @@ Multiplex_TopSpriteBeforeRasterPadding = 8
 Multiplex_ReverseOrder = 1
 Multiplex_MaintainPriority = 1
 
-Multiplex_items = 16
+Multiplex_items = 20
 
 ; This will move the sprite information into zeropage. With the maximum number of sprites there won't be enough space in zeropage for all of them
 defined_Multiplex_YPos			= 1

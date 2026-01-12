@@ -80,8 +80,7 @@ rem ..\bin\LZMPi.exe -c64 bin\main.prg bin\main.cmp.prg $200 >tmp\t.txt
 if not exist bin\main.cmp.prg goto error
 
 echo *** Target = 2,097,152
-dir tmp\Demo14FileResources_ForHW*.bin
-dir tmp\Demo14FinalData.bin
+dir tmp\Demo14FileResources_ForHW*.bin dir tmp\Demo14FinalData.bin assets\Demo14\Audio\*.vcd
 
 rem --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED
 rem -Xmx256M -Xms256M
@@ -90,8 +89,7 @@ rem "C:\Users\Martin Piper\.jdks\corretto-1.8.0_252\bin\java.exe"
 java.exe -Xincgc -Xmx256M -Xms256M -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags @Demo14 --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue macros --glue TestGlue features
 
 echo *** Target = 2,097,152
-dir tmp\Demo14FileResources_ForHW*.bin
-dir tmp\Demo14FinalData.bin
+dir tmp\Demo14FileResources_ForHW*.bin tmp\Demo14FinalData.bin assets\Demo14\Audio\*.vcd
 
 goto end
 :error

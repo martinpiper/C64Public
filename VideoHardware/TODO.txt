@@ -830,6 +830,20 @@
 
 
 
-* Demo14: Shift the horizontal intro screen two planes to the left edge a bit...
-	Debug_RunIntroScreenSequence = 7
 
+* Demo14: If game data exists, then skip the DMA stage.
+
+
+
+
+* Debugging C64U with 
+	>> "; Simple sample stream demo" works, which indicates that memory expansion reading works cia the C64U user port
+	I tested the cable and pin header, without the user port edge connector breakout board, and the problem happens slightly less often, but still happens.
+	Switching off the screen, and waiting several frames, also makes it happen less often, but it still happens.
+
+
+
+* Demo14: The runway tiles layer could be chars
+
+
+Useful to resize and remap an image to a specific palette: C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\magick.exe "C:\Users\marti\Pictures\AH_Eye resized.png" -resize 160x200! -remap "C:\work\c64\CharPack\Palette.bmp" c:\temp\out.png

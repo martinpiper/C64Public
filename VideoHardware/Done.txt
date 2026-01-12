@@ -2430,3 +2430,63 @@
 	Clouds are in the tiles...
 	>> Debug_RunIntroScreenSequence = 3
 	>>> Palette for bank $18 wasn't being sent in the DMA
+
+
+
+* Demo14: Shift the horizontal intro screen two planes to the left edge a bit...
+	Debug_RunIntroScreenSequence = 7
+
+
+
+
+* Demo14: EndCommonBootCode currently = fec3
+	This could be moved up $100 bytes
+	This means CommonBootCode_JumpTable_Start could be moved up $100
+	Giving $100 extra bytes in the game code, perhaps for more enemies and bullets!
+	>> But EndCommonBootCodeChainBlocks = $fff9, so no there isn't space...
+
+
+
+* Demo14: Memory optimisation using LABELUSAGE: in PDB
+	>> Shift some commonly used data into zeropage...
+	>> Before: maingame.pdb
+		$cfd5-$cfff:$002b
+		$dfdc-$dfff:$0024
+		$fcfc-$ffff:$0304
+	>> After:
+		$ce83-$cfff:$017d
+		$dfc1-$dfff:$003f
+		$fcc6-$ffff:$033a
+	>> Using +M_RAMTAS_LOW to clear zeropage...
+
+
+
+* Demo14: Render smaller ball sprites (or something obvious), at the start of the list, to indicate number of frames in Video_WaitVBlank_FramesPassed
+	From the previous frame... For a maximum of 10 frames...
+	This could also be an optional debugger realtime display of memory locations
+	But... This would need to be visible on real hardware anyway.
+	>> kVarsEmitSpriteFrame_hexdigits8x7_0_0_0_tileAddress
+	>> jsr RenderPreviousFramesPassed
+	>>> Option Debug_RenderPreviousFramesPassed
+
+
+
+* Demo14: Enhanced CPU version...
+    # C64 6510 speed
+    Given video display processes 24 pixels per instruction
+    # C128 8502 speed
+#    Given video display processes 12 pixels per instruction
+	>> Could be moved back into RAM not under IO: RadarDisplayRender_radarSpritePalette
+		>> The RadarDisplayTables.a include
+	>> Then increase SortHardMaxEntries kMaxEntityState_Bullets_ActiveNum kDelayCommonMissle_doSmoke
+	>>> Option BuildForFasterCPU
+
+
+
+
+* Demo14: Optional "jsr RenderTimeout" "jsr RenderTimeout2"
+	>> !ifdef Debug_RenderTimeout {
+
+
+
+* Demo14: The intro screen with the two jets, could be narrower only for that screen by adjusting the left border?

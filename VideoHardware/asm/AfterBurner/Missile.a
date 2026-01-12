@@ -82,7 +82,7 @@ EntityState_MissileForward
 CommonMissle_doSmoke
 	dec .emitSmokeCounter
 	bpl .noSmoke1
-	lda #4
+	lda #kDelayCommonMissle_doSmoke
 	sta .emitSmokeCounter
 
 CommonMissle_doSmokeForPlayerWinged

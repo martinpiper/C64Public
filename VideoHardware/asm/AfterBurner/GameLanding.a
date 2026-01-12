@@ -87,7 +87,9 @@ mainLoop5
 
 	jsr RunGameLanding_CalculateRunway
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	; Horizon pitch
@@ -233,7 +235,9 @@ mainLoop6
 	bne .cle1
 .noClearRunwayEnd
 
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	; And move the plane back again towards the camera
@@ -458,7 +462,9 @@ RunGameLanding_CommonFrame
 	rts
 
 RunGameLanding_CommonFrameEnd
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesAndSignalReady
 
 	jsr ResetInterfaceAndStartSendingScaledSprites2

@@ -287,7 +287,9 @@ DeltaDecompression_AdvanceFrameAddr
 
 
 !ifdef TestingExtraCompression {
+!ifndef CompressedDataTemp {
 CompressedDataTemp = $7800
+}
 !macro RNXPCompressionIncBorder_A {
 }
 !macro RNXPCompressionDecompress_WriteByteAddrHi {

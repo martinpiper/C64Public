@@ -38,8 +38,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>AnimationBitmap.prg</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>BuildIt2_11.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BuildIt2_11.bat</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>BuildIt2.bat</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BuildIt2.bat</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>AnimationBitmap.prg</NMakeOutput>
@@ -74,10 +74,13 @@
     <None Include="Animation8\convTest.bat" />
     <None Include="AnimationBitmap.a" />
     <None Include="AnimationBitmap2.a" />
+    <None Include="AnimationBitmap2With16KPre.a" />
+    <None Include="AnimationBitmap2With8KPre.a" />
     <None Include="AnimationBitmap2_11.a" />
     <None Include="AnimationBitmapPre.a" />
     <None Include="BuildIt.bat" />
     <None Include="BuildIt2.bat" />
+    <None Include="BuildIt2With8K.bat" />
     <None Include="BuildIt2_11.bat" />
     <None Include="ClearAnimationMemory.a" />
     <None Include="Conv.bat" />
@@ -88,6 +91,7 @@
     <None Include="Conv2_6.bat" />
     <None Include="ConvDelta.bat" />
     <None Include="ConvDelta2.bat" />
+    <None Include="ConvDelta2_1.bat" />
     <None Include="ConvDelta2_10.bat" />
     <None Include="ConvDelta2_11.bat" />
     <None Include="ConvDelta2_11_segment.bat" />

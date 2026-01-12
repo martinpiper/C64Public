@@ -23,7 +23,7 @@ InitScoreTable
 	+MByteValueToAddress_A 250 , .timeout
 
 	+MWordValueToAddress_A -32 - 200 , .scoreYPos
-	+MByteValueToAddress_A 16 , .headerSplitPos
+	+MByteValueToAddress_A 18 , .headerSplitPos
 
 	+MWordValueToAddress_A -432 + 96 , .scoreXPos1
 	+MByteValueToAddress_A 96 , .scoreXPos1Update
@@ -74,11 +74,9 @@ RunScoreTable
 	sec
 	sbc #71 + .ypos
 	+lbcc .endFrame1
-	cmp #8
+	cmp #6	; This gives enough gap for the code to run at the bottom of the screen
 	+lbcc .endFrame1
 	+MBus24Bit_WaitUntilRasterYWithA
-;	jsr Video_SetAddressVideoLayersEnable
-;	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
 	jsr Video_SetAddressCharScrollRegisters
 	+MBus24Bit_SendLE16BitValueFromAddress .position
 	; There is raster time to do the update here when it is displayed
@@ -94,13 +92,13 @@ RunScoreTable
 	}
 .o1
 }
-	+MScoreTableEntryUpdate .headerSplitPos , 0  , .scoreXPos1 , .endFrame1 , .scoreXPos1Update , 1
-	+MScoreTableEntryUpdate .headerSplitPos , 16 , .scoreXPos2 , .endFrame1 , .scoreXPos2Update , -1
-	+MScoreTableEntryUpdate .headerSplitPos , 32 , .scoreXPos3 , .endFrame1 , .scoreXPos3Update , 1
-	+MScoreTableEntryUpdate .headerSplitPos , 48 , .scoreXPos4 , .endFrame1 , .scoreXPos4Update , -1
-	+MScoreTableEntryUpdate .headerSplitPos , 64 , .scoreXPos5 , .endFrame1 , .scoreXPos5Update , 1
-	+MScoreTableEntryUpdate .headerSplitPos , 80 , .scoreXPos6 , .endFrame1 , .scoreXPos6Update , -1
-	+MScoreTableEntryUpdate .headerSplitPos , 96 , .scoreXPos7 , .endFrame1 , .scoreXPos7Update , 1
+	+MScoreTableEntryUpdate .headerSplitPos , -4	, .scoreXPos1 , .endFrame1 , .scoreXPos1Update , 1
+	+MScoreTableEntryUpdate .headerSplitPos , 16+3	, .scoreXPos2 , .endFrame1 , .scoreXPos2Update , -1
+	+MScoreTableEntryUpdate .headerSplitPos , 32+3	, .scoreXPos3 , .endFrame1 , .scoreXPos3Update , 1
+	+MScoreTableEntryUpdate .headerSplitPos , 48+3	, .scoreXPos4 , .endFrame1 , .scoreXPos4Update , -1
+	+MScoreTableEntryUpdate .headerSplitPos , 64+3	, .scoreXPos5 , .endFrame1 , .scoreXPos5Update , 1
+	+MScoreTableEntryUpdate .headerSplitPos , 80+3	, .scoreXPos6 , .endFrame1 , .scoreXPos6Update , -1
+	+MScoreTableEntryUpdate .headerSplitPos , 96+3	, .scoreXPos7 , .endFrame1 , .scoreXPos7Update , 1
 
 
 .endFrame1

@@ -1,4 +1,57 @@
-// NOTE: ConvDelta2.bat needs these values set correctly for the number of rames used:
+curl --request POST --data-binary "@C:\work\c64\AnimationBitmap\AnimationBitmap.crt" http://c64u/v1/runners:run_crt
+curl --request POST --data-binary "@C:\work\c64\AnimationBitmap\AnimationBitmapCompressed.crt" http://c64u/v1/runners:run_crt
+
+** Docs
+
+* Animation1 - Large spinning Hunrter's Moon spaceship
+	cls && Conv2_1.bat && ConvDelta2_1.bat && BuildIt2.bat
+	The raw frames were from a gif, and were converted by Animation\conv.bat into the Animation1 directory.
+	The converted image frames are converted to C64 format frame data by: Conv2_1.bat
+		Note the frame range in the bat file.
+	The delta compression then converts the C64 format frame data with: ConvDelta2_1.bat
+		Again note the frame range in the bat file.
+		This compression options assume the animation will loop and also that the last two frames are already in memory.
+		This means the last delta frame will compress the back to the first frame.
+		The first displayed frame will use the delta to reconctruct the first frame from the last two frames in memory.
+		These are two bitmap buffers in memory, the displayed framed and a working off-screen frame.
+		These two buffers are in two adjacent VIC banks, this means two frames worth of data can be used for delta compression pattern matching.
+		The delta compression also uses a dictioary, which is a block of memory that contains very highly used sequences of data.
+		This dictionary is cheaper, in terms of compression size, to access. Think of it like a cache of frequently used data.
+	Build the example code with BuildIt2.bat which assembles AnimationBitmap2.a
+		This writes the code and delta data to a new cartridge.
+			AnimationBitmap.crt
+		It also writes tries to save extra data by applying a compression post process to the delta files using the lzmpi tool.
+			AnimationBitmapCompressed.crt
+			This is slower, note TestingExtraCompression extra decompression check, but can save some bytes...
+			Note the option "-l 32 $800" which specifies the lower and upper range for the source data size limits (for the delta frames).
+			Anything outside this range wil not be compressed.
+			Also note that this uses "CompressedDataTemp = $7800" for decompressed output space, which only makes sense if $7800 is excluded during the delta compression.
+				This is because that data *must not be considered* during delta compression as it's not valid image data.
+			For Animation1, which is a full screen bitmap, this $7800 memory range is used by the bitmap, so the compression doesn't work properly. This is expected and normal.
+
+
+* Animation8 - For the Hunter's Moon intro and outro animations, no music or text just the video
+	cls && Conv.bat && ConvDeltaHMSequence.bat && BuildIt2.bat
+	>> This can use compression TestingExtraCompression, note the "The temporary decompression space" in ConvDeltaHMSequence.bat
+		>>> set EXCLUDEPANEL=-excludeposend $7400 $7c00
+		>>> CompressedDataTemp now = $c000 and compressed data size updated to $1000 from $800
+
+
+
+* Animation8 - For the Hunter's Moon intro and outro sequences with music, text, etc
+	cls && Conv.bat && ConvDelta.bat && BuildIt.bat && cls && ConvPrint.bat
+	This generates AnimationBitmapPreview.crt which uses AnimationBitmapPre.a to remove fade delays
+	And AnimationBitmap.crt which includes the full code as in the game
+	Note:
+		PreBoot_AnimationSelect			= $3fe
+			kPreBoot_AnimationSelect_Intro	= 0
+			kPreBoot_AnimationSelect_Outro	= 1
+	$3fe can be set to 1 by setting a breakpoint at $c000 in the monitor (bk c000) and then using: > 3fe 1
+
+
+
+
+// NOTE: ConvDelta2.bat needs these values set correctly for the number of frames used:
 	set START=0
 	set STEP=1
 	set END=99

@@ -19,7 +19,6 @@ InitGameIntro
 
 	jsr Music_GameChoice
 
-	jsr EntityInit
 	lda #0
 	sta smOffsetY1Carrier+1
 	lda #$20
@@ -118,13 +117,17 @@ mainLoop4b
 ;	bne .skipPlayerRender2
 ;	jsr RenderSpritesFakePlayer2
 ;.skipPlayerRender2
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesAndSignalReady
 	jsr ResetInterfaceAndStartSendingScaledSprites2
 ;	jsr RenderSpritesCarrier
 	jsr PlayerPositionToForHorizonAndLandscape
 	jsr LandscapeRender
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	dec .levelCompleteFrames
@@ -173,13 +176,17 @@ mainLoop4
 	bne .skipPlayerRender2
 	jsr RenderSpritesFakePlayer2
 .skipPlayerRender2
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout
+}
 	jsr TerminateScaledSpritesAndSignalReady
 	jsr ResetInterfaceAndStartSendingScaledSprites2
 	jsr RenderSpritesCarrier
 	jsr PlayerPositionToForHorizonAndLandscape
 	jsr LandscapeRender
+!ifdef Debug_RenderTimeout {
 	jsr RenderTimeout2
+}
 	jsr TerminateScaledSpritesAndSignalReady2
 
 	lda smOffsetY1Carrier+1

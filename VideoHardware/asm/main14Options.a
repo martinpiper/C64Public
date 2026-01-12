@@ -14,6 +14,12 @@ SendResourceData = 1
 ;Debug_Invulnerable = 1
 ;Debug_FakeHiscore = 1
 
+Debug_RenderPreviousFramesPassed = 1
+;Debug_RenderTimeout = 1
+
+; Define this to enable faster CPU tweaks
+BuildForFasterCPU = 1
+
 TitleFramesTimeoutValue = 650
 ;TitleFramesTimeoutValue = 50	; Debug, much shorter
 
@@ -33,7 +39,19 @@ kBus24Bit_VideoLayer_ExpandedPaletteLayers = 1
 kBus24Bit_VideoLayer_VBlankUseNMI = 1
 kBus24Bit_SpritesMaxNum = 32
 
+!ifndef BuildForFasterCPU {
+; For C64
 SortHardMaxEntries = 16	; The hard maximum for entries for the sort
+kMaxEntityState_Bullets_ActiveNum = 5
+kDelayCommonMissle_doSmoke = 4
+}
+!ifdef BuildForFasterCPU {
+; For C128 etc
+SortHardMaxEntries = 31	; The hard maximum for entries for the sort
+kMaxEntityState_Bullets_ActiveNum = 13
+kDelayCommonMissle_doSmoke = 1
+}
+
 Score_ZeroCharacter = 0	; Make sure this stays at 0
 
 zeroPage_Temp0	= $2
@@ -63,7 +81,24 @@ zeroPage_Temp23	= $19
 Score_ZeroPage	= $1a	; and $1b
 EnemyMissileCount		= $1c
 EnemyMissileCountNow	= $1d
-SortIndexTable	= $1e	; Should really be last, since it is large
+
+; From: PlayerControl.a
+playerXPositionOffset				= $1e
+playerYPositionOffsetSpeed			= $1f
+playerYPositionOffset				= $20
+playerYPositionOffset_AsEntityYPos	= $21
+playerYPositionOffset2				= $22
+playerYPositionOffsetForHorizon		= $23
+playerYPositionOffsetForSprites		= $24
+AudioActiveFlags					= $25
+landscapeFrameSpeed					= $26
+landscapeRotationsFrame				= $27
+
+EntityXPos							= $28
+EntityYPos = EntityXPos + SortHardMaxEntries
+EntityZPos = EntityYPos + SortHardMaxEntries
+SortIndexTable	= EntityZPos + SortHardMaxEntries	; Should really be last, since it is large
+; Look for SortIndexTableEnd
 
 SortTemp0 = zeroPage_Temp0
 SortTemp1 = SortTemp0 + 1

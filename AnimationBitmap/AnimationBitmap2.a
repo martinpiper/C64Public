@@ -10,8 +10,15 @@
 !ct pet
 !initmem %10100101
 
+; Debug
+DebugBorderTimings = 1
+
 ; Note in TODO
 TestingExtraCompression = 1
+
+UseCartBanks = 1
+StartCartBank = 4
+CompressedDataTemp = $c000
 
 CartSelectBank_ProcessorPort	= ProcessorPortDefault
 CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
@@ -21,12 +28,7 @@ DeltaDecompression_ZP_DeltaFrameLoHi = $10
 DeltaDecompression_ZP_DeltaFrameCompressed = $12
 }
 
-;!source "../MakeCart/asm/GMod2_Macros.a"
-!source "../MakeCart/asm/EasyFlash_Macros.a"
 !source "../Animation/DeltaDecompressionMacros.a"
-
-UseCartBanks = 1
-StartCartBank = 4
 
 ; Define this if \CharPack.exe uses -sheetframes and -sheetinfo
 SpriteSheetInfoBankOffset = $1000
@@ -43,7 +45,7 @@ MaxCartBank = 64
 }
 ScreenColour = VIC2Colour_Black
 
-*=$c000
+*=$4000
 	sei
 	lda #CartSelectBank_ProcessorPort
 	jsr InitialiseMachine
@@ -78,7 +80,14 @@ ScreenColour = VIC2Colour_Black
 	jsr DeltaDecompression_UnpackFrameEx
 	jsr DeltaDecompression_AdvanceFrameCount
 
+!ifdef DebugBorderTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 	+MACROWaitForTheLastScanPlus1_A
+!ifdef DebugBorderTimings {
+	inc VIC2BorderColour
+}
 
 	lda #%11
 	sta CIA2PortASerialBusVICBank
@@ -99,6 +108,9 @@ ScreenColour = VIC2Colour_Black
 }
 
 	+MDeltaDecompression_CopyColours $400
+!ifdef DebugBorderTimings {
+	inc VIC2BorderColour
+}
 
 ;	+WaitForFire_A
 	jsr TestEndReached
@@ -110,7 +122,14 @@ ScreenColour = VIC2Colour_Black
 	jsr DeltaDecompression_UnpackFrameEx
 	jsr DeltaDecompression_AdvanceFrameCount
 
+!ifdef DebugBorderTimings {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
 	+MACROWaitForTheLastScanPlus1_A
+!ifdef DebugBorderTimings {
+	inc VIC2BorderColour
+}
 
 	lda #%10
 	sta CIA2PortASerialBusVICBank
@@ -127,6 +146,9 @@ ScreenColour = VIC2Colour_Black
 }
 
 	+MDeltaDecompression_CopyColours $4400
+!ifdef DebugBorderTimings {
+	inc VIC2BorderColour
+}
 
 ;	+WaitForFire_A
 	jsr TestEndReached
@@ -145,13 +167,18 @@ TestEndReached
 	jmp .fin
 }
 
-!source "../stdlib/Initialise.a"
-
 !source "../Animation/DeltaDecompression.a"
 
-!ifdef SpriteSheetInfoBankOffset {
-!source "SpriteSheet.a"
+AnimationCode_End = *
+!if * >= $4400 {
+!error "Code is too large!"
 }
+
+*=$200
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "../stdlib/Initialise.a"
 
 DeltaDecompression_UnpackFrameEx
 	jsr AnimationRestoreCartBank
@@ -159,23 +186,13 @@ DeltaDecompression_UnpackFrameEx
 	jsr AnimationKillCartBank
 	rts
 
-AnimationKillCartBank
-;	sei
-	+MACRO_CartKillBank
-;	cli
-	rts
++MCartBankCode
 
-AnimationRestoreCartBank
-;	sei
-	jsr DeltaDecompression_GetBank
-	+MACRO_CartSelectBank_16K_NoSEI_A
-;	cli
-	rts
-
-AnimationCode_End = *
-!if * >= $d000 {
-!error "Code is too large!"
+!ifdef SpriteSheetInfoBankOffset {
+!source "SpriteSheet.a"
 }
 
 *=$400
-!bin "Data/frm-0001.del"
+!bin "Data/frm-0001.del" , $3c00 , 0
+*=$4400
+!bin "Data/frm-0001.del" , $3c00 , $4000

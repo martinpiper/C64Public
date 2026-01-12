@@ -65,7 +65,7 @@ SET FORCERGB_COMMON_1=--forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0
 SET FORCERGB_COMMON_2=--forcergb 255 0 255
 
 rem Player airplane
-set SPRITES_COMMON_1=--batchimagequantize 16 --batchimages Demo14\PlayerAirplane\Level\*.png Demo14\PlayerAirplane\Left1\*.png Demo14\PlayerAirplane\Left2\*.png Demo14\PlayerAirplane\Left3\*.png Demo14\PlayerAirplane\*.png
+set SPRITES_COMMON_1=--batchimagequantize 16 --batchimages Demo14\PlayerAirplane\Level\*.png Demo14\PlayerAirplane\Left1\*.png Demo14\PlayerAirplane\Left2\*.png Demo14\PlayerAirplane\Left3\*.png Demo14\PlayerAirplane\*.png Demo14\DebugFont\hexdigits8x7.png
 rem Green enemy, smoke, and missle used in the title screen
 set SPRITES_COMMON_2=--batchimagequantize 16 --batchimages Demo14\EnemyPlaneGreen\*.png Demo14\EnemyPlaneGreen\Roll2\*.png Demo14\t-241.png Demo14\t-104.png Demo14\t-113.png Demo14\t-279.png Demo14\t-90.png Demo14\t-177.png
 rem Bullets, reticle, bullet hit ground

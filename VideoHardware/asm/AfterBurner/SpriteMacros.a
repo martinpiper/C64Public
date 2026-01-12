@@ -191,6 +191,49 @@
 	+MBus24Bit_Send8BitValue .tileWidth-1
 }
 
+!macro MRenderFixedSpriteWithStrideWithAddressOffsetInA .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
+	pha
+!if >.xpos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBX
+}
+!if >.ypos != 0 {
+!set .palette = .palette | kBus24Bit_Sprites2_MSBY
+}
+!if .flipX != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipH
+!set .address = .address + .tileWidth - 1
+}
+!if .flipY != 0 {
+!set .palette = .palette | kBus24Bit_Video_FlipV
+!set .address = .address + ((.tileHeight-1) * .tileWidth)
+}
+	; Shows sprite timeout
+	; Palette
+	+MBus24Bit_Send8BitValue .palette
+	; Y pos and size
+	+MBus24Bit_Send8BitValue <.ypos
+	+MBus24Bit_Send8BitValue (.tileHeight * $20) / .scaleY
+	; X pos and size
+	+MBus24Bit_Send8BitValue <.xpos
+	+MBus24Bit_Send8BitValue (.tileWidth * $20) / .scaleX
+	; Address
+	pla
+	clc
+	adc #<.address
+	+MBus24Bit_Send8BitValueFromA
+	lda #>.address
+	adc #0
+	+MBus24Bit_Send8BitValueFromA
+	lda #<(.address >> 16)
+	adc #0
+	+MBus24Bit_Send8BitValueFromA
+	; Inv scales
+	+MBus24Bit_Send8BitValue .scaleY
+	+MBus24Bit_Send8BitValue .scaleX
+	; Stride
+	+MBus24Bit_Send8BitValue .tileStride-1
+}
+
 !macro MRenderFixedSpriteWithStride .palette , .xpos, .ypos , .scaleX , .scaleY , .flipX , .flipY , .address , .tileWidth , .tileHeight , .tileStride {
 !if >.xpos != 0 {
 !set .palette = .palette | kBus24Bit_Sprites2_MSBX
