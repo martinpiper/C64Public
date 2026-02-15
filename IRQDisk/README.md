@@ -22,7 +22,7 @@ new
 10 rem tusaricolcmp tusaribmpcmp
 20 rem show a bitmap screen
 30 poke52381,0:poke56576,2:poke53270,24:poke53265,59:poke53272,120
-40 rem init the drive
+40 rem init drive 8
 50 poke780,8:sys49152
 60 rem load the filename at $807 with length 12
 70 poke780,12:poke781,7:poke782,8:sys49158
@@ -31,3 +31,13 @@ new
 100 goto 100
 run
 ~~~
+
+
+
+File compression
+================
+
+* LZMPi with the "-no -yo -cu" options is the compression tool to use. Also note the "2" causes the first two bytes of a prg file need to be skipped.
+* For example: ..\bin\LZMPi.exe -no -yo -cu Tusari.col TusariCol.cmp 2
+* This compresses the input "Tusari.col" file and writes the data to "TusariCol.cmp"
+* The compressed file can then be included in a disk image.
