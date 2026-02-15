@@ -11,7 +11,10 @@ IF "%~1"=="" (
 REM First output the options for this build
 
 echo IRQDisk_MachineTarget = IRQDisk_MachineTypeC64 > _buildOptions.a
-echo RNXPCompressionDecompress_WriteBytesmAddr = ZPStartBasicLo >> _buildOptions.a
+echo RNXPCompressionDecompress_WriteBytesmAddr = ZPUnused0 >> _buildOptions.a
+rem echo IRQDisk_UpdateRegisterOnIdle = VIC2BorderColour >> _buildOptions.a
+rem echo IRQDisk_UpdateRegisterOnData = VIC2BorderColour >> _buildOptions.a
+rem echo IRQDisk_UpdateRegisterOnDataStore = VIC2BorderColour >> _buildOptions.a
 
 IF "%~3"=="1" (
 	ECHO IRQDisk_NoScreenNoIRQ = 1 >> _buildOptions.a
