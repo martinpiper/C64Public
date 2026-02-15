@@ -840,6 +840,10 @@
 	>> "; Simple sample stream demo" works, which indicates that memory expansion reading works cia the C64U user port
 	I tested the cable and pin header, without the user port edge connector breakout board, and the problem happens slightly less often, but still happens.
 	Switching off the screen, and waiting several frames, also makes it happen less often, but it still happens.
+	>> Assemble and test instructions in: C:\Work\BDD6502\features\C64WithNewUserPort20to32Bit1Minimal.a
+	>>> While the _PC transient is a problem, the low ATN transient is also a huge problem since it will reset the interface.
+		>> Added SP1, PS2, ATN filtering: "C:\work\BombJack\V2.0\C64UltimateDigitalFilter V2.0 - Routed.pdsprj"
+
 
 
 

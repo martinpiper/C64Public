@@ -10,6 +10,7 @@ To start, run MusicStudio2.2\MusicStudioLauncher.exe
 Video demonstration: https://www.youtube.com/watch?v=3ApqDIbYPec
 C64: MusicStudio2 play music from BASIC: https://youtu.be/s9IgipH5vXw
 C64: MusicStudio2 play music from machine code: https://youtu.be/NRzS6oS9JLo
+C64: MusicStudio2 using the rip SID functionality: https://www.youtube.com/watch?v=CVVSGfwlRhk
 
 
 Any errors regarding Visual Studio runtime can be fixed by installing the redistributable from Microsoft: http://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU3/vcredist_x86.exe

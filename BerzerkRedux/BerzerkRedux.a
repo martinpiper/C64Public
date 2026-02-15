@@ -503,6 +503,7 @@ Mainline
 
 ; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
 !zn {
+IRQDisk_NoCode_LoadCompressed = 1
 ; Include the private code for each machine type
 !source "../IRQDisk/IRQDiskC64.a"
 !source "../IRQDisk/IRQDisk.a"

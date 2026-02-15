@@ -1328,7 +1328,7 @@ Feature: Smoke test
     Given set the video display with 32 palette banks
     And the display uses exact address matching
     Given the display has palette layer expansion
-    And enable video display bus debug output
+#    And enable video display bus debug output
 #    Given a new audio expansion with registers at '0x8000' and addressEx '0x40'
     Given a new audio expansion
     And audio mix 85
@@ -1362,7 +1362,7 @@ Feature: Smoke test
     Given a user port to 32 bit interface running at 4.0MHz and 24 bit bus is installed
     And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
     And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
-    And enable user port bus debug output
+#    And enable user port bus debug output
     And enable APU mode
     # Stop Audio3 from conflicting...
     And the APU uses exact address matching

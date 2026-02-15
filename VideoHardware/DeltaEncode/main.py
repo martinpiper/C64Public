@@ -12,14 +12,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 outputBits = []
-numBitsDistribution = [0] * 8
+numBitsDistribution = [0] * 9 # Because the compression to max bits is iterative and can have a larger number of bits than expected
 bytesChanged = 0
 
 
 # The idea here being that smaller delta values, particularly 0, are more common and use fewer bits compared to the less
 # common larger delta values. Since delta values can be positive and negative the sign is stored and the absolute value
 # of the delta is encoded.
-def encodeDelta(previousValue, inValue):
+def encodeDelta(inValue):
     value = inValue
     if value == 0:
         outputBits.append(1)
@@ -51,18 +51,42 @@ def encodeDelta(previousValue, inValue):
     return len(theBits)
 
 
-if __name__ == '__main__':
+bitsRead = 0
+currentByte = 0
+currentPos = 0
 
-    if len(sys.argv) < 5:
+
+def getBit(data):
+    global bitsRead,  currentByte, currentPos
+    # Read the next byte if the buffer is empty
+    if bitsRead == 0:
+        currentByte = data[currentPos]
+        currentPos = currentPos + 1
+        bitsRead = 8
+
+    if (currentByte & 0x80) != 0:
+        theBit = 1
+    else:
+        theBit = 0
+    currentByte = currentByte << 1
+    bitsRead = bitsRead - 1
+    return theBit
+
+
+def main(argv):
+    global outputBits, numBitsDistribution, bytesChanged
+    if len(argv) < 4:
         print("Compress: -c <file name to compress> <max delta bits> <output file name>")
         print("Compress and display frequency details: -cv <file name to compress> <max delta bits> <output file "
               "name> <frequency in Hz>")
+        print("Decompress: -d <compressed file> <output file name>")
         exit(-1)
 
-    if sys.argv[1].lower().startswith("-c"):
-        maxDeltaBits = int(sys.argv[3])
-        fileIn = open(sys.argv[2], "rb")
+    if argv[1].lower().startswith("-c"):
+        maxDeltaBits = int(argv[3])
+        fileIn = open(argv[2], "rb")
         inBytes = list(fileIn.read())
+        fileIn.close()
 
         print("input size byte", len(inBytes))
 
@@ -73,14 +97,14 @@ if __name__ == '__main__':
             while i < len(inBytes):
                 newValue = (int(inBytes[i])) & 0xff
                 delta = newValue - previousValue
-                numOutputBits = encodeDelta(previousValue, delta)
+                numOutputBits = encodeDelta(delta)
                 # Reduce the size of the delta to fit the bits requirement
                 while numOutputBits > maxDeltaBits:
                     if delta > 0:
                         delta -= 1
                     else:
                         delta += 1
-                    numOutputBits = encodeDelta(previousValue, delta)
+                    numOutputBits = encodeDelta(delta)
                 # Compute what the resultant sample value is using the maybe compressed delta...
                 previousValue += delta
                 # And update the source data so that the final compression does not use out of range deltas
@@ -93,7 +117,7 @@ if __name__ == '__main__':
 
         # Now encode the data for real
         outputBits = []
-        numBitsDistribution = [0] * 8
+        numBitsDistribution = [0] * 9
 
         previousValue = 0x80
         signedData = []
@@ -102,12 +126,12 @@ if __name__ == '__main__':
             newValue = (int(inBytes[i])) & 0xff
             signedData.append(newValue - 0x80)
             delta = newValue - previousValue
-#            print(delta)
-            encodeDelta(previousValue, delta)
+            # print(delta, hex(delta & 0xff))
+            encodeDelta(delta)
             previousValue = newValue
             i += 1
 
-        fileOut = open(sys.argv[4], "wb")
+        fileOut = open(argv[4], "wb")
         i = 0
         theByte = 0
         theByteBits = 0
@@ -127,7 +151,7 @@ if __name__ == '__main__':
 
         fileOut.close()
 
-        fileOut = open(sys.argv[4] + ".decomp", "wb")
+        fileOut = open(argv[4] + ".decomp", "wb")
         i = 0
         while i < len(inBytes):
             fileOut.write(bytes([inBytes[i]]))
@@ -139,8 +163,8 @@ if __name__ == '__main__':
         print("ratio", 100 * (totalBits / 8) / len(inBytes))
         print("numBitsDistribution", numBitsDistribution)
 
-        if sys.argv[1].lower() == "-cv":
-            fs = int(sys.argv[5])  # Sample frequency (Hz) of input data
+        if argv[1].lower() == "-cv":
+            fs = int(argv[5])  # Sample frequency (Hz) of input data
             duration = len(signedData) / fs  # seconds
             t = np.linspace(0, duration, len(signedData), endpoint=False)
 
@@ -155,3 +179,50 @@ if __name__ == '__main__':
             plt.xlabel('Frequency (Hz)')
             plt.ylabel('Amplitude')
             plt.show()
+
+    if argv[1].lower().startswith("-d"):
+        global bitsRead, currentByte, currentPos
+
+        fileIn = open(argv[2], "rb")
+        data = fileIn.read()
+        fileIn.close()
+        print("input size byte to decompress", len(data))
+        fileOut = open(argv[3], "wb")
+
+        currentSample = 0x80
+        bitsRead = 0
+        currentByte = 0
+        currentPos = 0
+
+        while currentPos < len(data):
+            delta = 0
+            numBits = 0
+            gotBit = 1
+            while getBit(data) == 0:
+                numBits = numBits + 1
+                if currentPos >= len(data):
+                    numBits = 0
+                    break
+
+            # Anything else except the 0 special case...
+            if numBits > 0:
+                # Decode the unsigned delta
+                while numBits > 0:
+                    delta = delta << 1
+                    delta = delta | gotBit
+                    gotBit = getBit(data)
+                    numBits = numBits - 1
+
+                # Decode the sign
+                if gotBit != 0:
+                    delta = -delta
+
+                currentSample += delta
+
+            fileOut.write(bytes([currentSample]))
+
+        fileOut.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv)

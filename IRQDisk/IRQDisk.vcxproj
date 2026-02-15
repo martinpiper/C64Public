@@ -7,8 +7,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <SccProjectName>IRQDisk</SccProjectName>
-    <SccLocalPath>.</SccLocalPath>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
     <Keyword>MakeFileProj</Keyword>
     <ProjectGuid>{09ABC688-3B26-4D90-B64A-377E2BA9C745}</ProjectGuid>
   </PropertyGroup>
@@ -60,6 +62,8 @@
     <Text Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Decompression\DecompressionUReferenceLongOffset.a" />
+    <None Include="BuildOptions.bat" />
     <None Include="RunIt.bat" />
     <None Include="SmallestBoot.a" />
     <None Include="TestIRQDisk3.a" />

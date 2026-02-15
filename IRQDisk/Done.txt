@@ -194,3 +194,17 @@
 
 
 * Make raster IRQ display stable colour bars
+
+
+
+* Decompress bytes from the disk into memory as bytes arrive
+	>> IRQDisk_NoCode_LoadCompressed
+	;UseUncompressedData = 1
+	UseCompressedData = 1
+
+
+
+* For compressed load code (!IRQDisk_NoCode_LoadCompressed) get the ATN transfer mode working
+	SafeCHRIN will need to know if it is in the IRQDisk_computerRecv or IRQDisk_computerRecvBitsATNBurst state
+	>> !error "IRQDisk_UseATN and SafeCHRIN cannot be used at the same time"
+	> Check the code in IRQDisk_LoadDataAfterName for "!ifdef IRQDisk_UseATN {"

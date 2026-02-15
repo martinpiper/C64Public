@@ -393,6 +393,7 @@ InitIRQ
 
 ; This block of code includes the IRQ disk libs, note the !zn is here instead of in the libs.
 !zn {
+IRQDisk_NoCode_LoadCompressed = 1
 !source "IRQDiskC64.a"
 !source "IRQDisk.a"
 !source "stdlib1541.a"

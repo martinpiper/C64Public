@@ -26,7 +26,8 @@
 ; 2-bit screen off div 1-bit:		0.8004403579265994
 
 
-!source "../stdlib/stdlib.a"
+!source "stdlib/stdlib.a"
+!source "stdlib/LongBranches.a"
 !to "TestIRQDisk.prg", cbm
 !sal
 !sl "TestIRQDisk.map"
@@ -42,7 +43,11 @@ IRQDisk_LEDFlash = 15
 IRQDisk_UseATN = 1
 ;IRQDisk_UseATNACK = 1
 
+;UseUncompressedData = 1
+UseCompressedData = 1
+
 TheRasterBarPosition = 148
+RNXPCompressionDecompress_WriteBytesmAddr	= ZPStartBasicLo
 
 ; Enable this to disable the screen
 ;IRQDisk_NoScreenNoIRQ = 1
@@ -212,6 +217,7 @@ ThisIsSomeOverlappingCode
 .nope1
 }
 
+!ifdef UseUncompressedData {
 	lda #.nameTestEnd-.nameTest
 	ldx #<.nameTest
 	ldy #>.nameTest
@@ -222,6 +228,21 @@ ThisIsSomeOverlappingCode
 
 !ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+}
+
+!ifdef UseCompressedData {
+	lda #.nameTestCmpEnd-.nameTestCmp
+	ldx #<.nameTestCmp
+	ldy #>.nameTestCmp
+	jsr IRQDisk_LoadCompressed
+	jsr ValidateScreenWithExpected1
+
+	inc VIC2BorderColour
+
+!ifndef IRQDisk_DebugElapsedTime {
+	+WaitForFire_A
+}
 }
 
 	; If things go wrong, this helps repeat the test iteration
@@ -239,6 +260,7 @@ ThisIsSomeOverlappingCode
 .nope2
 }
 
+!ifdef UseUncompressedData {
 	lda #.nameTest2End-.nameTest2
 	ldx #<.nameTest2
 	ldy #>.nameTest2
@@ -249,6 +271,21 @@ ThisIsSomeOverlappingCode
 
 !ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+}
+
+!ifdef UseCompressedData {
+	lda #.nameTest2CmpEnd-.nameTest2Cmp
+	ldx #<.nameTest2Cmp
+	ldy #>.nameTest2Cmp
+	jsr IRQDisk_LoadCompressed
+	jsr ValidateScreenWithExpected2
+
+	inc VIC2BorderColour
+
+!ifndef IRQDisk_DebugElapsedTime {
+	+WaitForFire_A
+}
 }
 
 	; If things go wrong, this helps repeat the test iteration
@@ -266,6 +303,7 @@ ThisIsSomeOverlappingCode
 .nope3
 }
 
+!ifdef UseUncompressedData {
 	lda #.nameTest3End-.nameTest3
 	ldx #<.nameTest3
 	ldy #>.nameTest3
@@ -276,6 +314,32 @@ ThisIsSomeOverlappingCode
 
 !ifndef IRQDisk_DebugElapsedTime {
 	+WaitForFire_A
+}
+}
+
+!ifdef UseCompressedData {
+	lda #.nameTest3CmpEnd-.nameTest3Cmp
+	ldx #<.nameTest3Cmp
+	ldy #>.nameTest3Cmp
+	jsr IRQDisk_LoadCompressed
+	jsr ValidateScreenWithExpected3
+
+	inc VIC2BorderColour
+
+!ifndef IRQDisk_DebugElapsedTime {
+	+WaitForFire_A
+}
+
+	lda #.nameTest4CmpEnd-.nameTest4Cmp
+	ldx #<.nameTest4Cmp
+	ldy #>.nameTest4Cmp
+	jsr IRQDisk_LoadCompressed
+
+	inc VIC2BorderColour
+
+!ifndef IRQDisk_DebugElapsedTime {
+	+WaitForFire_A
+}
 }
 
 !ifdef IRQDisk_DebugRepeatLoads {
@@ -308,14 +372,22 @@ ThisIsSomeOverlappingCode
 
 	; Note, the ct raw is used here
 .nameTest !raw "SCREEN1"
-.nameTestEnd = *
+.nameTestEnd
+.nameTestCmp !raw "SCREEN1CMP"
+.nameTestCmpEnd
 .nameTest2 !raw "SCREEN2"
-.nameTest2End = *
+.nameTest2End
+.nameTest2Cmp !raw "SCREEN2CMP"
+.nameTest2CmpEnd
 .nameTest3 !raw "SCREEN3"
-.nameTest3End = *
+.nameTest3End
+.nameTest3Cmp !raw "SCREEN3CMP"
+.nameTest3CmpEnd
+.nameTest4Cmp !raw "SCREEN4CMP"
+.nameTest4CmpEnd
 
 .nameTestSave !raw "TESTSAVE"
-.nameTestSaveEnd = *
+.nameTestSaveEnd
 
 TestIRQ
 	pha

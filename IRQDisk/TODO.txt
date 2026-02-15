@@ -27,11 +27,6 @@
 
 
 
-* Decompress bytes from the disk into memory as bytes arrive
-
-
-
-
 * Instead of using kernal to send M-W and M-E, or SETLFS/SETNAM/LOAD, use minimal code to directly send serail bytes via kernal, and then reduce to not using any kernal, i.e. kernal replacement serial routines.
 	This would allow RAM+IO to be mapped in while loading under BASIC and KERNAL.
 	Must be compatible with multiple drives etc.
@@ -47,3 +42,6 @@
 	For example: load "$",8
 	Translates to bytes received on the drive side: 28 f0 24 3f	<pause dur to 8:c146 execution>	48 60
 	c:f3d5 is the open command for serial devices file:///C:/work/C64Docs/unusedino.de/ec64/technical/misc/c64/romlisting.htm#F3D5
+
+
+

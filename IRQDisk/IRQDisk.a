@@ -175,6 +175,17 @@ IRQDisk_Load:
 	rts
 }
 
+!ifndef IRQDisk_NoCode_LoadCompressed {
+IRQDisk_LoadCompressed:
+	jsr IRQDisk_SendLoadName
+	bcs .loadError
+!ifndef IRQDisk_NoCode_LoadAfterName {
+	jmp IRQDisk_LoadCompressedDataAfterName
+} else {
+	rts
+}
+} ; < ifndef IRQDisk_NoCode_LoadCompressed
+
 IRQDisk_SendLoadName
 	pha
 	; Update the self modify file name address
@@ -194,6 +205,9 @@ IRQDisk_SendLoadName
 	ldx #0
 !ifdef IRQDisk_UseATN {
 	stx .gotAddrB
+!ifndef IRQDisk_NoCode_LoadCompressed {
+	stx .smGotATNBurstBytes+1
+}
 }
 .smFileNameIn	lda $0000,x
 	jsr IRQDisk_computerSend
@@ -286,6 +300,67 @@ IRQDisk_GetLastStoredHi
 	lda .storeHi
 	rts
 
+
+!ifndef IRQDisk_NoCode_LoadCompressed {
+
+!macro RNXPCompressionIncBorder_A {}
+RNXPCompressionDecompress_GetBytesmAddrAsMacro = 1
+!macro MRNXPCompressionDecompress_GetBytesmAddrAsMacro {
+	jsr IRQDisk_SafeCHRIN
+}
+!source "Decompression\DecompressionUReferenceLongOffset.a"
+
+
+IRQDisk_LoadCompressedDataAfterName
+	jsr IRQDisk_SafeCHRIN
+	sta RNXPCompressionDecompress_WriteBytesmAddr
+	jsr IRQDisk_SafeCHRIN
+	sta RNXPCompressionDecompress_WriteBytesmAddr+1
+	
+	jsr RNXPCompressionDecompressU
+
+	; Read the last escape after all data, should exit
+	jsr IRQDisk_computerRecv
+	
+	rts
+
+IRQDisk_SafeCHRIN
+	php
+	stx .sxX+1
+	sty .sxY+1
+!ifdef IRQDisk_UseATN {
+.smGotATNBurstBytes	lda #0
+	bne .processBurstBytes
+
+	+DelayFor IRQDisk_C64FromBurstGuardTime
+
+	; Gets the number of bytes to process, or the EOF escape code, or an error escape code
+	jsr IRQDisk_computerRecv
+	sta .smGotATNBurstBytes+1
+
+	+DelayFor IRQDisk_C64ToBurstGuardTime
+
+.processBurstBytes
+	dec .smGotATNBurstBytes+1
+	jsr IRQDisk_computerRecvBitsATNBurst
+} else {
+	jsr IRQDisk_computerRecv
+}
+	sta .smA+1
+.sxX ldx #0
+.sxY ldy #0
+.smA lda #0
+	plp	; Restores any IRQ state as well as status flags
+	rts
+
+; These do not have to be in zeropage, but for speed they should be
+; Although we are pulling bytes from the drive over serial, so speed is less of an issue... :)
+RNXPCompressionDecompress_TempWord1			!word 0
+RNXPCompressionDecompress_TempOffset		!word -1
+
+} ; < ifndef IRQDisk_NoCode_LoadCompressed
+
+	
 } ; <!ifndef IRQDisk_NoCode_LoadAfterName {
 
 	; Gets a byte from the drive with escape byte parsing
@@ -717,6 +792,11 @@ IRQDisk_computerRecvBitsATNBurst:
 	+MC64DecodeBitPair 0 , .serialIn , .tempStore , .serialBitPairToRealBitPair
 	+DelayFor IRQDisk_DriveSendBurstDriveCalculationTimeLast
 	+MC64DecodeBitPair 0 , .serialIn , .tempStore , .serialBitPairToRealBitPair
+
+!ifdef IRQDisk_UpdateRegisterOnData {
+	inc IRQDisk_UpdateRegisterOnData
+	sta IRQDisk_UpdateRegisterOnData
+}
 
 	; Allow IRQs again
 	cli
