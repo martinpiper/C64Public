@@ -211,14 +211,18 @@
 
 
 
-* Demo for BuildOptions.bat
+* BASIC Demo for BuildOptions.bat
 	BuildOptions.bat $c000 0 0 1 15 5 1 1 1 0
 	_buildOptions.prg
 	Attach test.d64
 new
-10 rem screen1cmp
-20 rem init the drive
-30 poke780,8:sys49152
-40 rem load the filename at $807 with length 10
-50 poke780,10:poke781,7:poke782,8:sys49158
+10 rem tusaricolcmp tusaribmpcmp
+20 poke52381,0:poke56576,2:poke53270,24:poke53265,59:poke53272,120
+30 rem init the drive
+40 poke780,8:sys49152
+50 rem load the filename at $807 with length 12
+60 poke780,12:poke781,7:poke782,8:sys49158
+70 rem load the filename at $814 with length 12
+80 poke780,12:poke781,20:poke782,8:sys49158
+90 goto 90
 run

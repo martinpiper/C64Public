@@ -4,6 +4,8 @@ rem ..\bin\LZMPi.exe -no -yo -cu screen1.prg screen1.cmp 2
 rem ..\bin\LZMPi.exe -no -yo -cu screen2.prg screen2.cmp 2
 rem ..\bin\LZMPi.exe -no -yo -cu screen3.prg screen3.cmp 2
 rem ..\bin\LZMPi.exe -no -yo -cu screen4.prg screen4.cmp 2
+rem ..\bin\LZMPi.exe -no -yo -cu Tusari.col TusariCol.cmp 2
+rem ..\bin\LZMPi.exe -no -yo -cu Tusari.bmp TusariBmp.cmp 2
 
 del TestIRQDisk.prg
 ..\acme.exe -v4 --msvc --lib ..\ TestIRQDisk.a
@@ -33,4 +35,4 @@ echo TestIRQDisk.prg not created!
 exit -1
 :end
 
-..\ExternalTools\C1541\c1541.exe -interleave 15 -attach test.d64 -format test,67 -write SmallestBoot.prg boot -write TestIRQDisk.prg testirqdisk -write screen1.prg screen1 -write screen2.prg screen2 -write screen3.prg screen3 -write screen1.cmp screen1cmp -write screen2.cmp screen2cmp -write screen3.cmp screen3cmp -write screen4.cmp screen4cmp -write TESTSAVE.PRG testsave
+..\ExternalTools\C1541\c1541.exe -interleave 15 -attach test.d64 -format test,67 -write SmallestBoot.prg boot -write TestIRQDisk.prg testirqdisk -write screen1.prg screen1 -write screen2.prg screen2 -write screen3.prg screen3 -write screen1.cmp screen1cmp -write screen2.cmp screen2cmp -write screen3.cmp screen3cmp -write screen4.cmp screen4cmp -write TESTSAVE.PRG testsave -write TusariCol.cmp tusaricolcmp -write TusariBmp.cmp tusaribmpcmp
