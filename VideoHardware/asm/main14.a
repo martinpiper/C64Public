@@ -25,6 +25,7 @@
 !source "AfterBurner/LandscapeDefs.a"
 !source "AfterBurner/SpriteMacros.a"
 !source "AfterBurner/SampleMacros.a"
+!source "AfterBurner/Audio2_Macros.a"
 
 
 !zn
@@ -35,6 +36,7 @@ start
 
 !source "tmp/FingerPrint.a"
 !source "BombJack/stdlib/APU.a"
+
 
 Initialise_NoPreserveStack = 1
 Initialise_NoIRQServiceRoutine = 1
@@ -63,6 +65,11 @@ messageMWRAMErrorEnd
 !source "BombJack/stdlib/Video.a"
 !source "BombJack/stdlib/HardwareTest.a"
 !source "asm/ExternalMemory.a"
+
+!source "AfterBurner/TestMenu.a"
+!source "AfterBurner/Audio2.a"
+BuildTitleScreen = 1 ; For music 60fps check
+!source "AfterBurner/Music.a"
 
 !source "tmp\Demo14FileResources_ForHW1_Checksums.a"
 !source "tmp\Demo14FinalData_Checksums.a"
@@ -160,8 +167,52 @@ mainLoop
 	+WaitForFire_A
 }
 
+!ifdef resourceFileOffset_FileL1 {
+	; Left channel
+	+MWordValueToAddress_A $8030 , $05	; Bank register address
+	+MByteValueToAddress_A $06 , $07	; EBBS for sound data
+	+MWordValueToAddress_A resourceFileOffset_FileL1 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileL1 / kSize_8K))+1 , $fd	; Number of banks to copy
+	+MLongValueToAddress_A 0 , $02
+	jsr SendMusicData
+
+	+MWordValueToAddress_A resourceFileOffset_FileL3 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileL3 / kSize_8K))+1 , $fd
+	+MLongValueToAddress_A 896987 , $02
+	jsr SendMusicData
+
+	+MWordValueToAddress_A resourceFileOffset_FileL6 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileL6 / kSize_8K))+1 , $fd
+	+MLongValueToAddress_A 896987+1343276 , $02
+	jsr SendMusicData
+
+	; Right channel
+	+MWordValueToAddress_A $8130 , $05	; Bank register address
+	+MByteValueToAddress_A $07 , $07	; EBBS for sound data
+	+MWordValueToAddress_A resourceFileOffset_FileR1 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileR1 / kSize_8K))+1 , $fd	; Number of banks to copy
+	+MLongValueToAddress_A 0 , $02
+	jsr SendMusicData
+
+	+MWordValueToAddress_A resourceFileOffset_FileR3 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileR3 / kSize_8K))+1 , $fd
+	+MLongValueToAddress_A 873536 , $02
+	jsr SendMusicData
+
+	+MWordValueToAddress_A resourceFileOffset_FileR6 / kSize_8K , $fb	; Cart bank
+	+MByteValueToAddress_A (<(resourceFileSize_FileR6 / kSize_8K))+1 , $fd
+	+MLongValueToAddress_A 873536+1326593 , $02
+	jsr SendMusicData
+}
+
 CheckForHWData
 ;+MBPH
+!ifdef resourceFileOffset_File1 {
+	+MByteValueToAddress_A <(resourceFileOffset_File1 / kSize_8K) , $fb
+	+MByteValueToAddress_A >(resourceFileOffset_File1 / kSize_8K) , $fc
+	+MByteValueToAddress_A (<(resourceFileSize_File1 / kSize_8K))+1 , $fd
+	jsr TransferFromCartridgeToExternalRAM
+}
 	; ForHW chunks: Demo14FileResources_ForHW1.bin
 	lda #ForHW1_checksumsCount
 	ldx #<ForHW1_checksumsNumBytes
@@ -207,6 +258,12 @@ CheckForHWData
 
 CheckForGameData
 ;	+WaitForFire_A
+!ifdef resourceFileOffset_File2 {
+	+MByteValueToAddress_A <(resourceFileOffset_File2 / kSize_8K) , $fb
+	+MByteValueToAddress_A >(resourceFileOffset_File2 / kSize_8K) , $fc
+	+MByteValueToAddress_A (<(resourceFileSize_File2 / kSize_8K))+1 , $fd
+	jsr TransferFromCartridgeToExternalRAM
+}
 
 	lda #ForGame_checksumsCount
 	ldx #<ForGame_checksumsNumBytes
@@ -233,9 +290,139 @@ CheckForGameData
 	+MByteValueToAddress_A 9-.i , GameTotalHits + .i-1
 }
 }
+	+LTestForPortNotBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , DisplayTestMenu
 
 	jmp LoadRunTitleScreen
 
+!zn
+TransferFromCartridgeToExternalRAM
+	+MGuardAgainstLowerCart *
+	+MGuardAgainstUpperCart *
+	jsr Bus20To32Bit1_Init
+	jsr Bus20To32Bit1_SetLatch0
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch1
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch2
+	+MBus24Bit_Send8BitValue 0
+	jsr Bus20To32Bit1_SetLatch6
+
+	; This must not call any Bus20To32Bit1_* routines since they all live under the kernal
+	+MByteValueToAddress_A $7f , CIA2InterruptControl
+	+MByteValueToAddress_A ProcessorPortDefault , ZPProcessorPort
+.clre1
+	inc SCREENRAM
+	ldy #>kSize_8K
+	+MByteValueToAddress_A >C64Cartridge_Lo_8K , .clre2+2
+	lda $fb
+	sta $de00
+	lda $fc
+	and #%00111111
+	sta $df00
+	ldx #0
+.clre2
+	lda C64Cartridge_Lo_8K,x
+	+MBus24Bit_Send8BitValueFromA
+	inx
+	bne .clre2
+	inc .clre2+2
+	dey
+	bne .clre2
+	; End of the 8KB, so move to the next bank
+	inc $fb
+	bne .clre3
+	inc $fc
+.clre3
+	dec $fd
+	bne .clre1	
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+	+MByteValueToAddress_A %10010000 , CIA2InterruptControl
+
+	jsr Bus20To32Bit1_Init
+	jsr Bus20To32Bit1_ShortReset
+
+	+MGuardAgainstLowerCart *
+	+MGuardAgainstUpperCart *
+	rts
+
+!zn
+SendMusicData
+	+MGuardAgainstLowerCart *
+	+MGuardAgainstUpperCart *
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	+MWordValueToAddress_A C64Cartridge_Lo_8K , .sssm1+1
+.ss1
+	lda $04
+	sta $08
+	jsr Bus24Bit_Reset
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_EBBS
+	+MBus24Bit_Send8BitValueFromAddress $05
+	+MBus24Bit_Send8BitValueFromAddress $06
+	+MBus24Bit_Send8BitValueFromAddress $08	; New Bank register
+
+	jsr Bus24Bit_Reset
+	+MBus24Bit_Send8BitValueFromAddress $07
+	+MBus24Bit_Send8BitValueFromAddress $02
+	+MBus24Bit_Send8BitValueFromAddress $03
+
+	+MByteValueToAddress_A $7f , CIA2InterruptControl
+	+MByteValueToAddress_A ProcessorPortDefault , ZPProcessorPort
+
+	lda $fb
+	sta $de00
+	lda $fc
+	and #%00111111
+	sta $df00
+
+.sssm1	lda C64Cartridge_Lo_8K
+	+MBus24Bit_Send8BitValueFromA
+	inc .sssm1+1
+	bne .ss3
+	inc .sssm1+2
+
+	; Check for cart bank increment
+	lda .sssm1+2
+	cmp #>(C64Cartridge_Lo_8K+kSize_8K)
+	bne .ss3
+
+	dec $fd
+	beq .ss5
+
+	+MByteValueToAddress_A >C64Cartridge_Lo_8K , .sssm1+2
+
+	+MIncAddr16 $fb , $fc
+	lda $fb
+	sta $de00
+	lda $fc
+	and #%00111111
+	sta $df00
+
+.ss3
+	inc $02
+	bne .ss4
+	inc $03
+	bne .ss4
+	inc $04
+	lda $04
+	cmp $08
+	beq .ss4
+	inc SCREENRAM+1
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+	jmp .ss1
+.ss4
+
+	jmp .sssm1
+
+
+.ss5
+	+MByteValueToAddress_A ProcessorPortAllRAMWithIO , ZPProcessorPort
+	+MByteValueToAddress_A %10010000 , CIA2InterruptControl
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+	rts
+	+MGuardAgainstLowerCart *
+	+MGuardAgainstUpperCart *
 
 !zn
 .hexTab !scr "0123456789abcdef"
@@ -257,6 +444,8 @@ DisplayHexFromAAtX
 	sta SCREENRAM,x
 	inx
 	rts
+
+
 
 +MCheckNotInIOKernal
 

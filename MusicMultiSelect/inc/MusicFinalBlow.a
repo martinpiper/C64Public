@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $88ef	; From $0a/$0b big endian
+MusicPlay = $894c	; From $0c/$0d big endian
+NumSongs = 5		; From $0e/$0f big endian
+* = $8880	; From $7c/$7d little endian
+!bin "SIDs\Final_Blow.sid",,$7e

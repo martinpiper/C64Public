@@ -1,0 +1,15 @@
+PlayerStart = $800
+MusicInit = $8e64	; From $0a/$0b big endian
+MusicPlay = $8e9f	; From $0c/$0d big endian
+NumSongs = 7		; From $0e/$0f big endian
+* = $5000	; From $7c/$7d little endian
+!disablesegmentcheck
+!bin "SIDs\Galaxy_Force_II.sid",,$7e
+; Patch out $01 tweaks
+*=$8e5c
+	nop
+	nop
+*=$8e61
+	nop
+	nop
+!enablesegmentcheck

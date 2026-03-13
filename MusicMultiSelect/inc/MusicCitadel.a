@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $c000	; From $0a/$0b big endian
+MusicPlay = $c059	; From $0c/$0d big endian
+NumSongs = 4		; From $0e/$0f big endian
+* = $c000	; From $7c/$7d little endian
+!bin "SIDs\Citadel.sid",,$7e

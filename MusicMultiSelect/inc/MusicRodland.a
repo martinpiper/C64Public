@@ -1,0 +1,6 @@
+PlayerStart = $4000
+MusicInit = $219c	; From $0a/$0b big endian
+MusicPlay = $21ea	; From $0c/$0d big endian
+NumSongs = 5		; From $0e/$0f big endian
+* = $1000	; From $7c/$7d little endian
+!bin "SIDs\Rodland.sid",,$7e

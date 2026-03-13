@@ -1,0 +1,6 @@
+PlayerStart = $4000
+MusicInit = $0ccf	; From $0a/$0b big endian
+MusicPlay = $0d2e	; From $0c/$0d big endian
+NumSongs = 2		; From $0e/$0f big endian
+* = $0800	; From $7c/$7d little endian
+!bin "SIDs\SWIV.sid",,$7e

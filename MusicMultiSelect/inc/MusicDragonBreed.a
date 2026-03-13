@@ -1,0 +1,6 @@
+PlayerStart = $c000
+MusicInit = $2500	; From $0a/$0b big endian
+MusicPlay = $0000	; From $0c/$0d big endian
+NumSongs = $0d		; From $0e/$0f big endian
+* = $2500	; From $7c/$7d little endian
+!bin "SIDs\Dragon_Breed.sid",,$7e

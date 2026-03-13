@@ -2331,7 +2331,8 @@
 		> CheckForHWData CheckForGameData
 			c64vh
 			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FileResources_ForHW1.bin
-			C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\main.cmp.prg
+			C64: C:\Users\marti\Desktop\EF3\easytransfer-win32-1.2.0\easytransfer\ef3xfer.exe -x bin\main.cmp.prg
+			C64U: curl --request POST --data-binary "@bin\main.cmp.prg" http://c64u/v1/runners:run_prg
 			python C:\Work\BombJack\UserPort20To32Bit2_DataSend.py tmp\Demo14FinalData.bin
 	>> The mission complete data DMA for resourceFileOffset_ResourcesMissionComplete works on real hardware, with the APU_ResetDisableClear and "; Only show the clouds, not the tiles"
 	>> The hiscore table scroll with raster splits also works, MScoreTableEntryUpdate
@@ -2490,3 +2491,25 @@
 
 
 * Demo14: The intro screen with the two jets, could be narrower only for that screen by adjusting the left border?
+
+
+
+* Demo14: Use the 8MB cartridge to send over some assets and populate external RAM
+	> tmp\Demo14Cartridge.bin
+	> This isn't going to be a CRT file...
+	* Done: BDD6502 will need to be updated to include the 8MB cartridge emulation, and to load a raw binary file.
+		> And I load cartridge binary "test.bin" type 61 bank size 0x2000 bank address 0x8000 game 1 exrom 0
+	* Done: Can include a special version of main14.a which includes the relevant file copies from this data
+		This will then be compressed and linked to a boot bank 0, which is padded to the entire 8KB
+		This means the extra file data will always starting from bank 1
+		Minimal cartridge boot bank code asm\main6c.a
+		> TransferFromCartridgeToExternalRAM
+		> goto skipCartData
+	* Done: Include audio data
+	* Add better debug output on the C64 screen, or the hardware screen since the C64 screen is probably off...
+	* Add a title screen music selector...
+		>> Use similar code to DisplayRunIntroScreens when RunGameMissionComplete=0
+		>> RunGameIntroCycle and DisplayRunIntroScreens
+		>> Or maybe just include it early in main14.a or main14Title.a
+			To avoid the mission complete and intro screens having a slower transition
+	>> Hold down fire after the hardware test, during the cartridge to external RAM copy, until the test menu is displayed

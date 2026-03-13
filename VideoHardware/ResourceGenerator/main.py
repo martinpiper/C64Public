@@ -6,7 +6,38 @@ if __name__ == '__main__':
         print("<file to append to> <ebbs> <address if ebbs != 0> bytes <byte>...")
         print("<file to append to> checksum <block size> <number of bytes> <bytes per checksum> <output label file>")
         print("<file to append to> addfile <filename> <output label file> <label postfix>")
+        print("<file to append to> padding <padding alignment>")
+        print("<file to write to> patchfile <filename> <position>")
         exit(-1)
+
+    if sys.argv[2] == "padding":
+        fileOut = open(sys.argv[1], "r+b")
+        fileOut.seek(0, 2)
+        fileLen = fileOut.tell()
+
+        paddingAlignment = int(sys.argv[3], 0)
+        while (fileLen & paddingAlignment) != 0:
+            fileOut.write(bytes([0]))
+            fileLen += 1
+
+        fileOut.flush()
+        fileOut.close()
+
+        exit(0)
+
+    if sys.argv[2] == "patchfile":
+        fileOut = open(sys.argv[1], "r+b")
+        fileIn = open(sys.argv[3], "rb")
+        inBytes = fileIn.read()
+        position = int(sys.argv[4], 0)
+
+        fileOut.seek(position, 0)
+        fileOut.write(inBytes)
+
+        fileOut.flush()
+        fileOut.close()
+
+        exit(0)
 
     if sys.argv[2] == "addfile":
         fileOut = open(sys.argv[1], "r+b")
@@ -19,8 +50,8 @@ if __name__ == '__main__':
 
         fileLen = fileOut.tell()
 
-        labelFile.write("resourceFileOffset_"+labelPostfix+" = $" + hex(fileLen & 0xffffff)[2:] + "\n")
-        labelFile.write("resourceFileSize_"+labelPostfix+" = $" + hex(len(inBytes) & 0xffffff)[2:] + "\n")
+        labelFile.write("resourceFileOffset_" + labelPostfix + " = $" + hex(fileLen & 0xffffff)[2:] + "\n")
+        labelFile.write("resourceFileSize_" + labelPostfix + " = $" + hex(len(inBytes) & 0xffffff)[2:] + "\n")
 
         fileOut.write(inBytes)
 

@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\inc">
+      <UniqueIdentifier>{225aed85-5418-45af-b077-52f317823302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tmp">
+      <UniqueIdentifier>{32af318b-b8a7-48aa-9646-e415afa7ecaf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Main.a">
+      <Filter>Source Files</Filter>
+    </Library>
+    <Library Include="..\stdlib\Initialise.a">
+      <Filter>Header Files</Filter>
+    </Library>
+    <Library Include="..\stdlib\LongBranches.a">
+      <Filter>Header Files</Filter>
+    </Library>
+    <Library Include="..\stdlib\MemoryCopy.a">
+      <Filter>Header Files</Filter>
+    </Library>
+    <Library Include="..\stdlib\stdlib.a">
+      <Filter>Header Files</Filter>
+    </Library>
+    <Library Include="Player.a">
+      <Filter>Source Files</Filter>
+    </Library>
+    <Library Include="inc\MusicAggressorTheme.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicAlteredBeast.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicArmalyte.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicAtomicRoboKid.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicChameleon.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicCitadel.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicDominion.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicDragonBreed.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicFinalBlow.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicGalaxyForceII.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicIndianaJonesFateofAtlantis.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicNinjaSpirit.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicRodland.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicRupertandtheToymakersParty.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicSecretProject.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicSnare.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicSpeedball2.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicSWIV.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicTimeMachine.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="inc\MusicWalkersWarbles.a">
+      <Filter>Source Files\inc</Filter>
+    </Library>
+    <Library Include="bin\_f_index1.a">
+      <Filter>Source Files\tmp</Filter>
+    </Library>
+    <Library Include="FingerPrint.a">
+      <Filter>Source Files\tmp</Filter>
+    </Library>
+    <Library Include="MultiSelectSystem.a">
+      <Filter>Source Files</Filter>
+    </Library>
+    <Library Include="..\MakeCart\asm\GMod2_Macros.a">
+      <Filter>Header Files</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildIt.bat">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

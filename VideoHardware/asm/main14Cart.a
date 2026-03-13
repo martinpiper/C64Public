@@ -1,0 +1,90 @@
+!to "bin/maincart.bin", plain
+!sal
+!sl "tmp/maincart.map"
+!svl "tmp/maincart.lbl"
+!pdb "tmp/maincart.pdb"
+!cpu 6510
+!ct pet
+
+!source "stdlib/stdlib.a"
+!source "stdlib/Comparisons.a"
+
+!zn
+*=C64Cartridge_Lo_8K
+!word start
+!word start
++M_CBM80
+
+.c64Reminder
+	!scr "MegaWang 2000 Turbo Edition hardware - Cart boot"
+.c64ReminderEnd
+
+start
+	+MStopInitStack_X
+	jsr DoDataToTop
+	jmp DataToTopStartReal
+
+DataToTopStart
+!pseudopc $c000 {
+DataToTopStartReal
+	lda #ProcessorPortDefault
+	sta ZPProcessorPort
+	lda #ProcessorPortDDRDefault
+	sta ZPProcessorPortDDR
+	lda #0
+	sta MemoryMappedIOArea1
+	sta MemoryMappedIOArea2
+
+	lda #ProcessorPortDefault
+	jsr InitialiseMachine
+
+	+SetDefaultScreenLowerCase_A
+	+ClearScreenAt_AX SCREENRAM , ' '
+	+DisplayColourTextMiddle_AX .c64Reminder , .c64ReminderEnd , SCREENRAM , VIC2Colour_White
+
+	+MWordValueToAddress_A BootCode , $fb
+	+MWordValueToAddress_A BASICSTART , $fd
+	ldy #0
+.cl1  lda ($fb),y
+	sta ($fd),y
+	+MIncAddr16 $fb , $fc
+	+MIncAddr16 $fd , $fe
+	lda $fc
+	cmp #(>BootCodeEnd)+1
+	bne .cl1
+
+	jmp 2061
+
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+Initialise_NoMACROWaitForTheLastScan = 1
+!source "stdlib/Initialise.a"
+
+BootCode
+!bin "bin/main.cmp2.prg",,2
+BootCodeEnd
++MCheckNotInIOKernal
+DataToTopEndReal
+}
+
+DataToTopEnd
+DataToTopSize = DataToTopEnd - DataToTopStart
+
+!if DataToTopEndReal >= VIC {
+!error "DataToTopEndReal is over VIC"
+}
+
+!zn
+DoDataToTop
+	ldx #0
+.cl1
+!for .i , (>DataToTopSize)+1 {
+!set .ii = .i - 1
+	lda DataToTopStart + (.ii * $100),x
+	sta DataToTopStartReal + (.ii * $100),x
+}
+	dex
+	bne .cl1
+	rts
+
++MCheckNotInKERNALServiceVectors

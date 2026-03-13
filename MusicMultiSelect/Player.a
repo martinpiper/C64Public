@@ -1,0 +1,131 @@
+!ifndef SCREENRAMPlayer {
+SCREENRAMPlayer = SCREENRAM
+}
+
+!disablesegmentcheck
+*=SCREENRAMPlayer
+	!fill VIC2ScreenNumChars , ' '
+*=SCREENRAMPlayer
+	!scr "Hello world"
+
+*=SCREENRAMPlayer + (10 * VIC2ScreenCharsWidth)
+	!scr "Joystick fire to return to SID select"
+
+!if NumSongs > 1 {
+*=SCREENRAMPlayer + (3 * VIC2ScreenCharsWidth)
+	!scr "Joystick left or right to select music"
+*=SCREENRAMPlayer + (6 * VIC2ScreenCharsWidth)
+	!scr "Selected music"
+SelectedSID = * + 1
+}
+
+!enablesegmentcheck
+
+*=PlayerStart
+; This code can be moved around to anywhere to fit around the loaded SID
+Start
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
+	+SetDefaultScreenLowerCase_A
+!if SCREENRAMPlayer >= VIC2_Bank2 {
+	lda #CIA2PortASerialBusVICBank_Bank2
+	sta CIA2PortASerialBusVICBank
+}
+
+.smsong	lda #0
+	jsr MusicInit
+
+!if NumSongs > 1 {
+	lda .smsong+1
+	and #$0f
+	tay
+	lda HexTab,y
+	sta SelectedSID+1
+	lda .smsong+1
+	lsr
+	lsr
+	lsr
+	lsr
+	tay
+	lda HexTab,y
+	sta SelectedSID	
+}
+
+.l1	
+	+MACROWaitForTheLastScanPlus1_A
+	inc VIC2BorderColour
+!if MusicPlay != 0 {
+	jsr MusicPlay
+}
+	dec VIC2BorderColour
+
+!if NumSongs > 1 {
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	dec .smsong+1
+	bpl .smsong
+	lda #NumSongs-1
+	sta .smsong+1
+	jmp .smsong
+.notLeft
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	inc .smsong+1
+	lda .smsong+1
+	cmp #NumSongs
+	bne .smsong
+	lda #0
+	sta .smsong+1
+	jmp .smsong
+.notRight
+}
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+
+	; Load and run the main select system part
+	+MByteValueToAddress_A 0 , SIDVolumeFilter
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+MVIC2MemorySetup_ScreenChar_A 0 , CHARROM_LowerCase
+	sta VIC2MemorySetup
+	+SetMemory_AX COLOURRAM + LoadingMessage , COLOURRAM + (LoadingMessageEnd-1), VIC2Colour_White
+
+	sei
+	ldx #0
+.ccl1
+	lda LoadAndRunMainPartReal,x
+	sta LoadAndRunMainPart,x
+	dex
+	bne .ccl1
+	jmp LoadAndRunMainPart
+
+.notFire
+	jmp .l1
+
+HexTab
+	!scr "0123456789abcdef"
+
+!source "FingerPrint.a"
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+
+
+LoadAndRunMainPartReal
+!pseudopc $100 {
+LoadAndRunMainPart
+	sei
+	lda #1
+	+MACRO_CartSelectBank_8K_NoSEI_A
+	+MWordValueTo_XY C64Cartridge_Lo_8K
+	jsr MemoryCopy_SetSource
+	+MWordValueTo_XY $800
+	jsr MemoryCopy_SetDestination
+	+MWordValueTo_XY kSize_8K
+	jsr MemoryCopy_ForSize
+	jmp 2061
+!source "stdlib\MemoryCopy.a"
+LoadAndRunMainPartEnd
+!if * >= $1f0 {
+!error "Cannot be in the end of stack area"
+}
+}

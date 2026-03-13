@@ -1,0 +1,240 @@
+; MultiSelectSystem main code
+
+!source "stdlib/stdlib.a"
+!to "MultiSelectSystem.prg", cbm
+!sl "MultiSelectSystem.map"
+!sal
+!svl "MultiSelectSystem.lbl"
+!pdb "MultiSelectSystem.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "MakeCart/asm/GMod2_Macros.a"
+
+!source "bin\_f_index1.a"
+
+SelectSIDFile = $200	; This does get initialised by the first boot
+
+*=$230
+LoadingMessage
+	!scr "Loading..."
+LoadingMessageEnd
+
+*=$300
+	jmp Start
+
+	!disablesegmentcheck
+*=SCREENRAM
+	!fill VIC2ScreenNumChars , ' '
+*=SCREENRAM
+	!scr "Music multi select system"
+*=SCREENRAM + (3 * VIC2ScreenCharsWidth)
+	!scr "Joystick left or right to select SID"
+*=SCREENRAM + (4 * VIC2ScreenCharsWidth)
+	!scr "Joystick fire to load SID"
+*=SCREENRAM + (6 * VIC2ScreenCharsWidth)
+	!scr "Selected SID"
+SelectedSID = * + 1
+!enablesegmentcheck
+
+*=$800
+; This code can be moved around to anywhere to fit around the loaded SID
+Start
+	lda #ProcessorPortAllRAMWithIO
+	jsr InitialiseMachine
+
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_White
+	+SetDefaultScreenLowerCase_A
+
+.l1	
+	+MACROWaitForTheLastScanPlus1_A
+	inc VIC2BorderColour
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Left , .notLeft
+	dec SelectSIDFile
+.notLeft
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Right , .notRight
+	inc SelectSIDFile
+.notRight
+
+.check1
+	lda SelectSIDFile
+	cmp #MusicBankTableEnd-MusicBankTable
+	bcc .okRange
+	sec
+	sbc #MusicBankTableEnd-MusicBankTable
+	sta SelectSIDFile
+	jmp .check1
+.okRange
+
+	lda SelectSIDFile
+	and #$0f
+	tay
+	lda HexTab,y
+	sta SelectedSID+1
+	lda SelectSIDFile
+	lsr
+	lsr
+	lsr
+	lsr
+	tay
+	lda HexTab,y
+	sta SelectedSID
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+
+	; Load and run the selected part
+	+ClearScreenAt_AX COLOURRAM , VIC2Colour_Black
+	+MVIC2MemorySetup_ScreenChar_A 0 , $1800
+	sta VIC2MemorySetup
+	+SetMemory_AX COLOURRAM + LoadingMessage , COLOURRAM + (LoadingMessageEnd-1), VIC2Colour_White
+
+	lda SelectSIDFile
+	tay
+	asl
+	tax
+	lda MusicStartTable,x
+	sta .smx+1
+	lda MusicStartTable+1,x
+	sta .smy+1
+	lda MusicBankTable,y
+.smx	ldx #0
+.smy	ldy #0
+	jmp CopyAndRunFile
+
+.notFire
+
+	dec VIC2BorderColour
+	jmp .l1
+
+HexTab
+	!scr "0123456789abcdef"
+
+MusicBankTable
+!by CartFile1_Bank_MusicMultiSelect_AggressorTheme_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_AlteredBeast_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Armalyte_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_AtomicRoboKid_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Chameleon_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Citadel_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Dominion_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_DragonBreed_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_FinalBlow_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_GalaxyForceII_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_IndianaJonesFateofAtlantis_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_NinjaSpirit_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Rodland_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_RupertandtheToymakersParty_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_SWIV_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_SecretProject_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Snare_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_Speedball2_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_TimeMachine_prg_fragment0
+!by CartFile1_Bank_MusicMultiSelect_WalkersWarbles_prg_fragment0
+MusicBankTableEnd
+MusicStartTable
+!word CartFile1_Start_MusicMultiSelect_AggressorTheme_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_AlteredBeast_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Armalyte_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_AtomicRoboKid_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Chameleon_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Citadel_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Dominion_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_DragonBreed_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_FinalBlow_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_GalaxyForceII_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_IndianaJonesFateofAtlantis_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_NinjaSpirit_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Rodland_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_RupertandtheToymakersParty_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_SWIV_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_SecretProject_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Snare_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_Speedball2_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_TimeMachine_prg_fragment0
+!word CartFile1_Start_MusicMultiSelect_WalkersWarbles_prg_fragment0
+MusicStartTableEnd
+
+
+
+!source "FingerPrint.a"
+Initialise_NoPreserveStack = 1
+Initialise_NoIRQServiceRoutine = 1
+!source "stdlib/Initialise.a"
+
+*=$cf00
+CopyAndRunFile
+	sei
+	stx $02
+	sty $03
+	ldy #0
+	+MACRO_CartSelectBank_8K_NoSEI_A
+
+.doNextBlock
+	lda ($02),y
+	sta .nextBank
+	+MIncAddr16 $02 , $03
+
+	lda ($02),y
+	sta .nextAddress
+	+MIncAddr16 $02 , $03
+
+	lda ($02),y
+	ora #>C64Cartridge_Lo_8K
+	sta .nextAddress+1
+	+MIncAddr16 $02 , $03
+
+	; End of this block
+	lda ($02),y
+	sta $04
+	+MIncAddr16 $02 , $03
+	lda ($02),y
+	sta $05
+	+MIncAddr16 $02 , $03
+
+	lda .useLoadAddress
+	beq .skipLoadAddress
+
+	dec .useLoadAddress
+	; Start address
+	lda ($02),y
+	sta $06
+	+MIncAddr16 $02 , $03
+	lda ($02),y
+	sta $07
+	+MIncAddr16 $02 , $03
+.skipLoadAddress
+
+	; Copy loop
+.cl1
+	lda ($02),y
+	sta ($06),y
+	+MIncAddr16 $02 , $03
+	+MIncAddr16 $06 , $07
+	; End of block check
+	lda $03
+	cmp $05
+	bne .cl1
+	lda $02
+	cmp $04
+	bne .cl1
+
+	lda .nextBank
+	bne .moreData
+
+	; Run the section
+	jmp 2061
+
+.moreData
+	sta CART_SELECT_BANK
+	+MAddr16toAddr_A .nextAddress , $02
+
+	jmp .doNextBlock
+.nextBank !by 0
+.nextAddress !word 0
+.useLoadAddress !by 1
+
++MGuardAgainstIOSpaceUpwards *

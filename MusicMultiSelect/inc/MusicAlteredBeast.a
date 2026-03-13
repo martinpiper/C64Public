@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $e000	; From $0a/$0b big endian
+MusicPlay = $e05a	; From $0c/$0d big endian
+NumSongs = 6		; From $0e/$0f big endian
+* = $e000	; From $7c/$7d little endian
+!bin "SIDs\Altered_Beast.sid",,$7e

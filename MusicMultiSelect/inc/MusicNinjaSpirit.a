@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $a4e6	; From $0a/$0b big endian
+MusicPlay = $a543	; From $0c/$0d big endian
+NumSongs = 9		; From $0e/$0f big endian
+* = $a200	; From $7c/$7d little endian
+!bin "SIDs\Ninja_Spirit.sid",,$7e

@@ -1,0 +1,31 @@
+; MusicMultiSelect main code
+; https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+
+!source "stdlib/stdlib.a"
+!to "MusicMultiSelect.prg", cbm
+!sl "MusicMultiSelect.map"
+!sal
+!svl "MusicMultiSelect.lbl"
+!pdb "MusicMultiSelect.pdb"
+!cpu 6510
+!ct pet
+!initmem $aa
+
+CartSelectBank_ProcessorPort	= ProcessorPortDefault
+CartKillBank_ProcessorPort		= ProcessorPortKERNALWithIO
+!source "MakeCart/asm/GMod2_Macros.a"
+
+; MusicDragonBreed.a
+; Uses sample IRQ/NMI/timer
+; Done: MusicAtomicRoboKid.a
+; After init uses $400, the display will need to be in the other bank
+; Done: 09 : GalaxyForceII
+; $8e5a and 8e5f tweak $01...
+
+*=$230
+LoadingMessage
+	!scr "Loading..."
+LoadingMessageEnd
+
+*=$300
+	jmp Start

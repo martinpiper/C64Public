@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $34a0	; From $0a/$0b big endian
+MusicPlay = $34ac	; From $0c/$0d big endian
+NumSongs = 4		; From $0e/$0f big endian
+* = $27cd	; From $7c/$7d little endian
+!bin "SIDs\Snare.sid",,$7e

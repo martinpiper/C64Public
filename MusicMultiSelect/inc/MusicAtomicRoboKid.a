@@ -1,0 +1,7 @@
+SCREENRAMPlayer = VIC2_Bank2 + SCREENRAM
+PlayerStart = $8800
+MusicInit = $1800	; From $0a/$0b big endian
+MusicPlay = $1803	; From $0c/$0d big endian
+NumSongs = 8		; From $0e/$0f big endian
+* = $1800	; From $7c/$7d little endian
+!bin "SIDs\Atomic_Robo-Kid.sid",,$7e

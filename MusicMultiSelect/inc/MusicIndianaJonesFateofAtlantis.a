@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $73e0	; From $0a/$0b big endian
+MusicPlay = $73f0	; From $0c/$0d big endian
+NumSongs = 1		; From $0e/$0f big endian
+* = $73e0	; From $7c/$7d little endian
+!bin "SIDs\Indiana_Jones_Fate_of_Atlantis.sid",,$7e

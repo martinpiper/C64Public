@@ -1,0 +1,199 @@
+!zn
+DisplayTestMenu
+	jsr Bus24Bit_Init
+	jsr Bus20To32Bit1_Init
+
+	jsr Video_InitDisplaySpritesScrollsBackground
+	jsr Video_SetAddressMergeLayer
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_ForceOut_1
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+	; To stop the APU memory being displayed in the Vectors layer - In simulation
+	; To stop the intro screens on the second chars layer being displayed - For emulation and hardware
+	lda #kBus24Bit_MergeLayer_Register_Control_Visible_1 | kBus24Bit_MergeLayer_Register_Control_ForceOut_1
+	sta CIA2PortBRS232
+	lda #0
+	sta CIA2PortBRS232
+
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars
+
+	jsr Video_SetAddressVideoPaletteLayersRegister
+	+MBus24Bit_Send8BitValue %00000000
+
+	jsr Video_SetAddressVideoOverscanExtentRegisters
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_OverscanExtent_UnsafeWide
+
+	lda #kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_BGColour
+	jsr Video_EnableDisplay
+	jsr Video_SetAddressVideoBackgroundColour
+	+MBus24Bit_Send8BitValue 19
+
+	jsr Video_SetAddressVideoLayersEnable
+	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
+
+	jsr Video_WaitVBlank
+
+!macro MDisplayText_Char1 .pos , .text , .len {
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharScreenMap + .pos
+	+MWordValueTo_AX .text
+	ldy #.len
+	jsr Bus24Bit_FastCopySmallData
+}
+
+!macro MDisplayText_Char1 .pos , .colour , .text , .len {
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + .pos
+	lda #.colour
+	ldy #.len
+	jsr Bus24Bit_WriteAForY
+
+	+MDisplayText_Char1 .pos , .text , .len
+}
+
+!macro MDisplayText_FlashColour .pos , .colour , .len {
+	+MBus24Bit_SetAddress_AXY kBus24Bit_CharScreenMap_EBBS , kBus24Bit_CharColourMap + .pos
+	lda #.colour
+	ldy #.len
+	jsr Bus24Bit_WriteAForY
+}
+
+	+MDisplayText_Char1 Text_8x8_musicPlay2_Pos , Text_8x8_musicPlay2 , Text_8x8_musicPlay2_size
+	+MDisplayText_Char1 Text_8x8_musicPlay3_Pos , Text_8x8_musicPlay3 , Text_8x8_musicPlay3_size
+	+MDisplayText_Char1 Text_8x8_musicPlay6_Pos , Text_8x8_musicPlay6 , Text_8x8_musicPlay6_size
+	+MDisplayText_Char1 Text_8x8_instructions_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y8_colour , Text_8x8_instructions , Text_8x8_instructions_size
+
+	jsr EndFlashAll
+
+.l1
+	jsr Video_WaitVBlank
+
+.selected = *+1
+	lda #0
+	bne .not0
+	lda .eor
+	and #8
+	beq .is0
+	jsr .flashEnd0
+	jmp .end
+.is0
+	jsr .flash0
+	jmp .end
+.not0
+	cmp #1
+	bne .not1
+	lda .eor
+	and #8
+	beq .is1
+	jsr .flashEnd1
+	jmp .end
+.is1
+	jsr .flash1
+	jmp .end
+.not1
+	cmp #2
+	bne .not2
+	lda .eor
+	and #8
+	beq .is2
+	jsr .flashEnd2
+	jmp .end
+.is2
+	jsr .flash2
+	jmp .end
+.not2
+.end
+	inc .eor
+
+;	jsr Music_CheckTime
+!labelredefine
+	lda CIA1KeyboardColumnJoystickA
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Up , .notUp
+	dec .selected
+	jsr EndFlashAll
+.notUp
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Down , .notDown
+	inc .selected
+	jsr EndFlashAll
+.notDown
+
+	lda .selected
+	cmp #3
+	bcc .ok1
+	lda #0
+	sta .selected
+.ok1
+
+	+WaitForPortBitsLoop_A CIA1KeyboardColumnJoystickA , JoystickBits_Fire , .notFire
+	lda .selected
+	bne .notPlay0
+	jsr Music_Play2
+	jmp .notFire
+.notPlay0
+	cmp #1
+	bne .notPlay1
+	jsr Music_Play3
+	jmp .notFire
+.notPlay1
+	cmp #2
+	bne .notPlay2
+	jsr Music_Play6
+	jmp .notFire
+.notPlay2
+.notFire
+!labelredefineend
+
+	jsr Music_CheckTime
+
+	jmp .l1
+
+	rts
+.eor !by 0
+.flash0
+	+MDisplayText_FlashColour Text_8x8_musicPlay2_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour , Text_8x8_musicPlay2_size
+	rts
+.flash1
+	+MDisplayText_FlashColour Text_8x8_musicPlay3_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour , Text_8x8_musicPlay3_size
+	rts
+.flash2
+	+MDisplayText_FlashColour Text_8x8_musicPlay6_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y24_colour , Text_8x8_musicPlay6_size
+	rts
+.flashEnd0
+	+MDisplayText_FlashColour Text_8x8_musicPlay2_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour , Text_8x8_musicPlay2_size
+	rts
+.flashEnd1
+	+MDisplayText_FlashColour Text_8x8_musicPlay3_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour , Text_8x8_musicPlay3_size
+	rts
+.flashEnd2
+	+MDisplayText_FlashColour Text_8x8_musicPlay6_Pos , kTileScreenDebug____tmp_Demo14TitleChars_map_bin_x8_y16_colour , Text_8x8_musicPlay6_size
+	rts
+EndFlashAll
+	jsr Video_WaitVBlank
+	jsr .flashEnd0
+	jsr .flashEnd1
+	jsr .flashEnd2
+	rts
+
+
+!source "tmp\Demo14TitleChars_map.bin.debug.optimised.txt"
+!convtab "tmp\ConvtabChar8x8.ct" {
+Text_8x8_musicPlay2_Pos = (12 * kBus24Bit_CharScreenWidth) + 7
+Text_8x8_musicPlay2
+!tx "play music 2. maximum power"
+Text_8x8_musicPlay2_size = *-Text_8x8_musicPlay2
+
+Text_8x8_musicPlay3_Pos = (14 * kBus24Bit_CharScreenWidth) + 7
+Text_8x8_musicPlay3
+!tx "play music 3. afterburner"
+Text_8x8_musicPlay3_size = *-Text_8x8_musicPlay3
+
+Text_8x8_musicPlay6_Pos = (16 * kBus24Bit_CharScreenWidth) + 7
+Text_8x8_musicPlay6
+!tx "play music 6. city 202"
+Text_8x8_musicPlay6_size = *-Text_8x8_musicPlay6
+
+Text_8x8_instructions_Pos = (20 * kBus24Bit_CharScreenWidth) + 8
+Text_8x8_instructions
+!tx "use joystick up/down/fire"
+Text_8x8_instructions_size = *-Text_8x8_instructions
+}

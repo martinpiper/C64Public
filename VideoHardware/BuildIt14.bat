@@ -80,13 +80,53 @@ rem ..\bin\LZMPi.exe -c64 bin\main.prg bin\main.cmp.prg $200 >tmp\t.txt
 if not exist bin\main.cmp.prg goto error
 
 echo *** Target = 2,097,152
-dir tmp\Demo14FileResources_ForHW*.bin dir tmp\Demo14FinalData.bin assets\Demo14\Audio\*.vcd
+dir tmp\Demo14FileResources_ForHW*.bin tmp\Demo14FinalData.bin assets\Demo14\Audio\*.vcd
+
+goto skipCartData
+rem Produce 8MB cartridge image, with first padding data for the file offsets
+del /q tmp\Demo14Cartridge.bin
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin 0
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile tmp\Demo14FileResources_ForHW1.bin tmp/Demo14CartridgeAddFile_1.a File1
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile tmp\Demo14FinalData.bin tmp/Demo14CartridgeAddFile_2.a File2
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_left.vcd tmp/Demo14CartridgeAddFile_l1.a FileL1
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_left3.vcd tmp/Demo14CartridgeAddFile_l3.a FileL3
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_left6.vcd tmp/Demo14CartridgeAddFile_l6.a FileL6
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_right.vcd tmp/Demo14CartridgeAddFile_r1.a FileR1
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_right3.vcd tmp/Demo14CartridgeAddFile_r3.a FileR3
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin padding 0x1fff
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin addfile assets\Demo14\Audio\aburner_right6.vcd tmp/Demo14CartridgeAddFile_r6.a FileR6
+
+del bin\main.prg
+del bin\main.cmp2.prg
+..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc tmp/Demo14CartridgeAddFile_1.a tmp/Demo14CartridgeAddFile_2.a tmp/Demo14CartridgeAddFile_l1.a tmp/Demo14CartridgeAddFile_l3.a tmp/Demo14CartridgeAddFile_l6.a tmp/Demo14CartridgeAddFile_r1.a tmp/Demo14CartridgeAddFile_r3.a tmp/Demo14CartridgeAddFile_r6.a asm/main14.a
+if not exist bin\main.prg goto error
+..\bin\LZMPi.exe -c64mu bin\main.prg bin\main.cmp2.prg $200 >tmp\t.txt
+if not exist bin\main.cmp2.prg goto error
+
+del bin\maincart.bin
+..\acme.exe -v4 --lib ../ --lib ../../ --lib ../../../ --lib asm/ --msvc asm/main14Cart.a
+if not exist bin\maincart.bin goto error
+
+python ResourceGenerator\main.py tmp/Demo14Cartridge.bin patchfile bin\maincart.bin 0
+
+dir tmp\Demo14Cartridge.bin
+
+:skipCartData
 
 rem --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED
 rem -Xmx256M -Xms256M
 rem -DZbdd6502.trace=true
 rem "C:\Users\Martin Piper\.jdks\corretto-1.8.0_252\bin\java.exe"
 java.exe -Xincgc -Xmx256M -Xms256M -jar ..\..\BDD6502\target\BDD6502-1.0.9-SNAPSHOT-jar-with-dependencies.jar --tags @Demo14 --monochrome --plugin pretty --plugin html:target/cucumber --plugin json:target/report1.json --glue macros --glue TestGlue features
+
+dir tmp\Demo14Cartridge.bin
 
 echo *** Target = 2,097,152
 dir tmp\Demo14FileResources_ForHW*.bin tmp\Demo14FinalData.bin assets\Demo14\Audio\*.vcd

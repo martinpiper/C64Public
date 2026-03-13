@@ -1421,15 +1421,6 @@ Feature: Smoke test
     Given show video window
 #    Given randomly initialise all memory using seed 4321
 
-#    Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
-    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
-    And trim "0" bytes from the start of temporary memory
-    And add temporary memory to the 32 bit interface memory address '0x0'
-	# Debug: Simulate a memory checksum failure
-#    And trim "200000" bytes from the start of temporary memory
-#    And add temporary memory to the 32 bit interface memory address '0x20050'
-	# Comment out the above after debugging checksum failure
-
     # Exact address first
 	#  Music
     # Audio3 1 data
@@ -1616,14 +1607,30 @@ Feature: Smoke test
 #    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     And audio refresh window every 0 instructions
     And audio refresh is independent
-    # ForHW chunks
-#    When I execute the procedure at start until return
+
+    # Execute pretending we are processing chunks of data sent via USB to the RAM expansion:
+#	# ForHW chunk
+    Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
+    And trim "0" bytes from the start of temporary memory
+    And add temporary memory to the 32 bit interface memory address '0x0'
+	# Debug: Simulate a memory checksum failure
+#    And trim "200000" bytes from the start of temporary memory
+#    And add temporary memory to the 32 bit interface memory address '0x20050'
+	# Comment out the above after debugging checksum failure
     When I execute the procedure at start for no more than 10000000 instructions until PC = CheckForGameData
     # Game memory chunk
     Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
     And trim "0" bytes from the start of temporary memory
     And add temporary memory to the 32 bit interface memory address '0x0'
     Then I continue executing the procedure until return
+#    # Execute the 8MB cartridge code. See: goto skipCartData
+#    And I load cartridge binary "tmp/Demo14Cartridge.bin" type 61 bank size 0x2000 bank address 0x8000 game 1 exrom 0
+#    And I load labels "tmp/main.map"
+#    When I execute the indirect procedure at $fffc until return
+#    # Debug...
+##    When I execute the indirect procedure at $fffc until return or until PC = CheckForHWData
+##    And I enable trace with indent
+##    Then I continue executing the procedure until return
 
 
 

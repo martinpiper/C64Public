@@ -1,0 +1,6 @@
+PlayerStart = $4000
+MusicInit = $2878	; From $0a/$0b big endian
+MusicPlay = $2511	; From $0c/$0d big endian
+NumSongs = 7		; From $0e/$0f big endian
+* = $1970	; From $7c/$7d little endian
+!bin "SIDs\Rupert_and_the_Toymakers_Party.sid",,$7e

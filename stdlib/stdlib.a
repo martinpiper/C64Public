@@ -226,6 +226,8 @@ SCREENRAM = $0400
 SPRITEFRAME = SCREENRAM + SPRITEFRAMESCROFF
 BASICROM  = $A000
 CHARROM   = $D000	; See: ProcessorPortCharROMBASICKERNAL
+CHARROM_UpperCase   = $1000
+CHARROM_LowerCase   = $1800
 VIC       = $D000
 IOSPACE   = $D000
 SPACEMASK = $F000
@@ -260,6 +262,7 @@ KERNALTape_TimingAdjustment		= $f9d5
 KERNALVIC_DefaultValues = $ecb9
 
 ; These are used by the RESET routine at $fce2
+KERNALReset = $fce2 ; Same as SYS 64738 from BASIC
 KERNALInitIO = $fda3
 KERNALRestoreIOVectors = $fd15
 KERNALInitIOAdditional = $ff5b
@@ -1302,10 +1305,15 @@ RasterLengthNTSCC64		= 520
 	+lbne .notTo
 }
 
-!macro TestForPortNotBitsLoop_A .port , .value , .notTo {
+!macro TestForPortNotBitsLoop_A .port , .value , .goTo {
 	lda .port
 	and #.value
-	beq .notTo
+	beq .goTo
+}
+!macro LTestForPortNotBitsLoop_A .port , .value , .goTo {
+	lda .port
+	and #.value
+	+lbeq .goTo
 }
 
 !macro SetDefaultScreenNoEnable_A {
@@ -1487,6 +1495,16 @@ RasterLengthNTSCC64		= 520
 	lda #>.value
 	sta .addrHi
 }
+
+!macro MLongValueToAddress_A .value , .addr {
+	lda #<.value
+	sta .addr
+	lda #>.value
+	sta .addr+1
+	lda #^.value
+	sta .addr+2
+}
+
 
 !macro MAddr16ToAddr16_A .src , .dest {
 	lda .src

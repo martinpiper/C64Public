@@ -1,0 +1,7 @@
+PlayerStart = $4000
+MusicInit = $0800	; From $0a/$0b big endian
+MusicPlay = $085f	; From $0c/$0d big endian
+NumSongs = 1		; From $0e/$0f big endian
+; +$30 to skip the end of screen
+* = $07d0+$30	; From $7c/$7d little endian
+!bin "SIDs\Time_Machine.sid",,$7e+$30

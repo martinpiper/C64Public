@@ -1,9 +1,10 @@
-# Use variable coded delta encoding to compress PCM samples. More frequent smaller deltas are encoded to use shorter bit
-# sequences.
-# When using max delta bits of 7 this method is lossless. When using lower delta bits larger delta changes tend to get
-# smoothed out into following samples, this tends to filter out loud higher frequencies first.
+# Use variable coded delta encoding to compress PCM samples. More frequent smaller deltas are encoded to use shorter
+# bit sequences. When using max delta bits of 7 this method is lossless. When using lower delta bits larger delta
+# changes tend to get smoothed out into following samples, this tends to filter out loud higher frequencies first.
 # This compression is quite simple to decompress, consisting of only a stream of bits from memory, and does not use
 # complex mathematics or lookup tables. The goal being to be simple to implement in hardware.
+# This algorithm deliberately does not exploit 8-bit wraparound effects, this preserves the ability to extend to 12 or
+# 16 bit samples later on.
 import sys
 import numpy as np
 # pip install matplotlib
@@ -12,8 +13,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 outputBits = []
-numBitsDistribution = [0] * 9 # Because the compression to max bits is iterative and can have a larger number of bits than expected
+numBitsDistribution = [0] * 9    # Because the compression conversion to max bits is iterative and can have a larger number of
+                                    # bits than expected
 bytesChanged = 0
+
+debug = False
 
 
 # The idea here being that smaller delta values, particularly 0, are more common and use fewer bits compared to the less
@@ -45,6 +49,8 @@ def encodeDelta(inValue):
          "bits (after the zeros) and also the value to shift into the byte.")
     outputBits.extend(theBits)
     outputBits.append(sign)
+    if debug:
+        print("len=", len(theBits), "bits=", theBits, "sign=", sign)
 
     numBitsDistribution[len(theBits)] += 1
 
@@ -57,7 +63,7 @@ currentPos = 0
 
 
 def getBit(data):
-    global bitsRead,  currentByte, currentPos
+    global bitsRead, currentByte, currentPos
     # Read the next byte if the buffer is empty
     if bitsRead == 0:
         currentByte = data[currentPos]
@@ -74,7 +80,7 @@ def getBit(data):
 
 
 def main(argv):
-    global outputBits, numBitsDistribution, bytesChanged
+    global outputBits, numBitsDistribution, bytesChanged, debug
     if len(argv) < 4:
         print("Compress: -c <file name to compress> <max delta bits> <output file name>")
         print("Compress and display frequency details: -cv <file name to compress> <max delta bits> <output file "
@@ -90,7 +96,7 @@ def main(argv):
 
         print("input size byte", len(inBytes))
 
-        if maxDeltaBits < 7:
+        if maxDeltaBits <= 7:
             # Pre-process the file to minimise the delta size
             previousValue = 0x80
             i = 0
@@ -122,11 +128,14 @@ def main(argv):
         previousValue = 0x80
         signedData = []
         i = 0
+        #debug = True
+
         while i < len(inBytes):
             newValue = (int(inBytes[i])) & 0xff
             signedData.append(newValue - 0x80)
             delta = newValue - previousValue
-            # print(delta, hex(delta & 0xff))
+            if debug:
+                print(delta, hex(delta & 0xff))
             encodeDelta(delta)
             previousValue = newValue
             i += 1

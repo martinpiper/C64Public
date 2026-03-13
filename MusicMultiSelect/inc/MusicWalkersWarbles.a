@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $41c0	; From $0a/$0b big endian
+MusicPlay = $3d4d	; From $0c/$0d big endian
+NumSongs = 4		; From $0e/$0f big endian
+* = $2fc4	; From $7c/$7d little endian
+!bin "SIDs\Walkers_Warbles.sid",,$7e

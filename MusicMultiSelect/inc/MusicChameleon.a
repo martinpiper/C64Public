@@ -1,0 +1,6 @@
+PlayerStart = $800
+MusicInit = $ac00	; From $0a/$0b big endian
+MusicPlay = $aa65	; From $0c/$0d big endian
+NumSongs = 1		; From $0e/$0f big endian
+* = $a000	; From $7c/$7d little endian
+!bin "SIDs\Chameleon.sid",,$7e
