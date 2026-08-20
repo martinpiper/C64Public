@@ -1073,6 +1073,12 @@
 	cd /d c:\work\mame\
 	"C:\work\mame\mytest.exe" -window outrun
 	"C:\work\mame\mytest.exe" -window aburner2
+	"C:\work\mame\mytest.exe" -window thndrbld
+		>> See: // This handles the "Thunder Blade" logo palette being updated after it is displayed for a frame at game boot.
+		>> See: CheckPaleteAndForceColour()
+		>> // Use for Thunder Blade
+		>> Let the attract mode demos run. Start the game, move the player up/down/left/right. Note all the frames for each of the nine sections of the screen.
+
 	Converts raw data:
 		del "C:\temp\thunderbladearcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\thunderbladearcade\t.png"
 		del "C:\temp\afterburnerarcade\*.png" &&  C:\Downloads\ImageMagick-7.0.7-4-portable-Q16-x64\convert.exe -verbose -size "512x256" -depth 8 rgb:c:\temp\t.raw "C:\temp\afterburnerarcade\t.png"
@@ -1096,7 +1102,7 @@
 			Notepad++->Edit->Line operation->sort...
 			Look for p00000f20 again
 			Note the palette colour index entries that change, in this case they are 1,2,4 (0 based)
-		In C:\Work\mame\src\mame\sega\sega16sp.cpp update CheckPaleteAndForceColour() and update with RGB mask colours like 200,0,200, 150,0,150 , 100,0,100 etc
+		** In C:\Work\mame\src\mame\sega\sega16sp.cpp update CheckPaleteAndForceColour() and update with RGB mask colours like 200,0,200, 150,0,150 , 100,0,100 etc
 
 	>> Processing image files:
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\Work\C64\VideoHardware\assets\Demo14\ToUse\*.png
@@ -1109,6 +1115,9 @@
 	>> Outrun
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\temp\outrunarcade\*.png
 		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\temp\outrunarcade\*.png
+	>> Thunder Blade
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --transparentRGB 255 0 255 --shiftTopLeft --minimiseArea --processNow C:\temp\thunderbladearcade\*.png
+		java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --removeDuplicates C:\temp\thunderbladearcade\*.png
 
 	>> For the new scaled sprites, since they are variable in size, will need image conversion changes to take entire batches of sprite files and convert them for best fit palettes
 		For example this needs batch processing: java -jar c:\work\ImageToBitplane\target\imagetobitplane-1.0-SNAPSHOT-jar-with-dependencies.jar --rgbshift 5 6 5 --newpalettes --palettesize 16 --forcergb 255 0 255 --forcergb 200 0 200 --forcergb 150 0 150 --forcergb 100 0 100 --image "C:\Work\C64\VideoHardware\assets\Demo14\t-6.png" --imagequantize 16 --outputpalettes c:\temp\t.pal --convertwritepass

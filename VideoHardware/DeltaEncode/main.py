@@ -18,6 +18,7 @@ numBitsDistribution = [0] * 9    # Because the compression conversion to max bit
 bytesChanged = 0
 
 debug = False
+outputFinal = False
 
 
 # The idea here being that smaller delta values, particularly 0, are more common and use fewer bits compared to the less
@@ -28,6 +29,8 @@ def encodeDelta(inValue):
     if value == 0:
         outputBits.append(1)
         numBitsDistribution[0] += 1
+        if debug:
+            print("len=1 bits=[1]")
         return 1
 
     # Set up the sign and normalise the value
@@ -37,16 +40,24 @@ def encodeDelta(inValue):
         sign = 1
 
     theBits = []
+    forOutput = []
     testValue = value
     while testValue > 0:
         theBits.append(testValue & 0x01)
         testValue = testValue >> 1
-        outputBits.append(0)
+        forOutput.append(0)
 
     theBits = theBits[::-1]
     assert theBits[0] == 1, \
         ("The most significant bit should always be one. It has a dual purpose to signal the end of the number of "
          "bits (after the zeros) and also the value to shift into the byte.")
+#    if outputFinal:
+#        # Attempt to correct any hardware bug - 2?
+#        while ((((len(outputBits) & 7) + len(forOutput) + len(theBits)) & 0x08) !=
+#               (((len(outputBits) & 7) + len(forOutput) + len(theBits) + 1) & 0x08)):
+#            outputBits.append(1)
+
+    outputBits.extend(forOutput)
     outputBits.extend(theBits)
     outputBits.append(sign)
     if debug:
@@ -80,7 +91,7 @@ def getBit(data):
 
 
 def main(argv):
-    global outputBits, numBitsDistribution, bytesChanged, debug
+    global outputBits, numBitsDistribution, bytesChanged, debug, outputFinal
     if len(argv) < 4:
         print("Compress: -c <file name to compress> <max delta bits> <output file name>")
         print("Compress and display frequency details: -cv <file name to compress> <max delta bits> <output file "
@@ -132,7 +143,9 @@ def main(argv):
         previousValue = 0x80
         signedData = []
         i = 0
-        #debug = True
+        # Debug display bit patterns
+#        debug = True
+        outputFinal = True
 
         while i < len(inBytes):
             newValue = (int(inBytes[i])) & 0xff
@@ -143,7 +156,11 @@ def main(argv):
             encodeDelta(delta)
             previousValue = newValue
             i += 1
+            # Attempt to correct any hardware bug?
+#            while len(outputBits) & 7 >= 7:
+#                outputBits.append(1)
 
+        # Finally output the bits as bytes
         fileOut = open(argv[4], "wb")
         i = 0
         theByte = 0
@@ -158,8 +175,11 @@ def main(argv):
                 theByteBits = 0
                 theByte = 0
 
-        # Ensure last byte is written if needed
-        if theByteBits >= 8:
+        # Ensure any last byte is written if needed
+        if theByteBits >= 1:
+            while theByteBits < 8:
+                theByte <<= 1
+                theByteBits += 1
             fileOut.write(bytes([theByte]))
 
         fileOut.close()
