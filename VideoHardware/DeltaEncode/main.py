@@ -13,12 +13,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 outputBits = []
-numBitsDistribution = [0] * 9    # Because the compression conversion to max bits is iterative and can have a larger number of
-                                    # bits than expected
+# Because the compression conversion to max bits is iterative and can have a larger number of bits than expected
+numBitsDistribution = [0] * 9
+outputBitsMaxRules = [0] * 9
+
 bytesChanged = 0
 
 debug = False
 outputFinal = False
+
+
+
+# Delta least significant bits rules
+# outputBitsMaxRules[2] = 1
+# outputBitsMaxRules[3] = 2
+# outputBitsMaxRules[4] = 3
+# outputBitsMaxRules[5] = 3
+# outputBitsMaxRules[6] = 4
+# outputBitsMaxRules[7] = 5
 
 
 # The idea here being that smaller delta values, particularly 0, are more common and use fewer bits compared to the less
@@ -51,14 +63,18 @@ def encodeDelta(inValue):
     assert theBits[0] == 1, \
         ("The most significant bit should always be one. It has a dual purpose to signal the end of the number of "
          "bits (after the zeros) and also the value to shift into the byte.")
-#    if outputFinal:
-#        # Attempt to correct any hardware bug - 2?
-#        while ((((len(outputBits) & 7) + len(forOutput) + len(theBits)) & 0x08) !=
-#               (((len(outputBits) & 7) + len(forOutput) + len(theBits) + 1) & 0x08)):
-#            outputBits.append(1)
+    #    if outputFinal:
+    #        # Attempt to correct any hardware bug - 2?
+    #        while ((((len(outputBits) & 7) + len(forOutput) + len(theBits)) & 0x08) !=
+    #               (((len(outputBits) & 7) + len(forOutput) + len(theBits) + 1) & 0x08)):
+    #            outputBits.append(1)
 
     outputBits.extend(forOutput)
-    outputBits.extend(theBits)
+    thisMaxBits = outputBitsMaxRules[len(theBits)]
+    theOutBits = theBits
+    if thisMaxBits > 0:
+        theOutBits = theOutBits[:-thisMaxBits]  # Trim end, the least significant bits after being shifted in
+    outputBits.extend(theOutBits)
     outputBits.append(sign)
     if debug:
         print("len=", len(theBits), "bits=", theBits, "sign=", sign)
@@ -111,30 +127,41 @@ def main(argv):
 
         print("input size byte", len(inBytes))
 
-        if maxDeltaBits <= 7:
-            # Pre-process the file to minimise the delta size
-            previousValue = 0x80
-            i = 0
-            while i < len(inBytes):
-                newValue = (int(inBytes[i])) & 0xff
-                delta = newValue - previousValue
+        # Pre-process the file to minimise the delta size
+        previousValue = 0x80
+        i = 0
+        while i < len(inBytes):
+            newValue = (int(inBytes[i])) & 0xff
+            delta = newValue - previousValue
+            numOutputBits = encodeDelta(delta)
+            # Reduce the size of the delta to fit the bits requirement
+            while numOutputBits > maxDeltaBits:
+                if delta > 0:
+                    delta -= 1
+                else:
+                    delta += 1
                 numOutputBits = encodeDelta(delta)
-                # Reduce the size of the delta to fit the bits requirement
-                while numOutputBits > maxDeltaBits:
-                    if delta > 0:
-                        delta -= 1
-                    else:
-                        delta += 1
-                    numOutputBits = encodeDelta(delta)
-                # Compute what the resultant sample value is using the maybe compressed delta...
-                previousValue += delta
-                # And update the source data so that the final compression does not use out of range deltas
-                if inBytes[i] != previousValue:
-                    bytesChanged += 1
-                inBytes[i] = previousValue
-                i += 1
 
-            print("bytesChanged", bytesChanged)
+            thisMaxBits = outputBitsMaxRules[numOutputBits]
+            if thisMaxBits > 0:
+                posDelta = delta
+                if posDelta < 0:
+                    posDelta = -posDelta
+                posDelta = posDelta & ~((1 << thisMaxBits) - 1)
+                if delta < 0:
+                    delta = -posDelta
+                else:
+                    delta = posDelta
+
+            # Compute what the resultant sample value is using the maybe compressed delta...
+            previousValue += delta
+            # And update the source data so that the final compression does not use out of range deltas
+            if inBytes[i] != previousValue:
+                bytesChanged += 1
+            inBytes[i] = previousValue
+            i += 1
+
+        print("bytesChanged", bytesChanged)
 
         # Now encode the data for real
         outputBits = []
@@ -144,7 +171,7 @@ def main(argv):
         signedData = []
         i = 0
         # Debug display bit patterns
-#        debug = True
+        #        debug = True
         outputFinal = True
 
         while i < len(inBytes):
@@ -157,8 +184,8 @@ def main(argv):
             previousValue = newValue
             i += 1
             # Attempt to correct any hardware bug?
-#            while len(outputBits) & 7 >= 7:
-#                outputBits.append(1)
+        #            while len(outputBits) & 7 >= 7:
+        #                outputBits.append(1)
 
         # Finally output the bits as bytes
         fileOut = open(argv[4], "wb")

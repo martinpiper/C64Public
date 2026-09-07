@@ -11,6 +11,7 @@ kAudio2Register_Length24	= 6
 kAudio2Register_Rate16		= 9
 kAudio2Register_Rate16_Normal = 1<<12
 kAudio2Register_Rate16_NormalFull = 1<<15
+kAudio2Register__size = 12
 
 +MAssertEquals kAudio2Register_Address24+3 , kAudio2Register_Length24
 +MAssertEquals kAudio2Register_Length24+3 , kAudio2Register_Rate16

@@ -7,3 +7,56 @@ Given execute "*" for eight times
   When I execute the procedure at $1 for no more than 1000000 instructions
   When I execute the procedure at $1 for no more than 1000000 instructions
   When I execute the procedure at $1 for no more than 1000000 instructions
+
+
+
+Given standard super scalar setup
+	# Layer 3
+    Given add a 2-to-1 merge layer with registers at '0xa200'
+    And the layer has 16 colours
+    And the layer has overscan
+		# Layer 3-1
+		Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
+		# Layer 3-0
+		Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
+		And the layer has 16 colours
+		And the layer has overscan
+#		And the layer uses exact address matching
+	# Layer 2
+    Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+#    And the layer displays a debug window
+    # Layer 1
+    Given add a 2-to-1 merge layer with registers at '0xa202'
+    And the layer has 16 colours
+    And the layer has overscan
+		Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
+		Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
+		And the layer has 16 colours
+		And the layer has overscan
+		And the layer uses exact address matching
+    # Layer 0
+    # Note: If comparing simulated output with emulated output, some layers need a merge layer
+    # Layer 0-1
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
+#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 13.7MHz
+    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
+    And the layer has 16 colours
+    And the layer has overscan
+    And the layer uses exact address matching
+#    And the layer displays a debug window
+#    # Layer 0-0
+#    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
+#    And the layer has 16 colours
+#    And the layer has overscan
+#    And the layer uses exact address matching
+

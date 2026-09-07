@@ -4,7 +4,12 @@
 ;main test code
 kBus24Bit_VideoLayer_HasOverscan=1
 kBus24Bit_VideoLayer_ExpandedPalettes = 1
+kBus24Bit_VideoLayer_ExpandedPaletteLayers = 1
 kBus24Bit_SpritesMaxNum = 32
+
+kHardwareTest_UsingSprites4 = 1
+kBus24Bit_Sprites4_Controls2		= $b800
+kBus24Bit_Sprites4_Registers2		= $b808
 
 !source "stdlib/stdlib.a"
 !source "stdlib/LongBranches.a"
@@ -61,8 +66,139 @@ start
 
 !ifdef IncludeGraphicsData {
 	jsr HardwareTest_VideoPattern0
+
+	; And the extra chars layer...
+	+MBus24Bit_SetAddress_AXY $90 , kBus24Bit_CharScreenMap
+	jsr HardwareTest_VideoPattern0_SendCharsMap
+
+	+MBus24Bit_SetAddress_AXY $90 , kBus24Bit_CharColourMap
+	jsr HardwareTest_VideoPattern0_SendCharsColourMap
+
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_0
+	jsr HardwareTest_VideoPattern0_SendCharsPlane0
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_1
+	jsr HardwareTest_VideoPattern0_SendCharsPlane1
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_2
+	jsr HardwareTest_VideoPattern0_SendCharsPlane2
+
+	+MBus24Bit_SetAddress_AXY $30 , kBus24Bit_CharScreenPlanes_3
+	jsr HardwareTest_VideoPattern0_SendCharsPlane3
+
+	+MBus24Bit_SetAddress_A kBus24Bit_CharScreen_EBBS , $a800
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SendLE16BitValue -48
+	+MBus24Bit_SendLE16BitValue -12
+
 ;	+WaitForFire_A
 }
+
+	; Test APU and display hardware
+!if 1 {
+	+WaitForFire_A
+
+	jsr SetupAPU
+	jsr APU_ResetDisable
+	jsr APU_Enable
+
+;	jsr Video_InitDisplaySpritesScrollsBackground
+
+	; No mode7 layer, since it blocks the background register
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel0 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel1
+
+	jsr Video_SetAddressVideoBackgroundColour
+	+MBus24Bit_Send8BitValue 0
+	jsr Video_SetAddressVideoControlRegisters
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable
+
+	+WaitForFire_A
+
+	; Check bus arbitration with the CPU and APU by updating the char scroll registers all the time
+.us1
+;	jsr Video_WaitVBlank
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue -16
+	+MBus24Bit_SendLE16BitValue -32
+	+WaitForFireLoop_A .us1
+
+	; Check bus arbitration with variable sprites4 writes
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue 0
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	jsr InitSprites4
+
+.rspt1
+	jsr Video_WaitVBlank
+	jsr Video_StartRasterTimers
+	jsr Bus20To32Bit1_Init
+
+	+MByteValueToAddress_A 4 , zeroPage_Temp0
+	+MByteValueToAddress_A 4 , zeroPage_Temp1
+
+	; A very large sprite formation
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	+MBus24Bit_Send8BitValue %10
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Registers
+	ldx #128
+.ssl1
+	; Palette
+	+MBus24Bit_Send8BitValue 0
+	; Y pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp1
+	+MBus24Bit_Send8BitValue 16
+	; X pos and size
+	+MBus24Bit_Send8BitValueFromAddress zeroPage_Temp0
+	+MBus24Bit_Send8BitValue 16
+	; Address
+	jsr Video_clearThreeBytes
+	; Scales
+	+MBus24Bit_Send8BitValue $10
+	+MBus24Bit_Send8BitValue $10
+	; Stride
+	+MBus24Bit_Send8BitValue 4
+
+	+MAddU8ToAddr8 19 , zeroPage_Temp0
+	+MAddU8ToAddr8 1 , zeroPage_Temp1
+
+	dex
+	bne .ssl1
+
+	; End of list
+	jsr Video_clearThreeBytes
+
+
+	+MBus24Bit_SetAddress_A kBus24Bit_Sprites4_EBBS , kBus24Bit_Sprites4_Controls
+	; Flag ready and enable logic
+	+MBus24Bit_Send8BitValue %11
+
+	+WaitForFireLoopL_A .rspt1
+
+	; Just displays chars
+	jsr Video_SetAddressVideoPriorityRegister
+	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel1 , kBus24Bit_VideoLayer_Priority_Pixel1
+
+	; CPU write to APU data and scroll registers test
+.cwad1
+	+MAPU_SetDataUpdateBus APUData_RasterBarStart + (151 * APUData_RasterBar_size) + APUData_RasterBar_palette
+	+MBus24Bit_SendPaletteRGB 16 , 16 , 16
+	+MAPU_SetDataUpdateBus APUData_RasterBarStart + (154 * APUData_RasterBar_size) + APUData_RasterBar_palette
+	+MBus24Bit_SendPaletteRGB 32 , 32 , 32
+	+MAPU_SetDataUpdateBus APUData_RasterBarStart + (157 * APUData_RasterBar_size) + APUData_RasterBar_palette
+	+MBus24Bit_SendPaletteRGB 64 , 64 , 64
+	+MAPU_SetDataUpdateBus APUData_RasterBarStart + (160 * APUData_RasterBar_size) + APUData_RasterBar_palette
+	+MBus24Bit_SendPaletteRGB 128 , 128 , 128
+	jsr Video_SetAddressCharScrollRegisters
+	+MBus24Bit_SendLE16BitValue -20
+	+MBus24Bit_SendLE16BitValue -38
+	+WaitForFireLoopL_A .cwad1
+
+
+}
+
+
 
 ;	+WaitForFire_A
 
@@ -76,17 +212,18 @@ start
 	jsr Video_SetAddressVideoLayersEnable
 	+MBus24Bit_Send8BitValue kBus24Bit_VideoLayer_LayersEnable_2
 	jsr Video_SetAddressVideoControlRegisters
-	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable | $01
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_RGBBackground
 }
 
 !if 0 {
+	; DMA 2MB from external RAM to bitmap RGB RAM or Audio RAM
 .otherClear3
 	; DMA Copy
 	jsr Bus24Bit_Init
 	; BackgroundRGB bank address
-;	+MBus24Bit_SetAddress_A $01 , $a300
+	+MBus24Bit_SetAddress_A $01 , $a300
 	; Audio2 bank address
-	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Bank
+;	+MBus24Bit_SetAddress_A kAudio2_EBBS , kAudio2_LeftChannel + kAudio2Register_Bank
 .smb3	+MBus24Bit_Send8BitValue 0
 	jsr Bus20To32Bit1_Init
 	jsr Bus20To32Bit1_ShortReset
@@ -97,9 +234,9 @@ start
 	+MBus24Bit_Send8BitValueFromAddress .smb3+1
 	jsr Bus20To32Bit1_SetLatch4
 	; BackgroundRGB EBBS
-;	+MBus24Bit_SetAddressNoReset_A $03 , 0
+	+MBus24Bit_SetAddressNoReset_A $03 , 0
 	; Audio2 EBBS
-	+MBus24Bit_SetAddressNoReset_A $06 , 0
+;	+MBus24Bit_SetAddressNoReset_A $06 , 0
 
 .bph
 	; DMA Two 32768 byte chunks, not 65535 bytes skipping a byte...
@@ -115,7 +252,7 @@ start
 }
 
 	; Test Audio2 samples
-!if 1 {
+!if 0 {
 .smpl1
 	jsr Bus24Bit_Init
 	jsr Audio2_Disable
@@ -252,7 +389,7 @@ start
 	jsr Video_SetAddressVideoControlRegisters
 	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Use_BGColour | kVideo_EnableDisplay_Enable
 ;	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable
-;	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | $01
+;	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_RGBBackground
 
 	jsr Video_SetAddressVideoBackgroundColour
 	+MBus24Bit_Send8BitValue 1
@@ -330,7 +467,7 @@ start
 
 ;	+WaitForFire_A
 	jsr Video_SetAddressVideoControlRegisters
-	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | $01
+	+MBus24Bit_Send8BitValue kVideo_EnableDisplay_Enable | kVideo_EnableDisplay_Use_RGBBackground
 	jsr Video_SetAddressVideoPriorityRegister
 	+MBus24Bit_VideoLayer_EmitPriority_NearToFar_A kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars , kBus24Bit_VideoLayer_Priority_Chars
 
@@ -482,6 +619,66 @@ DMAHalfBank
 
 !source "asm/AfterBurner/Audio2.a"
 
+TotalAPU_Start
+
+!if 0 {
+; Old hardware limits
+kRasterBarRows = 20
+kYPosStart = 160
+} else {
+; New hardware uses three banks
+kRasterBarRows = 100
+kYPosStart = 130
+}
+
+APUCode_Start
+!pseudopc 0 {
+frameStart0
+	+MAPU
+	+MAPU kAPU_Reset_ADDRB1
+	+MAPU_LoadEBSFromB1
+
+!for .ii , kRasterBarRows {
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+	+MAPU_LoadDoWait
+	+MAPU_ProcessRasterWord
+}
+
+	+MAPU kAPU_Reset_PC
+	+MAPU
+}
+
+APUCode_Size = *-APUCode_Start
+
+APUData_Start
+	!by kBus24Bit_VideoLayer_EBBS
+
+APUData_RasterBarStart
+!for .ii , kRasterBarRows {
+!set .i = .ii - 1
+!set .t = *
+	+MAPU_EmitWait 4 , kYPosStart + .i
+!set APUData_RasterBar_palette = * + 2 - .t
+	+MAPUEmitChangePaletteIndex 0*16 ,  (.i+1) * 10 , (.i+1) * 4 , (.i+1) * 8
+!set APUData_RasterBar_size = * - .t
+
+	+MAPU_EmitWait 128 , kYPosStart + .i
+	+MAPUEmitChangePaletteIndex 0*16 ,  (.i+1) * 1 , (.i+1) * 8 , (.i+1) * 12
+	+MAPU_EmitWait 256 , kYPosStart + .i
+	+MAPUEmitChangePaletteIndex 0*16 ,  (.i+1) * 7 , (.i+1) * 12 , (.i+1) * 3
+}
+
+APUData_Size = * -APUData_Start
+
+
+TotalAPU_Size = * - TotalAPU_Start
+
+
+!source "BombJack/stdlib/APUSetup.a"
+!source "AfterBurner/InitSprites4.a"
 
 EndMainMemory
 +MCheckNotInIOKernal

@@ -1255,6 +1255,16 @@ RasterLengthNTSCC64		= 520
 	beq .ft2
 }
 
+!macro WaitForFireLoopL_A .to {
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	+lbne .to
+.ft2
+	lda CIA1KeyboardColumnJoystickA
+	and #JoystickBits_Fire
+	beq .ft2
+}
+
 !macro WaitForFireB_A {
 .ft1
 	lda CIA1KeyboardRowsJoystickB

@@ -1367,57 +1367,11 @@ Feature: Smoke test
     # Stop Audio3 from conflicting...
     And the APU uses exact address matching
     And APU clock divider 1
-    And APU memory clock divider 2
+    And APU memory clock divider 4
 
 
-    # Note: If comparing simulated output with emulated output, some layers need a merge layer
-    Given add a 2-to-1 merge layer with registers at '0xa200'
-    And the layer has 16 colours
-    And the layer has overscan
-		# Layer 3-1
-		Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
-		And the layer has 16 colours
-		And the layer has overscan
-		And the layer uses exact address matching
-		# Layer 3-0
-		Given add a Tiles layer with registers at '0x9e00' and screen addressEx '0x80' and planes addressEx '0x40'
-		And the layer has 16 colours
-		And the layer has overscan
-#		And the layer uses exact address matching
-	# Layer 2
-    Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-#    And the layer displays a debug window
-    # Layer 1
-    Given add a 2-to-1 merge layer with registers at '0xa202'
-    And the layer has 16 colours
-    And the layer has overscan
-		Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
-		And the layer has 16 colours
-		And the layer has overscan
-		And the layer uses exact address matching
-		Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
-		And the layer has 16 colours
-		And the layer has overscan
-		And the layer uses exact address matching
-    # Layer 0
-    # Note: If comparing simulated output with emulated output, some layers need a merge layer
-    # Layer 0-1
-#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 16MHz
-#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 14.31818MHz
-#    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 13.7MHz
-    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-#    And the layer displays a debug window
-#    # Layer 0-0
-#    Given add a Sprites V9.5 layer with registers at '0x9800' and addressEx '0x10' and running at 16MHz
-#    And the layer has 16 colours
-#    And the layer has overscan
-#    And the layer uses exact address matching
+    Given standard super scalar setup
+
     Given show video window
 #    Given randomly initialise all memory using seed 4321
 
@@ -1607,8 +1561,12 @@ Feature: Smoke test
 #    Given avoid CPU wait during VBlank for address "Video_WaitVBlank_startGuard"
     And audio refresh window every 0 instructions
     And audio refresh is independent
+
     # Execute pretending we are processing chunks of data sent via USB to the RAM expansion:
-    * if string "" is not empty
+	# bat file enable: goto skipCartData
+	# main14Options.a: Optionally comment out: SendResourceData = 1
+	# Set "1" instead of "" below:
+    * if string "1" is not empty
     # ForHW chunk
       Given load binary file "tmp\Demo14FileResources_ForHW1.bin" into temporary memory
       And trim "0" bytes from the start of temporary memory
@@ -1624,8 +1582,16 @@ Feature: Smoke test
       And add temporary memory to the 32 bit interface memory address '0x0'
       Then I continue executing the procedure until return
     * endif
+
     # Execute the 8MB cartridge code. See: goto skipCartData
+	# bat file disable: rem goto skipCartData
+	# main14Options.a: Optionally comment out: SendResourceData = 1
+	# Set "" instead of "" below:
     * if string "1" is not empty
+      # If using "jmp SkipCartToRAM" then the RAM must contain this file...
+#      Given load binary file "tmp\Demo14FinalData.bin" into temporary memory
+#      And trim "0" bytes from the start of temporary memory
+#      And add temporary memory to the 32 bit interface memory address '0x0'
     And I load cartridge binary "tmp/Demo14Cartridge.bin" type 61 bank size 0x2000 bank address 0x8000 game 1 exrom 0
     And I load labels "tmp/main.map"
 #    And I enable trace with indent
@@ -1690,51 +1656,21 @@ Feature: Smoke test
     And add to the 32 bit interface a bank of memory at address '0x0' and size '0x100000'
     And add to the 32 bit interface a bank of memory at address '0x100000' and size '0x100000'
 	# Background RGB data
-#    Given load binary file "c:\temp\t.bmp" into temporary memory
-#    And trim "0x8a" bytes from the start of temporary memory
+    Given load binary file "c:\temp\t.bmp" into temporary memory
+    And trim "0x8a" bytes from the start of temporary memory
 	# Audio2 data
-    Given load binary file "c:\temp\aburner1_mono.bin" into temporary memory
+#    Given load binary file "c:\temp\aburner1_mono.bin" into temporary memory
 #    Given load binary file "assets\Demo14\Audio\aburner_left.vcd" into temporary memory
     And add temporary memory to the 32 bit interface memory address '0x0'
     And enable user port bus debug output
     And enable APU mode
     And the APU uses exact address matching
     And APU clock divider 1
-    And APU memory clock divider 2
+    And APU memory clock divider 4
 
     Given add a BitmapRGB background with registers at '0xa300' and addressEx '0x03'
-    # Layer 3
-    Given add a Mode7 layer with registers at '0xa000' and addressEx '0x08'
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-	# Layer 2
-    Given add a Sprites4 layer with registers at '0xb800' and addressEx '0x05' and running at 12.096MHz
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-#    And the layer displays a debug window
-    # Layer 1
-    Given add a 2-to-1 merge layer with registers at '0xa200'
-    And the layer uses exact address matching
-    And the layer has 16 colours
-    And the layer has overscan
-      # Standard addresses
-      Given add a Chars V4.0 layer with registers at '0x9000' and screen addressEx '0x80' and planes addressEx '0x20'
-      And the layer uses exact address matching
-      And the layer has 16 colours
-      And the layer has overscan
-      # Other addresses
-      Given add a Chars V4.0 layer with registers at '0xa800' and screen addressEx '0x90' and planes addressEx '0x30'
-      And the layer uses exact address matching
-      And the layer has 16 colours
-      And the layer has overscan
-    # Layer 0
-    Given add a Sprites4 layer with registers at '0x8800' and addressEx '0x05' and running at 12.096MHz
-    And the layer has 16 colours
-    And the layer has overscan
-    And the layer uses exact address matching
-#    And the layer displays a debug window
+    Given standard super scalar setup
+
 
     Given show video window
 #    Given randomly initialise all memory using seed 4321
