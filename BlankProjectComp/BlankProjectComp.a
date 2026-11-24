@@ -10,6 +10,7 @@
 !ct pet
 !initmem $aa
 
+
 !macro Crunch .pos {
 	+MACROWaitForRaster .pos
 ;	+MACRODelay_X 1
@@ -21,7 +22,8 @@
 
 *=$400
 	jmp $800
-	
+
+!source "stdlib/Initialise.a"
 !source "FingerPrint.a"
 
 *=$800
@@ -46,9 +48,445 @@
 	jmp *-3
 }
 
-; TODO: Side border with sprites
-
+; Side border with sprites
 !if 1 {
+	; Define options
+;kEnableMultiplexor
+;kUseSimpleNMI
+;kUseMusic
+
+	sei
+	+MByteValueToAddress_A VIC2Colour_LightBlue , VIC2BorderColour
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+	+MByteValueToAddress_A 0 , VIC2_Bank0_GhostByte
+	+MByteValueToAddress_A kVIC2ScreenControlHBits_40Columns , VIC2ScreenControlH	; For easy open side border later using MOpenSideBorder
+	lda #0
+	jsr $5000
+
+	; Turn off the screen and ensure the VIC chip has cycled around at least a full screen to ensure no bad lines are visible...
+	+MACROWaitForTheLastScan_A
+	+MByteValueToAddress_A $00 , VIC2ScreenControlV
+	+MACROWaitForRasterHigh_A
+	+MACROWaitForTheLastScan_A
+	+MACROWaitForRasterHigh_A
+
+	ldy #50
+.l1
+	+MACROWaitForRaster 200
+	+MACROStabliseLine
+	; Demonstrate the stable nature of this position with border colour changes
+	inc VIC2BorderColour
+	inc VIC2BorderColour
+	inc VIC2BorderColour
+	inc VIC2BorderColour
+	dec VIC2BorderColour
+	dec VIC2BorderColour
+	dec VIC2BorderColour
+	dec VIC2BorderColour
+	dey
+	bne .l1
+
+	; Here is it still at a stable cycle within the line...
+.bph1
+	; Setup the CIA timer assisted NMI jmp
+	+MWordValueToAddress_A CIA2TimerALo , KERNALNMIServiceRoutineLo
+	+MByteValueToAddress_A 0 , CIA2TimerAControl
+	+MAlsoToAddress_A CIA2TimerBControl
+	bit CIA2InterruptControl	; ACK anything previously
+	+MByteValueToAddress_A CIAInterruptControlAllSources , CIA2InterruptControl
+	; Setup JMP $xx00, where xx comes from the following CIA2TimerBLo 
+	+MByteValueToAddress_A $4c , CIA2TimerALo
+	+MByteValueToAddress_A $00 , CIA2TimerALo + 1
+	+MWordValueToAddress_A CyclesPerRasterPALC64-1 , CIA2TimerBLo
+	; Time tweak here, this adjusts when TimerB is started (with CIA2TimerBControl) and decides what range the JMP in CIA2TimerBLo has
+	+DelayFor 39
+.bph2
+	+MByteValueToAddress_A $11 , CIA2TimerBControl
+!ifndef kUseSimpleNMI {
+	+MByteValueToAddress_A $40 , CIA2SerialShift	; Setup RTI here, which if executed will also read from the following address for CIA2InterruptControl, which does an automatic ack
+}
+	
+	+MVIC2SpriteEnableAll_A
+	+MAlsoToAddress_A VIC2SpriteDoubleWidth
+
+!for .ii , kVIC2NumSprites {
+!set .i = .ii-1
+	+MSetSpriteXYColFrame_A .i, 0 + (.i * VIC2SpriteSizeX * 2), 80, VIC2Colour_White + (.i & 3), $f8 + (.i & 7), SCREENRAM
+}
+
+	; Switch on the normal screen for a bit...
+	+MACROWaitForTheLastScan_A
+	+MByteValueToAddress_A VIC2ScreenControlVDefault , VIC2ScreenControlV
+	+MACROWaitForRasterHigh_A
+	+MACROWaitForTheLastScan_A
+
+!macro MSetSpriteYs .pos {
+	+MByteValueToAddress_A .pos , VIC2Sprite0Y
+	+MAlsoToAddress_A VIC2Sprite1Y
+	+MAlsoToAddress_A VIC2Sprite2Y
+	+MAlsoToAddress_A VIC2Sprite3Y
+	+MAlsoToAddress_A VIC2Sprite4Y
+	+MAlsoToAddress_A VIC2Sprite5Y
+	+MAlsoToAddress_A VIC2Sprite6Y
+	+MAlsoToAddress_A VIC2Sprite7Y
+}
+
+!ifdef kEnableMultiplexor {
+	jsr Multiplexor_BASICStart
+}
+
+.l2
+	; Enable screen without badlines mode, so text and colour is not visble...
+	+MACROWaitForRaster 248
+	+MByteValueToAddress_A 5 , VIC2ScreenControlV
+
+!ifndef kEnableMultiplexor {
+	+MACROWaitForRaster 254
+	+MSetSpriteYs <(13 * VIC2SpriteSizeY)
+} else {
+	+MByteValueToAddress_A VIC2Colour_Blue , VIC2ScreenColour
+}
+
+	+MACROWaitForRasterHigh_A
+	+MACROWaitForRaster <267
+	+MByteValueToAddress_A 5 | kVIC2ScreenControlVBits_25Rows , VIC2ScreenControlV
+
+	; Only enable NMIs, once, after the no bad line screen is enabled... This avoids any unexpected timerB related jmp destinations
+.smf1	lda #1
+	beq .smf10
+	dec .smf1+1
+	bit CIA2InterruptControl	; ACK anything previously
+	+MByteValueToAddress_A $82 , CIA2InterruptControl	; Enable NMI on timer B
+.smf10
+
+!ifdef kEnableMultiplexor {
+	lda #1
+	ldx #Multiplex_items
+	ldy #0
+	jsr lMultiplexor_MoveLeft
+;	+MByteValueToAddress_A 8 , Multiplexor_SignalNewData
+}
+
+!ifndef kEnableMultiplexor {
+	; Very near the bottom of the screen
+	+MACROWaitForRaster <(RasterLinesPALC64 - 5)
+	+MSetSpriteYs 0
+!ifdef kUseMusic {
+kNumRows = 6
+} else {
+kNumRows = 12
+}
+!for .ii , kNumRows {
+!set .i = .ii -1
+	+MACROWaitForRaster (.i * VIC2SpriteSizeY) + 2
+	+MSetSpriteYs .ii * VIC2SpriteSizeY
+}
+}
+
+!ifdef kUseMusic {
+	inc VIC2ScreenColour
+	jsr $5003
+	dec VIC2ScreenColour
+}
+
+	jmp .l2
+
+!macro MOpenSideBorder {
+	dec VIC2ScreenControlH
+	inc VIC2ScreenControlH
+}
+
+; NMI entry points from the timerB modified JMP at CIA2TimerALo
+!ifdef kUseSimpleNMI {
+	; Simple algorithmic NMI code, wastes cycles
+!for .ii , 7 {
+!set .i = .ii-1
+* = $2e00 + (.i * $100)
+	+DelayFor 2 + .i
+	+MOpenSideBorder
+	bit CIA2InterruptControl
+	rti
+}
+
+} else {
+; Optimised versions
+* = $2e00
+	+DelayFor 2
+	+MOpenSideBorder
+	jmp CIA2SerialShift
+
+* = $2f00
+	+DelayFor 3
+	+MOpenSideBorder
+	jmp CIA2SerialShift
+
+* = $3000
+	+DelayFor 4-4
+	bit CIA2InterruptControl
+	+MOpenSideBorder
+	rti
+
+* = $3100
+	+DelayFor 5
+	+MOpenSideBorder
+	jmp CIA2SerialShift
+
+* = $3200
+	bit CIA2InterruptControl
+	+DelayFor 6-4
+	+MOpenSideBorder
+	rti
+
+* = $3300
+	bit CIA2InterruptControl
+	+DelayFor 7-4
+	+MOpenSideBorder
+	rti
+
+* = $3400
+	bit CIA2InterruptControl
+	+DelayFor 8-4
+	+MOpenSideBorder
+	rti
+}
+
+* = $3e00
+!bin "BorderSprites.bin"
+
+* = $5000
+!bin "music5000.prg",,2
+
+* = $8000
+!source "stdlib/LongBranches.a"
+
+; Optimise for BASIC zeropage usage, which means not very much
+Multiplex_spritepointer	= SPRITEFRAME
+Multiplex_IRQServiceRoutineLo = KERNALIRQServiceRoutineLo
+Multiplex_IRQServiceRoutineHi = KERNALIRQServiceRoutineHi
+!macro Multiplex_IRQExit {
+	inc VIC2ScreenColour
+	rti
+}
+Multiplex_DiscardSpritesYPos=VIC2SpriteYBorderBottom
+;Multiplexor_DebugBorder = 1
+;Multiplex_EnableEarlyOut = 1
+;Multiplex_BunchingCheck = 1
+;Multiplex_BunchingCheckLongBranch = 1
+;Multiplex_OverflowRasterCheck1 = 1
+;Multiplex_OverflowRasterCheck2 = 1
+;Multiplex_OverflowRasterCheck2LongBranch = 1
+
+Multiplex_items = 32
+
+Multiplex_bal = $fb
+Multiplex_bah = $fc
+
+;Multiplexor_UseMulticolour = 1
+;Multiplexor_UsePriority = 1
+;Multiplexor_UseDoubleWidth = 1
+;Multiplexor_UseDoubleHeight = 1
+;Multiplex_MaintainPriority = 1
+;Multiplex_LogCollisions = 1
+;Multiplex_ReverseOrder = 1
+Multiplex_DoNotAlignSpriteTables = 1
+
+Multiplexor_SignalNewData	!by 0
+Multiplexor_SignalNewFrame	!by 0
+
+lMultiplex_SetSpritePointer	jmp Multiplex_SetSpritePointer
+
+Multiplex_Default_XPosLo
+!for .i , Multiplex_items / 4 {
+	!by 0 , 12
+	!by 70 , 82
+}
+
+Multiplex_Default_XPosHi
+!for .i , Multiplex_items / 4 {
+	!by 0 , 0
+	!by 1 , 1
+}
+
+Multiplex_Default_YPos
+!for .i , Multiplex_items / 4 {
+	!by 10 + ((.i-1) * 34)
+	!by 10 + ((.i-1) * 34)
+	!by 10 + ((.i-1) * 34)
+	!by 10 + ((.i-1) * 34)
+}
+
+Multiplex_Default_Colour
+!for .i , Multiplex_items {
+	!by (.i-1) & 3
+}
+
+Multiplex_Default_SpriteFrame
+!for .i , Multiplex_items {
+	!by $f8 + ((.i-1) & 7)
+}
+
+!ifdef Multiplexor_UseMulticolour {
+Multiplex_Default_Multicolour
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UsePriority {
+Multiplex_Default_Priority
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleWidth {
+Multiplex_Default_DoubleWidth
+	!fill Multiplex_items , 0
+}
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_Default_DoubleHeight
+	!fill Multiplex_items , 0
+}
+
+
+Multiplexor_BASICStart
+	ldx #Multiplex_items
+	stx Multiplex_MaxSpr
+	jsr Multiplex_Default_Init
+
+	lda #<Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>Multiplex_maininter
+	sta Multiplex_IRQServiceRoutineHi
+
+	jsr Multiplex_InitSort
+
+	; Stop the high raster bit
+	lda VIC2ScreenControlV
+	and #%01111111
+	sta VIC2ScreenControlV
+
+	lda #1
+	sta VIC2InteruptControl
+	lda #0
+	sta VIC2Raster
+	; Ack any interrupts that might have happened so we get a clean start
+	lda #1
+	sta VIC2InteruptStatus
+
+	jsr Multiplex_Sort
+	cli
+
+	rts
+
+!source "SpriteMultiplexorDefaultPatternCode.a"
+
+; Define various zeropage working variables
+Multiplex_areg				!by 0
+Multiplex_xreg				!by 0
+Multiplex_yreg				!by 0
+Multiplex_MaxSpr			!by 0
+Multiplex_MaxSprSorted		!by 0
+Multiplex_counter			!by 0
+Multiplex_jumplo			!by 0
+Multiplex_jumphi			!by 0
+;Multiplex_bal				!by 0
+;Multiplex_bah				!by 0
+Multiplex_BottomTriggered	!by 0
+Multiplex_indextable		!fill Multiplex_items , 0
+
+MultiplexSort_indextable = Multiplex_indextable
+MultiplexSort_YPos = Multiplex_YPos
+MultiplexSort_MaxSprSorted = Multiplex_MaxSprSorted
+
+
+!ifdef Multiplexor_UseDoubleHeight {
+Multiplex_DynamicSpriteHeight		!by 0
+Multiplex_DynamicSpriteHeight2		!by 0
+Multiplex_DynamicSpriteHeight3		!by 0
+}
+
+Multiplex_endVars
+
+!zn
+MultiplexExt_LastIRQ
+	lda #VIC2SpriteYBorderBottom
+	sta VIC2Raster
+	lda #<MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineLo
+	lda #>MultiplexExt_LastIRQ2
+	sta Multiplex_IRQServiceRoutineHi
+	jmp Multiplex_AckExitInterrupt
+
+; The IRQ at the bottom of the screen
+MultiplexExt_LastIRQ2
+	sta Multiplex_areg
+	stx Multiplex_xreg
+	sty Multiplex_yreg
+
+	lda #1
+	sta Multiplexor_SignalNewFrame
+
+!ifdef Multiplex_LogCollisions {
+	lda VIC2SpriteSpriteCollision
+	jsr Multiplexor_UpdateCollisionDetails
+}
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Red
+	sta VIC2BorderColour
+}
+
+	; Only copy the specified number of sprites
+	ldx Multiplexor_SignalNewData
+	beq .noNewData
+	jsr Multiplex_Default_Init
+
+	lda #0
+	sta Multiplexor_SignalNewData
+
+	jsr Multiplex_Sort
+
+.noNewData
+
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Black
+	sta VIC2BorderColour
+}
+	jsr Multiplex_StartTopInterrupt
+;	jmp Multiplex_AckExitInterrupt
+
+	+MACROAckRasterIRQ_A
+!ifdef Multiplexor_DebugBorder {
+	lda #VIC2Colour_Cyan : sta VIC2BorderColour
+}
+
+	lda Multiplex_areg
+	ldx Multiplex_xreg
+	ldy Multiplex_yreg
+	rti
+
+!source "SpriteMultiplexor.a"
+
+!zn
+lMultiplexor_MoveLeft
+	sta .sm1 + 1
+.l1
+	lda Multiplex_XPosLo,y
+	sec
+.sm1	sbc #0
+	sta Multiplex_XPosLo,y
+	lda Multiplex_XPosHi,y
+	sbc #0
+	and #1
+	sta Multiplex_XPosHi,y
+	iny
+	dex
+	bne .l1
+	rts
+
+}
+
+
+
+!if 0 {
 	; Open top/bottom borders
 	; Ten "hires" sprites in the top border
 	+ClearScreenAt_AX SCREENRAM , ' '
@@ -1187,7 +1625,7 @@ SampleEnd
 !fill 63, 255
 }
 
-!source "stdlib/Initialise.a"
+;!source "stdlib/Initialise.a"
 
 !if 0 {
 !source "stdlib/MemoryCopy.a"
