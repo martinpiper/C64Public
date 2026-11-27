@@ -70,6 +70,41 @@
 	+MACROWaitForTheLastScan_A
 	+MACROWaitForRasterHigh_A
 
+	; Detect CIA2 type. This must be done with everything off, the screen, sprites, IRQs, everything...
+	; Starts a 5 cycle timerB NMI on CIA2, the old CIA type will be slower and execute the inc CIA2TimerBIsOld, the new CIA will just go straight to .afterDetect and skip the inc
+	+MWordValueToAddress_A .afterDetect , KERNALNMIServiceRoutineLo
+	+MByteValueToAddress_A 0 , CIA2TimerBControl
+	+MWordValueToAddress_A 4 , CIA2TimerBLo
+
+	bit CIA2InterruptControl	; ACK anything previously
+	+MByteValueToAddress_A %10000010 , CIA2InterruptControl	; TimerB NMI enable
+
+	; Load and start timer, timer stops after underflow
+	+MByteValueToAddress_A %00011001 , CIA2TimerBControl
+
+	; Delay a bit for the timer detect to do its thing
+	+DelayFor 5+3	; 5 timerB cycles plus pipeline delay
+
+	inc CIA2TimerBIsOld
+	jmp *	; Just wait for the NMI to do its thing and enter .afterDetect
+
+.afterDetect
+	bit CIA2InterruptControl	; ACK
+	; Remove the mainline context from this NMI and continue as normal
+	pla
+	pla
+	pla
+	; Code continues here
+
+	lda CIA2TimerBIsOld
+	bne .isOldCIA2
+	; Alter the timerB start delay by plus 1 cycle
+	+MByteValueToAddress_A $06 , .delayModifyNewCIA	; asl $ea
+	jmp .runStablise
+.isOldCIA2
+	+MByteValueToAddress_A $80 , .modifyNMILoOldCIA	; Choose the old CIA variant NMI code
+
+.runStablise
 	ldy #50
 .l1
 	+MACROWaitForRaster 200
@@ -96,11 +131,18 @@
 	+MByteValueToAddress_A CIAInterruptControlAllSources , CIA2InterruptControl
 	; Setup JMP $xx00, where xx comes from the following CIA2TimerBLo 
 	+MByteValueToAddress_A $4c , CIA2TimerALo
-	+MByteValueToAddress_A $00 , CIA2TimerALo + 1
+.modifyNMILoOldCIA = * + 1
+	+MByteValueToAddress_A $00 , CIA2TimerALo + 1	; For the new CIA
+;	+MByteValueToAddress_A $80 , CIA2TimerALo + 1	; For the old CIA
 	+MWordValueToAddress_A CyclesPerRasterPALC64-1 , CIA2TimerBLo
 	; Time tweak here, this adjusts when TimerB is started (with CIA2TimerBControl) and decides what range the JMP in CIA2TimerBLo has
-	+DelayFor 39
+.delayModifyNewCIA
+;	+DelayFor 39	; New CIA
+	; Changing the first opcode from $ea to $06 (making: asl $ea) will increase the delay by one cycle
+	+DelayFor 39-1	; Old CIA
 .bph2
+	; New CIA the CIA2TimerBControl store must be at cycle 25
+	; Old CIA the CIA2TimerBControl store must be at cycle 24
 	+MByteValueToAddress_A $11 , CIA2TimerBControl
 !ifndef kUseSimpleNMI {
 	+MByteValueToAddress_A $40 , CIA2SerialShift	; Setup RTI here, which if executed will also read from the following address for CIA2InterruptControl, which does an automatic ack
@@ -199,6 +241,7 @@ kNumRows = 12
 ; NMI entry points from the timerB modified JMP at CIA2TimerALo
 !ifdef kUseSimpleNMI {
 	; Simple algorithmic NMI code, wastes cycles
+; For the new CIA
 !for .ii , 7 {
 !set .i = .ii-1
 * = $2e00 + (.i * $100)
@@ -208,47 +251,64 @@ kNumRows = 12
 	rti
 }
 
+; For the old CIA
+!for .ii , 7 {
+!set .i = .ii-1
+; Note the $80 offset and different start address page
+* = $2d80 + (.i * $100)
+	+DelayFor 2 + .i
+	+MOpenSideBorder
+	bit CIA2InterruptControl
+	rti
+}
+
 } else {
+!macro MOptimisedNMIsAt .start {
 ; Optimised versions
-* = $2e00
+* = .start
 	+DelayFor 2
 	+MOpenSideBorder
 	jmp CIA2SerialShift
 
-* = $2f00
+* = .start + $100
 	+DelayFor 3
 	+MOpenSideBorder
 	jmp CIA2SerialShift
 
-* = $3000
+* = .start + $200
 	+DelayFor 4-4
 	bit CIA2InterruptControl
 	+MOpenSideBorder
 	rti
 
-* = $3100
+* = .start + $300
 	+DelayFor 5
 	+MOpenSideBorder
 	jmp CIA2SerialShift
 
-* = $3200
+* = .start + $400
 	bit CIA2InterruptControl
 	+DelayFor 6-4
 	+MOpenSideBorder
 	rti
 
-* = $3300
+* = .start + $500
 	bit CIA2InterruptControl
 	+DelayFor 7-4
 	+MOpenSideBorder
 	rti
 
-* = $3400
+* = .start + $600
 	bit CIA2InterruptControl
 	+DelayFor 8-4
 	+MOpenSideBorder
 	rti
 }
+	+MOptimisedNMIsAt $2e00
+	+MOptimisedNMIsAt $2d80	; Note the $80 offset and different start address page
+}
+
+CIA2TimerBIsOld !by 0
 
 * = $3e00
 !bin "BorderSprites.bin"
